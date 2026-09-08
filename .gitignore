@@ -1,0 +1,5 @@
+dist/
+out/
+*.exe
+*.png.tmp
+/misterzine
