@@ -4,13 +4,15 @@
     make-db.py <tag> <binary> <out.json.zip>
     make-db.py --check <json.zip>
 
-The database lists three files, all served from the GitHub release of <tag>,
+The database lists two files, both served from the GitHub release of <tag>,
 so the md5 in the database is the md5 of exactly the bytes those URLs serve:
 a mismatch would make downloader fetch the file again on every run.
 
     Scripts/misterzine.sh         from deploy/Scripts/misterzine.sh
-    downloader_misterzine.ini     from deploy/downloader_misterzine.ini
     misterzine/misterzine         the cross-built binary
+
+The drop-in downloader_misterzine.ini is a release asset for manual use only:
+downloader rejects root-level ini files inside a database ("illegal path").
 
 Schema: https://github.com/MiSTer-devel/Downloader_MiSTer/blob/main/docs/custom-databases.md
 """
@@ -43,7 +45,6 @@ def build(tag, binary, out):
     base = f"https://github.com/{REPO}/releases/download/{tag}/"
     files = {
         "Scripts/misterzine.sh": entry(os.path.join(root, "deploy", "Scripts", "misterzine.sh"), base + "misterzine.sh"),
-        "downloader_misterzine.ini": entry(os.path.join(root, "deploy", "downloader_misterzine.ini"), base + "downloader_misterzine.ini"),
         "misterzine/misterzine": entry(binary, base + "misterzine"),
     }
     db = {

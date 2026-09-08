@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.1
+
+- The downloader database no longer lists the drop-in ini: downloader rejects
+  root-level ini files from a database. It stays a release asset for manual use.
+
 ## v0.1.0
 
 First release. Runs from the Scripts menu on a 320x240 framebuffer, horizontal

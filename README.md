@@ -14,17 +14,17 @@ way to start the game you are looking at.
 
 ## Install
 
-Add the database to `/media/fat/downloader.ini` on the card (or paste it into
-a new file `/media/fat/downloader_misterzine.ini`):
+Add the database to `/media/fat/downloader.ini` on the card:
 
 ```ini
 [misterzine]
 db_url = https://github.com/matijaerceg/misterzine-on-device/releases/latest/download/misterzine.json.zip
 ```
 
-Run update_all (or downloader) once. You get `Scripts/misterzine.sh` and the
-binary under `/media/fat/misterzine/`. The database also ships the drop-in
-ini, so it keeps itself registered. Then: main menu, Scripts, misterzine.
+(or copy the release asset `downloader_misterzine.ini` next to downloader.ini,
+it is the same two lines). Run update_all (or downloader) once. You get
+`Scripts/misterzine.sh` and the binary under `/media/fat/misterzine/`. Then:
+main menu, Scripts, misterzine.
 
 `fb_terminal=1` must be set in MiSTer.ini (it is the default).
 
