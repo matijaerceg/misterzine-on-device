@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Vet and test
+        run: |
+          go vet ./...
+          go test ./...
+      - name: Cross-build for the MiSTer (armv7, static)
+        run: |
+          GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go vet ./...
+          GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o dist/misterzine ./cmd/misterzine
+          file dist/misterzine
+          ls -la dist/misterzine
+      - name: Downloader database dry run
+        run: |
+          python3 tools/make-db.py v0.0.0-ci dist/misterzine dist/misterzine.json.zip
+          python3 tools/make-db.py --check dist/misterzine.json.zip
+      - name: Harness renders
+        run: |
+          go run ./cmd/mzharness -rot none -out out/h -images "" -script "shot list; enter; shot details"
+          go run ./cmd/mzharness -rot left -out out/t -images "" -logical -script "shot list; tab; shot filter"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: renders
+          path: out/
