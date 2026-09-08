@@ -7,7 +7,7 @@
   the "+" glyph is lighter so "filters+settings" reads cleanly.
 - Horizontal pane: picture and text share a left edge 3 px in from the
   separator; horizontal games fill the 4:3 box like the site, vertical ones
-  keep their shape.
+  keep their shape. In tate the pane picture is centred in its box.
 - Details strip: boxes hug the pictures and pack from the left in both
   orientations.
 - Start launches: from the list it launches the main version, in details the

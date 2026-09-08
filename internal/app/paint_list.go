@@ -293,7 +293,12 @@ func (a *App) paintThumb(c *gfx.Canvas, box image.Rectangle, row *data.Row) {
 		}
 		return
 	}
+	// horizontal: on the left edge, in line with the text below; tate:
+	// centred in the box beside the text
 	p := image.Pt(box.Min.X, box.Min.Y+(box.Dy()-img.Rect.Dy())/2)
+	if a.lay.Portrait {
+		p.X = box.Min.X + (box.Dx()-img.Rect.Dx())/2
+	}
 	if slot == "system" {
 		c.BlitAlpha(p, img)
 	} else {
