@@ -23,9 +23,9 @@ it is not a list of unrelated website work.
   and Menu; the user's comparable long-idle CRT result is still pending.
 - **Pi after Linux update:** the framebuffer compatibility build runs;
   physical CRT confirmation remains pending in this conversation.
-- **Update All with visible feedback:** scoped in
-  [UPDATE_ALL_SCOPE.md](UPDATE_ALL_SCOPE.md). The user permits a modal
-  that blocks other app use, but does not accept a silent background run.
+- **Update All with visible feedback:** implemented as a dedicated screen,
+  stage bar, live log, long-B cancellation and early restart ribbon. See
+  [UPDATE_ALL_SCOPE.md](UPDATE_ALL_SCOPE.md) for validation and limits.
 - **Release:** package the accumulated fixes in the next release, verify
   downloader installation on both devices, and remove debug flags from
   normal installs. No new public release has been requested in this turn.

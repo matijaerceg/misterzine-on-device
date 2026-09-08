@@ -21,6 +21,7 @@ jobs:
         run: |
           go vet ./...
           go test ./...
+          GOARCH=386 CGO_ENABLED=0 go test ./internal/app -run TestUpdate
       - name: Cross-build for the MiSTer (armv7, static)
         run: |
           GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go vet ./...
@@ -35,6 +36,8 @@ jobs:
         run: |
           go run ./cmd/mzharness -rot none -out out/h -images "" -script "shot list; enter; shot details"
           go run ./cmd/mzharness -rot left -out out/t -images "" -logical -script "shot list; tab; shot filter"
+          go run ./cmd/mzharness -update-state testdata/update-running.json -out out/update-h -images "" -script "shot running; hold back 2200; shot cancel"
+          go run ./cmd/mzharness -update-state testdata/update-running.json -rot left -logical -out out/update-t -images "" -script "shot running; hold back 2200; shot cancel"
       - uses: actions/upload-artifact@v4
         with:
           name: renders

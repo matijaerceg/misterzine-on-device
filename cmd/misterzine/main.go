@@ -34,6 +34,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/scan"
 	"github.com/matijaerceg/misterzine-on-device/internal/snapshot"
 	"github.com/matijaerceg/misterzine-on-device/internal/store"
+	"github.com/matijaerceg/misterzine-on-device/internal/updater"
 )
 
 const (
@@ -42,40 +43,43 @@ const (
 )
 
 type host struct {
-	root, card  string
-	lg          *log.Logger
-	console     *mister.Console
-	cmd         *mister.Cmd
-	fb          *mister.FB
-	input       *mister.Input
-	a           *app.App
-	settings    store.Settings
-	state       store.State
-	favs        store.Favorites
-	events      chan platform.Event
-	uiRun       chan func()
-	quit        chan struct{}
-	launch      string
-	dirty       bool          // state needs saving
-	lostCh      chan struct{} // the screen-lost probe fired
-	logInput    bool          // debug: log every input event
-	lastEv      time.Time
-	checkFailed atomic.Bool
-	dataUpdated time.Time // the data's build time, for the clock check
-	slowLog     time.Time
-	stats       frameStats
-	favDirty    bool
-	setDirty    bool
-	clock       platform.Clock
-	client      *fetch.Client
-	img         *images.Service
-	index       *scan.Index
-	status      []data.Status
-	alts        []scan.Alt
-	scanCh      chan scanResult
-	offset      atomic.Int64 // added to the system clock (from the site's Date header until NTP lands)
-	dataCh      chan fetch.Fresh
-	netCh       chan string
+	root, card    string
+	lg            *log.Logger
+	console       *mister.Console
+	cmd           *mister.Cmd
+	fb            *mister.FB
+	input         *mister.Input
+	a             *app.App
+	settings      store.Settings
+	state         store.State
+	favs          store.Favorites
+	events        chan platform.Event
+	uiRun         chan func()
+	quit          chan struct{}
+	launch        string
+	dirty         bool          // state needs saving
+	lostCh        chan struct{} // the screen-lost probe fired
+	logInput      bool          // debug: log every input event
+	lastEv        time.Time
+	checkFailed   atomic.Bool
+	dataUpdated   time.Time // the data's build time, for the clock check
+	slowLog       time.Time
+	stats         frameStats
+	favDirty      bool
+	setDirty      bool
+	clock         platform.Clock
+	client        *fetch.Client
+	img           *images.Service
+	index         *scan.Index
+	status        []data.Status
+	alts          []scan.Alt
+	scanCh        chan scanResult
+	offset        atomic.Int64 // added to the system clock (from the site's Date header until NTP lands)
+	dataCh        chan fetch.Fresh
+	netCh         chan string
+	updates       chan updateResult
+	updatePending bool
+	updateRunning bool
 }
 
 func main() {
@@ -90,6 +94,9 @@ func main() {
 	}
 	if len(os.Args) > 1 && os.Args[1] == "launcher" {
 		os.Exit(launcherCmd(os.Args[2:]))
+	}
+	if len(os.Args) == 5 && os.Args[1] == "update-worker" {
+		os.Exit(updater.Worker(os.Args[2], os.Args[3], os.Args[4]))
 	}
 	root := flag.String("root", "/media/fat/misterzine", "config directory")
 	card := flag.String("card", "/media/fat", "card root")
@@ -220,6 +227,14 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 		SettingsChanged: func() { h.setDirty = true },
 		Action: func(kind, arg string) {
 			lg.Printf("action: %s %s", kind, arg)
+			if kind == "update" {
+				h.startUpdate()
+				return
+			}
+			if kind == "update-cancel" {
+				go h.cancelUpdate(arg)
+				return
+			}
 			if kind == "refresh" {
 				go h.check(ds.Hash)
 			}
@@ -254,6 +269,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 		seen = &h.state.Seen
 	}
 	h.a = app.New(cfg, ds, seen)
+	h.initUpdates()
 	h.a.SetPrefetch(h.settings.Prefetch)
 	// like the site, every visit starts at the top of the updated sort with
 	// no filters; only the last-look baseline and favorites carry over
@@ -277,6 +293,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 					"sort": h.a.Sort().String(), "rows": len(ds.Rows), "fb": h.fb.Geometry().String(),
 					"rotation": h.a.Rotation().String(), "inset": fmt.Sprint(h.a.Inset()), "devices": h.input.Devices(),
 					"sysfs": mister.SysfsMode(), "uptime": time.Since(t0).String(), "frames": h.stats.String(),
+					"update": h.a.UpdateState(),
 				}
 			},
 			Quit: h.stop,
@@ -359,6 +376,8 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 			h.drainEvents()
 		case f := <-h.uiRun:
 			f()
+		case u := <-h.updates:
+			h.receiveUpdate(u)
 		case fr := <-h.dataCh:
 			h.swap(fr)
 		case s := <-h.netCh:

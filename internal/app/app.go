@@ -15,6 +15,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/gen"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
+	"github.com/matijaerceg/misterzine-on-device/internal/updater"
 )
 
 // Screen is which view is showing.
@@ -27,10 +28,11 @@ const (
 	ScreenFilter
 	ScreenOptions
 	ScreenCalibrate
+	ScreenUpdate
 )
 
 func (s Screen) String() string {
-	return [...]string{"list", "details", "screen", "filter", "options", "calibrate", "input"}[s]
+	return [...]string{"list", "details", "screen", "filter", "options", "calibrate", "update"}[s]
 }
 
 // Config is what the app needs from its host.
@@ -86,13 +88,15 @@ type App struct {
 	split   int  // marker after view[split]; -1 none
 	topMark bool // "nothing new" marker on top
 
-	screen   Screen
-	cursor   int    // index into view
-	top      int    // first visible screen line
-	slot     int    // screen view slot index
-	slotName string // preferred slot, kept across rows
-	detail   detailState
-	panel    panelState
+	screen     Screen
+	cursor     int    // index into view
+	top        int    // first visible screen line
+	slot       int    // screen view slot index
+	slotName   string // preferred slot, kept across rows
+	detail     detailState
+	panel      panelState
+	update     updater.State
+	updateView updateView
 
 	wants  []ImageReq // pictures this frame asked for, in priority order
 	rep    repeater
@@ -340,6 +344,9 @@ func (a *App) ensureVisible() {
 // that Main also translates delivers every press twice (raw and through the
 // virtual keyboard), and this folds the pair into one.
 func (a *App) Handle(ev platform.Event) bool {
+	if a.screen == ScreenUpdate {
+		return a.handleUpdate(ev)
+	}
 	if ev.Key == platform.KeyNone || ev.Key == platform.KeyOther {
 		return false
 	}
@@ -397,6 +404,9 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 
 // Tick runs due repeats and expires notices; returns true to repaint.
 func (a *App) Tick(now time.Time) bool {
+	if a.screen == ScreenUpdate {
+		return a.tickUpdate(now)
+	}
 	changed := false
 	if k := a.rep.due(now, a.repeatStep); k != platform.KeyNone {
 		if a.act(k) {
@@ -587,7 +597,7 @@ func (a *App) Invalidate() {
 
 // Repeating reports whether a held key is driving repeats right now; the
 // host then runs its vsync-driven frame loop (see Frame).
-func (a *App) Repeating() bool { return a.rep.held }
+func (a *App) Repeating() bool { return a.screen != ScreenUpdate && a.rep.held }
 
 // RepeatActive reports whether a held key has started repeating (a tap
 // released before the delay never does), which is when background work
@@ -663,6 +673,8 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 		a.paintPanel(c)
 	case ScreenCalibrate:
 		a.paintCalibrate(c)
+	case ScreenUpdate:
+		a.paintUpdate(c)
 	}
 	a.neighbourhood()
 	a.cfg.Images.Want(a.wants)

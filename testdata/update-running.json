@@ -1,0 +1,21 @@
+{
+  "id": "preview",
+  "status": "running",
+  "stage": 2,
+  "label": "Updating system files",
+  "started": "2026-09-08T11:55:00Z",
+  "heartbeat": "2026-09-08T12:00:00Z",
+  "last_output": "2026-09-08T11:59:58Z",
+  "elapsed": 300,
+  "protected": true,
+  "reboot": true,
+  "lines": [
+    "Running MiSTer Downloader",
+    "Checking installed files...",
+    "Downloading updated cores...",
+    "Linux will be updated from distribution_mister:",
+    "Fetching the new Linux image...",
+    "Verifying the downloaded image...",
+    "Hold your breath: updating the Kernel..."
+  ]
+}

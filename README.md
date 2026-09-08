@@ -37,10 +37,32 @@ Main, Menu and Linux do not need to be downgraded. MiSTer has also
 
 ### Running Update All
 
+From the main list, press B for Options, select **Run Update All**, then A.
+The dedicated screen shows five stages, an activity spinner, elapsed time,
+time since the last output, and a live log. The bar advances as known
+stages are announced; it is not a download percentage. Up/Down scroll the
+log and L/R move by a page. Browsing and core launching are blocked until
+the run finishes.
+
+**Hold B for two seconds to cancel.** During a detected Linux, firmware or
+bootloader write, cancellation waits until that work finishes. Cancelling
+does not undo files already updated. A **Restart expected** ribbon appears
+as soon as a Linux update or reboot requirement is detected. Update All
+uses your saved configuration, including its automatic restart setting.
+
+If Main's menu button closes MisterZine, this supervised run keeps working
+and recording output. Reopen MisterZine to reconnect. After completion,
+B returns to Options and the card is rescanned. The most recent summary
+and bounded output log are retained in `/media/fat/misterzine/update-all/`.
+After a reboot, the next launch shows the last known result; an interrupted
+run is never assumed successful.
+
 For the usual Scripts-menu or Remote launch, quit MisterZine before
 starting Update All, let the updater finish (including any requested
 reboot), then reopen MisterZine. Both apps use the same script console;
 hiding Update All does not turn it into an independent background job.
+MisterZine's menu helper refuses to take over while it detects an external
+updater. Use the Options action for the supervised workflow above.
 
 An updater started independently through SSH with its own input/output
 can keep working while MisterZine is open. Quitting MisterZine does not
@@ -116,7 +138,7 @@ since your last look show their date in green, and a "your last look" line
 marks where you left off.
 
 Options (B from the main list) has the safe-zone calibration for
-overscan, rotation override, screenshot prefetch, rescan, refresh and cache
+overscan, rotation override, screenshot prefetch, Update All, rescan, refresh and cache
 clearing. A safe zone up to 40 px is available for consumer sets.
 
 Filters (X from the main list) is a separate screen, ordered: On the card,

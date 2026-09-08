@@ -11,6 +11,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"image"
@@ -27,6 +28,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/images"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform/headless"
+	"github.com/matijaerceg/misterzine-on-device/internal/updater"
 )
 
 const allViews = "shot list; enter; shot details; wait 600; enter; shot screen; back; back; tab; shot filter; back; back; shot options; down; enter; shot calibrate; back; back"
@@ -43,6 +45,7 @@ func main() {
 	seenAge := flag.Duration("seen", 48*time.Hour, "pretend the last look was this long ago (0 = first run)")
 	logical := flag.Bool("logical", false, "save the unrotated logical canvas instead of the physical frame")
 	imgDir := flag.String("images", "../misterzine/docs/images", "directory laid out like the site's docs/images; empty = placeholders")
+	updatePath := flag.String("update-state", "", "render an Update All state JSON without running an updater")
 	flag.Parse()
 
 	rows, meta := load(*dataPath, *metaPath)
@@ -106,6 +109,17 @@ func main() {
 	}
 	a := app.New(cfg, ds, stored)
 	a.SetNet("data " + data.RelUpdated(now, upd))
+	if *updatePath != "" {
+		b, err := os.ReadFile(*updatePath)
+		if err != nil {
+			die(err)
+		}
+		var state updater.State
+		if err := json.Unmarshal(b, &state); err != nil {
+			die(err)
+		}
+		a.SetUpdate(state, true)
+	}
 
 	if err := os.MkdirAll(*out, 0755); err != nil {
 		die(err)

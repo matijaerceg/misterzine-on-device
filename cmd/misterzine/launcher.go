@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/platform/mister"
+	"github.com/matijaerceg/misterzine-on-device/internal/updater"
 )
 
 // The menu launcher. Main's core browser only lists cores and MGL files, and
@@ -256,6 +257,10 @@ func watch() int {
 			continue
 		}
 		lg.Printf("watch: misterzine selected in the menu")
+		if s, _ := updater.Read(filepath.Dir(pidFile)); !s.Active() && updater.OtherScript() {
+			lg.Printf("watch: another updater is running; finish it before opening MisterZine")
+			continue // leave its script console and /tmp/script untouched
+		}
 		if kbd == nil {
 			if kbd, err = mister.NewVKeyboard("misterzine launcher"); err != nil {
 				lg.Printf("watch: %v", err)

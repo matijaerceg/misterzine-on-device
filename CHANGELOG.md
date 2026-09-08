@@ -2,6 +2,12 @@
 
 ## v0.2.2
 
+- Options: Run Update All opens a dedicated stage bar and live-log screen.
+  Normal navigation is blocked; hold B for two seconds to request
+  cancellation, with system writes allowed to finish. An early restart
+  ribbon honours Update All's existing reboot policy. A detached supervisor
+  retains output and lets the app reconnect after closing; completion
+  triggers a card rescan. External updater launches are guarded.
 - Main list: X opens Filters; B opens Options (formerly Settings). Both
   screens return directly to the list with B. Filters starts with On the
   card, Favorites and Since last look, followed by the existing facets.

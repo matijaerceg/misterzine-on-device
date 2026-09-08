@@ -169,6 +169,8 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Puts a MisterZine entry in the MiSTer main menu, next to Arcade and Console. Adds one line to linux/user-startup.sh and ships MisterZine.mgl. Off removes both; the Scripts menu entry keeps working."},
 		{text: "Rescan card", kind: "rescan",
 			help: "Re-read which cores and MRAs are on the card. Do this after running update_all."},
+		{text: "Run Update All", kind: "update",
+			help: "Update with live output and a stage bar. Browsing waits until it finishes. Hold B for 2 seconds to cancel; system writes finish first. A restart may be required."},
 		{text: "Refresh data now", kind: "refresh",
 			help: "Ask misterzine.fyi for new releases right now. The app also checks on launch and every 30 minutes while open; new rows show a notice and their dates in green."},
 		{text: "Clear image cache", kind: "clearimg",
@@ -463,6 +465,9 @@ func (a *App) togglePanel() bool {
 		return out
 	}
 	switch e.kind {
+	case "update":
+		a.OpenUpdate()
+		return true
 	case "clear":
 		a.SetFilters(data.Filters{})
 		p.cursor = 0
