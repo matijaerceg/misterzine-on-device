@@ -56,7 +56,6 @@ func launcherCmd(args []string) int {
 		launcherStop()
 		return 0
 	case "status":
-		ensureMGL()
 		fmt.Printf("enabled=%v running=%v mgl=%v\n", launcherEnabled(), watcherPID() > 0, fileExists(mglPath))
 		return 0
 	case "enable":
@@ -66,7 +65,10 @@ func launcherCmd(args []string) int {
 		}
 		return launcherStart()
 	case "disable":
-		launcherDisable()
+		if err := launcherDisable(); err != nil {
+			fmt.Println("disable:", err)
+			return 1
+		}
 		launcherStop()
 		return 0
 	case "watch":
@@ -153,14 +155,46 @@ func launcherEnable() error {
 		s += "\n"
 	}
 	s += "\n" + startupMark + "\n" + startupLine + "\n"
-	return os.WriteFile(startupScript, []byte(s), 0755)
+	return writeStartup(startupScript, []byte(s))
 }
 
-// launcherDisable removes the boot block.
-func launcherDisable() {
-	b, err := os.ReadFile(startupScript)
+// writeStartup preserves the existing script and permissions until the
+// replacement is written and synced. Other apps share this boot script.
+func writeStartup(path string, b []byte) error {
+	mode := os.FileMode(0755)
+	if st, err := os.Stat(path); err == nil {
+		mode = st.Mode().Perm()
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+	f, err := os.CreateTemp(filepath.Dir(path), ".misterzine-startup-*")
 	if err != nil {
-		return
+		return err
+	}
+	defer os.Remove(f.Name())
+	defer f.Close()
+	if err := f.Chmod(mode); err != nil {
+		return err
+	}
+	if _, err := f.Write(b); err != nil {
+		return err
+	}
+	if err := f.Sync(); err != nil {
+		return err
+	}
+	if err := f.Close(); err != nil {
+		return err
+	}
+	return os.Rename(f.Name(), path)
+}
+
+// launcherDisable removes both the boot block and the main-menu entry.
+func launcherDisable() error { return disableLauncherFiles(startupScript, mglPath) }
+
+func disableLauncherFiles(startup, mgl string) error {
+	b, err := os.ReadFile(startup)
+	if err != nil && !os.IsNotExist(err) {
+		return err
 	}
 	var out []string
 	for _, ln := range strings.Split(string(b), "\n") {
@@ -169,11 +203,21 @@ func launcherDisable() {
 		}
 		out = append(out, ln)
 	}
-	os.WriteFile(startupScript, []byte(strings.Join(out, "\n")), 0755)
+	if next := []byte(strings.Join(out, "\n")); !bytes.Equal(next, b) {
+		if err := writeStartup(startup, next); err != nil {
+			return err
+		}
+	}
+	if err := os.Remove(mgl); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
 }
 
-func watcherPID() int {
-	b, err := os.ReadFile(pidFile)
+func watcherPID() int { return watcherPIDFrom(pidFile) }
+
+func watcherPIDFrom(path string) int {
+	b, err := os.ReadFile(path)
 	if err != nil {
 		return 0
 	}
@@ -216,17 +260,57 @@ func launcherStart() int {
 	return 0
 }
 
-func launcherStop() {
-	if pid := watcherPID(); pid > 0 {
+// processAncestor follows the actual parent chain, including the login shell
+// and Scripts wrapper between the watcher and the on-screen app.
+func processAncestor(ancestor, pid int) bool {
+	for depth := 0; pid > 1 && depth < 64; depth++ {
+		if pid == ancestor {
+			return true
+		}
+		b, err := os.ReadFile(fmt.Sprintf("/proc/%d/status", pid))
+		if err != nil {
+			return false
+		}
+		parent := 0
+		for _, line := range strings.Split(string(b), "\n") {
+			if fields := strings.Fields(line); len(fields) == 2 && fields[0] == "PPid:" {
+				parent, _ = strconv.Atoi(fields[1])
+				break
+			}
+		}
+		if parent == pid {
+			return false
+		}
+		pid = parent
+	}
+	return false
+}
+
+func launcherStop() { stopWatcher(pidFile) }
+
+func stopWatcher(path string) {
+	if pid := watcherPIDFrom(path); pid > 0 {
+		if processAncestor(pid, os.Getpid()) {
+			// This watcher owns our console session. Leave it alive to restore
+			// Menu when we exit; watch then stops if the setting is still off.
+			return
+		}
 		syscall.Kill(pid, syscall.SIGTERM)
 	}
-	os.Remove(pidFile)
+	os.Remove(path)
+}
+
+func removeWatcherPID(path string, pid int) {
+	if b, err := os.ReadFile(path); err == nil && strings.TrimSpace(string(b)) == strconv.Itoa(pid) {
+		os.Remove(path)
+	}
 }
 
 // watch is the resident loop.
 func watch() int {
 	lg := log.New(os.Stdout, "", log.Ltime)
 	os.WriteFile(pidFile, []byte(strconv.Itoa(os.Getpid())), 0644)
+	defer removeWatcherPID(pidFile, os.Getpid())
 	lg.Printf("watch: started, pid %d", os.Getpid())
 	warmCache()
 	var kbd *mister.VKeyboard
@@ -273,7 +357,10 @@ func watch() int {
 		if err := runFromMenu(lg, kbd); err != nil {
 			lg.Printf("watch: %v", err)
 		}
-		ensureMGL()
+		enabled := launcherEnabled()
+		if enabled {
+			ensureMGL()
+		}
 		if b, err := os.ReadFile(launchedFile); err == nil {
 			// the app itself loaded a core: leave it alone
 			os.Remove(launchedFile)
@@ -290,6 +377,10 @@ func watch() int {
 			if strings.TrimSpace(string(b)) != "misterzine" {
 				break
 			}
+		}
+		if !enabled {
+			lg.Printf("watch: launcher disabled; finished the app session and stopping")
+			return 0
 		}
 	}
 }

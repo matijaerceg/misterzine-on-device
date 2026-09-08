@@ -83,8 +83,10 @@ helper (started from `/media/fat/linux/user-startup.sh`, the same way the
 Remote and Zaparoo services start) sees that name appear, opens the
 framebuffer console the way the Scripts menu does, runs the app on it, and
 reloads the plain menu when you quit. Main itself is untouched. Turning the
-setting off removes the boot hook and stops the helper; the Scripts entry
-keeps working either way.
+setting off removes the boot hook and menu entry. If the helper opened the
+current app session, it first returns you to Menu, then stops. Turning the
+setting back on before quitting keeps it enabled. The Scripts entry keeps
+working either way, so you can reopen the app there to re-enable the launcher.
 
 ### CRT only? One line in MiSTer.ini
 

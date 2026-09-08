@@ -2,6 +2,10 @@
 
 ## v0.2.2
 
+- Turning the main-menu launcher off keeps the current session's helper
+  alive until it returns to Menu, then stops it. Off removes the menu entry;
+  checking launcher status no longer recreates it. Boot-hook changes use a
+  synced replacement file and preserve the script's existing permissions.
 - An unreadable favorites file is preserved on quit and later launches;
   the app reports the failure and disables favorite edits for that session.
   Options now spells the quit action "Quit MisterZine".

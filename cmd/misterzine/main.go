@@ -258,7 +258,11 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 					}
 					launcherStart()
 				} else {
-					launcherDisable()
+					if err := launcherDisable(); err != nil {
+						lg.Printf("launcher: %v", err)
+						h.a.Notice("could not disable: "+err.Error(), 6*time.Second)
+						return
+					}
 					launcherStop()
 				}
 			}

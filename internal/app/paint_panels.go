@@ -181,7 +181,7 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "Prefetch shots" + a.progressText(), kind: "prefetch", vals: []string{"off", "on"}, idx: prefetchIdx,
 			help: "Download every screenshot in the background (about 55 MB) so browsing never waits; the tally counts up as they land. Off: only what you look at."},
 		{text: "Main menu launcher", kind: "launcher", vals: []string{"off", "on"}, idx: launcherIdx,
-			help: "Puts a MisterZine entry in the MiSTer main menu, next to Arcade and Console. Adds one line to linux/user-startup.sh and ships MisterZine.mgl. Off removes both; the Scripts menu entry keeps working."},
+			help: "Show MisterZine in the MiSTer main menu. Off removes the entry when you return to Menu. You can still open MisterZine from Scripts and turn this back on."},
 		{text: "Run Update All", kind: "update",
 			help: "Update with live output and a stage bar. Browsing waits until it finishes. Hold B for 2 seconds to cancel; system writes finish first. A restart may be required."},
 		{text: "Rescan card", kind: "rescan",

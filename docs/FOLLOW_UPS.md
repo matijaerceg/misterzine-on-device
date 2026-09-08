@@ -23,12 +23,16 @@ it is not a list of unrelated website work.
   batch before implementation proceeds to the next. Batch 1 (`efd13f9`)
   fixes image-worker shutdown. The user confirmed it works on DE10-Nano;
   its regression tests also passed on MiSTer Pi.
-  Batch 2 protects favorites after read errors and fixes the Options label
-  to "Quit MisterZine". User acceptance is pending: add a favorite, quit,
-  reopen and check it remains; remove it, quit and reopen again. Failure
-  cases are tested with temporary files, never the user's saved favorites.
-  The persistence and disabled-edit tests passed on both devices.
-  Do not start batch 3 before the user tests batch 2.
+  Batch 2 (`2c9389a`) protects favorites after read errors and fixes the
+  Options label to "Quit MisterZine". The user confirmed it passes.
+  Batch 3 fixes disabling the main-menu launcher from inside its app:
+  preserve the owning watcher until return to Menu, remove the MGL, stop
+  after the session if still disabled, and write boot-hook changes safely.
+  User acceptance is pending: turn the launcher off, quit, check Menu and
+  the absent entry; reopen via Scripts, turn it on, and check the entry.
+  Parent/child process and boot-file regression tests passed on both MiSTers.
+  Also cover off then on before quitting. Do not start batch 4 before
+  the user tests batch 3.
 - **DE10 long idle stability:** short transitions passed on latest Main
   and Menu; the user's comparable long-idle CRT result is still pending.
 - **Pi after Linux update:** the framebuffer compatibility build runs;
