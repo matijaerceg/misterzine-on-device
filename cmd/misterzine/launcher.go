@@ -234,22 +234,25 @@ func watch() int {
 			kbd.Close()
 		}
 	}()
-	// edge-triggered: react to CORENAME becoming "misterzine", not to it
-	// already saying so when the watcher starts (a restart while the app
-	// runs, or a stale value at boot)
-	armed := true
-	if b, err := os.ReadFile(corenameFile); err == nil && strings.TrimSpace(string(b)) == "misterzine" {
-		armed = false
-		lg.Printf("watch: CORENAME already says misterzine at start; waiting for it to change")
-	}
+	// Main rewrites /tmp/CORENAME on every core load, so a fresh write
+	// saying "misterzine" is a selection: act on each one once, keyed by
+	// the file's mtime. A selection made before the watcher was up (a quick
+	// press after a cold boot) counts too: /tmp is empty at boot, so the
+	// file cannot be stale.
+	var handled time.Time
 	for {
 		time.Sleep(100 * time.Millisecond)
-		b, err := os.ReadFile(corenameFile)
-		if err != nil || strings.TrimSpace(string(b)) != "misterzine" {
-			armed = true
+		st, err := os.Stat(corenameFile)
+		if err != nil || st.ModTime().Equal(handled) {
 			continue
 		}
-		if !armed {
+		b, err := os.ReadFile(corenameFile)
+		if err != nil || strings.TrimSpace(string(b)) != "misterzine" {
+			continue
+		}
+		handled = st.ModTime()
+		if out, _ := exec.Command("pidof", "misterzine").Output(); len(strings.Fields(string(out))) > 1 {
+			lg.Printf("watch: CORENAME says misterzine and the app is already running; leaving it")
 			continue
 		}
 		lg.Printf("watch: misterzine selected in the menu")
@@ -290,11 +293,6 @@ func watch() int {
 // Main does for its own Scripts menu, and returns when the app exits.
 func runFromMenu(lg *log.Logger, kbd *mister.VKeyboard) error {
 	time.Sleep(1200 * time.Millisecond) // Main has just re-executed itself
-	if p := exec.Command("pidof", "misterzine"); p != nil {
-		if out, _ := p.Output(); len(strings.Fields(string(out))) > 1 {
-			return fmt.Errorf("the app is already running")
-		}
-	}
 	// Remote's trick: park on tty3, press F9 until Main switches to tty1
 	lg.Printf("watch: console: active %s, fb mode %q before", mister.ActiveTTY(), mister.SysfsMode())
 	mister.Chvt(3)

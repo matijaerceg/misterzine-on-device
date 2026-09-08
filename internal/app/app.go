@@ -741,7 +741,7 @@ func statusText(st data.Status, cardDate string) string {
 	case data.StatusNotFound:
 		return "not on card"
 	}
-	return "checking card.."
+	return "checking card" + gfx.Ellipsis
 }
 
 // chips lists the row's badges in the site's title-cell order.

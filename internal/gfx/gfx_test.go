@@ -88,7 +88,7 @@ func TestTextAndDirty(t *testing.T) {
 	if red < 10 {
 		t.Fatalf("only %d red pixels drawn", red)
 	}
-	if got := Fit("abcdefgh", 5); got != "abc.." {
+	if got := Fit("abcdefgh", 5); got != "abcd"+Ellipsis {
 		t.Errorf("Fit = %q", got)
 	}
 	if got := Fit("abc", 5); got != "abc" {

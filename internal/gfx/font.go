@@ -127,6 +127,7 @@ const (
 	ArrowDown  = "\x12"
 	ArrowLeft  = "\x13"
 	ArrowRight = "\x14"
+	Ellipsis   = "\x15" // three dots in one cell
 )
 
 // SetGlyph installs a glyph (rows top to bottom, MSB = leftmost pixel).
@@ -160,6 +161,19 @@ func (f *Font) AddArrows() {
 	f.SetGlyph(ArrowDown[0], place(down))
 	f.SetGlyph(ArrowLeft[0], place(left))
 	f.SetGlyph(ArrowRight[0], place(right))
+	// the ellipsis: three dots on the baseline in a single cell
+	dots := make([]byte, f.H)
+	base := f.H - 2
+	if f.H >= 12 {
+		base = f.H - 3
+	}
+	dots[base] = 0xA8
+	f.SetGlyph(Ellipsis[0], dots)
+	// a plus with one-pixel arms, so "a+b" does not touch its neighbours
+	plus := make([]byte, f.H)
+	top := (f.H-3)/2 + 1
+	plus[top], plus[top+1], plus[top+2] = 0x20, 0x70, 0x20
+	f.SetGlyph('+', plus)
 }
 
 // Cols is how many cells fit in w pixels.
@@ -204,7 +218,8 @@ func (c *Canvas) glyph(x, y int, f *Font, rows []byte, col color.RGBA) {
 	}
 }
 
-// Fit trims s to at most cols cells, ending in ".." when it had to cut.
+// Fit trims s to at most cols cells, ending in the one-cell ellipsis when
+// it had to cut.
 func Fit(s string, cols int) string {
 	if cols <= 0 {
 		return ""
@@ -212,10 +227,10 @@ func Fit(s string, cols int) string {
 	if len(s) <= cols {
 		return s
 	}
-	if cols <= 2 {
+	if cols <= 1 {
 		return s[:cols]
 	}
-	return s[:cols-2] + ".."
+	return s[:cols-1] + Ellipsis
 }
 
 // TextFit draws s trimmed to maxW pixels.
@@ -230,7 +245,7 @@ func (c *Canvas) TextRight(x, y int, f *Font, s string, col color.RGBA) int {
 
 // Wrap breaks s into lines of at most cols cells on spaces, hard-breaking
 // words longer than a line. At most maxLines lines; when text remains, the
-// last line is the rest of the text trimmed with "..".
+// last line is the rest of the text trimmed with the ellipsis.
 func Wrap(s string, cols, maxLines int) []string {
 	if cols <= 0 || maxLines <= 0 {
 		return nil

@@ -26,14 +26,25 @@ func Resample(src *image.RGBA, w, h int) *image.RGBA {
 		return out
 	}
 	// horizontal pass into a w x sh intermediate, then vertical into w x h
-	mid := axis(src, sw, sh, w, true)
-	return axis(mid, w, sh, h, false)
+	mid := axis(src, sw, sh, w, true, false)
+	return axis(mid, w, sh, h, false, false)
+}
+
+// resampleLinear is Resample with linear interpolation when an axis grows
+// (a scanout stretch of a few percent must not double every fourth line).
+func resampleLinear(src *image.RGBA, w, h int) *image.RGBA {
+	sw, sh := src.Rect.Dx(), src.Rect.Dy()
+	if w <= 0 || h <= 0 || sw == 0 || sh == 0 {
+		return image.NewRGBA(image.Rect(0, 0, 0, 0))
+	}
+	mid := axis(src, sw, sh, w, true, true)
+	return axis(mid, w, sh, h, false, true)
 }
 
 // axis scales one axis of an RGBA image with area averaging (or nearest
 // when growing). horizontal=true scales width sw->n keeping height sh;
 // otherwise it scales height sh->n keeping width sw.
-func axis(src *image.RGBA, sw, sh, n int, horizontal bool) *image.RGBA {
+func axis(src *image.RGBA, sw, sh, n int, horizontal, linear bool) *image.RGBA {
 	var out *image.RGBA
 	if horizontal {
 		out = image.NewRGBA(image.Rect(0, 0, n, sh))
@@ -44,7 +55,17 @@ func axis(src *image.RGBA, sw, sh, n int, horizontal bool) *image.RGBA {
 	if !horizontal {
 		srcLen = sh
 	}
-	if n >= srcLen {
+	lines := sh
+	if !horizontal {
+		lines = sw
+	}
+	if n == srcLen {
+		for i := 0; i < n; i++ {
+			copyLine(out, src, i, i, horizontal, sw, sh)
+		}
+		return out
+	}
+	if n > srcLen && !linear {
 		// nearest
 		for i := 0; i < n; i++ {
 			s := i * srcLen / n
@@ -52,12 +73,33 @@ func axis(src *image.RGBA, sw, sh, n int, horizontal bool) *image.RGBA {
 		}
 		return out
 	}
+	if n > srcLen {
+		// linear: each destination line blends its two nearest sources
+		acc := make([]float64, lines*4)
+		for i := 0; i < n; i++ {
+			pos := (float64(i)+0.5)*float64(srcLen)/float64(n) - 0.5
+			s0 := int(pos)
+			if pos < 0 {
+				pos, s0 = 0, 0
+			}
+			t := pos - float64(s0)
+			s1 := s0 + 1
+			if s1 >= srcLen {
+				s1 = srcLen - 1
+			}
+			for j := range acc {
+				acc[j] = 0
+			}
+			accumulate(acc, src, s0, horizontal, sw, sh, 1-t)
+			if t > 0 {
+				accumulate(acc, src, s1, horizontal, sw, sh, t)
+			}
+			writeLine(out, acc, i, horizontal, 1)
+		}
+		return out
+	}
 	// weights: destination cell i covers source [i*srcLen/n, (i+1)*srcLen/n)
 	scale := float64(srcLen) / float64(n)
-	lines := sh
-	if !horizontal {
-		lines = sw
-	}
 	acc := make([]float64, lines*4)
 	for i := 0; i < n; i++ {
 		start := float64(i) * scale
@@ -173,23 +215,57 @@ func ToRGBA(img image.Image) *image.RGBA {
 
 // FitSize is the size (fw, fh) that fits (w, h) inside (bw, bh) keeping the
 // aspect ratio, never growing beyond 2x.
-// Scale produces the bitmap for a box: fitted with the aspect kept, or,
-// when native is asked and the picture is no more than 15% larger than the
-// box in either direction, the picture pixel for pixel cropped to the box
-// (a 240p shot on a 240p screen).
-func Scale(src *image.RGBA, bw, bh int, native bool) *image.RGBA {
+// Scale produces the bitmap for a box: fitted with the aspect kept; or,
+// with stretch, filling the box exactly; or, with native, scanned out
+// like a CRT would (see scanout), falling back to the fit.
+func Scale(src *image.RGBA, bw, bh int, native, stretch bool) *image.RGBA {
 	w, h := src.Rect.Dx(), src.Rect.Dy()
-	if native && w <= bw*115/100 && h <= bh*115/100 {
-		cw, ch := min(w, bw), min(h, bh)
-		r := image.Rect((w-cw)/2, (h-ch)/2, (w-cw)/2+cw, (h-ch)/2+ch).Add(src.Rect.Min)
-		out := image.NewRGBA(image.Rect(0, 0, cw, ch))
-		for y := 0; y < ch; y++ {
-			copy(out.Pix[y*out.Stride:y*out.Stride+cw*4], src.Pix[src.PixOffset(r.Min.X, r.Min.Y+y):src.PixOffset(r.Max.X, r.Min.Y+y)])
+	if stretch {
+		return Resample(src, bw, bh)
+	}
+	if native {
+		if out := scanout(src, bw, bh); out != nil {
+			return out
 		}
-		return out
 	}
 	fw, fh := FitSize(w, h, bw, bh)
 	return Resample(src, fw, fh)
+}
+
+// scanout shows a picture the way the tube would: its long axis is
+// stretched (or squeezed) to the box's long axis with linear filtering, the
+// short axis stays pixel for pixel, cropped centrally when it is up to 15%
+// too big. A picture the wrong way round for the box, or more than 15% too
+// big on the short axis, returns nil and is fitted instead.
+func scanout(src *image.RGBA, bw, bh int) *image.RGBA {
+	w, h := src.Rect.Dx(), src.Rect.Dy()
+	if (w >= h) != (bw >= bh) {
+		return nil
+	}
+	cw, ch := w, h // crop size on the short axis
+	tw, th := bw, h
+	if w >= h {
+		if h > bh*115/100 {
+			return nil
+		}
+		ch = min(h, bh)
+		th = ch
+	} else {
+		if w > bw*115/100 {
+			return nil
+		}
+		cw = min(w, bw)
+		tw, th = cw, bh
+	}
+	cropped := src
+	if cw != w || ch != h {
+		r := image.Rect((w-cw)/2, (h-ch)/2, (w-cw)/2+cw, (h-ch)/2+ch).Add(src.Rect.Min)
+		cropped = image.NewRGBA(image.Rect(0, 0, cw, ch))
+		for y := 0; y < ch; y++ {
+			copy(cropped.Pix[y*cropped.Stride:y*cropped.Stride+cw*4], src.Pix[src.PixOffset(r.Min.X, r.Min.Y+y):src.PixOffset(r.Max.X, r.Min.Y+y)])
+		}
+	}
+	return resampleLinear(cropped, tw, th)
 }
 
 func FitSize(w, h, bw, bh int) (int, int) {

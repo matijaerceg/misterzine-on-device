@@ -174,20 +174,25 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 			bw = 96
 		}
 		bh := stripH
-		if l.Portrait && row.ImgW > 0 && row.ImgH > 0 {
-			if fw, _ := fitBox(row.ImgW, row.ImgH, bw, bh); fw > 0 {
-				bw = fw
-			}
-		}
 		x := body.Min.X
 		for _, s := range slots {
-			box := image.Rect(x, y, x+bw, y+bh)
+			// each box hugs its picture: horizontal games at 4:3 like the
+			// site, vertical ones at their own shape; all packed from the left
+			w, stretch := bw, false
+			if s != "system" && row.ImgW > 0 && row.ImgH > 0 {
+				if row.ImgW > row.ImgH {
+					w, stretch = min(bw, bh*4/3), true
+				} else if fw, _ := fitBox(row.ImgW, row.ImgH, bw, bh); fw > 0 {
+					w = fw
+				}
+			}
+			box := image.Rect(x, y, x+w, y+bh)
 			key := row.Img
 			if s == "system" {
 				key = row.Core
 			}
-			a.paintImageBox(c, box, key, s)
-			x += bw + 4
+			a.paintImageBox(c, box, key, s, stretch)
+			x += w + 4
 		}
 		y += bh + 4
 	}
@@ -275,8 +280,8 @@ func shotSlots(row *data.Row) []string {
 	return nil
 }
 
-func (a *App) paintImageBox(c *gfx.Canvas, box image.Rectangle, key, slot string) {
-	req := ImageReq{Key: key, Slot: slot, W: box.Dx(), H: box.Dy()}
+func (a *App) paintImageBox(c *gfx.Canvas, box image.Rectangle, key, slot string, stretch bool) {
+	req := ImageReq{Key: key, Slot: slot, W: box.Dx(), H: box.Dy(), Stretch: stretch}
 	img, st := a.cfg.Images.Get(req)
 	if img == nil {
 		a.want(req)
@@ -289,7 +294,7 @@ func (a *App) paintImageBox(c *gfx.Canvas, box image.Rectangle, key, slot string
 		a.placeholder(c, box, text)
 		return
 	}
-	p := image.Pt(box.Min.X+(box.Dx()-img.Rect.Dx())/2, box.Min.Y+(box.Dy()-img.Rect.Dy())/2)
+	p := image.Pt(box.Min.X, box.Min.Y+(box.Dy()-img.Rect.Dy())/2)
 	if slot == "system" {
 		c.BlitAlpha(p, img)
 	} else {

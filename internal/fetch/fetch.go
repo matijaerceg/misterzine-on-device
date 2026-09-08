@@ -46,6 +46,30 @@ type Client struct {
 	UA   string
 }
 
+// ServerTime asks the site what time it is, over plain HTTP so that a
+// device whose clock still says 1970 (no NTP answer yet) can ask: the
+// redirect to https carries a Date header like any other answer.
+func (c *Client) ServerTime(ctx context.Context) (time.Time, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, "HEAD", "http://misterzine.fyi/", nil)
+	if err != nil {
+		return time.Time{}, err
+	}
+	req.Header.Set("User-Agent", c.UA)
+	plain := &http.Client{Transport: c.http.Transport, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	resp, err := plain.Do(req)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("%w: %v", ErrOffline, err)
+	}
+	resp.Body.Close()
+	t, err := http.ParseTime(resp.Header.Get("Date"))
+	if err != nil {
+		return time.Time{}, fmt.Errorf("no usable Date header: %v", err)
+	}
+	return t, nil
+}
+
 // NewClient builds the client with the timeouts the plan fixes.
 func NewClient(version string) *Client {
 	tr := &http.Transport{

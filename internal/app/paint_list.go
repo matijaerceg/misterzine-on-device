@@ -29,14 +29,13 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 	l := &a.lay
 	c.Fill(l.Status, gen.Eva.Surface)
 	y := l.Status.Min.Y + 2
-	left := "by latest update"
+	left := "by: latest update"
 	if a.mode == data.SortDebut {
-		left = "by MiSTer debut"
+		left = "by: MiSTer debut"
 	}
+	count := itoa(len(a.ds.Rows)) + " releases"
 	if a.filters.Active() {
-		left += "  " + itoa(len(a.view)) + " of " + itoa(len(a.ds.Rows)) + " releases"
-	} else {
-		left += "  " + itoa(len(a.ds.Rows)) + " releases"
+		count = itoa(len(a.view)) + " of " + itoa(len(a.ds.Rows)) + " releases"
 	}
 	if a.notice != "" {
 		// a notice takes the whole line while it shows; the right half alone
@@ -45,6 +44,8 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 		return
 	}
 	c.Text(l.Status.Min.X+2, y, a.sm, left, gen.Eva.Accent)
+	c.Text(l.Status.Min.X+2+a.sm.Width(left)+a.sm.W*2, y, a.sm, count, gen.Eva.Muted)
+	left += "  " + count
 	if a.net != "" {
 		c.TextRight(l.Status.Max.X-2, y, a.sm, gfx.Fit(a.net, a.sm.Cols(l.Status.Dx()-a.sm.Width(left)-8)), gen.Eva.Fg)
 	}
@@ -165,7 +166,7 @@ func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {
 	if a.cfg.Favorites[row.K] {
 		c.Text(x, y, a.body, "*", gen.Eva.Accent)
 	}
-	x += fw * 2
+	x += fw
 	// title
 	st := a.status(i)
 	titleCol := gen.Eva.Fg
@@ -276,7 +277,9 @@ func (a *App) paintThumb(c *gfx.Canvas, box image.Rectangle, row *data.Row) {
 		a.placeholder(c, box, "no shot")
 		return
 	}
-	req := ImageReq{Key: key, Slot: slot, W: box.Dx(), H: box.Dy()}
+	// a horizontal game fills the 4:3 box like on the site; a vertical one
+	// keeps its shape and sits on the left edge with the text
+	req := ImageReq{Key: key, Slot: slot, W: box.Dx(), H: box.Dy(), Stretch: slot != "system" && row.ImgW > row.ImgH}
 	img, st := a.cfg.Images.Get(req)
 	if img == nil {
 		a.want(req)
@@ -290,7 +293,7 @@ func (a *App) paintThumb(c *gfx.Canvas, box image.Rectangle, row *data.Row) {
 		}
 		return
 	}
-	p := image.Pt(box.Min.X+(box.Dx()-img.Rect.Dx())/2, box.Min.Y+(box.Dy()-img.Rect.Dy())/2)
+	p := image.Pt(box.Min.X, box.Min.Y+(box.Dy()-img.Rect.Dy())/2)
 	if slot == "system" {
 		c.BlitAlpha(p, img)
 	} else {

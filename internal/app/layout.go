@@ -55,17 +55,18 @@ func NewLayout(w, h, ix, iy int, body *gfx.Font) Layout {
 	} else {
 		l.Pane = image.Rect(l.Body.Max.X-paneW, l.Body.Min.Y, l.Body.Max.X, l.Body.Max.Y)
 		l.List = image.Rect(l.Body.Min.X, l.Body.Min.Y, l.Pane.Min.X-1, l.Body.Max.Y)
-		tx := l.Pane.Min.X + (paneW-thumbW)/2
-		l.Thumb = image.Rect(tx, l.Pane.Min.Y+2, tx+thumbW, l.Pane.Min.Y+2+thumbH)
-		l.PaneText = image.Rect(l.Pane.Min.X+2, l.Thumb.Max.Y+3, l.Pane.Max.X, l.Pane.Max.Y)
+		// picture and text share a left edge, 3 px in from the separator
+		tx := l.Pane.Min.X + 3
+		l.Thumb = image.Rect(tx, l.Pane.Min.Y+3, tx+thumbW, l.Pane.Min.Y+3+thumbH)
+		l.PaneText = image.Rect(tx, l.Thumb.Max.Y+3, l.Pane.Max.X, l.Pane.Max.Y)
 	}
 	// a 2 px scrollbar beside the rows
 	l.Scroll = image.Rect(l.List.Max.X-2, l.List.Min.Y, l.List.Max.X, l.List.Max.Y)
 	l.List.Max.X -= 4
 	l.Lines = l.List.Dy() / l.Line
 	l.Cols = l.List.Dx() / body.W
-	// columns: fav(1) sp title sp status(1) sp date(5)
-	l.TitleCol = l.Cols - 1 - 1 - 1 - 1 - 1 - 5
+	// columns: fav(1) title sp status(1) sp date(5)
+	l.TitleCol = l.Cols - 1 - 1 - 1 - 1 - 5
 	if l.TitleCol < 8 {
 		l.TitleCol = 8
 	}

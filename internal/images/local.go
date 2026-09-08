@@ -38,7 +38,7 @@ func (l *Local) SetPaused(bool) {}
 // Get decodes and scales on the spot.
 func (l *Local) Get(req app.ImageReq) (*image.RGBA, app.ImageState) {
 	p := Pic{req.Key, req.Slot}
-	k := scaledKey{p, req.W, req.H, req.Native}
+	k := scaledKey{p, req.W, req.H, req.Native, req.Stretch}
 	if img, ok := l.cache[k]; ok {
 		return img, app.ImageReady
 	}
@@ -61,7 +61,7 @@ func (l *Local) Get(req app.ImageReq) (*image.RGBA, app.ImageState) {
 		src = ToRGBA(img)
 		l.raw[p] = src
 	}
-	out := Scale(src, req.W, req.H, req.Native)
+	out := Scale(src, req.W, req.H, req.Native, req.Stretch)
 	l.cache[k] = out
 	return out, app.ImageReady
 }

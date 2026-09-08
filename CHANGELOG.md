@@ -2,6 +2,20 @@
 
 ## v0.2.2
 
+- List: titles start one column further left; the release count is muted
+  beside "by: latest update"; a one-cell ellipsis replaces ".." everywhere;
+  the "+" glyph is lighter so "filters+settings" reads cleanly.
+- Horizontal pane: picture and text share a left edge 3 px in from the
+  separator; horizontal games fill the 4:3 box like the site, vertical ones
+  keep their shape.
+- Details strip: boxes hug the pictures and pack from the left in both
+  orientations.
+- Full-screen shots scan out like the tube: the long axis fills the screen
+  (linear filtering), the short axis stays pixel for pixel.
+- Clock: while the system clock is still at 1970 (no NTP yet), the app takes
+  the time from the site's Date header so relative dates are right.
+- Main menu entry: a press made before the watcher was up after a cold boot
+  is honoured; every fresh selection counts, keyed by CORENAME's mtime.
 - Safe zone editor: the d-pad nudges the top-right corner of the frame
   (Right and Up grow it, Left and Down shrink it); an arrow marks the corner.
 - Launching a game from the main menu entry no longer risks the menu

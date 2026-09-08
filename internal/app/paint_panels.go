@@ -84,7 +84,7 @@ func sortedFacet(m map[string]int) []string {
 func (a *App) filterEntries() []panelEntry {
 	f := &a.filters
 	var E []panelEntry
-	E = append(E, panelEntry{text: "Settings...  (safe zone, rotation)", kind: "settings"})
+	E = append(E, panelEntry{text: "Settings" + gfx.Ellipsis + "  (safe zone, rotation)", kind: "settings"})
 	if f.Active() {
 		E = append(E, panelEntry{text: "Clear all filters", kind: "clear"})
 	}
@@ -536,7 +536,7 @@ func (a *App) togglePanel() bool {
 		if a.cfg.Action != nil {
 			a.cfg.Action(e.kind, "")
 		}
-		a.Notice(strings.TrimSuffix(e.text, " now")+"..", 3e9)
+		a.Notice(strings.TrimSuffix(e.text, " now")+gfx.Ellipsis, 3e9)
 		return true
 	case "back":
 		a.openPanel(ScreenFilter)
