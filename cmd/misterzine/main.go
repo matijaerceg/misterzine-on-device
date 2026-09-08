@@ -66,6 +66,7 @@ type host struct {
 	slowLog       time.Time
 	stats         frameStats
 	favDirty      bool
+	favLoadFailed bool // preserve a favorites file we could not read
 	setDirty      bool
 	clock         platform.Clock
 	client        *fetch.Client
@@ -130,9 +131,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 			lg.Printf("state: %v", err)
 		}
 	}
-	if err := store.Load(filepath.Join(root, "favorites.json"), &h.favs); err != nil && !errors.Is(err, os.ErrNotExist) {
-		lg.Printf("favorites: %v", err)
-	}
+	h.loadFavorites()
 
 	ini := mister.ReadIni(iniPath)
 	lg.Printf("ini: found=%v osd_rotate=%d direct_video=%d vga_scaler=%d fb_terminal=%d analog-visible=%v",
@@ -207,8 +206,9 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	cfg := app.Config{
 		PhysW: canvasW, PhysH: canvasH, Rotation: rotation, SafeInsetX: h.settings.InsetX, SafeInsetY: h.settings.InsetY,
 		Now: h.now, ClockTrusted: trusted, Favorites: favSet, Images: h.img, Scroll: h.settings.Scroll,
-		Progress: func() (int, int) { return h.img.Progress() },
-		Launcher: launcherEnabled,
+		FavoritesUnavailable: h.favLoadFailed,
+		Progress:             func() (int, int) { return h.img.Progress() },
+		Launcher:             launcherEnabled,
 		Status: func(i int) data.Status {
 			if i < len(h.status) {
 				return h.status[i]
@@ -277,6 +277,9 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	h.a.SetNet(h.netLabel(ds))
 	if ini.Found && !ini.AnalogVisible() && !hasState { // first run only: HDMI users need nothing
 		h.a.Notice("CRT only? add direct_video=1 under [Menu], see README", 20*time.Second)
+	}
+	if h.favLoadFailed {
+		h.a.Notice(app.FavoritesUnavailableNotice, 12*time.Second)
 	}
 	h.present()
 	lg.Printf("first frame at %v", time.Since(t0).Round(time.Millisecond))
@@ -393,7 +396,10 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 				h.status = scan.Statuses(h.card, r.index, ds.Rows)
 			}
 			h.a.Refilter()
-			if first || r.notice != "" {
+			if first && h.favLoadFailed {
+				// Keep the startup scan from immediately hiding the read error.
+				h.a.Notice(app.FavoritesUnavailableNotice, 12*time.Second)
+			} else if first || r.notice != "" {
 				h.a.Notice(r.notice, 8*time.Second)
 			}
 		case <-h.lostCh:
@@ -560,6 +566,15 @@ func (h *host) snapshotState() string {
 	return h.a.CursorKey() + "|" + h.a.Sort().String() + "|" + fmt.Sprint(h.a.Filters())
 }
 
+func (h *host) loadFavorites() {
+	var err error
+	h.favs, err = store.LoadFavorites(filepath.Join(h.root, "favorites.json"))
+	h.favLoadFailed = err != nil && !errors.Is(err, os.ErrNotExist)
+	if h.favLoadFailed {
+		h.lg.Printf("favorites: %v; editing and saving disabled for this session", err)
+	}
+}
+
 func (h *host) saveAll(final bool) {
 	if h.dirty || final {
 		f := h.a.Filters()
@@ -573,7 +588,7 @@ func (h *host) saveAll(final bool) {
 		}
 		h.dirty = false
 	}
-	if h.favDirty || final {
+	if !h.favLoadFailed && (h.favDirty || final) {
 		h.favs.Apply(h.a.FavoriteSet(), time.Now())
 		if err := store.Save(filepath.Join(h.root, "favorites.json"), h.favs); err != nil {
 			h.lg.Printf("favorites: %v", err)

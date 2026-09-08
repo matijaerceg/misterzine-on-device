@@ -2,6 +2,9 @@
 
 ## v0.2.2
 
+- An unreadable favorites file is preserved on quit and later launches;
+  the app reports the failure and disables favorite edits for that session.
+  Options now spells the quit action "Quit MisterZine".
 - Image workers stop even with pictures still queued, preventing a pending
   download or unreadable cached image from trapping shutdown before a launch.
 - Updated sort matches the site's arrival batches: later same-day refreshes

@@ -50,6 +50,9 @@ type Config struct {
 	Quit         func()
 	Version      string
 
+	// FavoritesUnavailable prevents edits after the host could not read the file.
+	FavoritesUnavailable bool
+
 	// Alternatives lists installed alternative MRAs for a row (card-relative paths).
 	Alternatives func(r *data.Row) []string
 	// FavChanged fires after a favorite toggle so the host can persist.

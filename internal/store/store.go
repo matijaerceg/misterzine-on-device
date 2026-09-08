@@ -95,6 +95,21 @@ type Favorites struct {
 	SyncedAt *string    `json:"synced_at"`
 }
 
+// LoadFavorites preserves the original file on every error. Unlike cached
+// data, favorites cannot be downloaded again, so do not rename a bad file
+// and let the next launch mistake it for a fresh installation.
+func LoadFavorites(path string) (Favorites, error) {
+	var f Favorites
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return f, err
+	}
+	if err := json.Unmarshal(b, &f); err != nil {
+		return Favorites{}, fmt.Errorf("%s: %w (file kept unchanged)", filepath.Base(path), err)
+	}
+	return f, nil
+}
+
 // Set returns the live favorites as a set.
 func (f *Favorites) Set() map[string]bool {
 	m := map[string]bool{}

@@ -190,7 +190,7 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Ask misterzine.fyi for new releases right now. The app also checks on launch and every 30 minutes while open; new rows show a notice and their dates in green."},
 		{text: "Clear image cache", kind: "clearimg",
 			help: "Delete the downloaded screenshots and system photos; they come back as you browse."},
-		{text: "Quit misterzine", kind: "quit",
+		{text: "Quit MisterZine", kind: "quit",
 			help: "Back to the MiSTer menu. The pad's menu button does the same."},
 	}
 }

@@ -137,6 +137,12 @@ card with an unknown build date, `-` not found on the card. Rows changed
 since your last look show their date in green, and a "your last look" line
 marks where you left off.
 
+If the favorites file cannot be read, the app shows "Favorites unreadable;
+file kept" and disables favorite edits for that session. It preserves
+`favorites.json` in place, including on quit and subsequent launches.
+After the file is readable or restored from a backup, reopen MisterZine
+to load it and enable favorite edits again.
+
 Options (B from the main list) has the safe-zone calibration for
 overscan, rotation override, screenshot prefetch, Update All, rescan, refresh and cache
 clearing. A safe zone up to 40 px is available for consumer sets.

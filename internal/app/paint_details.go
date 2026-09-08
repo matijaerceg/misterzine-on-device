@@ -306,6 +306,8 @@ func (a *App) paintImageBox(c *gfx.Canvas, box image.Rectangle, key, slot string
 // so a double tap in the list cannot launch.
 const launchGuard = 500 * time.Millisecond
 
+const FavoritesUnavailableNotice = "Favorites unreadable; file kept"
+
 func (a *App) actDetails(k platform.Key) bool {
 	row, _, _ := a.current()
 	if row == nil {
@@ -333,6 +335,10 @@ func (a *App) actDetails(k platform.Key) bool {
 	case platform.KeyPageDown:
 		a.detail.scroll += 4
 	case platform.KeySpace:
+		if a.cfg.FavoritesUnavailable {
+			a.Notice(FavoritesUnavailableNotice, 8*time.Second)
+			return true
+		}
 		a.cfg.Favorites[row.K] = !a.cfg.Favorites[row.K]
 		if !a.cfg.Favorites[row.K] {
 			delete(a.cfg.Favorites, row.K)

@@ -20,13 +20,15 @@ it is not a list of unrelated website work.
 ## Active verification / current scope
 
 - **Code review fixes: one small batch at a time.** The user must test each
-  batch before implementation proceeds to the next. Batch 1 only fixes
-  image-worker shutdown with pending downloads or unreadable cached images.
-  Its regression tests failed before the fix and now pass on the Windows
-  host, MiSTer Pi and DE10-Nano. User checks:
-  browse while pictures load, launch an installed game, reopen MisterZine,
-  and quit through Options; confirm prompt transitions and a stable CRT.
-  User acceptance is still pending. Other review fixes remain unstarted.
+  batch before implementation proceeds to the next. Batch 1 (`efd13f9`)
+  fixes image-worker shutdown. The user confirmed it works on DE10-Nano;
+  its regression tests also passed on MiSTer Pi.
+  Batch 2 protects favorites after read errors and fixes the Options label
+  to "Quit MisterZine". User acceptance is pending: add a favorite, quit,
+  reopen and check it remains; remove it, quit and reopen again. Failure
+  cases are tested with temporary files, never the user's saved favorites.
+  The persistence and disabled-edit tests passed on both devices.
+  Do not start batch 3 before the user tests batch 2.
 - **DE10 long idle stability:** short transitions passed on latest Main
   and Menu; the user's comparable long-idle CRT result is still pending.
 - **Pi after Linux update:** the framebuffer compatibility build runs;
