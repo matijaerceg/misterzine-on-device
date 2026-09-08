@@ -2,6 +2,8 @@
 
 ## v0.2.2
 
+- Scan messages expire while Update All is open, preventing an expired
+  message from driving continuous full-screen redraws during or after a run.
 - Returning from artwork keeps the selected game version and details scroll
   position, so Start still launches the version picked before viewing a shot.
 - Turning the main-menu launcher off keeps the current session's helper

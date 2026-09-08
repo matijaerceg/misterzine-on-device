@@ -27,12 +27,16 @@ it is not a list of unrelated website work.
   Options label to "Quit MisterZine". The user confirmed it passes.
   Batch 3 (`967dcdf`) fixes disabling and re-enabling the main-menu launcher.
   Device checks and the user's test passed.
-  Batch 4 preserves the selected game version and details scroll position
-  when returning from artwork. User acceptance is pending: choose an installed
-  alternative, view artwork with A, return with B, and check the same version
-  remains selected before launching it. Also check details scroll position.
-  Regression tests passed on both devices for B/A/X returns in all rotations.
-  Do not start batch 5 before the user tests batch 4.
+  Batch 4 (`3878f43`) preserves the selected game version and details scroll
+  position when returning from artwork. The user confirmed it on MiSTer Pi;
+  regression tests passed on both devices for B/A/X returns in all rotations.
+  Batch 5 clears expired scan messages on the Update All screen, preventing
+  a stale timer from forcing continuous redraws. Regression tests reproduced
+  the old failure and now pass on both devices, along with the existing
+  progress-rendering and long-B cancellation tests. User acceptance is pending:
+  run Update All, check the live display remains responsive, leave its result
+  screen open for at least ten seconds, then return to Options with B.
+  Do not start batch 6 before the user tests batch 5.
 - **DE10 long idle stability:** short transitions passed on latest Main
   and Menu; the user's comparable long-idle CRT result is still pending.
 - **Pi after Linux update:** the framebuffer compatibility build runs;

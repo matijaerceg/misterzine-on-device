@@ -10,6 +10,76 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/updater"
 )
 
+// A scan notice can predate opening Update All or arrive during a run/result.
+// Once it expires, the host must return to its normal polling delay instead of
+// receiving the same past deadline and repainting as fast as vsync allows.
+func TestUpdateNoticeExpiryReleasesWakeDeadline(t *testing.T) {
+	for _, status := range []string{"starting", "running", "completed", "cancelled"} {
+		for _, inherited := range []bool{true, false} {
+			name := status + "/during"
+			if inherited {
+				name = status + "/inherited"
+			}
+			t.Run(name, func(t *testing.T) {
+				now := time.Unix(1788900000, 0)
+				a := New(Config{PhysW: 320, PhysH: 240, Now: func() time.Time { return now }}, data.Ingest(nil, "test", now), nil)
+				if inherited {
+					a.Notice("scanning card", time.Second)
+					a.OpenUpdate()
+				}
+				a.SetUpdate(updater.State{ID: "run", Status: status, Started: now, Heartbeat: now}, true)
+				if !inherited {
+					a.Notice("card scan complete", time.Second)
+				}
+				deadline := now.Add(time.Second)
+				a.Paint()
+				now = deadline.Add(-time.Millisecond)
+				a.Tick(now)
+				if a.notice == "" || !a.NextTick().Equal(deadline) {
+					t.Fatal("notice expired before its deadline")
+				}
+				for _, elapsed := range []time.Duration{0, time.Millisecond, 250 * time.Millisecond, time.Second} {
+					now = deadline.Add(elapsed)
+					a.Tick(now)
+					a.Paint()
+					if next := a.NextTick(); !next.IsZero() || a.notice != "" {
+						t.Errorf("at deadline + %v: stale notice %q keeps wake deadline %v", elapsed, a.notice, next)
+					}
+					if a.Screen() != ScreenUpdate || a.UpdateState().Status != status {
+						t.Fatal("notice expiry changed the update screen or run status")
+					}
+				}
+				if status == "completed" || status == "cancelled" {
+					a.Handle(platform.Event{Key: platform.KeyBack, Pressed: true, At: now})
+					if a.Screen() != ScreenOptions || a.notice != "" {
+						t.Fatal("B did not return to Options with the expired notice cleared")
+					}
+				}
+			})
+		}
+	}
+}
+
+func TestNoticeExpiresAtDeadline(t *testing.T) {
+	for _, frame := range []bool{false, true} {
+		now := time.Unix(1788900000, 0)
+		a := New(Config{PhysW: 320, PhysH: 240, Now: func() time.Time { return now }}, data.Ingest(nil, "test", now), nil)
+		a.Notice("message", time.Second)
+		a.Paint()
+		now = a.NextTick()
+		tick := a.Tick
+		if frame {
+			tick = a.Frame
+		}
+		if !tick(now) || a.notice != "" || !a.NextTick().IsZero() {
+			t.Fatalf("frame=%v: notice did not expire when the host woke at its deadline", frame)
+		}
+		if _, dirty := a.Paint(); len(dirty) == 0 {
+			t.Fatal("expired message was not repainted")
+		}
+	}
+}
+
 func TestUpdateModalAndLongCancel(t *testing.T) {
 	now := time.Now()
 	calls := 0

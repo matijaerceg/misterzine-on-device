@@ -407,19 +407,21 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 
 // Tick runs due repeats and expires notices; returns true to repaint.
 func (a *App) Tick(now time.Time) bool {
-	if a.screen == ScreenUpdate {
-		return a.tickUpdate(now)
-	}
 	changed := false
+	// Expire notices on every screen so NextTick cannot keep returning a past
+	// deadline while Update All handles its own animation and cancel input.
+	if a.notice != "" && !now.Before(a.until) {
+		a.notice = ""
+		a.all = true
+		changed = true
+	}
+	if a.screen == ScreenUpdate {
+		return a.tickUpdate(now) || changed
+	}
 	if k := a.rep.due(now, a.repeatStep); k != platform.KeyNone {
 		if a.act(k) {
 			changed = true
 		}
-	}
-	if a.notice != "" && now.After(a.until) {
-		a.notice = ""
-		a.all = true
-		changed = true
 	}
 	return changed
 }
@@ -433,7 +435,7 @@ func (a *App) Frame(now time.Time) bool {
 			changed = true
 		}
 	}
-	if a.notice != "" && now.After(a.until) {
+	if a.notice != "" && !now.Before(a.until) {
 		a.notice = ""
 		a.all = true
 		changed = true
