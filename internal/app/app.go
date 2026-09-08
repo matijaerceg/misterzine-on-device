@@ -632,7 +632,7 @@ func (a *App) neighbourhood() {
 			}
 			key, slot := thumbSlot(row)
 			if key != "" {
-				a.want(ImageReq{Key: key, Slot: slot, W: box.Dx() - 2, H: box.Dy() - 2})
+				a.want(ImageReq{Key: key, Slot: slot, W: box.Dx(), H: box.Dy()})
 			}
 		}
 	}
