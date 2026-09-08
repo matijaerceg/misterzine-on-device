@@ -37,8 +37,8 @@ func (s Screen) String() string {
 type Config struct {
 	PhysW, PhysH int // physical frame, 320x240
 	Rotation     gfx.Rotation
-	SafeInsetX   int // safe-zone margin left and right of the physical screen
-	SafeInsetY   int // and top and bottom
+	SafeInsetX   int // safe-zone margin at the left and right edges, as viewed
+	SafeInsetY   int // and at the top and bottom
 	Now          func() time.Time
 	ClockTrusted bool
 	Images       Images
@@ -705,9 +705,6 @@ func statusText(st data.Status, cardDate string) string {
 // chips lists the row's badges in the site's title-cell order.
 func chips(r *data.Row, d *data.Derived) []string {
 	var out []string
-	if d.BatchN >= 2 {
-		out = append(out, "batch of "+itoa(d.BatchN))
-	}
 	if r.Beta {
 		out = append(out, "beta")
 	}

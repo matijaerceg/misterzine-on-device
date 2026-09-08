@@ -11,6 +11,14 @@
   saves, network checks) runs between two frames. Left/Right page at the
   same pace. A scrollbar beside the list.
 - L and R jump to the top and bottom.
+- Screen view uses the whole screen (a 240p shot shows pixel for pixel),
+  with only the slot count overlaid in a corner. Pictures in the list pane
+  and details draw without frames; missing ones are a black shape with a
+  word on it. Details lose the status bar and the batch chip; the launch
+  list is headed "Versions".
+- Safe zone editor: B saves and goes back (no A); Left/Right are the sides
+  as viewed, Up/Down the top and bottom, in both orientations.
+- Filters: Left/Right page, L/R first and last, only B closes.
 - Settings: Left/Right change a value (arrows show which way can still
   move); scroll speed reads 20 / 30 / 60 Hz and defaults to 30; "Edit safe
   zone" sets the side margins with Left/Right and the top and bottom ones

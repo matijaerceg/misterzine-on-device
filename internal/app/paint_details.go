@@ -73,9 +73,6 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 		return fg
 	}
 	add("Updated", row.Updated+rel(row.Updated), fg)
-	if d.BatchN >= 2 {
-		L = append(L, paneLine{"  shipped together with " + itoa(d.BatchN-1) + " other game(s) on this core", mu})
-	}
 	kind := "Debut"
 	if row.DateKind == "build" {
 		kind = "Latest build"
@@ -141,8 +138,8 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 		a.paintList(c)
 		return
 	}
-	a.paintStatus(c)
 	body := l.Body
+	body.Min.Y = l.Root.Min.Y // no status bar here: the room goes to the specs
 	cols := a.body.Cols(body.Dx())
 	y := body.Min.Y
 	title := d.Title
@@ -211,7 +208,7 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 	// launch section
 	y = body.Max.Y - launchH
 	c.HLine(body.Min.X, body.Max.X-1, y-1, gen.Eva.Line)
-	c.Text(body.Min.X, y, a.sm, "Launch (A):", gen.Eva.Muted)
+	c.Text(body.Min.X, y, a.sm, "Versions:", gen.Eva.Muted)
 	y += lh
 	if a.detail.pick >= len(entries) {
 		a.detail.pick = len(entries) - 1
@@ -242,6 +239,11 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 		c.Text(body.Min.X, y, a.sm, gfx.Fit(prefix+label, sc), col)
 		y += lh
 	}
+	if a.notice != "" {
+		c.Fill(l.Hint, gen.Eva.Surface)
+		c.Text(l.Hint.Min.X+2, l.Hint.Min.Y+2, a.sm, gfx.Fit(a.notice, a.sm.Cols(l.Hint.Dx()-4)), gen.Eva.Fg)
+		return
+	}
 	hint := "A launch  X shots  Y fav"
 	if len(entries) > 1 {
 		hint += "  " + gfx.ArrowUp + " " + gfx.ArrowDown + " pick"
@@ -261,9 +263,7 @@ func shotSlots(row *data.Row) []string {
 }
 
 func (a *App) paintImageBox(c *gfx.Canvas, box image.Rectangle, key, slot string) {
-	c.Fill(box, gen.Eva.Surface)
-	c.Box(box, gen.Eva.Line)
-	req := ImageReq{Key: key, Slot: slot, W: box.Dx() - 2, H: box.Dy() - 2}
+	req := ImageReq{Key: key, Slot: slot, W: box.Dx(), H: box.Dy()}
 	img, st := a.cfg.Images.Get(req)
 	if img == nil {
 		a.want(req)

@@ -271,14 +271,12 @@ func (a *App) paintPaneText(c *gfx.Canvas, r image.Rectangle, lines []paneLine) 
 
 // paintThumb draws a row's list thumbnail or a placeholder into box.
 func (a *App) paintThumb(c *gfx.Canvas, box image.Rectangle, row *data.Row) {
-	c.Fill(box, gen.Eva.Surface)
-	c.Box(box, gen.Eva.Line)
 	key, slot := thumbSlot(row)
 	if key == "" {
 		a.placeholder(c, box, "no shot")
 		return
 	}
-	req := ImageReq{Key: key, Slot: slot, W: box.Dx() - 2, H: box.Dy() - 2}
+	req := ImageReq{Key: key, Slot: slot, W: box.Dx(), H: box.Dy()}
 	img, st := a.cfg.Images.Get(req)
 	if img == nil {
 		a.want(req)
@@ -300,7 +298,10 @@ func (a *App) paintThumb(c *gfx.Canvas, box image.Rectangle, row *data.Row) {
 	}
 }
 
+// placeholder stands in for a picture: a solid black shape with a word on
+// it (pictures themselves draw bare, no frame).
 func (a *App) placeholder(c *gfx.Canvas, box image.Rectangle, text string) {
+	c.Fill(box, rgb{R: 0, G: 0, B: 0, A: 255})
 	w := a.sm.Width(text)
 	c.Text(box.Min.X+(box.Dx()-w)/2, box.Min.Y+(box.Dy()-a.sm.H)/2, a.sm, text, gen.Eva.Muted)
 }

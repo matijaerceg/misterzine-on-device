@@ -38,13 +38,11 @@ const (
 )
 
 // NewLayout computes the layout for a logical W x H canvas. The insets are
-// the safe-zone margins on the PHYSICAL screen (ix left/right, iy
-// top/bottom); in tate the logical canvas is turned, so they swap.
+// the safe-zone margins as the viewer sees the picture: ix at the left and
+// right edges, iy at the top and bottom (the logical canvas is already the
+// viewer's orientation, so in tate ix is the tube's short side).
 func NewLayout(w, h, ix, iy int, body *gfx.Font) Layout {
 	l := Layout{W: w, H: h, Inset: ix, Portrait: h > w, Line: body.H}
-	if l.Portrait {
-		ix, iy = iy, ix
-	}
 	l.Root = image.Rect(ix, iy, w-ix, h-iy)
 	l.Status = image.Rect(l.Root.Min.X, l.Root.Min.Y, l.Root.Max.X, l.Root.Min.Y+statusH)
 	l.Hint = image.Rect(l.Root.Min.X, l.Root.Max.Y-hintH, l.Root.Max.X, l.Root.Max.Y)

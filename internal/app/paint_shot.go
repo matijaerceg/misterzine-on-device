@@ -8,9 +8,10 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
 
-// paintShot is the screenshot view: the picture as large as the safe area
-// allows above a one-line caption. Left/Right walk the list, Up/Down cycle
-// the slots.
+// paintShot is the screenshot view: the picture on the whole canvas (the
+// safe zone does not apply, so a 240p shot shows pixel for pixel on a 240p
+// screen) with the slot count overlaid in a corner. Left/Right cycle the
+// slots.
 func (a *App) paintShot(c *gfx.Canvas) {
 	l := &a.lay
 	row, d, _ := a.current()
@@ -21,7 +22,6 @@ func (a *App) paintShot(c *gfx.Canvas) {
 	}
 	slots := shotSlots(row)
 	area := a.shotArea()
-	cap := image.Rect(l.Root.Min.X, area.Max.Y, l.Root.Max.X, l.Root.Max.Y)
 	c.Fill(area, gen.Eva.Bg)
 	if len(slots) == 0 {
 		a.placeholder(c, area, "no shot for this row")
@@ -54,26 +54,20 @@ func (a *App) paintShot(c *gfx.Canvas) {
 			}
 		}
 	}
-	c.Fill(cap, gen.Eva.Surface)
-	right := ""
-	if len(slots) > 0 {
-		right = slots[a.slot] + " " + itoa(a.slot+1) + "/" + itoa(len(slots))
+	_ = d
+	if len(slots) > 1 {
+		// the count, on a small dark tab inside the safe zone's corner
+		s := itoa(a.slot+1) + "/" + itoa(len(slots))
+		w := a.sm.Width(s) + 6
+		tab := image.Rect(l.Root.Max.X-w, l.Root.Max.Y-a.sm.H-4, l.Root.Max.X, l.Root.Max.Y)
+		c.Fill(tab, rgb{R: 0, G: 0, B: 0, A: 255})
+		c.Text(tab.Min.X+3, tab.Min.Y+2, a.sm, s, gen.Eva.Fg)
 	}
-	date := row.Updated
-	if right != "" {
-		right += "  "
-	}
-	right += date
-	rw := a.sm.Width(right)
-	c.TextRight(cap.Max.X-2, cap.Min.Y+2, a.sm, right, gen.Eva.Muted)
-	c.Text(cap.Min.X+2, cap.Min.Y+2, a.sm, gfx.Fit(d.Title, a.sm.Cols(cap.Dx()-rw-6)), gen.Eva.Fg)
 }
 
-// shotArea is the picture area of the screen view: the safe area above the
-// caption band.
+// shotArea is the picture area of the screen view: the whole canvas.
 func (a *App) shotArea() image.Rectangle {
-	l := &a.lay
-	return image.Rect(l.Root.Min.X, l.Root.Min.Y, l.Root.Max.X, l.Root.Max.Y-statusH)
+	return image.Rect(0, 0, a.lay.W, a.lay.H)
 }
 
 func (a *App) actShot(k platform.Key) bool {

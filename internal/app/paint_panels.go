@@ -30,8 +30,8 @@ type panelState struct {
 	cursor  int
 	top     int
 	// settings snapshot
-	prefetch             bool
-	insetWasX, insetWasY int // insets before calibration, for cancel
+	prefetch bool
+	lines    int // entries that fit, from the last paint (paging)
 }
 
 func (a *App) openPanel(s Screen) {
@@ -164,7 +164,7 @@ func (a *App) settingsEntries() []panelEntry {
 			help: "Margin kept clear of the screen edge (overscan): now " + itoa(a.cfg.SafeInsetX) + " px at the sides, " + itoa(a.cfg.SafeInsetY) + " px top and bottom. A opens the frame; fit it just inside the picture."},
 		{text: "Scroll speed", kind: "scroll", vals: []string{"20 Hz", "30 Hz", "60 Hz"}, idx: scrollIdx,
 			help: "How many rows (or pages, with Left/Right) a held direction moves per second. 60 Hz is one row every frame."},
-		{text: "Prefetch all shots" + a.progressText(), kind: "prefetch", vals: []string{"off", "on"}, idx: prefetchIdx,
+		{text: "Prefetch shots" + a.progressText(), kind: "prefetch", vals: []string{"off", "on"}, idx: prefetchIdx,
 			help: "Download every screenshot in the background (about 55 MB) so browsing never waits; the tally counts up as they land. Off: only what you look at."},
 		{text: "Main menu launcher", kind: "launcher", vals: []string{"off", "on"}, idx: launcherIdx,
 			help: "Puts a MisterZine entry in the MiSTer main menu, next to Arcade and Console. Adds one line to linux/user-startup.sh and ships MisterZine.mgl. Off removes both; the Scripts menu entry keeps working."},
@@ -207,7 +207,7 @@ func (a *App) progressText() string {
 	if total == 0 {
 		return ""
 	}
-	return "  " + itoa(have) + "/" + itoa(total) + " on card"
+	return "  " + itoa(have) + "/" + itoa(total)
 }
 
 func onOff(b bool) string {
@@ -238,6 +238,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 	lh := a.body.H
 	lines := inner.Dy() / lh
 	p := &a.panel
+	p.lines = lines
 	if p.cursor < p.top {
 		p.top = p.cursor
 	}
@@ -308,7 +309,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 		}
 		a.paintHint(c, gfx.ArrowLeft+" "+gfx.ArrowRight+" change  A open  B back")
 	} else {
-		a.paintHint(c, "A toggle  "+gfx.ArrowLeft+" "+gfx.ArrowRight+" section  X close  Settings at top")
+		a.paintHint(c, "A toggle  "+gfx.ArrowLeft+" "+gfx.ArrowRight+" page  B back")
 	}
 }
 
@@ -319,7 +320,7 @@ func (a *App) actPanel(k platform.Key) bool {
 		return i >= 0 && i < n && !p.entries[i].info && !(p.entries[i].header && p.entries[i].text == "")
 	}
 	switch k {
-	case platform.KeyBack, platform.KeyTab:
+	case platform.KeyBack:
 		if a.screen == ScreenSettings {
 			a.openPanel(ScreenFilter)
 			return true
@@ -341,35 +342,27 @@ func (a *App) actPanel(k platform.Key) bool {
 				break
 			}
 		}
-	case platform.KeyLeft, platform.KeyPageUp:
+	case platform.KeyLeft:
 		if a.screen == ScreenSettings {
 			return a.stepValue(-1)
 		}
-		// previous section header (headers are selectable: A on one = all)
-		for i := p.cursor - 1; i >= 0; i-- {
-			if p.entries[i].header && p.entries[i].text != "" {
-				p.cursor = i
-				break
-			}
-		}
-	case platform.KeyRight, platform.KeyPageDown:
+		// a page up, landing on the nearest selectable entry
+		target := p.cursor - max(p.lines, 1)
+		p.cursor = p.nearest(target, selectable)
+	case platform.KeyRight:
 		if a.screen == ScreenSettings {
 			return a.stepValue(1)
 		}
-		for i := p.cursor + 1; i < n; i++ {
-			if p.entries[i].header && p.entries[i].text != "" {
-				p.cursor = i
-				break
-			}
-		}
-	case platform.KeyHome:
+		target := p.cursor + max(p.lines, 1)
+		p.cursor = p.nearest(target, selectable)
+	case platform.KeyPageUp, platform.KeyHome:
 		for i := 0; i < n; i++ {
 			if selectable(i) {
 				p.cursor = i
 				break
 			}
 		}
-	case platform.KeyEnd:
+	case platform.KeyPageDown, platform.KeyEnd:
 		for i := n - 1; i >= 0; i-- {
 			if selectable(i) {
 				p.cursor = i
@@ -383,6 +376,27 @@ func (a *App) actPanel(k platform.Key) bool {
 	}
 	a.all = true
 	return true
+}
+
+// nearest is the selectable entry closest to target inside the list: for a
+// target past either end, the first or last selectable entry.
+func (p *panelState) nearest(target int, selectable func(int) bool) int {
+	n := len(p.entries)
+	if target < 0 {
+		target = 0
+	}
+	if target > n-1 {
+		target = n - 1
+	}
+	for d := 0; d < n; d++ {
+		if selectable(target + d) {
+			return target + d
+		}
+		if selectable(target - d) {
+			return target - d
+		}
+	}
+	return p.cursor
 }
 
 // stepValue moves a settings choice one step left or right.
@@ -503,7 +517,6 @@ func (a *App) togglePanel() bool {
 	case "rotation", "launcher", "scroll", "prefetch":
 		return true // Left/Right pick these
 	case "inset":
-		a.panel.insetWasX, a.panel.insetWasY = a.Inset()
 		a.screen = ScreenCalibrate
 		a.all = true
 		return true
@@ -551,7 +564,7 @@ func (a *App) paintCalibrate(c *gfx.Canvas) {
 	lines := []string{
 		"Safe zone: sides " + itoa(a.cfg.SafeInsetX) + " px, top/bottom " + itoa(a.cfg.SafeInsetY) + " px",
 		gfx.ArrowLeft + " " + gfx.ArrowRight + " sides  " + gfx.ArrowUp + " " + gfx.ArrowDown + " top/bottom",
-		"A save, B cancel",
+		"B save and go back",
 		"the green frame should sit just",
 		"inside the edge of your screen",
 	}
@@ -572,13 +585,10 @@ func (a *App) actCalibrate(k platform.Key) bool {
 		a.SetInset(a.cfg.SafeInsetX, a.cfg.SafeInsetY-1)
 	case platform.KeyDown:
 		a.SetInset(a.cfg.SafeInsetX, a.cfg.SafeInsetY+1)
-	case platform.KeyEnter:
+	case platform.KeyBack:
 		if a.cfg.SettingsChanged != nil {
 			a.cfg.SettingsChanged()
 		}
-		a.openPanel(ScreenSettings)
-	case platform.KeyBack:
-		a.SetInset(a.panel.insetWasX, a.panel.insetWasY)
 		a.openPanel(ScreenSettings)
 	default:
 		return false

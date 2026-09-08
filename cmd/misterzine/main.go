@@ -241,11 +241,9 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 						return
 					}
 					launcherStart()
-					h.a.Notice("menu launcher on: misterzine now sits in the main menu", 8*time.Second)
 				} else {
 					launcherDisable()
 					launcherStop()
-					h.a.Notice("menu launcher off", 4*time.Second)
 				}
 			}
 		},
