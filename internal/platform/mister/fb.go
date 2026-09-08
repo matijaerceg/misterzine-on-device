@@ -111,12 +111,12 @@ func OpenFB(cmd *Cmd, canvasW, canvasH int, lg *log.Logger) (*FB, error) {
 		}
 	}
 	if err := b.mapMem(); err != nil {
-		f.Close()
+		b.CloseRestore(cmd, true)
 		return nil, err
 	}
 	b.sx, b.sy = b.geom.W/canvasW, b.geom.H/canvasH
 	if b.sx < 1 || b.sy < 1 {
-		b.Close()
+		b.CloseRestore(cmd, true)
 		return nil, fmt.Errorf("framebuffer %dx%d is smaller than the canvas %dx%d", b.geom.W, b.geom.H, canvasW, canvasH)
 	}
 	b.ox = (b.geom.W - canvasW*b.sx) / 2
@@ -174,13 +174,32 @@ func (b *FB) mapMem() error {
 	if err := ioctl(b.f.Fd(), fbiogetFscreeninfo, unsafe.Pointer(&x)); err != nil {
 		return err
 	}
-	size := int(x.SmemLen)
-	if need := b.geom.Stride * b.geom.H; size < need {
-		size = need
+	size, err := framebufferMemorySize(x, b.geom)
+	if err != nil {
+		return err
 	}
 	m, err := syscall.Mmap(int(b.f.Fd()), 0, size, syscall.PROT_READ|syscall.PROT_WRITE, syscall.MAP_SHARED)
 	if err != nil {
-		return fmt.Errorf("mmap: %w", err)
+		// Linux 20260907 omitted MiSTer_fb's mmap operation. Older
+		// kernels supplied a default; Linux 6.8+ returns ENODEV. Map
+		// only this driver's reported pixel memory until a fixed kernel
+		// is installed. Normal /dev/fb0 mapping remains the first choice.
+		offset, fallbackErr := physicalFramebufferOffset(x, err)
+		if fallbackErr != nil {
+			return fmt.Errorf("mmap: %w", fallbackErr)
+		}
+		mf, openErr := os.OpenFile("/dev/mem", os.O_RDWR|syscall.O_SYNC|syscall.O_CLOEXEC, 0)
+		if openErr != nil {
+			return fmt.Errorf("mmap: %v; open framebuffer memory: %w", err, openErr)
+		}
+		// O_SYNC gives the ARM mapping write-combining attributes, like
+		// fb_io_mmap. The mmap owns its lifetime after the fd is closed.
+		m, fallbackErr = syscall.Mmap(int(mf.Fd()), offset, size, syscall.PROT_READ|syscall.PROT_WRITE, syscall.MAP_SHARED)
+		mf.Close()
+		if fallbackErr != nil {
+			return fmt.Errorf("mmap: %v; map framebuffer memory: %w", err, fallbackErr)
+		}
+		b.log.Printf("fb: /dev/fb0 mmap unavailable (%v); mapped MiSTer_fb pixel memory at %#x (%d bytes)", err, offset, size)
 	}
 	b.mem = m
 	return nil

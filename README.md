@@ -28,6 +28,27 @@ main menu, Scripts, misterzine.
 
 `fb_terminal=1` must be set in MiSTer.ini (it is the default).
 
+The September 7, 2026 MiSTer Linux release has a framebuffer driver bug
+that prevents apps such as MisterZine from opening their display. Current
+MisterZine source includes a compatibility fallback for that release. It
+uses the usual framebuffer interface whenever the kernel supports it;
+Main, Menu and Linux do not need to be downgraded. MiSTer has also
+[fixed the driver in its kernel source](https://github.com/MiSTer-devel/Linux-Kernel_MiSTer/commit/ea2212221ad137cf26bf5caa7ad3dab7216435a6).
+
+### Running Update All
+
+For the usual Scripts-menu or Remote launch, quit MisterZine before
+starting Update All, let the updater finish (including any requested
+reboot), then reopen MisterZine. Both apps use the same script console;
+hiding Update All does not turn it into an independent background job.
+
+An updater started independently through SSH with its own input/output
+can keep working while MisterZine is open. Quitting MisterZine does not
+pause that process. Updates can replace cores or restart the system, so
+wait for completion before launching a core, and use Settings → Rescan
+to refresh the on-card status if MisterZine stayed open. This is not a
+promise that every Update All configuration supports concurrent use.
+
 ### Put it in the main menu
 
 Once, from the app: X, Settings, "Main menu launcher", A. From then on a
