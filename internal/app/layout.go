@@ -17,6 +17,7 @@ type Layout struct {
 	Status   image.Rectangle // top bar
 	Hint     image.Rectangle // bottom bar
 	List     image.Rectangle
+	Scroll   image.Rectangle // scrollbar track beside the list
 	Pane     image.Rectangle
 	Body     image.Rectangle // list + pane, for modal panels
 	Line     int             // list line height (body font height)
@@ -55,6 +56,9 @@ func NewLayout(w, h, inset int, body *gfx.Font) Layout {
 		l.Thumb = image.Rect(tx, l.Pane.Min.Y+2, tx+thumbW, l.Pane.Min.Y+2+thumbH)
 		l.PaneText = image.Rect(l.Pane.Min.X+2, l.Thumb.Max.Y+3, l.Pane.Max.X, l.Pane.Max.Y)
 	}
+	// a 2 px scrollbar beside the rows
+	l.Scroll = image.Rect(l.List.Max.X-2, l.List.Min.Y, l.List.Max.X, l.List.Max.Y)
+	l.List.Max.X -= 4
 	l.Lines = l.List.Dy() / l.Line
 	l.Cols = l.List.Dx() / body.W
 	// columns: fav(1) sp title sp status(1) sp date(5)

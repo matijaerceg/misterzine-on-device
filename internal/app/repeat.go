@@ -13,11 +13,16 @@ import (
 // virtual keyboard autorepeats too, but those events are dropped by the
 // platform layer so the feel is ours.
 type repeater struct {
-	key   platform.Key
-	held  bool
-	next  time.Time
-	count int
+	key    platform.Key
+	held   bool
+	next   time.Time
+	count  int
+	frames int // frames since the last step (frame-driven mode)
+	every  int // frames per step (frame-driven mode)
 }
+
+// frameDur is one frame of the 60 Hz framebuffer.
+const frameDur = 16667 * time.Microsecond
 
 const (
 	repeatDelay = 200 * time.Millisecond
@@ -31,6 +36,7 @@ const (
 
 func (r *repeater) press(k platform.Key, now time.Time) {
 	r.key, r.held, r.count = k, true, 0
+	r.frames, r.every = 0, 0
 	r.next = now.Add(repeatDelay)
 }
 
@@ -52,13 +58,38 @@ func (r *repeater) due(now time.Time, step func(platform.Key, int) time.Duration
 		r.held = false
 		return platform.KeyNone
 	}
-	// anchor to the schedule, not to when the loop got round to it, so the
-	// average rate is exact; after a long stall (a data swap) restart from now
-	if now.Sub(r.next) > 4*d {
-		r.next = now.Add(d)
-	} else {
-		r.next = r.next.Add(d)
+	// anchored to the schedule, but never more than one step per call: a
+	// late frame slides the schedule rather than skipping rows
+	r.next = r.next.Add(d)
+	if r.next.Before(now) {
+		r.next = now
 	}
+	return r.key
+}
+
+// frameDue is the vsync-driven counterpart of due, called once per frame:
+// a step happens every N frames, N from the pace the screen asks for, so
+// the rate is exact and no frame ever moves more than one step.
+func (r *repeater) frameDue(now time.Time, step func(platform.Key, int) time.Duration) platform.Key {
+	if !r.held || now.Before(r.next) {
+		return platform.KeyNone
+	}
+	r.frames++
+	if r.frames < r.every {
+		return platform.KeyNone
+	}
+	r.frames = 0
+	r.count++
+	d := step(r.key, r.count)
+	if d == 0 {
+		r.held = false
+		return platform.KeyNone
+	}
+	r.every = int((d + frameDur/2) / frameDur)
+	if r.every < 1 {
+		r.every = 1
+	}
+	r.next = now
 	return r.key
 }
 
@@ -70,9 +101,9 @@ func (r *repeater) nextAt() time.Time {
 	return r.next
 }
 
-// Scroll speeds for a held Up/Down in lists: a steady rate with a short
-// warm-up. "fast" is about 30 rows a second, which is what a CRT list wants.
-var scrollSpeeds = map[string]time.Duration{"normal": 50 * time.Millisecond, "fast": 33 * time.Millisecond, "turbo": 20 * time.Millisecond}
+// Scroll speeds for a held Up/Down in lists, in frames per row: normal is
+// 20 rows a second, fast 30, turbo one row every frame (60).
+var scrollSpeeds = map[string]time.Duration{"normal": 3 * frameDur, "fast": 2 * frameDur, "turbo": frameDur}
 
 // accel is the list scrolling ladder for the chosen speed: two slower steps
 // so a single tap never overshoots, then the steady rate.

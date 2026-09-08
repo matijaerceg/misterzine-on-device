@@ -5,6 +5,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -74,6 +75,21 @@ func launcherCmd(args []string) int {
 }
 
 func fileExists(p string) bool { _, err := os.Stat(p); return err == nil }
+
+// warmCache reads the binary and the data cache once so the first start
+// after a cold boot is not slower than the ones after it.
+func warmCache() {
+	exe, _ := os.Executable()
+	for _, p := range []string{exe, "/media/fat/misterzine/cache/data.json", "/media/fat/misterzine/cache/meta.json", "/media/fat/misterzine/cache/alts.json"} {
+		if p == "" {
+			continue
+		}
+		if f, err := os.Open(p); err == nil {
+			io.Copy(io.Discard, f)
+			f.Close()
+		}
+	}
+}
 
 // launcherEnabled reports whether the boot script starts the watcher.
 func launcherEnabled() bool {
@@ -210,6 +226,7 @@ func watch() int {
 	lg := log.New(os.Stdout, "", log.Ltime)
 	os.WriteFile(pidFile, []byte(strconv.Itoa(os.Getpid())), 0644)
 	lg.Printf("watch: started, pid %d", os.Getpid())
+	warmCache()
 	var kbd *mister.VKeyboard
 	defer func() {
 		if kbd != nil {
@@ -217,7 +234,7 @@ func watch() int {
 		}
 	}()
 	for {
-		time.Sleep(250 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 		b, err := os.ReadFile(corenameFile)
 		if err != nil || strings.TrimSpace(string(b)) != "misterzine" {
 			continue

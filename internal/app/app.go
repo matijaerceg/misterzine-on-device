@@ -88,6 +88,7 @@ type App struct {
 
 	screen   Screen
 	cursor   int    // index into view
+	jumpBack int    // row to return to after an L/R jump; -1 none
 	top      int    // first visible screen line
 	slot     int    // screen view slot index
 	slotName string // preferred slot, kept across rows
@@ -127,6 +128,7 @@ func New(cfg Config, ds *data.Dataset, stored *data.SeenRecord) *App {
 	a.physical = image.NewRGBA(image.Rect(0, 0, cfg.PhysW, cfg.PhysH))
 	a.setRotation(cfg.Rotation)
 	a.SetData(ds, stored)
+	a.jumpBack = -1
 	return a
 }
 
@@ -198,6 +200,7 @@ func (a *App) Data() *data.Dataset { return a.ds }
 
 // rebuild recomputes order, view and marker from the current state.
 func (a *App) rebuild() {
+	a.jumpBack = -1 // the view changed
 	a.order = a.ds.Order(a.mode)
 	fav := func(k string) bool { return a.cfg.Favorites[k] }
 	unseen := func(i int) bool { return a.seen != nil && a.seen.Unseen(&a.ds.Rows[i]) }
@@ -270,6 +273,12 @@ func (a *App) SetFilters(f data.Filters) {
 func (a *App) Notice(s string, d time.Duration) {
 	a.notice = s
 	a.until = a.cfg.Now().Add(d)
+	a.all = true
+}
+
+// SetClockTrusted flips the clock state once NTP has set it.
+func (a *App) SetClockTrusted(t bool) {
+	a.cfg.ClockTrusted = t
 	a.all = true
 }
 
@@ -357,10 +366,8 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 	switch a.screen {
 	case ScreenList:
 		switch k {
-		case platform.KeyUp, platform.KeyDown:
-			return accel(a.cfg.Scroll, count)
-		case platform.KeyPageUp, platform.KeyPageDown, platform.KeyLeft, platform.KeyRight:
-			return repeatPage
+		case platform.KeyUp, platform.KeyDown, platform.KeyLeft, platform.KeyRight:
+			return accel(a.cfg.Scroll, count) // pages at the row pace
 		}
 	case ScreenShot:
 		switch k {
@@ -369,7 +376,7 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 		}
 	case ScreenDetails:
 		switch k {
-		case platform.KeyLeft, platform.KeyRight, platform.KeyUp, platform.KeyDown:
+		case platform.KeyUp, platform.KeyDown:
 			return repeatStep
 		case platform.KeyPageUp, platform.KeyPageDown:
 			return repeatPage
@@ -393,11 +400,24 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 // Tick runs due repeats and expires notices; returns true to repaint.
 func (a *App) Tick(now time.Time) bool {
 	changed := false
-	for i := 0; i < 4; i++ { // catch up on late repeats, a few per tick at most
-		k := a.rep.due(now, a.repeatStep)
-		if k == platform.KeyNone {
-			break
+	if k := a.rep.due(now, a.repeatStep); k != platform.KeyNone {
+		if a.act(k) {
+			changed = true
 		}
+	}
+	if a.notice != "" && now.After(a.until) {
+		a.notice = ""
+		a.all = true
+		changed = true
+	}
+	return changed
+}
+
+// Frame is Tick for the vsync-driven loop the host runs while a key is
+// held: called once per frame, it moves at most one step.
+func (a *App) Frame(now time.Time) bool {
+	changed := false
+	if k := a.rep.frameDue(now, a.repeatStep); k != platform.KeyNone {
 		if a.act(k) {
 			changed = true
 		}
@@ -440,6 +460,7 @@ func (a *App) act(k platform.Key) bool {
 
 func (a *App) actList(k platform.Key) bool {
 	n := len(a.view)
+	was := a.cursor
 	switch k {
 	case platform.KeyUp:
 		if a.cursor > 0 {
@@ -449,20 +470,22 @@ func (a *App) actList(k platform.Key) bool {
 		if a.cursor < n-1 {
 			a.cursor++
 		}
-	case platform.KeyPageUp:
-		a.cursor -= a.lay.Lines
-		if a.cursor < 0 {
+	case platform.KeyPageUp, platform.KeyHome: // L: top, and back again
+		if a.cursor == 0 && a.jumpBack > 0 && a.jumpBack < n {
+			a.cursor = a.jumpBack
+		} else {
+			a.jumpBack = a.cursor
 			a.cursor = 0
 		}
-	case platform.KeyPageDown:
-		a.cursor += a.lay.Lines
-		if a.cursor > n-1 {
+		was = a.cursor
+	case platform.KeyPageDown, platform.KeyEnd: // R: bottom, and back again
+		if a.cursor == n-1 && a.jumpBack >= 0 && a.jumpBack < n-1 {
+			a.cursor = a.jumpBack
+		} else {
+			a.jumpBack = a.cursor
 			a.cursor = n - 1
 		}
-	case platform.KeyHome:
-		a.cursor = 0
-	case platform.KeyEnd:
-		a.cursor = n - 1
+		was = a.cursor
 	case platform.KeySpace:
 		if a.mode == data.SortUpdated {
 			a.SetSort(data.SortDebut)
@@ -499,6 +522,9 @@ func (a *App) actList(k platform.Key) bool {
 	}
 	if a.cursor < 0 {
 		a.cursor = 0
+	}
+	if a.cursor != was {
+		a.jumpBack = -1 // scrolled away: L/R will not return any more
 	}
 	a.ensureVisible()
 	a.all = true
@@ -537,8 +563,7 @@ func (a *App) Refilter() {
 func (a *App) Invalidate() { a.all = true }
 
 // Repeating reports whether a held key is driving repeats right now; the
-// host then lets pictures wait for the next repeat frame instead of painting
-// them at once, so scrolling never yields to image traffic.
+// host then runs its vsync-driven frame loop (see Frame).
 func (a *App) Repeating() bool { return a.rep.held }
 
 // want records a picture this frame needs; the list goes to the provider
@@ -676,19 +701,20 @@ func statusGlyph(st data.Status) (string, rgb) {
 	return " ", gen.Eva.Muted
 }
 
+// statusText fits the pane's 20 columns.
 func statusText(st data.Status, cardDate string) string {
 	switch st {
 	case data.StatusCurrent:
-		return "on card, current"
+		return "current build"
 	case data.StatusOutdated:
 		if cardDate != "" {
-			return "on card, older: " + cardDate
+			return "older: " + cardDate
 		}
-		return "on card, older build"
+		return "older build"
 	case data.StatusFoundUndated:
-		return "on card, build date unknown"
+		return "on card, undated"
 	case data.StatusNotFound:
-		return "not found on card"
+		return "not on card"
 	}
 	return "checking card.."
 }

@@ -5,6 +5,8 @@ DIR=/media/fat/misterzine
 BIN="$DIR/misterzine"
 [ -x "$BIN" ] || { echo "misterzine: binary missing at $BIN (run update_all)"; exit 1; }
 trap '"$BIN" console-restore >/dev/null 2>&1; stty sane </dev/tty2 2>/dev/null' EXIT
+echo
+echo "  MisterZine is loading..."
 ARGS=()
 [ -e "$DIR/debug.flag" ] && ARGS+=(--debug-http=:8195)
 "$BIN" "${ARGS[@]}" "$@"

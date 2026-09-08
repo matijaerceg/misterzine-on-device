@@ -149,15 +149,15 @@ func (a *App) settingsEntries() []panelEntry {
 		{text: "Safe zone: " + itoa(a.cfg.SafeInset) + " px", kind: "inset",
 			help: "Margin kept clear of the screen edge (overscan). A opens the calibration frame; fit it just inside the picture."},
 		{text: "Scroll speed: " + a.scrollText(), kind: "scroll",
-			help: "How fast a held Up/Down moves through the list. Fast is about 30 rows a second."},
+			help: "How fast a held Up/Down (rows) or Left/Right (pages) moves through the list. Normal is 20 rows a second, fast 30, turbo 60: one row every frame."},
 		{text: "Prefetch all shots: " + onOff(a.panel.prefetch) + a.progressText(), kind: "prefetch",
 			help: "Download every screenshot in the background (about 55 MB) so browsing never waits. Off: only what you look at."},
 		{text: "Main menu launcher: " + launcher, kind: "launcher",
-			help: "Puts a misterzine entry in the MiSTer main menu (adds a line to user-startup.sh). Off removes it; Scripts still works."},
+			help: "Puts a MisterZine entry in the MiSTer main menu, next to Arcade and Console. Adds one line to linux/user-startup.sh and ships MisterZine.mgl. Off removes both; the Scripts menu entry keeps working."},
 		{text: "Rescan card", kind: "rescan",
 			help: "Re-read which cores and MRAs are on the card. Do this after running update_all."},
 		{text: "Refresh data now", kind: "refresh",
-			help: "Ask misterzine.fyi for new rows right now (it also checks on launch and every 30 min)."},
+			help: "Ask misterzine.fyi for new releases right now. The app also checks on launch and every 30 minutes while open; new rows show a notice and their dates in green."},
 		{text: "Clear image cache", kind: "clearimg",
 			help: "Delete the downloaded screenshots and system photos; they come back as you browse."},
 		{text: "Input test", kind: "inputtest",
@@ -217,7 +217,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 	box := l.Body
 	helpH := 0
 	if a.screen == ScreenSettings {
-		helpH = 2*(a.sm.H+1) + 3
+		helpH = 4*(a.sm.H+1) + 3
 	}
 	box.Max.Y -= helpH
 	c.Fill(l.Body, gen.Eva.Bg)
@@ -269,17 +269,17 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 		y += lh
 	}
 	if a.screen == ScreenSettings {
-		// help for the selected item, wrapped to two small lines
+		// help for the selected item, wrapped to four small lines
 		if p.cursor < len(p.entries) && p.entries[p.cursor].help != "" {
 			hy := box.Max.Y + 2
-			for _, ln := range gfx.Wrap(p.entries[p.cursor].help, a.sm.Cols(l.Body.Dx()-4), 2) {
+			for _, ln := range gfx.Wrap(p.entries[p.cursor].help, a.sm.Cols(l.Body.Dx()-4), 4) {
 				c.Text(l.Body.Min.X+2, hy, a.sm, ln, gen.Eva.Fg)
 				hy += a.sm.H + 1
 			}
 		}
 		a.paintHint(c, "A change  B back to filters")
 	} else {
-		a.paintHint(c, "A toggle  </> section  X close  Settings at top")
+		a.paintHint(c, "A toggle  "+gfx.ArrowLeft+" "+gfx.ArrowRight+" section  X close  Settings at top")
 	}
 }
 
@@ -518,7 +518,7 @@ func (a *App) paintCalibrate(c *gfx.Canvas) {
 	}
 	lines := []string{
 		"Safe zone: " + itoa(a.cfg.SafeInset) + " px (0-32)",
-		"left/right adjust, A save, B cancel",
+		gfx.ArrowLeft + " " + gfx.ArrowRight + " adjust, A save, B cancel",
 		"the green frame should sit just",
 		"inside the edge of your screen",
 	}

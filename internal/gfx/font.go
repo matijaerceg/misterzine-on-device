@@ -120,6 +120,48 @@ func (f *Font) Glyph(ch byte) []byte {
 	return f.glyphs['?']
 }
 
+// Arrow glyphs live on four control bytes so hints can show a real arrow
+// for a direction key ("\x13 \x14 page").
+const (
+	ArrowUp    = "\x11"
+	ArrowDown  = "\x12"
+	ArrowLeft  = "\x13"
+	ArrowRight = "\x14"
+)
+
+// SetGlyph installs a glyph (rows top to bottom, MSB = leftmost pixel).
+func (f *Font) SetGlyph(ch byte, rows []byte) {
+	if ch < 128 {
+		f.glyphs[ch] = rows
+		f.has[ch] = true
+	}
+}
+
+// AddArrows installs triangle arrows sized for this font's cell, centred
+// vertically.
+func (f *Font) AddArrows() {
+	place := func(shape []byte) []byte {
+		rows := make([]byte, f.H)
+		top := (f.H - len(shape)) / 2
+		copy(rows[top:], shape)
+		return rows
+	}
+	up := []byte{0x20, 0x70, 0xF8}
+	down := []byte{0xF8, 0x70, 0x20}
+	left := []byte{0x20, 0x60, 0xE0, 0x60, 0x20}
+	right := []byte{0x80, 0xC0, 0xE0, 0xC0, 0x80}
+	if f.W >= 6 { // one pixel wider in the body font
+		up = []byte{0x20, 0x70, 0xF8, 0xFC}
+		down = []byte{0xFC, 0xF8, 0x70, 0x20}
+		left = []byte{0x10, 0x30, 0x70, 0xF0, 0x70, 0x30, 0x10}
+		right = []byte{0x80, 0xC0, 0xE0, 0xF0, 0xE0, 0xC0, 0x80}
+	}
+	f.SetGlyph(ArrowUp[0], place(up))
+	f.SetGlyph(ArrowDown[0], place(down))
+	f.SetGlyph(ArrowLeft[0], place(left))
+	f.SetGlyph(ArrowRight[0], place(right))
+}
+
 // Cols is how many cells fit in w pixels.
 func (f *Font) Cols(w int) int { return w / f.W }
 

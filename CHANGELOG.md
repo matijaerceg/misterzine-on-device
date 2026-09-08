@@ -6,9 +6,21 @@
   lowercase file is renamed on the next boot or launcher start).
 - Left/Right page the list like Main's menu. Shots open from details with X
   and go back to details; details still walk rows with Left/Right.
-- Held scrolling keeps its rate whatever a frame costs: repeats are anchored
-  to the schedule and catch up, and pictures that land mid-scroll wait for
-  the next scroll frame instead of painting at once.
+- Held scrolling runs at the framebuffer's pace: one row per frame at most,
+  normal 20 / fast 30 / turbo 60 rows a second, and nothing else (state
+  saves, network checks) runs between two frames. Left/Right page at the
+  same pace. A scrollbar beside the list.
+- L and R jump to the top and bottom; pressing again comes back to the row
+  you left, unless you scrolled away.
+- Details: Up/Down pick the launch target; row browsing from details is
+  gone (go back to the list). No B legend.
+- "no connection" instead of "offline", and no label at all in the first
+  seconds after a cold boot while the clock is still unset (the check
+  retries every 15 s until it is).
+- Pane card status fits its column: "current build", "older: 20240601",
+  "on card, undated", "not on card". Date rules between rows are gone.
+- Settings help gets four lines. A "MisterZine is loading" line shows on the
+  console while the app starts, and the launcher warms the cache at boot.
 - Scroll speed setting (normal / fast / turbo), help text under every
   setting, coloured button hints, Input test screen, Quit item; B never
   exits.

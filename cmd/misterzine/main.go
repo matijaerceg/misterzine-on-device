@@ -18,6 +18,7 @@ import (
 	"path/filepath"
 	"runtime/debug"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -41,33 +42,36 @@ const (
 )
 
 type host struct {
-	root, card string
-	lg         *log.Logger
-	console    *mister.Console
-	cmd        *mister.Cmd
-	fb         *mister.FB
-	input      *mister.Input
-	a          *app.App
-	settings   store.Settings
-	state      store.State
-	favs       store.Favorites
-	events     chan platform.Event
-	uiRun      chan func()
-	quit       chan struct{}
-	launch     string
-	dirty      bool // state needs saving
-	slowLog    time.Time
-	favDirty   bool
-	setDirty   bool
-	clock      platform.Clock
-	client     *fetch.Client
-	img        *images.Service
-	index      *scan.Index
-	status     []data.Status
-	alts       []scan.Alt
-	scanCh     chan scanResult
-	dataCh     chan fetch.Fresh
-	netCh      chan string
+	root, card  string
+	lg          *log.Logger
+	console     *mister.Console
+	cmd         *mister.Cmd
+	fb          *mister.FB
+	input       *mister.Input
+	a           *app.App
+	settings    store.Settings
+	state       store.State
+	favs        store.Favorites
+	events      chan platform.Event
+	uiRun       chan func()
+	quit        chan struct{}
+	launch      string
+	dirty       bool // state needs saving
+	checkFailed atomic.Bool
+	dataUpdated time.Time // the data's build time, for the clock check
+	slowLog     time.Time
+	stats       frameStats
+	favDirty    bool
+	setDirty    bool
+	clock       platform.Clock
+	client      *fetch.Client
+	img         *images.Service
+	index       *scan.Index
+	status      []data.Status
+	alts        []scan.Alt
+	scanCh      chan scanResult
+	dataCh      chan fetch.Fresh
+	netCh       chan string
 }
 
 func main() {
@@ -142,6 +146,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	now := time.Now()
 	trusted := !upd.IsZero() && now.After(upd.Add(-24*time.Hour))
 	h.clock = platform.Clock{Now: time.Now, Trusted: trusted}
+	h.dataUpdated = upd
 	ds := data.Ingest(rows, meta.Hash, upd)
 	lg.Printf("data: %d rows from %s, hash %.8s, updated %s, clock trusted=%v (%v)", len(rows), source, meta.Hash, meta.Updated, trusted, time.Since(t0).Round(time.Millisecond))
 
@@ -263,7 +268,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 					"version": buildinfo.String(), "screen": h.a.Screen().String(), "cursor": h.a.CursorKey(),
 					"sort": h.a.Sort().String(), "rows": len(ds.Rows), "fb": h.fb.Geometry().String(),
 					"rotation": h.a.Rotation().String(), "inset": h.a.Inset(), "devices": h.input.Devices(),
-					"sysfs": mister.SysfsMode(), "uptime": time.Since(t0).String(),
+					"sysfs": mister.SysfsMode(), "uptime": time.Since(t0).String(), "frames": h.stats.String(),
 				}
 			},
 			Quit: h.stop,
@@ -275,17 +280,21 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	// card scan: cores, MRA presence, then alternatives
 	go h.scan(ds.Rows)
 
-	// freshness: first check shortly after boot, then every 30 minutes
+	// freshness: first check shortly after boot, then every 30 minutes;
+	// while the clock is unset (the first seconds after a cold boot, before
+	// NTP) or the last check failed, every 15 seconds instead
 	go func() {
 		time.Sleep(300 * time.Millisecond)
 		h.check(ds.Hash)
-		t := time.NewTicker(30 * time.Minute)
-		defer t.Stop()
 		for {
+			wait := 30 * time.Minute
+			if !h.clockTrusted() || h.checkFailed.Load() {
+				wait = 15 * time.Second
+			}
 			select {
 			case <-h.quit:
 				return
-			case <-t.C:
+			case <-time.After(wait):
 				h.check(h.a.Data().Hash)
 			}
 		}
@@ -317,35 +326,17 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 			h.saveAll(true)
 			return 130
 		case ev := <-h.events:
-			if ev.Key == platform.KeyScreenshot {
-				if ev.Pressed {
-					h.screenshot()
-				}
-				break
-			}
-			h.a.Handle(ev)
-			// drain whatever else arrived
-		drain:
-			for {
-				select {
-				case ev := <-h.events:
-					h.a.Handle(ev)
-				default:
-					break drain
-				}
-			}
+			h.handleEvent(ev)
+			h.drainEvents()
 		case f := <-h.uiRun:
 			f()
 		case fr := <-h.dataCh:
 			h.swap(fr)
 		case s := <-h.netCh:
 			h.a.SetNet(s)
-			h.img.SetOffline(s == "offline")
+			h.img.SetOffline(s == "no connection")
 		case <-h.img.Ready():
 			h.a.Invalidate()
-			if h.a.Repeating() {
-				continue // the next repeat frame paints it; scrolling comes first
-			}
 		case r := <-h.scanCh:
 			first := h.index == nil
 			h.index, h.status, h.alts = r.index, r.status, r.alts
@@ -362,6 +353,11 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 		}
 		h.a.Tick(time.Now())
 		h.present()
+		if h.a.Repeating() {
+			// a held key: run at the framebuffer's pace until it is released,
+			// nothing else (saves, checks) gets between two frames
+			h.frameLoop()
+		}
 		if st := h.snapshotState(); st != lastState {
 			lastState = st
 			h.dirty = true
@@ -375,6 +371,58 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 			h.saveAll(true)
 			h.doLaunch()
 			return 0
+		}
+	}
+}
+
+// handleEvent feeds one input event to the app (the screenshot key is the
+// host's own).
+func (h *host) handleEvent(ev platform.Event) {
+	if ev.Key == platform.KeyScreenshot {
+		if ev.Pressed {
+			h.screenshot()
+		}
+		return
+	}
+	h.a.Handle(ev)
+}
+
+func (h *host) drainEvents() {
+	for {
+		select {
+		case ev := <-h.events:
+			h.handleEvent(ev)
+		default:
+			return
+		}
+	}
+}
+
+// frameLoop runs while a key is held: every vertical blank, take the input
+// that arrived, move at most one step, paint, and copy the frame straight
+// in (the wait for vsync already happened). Pictures that land are painted
+// within the same frame budget; nothing else runs.
+func (h *host) frameLoop() {
+	probe := 0
+	for h.a.Repeating() {
+		h.drainEvents()
+		select {
+		case <-h.quit:
+			return
+		case <-h.img.Ready():
+			h.a.Invalidate()
+		default:
+		}
+		if !h.a.Repeating() {
+			return
+		}
+		h.fb.WaitVSync()
+		h.a.Frame(time.Now())
+		h.presentSynced()
+		if probe++; probe%30 == 0 && h.input.ScreenLost() {
+			h.lg.Printf("Main took the screen back (menu button): leaving")
+			h.stop()
+			return
 		}
 	}
 }
@@ -400,12 +448,19 @@ func (h *host) runOnUI(f func()) {
 	<-done
 }
 
-func (h *host) present() {
+func (h *host) present() { h.presentWith(true) }
+
+// presentSynced is present for the frame loop, which has already waited
+// for the vertical blank.
+func (h *host) presentSynced() { h.presentWith(false) }
+
+func (h *host) presentWith(wait bool) {
 	t0 := time.Now()
 	frame, dirty := h.a.Paint()
 	if dirty != nil {
 		t1 := time.Now()
-		h.fb.Present(frame, dirty)
+		h.fb.PresentWait(frame, dirty, wait)
+		h.stats.add(t1.Sub(t0), h.fb.LastWait, time.Since(t1)-h.fb.LastWait)
 		if d := time.Since(t0); d > 40*time.Millisecond && time.Since(h.slowLog) > 5*time.Second {
 			h.slowLog = time.Now()
 			h.lg.Printf("slow frame: paint %s, present %s", t1.Sub(t0).Round(time.Millisecond), time.Since(t1).Round(time.Millisecond))
@@ -517,6 +572,21 @@ func (h *host) loadData() ([]data.Row, data.Meta, string) {
 	return rows, meta, "snapshot"
 }
 
+// clockTrusted re-checks the clock: it starts at 1970 on a cold boot and
+// jumps once NTP answers, at which point relative times and the network
+// label make sense again.
+func (h *host) clockTrusted() bool {
+	if h.clock.Trusted {
+		return true
+	}
+	if !h.dataUpdated.IsZero() && time.Now().After(h.dataUpdated.Add(-24*time.Hour)) {
+		h.clock.Trusted = true
+		h.runOnUI(func() { h.a.SetClockTrusted(true) })
+		h.lg.Printf("clock: now set")
+	}
+	return h.clock.Trusted
+}
+
 func (h *host) netLabel(ds *data.Dataset) string {
 	if ds.Updated.IsZero() || !h.clock.Trusted {
 		return ""
@@ -530,13 +600,17 @@ func (h *host) check(current string) {
 	fr, err := h.client.Check(context.Background(), current)
 	if err != nil {
 		h.lg.Printf("check: %v", err)
-		if errors.Is(err, fetch.ErrOffline) {
-			h.netCh <- "offline"
+		if !h.clockTrusted() {
+			h.netCh <- "" // the clock is not set yet: nothing to tell the user
+		} else if errors.Is(err, fetch.ErrOffline) {
+			h.netCh <- "no connection"
 		} else {
 			h.netCh <- "check failed"
 		}
+		h.checkFailed.Store(true)
 		return
 	}
+	h.checkFailed.Store(false)
 	if !fr.Changed {
 		h.lg.Printf("check: current (%.8s)", fr.Meta.Hash)
 		h.netCh <- ""
@@ -646,4 +720,34 @@ func openLog(path string) *log.Logger {
 		return log.New(os.Stderr, "", log.Ltime|log.Lmicroseconds)
 	}
 	return log.New(f, "", log.Ltime|log.Lmicroseconds)
+}
+
+// frameStats keeps the last frames' paint, vsync wait and copy times.
+type frameStats struct {
+	n               int
+	paint, wait, cp [256]time.Duration
+}
+
+func (f *frameStats) add(p, w, c time.Duration) {
+	i := f.n % len(f.paint)
+	f.paint[i], f.wait[i], f.cp[i] = p, w, c
+	f.n++
+}
+
+func (f *frameStats) String() string {
+	n := min(f.n, len(f.paint))
+	if n == 0 {
+		return "none"
+	}
+	stat := func(a *[256]time.Duration) string {
+		var sum, mx time.Duration
+		for i := 0; i < n; i++ {
+			sum += a[i]
+			if a[i] > mx {
+				mx = a[i]
+			}
+		}
+		return fmt.Sprintf("avg %s max %s", (sum / time.Duration(n)).Round(100*time.Microsecond), mx.Round(100*time.Microsecond))
+	}
+	return fmt.Sprintf("%d frames; paint %s; vsync wait %s; copy %s", f.n, stat(&f.paint), stat(&f.wait), stat(&f.cp))
 }

@@ -28,6 +28,7 @@ func Body() *gfx.Font {
 		if f6, err = gfx.ParseBDF(spleen6x12); err != nil {
 			panic("fonts: spleen-6x12: " + err.Error())
 		}
+		f6.AddArrows()
 	})
 	return f6
 }
@@ -39,6 +40,7 @@ func Small() *gfx.Font {
 		if f5, err = gfx.ParseBDF(spleen5x8); err != nil {
 			panic("fonts: spleen-5x8: " + err.Error())
 		}
+		f5.AddArrows()
 	})
 	return f5
 }

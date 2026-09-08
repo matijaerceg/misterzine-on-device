@@ -42,7 +42,7 @@ func (a *App) paintShot(c *gfx.Canvas) {
 			if st == ImageMissing {
 				text = "no shot"
 			} else if st == ImageOffline {
-				text = "offline"
+				text = "no connection"
 			}
 			a.placeholder(c, area, text)
 		} else {

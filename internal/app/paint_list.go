@@ -16,11 +16,12 @@ type rgb = color.RGBA
 func (a *App) paintList(c *gfx.Canvas) {
 	a.paintStatus(c)
 	a.paintRows(c)
+	a.paintScrollbar(c)
 	a.paintPane(c)
 	if a.lay.Portrait {
-		a.paintHint(c, "</> page  Y sort  X filters+settings")
+		a.paintHint(c, gfx.ArrowLeft+" "+gfx.ArrowRight+" page  Y sort  X filters+settings")
 	} else {
-		a.paintHint(c, "</> page  Y sort  X filters and settings")
+		a.paintHint(c, gfx.ArrowLeft+" "+gfx.ArrowRight+" page  Y sort  X filters and settings")
 	}
 }
 
@@ -65,12 +66,21 @@ func (a *App) hintLine(c *gfx.Canvas, x, y, w int, s string) {
 			continue
 		}
 		btn, rest, _ := strings.Cut(chunk, " ")
+		if isArrow(btn) { // a pair of arrows is one button
+			if b2, r2, ok := strings.Cut(rest, " "); ok && isArrow(b2) {
+				btn, rest = btn+" "+b2, r2
+			}
+		}
 		if x+a.sm.Width(btn+" "+rest) > maxX {
 			break
 		}
 		x += c.Text(x, y, a.sm, btn, gen.Eva.Accent)
 		x += c.Text(x, y, a.sm, " "+rest+"  ", gen.Eva.Muted)
 	}
+}
+
+func isArrow(s string) bool {
+	return s == gfx.ArrowUp || s == gfx.ArrowDown || s == gfx.ArrowLeft || s == gfx.ArrowRight
 }
 
 // paintRows draws the visible list lines: rows, and the last-look marker.
@@ -110,6 +120,28 @@ func (a *App) paintRows(c *gfx.Canvas) {
 	}
 }
 
+// paintScrollbar draws the track beside the list with a thumb sized to the
+// visible share of the lines and placed at the scroll position.
+func (a *App) paintScrollbar(c *gfx.Canvas) {
+	l := &a.lay
+	t := l.Scroll
+	if t.Empty() {
+		return
+	}
+	c.Fill(t, gen.Eva.Line)
+	total := a.totalLines()
+	if total <= l.Lines {
+		c.Fill(t, gen.Eva.Muted)
+		return
+	}
+	h := t.Dy() * l.Lines / total
+	if h < 4 {
+		h = 4
+	}
+	y := t.Min.Y + (t.Dy()-h)*a.top/(total-l.Lines)
+	c.Fill(image.Rect(t.Min.X, y, t.Max.X, y+h), gen.Eva.Accent)
+}
+
 func (a *App) paintMarker(c *gfx.Canvas, r image.Rectangle, text string) {
 	mid := r.Min.Y + r.Dy()/2
 	c.HLine(r.Min.X, r.Max.X-1, mid, gen.Eva.Line)
@@ -127,17 +159,6 @@ func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {
 	selected := pos == a.cursor
 	if selected {
 		c.Fill(r, gen.Eva.Surface)
-	}
-	// a thin rule where the sort date changes, inside the row
-	if pos > 0 {
-		prev := &a.ds.Rows[a.view[pos-1]]
-		cur, was := row.Updated, prev.Updated
-		if a.mode == data.SortDebut {
-			cur, was = row.Date, prev.Date
-		}
-		if cur != was {
-			c.HLine(r.Min.X, r.Max.X-1, r.Min.Y, gen.Eva.Line)
-		}
 	}
 	x := r.Min.X
 	y := r.Min.Y
@@ -267,7 +288,7 @@ func (a *App) paintThumb(c *gfx.Canvas, box image.Rectangle, row *data.Row) {
 		case ImageLoading:
 			a.placeholder(c, box, "loading")
 		case ImageOffline:
-			a.placeholder(c, box, "offline")
+			a.placeholder(c, box, "no connection")
 		default:
 			a.placeholder(c, box, "no shot")
 		}

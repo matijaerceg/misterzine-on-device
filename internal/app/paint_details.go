@@ -242,11 +242,11 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 		c.Text(body.Min.X, y, a.sm, gfx.Fit(prefix+label, sc), col)
 		y += lh
 	}
-	if l.Portrait {
-		a.paintHint(c, "A launch  X shots  Y fav  </> next  B back")
-	} else {
-		a.paintHint(c, "A launch  X shots  Y fav  </> next row  U/D pick  B back")
+	hint := "A launch  X shots  Y fav"
+	if len(entries) > 1 {
+		hint += "  " + gfx.ArrowUp + " " + gfx.ArrowDown + " pick"
 	}
+	a.paintHint(c, hint)
 }
 
 // shotSlots is the list of picture slots to show for a row.
@@ -271,7 +271,7 @@ func (a *App) paintImageBox(c *gfx.Canvas, box image.Rectangle, key, slot string
 		if st == ImageLoading {
 			text = "loading"
 		} else if st == ImageOffline {
-			text = "offline"
+			text = "no connection"
 		}
 		a.placeholder(c, box, text)
 		return
@@ -307,18 +307,6 @@ func (a *App) actDetails(k platform.Key) bool {
 		a.detail.scroll -= 4
 	case platform.KeyPageDown:
 		a.detail.scroll += 4
-	case platform.KeyLeft:
-		if a.cursor > 0 {
-			a.cursor--
-			a.detail = detailState{from: a.detail.from}
-			a.ensureVisible()
-		}
-	case platform.KeyRight:
-		if a.cursor < len(a.view)-1 {
-			a.cursor++
-			a.detail = detailState{from: a.detail.from}
-			a.ensureVisible()
-		}
 	case platform.KeySpace:
 		a.cfg.Favorites[row.K] = !a.cfg.Favorites[row.K]
 		if !a.cfg.Favorites[row.K] {

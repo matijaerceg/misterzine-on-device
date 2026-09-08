@@ -6,6 +6,7 @@
 package mister
 
 import (
+	"encoding/binary"
 	"fmt"
 	"image"
 	"log"
@@ -84,6 +85,7 @@ type FB struct {
 	log              *log.Logger
 	requested        bool
 	presents         int
+	LastWait         time.Duration // vsync wait inside the last Present
 }
 
 // OpenFB opens /dev/fb0, asks Main for a canvasW x canvasH framebuffer and
@@ -200,6 +202,12 @@ func (b *FB) WaitVSync() error {
 // Large updates wait for vsync first so a full repaint never tears; small
 // ones (a cursor move) go straight in.
 func (b *FB) Present(c *image.RGBA, dirty []image.Rectangle) error {
+	return b.PresentWait(c, dirty, true)
+}
+
+// PresentWait is Present with the vsync wait optional (the frame loop has
+// already waited).
+func (b *FB) PresentWait(c *image.RGBA, dirty []image.Rectangle, wait bool) error {
 	if b.mem == nil {
 		return fmt.Errorf("framebuffer closed")
 	}
@@ -212,8 +220,11 @@ func (b *FB) Present(c *image.RGBA, dirty []image.Rectangle) error {
 		r = r.Intersect(full)
 		area += r.Dx() * r.Dy()
 	}
-	if area*4 > b.CanvasW*b.CanvasH {
+	b.LastWait = 0
+	if wait && area*4 > b.CanvasW*b.CanvasH {
+		t := time.Now()
 		b.WaitVSync()
+		b.LastWait = time.Since(t)
 	}
 	for _, r := range dirty {
 		r = r.Intersect(full).Intersect(c.Rect)
@@ -235,14 +246,11 @@ func (b *FB) presentRect(c *image.RGBA, r image.Rectangle) {
 		src := c.Pix[c.PixOffset(r.Min.X, y):c.PixOffset(r.Max.X, y)]
 		o := 0
 		if bpp == 4 {
-			ri, gi, bi := b.geom.ROff, b.geom.GOff, b.geom.BOff
+			rs, gs, bs := uint(b.geom.ROff*8), uint(b.geom.GOff*8), uint(b.geom.BOff*8)
 			for x := 0; x < len(src); x += 4 {
+				v := uint32(src[x])<<rs | uint32(src[x+1])<<gs | uint32(src[x+2])<<bs
 				for k := 0; k < sx; k++ {
-					p := row[o : o+4]
-					p[0], p[1], p[2], p[3] = 0, 0, 0, 0
-					p[ri] = src[x]
-					p[gi] = src[x+1]
-					p[bi] = src[x+2]
+					binary.LittleEndian.PutUint32(row[o:o+4], v)
 					o += 4
 				}
 			}
