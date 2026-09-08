@@ -130,25 +130,25 @@ func TestRotate(t *testing.T) {
 		}
 	}
 	dst := image.NewRGBA(image.Rect(0, 0, 2, 4)) // physical W=2, H=4
-	r := RotateAll(dst, src, RotCW)
+	r := RotateAll(dst, src, RotLeft)
 	if !r.Eq(dst.Rect) {
-		t.Fatalf("CW rect = %v", r)
+		t.Fatalf("left rect = %v", r)
 	}
-	// CW: px = W-1-ly, py = lx. src(0,0) -> (1,0); src(3,1) -> (0,3)
+	// left: px = W-1-ly, py = lx. src(0,0) -> (1,0); src(3,1) -> (0,3)
 	if dst.RGBAAt(1, 0) != cols[0] || dst.RGBAAt(0, 3) != cols[7] || dst.RGBAAt(1, 3) != cols[3] {
-		t.Fatalf("CW mapping wrong: %v", dst.Pix)
+		t.Fatalf("left mapping wrong: %v", dst.Pix)
 	}
 	dst2 := image.NewRGBA(image.Rect(0, 0, 2, 4))
-	RotateAll(dst2, src, RotCCW)
-	// CCW: px = ly, py = H-1-lx. src(0,0) -> (0,3); src(3,1) -> (1,0)
+	RotateAll(dst2, src, RotRight)
+	// right: px = ly, py = H-1-lx. src(0,0) -> (0,3); src(3,1) -> (1,0)
 	if dst2.RGBAAt(0, 3) != cols[0] || dst2.RGBAAt(1, 0) != cols[7] {
-		t.Fatalf("CCW mapping wrong: %v", dst2.Pix)
+		t.Fatalf("right mapping wrong: %v", dst2.Pix)
 	}
 	// partial rect: only its pixels move, returned rect covers them
 	dst3 := image.NewRGBA(image.Rect(0, 0, 2, 4))
-	pr := RotateRect(dst3, src, image.Rect(1, 0, 3, 1), RotCW) // src (1,0),(2,0) -> (1,1),(1,2)
+	pr := RotateRect(dst3, src, image.Rect(1, 0, 3, 1), RotLeft) // src (1,0),(2,0) -> (1,1),(1,2)
 	if !pr.Eq(image.Rect(1, 1, 2, 3)) || dst3.RGBAAt(1, 1) != cols[1] || dst3.RGBAAt(1, 2) != cols[2] {
-		t.Fatalf("partial CW: rect %v pix %v", pr, dst3.Pix)
+		t.Fatalf("partial left: rect %v pix %v", pr, dst3.Pix)
 	}
 }
 
@@ -190,6 +190,6 @@ func BenchmarkRotateFrame(b *testing.B) {
 	dst := image.NewRGBA(image.Rect(0, 0, 320, 240))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		RotateAll(dst, src, RotCCW)
+		RotateAll(dst, src, RotLeft)
 	}
 }
