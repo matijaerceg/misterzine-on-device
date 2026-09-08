@@ -25,7 +25,7 @@ type repeater struct {
 const frameDur = 16667 * time.Microsecond
 
 const (
-	repeatDelay = 320 * time.Millisecond // a tap held a little long is still one step
+	repeatDelay = 500 * time.Millisecond // a tap held a little long is still one step
 	repeatSlow  = 48 * time.Millisecond
 	repeatMid   = 28 * time.Millisecond
 	repeatFast  = 16 * time.Millisecond
@@ -108,15 +108,12 @@ var scrollSpeeds = map[string]time.Duration{"20": 3 * frameDur, "30": 2 * frameD
 // ScrollValues are the setting's choices in order.
 var ScrollValues = []string{"20", "30", "60"}
 
-// accel is the list scrolling ladder for the chosen speed: two slower steps
-// so a single tap never overshoots, then the steady rate.
+// accel is the list scrolling pace for the chosen speed: full speed from
+// the first repeat (the half-second delay before it is the only guard).
 func accel(speed string, count int) time.Duration {
 	d, ok := scrollSpeeds[speed]
 	if !ok {
 		d = scrollSpeeds["30"]
-	}
-	if count <= 2 {
-		return d * 2
 	}
 	return d
 }

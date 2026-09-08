@@ -12,9 +12,8 @@ type ImageReq struct {
 	Key  string // row.Img for shots, row.Core for system photos
 	Slot string // "title", "snap", "ingame", "system"
 	W, H int    // box to fit into, aspect kept
-	// Native: like a CRT scanning it out: the long axis fills the box, the
-	// short axis stays pixel for pixel (cropped when up to 15% too big);
-	// a picture the wrong way round for the box, or far too big, is fitted
+	// Native: a picture close to the box (up to 15% larger) shows pixel
+	// for pixel, cropped centrally; only a much bigger one is scaled down
 	Native bool
 	// Stretch: fill the box exactly, aspect be damned (4:3 thumbnails)
 	Stretch bool

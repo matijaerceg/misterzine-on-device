@@ -41,6 +41,7 @@ const (
 	keyEnd     = 107
 	keyDown    = 108
 	keyPageDn  = 109
+	btnStart   = 315 // BTN_START on a gamepad
 )
 
 var keyMap = map[uint16]platform.Key{
@@ -60,6 +61,7 @@ type device struct {
 	path string
 	name string
 	f    *os.File
+	pad  bool // a gamepad node: only its Start button is read
 }
 
 // Input reads every keyboard-class evdev device, rescanning for hotplug.
@@ -124,20 +126,30 @@ func (in *Input) rescan() {
 		if err != nil {
 			continue
 		}
+		pad := false
 		if !isKeyboard(f) {
-			f.Close()
-			continue
+			// Main turns the pad's face buttons into keys for us but not
+			// Start, so gamepad nodes are read for that one button
+			if !isPad(f) {
+				f.Close()
+				continue
+			}
+			pad = true
 		}
 		name := devName(f)
 		if name == "misterzine launcher" { // our own console-opening keyboard
 			f.Close()
 			continue
 		}
-		d := &device{path: p, name: name, f: f}
+		d := &device{path: p, name: name, f: f, pad: pad}
 		in.mu.Lock()
 		in.devs[p] = d
 		in.mu.Unlock()
-		in.log.Printf("input: reading %s (%s)", p, d.name)
+		if pad {
+			in.log.Printf("input: reading %s (%s) for its Start button", p, d.name)
+		} else {
+			in.log.Printf("input: reading %s (%s)", p, d.name)
+		}
 		in.wg.Add(1)
 		go in.read(d)
 	}
@@ -172,6 +184,15 @@ func isKeyboard(f *os.File) bool {
 	return has(keyEnter) && has(keyUp)
 }
 
+// isPad keeps devices whose EV_KEY bitmap has BTN_START (gamepads).
+func isPad(f *os.File) bool {
+	var bits [96]byte
+	if err := ioctl(f.Fd(), eviocgbitKey(len(bits)), unsafe.Pointer(&bits[0])); err != nil {
+		return false
+	}
+	return bits[btnStart/8]&(1<<uint(btnStart%8)) != 0
+}
+
 func (in *Input) read(d *device) {
 	defer in.wg.Done()
 	defer func() {
@@ -204,7 +225,15 @@ func (in *Input) read(d *device) {
 			}
 			sec := int64(int32(binary.LittleEndian.Uint32(buf[i:])))
 			usec := int64(int32(binary.LittleEndian.Uint32(buf[i+4:])))
+			if d.pad {
+				if code != btnStart {
+					continue // Main already turned the rest into keys
+				}
+			}
 			k, ok := keyMap[code]
+			if code == btnStart {
+				k, ok = platform.KeyStart, true
+			}
 			if !ok {
 				k = platform.KeyOther
 			}

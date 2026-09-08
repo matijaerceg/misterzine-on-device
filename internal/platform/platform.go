@@ -30,6 +30,7 @@ const (
 	KeyHome
 	KeyEnd
 	KeyScreenshot // F12 on a keyboard, or the debug channel
+	KeyStart      // the pad's Start button (read from the pad itself: Main does not forward it)
 	KeyOther      // anything else; Event.Code says what
 )
 
@@ -37,7 +38,7 @@ var keyNames = map[Key]string{
 	KeyNone: "none", KeyUp: "up", KeyDown: "down", KeyLeft: "left", KeyRight: "right",
 	KeyEnter: "enter", KeyBack: "back", KeySpace: "space", KeyTab: "tab",
 	KeyPageUp: "pageup", KeyPageDown: "pagedown", KeyHome: "home", KeyEnd: "end",
-	KeyScreenshot: "screenshot", KeyOther: "other",
+	KeyScreenshot: "screenshot", KeyStart: "start", KeyOther: "other",
 }
 
 func (k Key) String() string {

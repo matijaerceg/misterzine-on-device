@@ -19,9 +19,9 @@ func (a *App) paintList(c *gfx.Canvas) {
 	a.paintScrollbar(c)
 	a.paintPane(c)
 	if a.lay.Portrait {
-		a.paintHint(c, gfx.ArrowLeft+" "+gfx.ArrowRight+" page  Y sort  X filters+settings")
+		a.paintHint(c, "A details  Y sort  X filters+settings")
 	} else {
-		a.paintHint(c, gfx.ArrowLeft+" "+gfx.ArrowRight+" page  Y sort  X filters and settings")
+		a.paintHint(c, "A details  Y sort  X filters and settings")
 	}
 }
 

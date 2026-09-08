@@ -486,6 +486,11 @@ func (a *App) actList(k platform.Key) bool {
 			a.all = true
 		}
 		return true
+	case platform.KeyStart: // launch the main version straight from the list
+		if n > 0 {
+			a.launchPick(0)
+		}
+		return true
 	case platform.KeyLeft: // the bottom row of the previous page
 		a.pageTo(a.top-1, -1)
 	case platform.KeyRight: // the top row of the next page

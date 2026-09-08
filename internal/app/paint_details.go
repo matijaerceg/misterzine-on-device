@@ -262,7 +262,7 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 		c.Text(l.Hint.Min.X+2, l.Hint.Min.Y+2, a.sm, gfx.Fit(a.notice, a.sm.Cols(l.Hint.Dx()-4)), gen.Eva.Fg)
 		return
 	}
-	hint := "A launch  X shots  Y fav"
+	hint := "Start launch  A shots  Y fav"
 	if len(entries) > 1 {
 		hint += "  " + gfx.ArrowUp + " " + gfx.ArrowDown + " pick"
 	}
@@ -316,7 +316,10 @@ func (a *App) actDetails(k platform.Key) bool {
 	switch k {
 	case platform.KeyBack:
 		a.screen = ScreenList
-	case platform.KeyTab:
+	case platform.KeyEnter:
+		if a.cfg.Now().Sub(a.detail.opened) < launchGuard {
+			return true // a second tap right after opening is not an action
+		}
 		a.screen = ScreenShot
 		a.pickSlot()
 	case platform.KeyUp:
@@ -346,24 +349,30 @@ func (a *App) actDetails(k platform.Key) bool {
 		if a.cursor >= len(a.view) || a.ds.Rows[a.view[a.cursor]].K != k {
 			a.screen = ScreenList // the row left the filtered view
 		}
-	case platform.KeyEnter:
-		if a.cfg.Now().Sub(a.detail.opened) < launchGuard {
-			return true // a second tap right after opening is not a launch
-		}
-		_, _, i := a.current()
-		entries := a.launchEntries(row, i)
-		if len(entries) > 0 && a.cfg.Launch != nil {
-			e := entries[min(a.detail.pick, len(entries)-1)]
-			if !e.ok {
-				a.Notice("that file is not on the card", 3*time.Second)
-				return true
-			}
-			a.cfg.Launch(e.path)
-		}
-		return false
+	case platform.KeyStart:
+		return a.launchPick(a.detail.pick)
 	default:
 		return false
 	}
 	a.all = true
 	return true
+}
+
+// launchPick launches entry pick of the current row's versions (0 = the
+// main one); a version that is not on the card only shows a notice.
+func (a *App) launchPick(pick int) bool {
+	row, _, i := a.current()
+	if row == nil {
+		return false
+	}
+	entries := a.launchEntries(row, i)
+	if len(entries) > 0 && a.cfg.Launch != nil {
+		e := entries[min(pick, len(entries)-1)]
+		if !e.ok {
+			a.Notice("that file is not on the card", 3*time.Second)
+			return true
+		}
+		a.cfg.Launch(e.path)
+	}
+	return false
 }

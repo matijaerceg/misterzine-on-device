@@ -10,8 +10,10 @@
   keep their shape.
 - Details strip: boxes hug the pictures and pack from the left in both
   orientations.
-- Full-screen shots scan out like the tube: the long axis fills the screen
-  (linear filtering), the short axis stays pixel for pixel.
+- Start launches: from the list it launches the main version, in details the
+  picked version. A opens details from the list and the shots from details.
+  (Start is read from the pad itself, since Main does not pass it on.)
+- Held scrolling waits half a second, then runs at full speed at once.
 - Clock: while the system clock is still at 1970 (no NTP yet), the app takes
   the time from the site's Date header so relative dates are right.
 - Main menu entry: a press made before the watcher was up after a cold boot
