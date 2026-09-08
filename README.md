@@ -45,13 +45,13 @@ hiding Update All does not turn it into an independent background job.
 An updater started independently through SSH with its own input/output
 can keep working while MisterZine is open. Quitting MisterZine does not
 pause that process. Updates can replace cores or restart the system, so
-wait for completion before launching a core, and use Settings → Rescan
+wait for completion before launching a core, and use Options → Rescan
 to refresh the on-card status if MisterZine stayed open. This is not a
 promise that every Update All configuration supports concurrent use.
 
 ### Put it in the main menu
 
-Once, from the app: X, Settings, "Main menu launcher", A. From then on a
+Once, from the main list: B, Options, "Main menu launcher", Right. From then on a
 "MisterZine" entry sits in the main menu next to Arcade, Console and the
 rest, and picking it opens the app; no Scripts menu.
 
@@ -93,19 +93,21 @@ MiSTer.ini ... vga_scaler=1" box when the app starts, this is what it means.
 
 MiSTer turns the gamepad into these keys while a script runs.
 
-| Pad | Key | List | Details | Screen | Filters |
-|---|---|---|---|---|---|
-| D-pad up/down | arrows | move (hold to fly) | pick launch target | | move |
-| D-pad left/right | arrows | page (hold to fly) | | previous/next shot | jump section |
-| L / R | PageUp/Down | top / bottom | scroll info | | page |
+| Pad | Key | List | Details | Screen | Filters | Options |
+|---|---|---|---|---|---|---|
+| D-pad up/down | arrows | move (hold to fly) | pick launch target | previous/next release | move | move |
+| D-pad left/right | arrows | page (hold to fly) | | previous/next shot | page | change value |
+| L / R | PageUp/Down | top / bottom | scroll info | | top / bottom | top / bottom |
+| A | Enter | details | shots | back to details | toggle | open action |
+| B | Esc | Options | back | back to details | back to list | back to list |
+| Start | gamepad Start | launch main version | launch picked version | | | |
+| Menu | | back to the MiSTer menu (the app closes) | | | | |
+| Y | Space | sort: updated/debut | favorite | | toggle | |
+| X | Tab | Filters | | back to details | | |
 
-In Settings, Left/Right change a value; A opens the safe-zone editor, where
-Left/Right set the side margins and Up/Down the top and bottom ones.
-| A | Enter | details | launch | back to details | toggle |
-| B | Esc | | back | back to details | close |
-| Menu | | back to the MiSTer menu (the app closes) | | | |
-| Y | Space | sort: updated/debut | favorite | | toggle |
-| X | Tab | filters and settings | shots | | close |
+In Options, Left/Right change a value; A opens the safe-zone editor.
+There, the d-pad moves the top-right corner of the safe frame, and B saves
+and returns to Options.
 
 The list shows one row per line: favorite star, title, card status, date.
 Status glyphs: `+` current build on the card, `^` older build, `~` on the
@@ -113,9 +115,12 @@ card with an unknown build date, `-` not found on the card. Rows changed
 since your last look show their date in green, and a "your last look" line
 marks where you left off.
 
-Settings (first entry of the X panel) has the safe-zone calibration for
+Options (B from the main list) has the safe-zone calibration for
 overscan, rotation override, screenshot prefetch, rescan, refresh and cache
-clearing. A safe zone up to 32 px is available for consumer sets.
+clearing. A safe zone up to 40 px is available for consumer sets.
+
+Filters (X from the main list) is a separate screen, ordered: On the card,
+Favorites, Since last look, Type, Source, Rotation, Players, Genre.
 
 ## Data
 

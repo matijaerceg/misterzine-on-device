@@ -2,6 +2,12 @@
 
 ## v0.2.2
 
+- Main list: X opens Filters; B opens Options (formerly Settings). Both
+  screens return directly to the list with B. Filters starts with On the
+  card, Favorites and Since last look, followed by the existing facets.
+- Compatibility with the September 2026 Linux framebuffer driver: use the
+  driver's reported pixel memory when its normal mmap operation is absent.
+
 - List: titles start one column further left; the release count is muted
   beside "by: latest update"; a one-cell ellipsis replaces ".." everywhere;
   the "+" glyph is lighter so "filters+settings" reads cleanly.

@@ -25,12 +25,12 @@ const (
 	ScreenDetails
 	ScreenShot
 	ScreenFilter
-	ScreenSettings
+	ScreenOptions
 	ScreenCalibrate
 )
 
 func (s Screen) String() string {
-	return [...]string{"list", "details", "screen", "filter", "settings", "calibrate", "input"}[s]
+	return [...]string{"list", "details", "screen", "filter", "options", "calibrate", "input"}[s]
 }
 
 // Config is what the app needs from its host.
@@ -379,7 +379,7 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 		case platform.KeyPageUp, platform.KeyPageDown:
 			return repeatPage
 		}
-	case ScreenFilter, ScreenSettings:
+	case ScreenFilter, ScreenOptions:
 		switch k {
 		case platform.KeyUp, platform.KeyDown:
 			return accel("normal", count)
@@ -446,7 +446,7 @@ func (a *App) act(k platform.Key) bool {
 		return a.actDetails(k)
 	case ScreenShot:
 		return a.actShot(k)
-	case ScreenFilter, ScreenSettings:
+	case ScreenFilter, ScreenOptions:
 		return a.actPanel(k)
 	case ScreenCalibrate:
 		return a.actCalibrate(k)
@@ -496,8 +496,7 @@ func (a *App) actList(k platform.Key) bool {
 	case platform.KeyRight: // the top row of the next page
 		a.pageTo(a.top+a.lay.Lines, 1)
 	case platform.KeyBack:
-		// B is never an exit: the pad's menu button and Settings > Quit are
-		a.Notice("to leave: the pad's menu button, or Settings > Quit", 3*time.Second)
+		a.openPanel(ScreenOptions)
 		return true
 	default:
 		return false
@@ -581,7 +580,7 @@ func (a *App) Refilter() {
 // a scan finished).
 func (a *App) Invalidate() {
 	a.all = true
-	if a.screen == ScreenSettings {
+	if a.screen == ScreenOptions {
 		a.buildPanel() // the prefetch tally
 	}
 }
@@ -660,8 +659,7 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 		a.paintDetails(c)
 	case ScreenShot:
 		a.paintShot(c)
-	case ScreenFilter, ScreenSettings:
-		a.paintList(c)
+	case ScreenFilter, ScreenOptions:
 		a.paintPanel(c)
 	case ScreenCalibrate:
 		a.paintCalibrate(c)

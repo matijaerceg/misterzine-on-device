@@ -11,7 +11,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
 
-// panelEntry is one line of the filter or settings panel.
+// panelEntry is one line of the Filters or Options screen.
 type panelEntry struct {
 	text    string
 	header  bool
@@ -36,6 +36,7 @@ type panelState struct {
 
 func (a *App) openPanel(s Screen) {
 	a.screen = s
+	a.panel.entries = nil
 	a.panel.cursor = 0
 	a.panel.top = 0
 	a.buildPanel()
@@ -49,8 +50,8 @@ func (a *App) buildPanel() {
 		w := a.panel.entries[a.panel.cursor]
 		was = &w
 	}
-	if a.screen == ScreenSettings {
-		a.panel.entries = a.settingsEntries()
+	if a.screen == ScreenOptions {
+		a.panel.entries = a.optionsEntries()
 	} else {
 		a.panel.entries = a.filterEntries()
 	}
@@ -84,10 +85,21 @@ func sortedFacet(m map[string]int) []string {
 func (a *App) filterEntries() []panelEntry {
 	f := &a.filters
 	var E []panelEntry
-	E = append(E, panelEntry{text: "Settings" + gfx.Ellipsis + "  (safe zone, rotation)", kind: "settings"})
 	if f.Active() {
 		E = append(E, panelEntry{text: "Clear all filters", kind: "clear"})
 	}
+	E = append(E, panelEntry{text: "On the card", header: true, kind: "install"})
+	for _, v := range []struct{ val, text string }{{data.InstallAll, "everything"}, {data.InstallFound, "found on card (any build)"}, {data.InstallCurrent, "current build"}, {data.InstallOlder, "older build than shipped"}, {data.InstallUndated, "build date unknown"}, {data.InstallMissing, "not found on card"}} {
+		cur := f.Install
+		if cur == "" {
+			cur = data.InstallAll
+		}
+		E = append(E, panelEntry{text: v.text, kind: "install", value: v.val, checked: cur == v.val})
+	}
+	E = append(E, panelEntry{text: "Favorites", header: true, kind: "fav"})
+	E = append(E, panelEntry{text: "favorites only", kind: "fav", checked: f.FavOnly})
+	E = append(E, panelEntry{text: "Since last look", header: true, kind: "since"})
+	E = append(E, panelEntry{text: "only rows changed since my last look", kind: "since", checked: f.Since})
 	section := func(title, kind string, facet map[string]int, off map[string]bool, label func(string) string) {
 		E = append(E, panelEntry{text: title, header: true, kind: kind})
 		for _, v := range sortedFacet(facet) {
@@ -123,22 +135,10 @@ func (a *App) filterEntries() []panelEntry {
 		}
 		return s
 	})
-	E = append(E, panelEntry{text: "Since last look", header: true, kind: "since"})
-	E = append(E, panelEntry{text: "only rows changed since my last look", kind: "since", checked: f.Since})
-	E = append(E, panelEntry{text: "On the card", header: true, kind: "install"})
-	for _, v := range []struct{ val, text string }{{data.InstallAll, "everything"}, {data.InstallFound, "found on card (any build)"}, {data.InstallCurrent, "current build"}, {data.InstallOlder, "older build than shipped"}, {data.InstallUndated, "build date unknown"}, {data.InstallMissing, "not found on card"}} {
-		cur := f.Install
-		if cur == "" {
-			cur = data.InstallAll
-		}
-		E = append(E, panelEntry{text: v.text, kind: "install", value: v.val, checked: cur == v.val})
-	}
-	E = append(E, panelEntry{text: "Favorites", header: true, kind: "fav"})
-	E = append(E, panelEntry{text: "favorites only", kind: "fav", checked: f.FavOnly})
 	return E
 }
 
-func (a *App) settingsEntries() []panelEntry {
+func (a *App) optionsEntries() []panelEntry {
 	rot := map[gfx.Rotation]string{gfx.RotNone: "off", gfx.RotRight: "turned right", gfx.RotLeft: "turned left"}[a.rot]
 	_ = rot
 	rotIdx := map[gfx.Rotation]int{gfx.RotNone: 0, gfx.RotRight: 1, gfx.RotLeft: 2}[a.rot]
@@ -157,7 +157,6 @@ func (a *App) settingsEntries() []panelEntry {
 		prefetchIdx = 1
 	}
 	return []panelEntry{
-		{text: "Settings", header: true, info: true},
 		{text: "Rotation", kind: "rotation", vals: []string{"off", "turned right", "turned left"}, idx: rotIdx,
 			help: "How your monitor is turned. The default follows osd_rotate in MiSTer.ini."},
 		{text: "Edit safe zone", kind: "inset",
@@ -226,9 +225,18 @@ func short(h string) string {
 
 func (a *App) paintPanel(c *gfx.Canvas) {
 	l := &a.lay
+	a.paintStatus(c)
+	if a.notice == "" {
+		c.Fill(l.Status, gen.Eva.Surface)
+		title := "Filters"
+		if a.screen == ScreenOptions {
+			title = "Options"
+		}
+		c.Text(l.Status.Min.X+2, l.Status.Min.Y+2, a.sm, title, gen.Eva.Accent)
+	}
 	box := l.Body
 	helpH := 0
-	if a.screen == ScreenSettings {
+	if a.screen == ScreenOptions {
 		helpH = 4*(a.sm.H+1) + 3
 	}
 	box.Max.Y -= helpH
@@ -298,7 +306,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 		}
 		y += lh
 	}
-	if a.screen == ScreenSettings {
+	if a.screen == ScreenOptions {
 		// help for the selected item, wrapped to four small lines
 		if p.cursor < len(p.entries) && p.entries[p.cursor].help != "" {
 			hy := box.Max.Y + 2
@@ -321,10 +329,6 @@ func (a *App) actPanel(k platform.Key) bool {
 	}
 	switch k {
 	case platform.KeyBack:
-		if a.screen == ScreenSettings {
-			a.openPanel(ScreenFilter)
-			return true
-		}
 		a.screen = ScreenList
 		a.all = true
 		return true
@@ -343,7 +347,7 @@ func (a *App) actPanel(k platform.Key) bool {
 			}
 		}
 	case platform.KeyLeft:
-		if a.screen == ScreenSettings {
+		if a.screen == ScreenOptions {
 			return a.stepValue(-1)
 		}
 		// the last entry of the previous page, shown at the bottom
@@ -353,7 +357,7 @@ func (a *App) actPanel(k platform.Key) bool {
 			p.top = 0
 		}
 	case platform.KeyRight:
-		if a.screen == ScreenSettings {
+		if a.screen == ScreenOptions {
 			return a.stepValue(1)
 		}
 		// the first entry of the next page, shown at the top
@@ -459,10 +463,6 @@ func (a *App) togglePanel() bool {
 		return out
 	}
 	switch e.kind {
-	case "settings":
-		a.panel.cursor = 0
-		a.openPanel(ScreenSettings)
-		return true
 	case "clear":
 		a.SetFilters(data.Filters{})
 		p.cursor = 0
@@ -538,9 +538,6 @@ func (a *App) togglePanel() bool {
 		}
 		a.Notice(strings.TrimSuffix(e.text, " now")+gfx.Ellipsis, 3e9)
 		return true
-	case "back":
-		a.openPanel(ScreenFilter)
-		return true
 	default:
 		return false
 	}
@@ -601,7 +598,7 @@ func (a *App) actCalibrate(k platform.Key) bool {
 		if a.cfg.SettingsChanged != nil {
 			a.cfg.SettingsChanged()
 		}
-		a.openPanel(ScreenSettings)
+		a.openPanel(ScreenOptions)
 	default:
 		return false
 	}

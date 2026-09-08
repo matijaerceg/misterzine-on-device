@@ -29,7 +29,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/platform/headless"
 )
 
-const allViews = "shot list; enter; shot details; back; right; shot screen; back; tab; shot filter; end; enter; shot settings; back; back"
+const allViews = "shot list; enter; shot details; wait 600; enter; shot screen; back; back; tab; shot filter; back; back; shot options; down; enter; shot calibrate; back; back"
 
 func main() {
 	dataPath := flag.String("data", "testdata/data.json", "data.json")
