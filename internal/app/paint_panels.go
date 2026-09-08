@@ -80,6 +80,7 @@ func sortedFacet(m map[string]int) []string {
 func (a *App) filterEntries() []panelEntry {
 	f := &a.filters
 	var E []panelEntry
+	E = append(E, panelEntry{text: "Settings...  (safe zone, rotation)", kind: "settings"})
 	if f.Active() {
 		E = append(E, panelEntry{text: "Clear all filters", kind: "clear"})
 	}
@@ -128,8 +129,6 @@ func (a *App) filterEntries() []panelEntry {
 	}
 	E = append(E, panelEntry{text: "Favorites", header: true, kind: "fav"})
 	E = append(E, panelEntry{text: "favorites only", kind: "fav", checked: f.FavOnly})
-	E = append(E, panelEntry{text: "", header: true})
-	E = append(E, panelEntry{text: "Settings...", kind: "settings"})
 	return E
 }
 
@@ -138,7 +137,7 @@ func (a *App) settingsEntries() []panelEntry {
 	return []panelEntry{
 		{text: "Settings", header: true},
 		{text: "Rotation: " + rot + "  (A cycles)", kind: "rotation"},
-		{text: "Safe zone: " + itoa(a.cfg.SafeInset) + " px  (A calibrates)", kind: "inset"},
+		{text: "Safe zone: " + itoa(a.cfg.SafeInset) + " px  (A adjusts)", kind: "inset"},
 		{text: "Prefetch all shots: " + onOff(a.panel.prefetch), kind: "prefetch"},
 		{text: "Rescan card", kind: "rescan"},
 		{text: "Refresh data now", kind: "refresh"},
@@ -216,7 +215,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 	if a.screen == ScreenSettings {
 		a.paintHint(c, "A change  B back")
 	} else {
-		a.paintHint(c, "A toggle  A on header = all  </> section  B/X close")
+		a.paintHint(c, "A toggle  </> section  B/X close")
 	}
 }
 
@@ -415,10 +414,10 @@ func (a *App) paintCalibrate(c *gfx.Canvas) {
 		c.HLine(cx-y, cx+y, l.Root.Min.Y+24+y, gen.Eva.Fg)
 	}
 	lines := []string{
-		"Safe zone: " + itoa(a.cfg.SafeInset) + " px",
+		"Safe zone: " + itoa(a.cfg.SafeInset) + " px (0-32)",
 		"left/right adjust, A save, B cancel",
-		"the green frame should sit just inside",
-		"the visible edge of your screen",
+		"the green frame should sit just",
+		"inside the edge of your screen",
 	}
 	y := cy + 30
 	for _, s := range lines {

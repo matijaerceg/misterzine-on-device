@@ -85,6 +85,7 @@ type App struct {
 	panel  panelState
 
 	rep    repeater
+	down   map[platform.Key]bool // keys currently held, across all devices
 	notice string
 	until  time.Time
 	net    string // status bar right text: "offline", "updating", "data 2h ago"
@@ -108,7 +109,7 @@ func New(cfg Config, ds *data.Dataset, stored *data.SeenRecord) *App {
 	if cfg.Favorites == nil {
 		cfg.Favorites = map[string]bool{}
 	}
-	a := &App{cfg: cfg, body: fonts.Body(), sm: fonts.Small(), rot: cfg.Rotation, split: -1}
+	a := &App{cfg: cfg, body: fonts.Body(), sm: fonts.Small(), rot: cfg.Rotation, split: -1, down: map[platform.Key]bool{}}
 	a.physical = image.NewRGBA(image.Rect(0, 0, cfg.PhysW, cfg.PhysH))
 	a.setRotation(cfg.Rotation)
 	a.SetData(ds, stored)
@@ -137,8 +138,8 @@ func (a *App) SetInset(px int) {
 	if px < 0 {
 		px = 0
 	}
-	if px > 24 {
-		px = 24
+	if px > 32 {
+		px = 32
 	}
 	a.cfg.SafeInset = px
 	a.setRotation(a.rot)
@@ -308,27 +309,75 @@ func (a *App) ensureVisible() {
 }
 
 // Handle applies one key event and returns true when a repaint is needed.
+// A press for a key that is already down is ignored: a keyboard encoder
+// that Main also translates delivers every press twice (raw and through the
+// virtual keyboard), and this folds the pair into one.
 func (a *App) Handle(ev platform.Event) bool {
+	if ev.Key == platform.KeyNone || ev.Key == platform.KeyOther {
+		return false
+	}
 	if !ev.Pressed {
+		if !a.down[ev.Key] {
+			return false
+		}
+		delete(a.down, ev.Key)
 		a.rep.release(ev.Key)
 		return false
 	}
-	pace := time.Duration(0)
-	if a.screen == ScreenShot && (ev.Key == platform.KeyLeft || ev.Key == platform.KeyRight) {
-		pace = repeatShot
+	if a.down[ev.Key] {
+		return false
 	}
-	a.rep.press(ev.Key, ev.At, pace)
+	a.down[ev.Key] = true
+	a.rep.press(ev.Key, ev.At)
 	return a.act(ev.Key)
+}
+
+// repeatStep says whether a held key repeats on the current screen and how
+// fast; 0 means it does not.
+func (a *App) repeatStep(k platform.Key, count int) time.Duration {
+	switch a.screen {
+	case ScreenList:
+		switch k {
+		case platform.KeyUp, platform.KeyDown:
+			return accel(count)
+		case platform.KeyPageUp, platform.KeyPageDown:
+			return repeatPage
+		}
+	case ScreenShot:
+		switch k {
+		case platform.KeyLeft, platform.KeyRight, platform.KeyUp, platform.KeyDown:
+			return repeatStep
+		}
+	case ScreenDetails:
+		switch k {
+		case platform.KeyLeft, platform.KeyRight, platform.KeyUp, platform.KeyDown:
+			return repeatStep
+		case platform.KeyPageUp, platform.KeyPageDown:
+			return repeatPage
+		}
+	case ScreenFilter, ScreenSettings:
+		switch k {
+		case platform.KeyUp, platform.KeyDown:
+			return accel(count)
+		case platform.KeyLeft, platform.KeyRight, platform.KeyPageUp, platform.KeyPageDown:
+			return repeatStep
+		}
+	case ScreenCalibrate:
+		switch k {
+		case platform.KeyLeft, platform.KeyRight:
+			return repeatCalib
+		}
+	}
+	return 0
 }
 
 // Tick runs due repeats and expires notices; returns true to repaint.
 func (a *App) Tick(now time.Time) bool {
 	changed := false
-	for k := a.rep.due(now); k != platform.KeyNone; k = a.rep.due(now) {
+	if k := a.rep.due(now, a.repeatStep); k != platform.KeyNone {
 		if a.act(k) {
 			changed = true
 		}
-		break // one repeat per tick keeps input responsive
 	}
 	if a.notice != "" && now.After(a.until) {
 		a.notice = ""
