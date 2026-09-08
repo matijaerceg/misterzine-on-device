@@ -563,14 +563,18 @@ func (a *App) paintCalibrate(c *gfx.Canvas) {
 	cx, cy := full.Dx()/2, full.Dy()/2
 	c.HLine(cx-20, cx+20, cy, gen.Eva.Muted)
 	c.VLine(cx, cy-20, cy+20, gen.Eva.Muted)
-	// a big UP so rotation is verifiable
-	c.Text(cx-a.body.Width("UP")/2, l.Root.Min.Y+8, a.body, "UP", gen.Eva.Fg)
-	for y := 0; y < 10; y++ {
-		c.HLine(cx-y, cx+y, l.Root.Min.Y+24+y, gen.Eva.Fg)
+	// the d-pad nudges the top-right corner: a diagonal arrow points at it
+	// from inside the frame
+	ax, ay := l.Root.Max.X-1, l.Root.Min.Y
+	for i := 3; i < 20; i++ { // the shaft, from inside out
+		c.Fill(image.Rect(ax-i-1, ay+i-1, ax-i+1, ay+i+1), gen.Eva.Fg)
+	}
+	for i := 0; i < 8; i++ { // the head, hugging the corner
+		c.HLine(ax-8+i, ax-1, ay+i, gen.Eva.Fg)
 	}
 	lines := []string{
 		"Safe zone: sides " + itoa(a.cfg.SafeInsetX) + " px, top/bottom " + itoa(a.cfg.SafeInsetY) + " px",
-		gfx.ArrowLeft + " " + gfx.ArrowRight + " sides  " + gfx.ArrowUp + " " + gfx.ArrowDown + " top/bottom",
+		gfx.ArrowLeft + " " + gfx.ArrowRight + " " + gfx.ArrowUp + " " + gfx.ArrowDown + " nudge the corner",
 		"B save and go back",
 		"the green frame should sit just",
 		"inside the edge of your screen",
@@ -584,10 +588,11 @@ func (a *App) paintCalibrate(c *gfx.Canvas) {
 
 func (a *App) actCalibrate(k platform.Key) bool {
 	switch k {
+	// the corner moves with the d-pad: right and up grow the frame
 	case platform.KeyLeft:
-		a.SetInset(a.cfg.SafeInsetX-1, a.cfg.SafeInsetY)
-	case platform.KeyRight:
 		a.SetInset(a.cfg.SafeInsetX+1, a.cfg.SafeInsetY)
+	case platform.KeyRight:
+		a.SetInset(a.cfg.SafeInsetX-1, a.cfg.SafeInsetY)
 	case platform.KeyUp:
 		a.SetInset(a.cfg.SafeInsetX, a.cfg.SafeInsetY-1)
 	case platform.KeyDown:

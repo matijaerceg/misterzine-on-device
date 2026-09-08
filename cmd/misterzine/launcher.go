@@ -38,6 +38,7 @@ const (
 	pidFile       = "/media/fat/misterzine/watch.pid"
 	watchLog      = "/media/fat/misterzine/watch.log"
 	corenameFile  = "/tmp/CORENAME"
+	launchedFile  = "/media/fat/misterzine/launched" // written by the app right before it loads a core
 	scriptEntry   = "/media/fat/Scripts/misterzine.sh"
 )
 
@@ -260,12 +261,17 @@ func watch() int {
 			}
 			time.Sleep(500 * time.Millisecond) // let Main open the new device
 		}
+		os.Remove(launchedFile)
 		if err := runFromMenu(lg, kbd); err != nil {
 			lg.Printf("watch: %v", err)
 		}
 		ensureMGL()
-		// back to a plain menu: resets CORENAME so this does not retrigger
-		if f, err := os.OpenFile("/dev/MiSTer_cmd", os.O_WRONLY|syscall.O_NONBLOCK, 0); err == nil {
+		if b, err := os.ReadFile(launchedFile); err == nil {
+			// the app itself loaded a core: leave it alone
+			os.Remove(launchedFile)
+			lg.Printf("watch: the app launched %s; not touching the menu", strings.TrimSpace(string(b)))
+		} else if f, err := os.OpenFile("/dev/MiSTer_cmd", os.O_WRONLY|syscall.O_NONBLOCK, 0); err == nil {
+			// back to a plain menu: resets CORENAME so this does not retrigger
 			f.WriteString("load_core /media/fat/menu.rbf\n")
 			f.Close()
 		}

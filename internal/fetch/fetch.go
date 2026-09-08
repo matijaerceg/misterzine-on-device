@@ -21,7 +21,21 @@ import (
 )
 
 // Site is the base URL of the release tracker.
-const Site = "https://misterzine.fyi"
+var Site = "https://misterzine.fyi"
+
+// validHash accepts a lower-case hex SHA-256.
+func validHash(h string) bool {
+	if len(h) != 64 {
+		return false
+	}
+	for i := 0; i < len(h); i++ {
+		c := h[i]
+		if (c < '0' || c > '9') && (c < 'a' || c > 'f') {
+			return false
+		}
+	}
+	return true
+}
 
 // ErrOffline wraps dial, DNS and TLS failures: the network is not there.
 var ErrOffline = errors.New("offline")
@@ -101,13 +115,16 @@ func (c *Client) Check(ctx context.Context, current string) (Fresh, error) {
 	if meta.Hash == "" || meta.Hash == current {
 		return out, nil
 	}
+	if !validHash(meta.Hash) {
+		return out, fmt.Errorf("meta.json: malformed hash %q", meta.Hash)
+	}
 	raw, err := c.get(ctx, Site+"/releases/data.json?v="+meta.Hash, 20*time.Second)
 	if err != nil {
 		return out, err
 	}
 	sum := sha256.Sum256(raw)
 	if got := hex.EncodeToString(sum[:]); got != meta.Hash {
-		return out, fmt.Errorf("data.json hash %s does not match meta %s", got[:8], meta.Hash[:8])
+		return out, fmt.Errorf("data.json hash %.8s does not match meta %.8s", got, meta.Hash)
 	}
 	rows, err := data.DecodeRows(bytes.NewReader(raw))
 	if err != nil {

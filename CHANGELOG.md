@@ -2,6 +2,18 @@
 
 ## v0.2.2
 
+- Safe zone editor: the d-pad nudges the top-right corner of the frame
+  (Right and Up grow it, Left and Down shrink it); an arrow marks the corner.
+- Launching a game from the main menu entry no longer risks the menu
+  watcher putting the menu back over the game.
+- Quitting or launching cuts any screenshot download short instead of
+  waiting for it (a slow download could hold up a launch).
+- A failed screenshot download waits before it is retried (15 s, doubling
+  to 8 min) instead of retrying at once.
+- The cached data only advances its hash once the data itself is on disk;
+  a malformed hash from the site is an error, not a crash; a card scan that
+  finished after a data refresh no longer attaches statuses to the wrong rows.
+- Settings from before the two-axis safe zone keep their inset on both axes.
 - The main menu entry is "MisterZine" (the MGL is MisterZine.mgl; an older
   lowercase file is renamed on the next boot or launcher start).
 - Left/Right page the list like Main's menu. Shots open from details with X

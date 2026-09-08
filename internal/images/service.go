@@ -53,7 +53,9 @@ type Service struct {
 	inflight    map[scaledKey]bool
 	netBusy     map[Pic]bool
 	missing     map[Pic]bool
-	failed      map[Pic]bool // decode failed this run
+	failed      map[Pic]bool      // decode failed this run
+	retryAt     map[Pic]time.Time // download failed: not before this
+	retries     map[Pic]int
 	offline     bool
 	prefetch    []Pic // background download list, in priority order
 	prefetchOn  bool
@@ -66,6 +68,8 @@ type Service struct {
 	haveKnown   bool
 	ready       chan struct{}
 	stop        chan struct{}
+	ctx         context.Context // cancelled on Close
+	cancel      context.CancelFunc
 	wg          sync.WaitGroup
 }
 
@@ -78,10 +82,11 @@ func New(dir string, client *fetch.Client, lg *log.Logger, budget int) *Service 
 		dir: dir, client: client, lg: lg,
 		cache: map[scaledKey]*entry{}, lru: list.New(), budget: budget,
 		raw: map[Pic]*image.RGBA{}, inflight: map[scaledKey]bool{}, netBusy: map[Pic]bool{},
-		missing: map[Pic]bool{}, failed: map[Pic]bool{},
+		missing: map[Pic]bool{}, failed: map[Pic]bool{}, retryAt: map[Pic]time.Time{}, retries: map[Pic]int{},
 		kick: make(chan struct{}, 1), decodeKick: make(chan struct{}, 1),
 		ready: make(chan struct{}, 1), stop: make(chan struct{}),
 	}
+	s.ctx, s.cancel = context.WithCancel(context.Background())
 	for _, sub := range []string{"title", "snap", "ingame", "systems"} {
 		os.MkdirAll(filepath.Join(dir, sub), 0755)
 	}
@@ -111,9 +116,10 @@ func (s *Service) poke(ch chan struct{}) {
 	}
 }
 
-// Close stops the workers.
+// Close stops the workers, cutting any download short.
 func (s *Service) Close() {
 	close(s.stop)
+	s.cancel()
 	s.wg.Wait()
 	s.saveMissing()
 }
@@ -336,9 +342,10 @@ func (s *Service) nextDownload() (Pic, bool) {
 	if s.client == nil || s.offline {
 		return Pic{}, false
 	}
+	now := time.Now()
 	for _, k := range s.wanted {
 		p := k.Pic
-		if s.missing[p] || s.failed[p] || s.netBusy[p] || s.raw[p] != nil || s.exists(p) {
+		if s.missing[p] || s.failed[p] || s.netBusy[p] || s.raw[p] != nil || s.exists(p) || now.Before(s.retryAt[p]) {
 			continue
 		}
 		s.netBusy[p] = true
@@ -353,7 +360,7 @@ func (s *Service) nextDownload() (Pic, bool) {
 		for s.prefetchPos < len(s.prefetch) {
 			p := s.prefetch[s.prefetchPos]
 			s.prefetchPos++
-			if s.missing[p] || s.netBusy[p] || s.exists(p) {
+			if s.missing[p] || s.netBusy[p] || s.exists(p) || now.Before(s.retryAt[p]) {
 				continue
 			}
 			s.netBusy[p] = true
@@ -361,6 +368,17 @@ func (s *Service) nextDownload() (Pic, bool) {
 		}
 	}
 	return Pic{}, false
+}
+
+// backoff (mu held) schedules the next attempt at p: 15 s, then doubling
+// up to 8 minutes, so a bad server or a full card is not hammered.
+func (s *Service) backoff(p Pic) {
+	n := s.retries[p]
+	s.retries[p] = n + 1
+	if n > 5 {
+		n = 5
+	}
+	s.retryAt[p] = time.Now().Add(15 * time.Second << uint(n))
 }
 
 func (s *Service) netLoop() {
@@ -387,9 +405,12 @@ func (s *Service) download(p Pic) {
 		s.mu.Unlock()
 		s.poke(s.kick)
 	}()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(s.ctx, 10*time.Second)
 	defer cancel()
 	b, err := s.client.Image(ctx, p.Slot, p.Key)
+	if s.ctx.Err() != nil {
+		return // closing: not a failure worth remembering
+	}
 	if err != nil {
 		s.mu.Lock()
 		if errors.Is(err, fetch.ErrNotFound) {
@@ -398,7 +419,8 @@ func (s *Service) download(p Pic) {
 			s.offline = true
 			s.lg.Printf("images: offline: %v", err)
 		} else {
-			s.lg.Printf("images: %s/%s: %v", p.Slot, p.Key, err)
+			s.backoff(p)
+			s.lg.Printf("images: %s/%s: %v (retry in %v)", p.Slot, p.Key, err, time.Until(s.retryAt[p]).Round(time.Second))
 		}
 		s.mu.Unlock()
 		s.signal()
@@ -407,6 +429,9 @@ func (s *Service) download(p Pic) {
 	path := s.path(p)
 	tmp := path + ".part"
 	if err := os.WriteFile(tmp, b, 0644); err != nil {
+		s.mu.Lock()
+		s.backoff(p)
+		s.mu.Unlock()
 		s.lg.Printf("images: write %s: %v", tmp, err)
 		return
 	}

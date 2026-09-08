@@ -111,11 +111,9 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	h := &host{root: root, card: card, lg: lg, events: make(chan platform.Event, 256), uiRun: make(chan func(), 8), quit: make(chan struct{}), dataCh: make(chan fetch.Fresh, 1), netCh: make(chan string, 4), scanCh: make(chan scanResult, 1)}
 
 	// settings, state, favorites
-	h.settings = store.DefaultSettings()
-	if err := store.Load(filepath.Join(root, "settings.json"), &h.settings); err == nil {
-		h.settings.Migrate()
-	} else if !errors.Is(err, os.ErrNotExist) {
-		lg.Printf("settings: %v", err)
+	var serr error
+	if h.settings, serr = store.LoadSettings(filepath.Join(root, "settings.json")); serr != nil && !errors.Is(serr, os.ErrNotExist) {
+		lg.Printf("settings: %v", serr)
 	}
 	hasState := true
 	if err := store.Load(filepath.Join(root, "state.json"), &h.state); err != nil {
@@ -225,7 +223,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 				go h.check(ds.Hash)
 			}
 			if kind == "rescan" {
-				go h.scan(h.a.Data().Rows)
+				go h.scan(h.a.Data().Rows, h.a.Data().Hash)
 			}
 			if kind == "prefetch" {
 				h.settings.Prefetch = arg == "on"
@@ -308,7 +306,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	}()
 
 	// card scan: cores, MRA presence, then alternatives
-	go h.scan(ds.Rows)
+	go h.scan(ds.Rows, ds.Hash)
 
 	// freshness: first check shortly after boot, then every 30 minutes;
 	// while the clock is unset (the first seconds after a cold boot, before
@@ -370,6 +368,10 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 		case r := <-h.scanCh:
 			first := h.index == nil
 			h.index, h.status, h.alts = r.index, r.status, r.alts
+			if ds := h.a.Data(); ds != nil && r.hash != ds.Hash {
+				// the data moved under the scan: redo the cheap part now
+				h.status = scan.Statuses(h.card, r.index, ds.Rows)
+			}
 			h.a.Refilter()
 			if first || r.notice != "" {
 				h.a.Notice(r.notice, 8*time.Second)
@@ -611,8 +613,12 @@ func (h *host) doLaunch() {
 		return
 	}
 	h.cleanup()
+	// tell the menu watcher this exit is a launch, not a quit: it must not
+	// put the menu back over the game
+	os.WriteFile(filepath.Join(h.root, "launched"), []byte(abs+"\n"), 0644)
 	if err := h.cmd.Send("load_core " + abs); err != nil {
 		h.lg.Printf("launch: %v", err)
+		os.Remove(filepath.Join(h.root, "launched"))
 	}
 	h.lg.Printf("launched %s", abs)
 }
@@ -685,9 +691,8 @@ func (h *host) check(current string) {
 	}
 	cache := filepath.Join(h.root, "cache")
 	if err := store.WriteAtomic(filepath.Join(cache, "data.json"), fr.RawData); err != nil {
-		h.lg.Printf("cache: %v", err)
-	}
-	if err := store.WriteAtomic(filepath.Join(cache, "meta.json"), fr.RawMeta); err != nil {
+		h.lg.Printf("cache: %v (meta.json left as it was)", err)
+	} else if err := store.WriteAtomic(filepath.Join(cache, "meta.json"), fr.RawMeta); err != nil {
 		h.lg.Printf("cache: %v", err)
 	}
 	h.lg.Printf("check: new data %.8s, %d rows", fr.Meta.Hash, len(fr.Rows))
@@ -715,13 +720,14 @@ func (h *host) swap(fr fetch.Fresh) {
 type scanResult struct {
 	index  *scan.Index
 	status []data.Status
+	hash   string // the dataset the statuses index into
 	alts   []scan.Alt
 	notice string
 }
 
 // scan reads the card off the UI goroutine: cores and MRA stats first (fast),
 // alternatives after (slow the first time).
-func (h *host) scan(rows []data.Row) {
+func (h *host) scan(rows []data.Row, hash string) {
 	t0 := time.Now()
 	idx := scan.ScanCores(h.card)
 	st := scan.Statuses(h.card, idx, rows)
@@ -731,11 +737,11 @@ func (h *host) scan(rows []data.Row) {
 	}
 	h.lg.Printf("scan: %d cores; current %d, outdated %d, undated %d, not found %d (%v)", len(idx.Cores),
 		counts[data.StatusCurrent], counts[data.StatusOutdated], counts[data.StatusFoundUndated], counts[data.StatusNotFound], time.Since(t0).Round(time.Millisecond))
-	h.scanCh <- scanResult{index: idx, status: st, alts: h.alts, notice: fmt.Sprintf("card: %d current, %d older, %d not found", counts[data.StatusCurrent], counts[data.StatusOutdated], counts[data.StatusNotFound])}
+	h.scanCh <- scanResult{index: idx, status: st, hash: hash, alts: h.alts, notice: fmt.Sprintf("card: %d current, %d older, %d not found", counts[data.StatusCurrent], counts[data.StatusOutdated], counts[data.StatusNotFound])}
 	t1 := time.Now()
 	alts := scan.ScanAlternatives(h.card, filepath.Join(h.root, "cache", "alts.json"))
 	h.lg.Printf("scan: %d alternatives (%v)", len(alts), time.Since(t1).Round(time.Millisecond))
-	h.scanCh <- scanResult{index: idx, status: st, alts: alts}
+	h.scanCh <- scanResult{index: idx, status: st, hash: hash, alts: alts}
 }
 
 // screenshot saves the logical canvas (F12 on a keyboard).

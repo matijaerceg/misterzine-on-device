@@ -3,3 +3,4 @@ out/
 *.exe
 *.png.tmp
 /misterzine
+.claude/

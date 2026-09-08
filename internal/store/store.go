@@ -30,10 +30,33 @@ func DefaultSettings() Settings {
 	return Settings{Schema: 1, Rotation: "auto", Inset: 15, InsetX: 15, InsetY: 15, Scroll: "30"}
 }
 
+// LoadSettings reads path over the defaults and migrates older files.
+func LoadSettings(path string) (Settings, error) {
+	s := DefaultSettings()
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return s, err
+	}
+	if err := json.Unmarshal(b, &s); err != nil {
+		bad := path + ".bad"
+		os.Rename(path, bad)
+		return DefaultSettings(), fmt.Errorf("%s: %w (moved to %s)", filepath.Base(path), err, filepath.Base(bad))
+	}
+	// a file from before the two-axis inset carries only "inset"
+	var probe struct {
+		X *int `json:"inset_x"`
+		Y *int `json:"inset_y"`
+	}
+	json.Unmarshal(b, &probe)
+	s.Migrate(probe.X == nil && probe.Y == nil)
+	return s, nil
+}
+
 // Migrate brings an older settings file up to date: the single inset
-// becomes two, and the speed adjectives become rows per second.
-func (s *Settings) Migrate() {
-	if s.InsetX == 0 && s.InsetY == 0 {
+// becomes two (when legacy says the file predates the split), and the
+// speed adjectives become rows per second.
+func (s *Settings) Migrate(legacy bool) {
+	if legacy {
 		s.InsetX, s.InsetY = s.Inset, s.Inset
 	}
 	switch s.Scroll {
