@@ -22,7 +22,8 @@ it is not a list of unrelated website work.
 - **DE10 long idle stability:** short transitions passed on latest Main
   and Menu; the user's comparable long-idle CRT result is still pending.
 - **Pi after Linux update:** the framebuffer compatibility build runs;
-  physical CRT confirmation remains pending in this conversation.
+  the user confirmed the Update All result screen is readable and stable
+  on the CRT. Longer idle observation remains separate from that check.
 - **Update All with visible feedback:** implemented as a dedicated screen,
   stage bar, live log, long-B cancellation and early restart ribbon. See
   [UPDATE_ALL_SCOPE.md](UPDATE_ALL_SCOPE.md) for validation and limits.
