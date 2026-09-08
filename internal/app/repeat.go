@@ -25,7 +25,7 @@ type repeater struct {
 const frameDur = 16667 * time.Microsecond
 
 const (
-	repeatDelay = 200 * time.Millisecond
+	repeatDelay = 320 * time.Millisecond // a tap held a little long is still one step
 	repeatSlow  = 48 * time.Millisecond
 	repeatMid   = 28 * time.Millisecond
 	repeatFast  = 16 * time.Millisecond

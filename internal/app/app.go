@@ -486,16 +486,10 @@ func (a *App) actList(k platform.Key) bool {
 			a.all = true
 		}
 		return true
-	case platform.KeyLeft: // like Main's menu: left/right page
-		a.cursor -= a.lay.Lines
-		if a.cursor < 0 {
-			a.cursor = 0
-		}
-	case platform.KeyRight:
-		a.cursor += a.lay.Lines
-		if a.cursor > n-1 {
-			a.cursor = n - 1
-		}
+	case platform.KeyLeft: // the bottom row of the previous page
+		a.pageTo(a.top-1, -1)
+	case platform.KeyRight: // the top row of the next page
+		a.pageTo(a.top+a.lay.Lines, 1)
 	case platform.KeyBack:
 		// B is never an exit: the pad's menu button and Settings > Quit are
 		a.Notice("to leave: the pad's menu button, or Settings > Quit", 3*time.Second)
@@ -509,6 +503,46 @@ func (a *App) actList(k platform.Key) bool {
 	a.ensureVisible()
 	a.all = true
 	return true
+}
+
+// pageTo moves the cursor to the row on screen line target (or the next
+// row in direction dir when that line is a marker) and scrolls so that row
+// sits at the top (dir > 0) or the bottom (dir < 0) of the screen.
+func (a *App) pageTo(target, dir int) {
+	n := len(a.view)
+	if n == 0 {
+		return
+	}
+	pos := a.cursor
+	if dir > 0 {
+		pos = n - 1
+		for i := a.cursor; i < n; i++ {
+			if a.screenLine(i) >= target {
+				pos = i
+				break
+			}
+		}
+	} else {
+		pos = 0
+		for i := a.cursor; i >= 0; i-- {
+			if a.screenLine(i) <= target {
+				pos = i
+				break
+			}
+		}
+	}
+	a.cursor = pos
+	if dir > 0 {
+		a.top = a.screenLine(pos)
+	} else {
+		a.top = a.screenLine(pos) - a.lay.Lines + 1
+	}
+	if a.top > a.totalLines()-a.lay.Lines {
+		a.top = a.totalLines() - a.lay.Lines
+	}
+	if a.top < 0 {
+		a.top = 0
+	}
 }
 
 // current returns the row under the cursor, nil when the view is empty.

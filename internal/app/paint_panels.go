@@ -346,15 +346,22 @@ func (a *App) actPanel(k platform.Key) bool {
 		if a.screen == ScreenSettings {
 			return a.stepValue(-1)
 		}
-		// a page up, landing on the nearest selectable entry
-		target := p.cursor - max(p.lines, 1)
-		p.cursor = p.nearest(target, selectable)
+		// the last entry of the previous page, shown at the bottom
+		p.cursor = p.nearest(p.top-1, selectable)
+		p.top = p.cursor - max(p.lines, 1) + 1
+		if p.top < 0 {
+			p.top = 0
+		}
 	case platform.KeyRight:
 		if a.screen == ScreenSettings {
 			return a.stepValue(1)
 		}
-		target := p.cursor + max(p.lines, 1)
-		p.cursor = p.nearest(target, selectable)
+		// the first entry of the next page, shown at the top
+		p.cursor = p.nearest(p.top+max(p.lines, 1), selectable)
+		p.top = p.cursor
+		if p.top > n-max(p.lines, 1) {
+			p.top = max(n-max(p.lines, 1), 0)
+		}
 	case platform.KeyPageUp, platform.KeyHome:
 		for i := 0; i < n; i++ {
 			if selectable(i) {

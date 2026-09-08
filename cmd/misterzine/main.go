@@ -258,7 +258,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	// no filters; only the last-look baseline and favorites carry over
 	_ = hasState
 	h.a.SetNet(h.netLabel(ds))
-	if ini.Found && !ini.AnalogVisible() {
+	if ini.Found && !ini.AnalogVisible() && !hasState { // first run only: HDMI users need nothing
 		h.a.Notice("CRT only? add direct_video=1 under [Menu], see README", 20*time.Second)
 	}
 	h.present()

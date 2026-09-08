@@ -63,7 +63,12 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 		if val == "" {
 			return
 		}
-		L = append(L, paneLine{label + ": " + data.ASCII(val), col})
+		// labels padded so the values line up
+		label += ":"
+		for len(label) < 10 {
+			label += " "
+		}
+		L = append(L, paneLine{label + data.ASCII(val), col})
 	}
 	fg, mu := gen.Eva.Fg, gen.Eva.Muted
 	prov := func(f string) rgb {
@@ -81,7 +86,7 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 	if a.cfg.Status != nil {
 		st := a.status(i)
 		_, sc := statusGlyph(st)
-		L = append(L, paneLine{"Card: " + statusText(st, ""), sc})
+		L = append(L, paneLine{"Card:     " + statusText(st, ""), sc})
 	}
 	if row.Rot != "" {
 		add("Rotation", row.Rot, prov("rot"))
@@ -90,7 +95,9 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 		}
 	}
 	L = append(L, paneLine{"", fg})
-	add("Type", d.TypeLabel, typeHue(row.Base))
+	if !row.IsArcade() {
+		add("Type", d.TypeLabel, typeHue(row.Base))
+	}
 	add("Genre", row.Genre, fg)
 	add("Maker", row.Manufacturer, fg)
 	if row.Core != "" {
@@ -119,7 +126,6 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 	add("Flip", row.Flip, fg)
 	add("Commit", row.Act+rel(row.Act), mu)
 	add("Source", data.SrcFull(row.Src), fg)
-	add("Repo", row.Repo, mu)
 	if row.Deprecated {
 		add("Status", "deprecated", gen.Eva.Danger)
 	}
@@ -154,18 +160,25 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 		c.Text(body.Min.X, y, a.sm, gfx.Fit(strings.Join(ch, "  "), a.sm.Cols(body.Dx())), gen.Eva.Warn)
 		y += a.sm.H + 2
 	}
-	// shots strip
+	y += 4 // breathing room before the pictures
+	// shots strip: in horizontal the pictures share the row; in tate they
+	// are narrow, so each takes its own width and they pack from the left
 	stripH := 54
 	if !l.Portrait {
 		stripH = 72
 	}
 	slots := shotSlots(row)
 	if len(slots) > 0 {
-		bw := (body.Dx() - (len(slots)-1)*3) / len(slots)
+		bw := (body.Dx() - (len(slots)-1)*4) / len(slots)
 		if bw > 96 {
 			bw = 96
 		}
 		bh := stripH
+		if l.Portrait && row.ImgW > 0 && row.ImgH > 0 {
+			if fw, _ := fitBox(row.ImgW, row.ImgH, bw, bh); fw > 0 {
+				bw = fw
+			}
+		}
 		x := body.Min.X
 		for _, s := range slots {
 			box := image.Rect(x, y, x+bw, y+bh)
@@ -174,9 +187,9 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 				key = row.Core
 			}
 			a.paintImageBox(c, box, key, s)
-			x += bw + 3
+			x += bw + 4
 		}
-		y += bh + 3
+		y += bh + 4
 	}
 	// spec lines, scrollable
 	lines := a.detailLines(row, d, i)
