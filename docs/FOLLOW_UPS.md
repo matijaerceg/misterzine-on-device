@@ -25,14 +25,14 @@ it is not a list of unrelated website work.
   its regression tests also passed on MiSTer Pi.
   Batch 2 (`2c9389a`) protects favorites after read errors and fixes the
   Options label to "Quit MisterZine". The user confirmed it passes.
-  Batch 3 fixes disabling the main-menu launcher from inside its app:
-  preserve the owning watcher until return to Menu, remove the MGL, stop
-  after the session if still disabled, and write boot-hook changes safely.
-  User acceptance is pending: turn the launcher off, quit, check Menu and
-  the absent entry; reopen via Scripts, turn it on, and check the entry.
-  Parent/child process and boot-file regression tests passed on both MiSTers.
-  Also cover off then on before quitting. Do not start batch 4 before
-  the user tests batch 3.
+  Batch 3 (`967dcdf`) fixes disabling and re-enabling the main-menu launcher.
+  Device checks and the user's test passed.
+  Batch 4 preserves the selected game version and details scroll position
+  when returning from artwork. User acceptance is pending: choose an installed
+  alternative, view artwork with A, return with B, and check the same version
+  remains selected before launching it. Also check details scroll position.
+  Regression tests passed on both devices for B/A/X returns in all rotations.
+  Do not start batch 5 before the user tests batch 4.
 - **DE10 long idle stability:** short transitions passed on latest Main
   and Menu; the user's comparable long-idle CRT result is still pending.
 - **Pi after Linux update:** the framebuffer compatibility build runs;

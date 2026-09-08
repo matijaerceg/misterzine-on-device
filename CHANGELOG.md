@@ -2,6 +2,8 @@
 
 ## v0.2.2
 
+- Returning from artwork keeps the selected game version and details scroll
+  position, so Start still launches the version picked before viewing a shot.
 - Turning the main-menu launcher off keeps the current session's helper
   alive until it returns to Menu, then stops it. Off removes the menu entry;
   checking launcher status no longer recreates it. Boot-hook changes use a
