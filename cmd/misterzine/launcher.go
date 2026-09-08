@@ -20,8 +20,9 @@ import (
 // The menu launcher. Main's core browser only lists cores and MGL files, and
 // sorgelig will not add script entries to it (Main issue #664), so the app
 // gets there the way he suggested for TapTo: a resident helper. The database
-// ships misterzine.mgl at the card root; picking it reloads the menu core
-// with the setname "misterzine", which Main writes to /tmp/CORENAME. The
+// ships MisterZine.mgl at the card root (the menu shows the file name);
+// picking it reloads the menu core with the setname "misterzine", which
+// Main writes to /tmp/CORENAME. The
 // watcher sees that, opens the framebuffer console the way Main's own
 // Scripts entry does (F9 from a virtual keyboard, then tty2, where Main
 // ignores OSD keys), runs the app there, and reloads the plain menu when it
@@ -31,7 +32,7 @@ const (
 	startupScript = "/media/fat/linux/user-startup.sh"
 	startupMark   = "# misterzine"
 	startupLine   = "[[ -e /media/fat/misterzine/misterzine ]] && /media/fat/misterzine/misterzine launcher start"
-	mglPath       = "/media/fat/misterzine.mgl"
+	mglPath       = "/media/fat/MisterZine.mgl"
 	mglBody       = "<mistergamedescription>\n\t<rbf>menu</rbf>\n\t<setname>misterzine</setname>\n</mistergamedescription>\n"
 	pidFile       = "/media/fat/misterzine/watch.pid"
 	watchLog      = "/media/fat/misterzine/watch.log"
@@ -52,6 +53,7 @@ func launcherCmd(args []string) int {
 		launcherStop()
 		return 0
 	case "status":
+		ensureMGL()
 		fmt.Printf("enabled=%v running=%v mgl=%v\n", launcherEnabled(), watcherPID() > 0, fileExists(mglPath))
 		return 0
 	case "enable":
@@ -79,12 +81,44 @@ func launcherEnabled() bool {
 	return err == nil && strings.Contains(string(b), startupLine)
 }
 
+// ensureMGL makes sure the MGL exists under its proper name. The card is
+// case-insensitive, so an older lowercase file answers to the new name too
+// and would keep the menu entry lowercase; it is renamed. Downloader may
+// also have removed the old path after installing the new one (same file on
+// this filesystem), in which case the MGL is written back.
+func ensureMGL() error {
+	dir, base := filepath.Split(mglPath)
+	if ents, err := os.ReadDir(dir); err == nil {
+		exact := false
+		for _, e := range ents {
+			if e.Name() == base {
+				exact = true
+			}
+		}
+		if !exact {
+			for _, e := range ents {
+				if !e.IsDir() && strings.EqualFold(e.Name(), base) {
+					// a case-only rename is a no-op on exFAT: go through a temp name
+					tmp := mglPath + ".tmp"
+					if err := os.Rename(filepath.Join(dir, e.Name()), tmp); err == nil {
+						if err := os.Rename(tmp, mglPath); err == nil {
+							return nil
+						}
+					}
+				}
+			}
+		}
+		if exact {
+			return nil
+		}
+	}
+	return os.WriteFile(mglPath, []byte(mglBody), 0644)
+}
+
 // launcherEnable adds the boot block and makes sure the MGL exists.
 func launcherEnable() error {
-	if !fileExists(mglPath) {
-		if err := os.WriteFile(mglPath, []byte(mglBody), 0644); err != nil {
-			return err
-		}
+	if err := ensureMGL(); err != nil {
+		return err
 	}
 	if launcherEnabled() {
 		return nil
@@ -141,6 +175,9 @@ func watcherPID() int {
 
 // launcherStart spawns the watcher detached, once.
 func launcherStart() int {
+	if launcherEnabled() {
+		ensureMGL()
+	}
 	if watcherPID() > 0 {
 		return 0
 	}
@@ -197,6 +234,7 @@ func watch() int {
 		if err := runFromMenu(lg, kbd); err != nil {
 			lg.Printf("watch: %v", err)
 		}
+		ensureMGL()
 		// back to a plain menu: resets CORENAME so this does not retrigger
 		if f, err := os.OpenFile("/dev/MiSTer_cmd", os.O_WRONLY|syscall.O_NONBLOCK, 0); err == nil {
 			f.WriteString("load_core /media/fat/menu.rbf\n")

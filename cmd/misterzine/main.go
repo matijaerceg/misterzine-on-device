@@ -56,6 +56,7 @@ type host struct {
 	quit       chan struct{}
 	launch     string
 	dirty      bool // state needs saving
+	slowLog    time.Time
 	favDirty   bool
 	setDirty   bool
 	clock      platform.Clock
@@ -342,6 +343,9 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 			h.img.SetOffline(s == "offline")
 		case <-h.img.Ready():
 			h.a.Invalidate()
+			if h.a.Repeating() {
+				continue // the next repeat frame paints it; scrolling comes first
+			}
 		case r := <-h.scanCh:
 			first := h.index == nil
 			h.index, h.status, h.alts = r.index, r.status, r.alts
@@ -397,9 +401,15 @@ func (h *host) runOnUI(f func()) {
 }
 
 func (h *host) present() {
+	t0 := time.Now()
 	frame, dirty := h.a.Paint()
 	if dirty != nil {
+		t1 := time.Now()
 		h.fb.Present(frame, dirty)
+		if d := time.Since(t0); d > 40*time.Millisecond && time.Since(h.slowLog) > 5*time.Second {
+			h.slowLog = time.Now()
+			h.lg.Printf("slow frame: paint %s, present %s", t1.Sub(t0).Round(time.Millisecond), time.Since(t1).Round(time.Millisecond))
+		}
 	}
 }
 

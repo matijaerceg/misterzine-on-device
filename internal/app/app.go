@@ -359,12 +359,12 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 		switch k {
 		case platform.KeyUp, platform.KeyDown:
 			return accel(a.cfg.Scroll, count)
-		case platform.KeyPageUp, platform.KeyPageDown:
+		case platform.KeyPageUp, platform.KeyPageDown, platform.KeyLeft, platform.KeyRight:
 			return repeatPage
 		}
 	case ScreenShot:
 		switch k {
-		case platform.KeyLeft, platform.KeyRight, platform.KeyUp, platform.KeyDown:
+		case platform.KeyLeft, platform.KeyRight:
 			return repeatStep
 		}
 	case ScreenDetails:
@@ -393,7 +393,11 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 // Tick runs due repeats and expires notices; returns true to repaint.
 func (a *App) Tick(now time.Time) bool {
 	changed := false
-	if k := a.rep.due(now, a.repeatStep); k != platform.KeyNone {
+	for i := 0; i < 4; i++ { // catch up on late repeats, a few per tick at most
+		k := a.rep.due(now, a.repeatStep)
+		if k == platform.KeyNone {
+			break
+		}
 		if a.act(k) {
 			changed = true
 		}
@@ -476,16 +480,19 @@ func (a *App) actList(k platform.Key) bool {
 			a.all = true
 		}
 		return true
-	case platform.KeyRight:
-		if n > 0 {
-			a.screen = ScreenShot
-			a.pickSlot()
-			a.all = true
+	case platform.KeyLeft: // like Main's menu: left/right page
+		a.cursor -= a.lay.Lines
+		if a.cursor < 0 {
+			a.cursor = 0
 		}
-		return true
+	case platform.KeyRight:
+		a.cursor += a.lay.Lines
+		if a.cursor > n-1 {
+			a.cursor = n - 1
+		}
 	case platform.KeyBack:
 		// B is never an exit: the pad's menu button and Settings > Quit are
-		a.Notice("menu button or Settings > Quit leaves the app", 3*time.Second)
+		a.Notice("to leave: the pad's menu button, or Settings > Quit", 3*time.Second)
 		return true
 	default:
 		return false
@@ -528,6 +535,11 @@ func (a *App) Refilter() {
 // Invalidate forces a full repaint on the next Paint (a picture landed,
 // a scan finished).
 func (a *App) Invalidate() { a.all = true }
+
+// Repeating reports whether a held key is driving repeats right now; the
+// host then lets pictures wait for the next repeat frame instead of painting
+// them at once, so scrolling never yields to image traffic.
+func (a *App) Repeating() bool { return a.rep.held }
 
 // want records a picture this frame needs; the list goes to the provider
 // once per paint, in the order the views asked, so the cursor's pane image

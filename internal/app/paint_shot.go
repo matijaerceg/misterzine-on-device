@@ -78,20 +78,10 @@ func (a *App) shotArea() image.Rectangle {
 
 func (a *App) actShot(k platform.Key) bool {
 	switch k {
-	case platform.KeyBack:
-		a.screen = ScreenList
-	case platform.KeyUp:
-		if a.cursor > 0 {
-			a.cursor--
-			a.pickSlot()
-			a.ensureVisible()
-		}
-	case platform.KeyDown:
-		if a.cursor < len(a.view)-1 {
-			a.cursor++
-			a.pickSlot()
-			a.ensureVisible()
-		}
+	case platform.KeyBack, platform.KeyEnter, platform.KeyTab:
+		// a leaf view: every way out goes back to the details it came from
+		a.screen = ScreenDetails
+		a.detail = detailState{from: ScreenList}
 	case platform.KeyLeft, platform.KeyRight:
 		row, _, _ := a.current()
 		if row != nil {
@@ -105,9 +95,6 @@ func (a *App) actShot(k platform.Key) bool {
 				a.slotName = shotSlots(row)[a.slot]
 			}
 		}
-	case platform.KeyEnter:
-		a.screen = ScreenDetails
-		a.detail = detailState{from: ScreenShot}
 	default:
 		return false
 	}

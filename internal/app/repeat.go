@@ -52,7 +52,13 @@ func (r *repeater) due(now time.Time, step func(platform.Key, int) time.Duration
 		r.held = false
 		return platform.KeyNone
 	}
-	r.next = now.Add(d)
+	// anchor to the schedule, not to when the loop got round to it, so the
+	// average rate is exact; after a long stall (a data swap) restart from now
+	if now.Sub(r.next) > 4*d {
+		r.next = now.Add(d)
+	} else {
+		r.next = r.next.Add(d)
+	}
 	return r.key
 }
 

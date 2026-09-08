@@ -31,10 +31,10 @@ main menu, Scripts, misterzine.
 ### Put it in the main menu
 
 Once, from the app: X, Settings, "Main menu launcher", A. From then on a
-"misterzine" entry sits in the main menu next to Arcade, Console and the
+"MisterZine" entry sits in the main menu next to Arcade, Console and the
 rest, and picking it opens the app; no Scripts menu.
 
-How it works: the database ships `misterzine.mgl` at the card root, an MGL
+How it works: the database ships `MisterZine.mgl` at the card root, an MGL
 that reloads the menu core under the name "misterzine". A small resident
 helper (started from `/media/fat/linux/user-startup.sh`, the same way the
 Remote and Zaparoo services start) sees that name appear, opens the
@@ -74,14 +74,14 @@ MiSTer turns the gamepad into these keys while a script runs.
 
 | Pad | Key | List | Details | Screen | Filters |
 |---|---|---|---|---|---|
-| D-pad up/down | arrows | move (hold to fly) | pick launch target | previous/next row | move |
-| D-pad left/right | arrows | open shots (right) | previous/next row | previous/next shot | jump section |
+| D-pad up/down | arrows | move (hold to fly) | pick launch target | | move |
+| D-pad left/right | arrows | page | previous/next row | previous/next shot | jump section |
 | L / R | PageUp/Down | page | scroll info | | page |
-| A | Enter | details | launch | details | toggle |
-| B | Esc | quit | back | back | close |
+| A | Enter | details | launch | back to details | toggle |
+| B | Esc | | back | back to details | close |
 | Menu | | back to the MiSTer menu (the app closes) | | | |
 | Y | Space | sort: updated/debut | favorite | | toggle |
-| X | Tab | filters and settings | | | close |
+| X | Tab | filters and settings | shots | | close |
 
 The list shows one row per line: favorite star, title, card status, date.
 Status glyphs: `+` current build on the card, `^` older build, `~` on the

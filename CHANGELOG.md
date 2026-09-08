@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.2.2
+
+- The main menu entry is "MisterZine" (the MGL is MisterZine.mgl; an older
+  lowercase file is renamed on the next boot or launcher start).
+- Left/Right page the list like Main's menu. Shots open from details with X
+  and go back to details; details still walk rows with Left/Right.
+- Held scrolling keeps its rate whatever a frame costs: repeats are anchored
+  to the schedule and catch up, and pictures that land mid-scroll wait for
+  the next scroll frame instead of painting at once.
+- Scroll speed setting (normal / fast / turbo), help text under every
+  setting, coloured button hints, Input test screen, Quit item; B never
+  exits.
+
 ## v0.2.1
 
 - The pad's menu button returns to the MiSTer menu cleanly: the app notices

@@ -243,9 +243,9 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 		y += lh
 	}
 	if l.Portrait {
-		a.paintHint(c, "A launch  Y fav  </> next  L/R info  B back")
+		a.paintHint(c, "A launch  X shots  Y fav  </> next  B back")
 	} else {
-		a.paintHint(c, "A launch  Y fav  </> next row  U/D pick  L/R info  B back")
+		a.paintHint(c, "A launch  X shots  Y fav  </> next row  U/D pick  B back")
 	}
 }
 
@@ -293,11 +293,10 @@ func (a *App) actDetails(k platform.Key) bool {
 	}
 	switch k {
 	case platform.KeyBack:
-		if a.detail.from == ScreenShot {
-			a.screen = ScreenShot
-		} else {
-			a.screen = ScreenList
-		}
+		a.screen = ScreenList
+	case platform.KeyTab:
+		a.screen = ScreenShot
+		a.pickSlot()
 	case platform.KeyUp:
 		if a.detail.pick > 0 {
 			a.detail.pick--

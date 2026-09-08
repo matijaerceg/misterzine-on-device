@@ -18,9 +18,9 @@ func (a *App) paintList(c *gfx.Canvas) {
 	a.paintRows(c)
 	a.paintPane(c)
 	if a.lay.Portrait {
-		a.paintHint(c, "A info  > shots  Y sort  X filters+settings")
+		a.paintHint(c, "</> page  Y sort  X filters+settings")
 	} else {
-		a.paintHint(c, "A details  > shots  Y sort  X filters and settings")
+		a.paintHint(c, "</> page  Y sort  X filters and settings")
 	}
 }
 
@@ -28,19 +28,24 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 	l := &a.lay
 	c.Fill(l.Status, gen.Eva.Surface)
 	y := l.Status.Min.Y + 2
-	left := a.mode.String()
+	left := "by latest update"
+	if a.mode == data.SortDebut {
+		left = "by MiSTer debut"
+	}
 	if a.filters.Active() {
 		left += "  " + itoa(len(a.view)) + " of " + itoa(len(a.ds.Rows)) + " releases"
 	} else {
 		left += "  " + itoa(len(a.ds.Rows)) + " releases"
 	}
-	c.Text(l.Status.Min.X+2, y, a.sm, left, gen.Eva.Accent)
-	right := a.net
 	if a.notice != "" {
-		right = a.notice
+		// a notice takes the whole line while it shows; the right half alone
+		// is 27 characters and cut most of them off
+		c.Text(l.Status.Min.X+2, y, a.sm, gfx.Fit(a.notice, a.sm.Cols(l.Status.Dx()-4)), gen.Eva.Fg)
+		return
 	}
-	if right != "" {
-		c.TextRight(l.Status.Max.X-2, y, a.sm, gfx.Fit(right, a.sm.Cols(l.Status.Dx()-a.sm.Width(left)-8)), gen.Eva.Fg)
+	c.Text(l.Status.Min.X+2, y, a.sm, left, gen.Eva.Accent)
+	if a.net != "" {
+		c.TextRight(l.Status.Max.X-2, y, a.sm, gfx.Fit(a.net, a.sm.Cols(l.Status.Dx()-a.sm.Width(left)-8)), gen.Eva.Fg)
 	}
 }
 
@@ -87,7 +92,12 @@ func (a *App) paintRows(c *gfx.Canvas) {
 		r := l.lineRect(n)
 		switch {
 		case a.topMark && line == 0:
-			a.paintMarker(c, r, "nothing new since "+a.seen.Label(a.cfg.Now(), a.cfg.ClockTrusted))
+			// short: the list column is 36 characters wide
+			ago := data.VisitAgo(a.cfg.Now(), a.seen.BaseTime, a.cfg.ClockTrusted)
+			if ago == "" {
+				ago = "your last look"
+			}
+			a.paintMarker(c, r, "nothing new since "+ago)
 		case a.split >= 0 && line == a.screenLine(a.split)+1:
 			a.paintMarker(c, r, a.seen.Label(a.cfg.Now(), a.cfg.ClockTrusted))
 		default:
