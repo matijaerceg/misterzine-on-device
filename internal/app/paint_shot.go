@@ -20,7 +20,7 @@ func (a *App) paintShot(c *gfx.Canvas) {
 		return
 	}
 	slots := shotSlots(row)
-	area := image.Rect(l.Root.Min.X, l.Root.Min.Y, l.Root.Max.X, l.Root.Max.Y-statusH)
+	area := a.shotArea()
 	cap := image.Rect(l.Root.Min.X, area.Max.Y, l.Root.Max.X, l.Root.Max.Y)
 	c.Fill(area, gen.Eva.Bg)
 	if len(slots) == 0 {
@@ -37,7 +37,7 @@ func (a *App) paintShot(c *gfx.Canvas) {
 		req := ImageReq{Key: key, Slot: slot, W: area.Dx(), H: area.Dy()}
 		img, st := a.cfg.Images.Get(req)
 		if img == nil {
-			a.cfg.Images.Want([]ImageReq{req})
+			a.want(req)
 			text := "loading"
 			if st == ImageMissing {
 				text = "no shot"
@@ -67,6 +67,13 @@ func (a *App) paintShot(c *gfx.Canvas) {
 	rw := a.sm.Width(right)
 	c.TextRight(cap.Max.X-2, cap.Min.Y+2, a.sm, right, gen.Eva.Muted)
 	c.Text(cap.Min.X+2, cap.Min.Y+2, a.sm, gfx.Fit(d.Title, a.sm.Cols(cap.Dx()-rw-6)), gen.Eva.Fg)
+}
+
+// shotArea is the picture area of the screen view: the safe area above the
+// caption band.
+func (a *App) shotArea() image.Rectangle {
+	l := &a.lay
+	return image.Rect(l.Root.Min.X, l.Root.Min.Y, l.Root.Max.X, l.Root.Max.Y-statusH)
 }
 
 func (a *App) actShot(k platform.Key) bool {

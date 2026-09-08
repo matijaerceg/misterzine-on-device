@@ -232,7 +232,7 @@ func (a *App) paintThumb(c *gfx.Canvas, box image.Rectangle, row *data.Row) {
 	req := ImageReq{Key: key, Slot: slot, W: box.Dx() - 2, H: box.Dy() - 2}
 	img, st := a.cfg.Images.Get(req)
 	if img == nil {
-		a.cfg.Images.Want([]ImageReq{req})
+		a.want(req)
 		switch st {
 		case ImageLoading:
 			a.placeholder(c, box, "loading")

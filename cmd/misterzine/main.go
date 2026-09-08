@@ -26,6 +26,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/debugsrv"
 	"github.com/matijaerceg/misterzine-on-device/internal/fetch"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
+	"github.com/matijaerceg/misterzine-on-device/internal/images"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform/mister"
 	"github.com/matijaerceg/misterzine-on-device/internal/snapshot"
@@ -57,6 +58,7 @@ type host struct {
 	setDirty   bool
 	clock      platform.Clock
 	client     *fetch.Client
+	img        *images.Service
 	dataCh     chan fetch.Fresh
 	netCh      chan string
 }
@@ -164,11 +166,17 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	sig := make(chan os.Signal, 2)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
+	// pictures
+	h.client = fetch.NewClient(buildinfo.Version)
+	h.img = images.New(filepath.Join(root, "shots"), h.client, lg, 24<<20)
+	h.img.SetPrefetch(picsFor(ds), h.settings.Prefetch)
+
 	// app
 	favSet := h.favs.Set()
 	cfg := app.Config{
 		PhysW: canvasW, PhysH: canvasH, Rotation: rotation, SafeInset: h.settings.Inset,
-		Now: time.Now, ClockTrusted: trusted, Favorites: favSet,
+		Now: time.Now, ClockTrusted: trusted, Favorites: favSet, Images: h.img,
+		Progress:        func() (int, int) { return h.img.Progress() },
 		Launch:          func(target string) { h.launch = target; h.stop() },
 		Quit:            h.stop,
 		Version:         buildinfo.String(),
@@ -182,6 +190,10 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 			if kind == "prefetch" {
 				h.settings.Prefetch = arg == "on"
 				h.setDirty = true
+				h.img.SetPrefetch(picsFor(h.a.Data()), h.settings.Prefetch)
+			}
+			if kind == "clearimg" {
+				go h.img.ClearCache()
 			}
 		},
 	}
@@ -224,7 +236,6 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	}
 
 	// freshness: first check shortly after boot, then every 30 minutes
-	h.client = fetch.NewClient(buildinfo.Version)
 	go func() {
 		time.Sleep(300 * time.Millisecond)
 		h.check(ds.Hash)
@@ -283,6 +294,9 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 			h.swap(fr)
 		case s := <-h.netCh:
 			h.a.SetNet(s)
+			h.img.SetOffline(s == "offline")
+		case <-h.img.Ready():
+			h.a.Invalidate()
 		case <-tick:
 		}
 		h.a.Tick(time.Now())
@@ -382,6 +396,10 @@ func (h *host) saveAll(final bool) {
 
 // cleanup restores the machine; safe to call twice.
 func (h *host) cleanup() {
+	if h.img != nil {
+		h.img.Close()
+		h.img = nil
+	}
 	if h.input != nil {
 		h.input.Close()
 		h.input = nil
@@ -474,11 +492,33 @@ func (h *host) swap(fr fetch.Fresh) {
 	ds := data.Ingest(fr.Rows, fr.Meta.Hash, upd)
 	news := data.DiffNews(old, fr.Rows)
 	h.a.SetData(ds, nil)
+	h.img.SetPrefetch(picsFor(ds), h.settings.Prefetch)
 	h.a.SetNet(h.netLabel(ds))
 	if news != "" {
 		h.a.Notice(news, 12*time.Second)
 	}
 	h.dirty = true
+}
+
+// picsFor lists every picture the rows reference, newest updates first,
+// with the list thumbnail slot ahead of the others.
+func picsFor(ds *data.Dataset) []images.Pic {
+	var out []images.Pic
+	for _, i := range ds.Order(data.SortUpdated) {
+		r := &ds.Rows[i]
+		if r.Img != "" && len(r.ImgSlots) > 0 {
+			for _, want := range []string{"snap", "title", "ingame"} {
+				for _, s := range r.ImgSlots {
+					if s == want {
+						out = append(out, images.Pic{Key: r.Img, Slot: s})
+					}
+				}
+			}
+		} else if r.Core != "" && !r.IsArcade() {
+			out = append(out, images.Pic{Key: r.Core, Slot: "system"})
+		}
+	}
+	return out
 }
 
 func openLog(path string) *log.Logger {

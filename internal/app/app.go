@@ -55,6 +55,8 @@ type Config struct {
 	SettingsChanged func()
 	// Action asks the host for: prefetch (arg on/off), rescan, refresh, clearimg.
 	Action func(kind, arg string)
+	// Progress reports the picture prefetch state (files present, total).
+	Progress func() (have, total int)
 }
 
 // App is the state machine.
@@ -84,6 +86,7 @@ type App struct {
 	detail detailState
 	panel  panelState
 
+	wants  []ImageReq // pictures this frame asked for, in priority order
 	rep    repeater
 	down   map[platform.Key]bool // keys currently held, across all devices
 	notice string
@@ -494,6 +497,55 @@ func (a *App) status(i int) data.Status {
 	return a.cfg.Status(i)
 }
 
+// Invalidate forces a full repaint on the next Paint (a picture landed,
+// a scan finished).
+func (a *App) Invalidate() { a.all = true }
+
+// want records a picture this frame needs; the list goes to the provider
+// once per paint, in the order the views asked, so the cursor's pane image
+// comes before neighbours and prefetch.
+func (a *App) want(req ImageReq) {
+	for _, w := range a.wants {
+		if w == req {
+			return
+		}
+	}
+	a.wants = append(a.wants, req)
+}
+
+// neighbourhood asks for the pane thumbnails of the rows around the cursor
+// so scrolling finds them decoded already.
+func (a *App) neighbourhood() {
+	if a.screen != ScreenList && a.screen != ScreenShot {
+		return
+	}
+	box := a.lay.Thumb
+	for d := 1; d <= 8; d++ {
+		for _, pos := range []int{a.cursor + d, a.cursor - d} {
+			if pos < 0 || pos >= len(a.view) || (d > 4 && pos < a.cursor) {
+				continue
+			}
+			row := &a.ds.Rows[a.view[pos]]
+			if a.screen == ScreenShot {
+				slots := shotSlots(row)
+				if len(slots) > 0 {
+					key := row.Img
+					if slots[0] == "system" {
+						key = row.Core
+					}
+					area := a.shotArea()
+					a.want(ImageReq{Key: key, Slot: slots[0], W: area.Dx(), H: area.Dy()})
+				}
+				continue
+			}
+			key, slot := thumbSlot(row)
+			if key != "" {
+				a.want(ImageReq{Key: key, Slot: slot, W: box.Dx() - 2, H: box.Dy() - 2})
+			}
+		}
+	}
+}
+
 // Paint renders whatever changed and returns the physical frame with the
 // rectangles that need presenting (nil when nothing changed).
 func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
@@ -501,6 +553,7 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 		return a.physical, nil
 	}
 	a.all = false
+	a.wants = a.wants[:0]
 	c := a.logical
 	c.Fill(c.Rect, gen.Eva.Bg)
 	switch a.screen {
@@ -516,6 +569,8 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 	case ScreenCalibrate:
 		a.paintCalibrate(c)
 	}
+	a.neighbourhood()
+	a.cfg.Images.Want(a.wants)
 	dirty := c.TakeDirty()
 	var out []image.Rectangle
 	for _, r := range dirty {

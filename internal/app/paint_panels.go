@@ -138,7 +138,7 @@ func (a *App) settingsEntries() []panelEntry {
 		{text: "Settings", header: true},
 		{text: "Rotation: " + rot + "  (A cycles)", kind: "rotation"},
 		{text: "Safe zone: " + itoa(a.cfg.SafeInset) + " px  (A adjusts)", kind: "inset"},
-		{text: "Prefetch all shots: " + onOff(a.panel.prefetch), kind: "prefetch"},
+		{text: "Prefetch all shots: " + onOff(a.panel.prefetch) + a.progressText(), kind: "prefetch"},
 		{text: "Rescan card", kind: "rescan"},
 		{text: "Refresh data now", kind: "refresh"},
 		{text: "Clear image cache", kind: "clearimg"},
@@ -147,6 +147,17 @@ func (a *App) settingsEntries() []panelEntry {
 		{text: "data " + a.ds.Updated.Format("2006-01-02 15:04") + "  " + short(a.ds.Hash), header: true},
 		{text: "Back", kind: "back"},
 	}
+}
+
+func (a *App) progressText() string {
+	if a.cfg.Progress == nil {
+		return ""
+	}
+	have, total := a.cfg.Progress()
+	if total == 0 {
+		return ""
+	}
+	return "  " + itoa(have) + "/" + itoa(total) + " on card"
 }
 
 func onOff(b bool) string {

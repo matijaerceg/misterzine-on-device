@@ -24,6 +24,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/app"
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
+	"github.com/matijaerceg/misterzine-on-device/internal/images"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform/headless"
 )
@@ -41,6 +42,7 @@ func main() {
 	status := flag.String("status", "fake", "fake or unknown install statuses")
 	seenAge := flag.Duration("seen", 48*time.Hour, "pretend the last look was this long ago (0 = first run)")
 	logical := flag.Bool("logical", false, "save the unrotated logical canvas instead of the physical frame")
+	imgDir := flag.String("images", "../misterzine/docs/images", "directory laid out like the site's docs/images; empty = placeholders")
 	flag.Parse()
 
 	rows, meta := load(*dataPath, *metaPath)
@@ -75,6 +77,11 @@ func main() {
 			}
 			return nil
 		},
+	}
+	if *imgDir != "" {
+		if _, err := os.Stat(*imgDir); err == nil {
+			cfg.Images = images.NewLocal(*imgDir)
+		}
 	}
 	if *status == "fake" {
 		cfg.Status = func(i int) data.Status { return data.Status(1 + i%4) }

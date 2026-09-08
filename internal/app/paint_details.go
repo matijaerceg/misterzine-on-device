@@ -245,7 +245,7 @@ func (a *App) paintImageBox(c *gfx.Canvas, box image.Rectangle, key, slot string
 	req := ImageReq{Key: key, Slot: slot, W: box.Dx() - 2, H: box.Dy() - 2}
 	img, st := a.cfg.Images.Get(req)
 	if img == nil {
-		a.cfg.Images.Want([]ImageReq{req})
+		a.want(req)
 		text := "no shot"
 		if st == ImageLoading {
 			text = "loading"
