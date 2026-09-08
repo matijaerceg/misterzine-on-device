@@ -177,9 +177,6 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Delete the downloaded screenshots and system photos; they come back as you browse."},
 		{text: "Quit misterzine", kind: "quit",
 			help: "Back to the MiSTer menu. The pad's menu button does the same."},
-		{text: "", header: true, info: true},
-		{text: "misterzine " + a.cfg.Version, header: true, info: true},
-		{text: "data " + a.ds.Updated.Format("2006-01-02 15:04") + "  " + short(a.ds.Hash), header: true, info: true},
 	}
 }
 
@@ -238,13 +235,25 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 	}
 	box := l.Body
 	helpH := 0
+	helpLines := 4
 	if a.screen == ScreenOptions {
-		helpH = 4*(a.sm.H+1) + 3
+		if !l.Portrait {
+			helpLines = 3
+		}
+		helpH = helpLines*(a.sm.H+1) + 3
 	}
 	box.Max.Y -= helpH
 	c.Fill(l.Body, gen.Eva.Bg)
 	c.Box(box, gen.Eva.Line)
 	inner := box.Inset(2)
+	if a.screen == ScreenOptions {
+		// Keep build and data details visible even when the action list scrolls.
+		footerY := inner.Max.Y - 2*a.body.H
+		cols := a.body.Cols(inner.Dx() - 4)
+		c.Text(inner.Min.X+2, footerY, a.body, gfx.Fit("misterzine "+a.cfg.Version, cols), gen.Eva.Muted)
+		c.Text(inner.Min.X+2, footerY+a.body.H, a.body, gfx.Fit("data "+a.ds.Updated.Format("2006-01-02 15:04")+"  "+short(a.ds.Hash), cols), gen.Eva.Muted)
+		inner.Max.Y = footerY - 3
+	}
 	lh := a.body.H
 	lines := inner.Dy() / lh
 	p := &a.panel
@@ -309,10 +318,10 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 		y += lh
 	}
 	if a.screen == ScreenOptions {
-		// help for the selected item, wrapped to four small lines
+		// Horizontal uses three help lines; the narrower tate view keeps four.
 		if p.cursor < len(p.entries) && p.entries[p.cursor].help != "" {
 			hy := box.Max.Y + 2
-			for _, ln := range gfx.Wrap(p.entries[p.cursor].help, a.sm.Cols(l.Body.Dx()-4), 4) {
+			for _, ln := range gfx.Wrap(p.entries[p.cursor].help, a.sm.Cols(l.Body.Dx()-4), helpLines) {
 				c.Text(l.Body.Min.X+2, hy, a.sm, ln, gen.Eva.Fg)
 				hy += a.sm.H + 1
 			}
