@@ -43,7 +43,7 @@ func ParseBDF(data []byte) (*Font, error) {
 		case inBitmap && fields[0] == "ENDCHAR":
 			inBitmap = false
 			if enc >= 0 && enc < 128 {
-				f.glyphs[enc] = placeGlyph(rows, bbw, bbh, bbx, bby, fbw, fbh, descent)
+				f.glyphs[enc] = placeGlyph(rows, bbw, bbh, bbx-fbx, bby, fbw, fbh, descent)
 				f.has[enc] = true
 			}
 			enc = -1
@@ -82,7 +82,6 @@ func ParseBDF(data []byte) (*Font, error) {
 	if !haveFB || fbw <= 0 || fbw > 8 || fbh <= 0 {
 		return nil, fmt.Errorf("bdf: need a FONTBOUNDINGBOX up to 8 px wide, got %dx%d", fbw, fbh)
 	}
-	_ = fbx
 	f.W, f.H = fbw, fbh
 	if !f.has['?'] {
 		return nil, fmt.Errorf("bdf: font has no '?' glyph")
@@ -188,17 +187,15 @@ func (c *Canvas) TextRight(x, y int, f *Font, s string, col color.RGBA) int {
 }
 
 // Wrap breaks s into lines of at most cols cells on spaces, hard-breaking
-// words longer than a line. At most maxLines lines; the last one gets ".."
-// when text remains.
+// words longer than a line. At most maxLines lines; when text remains, the
+// last line is the rest of the text trimmed with "..".
 func Wrap(s string, cols, maxLines int) []string {
 	if cols <= 0 || maxLines <= 0 {
 		return nil
 	}
 	var lines []string
-	words := strings.Fields(s)
 	line := ""
-	for i := 0; i < len(words); i++ {
-		w := words[i]
+	for _, w := range strings.Fields(s) {
 		for len(w) > cols {
 			if line != "" {
 				lines = append(lines, line)
@@ -216,21 +213,13 @@ func Wrap(s string, cols, maxLines int) []string {
 			lines = append(lines, line)
 			line = w
 		}
-		if len(lines) >= maxLines {
-			rest := strings.Join(words[i+1:], " ")
-			if line != "" || rest != "" {
-				last := lines[maxLines-1]
-				lines = lines[:maxLines-1]
-				lines = append(lines, Fit(last+" "+strings.TrimSpace(line+" "+rest), cols))
-			}
-			return lines
-		}
 	}
 	if line != "" {
 		lines = append(lines, line)
 	}
 	if len(lines) > maxLines {
-		lines = lines[:maxLines]
+		rest := strings.Join(lines[maxLines-1:], " ")
+		lines = append(lines[:maxLines-1], Fit(rest, cols))
 	}
 	return lines
 }

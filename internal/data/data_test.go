@@ -236,7 +236,7 @@ func TestSeen(t *testing.T) {
 		t.Fatal("marker must be off under the debut sort")
 	}
 	// Untrusted clock: baseline kept, no age.
-	nt := InitSeen(&first.State, rows2, time.Time{}, false)
+	nt := InitSeen(&next.State, rows2, time.Time{}, false)
 	if nt.BaseRows == nil || nt.Label(time.Time{}, false) != "your last look" {
 		t.Fatal("untrusted clock handling wrong")
 	}

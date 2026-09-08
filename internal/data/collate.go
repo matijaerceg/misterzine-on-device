@@ -96,6 +96,13 @@ func Key(s string) []elem {
 	rs := []rune(s)
 	for i := 0; i < len(rs); i++ {
 		r := rs[i]
+		if r >= 0xFF10 && r <= 0xFF19 { // fullwidth digits
+			r = '0' + (r - 0xFF10)
+			rs[i] = r
+		}
+		if unicode.Is(unicode.Mn, r) { // combining marks carry no primary weight
+			continue
+		}
 		switch {
 		case r >= '0' && r <= '9':
 			j := i

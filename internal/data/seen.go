@@ -46,7 +46,9 @@ func rowMap(rows []Row) map[string]string {
 func InitSeen(stored *SeenRecord, rows []Row, now time.Time, clockTrusted bool) *Seen {
 	s := &Seen{}
 	if stored != nil {
-		sameVisit := false
+		// an untrusted clock cannot tell a quick return from a real one, so
+		// the baseline holds still (never advances wrongly)
+		sameVisit := !clockTrusted
 		if t, ok := ParseMetaTime(stored.T); ok && clockTrusted {
 			sameVisit = now.Sub(t) < SeenHold
 		}
@@ -121,7 +123,7 @@ func VisitAgo(now time.Time, iso string, clockTrusted bool) string {
 	if now.Sub(t) < 24*time.Hour {
 		return RelUpdated(now, t)
 	}
-	return RelAge(now, t.UTC().Format("2006-01-02"))
+	return RelAgeAt(now, t)
 }
 
 // Label is the marker text: "your last look, 2 days ago".

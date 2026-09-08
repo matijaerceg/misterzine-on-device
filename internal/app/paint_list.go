@@ -185,9 +185,11 @@ func (a *App) paintPane(c *gfx.Canvas) {
 			lines = append(lines, paneLine{d.Ctl, gen.Eva.Fg})
 		}
 	}
-	st := a.status(i)
-	_, sc := statusGlyph(st)
-	lines = append(lines, paneLine{statusText(st, ""), sc})
+	if a.cfg.Status != nil {
+		st := a.status(i)
+		_, sc := statusGlyph(st)
+		lines = append(lines, paneLine{statusText(st, ""), sc})
+	}
 	if ch := chips(row, d); len(ch) > 0 {
 		col := gen.Eva.Muted
 		for _, x := range ch {

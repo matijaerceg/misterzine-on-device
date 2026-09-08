@@ -120,6 +120,10 @@ func main() {
 			continue
 		}
 		f := strings.Fields(tok)
+		need := map[string]int{"shot": 2, "wait": 2, "hold": 3}[f[0]]
+		if len(f) < need {
+			die(fmt.Errorf("script: %q needs %d words", tok, need))
+		}
 		switch f[0] {
 		case "shot":
 			present()
@@ -173,6 +177,9 @@ func advance(a *app.App, clock time.Time, d time.Duration, present func()) time.
 	end := clock.Add(d)
 	for clock.Before(end) {
 		clock = clock.Add(10 * time.Millisecond)
+		if clock.After(end) {
+			clock = end
+		}
 		if a.Tick(clock) {
 			present()
 		}

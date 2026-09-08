@@ -1,0 +1,493 @@
+//go:build linux
+
+// misterzine is the device binary: it runs the app on the MiSTer's
+// framebuffer from the Scripts menu. See deploy/Scripts/misterzine.sh.
+package main
+
+import (
+	"bytes"
+	"context"
+	"errors"
+	"flag"
+	"fmt"
+	"image"
+	"log"
+	"os"
+	"os/signal"
+	"path/filepath"
+	"runtime/debug"
+	"strings"
+	"syscall"
+	"time"
+
+	"github.com/matijaerceg/misterzine-on-device/internal/app"
+	"github.com/matijaerceg/misterzine-on-device/internal/buildinfo"
+	"github.com/matijaerceg/misterzine-on-device/internal/data"
+	"github.com/matijaerceg/misterzine-on-device/internal/debugsrv"
+	"github.com/matijaerceg/misterzine-on-device/internal/fetch"
+	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
+	"github.com/matijaerceg/misterzine-on-device/internal/platform"
+	"github.com/matijaerceg/misterzine-on-device/internal/platform/mister"
+	"github.com/matijaerceg/misterzine-on-device/internal/snapshot"
+	"github.com/matijaerceg/misterzine-on-device/internal/store"
+)
+
+const (
+	canvasW, canvasH = 320, 240
+	logMax           = 1 << 20
+)
+
+type host struct {
+	root, card string
+	lg         *log.Logger
+	console    *mister.Console
+	cmd        *mister.Cmd
+	fb         *mister.FB
+	input      *mister.Input
+	a          *app.App
+	settings   store.Settings
+	state      store.State
+	favs       store.Favorites
+	events     chan platform.Event
+	uiRun      chan func()
+	quit       chan struct{}
+	launch     string
+	dirty      bool // state needs saving
+	favDirty   bool
+	setDirty   bool
+	clock      platform.Clock
+	client     *fetch.Client
+	dataCh     chan fetch.Fresh
+	netCh      chan string
+}
+
+func main() {
+	if len(os.Args) > 1 && os.Args[1] == "console-restore" {
+		mister.RestoreAll()
+		return
+	}
+	root := flag.String("root", "/media/fat/misterzine", "config directory")
+	card := flag.String("card", "/media/fat", "card root")
+	ini := flag.String("ini", "/media/fat/MiSTer.ini", "MiSTer.ini path")
+	debugAddr := flag.String("debug-http", "", "LAN debug server address, e.g. :8195")
+	version := flag.Bool("version", false, "print the version and exit")
+	flag.Parse()
+	if *version {
+		fmt.Println("misterzine " + buildinfo.String())
+		return
+	}
+	os.Exit(run(*root, *card, *ini, *debugAddr))
+}
+
+func run(root, card, iniPath, debugAddr string) (code int) {
+	os.MkdirAll(filepath.Join(root, "cache"), 0755)
+	lg := openLog(filepath.Join(root, "log.txt"))
+	lg.Printf("==== misterzine %s pid %d args %v", buildinfo.String(), os.Getpid(), os.Args[1:])
+	t0 := time.Now()
+	h := &host{root: root, card: card, lg: lg, events: make(chan platform.Event, 256), uiRun: make(chan func(), 8), quit: make(chan struct{}), dataCh: make(chan fetch.Fresh, 1), netCh: make(chan string, 4)}
+
+	// settings, state, favorites
+	h.settings = store.DefaultSettings()
+	if err := store.Load(filepath.Join(root, "settings.json"), &h.settings); err != nil && !errors.Is(err, os.ErrNotExist) {
+		lg.Printf("settings: %v", err)
+	}
+	hasState := true
+	if err := store.Load(filepath.Join(root, "state.json"), &h.state); err != nil {
+		hasState = false
+		if !errors.Is(err, os.ErrNotExist) {
+			lg.Printf("state: %v", err)
+		}
+	}
+	if err := store.Load(filepath.Join(root, "favorites.json"), &h.favs); err != nil && !errors.Is(err, os.ErrNotExist) {
+		lg.Printf("favorites: %v", err)
+	}
+
+	ini := mister.ReadIni(iniPath)
+	lg.Printf("ini: found=%v osd_rotate=%d direct_video=%d vga_scaler=%d fb_terminal=%d analog-visible=%v",
+		ini.Found, ini.OSDRotate, ini.DirectVideo, ini.VGAScaler, ini.FBTerminal, ini.AnalogVisible())
+	if ini.Found && !ini.AnalogVisible() {
+		lg.Printf("WARNING: the framebuffer cannot reach the analog port with this MiSTer.ini; on a CRT-only setup add direct_video=1 (or vga_scaler=1 + a 15 kHz video_mode) under a [Menu] section")
+	}
+	rotation := gfx.RotNone
+	switch h.settings.Rotation {
+	case "left":
+		rotation = gfx.RotLeft
+	case "right":
+		rotation = gfx.RotRight
+	case "off":
+	default: // auto
+		switch ini.OSDRotate {
+		case 1:
+			rotation = gfx.RotRight
+		case 2:
+			rotation = gfx.RotLeft
+		}
+	}
+
+	// data: cache, else the embedded snapshot
+	rows, meta, source := h.loadData()
+	upd, _ := data.ParseMetaTime(meta.Updated)
+	now := time.Now()
+	trusted := !upd.IsZero() && now.After(upd.Add(-24*time.Hour))
+	h.clock = platform.Clock{Now: time.Now, Trusted: trusted}
+	ds := data.Ingest(rows, meta.Hash, upd)
+	lg.Printf("data: %d rows from %s, hash %.8s, updated %s, clock trusted=%v (%v)", len(rows), source, meta.Hash, meta.Updated, trusted, time.Since(t0).Round(time.Millisecond))
+
+	// platform
+	var err error
+	if h.console, err = mister.AcquireConsole(lg); err != nil {
+		fmt.Fprintln(os.Stderr, "misterzine:", err)
+		lg.Printf("console: %v", err)
+		return 2
+	}
+	defer h.cleanup()
+	defer func() {
+		if r := recover(); r != nil {
+			lg.Printf("PANIC: %v\n%s", r, debug.Stack())
+			h.cleanup()
+			code = 70
+		}
+	}()
+	if h.cmd, err = mister.NewCmd(lg); err != nil {
+		lg.Printf("cmd: %v", err)
+	}
+	if h.fb, err = mister.OpenFB(h.cmd, canvasW, canvasH, lg); err != nil {
+		lg.Printf("fb: %v", err)
+		return 3
+	}
+	h.input = mister.OpenInput(lg)
+	go func() {
+		for ev := range h.input.Events() {
+			h.events <- ev
+		}
+	}()
+	sig := make(chan os.Signal, 2)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+
+	// app
+	favSet := h.favs.Set()
+	cfg := app.Config{
+		PhysW: canvasW, PhysH: canvasH, Rotation: rotation, SafeInset: h.settings.Inset,
+		Now: time.Now, ClockTrusted: trusted, Favorites: favSet,
+		Launch:          func(target string) { h.launch = target; h.stop() },
+		Quit:            h.stop,
+		Version:         buildinfo.String(),
+		FavChanged:      func() { h.favDirty = true },
+		SettingsChanged: func() { h.setDirty = true },
+		Action: func(kind, arg string) {
+			lg.Printf("action: %s %s", kind, arg)
+			if kind == "refresh" {
+				go h.check(ds.Hash)
+			}
+			if kind == "prefetch" {
+				h.settings.Prefetch = arg == "on"
+				h.setDirty = true
+			}
+		},
+	}
+	var seen *data.SeenRecord
+	if hasState && (len(h.state.Seen.Cur) > 0 || h.state.Seen.T != "") {
+		seen = &h.state.Seen
+	}
+	h.a = app.New(cfg, ds, seen)
+	h.a.SetPrefetch(h.settings.Prefetch)
+	if hasState {
+		if h.state.Sort == "debut" {
+			h.a.SetSort(data.SortDebut)
+		}
+		h.a.SetFilters(h.state.Filters)
+		if h.state.CursorK != "" {
+			h.a.MoveToKey(h.state.CursorK)
+		}
+	}
+	h.a.SetNet(h.netLabel(ds))
+	h.present()
+	lg.Printf("first frame at %v", time.Since(t0).Round(time.Millisecond))
+
+	if debugAddr != "" {
+		debugsrv.Serve(debugAddr, debugsrv.Hooks{
+			Run:    h.runOnUI,
+			Inject: func(ev platform.Event) { h.events <- ev },
+			Shot:   func() *image.RGBA { return h.a.Logical() },
+			State: func() any {
+				return map[string]any{
+					"version": buildinfo.String(), "screen": h.a.Screen().String(), "cursor": h.a.CursorKey(),
+					"sort": h.a.Sort().String(), "rows": len(ds.Rows), "fb": h.fb.Geometry().String(),
+					"rotation": h.a.Rotation().String(), "inset": h.a.Inset(), "devices": h.input.Devices(),
+					"sysfs": mister.SysfsMode(), "uptime": time.Since(t0).String(),
+				}
+			},
+			Quit: h.stop,
+			Goto: func(k string) { h.a.MoveToKey(k); h.present() },
+			Log:  filepath.Join(root, "log.txt"),
+		}, lg)
+	}
+
+	// freshness: first check shortly after boot, then every 30 minutes
+	h.client = fetch.NewClient(buildinfo.Version)
+	go func() {
+		time.Sleep(300 * time.Millisecond)
+		h.check(ds.Hash)
+		t := time.NewTicker(30 * time.Minute)
+		defer t.Stop()
+		for {
+			select {
+			case <-h.quit:
+				return
+			case <-t.C:
+				h.check(h.a.Data().Hash)
+			}
+		}
+	}()
+
+	// the loop
+	saveAt := time.Time{}
+	lastState := h.snapshotState()
+	for {
+		var tick <-chan time.Time
+		next := h.a.NextTick()
+		wait := 250 * time.Millisecond
+		if !next.IsZero() {
+			if d := time.Until(next); d < wait {
+				wait = d
+			}
+		}
+		if wait < 0 {
+			wait = 0
+		}
+		tick = time.After(wait)
+		select {
+		case <-h.quit:
+			h.saveAll(true)
+			return 0
+		case s := <-sig:
+			lg.Printf("signal %v", s)
+			h.stop()
+			h.saveAll(true)
+			return 130
+		case ev := <-h.events:
+			h.a.Handle(ev)
+			// drain whatever else arrived
+		drain:
+			for {
+				select {
+				case ev := <-h.events:
+					h.a.Handle(ev)
+				default:
+					break drain
+				}
+			}
+		case f := <-h.uiRun:
+			f()
+		case fr := <-h.dataCh:
+			h.swap(fr)
+		case s := <-h.netCh:
+			h.a.SetNet(s)
+		case <-tick:
+		}
+		h.a.Tick(time.Now())
+		h.present()
+		if st := h.snapshotState(); st != lastState {
+			lastState = st
+			h.dirty = true
+			saveAt = time.Now().Add(500 * time.Millisecond)
+		}
+		if (h.dirty || h.favDirty || h.setDirty) && !saveAt.IsZero() && time.Now().After(saveAt) {
+			h.saveAll(false)
+			saveAt = time.Time{}
+		}
+		if h.launch != "" {
+			h.saveAll(true)
+			h.doLaunch()
+			return 0
+		}
+	}
+}
+
+func (h *host) stop() {
+	select {
+	case <-h.quit:
+	default:
+		close(h.quit)
+		// watchdog: whatever else happens, the console comes back
+		go func() {
+			time.Sleep(3 * time.Second)
+			h.lg.Printf("shutdown watchdog fired: forcing exit")
+			mister.RestoreAll()
+			os.Exit(75)
+		}()
+	}
+}
+
+func (h *host) runOnUI(f func()) {
+	done := make(chan struct{})
+	h.uiRun <- func() { f(); close(done) }
+	<-done
+}
+
+func (h *host) present() {
+	frame, dirty := h.a.Paint()
+	if dirty != nil {
+		h.fb.Present(frame, dirty)
+	}
+}
+
+func (h *host) snapshotState() string {
+	return h.a.CursorKey() + "|" + h.a.Sort().String() + "|" + fmt.Sprint(h.a.Filters())
+}
+
+func (h *host) saveAll(final bool) {
+	if h.dirty || final {
+		f := h.a.Filters()
+		st := store.State{Schema: 1, CursorK: h.a.CursorKey(), Sort: strings.ToLower(h.a.Sort().String()), Filters: f,
+			LastOpen: time.Now().UTC().Format(time.RFC3339), DataHash: h.a.Data().Hash}
+		if s := h.a.Seen(); s != nil {
+			st.Seen = s.State
+		}
+		if err := store.Save(filepath.Join(h.root, "state.json"), st); err != nil {
+			h.lg.Printf("state: %v", err)
+		}
+		h.dirty = false
+	}
+	if h.favDirty || final {
+		h.favs.Apply(h.a.FavoriteSet(), time.Now())
+		if err := store.Save(filepath.Join(h.root, "favorites.json"), h.favs); err != nil {
+			h.lg.Printf("favorites: %v", err)
+		}
+		h.favDirty = false
+	}
+	if h.setDirty || final {
+		h.settings.Inset = h.a.Inset()
+		switch h.a.Rotation() {
+		case gfx.RotLeft:
+			h.settings.Rotation = "left"
+		case gfx.RotRight:
+			h.settings.Rotation = "right"
+		default:
+			h.settings.Rotation = "off"
+		}
+		if !h.setDirty && h.settings.Rotation != "" {
+			// untouched: keep "auto" if that is what the file said
+			var on store.Settings
+			if store.Load(filepath.Join(h.root, "settings.json"), &on) == nil && on.Rotation == "auto" {
+				h.settings.Rotation = "auto"
+			}
+		}
+		if err := store.Save(filepath.Join(h.root, "settings.json"), h.settings); err != nil {
+			h.lg.Printf("settings: %v", err)
+		}
+		h.setDirty = false
+	}
+}
+
+// cleanup restores the machine; safe to call twice.
+func (h *host) cleanup() {
+	if h.input != nil {
+		h.input.Close()
+		h.input = nil
+	}
+	if h.fb != nil {
+		h.fb.CloseRestore(h.cmd, h.launch == "")
+		h.fb = nil
+	}
+	if h.console != nil {
+		h.console.Restore()
+		h.console = nil
+	}
+}
+
+func (h *host) doLaunch() {
+	abs, err := mister.LaunchPath(h.card, h.launch)
+	if err != nil {
+		h.lg.Printf("launch %q: %v", h.launch, err)
+		return
+	}
+	h.cleanup()
+	if err := h.cmd.Send("load_core " + abs); err != nil {
+		h.lg.Printf("launch: %v", err)
+	}
+	h.lg.Printf("launched %s", abs)
+}
+
+func (h *host) loadData() ([]data.Row, data.Meta, string) {
+	cache := filepath.Join(h.root, "cache")
+	if b, err := os.ReadFile(filepath.Join(cache, "data.json")); err == nil {
+		if rows, err := data.DecodeRows(bytes.NewReader(b)); err == nil && len(rows) > 0 {
+			var meta data.Meta
+			if mb, err := os.ReadFile(filepath.Join(cache, "meta.json")); err == nil {
+				meta, _ = data.DecodeMeta(bytes.NewReader(mb))
+			}
+			return rows, meta, "cache"
+		} else if err != nil {
+			h.lg.Printf("cache: %v", err)
+			os.Rename(filepath.Join(cache, "data.json"), filepath.Join(cache, "data.json.bad"))
+		}
+	}
+	rows, meta, err := snapshot.Load()
+	if err != nil {
+		h.lg.Printf("snapshot: %v", err)
+		return nil, data.Meta{}, "nothing"
+	}
+	return rows, meta, "snapshot"
+}
+
+func (h *host) netLabel(ds *data.Dataset) string {
+	if ds.Updated.IsZero() || !h.clock.Trusted {
+		return ""
+	}
+	return "data " + data.RelUpdated(time.Now(), ds.Updated)
+}
+
+// check runs a freshness check off the UI goroutine.
+func (h *host) check(current string) {
+	h.netCh <- "checking.."
+	fr, err := h.client.Check(context.Background(), current)
+	if err != nil {
+		h.lg.Printf("check: %v", err)
+		if errors.Is(err, fetch.ErrOffline) {
+			h.netCh <- "offline"
+		} else {
+			h.netCh <- "check failed"
+		}
+		return
+	}
+	if !fr.Changed {
+		h.lg.Printf("check: current (%.8s)", fr.Meta.Hash)
+		h.netCh <- ""
+		return
+	}
+	cache := filepath.Join(h.root, "cache")
+	if err := store.WriteAtomic(filepath.Join(cache, "data.json"), fr.RawData); err != nil {
+		h.lg.Printf("cache: %v", err)
+	}
+	if err := store.WriteAtomic(filepath.Join(cache, "meta.json"), fr.RawMeta); err != nil {
+		h.lg.Printf("cache: %v", err)
+	}
+	h.lg.Printf("check: new data %.8s, %d rows", fr.Meta.Hash, len(fr.Rows))
+	h.dataCh <- fr
+}
+
+// swap installs fetched data on the UI goroutine.
+func (h *host) swap(fr fetch.Fresh) {
+	old := h.a.Data()
+	upd, _ := data.ParseMetaTime(fr.Meta.Updated)
+	ds := data.Ingest(fr.Rows, fr.Meta.Hash, upd)
+	news := data.DiffNews(old, fr.Rows)
+	h.a.SetData(ds, nil)
+	h.a.SetNet(h.netLabel(ds))
+	if news != "" {
+		h.a.Notice(news, 12*time.Second)
+	}
+	h.dirty = true
+}
+
+func openLog(path string) *log.Logger {
+	if st, err := os.Stat(path); err == nil && st.Size() > logMax {
+		os.Rename(path, strings.TrimSuffix(path, ".txt")+".1.txt")
+	}
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		return log.New(os.Stderr, "", log.Ltime|log.Lmicroseconds)
+	}
+	return log.New(f, "", log.Ltime|log.Lmicroseconds)
+}

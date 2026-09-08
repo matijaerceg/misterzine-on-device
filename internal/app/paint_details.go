@@ -112,9 +112,11 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 		L = append(L, paneLine{"Patreon beta: needs Jotego's jtbeta.zip", mu})
 	}
 	add("Note", row.Note, fg)
-	st := a.status(i)
-	_, sc := statusGlyph(st)
-	L = append(L, paneLine{"", fg}, paneLine{"Card: " + statusText(st, ""), sc})
+	if a.cfg.Status != nil {
+		st := a.status(i)
+		_, sc := statusGlyph(st)
+		L = append(L, paneLine{"", fg}, paneLine{"Card: " + statusText(st, ""), sc})
+	}
 	return L
 }
 
@@ -167,7 +169,12 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 	entries := a.launchEntries(row)
 	avail := body.Max.Y - y
 	lh := a.sm.H + 1
-	launchH := (len(entries) + 1) * lh
+	const launchMax = 5 // visible launch entries; more scroll under the pick
+	shown := len(entries)
+	if shown > launchMax {
+		shown = launchMax
+	}
+	launchH := (shown + 1) * lh
 	specH := avail - launchH - 2
 	if specH < lh*4 {
 		specH = lh * 4
@@ -195,14 +202,23 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 	if a.detail.pick < 0 {
 		a.detail.pick = 0
 	}
-	for n, e := range entries {
+	first := 0
+	if a.detail.pick >= shown {
+		first = a.detail.pick - shown + 1
+	}
+	for n := first; n < len(entries) && n < first+shown; n++ {
+		e := entries[n]
 		col := gen.Eva.Fg
 		prefix := "  "
 		if n == a.detail.pick {
 			col = gen.Eva.Accent
 			prefix = "> "
 		}
-		c.Text(body.Min.X, y, a.sm, gfx.Fit(prefix+e.label, sc), col)
+		label := e.label
+		if n == first+shown-1 && n < len(entries)-1 {
+			label += " (+" + itoa(len(entries)-1-n) + " more)"
+		}
+		c.Text(body.Min.X, y, a.sm, gfx.Fit(prefix+label, sc), col)
 		y += lh
 	}
 	if l.Portrait {
@@ -286,6 +302,12 @@ func (a *App) actDetails(k platform.Key) bool {
 		}
 		if a.cfg.FavChanged != nil {
 			a.cfg.FavChanged()
+		}
+		k := row.K
+		a.rebuild()
+		a.moveToKey(k)
+		if a.cursor >= len(a.view) || a.ds.Rows[a.view[a.cursor]].K != k {
+			a.screen = ScreenList // the row left the filtered view
 		}
 	case platform.KeyEnter:
 		entries := a.launchEntries(row)

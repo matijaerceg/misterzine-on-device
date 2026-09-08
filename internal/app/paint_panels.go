@@ -27,6 +27,7 @@ type panelState struct {
 	top     int
 	// settings snapshot
 	prefetch bool
+	insetWas int // inset before calibration, for cancel
 }
 
 func (a *App) openPanel(s Screen) {
@@ -38,15 +39,33 @@ func (a *App) openPanel(s Screen) {
 }
 
 func (a *App) buildPanel() {
+	// remember the entry under the cursor by identity, not by index
+	var was *panelEntry
+	if a.panel.cursor < len(a.panel.entries) {
+		w := a.panel.entries[a.panel.cursor]
+		was = &w
+	}
 	if a.screen == ScreenSettings {
 		a.panel.entries = a.settingsEntries()
 	} else {
 		a.panel.entries = a.filterEntries()
 	}
-	// land on the first non-header
-	for a.panel.cursor < len(a.panel.entries) && a.panel.entries[a.panel.cursor].header {
+	if was != nil {
+		for i, e := range a.panel.entries {
+			if e.kind == was.kind && e.value == was.value && e.header == was.header && (e.header || e.kind != "" || e.text == was.text) {
+				a.panel.cursor = i
+				break
+			}
+		}
+	}
+	if a.panel.cursor >= len(a.panel.entries) {
+		a.panel.cursor = len(a.panel.entries) - 1
+	}
+	// skip blank spacer headers
+	for a.panel.cursor < len(a.panel.entries)-1 && a.panel.entries[a.panel.cursor].header && a.panel.entries[a.panel.cursor].text == "" {
 		a.panel.cursor++
 	}
+	a.all = true
 }
 
 func sortedFacet(m map[string]int) []string {
@@ -204,6 +223,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 func (a *App) actPanel(k platform.Key) bool {
 	p := &a.panel
 	n := len(p.entries)
+	selectable := func(i int) bool { return i >= 0 && i < n && !(p.entries[i].header && p.entries[i].text == "") }
 	switch k {
 	case platform.KeyBack, platform.KeyTab:
 		if a.screen == ScreenSettings {
@@ -215,58 +235,46 @@ func (a *App) actPanel(k platform.Key) bool {
 		return true
 	case platform.KeyUp:
 		for i := p.cursor - 1; i >= 0; i-- {
-			if !p.entries[i].header || i == 0 {
+			if selectable(i) {
 				p.cursor = i
 				break
 			}
 		}
 	case platform.KeyDown:
 		for i := p.cursor + 1; i < n; i++ {
-			if !p.entries[i].header {
+			if selectable(i) {
 				p.cursor = i
 				break
 			}
 		}
 	case platform.KeyLeft, platform.KeyPageUp:
-		// previous section header, then its first entry
-		i := p.cursor - 1
-		for i > 0 && !p.entries[i].header {
-			i--
-		}
-		for i > 0 && !p.entries[i-1].header {
-			// walk to the start of the previous section
-			i--
-			for i > 0 && !p.entries[i].header {
-				i--
+		// previous section header (headers are selectable: A on one = all)
+		for i := p.cursor - 1; i >= 0; i-- {
+			if p.entries[i].header && p.entries[i].text != "" {
+				p.cursor = i
+				break
 			}
-			break
-		}
-		if i < 0 {
-			i = 0
-		}
-		p.cursor = i
-		if p.entries[i].header && i+1 < n {
-			p.cursor = i + 1
 		}
 	case platform.KeyRight, platform.KeyPageDown:
-		i := p.cursor + 1
-		for i < n && !p.entries[i].header {
-			i++
-		}
-		if i+1 < n {
-			p.cursor = i + 1
-		} else if i < n {
-			p.cursor = i
+		for i := p.cursor + 1; i < n; i++ {
+			if p.entries[i].header && p.entries[i].text != "" {
+				p.cursor = i
+				break
+			}
 		}
 	case platform.KeyHome:
-		p.cursor = 0
-		for p.cursor < n-1 && p.entries[p.cursor].header {
-			p.cursor++
+		for i := 0; i < n; i++ {
+			if selectable(i) {
+				p.cursor = i
+				break
+			}
 		}
 	case platform.KeyEnd:
-		p.cursor = n - 1
-		for p.cursor > 0 && p.entries[p.cursor].header {
-			p.cursor--
+		for i := n - 1; i >= 0; i-- {
+			if selectable(i) {
+				p.cursor = i
+				break
+			}
 		}
 	case platform.KeyEnter, platform.KeySpace:
 		return a.togglePanel()
@@ -301,7 +309,6 @@ func (a *App) togglePanel() bool {
 		a.SetFilters(data.Filters{})
 		p.cursor = 0
 		a.buildPanel()
-		a.all = true
 		return true
 	case "base", "src", "rot", "plr", "genre":
 		var m map[string]bool
@@ -319,7 +326,7 @@ func (a *App) togglePanel() bool {
 			m, facet = off(f.GenreOff), a.ds.Facets.Genre
 		}
 		if e.header {
-			// all on, or if all are on already, all off but keep the sort sane
+			// a header toggles its whole section: all on, or all off when already all on
 			allOn := len(m) == 0
 			m = map[string]bool{}
 			if allOn {
@@ -360,6 +367,7 @@ func (a *App) togglePanel() bool {
 		a.buildPanel()
 		return true
 	case "inset":
+		a.panel.insetWas = a.cfg.SafeInset
 		a.screen = ScreenCalibrate
 		a.all = true
 		return true
@@ -382,11 +390,8 @@ func (a *App) togglePanel() bool {
 	default:
 		return false
 	}
-	cur := p.cursor
 	a.SetFilters(f)
 	a.buildPanel()
-	p.cursor = cur
-	a.all = true
 	return true
 }
 
@@ -434,6 +439,7 @@ func (a *App) actCalibrate(k platform.Key) bool {
 		}
 		a.openPanel(ScreenSettings)
 	case platform.KeyBack:
+		a.SetInset(a.panel.insetWas)
 		a.openPanel(ScreenSettings)
 	default:
 		return false

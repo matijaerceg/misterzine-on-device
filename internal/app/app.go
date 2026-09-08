@@ -123,6 +123,9 @@ func (a *App) setRotation(rot gfx.Rotation) {
 	}
 	a.logical = gfx.New(w, h)
 	a.lay = NewLayout(w, h, a.cfg.SafeInset, a.body)
+	if a.ds != nil {
+		a.ensureVisible()
+	}
 	a.all = true
 }
 
@@ -168,6 +171,9 @@ func (a *App) SetData(ds *data.Dataset, stored *data.SeenRecord) {
 
 // Seen exposes the record to persist.
 func (a *App) Seen() *data.Seen { return a.seen }
+
+// FavoriteSet exposes the live favorites set.
+func (a *App) FavoriteSet() map[string]bool { return a.cfg.Favorites }
 
 // Data exposes the dataset.
 func (a *App) Data() *data.Dataset { return a.ds }
@@ -289,8 +295,12 @@ func (a *App) ensureVisible() {
 	if line < a.top {
 		a.top = line
 	}
-	if line >= a.top+a.lay.Lines {
-		a.top = line - a.lay.Lines + 1
+	last := line
+	if a.split == a.cursor {
+		last++ // keep the marker after the last unseen row reachable
+	}
+	if last >= a.top+a.lay.Lines {
+		a.top = last - a.lay.Lines + 1
 	}
 	if a.top < 0 {
 		a.top = 0
@@ -303,7 +313,11 @@ func (a *App) Handle(ev platform.Event) bool {
 		a.rep.release(ev.Key)
 		return false
 	}
-	a.rep.press(ev.Key, ev.At)
+	pace := time.Duration(0)
+	if a.screen == ScreenShot && (ev.Key == platform.KeyLeft || ev.Key == platform.KeyRight) {
+		pace = repeatShot
+	}
+	a.rep.press(ev.Key, ev.At, pace)
 	return a.act(ev.Key)
 }
 

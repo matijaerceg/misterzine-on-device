@@ -41,6 +41,12 @@ func RelAge(now time.Time, iso string) string {
 	if !ok {
 		return ""
 	}
+	return RelAgeAt(now, t)
+}
+
+// RelAgeAt is RelAge for a full timestamp (the site passes ISO clock strings
+// through the same ladder; whole days are floored from the exact moment).
+func RelAgeAt(now, t time.Time) string {
 	days := int(math.Floor(now.Sub(t).Hours() / 24))
 	if days < 0 {
 		days = 0
