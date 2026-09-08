@@ -7,16 +7,17 @@
 // from the measurements this produces.
 //
 // Usage (from /media/fat/Scripts/spike.sh, args in spike.args):
-//   spike all                      full battery, ~70 s, logs to spike.log
-//   spike fbinfo                   geometry + sysfs + channel offsets
-//   spike fbcmd W H                fb_cmd1 handshake, poll until it lands
-//   spike restore                  fb_cmd1 back to the geometry saved by fbinfo/all
-//   spike pattern SECS             corner colours, grey ramp, inset frames, up arrow
-//   spike vsync N                  N vsync waits, interval stats
-//   spike present N                N full-frame copies, timing
-//   spike keys SECS                log every EV_KEY event from every device
-//   spike png OUT                  dump the current shadow canvas as PNG
-//   spike load PATH                write load_core PATH to /dev/MiSTer_cmd
+//
+//	spike all                      full battery, ~70 s, logs to spike.log
+//	spike fbinfo                   geometry + sysfs + channel offsets
+//	spike fbcmd W H                fb_cmd1 handshake, poll until it lands
+//	spike restore                  fb_cmd1 back to the geometry saved by fbinfo/all
+//	spike pattern SECS             corner colours, grey ramp, inset frames, up arrow
+//	spike vsync N                  N vsync waits, interval stats
+//	spike present N                N full-frame copies, timing
+//	spike keys SECS                log every EV_KEY event from every device
+//	spike png OUT                  dump the current shadow canvas as PNG
+//	spike load PATH                write load_core PATH to /dev/MiSTer_cmd
 package main
 
 import (
