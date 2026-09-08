@@ -18,9 +18,9 @@ func (a *App) paintList(c *gfx.Canvas) {
 	a.paintRows(c)
 	a.paintPane(c)
 	if a.lay.Portrait {
-		a.paintHint(c, "A info  > shot  Y sort  X filter  B quit")
+		a.paintHint(c, "A info  > shots  Y sort  X filter  B quit")
 	} else {
-		a.paintHint(c, "A details  > screen  Y sort  X filter  B quit")
+		a.paintHint(c, "A details  > shots  Y sort  X filter  B quit")
 	}
 }
 
@@ -30,9 +30,9 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 	y := l.Status.Min.Y + 2
 	left := a.mode.String()
 	if a.filters.Active() {
-		left += " " + itoa(len(a.view)) + " of " + itoa(len(a.ds.Rows))
+		left += "  " + itoa(len(a.view)) + " of " + itoa(len(a.ds.Rows)) + " releases"
 	} else {
-		left += " " + itoa(len(a.ds.Rows))
+		left += "  " + itoa(len(a.ds.Rows)) + " releases"
 	}
 	c.Text(l.Status.Min.X+2, y, a.sm, left, gen.Eva.Accent)
 	right := a.net

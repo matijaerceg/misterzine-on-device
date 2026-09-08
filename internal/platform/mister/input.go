@@ -219,6 +219,39 @@ func (in *Input) read(d *device) {
 
 func (in *Input) Events() <-chan platform.Event { return in.ch }
 
+const eviocgrab = 0x40044590 // _IOW('E', 0x90, int)
+
+// ScreenLost reports whether Main has taken the screen back. When it hides
+// the framebuffer it grabs every real input device exclusively (never its
+// own virtual keyboard), so a momentary grab attempt on any real device
+// fails with EBUSY. Our own grab is released at once; it exists only as a
+// probe. Devices are opened fresh each time because Main re-creates them
+// when it restarts itself.
+func (in *Input) ScreenLost() bool {
+	paths, _ := filepath.Glob("/dev/input/event*")
+	for _, p := range paths {
+		f, err := os.OpenFile(p, os.O_RDONLY|syscall.O_NOCTTY|syscall.O_CLOEXEC|syscall.O_NONBLOCK, 0)
+		if err != nil {
+			continue
+		}
+		name := devName(f)
+		if name == "MiSTer virtual input" || name == "misterzine launcher" {
+			f.Close()
+			continue
+		}
+		_, _, e := syscall.Syscall(syscall.SYS_IOCTL, f.Fd(), eviocgrab, 1)
+		if e == 0 {
+			syscall.Syscall(syscall.SYS_IOCTL, f.Fd(), eviocgrab, 0)
+		}
+		f.Close()
+		if e == syscall.EBUSY {
+			in.log.Printf("input: %s (%s) is grabbed: Main has the screen", p, name)
+			return true
+		}
+	}
+	return false
+}
+
 // Close stops the readers, waiting at most half a second for them.
 func (in *Input) Close() error {
 	close(in.stop)

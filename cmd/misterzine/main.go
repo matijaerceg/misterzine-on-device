@@ -242,15 +242,9 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	}
 	h.a = app.New(cfg, ds, seen)
 	h.a.SetPrefetch(h.settings.Prefetch)
-	if hasState {
-		if h.state.Sort == "debut" {
-			h.a.SetSort(data.SortDebut)
-		}
-		h.a.SetFilters(h.state.Filters)
-		if h.state.CursorK != "" {
-			h.a.MoveToKey(h.state.CursorK)
-		}
-	}
+	// like the site, every visit starts at the top of the updated sort with
+	// no filters; only the last-look baseline and favorites carry over
+	_ = hasState
 	h.a.SetNet(h.netLabel(ds))
 	if ini.Found && !ini.AnalogVisible() {
 		h.a.Notice("CRT only? add direct_video=1 under [Menu], see README", 20*time.Second)
@@ -356,6 +350,11 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 				h.a.Notice(r.notice, 8*time.Second)
 			}
 		case <-tick:
+			if h.input.ScreenLost() {
+				lg.Printf("Main took the screen back (menu button): leaving")
+				h.stop()
+				continue
+			}
 		}
 		h.a.Tick(time.Now())
 		h.present()

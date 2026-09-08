@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.2.1
+
+- The pad's menu button returns to the MiSTer menu cleanly: the app notices
+  Main took the screen back and exits, so the launcher can reopen it.
+- Every visit starts at the top of the updated sort, like the site.
+- Screen view: Up/Down walk rows, Left/Right change the shot.
+- Faster held scrolling; status bar says "1206 releases".
+
 ## v0.2.0
 
 - Main menu launcher: a "misterzine" entry in the main menu, enabled once

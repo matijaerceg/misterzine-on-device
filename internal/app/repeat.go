@@ -20,10 +20,10 @@ type repeater struct {
 }
 
 const (
-	repeatDelay = 280 * time.Millisecond
-	repeatSlow  = 70 * time.Millisecond
-	repeatMid   = 40 * time.Millisecond
-	repeatFast  = 24 * time.Millisecond
+	repeatDelay = 220 * time.Millisecond
+	repeatSlow  = 48 * time.Millisecond
+	repeatMid   = 28 * time.Millisecond
+	repeatFast  = 16 * time.Millisecond
 	repeatPage  = 150 * time.Millisecond
 	repeatStep  = 200 * time.Millisecond // flat pace for row/slot walking
 	repeatCalib = 60 * time.Millisecond
@@ -64,12 +64,12 @@ func (r *repeater) nextAt() time.Time {
 	return r.next
 }
 
-// accel is the list scrolling ladder: slow, then faster after 10 and 30 steps.
+// accel is the list scrolling ladder: brisk, then faster after 8 and 22 steps.
 func accel(count int) time.Duration {
 	switch {
-	case count > 30:
+	case count > 22:
 		return repeatFast
-	case count > 10:
+	case count > 8:
 		return repeatMid
 	}
 	return repeatSlow

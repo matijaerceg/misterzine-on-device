@@ -80,24 +80,24 @@ func (a *App) actShot(k platform.Key) bool {
 	switch k {
 	case platform.KeyBack:
 		a.screen = ScreenList
-	case platform.KeyLeft:
+	case platform.KeyUp:
 		if a.cursor > 0 {
 			a.cursor--
 			a.pickSlot()
 			a.ensureVisible()
 		}
-	case platform.KeyRight:
+	case platform.KeyDown:
 		if a.cursor < len(a.view)-1 {
 			a.cursor++
 			a.pickSlot()
 			a.ensureVisible()
 		}
-	case platform.KeyUp, platform.KeyDown:
+	case platform.KeyLeft, platform.KeyRight:
 		row, _, _ := a.current()
 		if row != nil {
 			n := len(shotSlots(row))
 			if n > 0 {
-				if k == platform.KeyDown {
+				if k == platform.KeyRight {
 					a.slot = (a.slot + 1) % n
 				} else {
 					a.slot = (a.slot + n - 1) % n
