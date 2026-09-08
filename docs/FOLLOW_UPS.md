@@ -19,6 +19,14 @@ it is not a list of unrelated website work.
 
 ## Active verification / current scope
 
+- **Code review fixes: one small batch at a time.** The user must test each
+  batch before implementation proceeds to the next. Batch 1 only fixes
+  image-worker shutdown with pending downloads or unreadable cached images.
+  Its regression tests failed before the fix and now pass on the Windows
+  host, MiSTer Pi and DE10-Nano. User checks:
+  browse while pictures load, launch an installed game, reopen MisterZine,
+  and quit through Options; confirm prompt transitions and a stable CRT.
+  User acceptance is still pending. Other review fixes remain unstarted.
 - **DE10 long idle stability:** short transitions passed on latest Main
   and Menu; the user's comparable long-idle CRT result is still pending.
 - **Pi after Linux update:** the framebuffer compatibility build runs;

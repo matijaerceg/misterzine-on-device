@@ -254,6 +254,13 @@ func (s *Service) nextDecode() (scaledKey, bool) {
 func (s *Service) decodeLoop() {
 	defer s.wg.Done()
 	for {
+		// Failed reads can leave work queued; stopping must not depend on
+		// the decoder becoming idle.
+		select {
+		case <-s.stop:
+			return
+		default:
+		}
 		k, ok := s.nextDecode()
 		if !ok {
 			select {
@@ -385,6 +392,13 @@ func (s *Service) backoff(p Pic) {
 func (s *Service) netLoop() {
 	defer s.wg.Done()
 	for {
+		// A cancelled download remains wanted. Exit before selecting it
+		// again, rather than waiting for the queue to become empty.
+		select {
+		case <-s.stop:
+			return
+		default:
+		}
 		p, ok := s.nextDownload()
 		if !ok {
 			select {

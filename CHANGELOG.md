@@ -2,6 +2,8 @@
 
 ## v0.2.2
 
+- Image workers stop even with pictures still queued, preventing a pending
+  download or unreadable cached image from trapping shutdown before a launch.
 - Updated sort matches the site's arrival batches: later same-day refreshes
   come first, then core and title. Debut order and older feeds are unchanged.
 - Filters: smaller font, Input directions and Buttons sections, and Players
