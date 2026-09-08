@@ -128,10 +128,8 @@ func (a *App) paintScrollbar(c *gfx.Canvas) {
 	if t.Empty() {
 		return
 	}
-	c.Fill(t, gen.Eva.Line)
 	total := a.totalLines()
 	if total <= l.Lines {
-		c.Fill(t, gen.Eva.Muted)
 		return
 	}
 	h := t.Dy() * l.Lines / total
@@ -139,7 +137,7 @@ func (a *App) paintScrollbar(c *gfx.Canvas) {
 		h = 4
 	}
 	y := t.Min.Y + (t.Dy()-h)*a.top/(total-l.Lines)
-	c.Fill(image.Rect(t.Min.X, y, t.Max.X, y+h), gen.Eva.Accent)
+	c.Fill(image.Rect(t.Min.X, y, t.Max.X, y+h), gen.Eva.Muted)
 }
 
 func (a *App) paintMarker(c *gfx.Canvas, r image.Rectangle, text string) {

@@ -32,6 +32,9 @@ func (l *Local) path(p Pic) string {
 	return filepath.Join(l.dir, p.Slot, p.Key+".png")
 }
 
+// SetPaused is a no-op: Local decodes on demand.
+func (l *Local) SetPaused(bool) {}
+
 // Get decodes and scales on the spot.
 func (l *Local) Get(req app.ImageReq) (*image.RGBA, app.ImageState) {
 	p := Pic{req.Key, req.Slot}

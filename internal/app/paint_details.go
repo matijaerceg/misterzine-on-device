@@ -284,6 +284,10 @@ func (a *App) paintImageBox(c *gfx.Canvas, box image.Rectangle, key, slot string
 	}
 }
 
+// launchGuard is how long after opening details an A press is ignored,
+// so a double tap in the list cannot launch.
+const launchGuard = 500 * time.Millisecond
+
 func (a *App) actDetails(k platform.Key) bool {
 	row, _, _ := a.current()
 	if row == nil {
@@ -325,6 +329,9 @@ func (a *App) actDetails(k platform.Key) bool {
 			a.screen = ScreenList // the row left the filtered view
 		}
 	case platform.KeyEnter:
+		if a.cfg.Now().Sub(a.detail.opened) < launchGuard {
+			return true // a second tap right after opening is not a launch
+		}
 		_, _, i := a.current()
 		entries := a.launchEntries(row, i)
 		if len(entries) > 0 && a.cfg.Launch != nil {

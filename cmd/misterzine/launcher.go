@@ -233,10 +233,22 @@ func watch() int {
 			kbd.Close()
 		}
 	}()
+	// edge-triggered: react to CORENAME becoming "misterzine", not to it
+	// already saying so when the watcher starts (a restart while the app
+	// runs, or a stale value at boot)
+	armed := true
+	if b, err := os.ReadFile(corenameFile); err == nil && strings.TrimSpace(string(b)) == "misterzine" {
+		armed = false
+		lg.Printf("watch: CORENAME already says misterzine at start; waiting for it to change")
+	}
 	for {
 		time.Sleep(100 * time.Millisecond)
 		b, err := os.ReadFile(corenameFile)
 		if err != nil || strings.TrimSpace(string(b)) != "misterzine" {
+			armed = true
+			continue
+		}
+		if !armed {
 			continue
 		}
 		lg.Printf("watch: misterzine selected in the menu")
@@ -278,10 +290,13 @@ func runFromMenu(lg *log.Logger, kbd *mister.VKeyboard) error {
 		}
 	}
 	// Remote's trick: park on tty3, press F9 until Main switches to tty1
+	lg.Printf("watch: console: active %s, fb mode %q before", mister.ActiveTTY(), mister.SysfsMode())
 	mister.Chvt(3)
 	opened := false
+	presses := 0
 	for i := 0; i < 20; i++ {
 		kbd.Press(mister.KeyF9)
+		presses++
 		time.Sleep(60 * time.Millisecond)
 		if mister.ActiveTTY() == "tty1" {
 			opened = true
@@ -289,11 +304,12 @@ func runFromMenu(lg *log.Logger, kbd *mister.VKeyboard) error {
 		}
 	}
 	if !opened {
-		return fmt.Errorf("could not open the console (F9)")
+		return fmt.Errorf("could not open the console (F9 pressed %d times, active %s)", presses, mister.ActiveTTY())
 	}
 	if err := mister.Chvt(2); err != nil {
 		return err
 	}
+	lg.Printf("watch: console open after %d F9 press(es): active %s, fb mode %q", presses, mister.ActiveTTY(), mister.SysfsMode())
 	launcher := "#!/bin/bash\nexport LC_ALL=en_US.UTF-8\nexport HOME=/root\ncd " + filepath.Dir(scriptEntry) + "\n" + scriptEntry + "\n"
 	if err := os.WriteFile("/tmp/script", []byte(launcher), 0700); err != nil {
 		return err

@@ -81,7 +81,7 @@ func (a *App) actShot(k platform.Key) bool {
 	case platform.KeyBack, platform.KeyEnter, platform.KeyTab:
 		// a leaf view: every way out goes back to the details it came from
 		a.screen = ScreenDetails
-		a.detail = detailState{from: ScreenList}
+		a.detail = detailState{from: ScreenList, opened: a.cfg.Now()}
 	case platform.KeyLeft, platform.KeyRight:
 		row, _, _ := a.current()
 		if row != nil {

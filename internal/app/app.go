@@ -88,7 +88,6 @@ type App struct {
 
 	screen   Screen
 	cursor   int    // index into view
-	jumpBack int    // row to return to after an L/R jump; -1 none
 	top      int    // first visible screen line
 	slot     int    // screen view slot index
 	slotName string // preferred slot, kept across rows
@@ -108,8 +107,9 @@ type App struct {
 
 type detailState struct {
 	scroll int
-	pick   int    // launch entry cursor
-	from   Screen // where B returns to
+	pick   int       // launch entry cursor
+	from   Screen    // where B returns to
+	opened time.Time // A launches only after a short guard from here
 }
 
 // New builds an app around a dataset. stored is the persisted last-look
@@ -128,7 +128,6 @@ func New(cfg Config, ds *data.Dataset, stored *data.SeenRecord) *App {
 	a.physical = image.NewRGBA(image.Rect(0, 0, cfg.PhysW, cfg.PhysH))
 	a.setRotation(cfg.Rotation)
 	a.SetData(ds, stored)
-	a.jumpBack = -1
 	return a
 }
 
@@ -200,7 +199,6 @@ func (a *App) Data() *data.Dataset { return a.ds }
 
 // rebuild recomputes order, view and marker from the current state.
 func (a *App) rebuild() {
-	a.jumpBack = -1 // the view changed
 	a.order = a.ds.Order(a.mode)
 	fav := func(k string) bool { return a.cfg.Favorites[k] }
 	unseen := func(i int) bool { return a.seen != nil && a.seen.Unseen(&a.ds.Rows[i]) }
@@ -460,7 +458,6 @@ func (a *App) act(k platform.Key) bool {
 
 func (a *App) actList(k platform.Key) bool {
 	n := len(a.view)
-	was := a.cursor
 	switch k {
 	case platform.KeyUp:
 		if a.cursor > 0 {
@@ -470,22 +467,10 @@ func (a *App) actList(k platform.Key) bool {
 		if a.cursor < n-1 {
 			a.cursor++
 		}
-	case platform.KeyPageUp, platform.KeyHome: // L: top, and back again
-		if a.cursor == 0 && a.jumpBack > 0 && a.jumpBack < n {
-			a.cursor = a.jumpBack
-		} else {
-			a.jumpBack = a.cursor
-			a.cursor = 0
-		}
-		was = a.cursor
-	case platform.KeyPageDown, platform.KeyEnd: // R: bottom, and back again
-		if a.cursor == n-1 && a.jumpBack >= 0 && a.jumpBack < n-1 {
-			a.cursor = a.jumpBack
-		} else {
-			a.jumpBack = a.cursor
-			a.cursor = n - 1
-		}
-		was = a.cursor
+	case platform.KeyPageUp, platform.KeyHome: // L: top
+		a.cursor = 0
+	case platform.KeyPageDown, platform.KeyEnd: // R: bottom
+		a.cursor = n - 1
 	case platform.KeySpace:
 		if a.mode == data.SortUpdated {
 			a.SetSort(data.SortDebut)
@@ -499,7 +484,7 @@ func (a *App) actList(k platform.Key) bool {
 	case platform.KeyEnter:
 		if n > 0 {
 			a.screen = ScreenDetails
-			a.detail = detailState{from: ScreenList}
+			a.detail = detailState{from: ScreenList, opened: a.cfg.Now()}
 			a.all = true
 		}
 		return true
@@ -522,9 +507,6 @@ func (a *App) actList(k platform.Key) bool {
 	}
 	if a.cursor < 0 {
 		a.cursor = 0
-	}
-	if a.cursor != was {
-		a.jumpBack = -1 // scrolled away: L/R will not return any more
 	}
 	a.ensureVisible()
 	a.all = true

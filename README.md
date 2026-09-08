@@ -76,7 +76,7 @@ MiSTer turns the gamepad into these keys while a script runs.
 |---|---|---|---|---|---|
 | D-pad up/down | arrows | move (hold to fly) | pick launch target | | move |
 | D-pad left/right | arrows | page (hold to fly) | | previous/next shot | jump section |
-| L / R | PageUp/Down | top / bottom, again to come back | scroll info | | page |
+| L / R | PageUp/Down | top / bottom | scroll info | | page |
 | A | Enter | details | launch | back to details | toggle |
 | B | Esc | | back | back to details | close |
 | Menu | | back to the MiSTer menu (the app closes) | | | |

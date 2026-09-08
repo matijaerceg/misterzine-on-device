@@ -60,6 +60,7 @@ type Service struct {
 	prefetched  int
 	kick        chan struct{}
 	decodeKick  chan struct{}
+	paused      bool // no decoding while the UI scrolls
 	ready       chan struct{}
 	stop        chan struct{}
 	wg          sync.WaitGroup
@@ -137,6 +138,18 @@ func (s *Service) SetPrefetch(pics []Pic, on bool) {
 	s.poke(s.kick)
 }
 
+// SetPaused stops the decoder (the UI is scrolling and wants both cores'
+// worth of quiet); unpausing resumes with whatever is wanted now.
+func (s *Service) SetPaused(p bool) {
+	s.mu.Lock()
+	s.paused = p
+	s.mu.Unlock()
+	if !p {
+		s.poke(s.decodeKick)
+		s.poke(s.kick)
+	}
+}
+
 // Progress reports the prefetch state: files present, total in the list.
 func (s *Service) Progress() (have, total int) {
 	s.mu.Lock()
@@ -200,6 +213,9 @@ func (s *Service) Want(reqs []app.ImageReq) {
 func (s *Service) nextDecode() (scaledKey, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.paused {
+		return scaledKey{}, false
+	}
 	for _, k := range s.wanted {
 		if _, ok := s.cache[k]; ok || s.inflight[k] || s.missing[k.Pic] || s.failed[k.Pic] {
 			continue
@@ -300,6 +316,9 @@ func (s *Service) put(k scaledKey, img *image.RGBA) {
 func (s *Service) nextDownload() (Pic, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.paused {
+		return Pic{}, false
+	}
 	if s.client == nil || s.offline {
 		return Pic{}, false
 	}

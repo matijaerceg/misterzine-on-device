@@ -56,7 +56,8 @@ type host struct {
 	uiRun       chan func()
 	quit        chan struct{}
 	launch      string
-	dirty       bool // state needs saving
+	dirty       bool          // state needs saving
+	lostCh      chan struct{} // the screen-lost probe fired
 	checkFailed atomic.Bool
 	dataUpdated time.Time // the data's build time, for the clock check
 	slowLog     time.Time
@@ -75,6 +76,11 @@ type host struct {
 }
 
 func main() {
+	// fewer collections (the decoder allocates a lot), with a hard cap
+	debug.SetGCPercent(400)
+	debug.SetMemoryLimit(96 << 20)
+	// ahead of Main and the resident services when a frame is due
+	syscall.Setpriority(syscall.PRIO_PROCESS, 0, -10)
 	if len(os.Args) > 1 && os.Args[1] == "console-restore" {
 		mister.RestoreAll()
 		return
@@ -277,6 +283,27 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 		}, lg)
 	}
 
+	// the pad's menu button: Main takes the screen back and grabs the
+	// input devices; a probe every quarter second notices (it costs tens of
+	// milliseconds, so it runs off the UI goroutine)
+	h.lostCh = make(chan struct{}, 1)
+	go func() {
+		for {
+			select {
+			case <-h.quit:
+				return
+			case <-time.After(250 * time.Millisecond):
+			}
+			if h.input.ScreenLost() {
+				select {
+				case h.lostCh <- struct{}{}:
+				default:
+				}
+				return
+			}
+		}
+	}()
+
 	// card scan: cores, MRA presence, then alternatives
 	go h.scan(ds.Rows)
 
@@ -344,12 +371,11 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 			if first || r.notice != "" {
 				h.a.Notice(r.notice, 8*time.Second)
 			}
+		case <-h.lostCh:
+			lg.Printf("Main took the screen back (menu button): leaving")
+			h.stop()
+			continue
 		case <-tick:
-			if h.input.ScreenLost() {
-				lg.Printf("Main took the screen back (menu button): leaving")
-				h.stop()
-				continue
-			}
 		}
 		h.a.Tick(time.Now())
 		h.present()
@@ -403,26 +429,59 @@ func (h *host) drainEvents() {
 // in (the wait for vsync already happened). Pictures that land are painted
 // within the same frame budget; nothing else runs.
 func (h *host) frameLoop() {
-	probe := 0
+	// the decoder shares the memory bus and the GC with us: quiet it, and
+	// let pictures that already landed wait until the key is released
+	h.img.SetPaused(true)
+	t0, iters, p0, late := time.Now(), 0, h.stats.n, 0
+	var longWait time.Duration
+	longWaits := 0
+	defer func() {
+		h.img.SetPaused(false)
+		h.a.Invalidate()
+		if d := time.Since(t0); d > time.Second {
+			h.lg.Printf("frame loop: %d frames in %s (%.1f/s), %d presents, %d over budget, %d vsync waits over 20ms (max %s)", iters, d.Round(time.Millisecond), float64(iters)/d.Seconds(), h.stats.n-p0, late, longWaits, longWait.Round(100*time.Microsecond))
+		}
+	}()
 	for h.a.Repeating() {
+		iters++
 		h.drainEvents()
 		select {
 		case <-h.quit:
 			return
-		case <-h.img.Ready():
-			h.a.Invalidate()
 		default:
 		}
 		if !h.a.Repeating() {
 			return
 		}
+		// paint first, then copy right after the vertical blank: the copy
+		// runs ahead of the beam, so the single buffer never tears
+		t := time.Now()
+		h.a.Frame(t)
+		frame, dirty := h.a.Paint()
+		paint := time.Since(t)
+		t = time.Now()
 		h.fb.WaitVSync()
-		h.a.Frame(time.Now())
-		h.presentSynced()
-		if probe++; probe%30 == 0 && h.input.ScreenLost() {
+		if w := time.Since(t); w > longWait {
+			longWait = w
+		}
+		if time.Since(t) > 20*time.Millisecond {
+			longWaits++
+		}
+		if dirty != nil {
+			t = time.Now()
+			h.fb.PresentWait(frame, dirty, false)
+			cp := time.Since(t)
+			h.stats.add(paint, 0, cp)
+			if paint+cp > 16*time.Millisecond {
+				late++
+			}
+		}
+		select {
+		case <-h.lostCh:
 			h.lg.Printf("Main took the screen back (menu button): leaving")
 			h.stop()
 			return
+		default:
 		}
 	}
 }
@@ -448,18 +507,12 @@ func (h *host) runOnUI(f func()) {
 	<-done
 }
 
-func (h *host) present() { h.presentWith(true) }
-
-// presentSynced is present for the frame loop, which has already waited
-// for the vertical blank.
-func (h *host) presentSynced() { h.presentWith(false) }
-
-func (h *host) presentWith(wait bool) {
+func (h *host) present() {
 	t0 := time.Now()
 	frame, dirty := h.a.Paint()
 	if dirty != nil {
 		t1 := time.Now()
-		h.fb.PresentWait(frame, dirty, wait)
+		h.fb.Present(frame, dirty)
 		h.stats.add(t1.Sub(t0), h.fb.LastWait, time.Since(t1)-h.fb.LastWait)
 		if d := time.Since(t0); d > 40*time.Millisecond && time.Since(h.slowLog) > 5*time.Second {
 			h.slowLog = time.Now()

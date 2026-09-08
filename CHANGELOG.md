@@ -10,8 +10,12 @@
   normal 20 / fast 30 / turbo 60 rows a second, and nothing else (state
   saves, network checks) runs between two frames. Left/Right page at the
   same pace. A scrollbar beside the list.
-- L and R jump to the top and bottom; pressing again comes back to the row
-  you left, unless you scrolled away.
+- L and R jump to the top and bottom.
+- Details ignore A for half a second after opening, so a double tap in the
+  list cannot launch.
+- Screenshot decoding and downloads pause while a key is held; the menu
+  button probe runs off the drawing loop (it was costing a few frames a
+  second).
 - Details: Up/Down pick the launch target; row browsing from details is
   gone (go back to the list). No B legend.
 - "no connection" instead of "offline", and no label at all in the first

@@ -29,12 +29,15 @@ const (
 type Images interface {
 	Get(req ImageReq) (*image.RGBA, ImageState)
 	Want(reqs []ImageReq)
+	// SetPaused stops background decoding while the UI scrolls.
+	SetPaused(paused bool)
 }
 
 // noImages is the provider used before the pipeline exists, and in tests.
 type noImages struct{}
 
 func (noImages) Get(ImageReq) (*image.RGBA, ImageState) { return nil, ImageMissing }
+func (noImages) SetPaused(bool)                         {}
 func (noImages) Want([]ImageReq)                        {}
 
 // thumbSlot picks the slot the list thumbnail shows: snap, then title, then
