@@ -15,6 +15,8 @@ import (
 type panelEntry struct {
 	text    string
 	header  bool
+	info    bool   // plain text, never selectable
+	help    string // shown in the help area while selected
 	kind    string // filter section: "base","src","rot","plr","genre","install","fav"; settings: "rotation","inset","prefetch","rescan","refresh","clear","about","settings","back"
 	value   string // facet value for filter entries
 	checked bool
@@ -61,8 +63,8 @@ func (a *App) buildPanel() {
 	if a.panel.cursor >= len(a.panel.entries) {
 		a.panel.cursor = len(a.panel.entries) - 1
 	}
-	// skip blank spacer headers
-	for a.panel.cursor < len(a.panel.entries)-1 && a.panel.entries[a.panel.cursor].header && a.panel.entries[a.panel.cursor].text == "" {
+	// skip spacer and info lines
+	for a.panel.cursor < len(a.panel.entries)-1 && (a.panel.entries[a.panel.cursor].info || (a.panel.entries[a.panel.cursor].header && a.panel.entries[a.panel.cursor].text == "")) {
 		a.panel.cursor++
 	}
 	a.all = true
@@ -135,20 +137,36 @@ func (a *App) filterEntries() []panelEntry {
 }
 
 func (a *App) settingsEntries() []panelEntry {
-	rot := map[gfx.Rotation]string{gfx.RotNone: "off", gfx.RotRight: "monitor turned right", gfx.RotLeft: "monitor turned left"}[a.rot]
+	rot := map[gfx.Rotation]string{gfx.RotNone: "off", gfx.RotRight: "turned right", gfx.RotLeft: "turned left"}[a.rot]
+	launcher := "n/a"
+	if a.cfg.Launcher != nil {
+		launcher = onOff(a.cfg.Launcher())
+	}
 	return []panelEntry{
-		{text: "Settings", header: true},
-		{text: "Rotation: " + rot + "  (A cycles)", kind: "rotation"},
-		{text: "Safe zone: " + itoa(a.cfg.SafeInset) + " px  (A adjusts)", kind: "inset"},
-		{text: "Prefetch all shots: " + onOff(a.panel.prefetch) + a.progressText(), kind: "prefetch"},
-		{text: "Main menu launcher: " + a.launcherText(), kind: "launcher"},
-		{text: "Rescan card", kind: "rescan"},
-		{text: "Refresh data now", kind: "refresh"},
-		{text: "Clear image cache", kind: "clearimg"},
-		{text: "", header: true},
-		{text: "misterzine " + a.cfg.Version, header: true},
-		{text: "data " + a.ds.Updated.Format("2006-01-02 15:04") + "  " + short(a.ds.Hash), header: true},
-		{text: "Back", kind: "back"},
+		{text: "Settings", header: true, info: true},
+		{text: "Rotation: " + rot, kind: "rotation",
+			help: "How your monitor is turned. Auto follows osd_rotate in MiSTer.ini. A cycles off / right / left."},
+		{text: "Safe zone: " + itoa(a.cfg.SafeInset) + " px", kind: "inset",
+			help: "Margin kept clear of the screen edge (overscan). A opens the calibration frame; fit it just inside the picture."},
+		{text: "Scroll speed: " + a.scrollText(), kind: "scroll",
+			help: "How fast a held Up/Down moves through the list. Fast is about 30 rows a second."},
+		{text: "Prefetch all shots: " + onOff(a.panel.prefetch) + a.progressText(), kind: "prefetch",
+			help: "Download every screenshot in the background (about 55 MB) so browsing never waits. Off: only what you look at."},
+		{text: "Main menu launcher: " + launcher, kind: "launcher",
+			help: "Puts a misterzine entry in the MiSTer main menu (adds a line to user-startup.sh). Off removes it; Scripts still works."},
+		{text: "Rescan card", kind: "rescan",
+			help: "Re-read which cores and MRAs are on the card. Do this after running update_all."},
+		{text: "Refresh data now", kind: "refresh",
+			help: "Ask misterzine.fyi for new rows right now (it also checks on launch and every 30 min)."},
+		{text: "Clear image cache", kind: "clearimg",
+			help: "Delete the downloaded screenshots and system photos; they come back as you browse."},
+		{text: "Input test", kind: "inputtest",
+			help: "Shows every press and release the app receives, with timing, to debug a pad or keyboard encoder."},
+		{text: "Quit misterzine", kind: "quit",
+			help: "Back to the MiSTer menu. The pad's menu button does the same."},
+		{text: "", header: true, info: true},
+		{text: "misterzine " + a.cfg.Version, header: true, info: true},
+		{text: "data " + a.ds.Updated.Format("2006-01-02 15:04") + "  " + short(a.ds.Hash), header: true, info: true},
 	}
 }
 
@@ -160,6 +178,13 @@ func (a *App) launcherText() string {
 		return "on  (A turns off)"
 	}
 	return "off  (A puts misterzine in the main menu)"
+}
+
+func (a *App) scrollText() string {
+	if a.cfg.Scroll == "" {
+		return "fast"
+	}
+	return a.cfg.Scroll
 }
 
 func (a *App) progressText() string {
@@ -190,7 +215,12 @@ func short(h string) string {
 func (a *App) paintPanel(c *gfx.Canvas) {
 	l := &a.lay
 	box := l.Body
-	c.Fill(box, gen.Eva.Bg)
+	helpH := 0
+	if a.screen == ScreenSettings {
+		helpH = 2*(a.sm.H+1) + 3
+	}
+	box.Max.Y -= helpH
+	c.Fill(l.Body, gen.Eva.Bg)
 	c.Box(box, gen.Eva.Line)
 	inner := box.Inset(2)
 	lh := a.body.H
@@ -211,6 +241,8 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			c.Fill(r, gen.Eva.Surface)
 		}
 		switch {
+		case e.header && e.info:
+			c.Text(inner.Min.X+2, y, a.body, gfx.Fit(e.text, cols), gen.Eva.Muted)
 		case e.header:
 			c.Text(inner.Min.X+2, y, a.body, gfx.Fit(e.text, cols), gen.Eva.Accent)
 		case e.kind == "base" || e.kind == "src" || e.kind == "rot" || e.kind == "plr" || e.kind == "genre" || e.kind == "install" || e.kind == "fav" || e.kind == "since":
@@ -237,16 +269,26 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 		y += lh
 	}
 	if a.screen == ScreenSettings {
-		a.paintHint(c, "A change  B back")
+		// help for the selected item, wrapped to two small lines
+		if p.cursor < len(p.entries) && p.entries[p.cursor].help != "" {
+			hy := box.Max.Y + 2
+			for _, ln := range gfx.Wrap(p.entries[p.cursor].help, a.sm.Cols(l.Body.Dx()-4), 2) {
+				c.Text(l.Body.Min.X+2, hy, a.sm, ln, gen.Eva.Fg)
+				hy += a.sm.H + 1
+			}
+		}
+		a.paintHint(c, "A change  B back to filters")
 	} else {
-		a.paintHint(c, "A toggle  </> section  B/X close")
+		a.paintHint(c, "A toggle  </> section  X close  Settings at top")
 	}
 }
 
 func (a *App) actPanel(k platform.Key) bool {
 	p := &a.panel
 	n := len(p.entries)
-	selectable := func(i int) bool { return i >= 0 && i < n && !(p.entries[i].header && p.entries[i].text == "") }
+	selectable := func(i int) bool {
+		return i >= 0 && i < n && !p.entries[i].info && !(p.entries[i].header && p.entries[i].text == "")
+	}
 	switch k {
 	case platform.KeyBack, platform.KeyTab:
 		if a.screen == ScreenSettings {
@@ -408,6 +450,29 @@ func (a *App) togglePanel() bool {
 		}
 		a.buildPanel()
 		return true
+	case "scroll":
+		order := []string{"normal", "fast", "turbo"}
+		cur := a.scrollText()
+		for i, v := range order {
+			if v == cur {
+				a.cfg.Scroll = order[(i+1)%len(order)]
+				break
+			}
+		}
+		if a.cfg.SettingsChanged != nil {
+			a.cfg.SettingsChanged()
+		}
+		a.buildPanel()
+		return true
+	case "inputtest":
+		a.screen = ScreenInput
+		a.all = true
+		return true
+	case "quit":
+		if a.cfg.Quit != nil {
+			a.cfg.Quit()
+		}
+		return false
 	case "prefetch":
 		a.panel.prefetch = !a.panel.prefetch
 		if a.cfg.Action != nil {

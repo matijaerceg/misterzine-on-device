@@ -20,11 +20,12 @@ type Settings struct {
 	Rotation string `json:"rotation"` // auto, left, right, off
 	Inset    int    `json:"inset"`
 	Prefetch bool   `json:"prefetch"`
+	Scroll   string `json:"scroll"` // normal, fast, turbo
 }
 
 // DefaultSettings for a fresh install.
 func DefaultSettings() Settings {
-	return Settings{Schema: 1, Rotation: "auto", Inset: 8}
+	return Settings{Schema: 1, Rotation: "auto", Inset: 8, Scroll: "fast"}
 }
 
 // State is what the app restores between runs.

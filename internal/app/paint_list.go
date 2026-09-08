@@ -18,9 +18,9 @@ func (a *App) paintList(c *gfx.Canvas) {
 	a.paintRows(c)
 	a.paintPane(c)
 	if a.lay.Portrait {
-		a.paintHint(c, "A info  > shots  Y sort  X filter  B quit")
+		a.paintHint(c, "A info  > shots  Y sort  X filters+settings")
 	} else {
-		a.paintHint(c, "A details  > shots  Y sort  X filter  B quit")
+		a.paintHint(c, "A details  > shots  Y sort  X filters and settings")
 	}
 }
 
@@ -44,10 +44,28 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 	}
 }
 
+// paintHint draws the bottom hint bar. Chunks are separated by two spaces;
+// the first word of each chunk is the button and paints in the accent.
 func (a *App) paintHint(c *gfx.Canvas, s string) {
 	l := &a.lay
 	c.Fill(l.Hint, gen.Eva.Surface)
-	c.Text(l.Hint.Min.X+2, l.Hint.Min.Y+2, a.sm, gfx.Fit(s, a.sm.Cols(l.Hint.Dx()-4)), gen.Eva.Muted)
+	a.hintLine(c, l.Hint.Min.X+2, l.Hint.Min.Y+2, l.Hint.Dx()-4, s)
+}
+
+func (a *App) hintLine(c *gfx.Canvas, x, y, w int, s string) {
+	maxX := x + w
+	for _, chunk := range strings.Split(s, "  ") {
+		chunk = strings.TrimSpace(chunk)
+		if chunk == "" {
+			continue
+		}
+		btn, rest, _ := strings.Cut(chunk, " ")
+		if x+a.sm.Width(btn+" "+rest) > maxX {
+			break
+		}
+		x += c.Text(x, y, a.sm, btn, gen.Eva.Accent)
+		x += c.Text(x, y, a.sm, " "+rest+"  ", gen.Eva.Muted)
+	}
 }
 
 // paintRows draws the visible list lines: rows, and the last-look marker.

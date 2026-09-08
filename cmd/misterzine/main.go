@@ -184,7 +184,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	favSet := h.favs.Set()
 	cfg := app.Config{
 		PhysW: canvasW, PhysH: canvasH, Rotation: rotation, SafeInset: h.settings.Inset,
-		Now: time.Now, ClockTrusted: trusted, Favorites: favSet, Images: h.img,
+		Now: time.Now, ClockTrusted: trusted, Favorites: favSet, Images: h.img, Scroll: h.settings.Scroll,
 		Progress: func() (int, int) { return h.img.Progress() },
 		Launcher: launcherEnabled,
 		Status: func(i int) data.Status {
@@ -429,6 +429,7 @@ func (h *host) saveAll(final bool) {
 	}
 	if h.setDirty || final {
 		h.settings.Inset = h.a.Inset()
+		h.settings.Scroll = h.a.ScrollSpeed()
 		switch h.a.Rotation() {
 		case gfx.RotLeft:
 			h.settings.Rotation = "left"

@@ -20,7 +20,7 @@ type repeater struct {
 }
 
 const (
-	repeatDelay = 220 * time.Millisecond
+	repeatDelay = 200 * time.Millisecond
 	repeatSlow  = 48 * time.Millisecond
 	repeatMid   = 28 * time.Millisecond
 	repeatFast  = 16 * time.Millisecond
@@ -64,13 +64,19 @@ func (r *repeater) nextAt() time.Time {
 	return r.next
 }
 
-// accel is the list scrolling ladder: brisk, then faster after 8 and 22 steps.
-func accel(count int) time.Duration {
-	switch {
-	case count > 22:
-		return repeatFast
-	case count > 8:
-		return repeatMid
+// Scroll speeds for a held Up/Down in lists: a steady rate with a short
+// warm-up. "fast" is about 30 rows a second, which is what a CRT list wants.
+var scrollSpeeds = map[string]time.Duration{"normal": 50 * time.Millisecond, "fast": 33 * time.Millisecond, "turbo": 20 * time.Millisecond}
+
+// accel is the list scrolling ladder for the chosen speed: two slower steps
+// so a single tap never overshoots, then the steady rate.
+func accel(speed string, count int) time.Duration {
+	d, ok := scrollSpeeds[speed]
+	if !ok {
+		d = scrollSpeeds["fast"]
 	}
-	return repeatSlow
+	if count <= 2 {
+		return d * 2
+	}
+	return d
 }

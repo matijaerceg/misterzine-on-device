@@ -27,10 +27,11 @@ const (
 	ScreenFilter
 	ScreenSettings
 	ScreenCalibrate
+	ScreenInput
 )
 
 func (s Screen) String() string {
-	return [...]string{"list", "details", "screen", "filter", "settings", "calibrate"}[s]
+	return [...]string{"list", "details", "screen", "filter", "settings", "calibrate", "input"}[s]
 }
 
 // Config is what the app needs from its host.
@@ -61,6 +62,8 @@ type Config struct {
 	Exists func(rel string) bool
 	// Launcher reports whether the main-menu launcher is enabled (nil = unsupported).
 	Launcher func() bool
+	// Scroll is the held-scrolling speed: normal, fast (default), turbo.
+	Scroll string
 }
 
 // App is the state machine.
@@ -91,13 +94,15 @@ type App struct {
 	detail   detailState
 	panel    panelState
 
-	wants  []ImageReq // pictures this frame asked for, in priority order
-	rep    repeater
-	down   map[platform.Key]bool // keys currently held, across all devices
-	notice string
-	until  time.Time
-	net    string // status bar right text: "offline", "updating", "data 2h ago"
-	all    bool   // full repaint pending
+	wants     []ImageReq // pictures this frame asked for, in priority order
+	inputLog  []inputRec
+	inputBack time.Time
+	rep       repeater
+	down      map[platform.Key]bool // keys currently held, across all devices
+	notice    string
+	until     time.Time
+	net       string // status bar right text: "offline", "updating", "data 2h ago"
+	all       bool   // full repaint pending
 }
 
 type detailState struct {
@@ -153,6 +158,9 @@ func (a *App) SetInset(px int) {
 	a.cfg.SafeInset = px
 	a.setRotation(a.rot)
 }
+
+// ScrollSpeed reports the held-scrolling speed setting.
+func (a *App) ScrollSpeed() string { return a.scrollText() }
 
 // Rotation and Inset report the current display settings.
 func (a *App) Rotation() gfx.Rotation { return a.rot }
@@ -326,16 +334,17 @@ func (a *App) Handle(ev platform.Event) bool {
 	if ev.Key == platform.KeyNone || ev.Key == platform.KeyOther {
 		return false
 	}
+	a.recordInput(ev)
 	if !ev.Pressed {
 		if !a.down[ev.Key] {
-			return false
+			return a.screen == ScreenInput
 		}
 		delete(a.down, ev.Key)
 		a.rep.release(ev.Key)
-		return false
+		return a.screen == ScreenInput
 	}
 	if a.down[ev.Key] {
-		return false
+		return a.screen == ScreenInput
 	}
 	a.down[ev.Key] = true
 	a.rep.press(ev.Key, ev.At)
@@ -349,7 +358,7 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 	case ScreenList:
 		switch k {
 		case platform.KeyUp, platform.KeyDown:
-			return accel(count)
+			return accel(a.cfg.Scroll, count)
 		case platform.KeyPageUp, platform.KeyPageDown:
 			return repeatPage
 		}
@@ -368,7 +377,7 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 	case ScreenFilter, ScreenSettings:
 		switch k {
 		case platform.KeyUp, platform.KeyDown:
-			return accel(count)
+			return accel("normal", count)
 		case platform.KeyLeft, platform.KeyRight, platform.KeyPageUp, platform.KeyPageDown:
 			return repeatStep
 		}
@@ -419,6 +428,8 @@ func (a *App) act(k platform.Key) bool {
 		return a.actPanel(k)
 	case ScreenCalibrate:
 		return a.actCalibrate(k)
+	case ScreenInput:
+		return a.actInput(k)
 	}
 	return false
 }
@@ -473,10 +484,9 @@ func (a *App) actList(k platform.Key) bool {
 		}
 		return true
 	case platform.KeyBack:
-		if a.cfg.Quit != nil {
-			a.cfg.Quit()
-		}
-		return false
+		// B is never an exit: the pad's menu button and Settings > Quit are
+		a.Notice("menu button or Settings > Quit leaves the app", 3*time.Second)
+		return true
 	default:
 		return false
 	}
@@ -586,6 +596,8 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 		a.paintPanel(c)
 	case ScreenCalibrate:
 		a.paintCalibrate(c)
+	case ScreenInput:
+		a.paintInput(c)
 	}
 	a.neighbourhood()
 	a.cfg.Images.Want(a.wants)
