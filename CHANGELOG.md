@@ -11,6 +11,9 @@
   saves, network checks) runs between two frames. Left/Right page at the
   same pace. A scrollbar beside the list.
 - L and R jump to the top and bottom.
+- The pane pictures of the next 16 rows (and the previous 6) are fetched
+  and decoded ahead while you browse, nearest first; only a key that has
+  started repeating pauses that work, a tap does not.
 - Screen view uses the whole screen: a shot up to 15% larger than the
   screen shows pixel for pixel, cropped at the edges; only much bigger ones
   are scaled down. (A 240p shot on a 240p screen is untouched.),

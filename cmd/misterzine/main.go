@@ -436,14 +436,16 @@ func (h *host) drainEvents() {
 // in (the wait for vsync already happened). Pictures that land are painted
 // within the same frame budget; nothing else runs.
 func (h *host) frameLoop() {
-	// the decoder shares the memory bus and the GC with us: quiet it, and
-	// let pictures that already landed wait until the key is released
-	h.img.SetPaused(true)
+	// the decoder shares the memory bus and the GC with us: quiet it once
+	// the key really repeats (a tap leaves it working on the neighbours)
+	paused := false
 	t0, iters, p0, late := time.Now(), 0, h.stats.n, 0
 	var longWait time.Duration
 	longWaits := 0
 	defer func() {
-		h.img.SetPaused(false)
+		if paused {
+			h.img.SetPaused(false)
+		}
 		h.a.Invalidate()
 		if d := time.Since(t0); d > time.Second {
 			h.lg.Printf("frame loop: %d frames in %s (%.1f/s), %d presents, %d over budget, %d vsync waits over 20ms (max %s)", iters, d.Round(time.Millisecond), float64(iters)/d.Seconds(), h.stats.n-p0, late, longWaits, longWait.Round(100*time.Microsecond))
@@ -464,6 +466,10 @@ func (h *host) frameLoop() {
 		// runs ahead of the beam, so the single buffer never tears
 		t := time.Now()
 		h.a.Frame(t)
+		if !paused && h.a.RepeatActive() {
+			paused = true
+			h.img.SetPaused(true)
+		}
 		frame, dirty := h.a.Paint()
 		paint := time.Since(t)
 		t = time.Now()

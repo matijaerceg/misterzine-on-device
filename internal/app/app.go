@@ -585,6 +585,11 @@ func (a *App) Invalidate() {
 // host then runs its vsync-driven frame loop (see Frame).
 func (a *App) Repeating() bool { return a.rep.held }
 
+// RepeatActive reports whether a held key has started repeating (a tap
+// released before the delay never does), which is when background work
+// should step aside.
+func (a *App) RepeatActive() bool { return a.rep.held && a.rep.count > 0 }
+
 // want records a picture this frame needs; the list goes to the provider
 // once per paint, in the order the views asked, so the cursor's pane image
 // comes before neighbours and prefetch.
@@ -598,15 +603,18 @@ func (a *App) want(req ImageReq) {
 }
 
 // neighbourhood asks for the pane thumbnails of the rows around the cursor
-// so scrolling finds them decoded already.
+// so tapping along finds them downloaded and decoded already: 16 rows
+// ahead, 6 behind, nearest first. The provider works through the list in
+// order and only while nothing nearer is missing, and a held key pauses it,
+// so this never competes with scrolling.
 func (a *App) neighbourhood() {
 	if a.screen != ScreenList && a.screen != ScreenShot {
 		return
 	}
 	box := a.lay.Thumb
-	for d := 1; d <= 8; d++ {
+	for d := 1; d <= 16; d++ {
 		for _, pos := range []int{a.cursor + d, a.cursor - d} {
-			if pos < 0 || pos >= len(a.view) || (d > 4 && pos < a.cursor) {
+			if pos < 0 || pos >= len(a.view) || (d > 6 && pos < a.cursor) {
 				continue
 			}
 			row := &a.ds.Rows[a.view[pos]]
