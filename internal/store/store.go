@@ -20,12 +20,30 @@ type Settings struct {
 	Rotation string `json:"rotation"` // auto, left, right, off
 	Inset    int    `json:"inset"`
 	Prefetch bool   `json:"prefetch"`
-	Scroll   string `json:"scroll"` // normal, fast, turbo
+	Scroll   string `json:"scroll"` // rows per second: 20, 30, 60
+	InsetX   int    `json:"inset_x"`
+	InsetY   int    `json:"inset_y"`
 }
 
 // DefaultSettings for a fresh install.
 func DefaultSettings() Settings {
-	return Settings{Schema: 1, Rotation: "auto", Inset: 8, Scroll: "fast"}
+	return Settings{Schema: 1, Rotation: "auto", Inset: 15, InsetX: 15, InsetY: 15, Scroll: "30"}
+}
+
+// Migrate brings an older settings file up to date: the single inset
+// becomes two, and the speed adjectives become rows per second.
+func (s *Settings) Migrate() {
+	if s.InsetX == 0 && s.InsetY == 0 {
+		s.InsetX, s.InsetY = s.Inset, s.Inset
+	}
+	switch s.Scroll {
+	case "normal":
+		s.Scroll = "20"
+	case "fast", "":
+		s.Scroll = "30"
+	case "turbo":
+		s.Scroll = "60"
+	}
 }
 
 // State is what the app restores between runs.

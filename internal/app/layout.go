@@ -37,10 +37,15 @@ const (
 	thumbH  = 72
 )
 
-// NewLayout computes the layout for a logical W x H canvas.
-func NewLayout(w, h, inset int, body *gfx.Font) Layout {
-	l := Layout{W: w, H: h, Inset: inset, Portrait: h > w, Line: body.H}
-	l.Root = image.Rect(inset, inset, w-inset, h-inset)
+// NewLayout computes the layout for a logical W x H canvas. The insets are
+// the safe-zone margins on the PHYSICAL screen (ix left/right, iy
+// top/bottom); in tate the logical canvas is turned, so they swap.
+func NewLayout(w, h, ix, iy int, body *gfx.Font) Layout {
+	l := Layout{W: w, H: h, Inset: ix, Portrait: h > w, Line: body.H}
+	if l.Portrait {
+		ix, iy = iy, ix
+	}
+	l.Root = image.Rect(ix, iy, w-ix, h-iy)
 	l.Status = image.Rect(l.Root.Min.X, l.Root.Min.Y, l.Root.Max.X, l.Root.Min.Y+statusH)
 	l.Hint = image.Rect(l.Root.Min.X, l.Root.Max.Y-hintH, l.Root.Max.X, l.Root.Max.Y)
 	l.Body = image.Rect(l.Root.Min.X, l.Status.Max.Y, l.Root.Max.X, l.Hint.Min.Y)

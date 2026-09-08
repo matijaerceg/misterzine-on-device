@@ -77,6 +77,9 @@ MiSTer turns the gamepad into these keys while a script runs.
 | D-pad up/down | arrows | move (hold to fly) | pick launch target | | move |
 | D-pad left/right | arrows | page (hold to fly) | | previous/next shot | jump section |
 | L / R | PageUp/Down | top / bottom | scroll info | | page |
+
+In Settings, Left/Right change a value; A opens the safe-zone editor, where
+Left/Right set the side margins and Up/Down the top and bottom ones.
 | A | Enter | details | launch | back to details | toggle |
 | B | Esc | | back | back to details | close |
 | Menu | | back to the MiSTer menu (the app closes) | | | |

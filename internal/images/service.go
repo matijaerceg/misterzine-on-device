@@ -61,6 +61,8 @@ type Service struct {
 	kick        chan struct{}
 	decodeKick  chan struct{}
 	paused      bool // no decoding while the UI scrolls
+	have        int  // prefetch pictures on disk (kept current, never rescanned per call)
+	haveKnown   bool
 	ready       chan struct{}
 	stop        chan struct{}
 	wg          sync.WaitGroup
@@ -131,11 +133,29 @@ func (s *Service) SetOffline(off bool) {
 // switches prefetching on or off.
 func (s *Service) SetPrefetch(pics []Pic, on bool) {
 	s.mu.Lock()
+	rescan := !s.haveKnown || len(pics) != len(s.prefetch)
 	s.prefetch = pics
 	s.prefetchOn = on
 	s.prefetchPos = 0
 	s.mu.Unlock()
+	if rescan {
+		go s.countHave(pics)
+	}
 	s.poke(s.kick)
+}
+
+// countHave counts the prefetch pictures already on disk, once, off the UI.
+func (s *Service) countHave(pics []Pic) {
+	n := 0
+	for _, p := range pics {
+		if s.exists(p) {
+			n++
+		}
+	}
+	s.mu.Lock()
+	s.have, s.haveKnown = n, true
+	s.mu.Unlock()
+	s.signal()
 }
 
 // SetPaused stops the decoder (the UI is scrolling and wants both cores'
@@ -153,14 +173,8 @@ func (s *Service) SetPaused(p bool) {
 // Progress reports the prefetch state: files present, total in the list.
 func (s *Service) Progress() (have, total int) {
 	s.mu.Lock()
-	pics := s.prefetch
-	s.mu.Unlock()
-	for _, p := range pics {
-		if s.exists(p) {
-			have++
-		}
-	}
-	return have, len(pics)
+	defer s.mu.Unlock()
+	return s.have, len(s.prefetch)
 }
 
 func (s *Service) path(p Pic) string {
@@ -404,6 +418,14 @@ func (s *Service) download(p Pic) {
 	s.mu.Lock()
 	s.prefetched++
 	s.mu.Unlock()
+	s.mu.Lock()
+	for _, q := range s.prefetch {
+		if q == p {
+			s.have++
+			break
+		}
+	}
+	s.mu.Unlock()
 	s.poke(s.decodeKick)
 	s.signal()
 }
@@ -459,7 +481,9 @@ func (s *Service) ClearCache() {
 	s.missing = map[Pic]bool{}
 	s.failed = map[Pic]bool{}
 	s.prefetchPos = 0
+	s.have = 0
 	s.mu.Unlock()
+	s.signal()
 	for _, sub := range []string{"title", "snap", "ingame", "systems"} {
 		os.RemoveAll(filepath.Join(s.dir, sub))
 		os.MkdirAll(filepath.Join(s.dir, sub), 0755)

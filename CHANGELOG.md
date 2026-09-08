@@ -11,6 +11,12 @@
   saves, network checks) runs between two frames. Left/Right page at the
   same pace. A scrollbar beside the list.
 - L and R jump to the top and bottom.
+- Settings: Left/Right change a value (arrows show which way can still
+  move); scroll speed reads 20 / 30 / 60 Hz and defaults to 30; "Edit safe
+  zone" sets the side margins with Left/Right and the top and bottom ones
+  with Up/Down (two settings, default 15 px); the prefetch tally counts up
+  live and drops to zero on clear; the Input test is gone. Settings
+  repaints no longer stat every screenshot on the card.
 - Details ignore A for half a second after opening, so a double tap in the
   list cannot launch.
 - Screenshot decoding and downloads pause while a key is held; the menu

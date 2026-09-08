@@ -15,10 +15,12 @@ import (
 type panelEntry struct {
 	text    string
 	header  bool
-	info    bool   // plain text, never selectable
-	help    string // shown in the help area while selected
-	kind    string // filter section: "base","src","rot","plr","genre","install","fav"; settings: "rotation","inset","prefetch","rescan","refresh","clear","about","settings","back"
-	value   string // facet value for filter entries
+	info    bool     // plain text, never selectable
+	help    string   // shown in the help area while selected
+	kind    string   // filter section: "base","src","rot","plr","genre","install","fav"; settings: "rotation","inset","prefetch","rescan","refresh","clear","about","settings","back"
+	value   string   // facet value for filter entries
+	vals    []string // settings: the choices, Left/Right pick one
+	idx     int      // settings: the current choice
 	checked bool
 	count   int
 }
@@ -28,8 +30,8 @@ type panelState struct {
 	cursor  int
 	top     int
 	// settings snapshot
-	prefetch bool
-	insetWas int // inset before calibration, for cancel
+	prefetch             bool
+	insetWasX, insetWasY int // insets before calibration, for cancel
 }
 
 func (a *App) openPanel(s Screen) {
@@ -138,21 +140,33 @@ func (a *App) filterEntries() []panelEntry {
 
 func (a *App) settingsEntries() []panelEntry {
 	rot := map[gfx.Rotation]string{gfx.RotNone: "off", gfx.RotRight: "turned right", gfx.RotLeft: "turned left"}[a.rot]
-	launcher := "n/a"
-	if a.cfg.Launcher != nil {
-		launcher = onOff(a.cfg.Launcher())
+	_ = rot
+	rotIdx := map[gfx.Rotation]int{gfx.RotNone: 0, gfx.RotRight: 1, gfx.RotLeft: 2}[a.rot]
+	scrollIdx := 1
+	for i, v := range ScrollValues {
+		if v == a.scrollText() {
+			scrollIdx = i
+		}
+	}
+	launcherIdx := 0
+	if a.cfg.Launcher != nil && a.cfg.Launcher() {
+		launcherIdx = 1
+	}
+	prefetchIdx := 0
+	if a.panel.prefetch {
+		prefetchIdx = 1
 	}
 	return []panelEntry{
 		{text: "Settings", header: true, info: true},
-		{text: "Rotation: " + rot, kind: "rotation",
-			help: "How your monitor is turned. Auto follows osd_rotate in MiSTer.ini. A cycles off / right / left."},
-		{text: "Safe zone: " + itoa(a.cfg.SafeInset) + " px", kind: "inset",
-			help: "Margin kept clear of the screen edge (overscan). A opens the calibration frame; fit it just inside the picture."},
-		{text: "Scroll speed: " + a.scrollText(), kind: "scroll",
-			help: "How fast a held Up/Down (rows) or Left/Right (pages) moves through the list. Normal is 20 rows a second, fast 30, turbo 60: one row every frame."},
-		{text: "Prefetch all shots: " + onOff(a.panel.prefetch) + a.progressText(), kind: "prefetch",
-			help: "Download every screenshot in the background (about 55 MB) so browsing never waits. Off: only what you look at."},
-		{text: "Main menu launcher: " + launcher, kind: "launcher",
+		{text: "Rotation", kind: "rotation", vals: []string{"off", "turned right", "turned left"}, idx: rotIdx,
+			help: "How your monitor is turned. The default follows osd_rotate in MiSTer.ini."},
+		{text: "Edit safe zone", kind: "inset",
+			help: "Margin kept clear of the screen edge (overscan): now " + itoa(a.cfg.SafeInsetX) + " px at the sides, " + itoa(a.cfg.SafeInsetY) + " px top and bottom. A opens the frame; fit it just inside the picture."},
+		{text: "Scroll speed", kind: "scroll", vals: []string{"20 Hz", "30 Hz", "60 Hz"}, idx: scrollIdx,
+			help: "How many rows (or pages, with Left/Right) a held direction moves per second. 60 Hz is one row every frame."},
+		{text: "Prefetch all shots" + a.progressText(), kind: "prefetch", vals: []string{"off", "on"}, idx: prefetchIdx,
+			help: "Download every screenshot in the background (about 55 MB) so browsing never waits; the tally counts up as they land. Off: only what you look at."},
+		{text: "Main menu launcher", kind: "launcher", vals: []string{"off", "on"}, idx: launcherIdx,
 			help: "Puts a MisterZine entry in the MiSTer main menu, next to Arcade and Console. Adds one line to linux/user-startup.sh and ships MisterZine.mgl. Off removes both; the Scripts menu entry keeps working."},
 		{text: "Rescan card", kind: "rescan",
 			help: "Re-read which cores and MRAs are on the card. Do this after running update_all."},
@@ -160,8 +174,6 @@ func (a *App) settingsEntries() []panelEntry {
 			help: "Ask misterzine.fyi for new releases right now. The app also checks on launch and every 30 minutes while open; new rows show a notice and their dates in green."},
 		{text: "Clear image cache", kind: "clearimg",
 			help: "Delete the downloaded screenshots and system photos; they come back as you browse."},
-		{text: "Input test", kind: "inputtest",
-			help: "Shows every press and release the app receives, with timing, to debug a pad or keyboard encoder."},
 		{text: "Quit misterzine", kind: "quit",
 			help: "Back to the MiSTer menu. The pad's menu button does the same."},
 		{text: "", header: true, info: true},
@@ -182,7 +194,7 @@ func (a *App) launcherText() string {
 
 func (a *App) scrollText() string {
 	if a.cfg.Scroll == "" {
-		return "fast"
+		return "30"
 	}
 	return a.cfg.Scroll
 }
@@ -259,6 +271,23 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 				col = gen.Eva.Accent
 			}
 			c.Text(inner.Min.X+2, y, a.body, gfx.Fit(text, cols), col)
+		case len(e.vals) > 0:
+			col := gen.Eva.Fg
+			if n == p.cursor {
+				col = gen.Eva.Accent
+			}
+			// the value with an arrow on each side that can still move
+			left, right := " ", " "
+			if e.idx > 0 {
+				left = gfx.ArrowLeft
+			}
+			if e.idx < len(e.vals)-1 {
+				right = gfx.ArrowRight
+			}
+			val := left + " " + e.vals[e.idx] + " " + right
+			vw := a.body.Width(val)
+			c.Text(inner.Min.X+2, y, a.body, gfx.Fit(e.text, a.body.Cols(inner.Dx()-6-vw)), col)
+			c.Text(inner.Max.X-2-vw, y, a.body, val, col)
 		default:
 			col := gen.Eva.Fg
 			if n == p.cursor {
@@ -277,7 +306,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 				hy += a.sm.H + 1
 			}
 		}
-		a.paintHint(c, "A change  B back to filters")
+		a.paintHint(c, gfx.ArrowLeft+" "+gfx.ArrowRight+" change  A open  B back")
 	} else {
 		a.paintHint(c, "A toggle  "+gfx.ArrowLeft+" "+gfx.ArrowRight+" section  X close  Settings at top")
 	}
@@ -313,6 +342,9 @@ func (a *App) actPanel(k platform.Key) bool {
 			}
 		}
 	case platform.KeyLeft, platform.KeyPageUp:
+		if a.screen == ScreenSettings {
+			return a.stepValue(-1)
+		}
 		// previous section header (headers are selectable: A on one = all)
 		for i := p.cursor - 1; i >= 0; i-- {
 			if p.entries[i].header && p.entries[i].text != "" {
@@ -321,6 +353,9 @@ func (a *App) actPanel(k platform.Key) bool {
 			}
 		}
 	case platform.KeyRight, platform.KeyPageDown:
+		if a.screen == ScreenSettings {
+			return a.stepValue(1)
+		}
 		for i := p.cursor + 1; i < n; i++ {
 			if p.entries[i].header && p.entries[i].text != "" {
 				p.cursor = i
@@ -346,6 +381,43 @@ func (a *App) actPanel(k platform.Key) bool {
 	default:
 		return false
 	}
+	a.all = true
+	return true
+}
+
+// stepValue moves a settings choice one step left or right.
+func (a *App) stepValue(d int) bool {
+	p := &a.panel
+	if p.cursor >= len(p.entries) {
+		return false
+	}
+	e := p.entries[p.cursor]
+	if len(e.vals) == 0 {
+		return false
+	}
+	i := e.idx + d
+	if i < 0 || i >= len(e.vals) {
+		return false
+	}
+	switch e.kind {
+	case "rotation":
+		a.SetRotation([]gfx.Rotation{gfx.RotNone, gfx.RotRight, gfx.RotLeft}[i])
+	case "scroll":
+		a.cfg.Scroll = ScrollValues[i]
+	case "prefetch":
+		a.panel.prefetch = i == 1
+		if a.cfg.Action != nil {
+			a.cfg.Action("prefetch", onOff(a.panel.prefetch))
+		}
+	case "launcher":
+		if a.cfg.Action != nil && a.cfg.Launcher != nil {
+			a.cfg.Action("launcher", []string{"off", "on"}[i])
+		}
+	}
+	if a.cfg.SettingsChanged != nil {
+		a.cfg.SettingsChanged()
+	}
+	a.buildPanel()
 	a.all = true
 	return true
 }
@@ -428,44 +500,11 @@ func (a *App) togglePanel() bool {
 		if !e.header {
 			f.Since = !f.Since
 		}
-	case "rotation":
-		a.SetRotation((a.rot + 1) % 3)
-		if a.cfg.SettingsChanged != nil {
-			a.cfg.SettingsChanged()
-		}
-		a.buildPanel()
-		return true
+	case "rotation", "launcher", "scroll", "prefetch":
+		return true // Left/Right pick these
 	case "inset":
-		a.panel.insetWas = a.cfg.SafeInset
+		a.panel.insetWasX, a.panel.insetWasY = a.Inset()
 		a.screen = ScreenCalibrate
-		a.all = true
-		return true
-	case "launcher":
-		if a.cfg.Action != nil && a.cfg.Launcher != nil {
-			if a.cfg.Launcher() {
-				a.cfg.Action("launcher", "off")
-			} else {
-				a.cfg.Action("launcher", "on")
-			}
-		}
-		a.buildPanel()
-		return true
-	case "scroll":
-		order := []string{"normal", "fast", "turbo"}
-		cur := a.scrollText()
-		for i, v := range order {
-			if v == cur {
-				a.cfg.Scroll = order[(i+1)%len(order)]
-				break
-			}
-		}
-		if a.cfg.SettingsChanged != nil {
-			a.cfg.SettingsChanged()
-		}
-		a.buildPanel()
-		return true
-	case "inputtest":
-		a.screen = ScreenInput
 		a.all = true
 		return true
 	case "quit":
@@ -473,13 +512,6 @@ func (a *App) togglePanel() bool {
 			a.cfg.Quit()
 		}
 		return false
-	case "prefetch":
-		a.panel.prefetch = !a.panel.prefetch
-		if a.cfg.Action != nil {
-			a.cfg.Action("prefetch", onOff(a.panel.prefetch))
-		}
-		a.buildPanel()
-		return true
 	case "rescan", "refresh", "clearimg":
 		if a.cfg.Action != nil {
 			a.cfg.Action(e.kind, "")
@@ -517,8 +549,9 @@ func (a *App) paintCalibrate(c *gfx.Canvas) {
 		c.HLine(cx-y, cx+y, l.Root.Min.Y+24+y, gen.Eva.Fg)
 	}
 	lines := []string{
-		"Safe zone: " + itoa(a.cfg.SafeInset) + " px (0-32)",
-		gfx.ArrowLeft + " " + gfx.ArrowRight + " adjust, A save, B cancel",
+		"Safe zone: sides " + itoa(a.cfg.SafeInsetX) + " px, top/bottom " + itoa(a.cfg.SafeInsetY) + " px",
+		gfx.ArrowLeft + " " + gfx.ArrowRight + " sides  " + gfx.ArrowUp + " " + gfx.ArrowDown + " top/bottom",
+		"A save, B cancel",
 		"the green frame should sit just",
 		"inside the edge of your screen",
 	}
@@ -532,16 +565,20 @@ func (a *App) paintCalibrate(c *gfx.Canvas) {
 func (a *App) actCalibrate(k platform.Key) bool {
 	switch k {
 	case platform.KeyLeft:
-		a.SetInset(a.cfg.SafeInset - 1)
+		a.SetInset(a.cfg.SafeInsetX-1, a.cfg.SafeInsetY)
 	case platform.KeyRight:
-		a.SetInset(a.cfg.SafeInset + 1)
+		a.SetInset(a.cfg.SafeInsetX+1, a.cfg.SafeInsetY)
+	case platform.KeyUp:
+		a.SetInset(a.cfg.SafeInsetX, a.cfg.SafeInsetY-1)
+	case platform.KeyDown:
+		a.SetInset(a.cfg.SafeInsetX, a.cfg.SafeInsetY+1)
 	case platform.KeyEnter:
 		if a.cfg.SettingsChanged != nil {
 			a.cfg.SettingsChanged()
 		}
 		a.openPanel(ScreenSettings)
 	case platform.KeyBack:
-		a.SetInset(a.panel.insetWas)
+		a.SetInset(a.panel.insetWasX, a.panel.insetWasY)
 		a.openPanel(ScreenSettings)
 	default:
 		return false

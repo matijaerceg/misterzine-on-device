@@ -35,7 +35,7 @@ func main() {
 	dataPath := flag.String("data", "testdata/data.json", "data.json")
 	metaPath := flag.String("meta", "testdata/meta.json", "meta.json")
 	rot := flag.String("rot", "none", "none, left or right (how the monitor is turned)")
-	inset := flag.Int("inset", 8, "safe-zone inset in px")
+	inset := flag.Int("inset", 15, "safe-zone inset in px (both axes)")
 	out := flag.String("out", "out", "output directory")
 	script := flag.String("script", "", "key script; empty = every view")
 	nowStr := flag.String("now", "2026-09-08T12:00Z", "virtual clock start")
@@ -64,7 +64,7 @@ func main() {
 	disp := headless.NewDisplay(320, 240)
 	cmd := &headless.Cmd{}
 	cfg := app.Config{
-		PhysW: 320, PhysH: 240, Rotation: rotation, SafeInset: *inset,
+		PhysW: 320, PhysH: 240, Rotation: rotation, SafeInsetX: *inset, SafeInsetY: *inset,
 		Now:          func() time.Time { return clock },
 		ClockTrusted: true,
 		Favorites:    map[string]bool{},

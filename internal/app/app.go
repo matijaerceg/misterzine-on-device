@@ -27,7 +27,6 @@ const (
 	ScreenFilter
 	ScreenSettings
 	ScreenCalibrate
-	ScreenInput
 )
 
 func (s Screen) String() string {
@@ -38,7 +37,8 @@ func (s Screen) String() string {
 type Config struct {
 	PhysW, PhysH int // physical frame, 320x240
 	Rotation     gfx.Rotation
-	SafeInset    int
+	SafeInsetX   int // safe-zone margin left and right of the physical screen
+	SafeInsetY   int // and top and bottom
 	Now          func() time.Time
 	ClockTrusted bool
 	Images       Images
@@ -94,15 +94,13 @@ type App struct {
 	detail   detailState
 	panel    panelState
 
-	wants     []ImageReq // pictures this frame asked for, in priority order
-	inputLog  []inputRec
-	inputBack time.Time
-	rep       repeater
-	down      map[platform.Key]bool // keys currently held, across all devices
-	notice    string
-	until     time.Time
-	net       string // status bar right text: "offline", "updating", "data 2h ago"
-	all       bool   // full repaint pending
+	wants  []ImageReq // pictures this frame asked for, in priority order
+	rep    repeater
+	down   map[platform.Key]bool // keys currently held, across all devices
+	notice string
+	until  time.Time
+	net    string // status bar right text: "offline", "updating", "data 2h ago"
+	all    bool   // full repaint pending
 }
 
 type detailState struct {
@@ -138,7 +136,7 @@ func (a *App) setRotation(rot gfx.Rotation) {
 		w, h = h, w
 	}
 	a.logical = gfx.New(w, h)
-	a.lay = NewLayout(w, h, a.cfg.SafeInset, a.body)
+	a.lay = NewLayout(w, h, a.cfg.SafeInsetX, a.cfg.SafeInsetY, a.body)
 	if a.ds != nil {
 		a.ensureVisible()
 	}
@@ -148,16 +146,20 @@ func (a *App) setRotation(rot gfx.Rotation) {
 // SetRotation switches orientation (settings / calibration).
 func (a *App) SetRotation(rot gfx.Rotation) { a.setRotation(rot) }
 
-// SetInset changes the safe-zone inset.
-func (a *App) SetInset(px int) {
-	if px < 0 {
-		px = 0
-	}
-	if px > 32 {
-		px = 32
-	}
-	a.cfg.SafeInset = px
+// SetInset changes the safe-zone margins (physical horizontal, vertical).
+func (a *App) SetInset(x, y int) {
+	a.cfg.SafeInsetX, a.cfg.SafeInsetY = clampInset(x), clampInset(y)
 	a.setRotation(a.rot)
+}
+
+func clampInset(px int) int {
+	if px < 0 {
+		return 0
+	}
+	if px > 40 {
+		return 40
+	}
+	return px
 }
 
 // ScrollSpeed reports the held-scrolling speed setting.
@@ -165,7 +167,7 @@ func (a *App) ScrollSpeed() string { return a.scrollText() }
 
 // Rotation and Inset report the current display settings.
 func (a *App) Rotation() gfx.Rotation { return a.rot }
-func (a *App) Inset() int             { return a.cfg.SafeInset }
+func (a *App) Inset() (x, y int)      { return a.cfg.SafeInsetX, a.cfg.SafeInsetY }
 
 // SetData installs a dataset (first load or a live swap), keeping the cursor
 // on the same key. stored is the persisted seen record, nil on first ever run.
@@ -341,17 +343,15 @@ func (a *App) Handle(ev platform.Event) bool {
 	if ev.Key == platform.KeyNone || ev.Key == platform.KeyOther {
 		return false
 	}
-	a.recordInput(ev)
 	if !ev.Pressed {
-		if !a.down[ev.Key] {
-			return a.screen == ScreenInput
+		if a.down[ev.Key] {
+			delete(a.down, ev.Key)
+			a.rep.release(ev.Key)
 		}
-		delete(a.down, ev.Key)
-		a.rep.release(ev.Key)
-		return a.screen == ScreenInput
+		return false
 	}
 	if a.down[ev.Key] {
-		return a.screen == ScreenInput
+		return false
 	}
 	a.down[ev.Key] = true
 	a.rep.press(ev.Key, ev.At)
@@ -388,7 +388,7 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 		}
 	case ScreenCalibrate:
 		switch k {
-		case platform.KeyLeft, platform.KeyRight:
+		case platform.KeyLeft, platform.KeyRight, platform.KeyUp, platform.KeyDown:
 			return repeatCalib
 		}
 	}
@@ -450,8 +450,6 @@ func (a *App) act(k platform.Key) bool {
 		return a.actPanel(k)
 	case ScreenCalibrate:
 		return a.actCalibrate(k)
-	case ScreenInput:
-		return a.actInput(k)
 	}
 	return false
 }
@@ -542,7 +540,12 @@ func (a *App) Refilter() {
 
 // Invalidate forces a full repaint on the next Paint (a picture landed,
 // a scan finished).
-func (a *App) Invalidate() { a.all = true }
+func (a *App) Invalidate() {
+	a.all = true
+	if a.screen == ScreenSettings {
+		a.buildPanel() // the prefetch tally
+	}
+}
 
 // Repeating reports whether a held key is driving repeats right now; the
 // host then runs its vsync-driven frame loop (see Frame).
@@ -615,8 +618,6 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 		a.paintPanel(c)
 	case ScreenCalibrate:
 		a.paintCalibrate(c)
-	case ScreenInput:
-		a.paintInput(c)
 	}
 	a.neighbourhood()
 	a.cfg.Images.Want(a.wants)

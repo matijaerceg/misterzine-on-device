@@ -110,7 +110,9 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 
 	// settings, state, favorites
 	h.settings = store.DefaultSettings()
-	if err := store.Load(filepath.Join(root, "settings.json"), &h.settings); err != nil && !errors.Is(err, os.ErrNotExist) {
+	if err := store.Load(filepath.Join(root, "settings.json"), &h.settings); err == nil {
+		h.settings.Migrate()
+	} else if !errors.Is(err, os.ErrNotExist) {
 		lg.Printf("settings: %v", err)
 	}
 	hasState := true
@@ -195,7 +197,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	// app
 	favSet := h.favs.Set()
 	cfg := app.Config{
-		PhysW: canvasW, PhysH: canvasH, Rotation: rotation, SafeInset: h.settings.Inset,
+		PhysW: canvasW, PhysH: canvasH, Rotation: rotation, SafeInsetX: h.settings.InsetX, SafeInsetY: h.settings.InsetY,
 		Now: time.Now, ClockTrusted: trusted, Favorites: favSet, Images: h.img, Scroll: h.settings.Scroll,
 		Progress: func() (int, int) { return h.img.Progress() },
 		Launcher: launcherEnabled,
@@ -273,7 +275,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 				return map[string]any{
 					"version": buildinfo.String(), "screen": h.a.Screen().String(), "cursor": h.a.CursorKey(),
 					"sort": h.a.Sort().String(), "rows": len(ds.Rows), "fb": h.fb.Geometry().String(),
-					"rotation": h.a.Rotation().String(), "inset": h.a.Inset(), "devices": h.input.Devices(),
+					"rotation": h.a.Rotation().String(), "inset": fmt.Sprint(h.a.Inset()), "devices": h.input.Devices(),
 					"sysfs": mister.SysfsMode(), "uptime": time.Since(t0).String(), "frames": h.stats.String(),
 				}
 			},
@@ -546,7 +548,8 @@ func (h *host) saveAll(final bool) {
 		h.favDirty = false
 	}
 	if h.setDirty || final {
-		h.settings.Inset = h.a.Inset()
+		h.settings.InsetX, h.settings.InsetY = h.a.Inset()
+		h.settings.Inset = h.settings.InsetX
 		h.settings.Scroll = h.a.ScrollSpeed()
 		switch h.a.Rotation() {
 		case gfx.RotLeft:

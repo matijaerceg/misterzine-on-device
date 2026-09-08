@@ -137,7 +137,7 @@ func (a *App) paintScrollbar(c *gfx.Canvas) {
 		h = 4
 	}
 	y := t.Min.Y + (t.Dy()-h)*a.top/(total-l.Lines)
-	c.Fill(image.Rect(t.Min.X, y, t.Max.X, y+h), gen.Eva.Muted)
+	c.Fill(image.Rect(t.Min.X, y, t.Max.X, y+h), gen.Eva.Accent)
 }
 
 func (a *App) paintMarker(c *gfx.Canvas, r image.Rectangle, text string) {

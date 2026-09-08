@@ -101,16 +101,19 @@ func (r *repeater) nextAt() time.Time {
 	return r.next
 }
 
-// Scroll speeds for a held Up/Down in lists, in frames per row: normal is
-// 20 rows a second, fast 30, turbo one row every frame (60).
-var scrollSpeeds = map[string]time.Duration{"normal": 3 * frameDur, "fast": 2 * frameDur, "turbo": frameDur}
+// Scroll speeds for a held Up/Down in lists, keyed by rows per second:
+// every third frame, every second frame, every frame.
+var scrollSpeeds = map[string]time.Duration{"20": 3 * frameDur, "30": 2 * frameDur, "60": frameDur}
+
+// ScrollValues are the setting's choices in order.
+var ScrollValues = []string{"20", "30", "60"}
 
 // accel is the list scrolling ladder for the chosen speed: two slower steps
 // so a single tap never overshoots, then the steady rate.
 func accel(speed string, count int) time.Duration {
 	d, ok := scrollSpeeds[speed]
 	if !ok {
-		d = scrollSpeeds["fast"]
+		d = scrollSpeeds["30"]
 	}
 	if count <= 2 {
 		return d * 2
