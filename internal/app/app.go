@@ -59,6 +59,8 @@ type Config struct {
 	Progress func() (have, total int)
 	// Exists reports whether a card-relative file is present (launch targets).
 	Exists func(rel string) bool
+	// Launcher reports whether the main-menu launcher is enabled (nil = unsupported).
+	Launcher func() bool
 }
 
 // App is the state machine.

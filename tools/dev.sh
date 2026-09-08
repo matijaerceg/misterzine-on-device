@@ -32,6 +32,7 @@ case "$1" in
     $SSH "mkdir -p /media/fat/misterzine"
     scp -q dist/misterzine root@$PI:/media/fat/misterzine/misterzine.new
     scp -q deploy/Scripts/misterzine.sh root@$PI:/media/fat/Scripts/misterzine.sh
+    scp -q deploy/misterzine.mgl root@$PI:/media/fat/misterzine.mgl
     $SSH "mv /media/fat/misterzine/misterzine.new /media/fat/misterzine/misterzine; chmod +x /media/fat/misterzine/misterzine /media/fat/Scripts/misterzine.sh; sync; /media/fat/misterzine/misterzine --version" ;;
   launch)
     curl -s "$REMOTE/api/scripts/list" | python -c "import sys,json; print('canLaunch', json.load(sys.stdin)['canLaunch'])"

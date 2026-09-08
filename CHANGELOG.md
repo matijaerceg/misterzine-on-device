@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.0
+
+- Main menu launcher: a "misterzine" entry in the main menu, enabled once
+  from Settings. A resident helper opens the app when the entry's MGL loads,
+  and puts the plain menu back when you quit. The database ships the MGL.
+- The app's input reader ignores the launcher's own virtual keyboard.
+
 ## v0.1.1
 
 - The downloader database no longer lists the drop-in ini: downloader rejects

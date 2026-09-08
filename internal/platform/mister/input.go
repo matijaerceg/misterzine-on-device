@@ -128,7 +128,12 @@ func (in *Input) rescan() {
 			f.Close()
 			continue
 		}
-		d := &device{path: p, name: devName(f), f: f}
+		name := devName(f)
+		if name == "misterzine launcher" { // our own console-opening keyboard
+			f.Close()
+			continue
+		}
+		d := &device{path: p, name: name, f: f}
 		in.mu.Lock()
 		in.devs[p] = d
 		in.mu.Unlock()

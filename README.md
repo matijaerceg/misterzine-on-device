@@ -28,6 +28,21 @@ main menu, Scripts, misterzine.
 
 `fb_terminal=1` must be set in MiSTer.ini (it is the default).
 
+### Put it in the main menu
+
+Once, from the app: X, Settings, "Main menu launcher", A. From then on a
+"misterzine" entry sits in the main menu next to Arcade, Console and the
+rest, and picking it opens the app; no Scripts menu.
+
+How it works: the database ships `misterzine.mgl` at the card root, an MGL
+that reloads the menu core under the name "misterzine". A small resident
+helper (started from `/media/fat/linux/user-startup.sh`, the same way the
+Remote and Zaparoo services start) sees that name appear, opens the
+framebuffer console the way the Scripts menu does, runs the app on it, and
+reloads the plain menu when you quit. Main itself is untouched. Turning the
+setting off removes the boot hook and stops the helper; the Scripts entry
+keeps working either way.
+
 ### CRT only? One line in MiSTer.ini
 
 Every script's screen, this one and update_all's alike, is drawn into the

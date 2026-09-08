@@ -74,6 +74,9 @@ func main() {
 		mister.RestoreAll()
 		return
 	}
+	if len(os.Args) > 1 && os.Args[1] == "launcher" {
+		os.Exit(launcherCmd(os.Args[2:]))
+	}
 	root := flag.String("root", "/media/fat/misterzine", "config directory")
 	card := flag.String("card", "/media/fat", "card root")
 	ini := flag.String("ini", "/media/fat/MiSTer.ini", "MiSTer.ini path")
@@ -183,6 +186,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 		PhysW: canvasW, PhysH: canvasH, Rotation: rotation, SafeInset: h.settings.Inset,
 		Now: time.Now, ClockTrusted: trusted, Favorites: favSet, Images: h.img,
 		Progress: func() (int, int) { return h.img.Progress() },
+		Launcher: launcherEnabled,
 		Status: func(i int) data.Status {
 			if i < len(h.status) {
 				return h.status[i]
@@ -214,6 +218,21 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 			}
 			if kind == "clearimg" {
 				go h.img.ClearCache()
+			}
+			if kind == "launcher" {
+				if arg == "on" {
+					if err := launcherEnable(); err != nil {
+						lg.Printf("launcher: %v", err)
+						h.a.Notice("could not enable: "+err.Error(), 6*time.Second)
+						return
+					}
+					launcherStart()
+					h.a.Notice("menu launcher on: misterzine now sits in the main menu", 8*time.Second)
+				} else {
+					launcherDisable()
+					launcherStop()
+					h.a.Notice("menu launcher off", 4*time.Second)
+				}
 			}
 		},
 	}

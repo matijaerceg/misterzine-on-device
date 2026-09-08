@@ -10,6 +10,7 @@ a mismatch would make downloader fetch the file again on every run.
 
     Scripts/misterzine.sh         from deploy/Scripts/misterzine.sh
     misterzine/misterzine         the cross-built binary
+    misterzine.mgl                from deploy/misterzine.mgl (the main-menu entry)
 
 The drop-in downloader_misterzine.ini is a release asset for manual use only:
 downloader rejects root-level ini files inside a database ("illegal path").
@@ -46,6 +47,7 @@ def build(tag, binary, out):
     files = {
         "Scripts/misterzine.sh": entry(os.path.join(root, "deploy", "Scripts", "misterzine.sh"), base + "misterzine.sh"),
         "misterzine/misterzine": entry(binary, base + "misterzine"),
+        "misterzine.mgl": entry(os.path.join(root, "deploy", "misterzine.mgl"), base + "misterzine.mgl"),
     }
     db = {
         "v": 1,

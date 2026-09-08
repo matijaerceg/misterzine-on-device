@@ -36,7 +36,8 @@ jobs:
           python3 tools/make-db.py "${GITHUB_REF_NAME}" dist/misterzine dist/misterzine.json.zip
           cp deploy/Scripts/misterzine.sh dist/misterzine.sh
           cp deploy/downloader_misterzine.ini dist/downloader_misterzine.ini
-          (cd dist && sha256sum misterzine misterzine.sh downloader_misterzine.ini misterzine.json.zip > SHA256SUMS)
+          cp deploy/misterzine.mgl dist/misterzine.mgl
+          (cd dist && sha256sum misterzine misterzine.sh downloader_misterzine.ini misterzine.mgl misterzine.json.zip > SHA256SUMS)
           cat dist/SHA256SUMS
       - name: Publish the release
         uses: softprops/action-gh-release@v2
@@ -45,6 +46,7 @@ jobs:
             dist/misterzine
             dist/misterzine.sh
             dist/downloader_misterzine.ini
+            dist/misterzine.mgl
             dist/misterzine.json.zip
             dist/SHA256SUMS
           generate_release_notes: true

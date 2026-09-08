@@ -141,6 +141,7 @@ func (a *App) settingsEntries() []panelEntry {
 		{text: "Rotation: " + rot + "  (A cycles)", kind: "rotation"},
 		{text: "Safe zone: " + itoa(a.cfg.SafeInset) + " px  (A adjusts)", kind: "inset"},
 		{text: "Prefetch all shots: " + onOff(a.panel.prefetch) + a.progressText(), kind: "prefetch"},
+		{text: "Main menu launcher: " + a.launcherText(), kind: "launcher"},
 		{text: "Rescan card", kind: "rescan"},
 		{text: "Refresh data now", kind: "refresh"},
 		{text: "Clear image cache", kind: "clearimg"},
@@ -149,6 +150,16 @@ func (a *App) settingsEntries() []panelEntry {
 		{text: "data " + a.ds.Updated.Format("2006-01-02 15:04") + "  " + short(a.ds.Hash), header: true},
 		{text: "Back", kind: "back"},
 	}
+}
+
+func (a *App) launcherText() string {
+	if a.cfg.Launcher == nil {
+		return "n/a"
+	}
+	if a.cfg.Launcher() {
+		return "on  (A turns off)"
+	}
+	return "off  (A puts misterzine in the main menu)"
 }
 
 func (a *App) progressText() string {
@@ -386,6 +397,16 @@ func (a *App) togglePanel() bool {
 		a.panel.insetWas = a.cfg.SafeInset
 		a.screen = ScreenCalibrate
 		a.all = true
+		return true
+	case "launcher":
+		if a.cfg.Action != nil && a.cfg.Launcher != nil {
+			if a.cfg.Launcher() {
+				a.cfg.Action("launcher", "off")
+			} else {
+				a.cfg.Action("launcher", "on")
+			}
+		}
+		a.buildPanel()
 		return true
 	case "prefetch":
 		a.panel.prefetch = !a.panel.prefetch
