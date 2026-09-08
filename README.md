@@ -142,7 +142,11 @@ overscan, rotation override, screenshot prefetch, Update All, rescan, refresh an
 clearing. A safe zone up to 40 px is available for consumer sets.
 
 Filters (X from the main list) is a separate screen, ordered: On the card,
-Favorites, Since last look, Type, Source, Rotation, Players, Genre.
+Favorites, Since last look, Type, Source, Rotation, Genre, Input directions,
+Buttons, Players. Filters uses the smaller font. Button counts omitted by
+the data appear under "0 / not specified" because the feed combines those
+cases. Options keeps its version and data timestamp visible in both
+orientations, with three help lines in horizontal mode and four in tate.
 
 ## Data
 

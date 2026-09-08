@@ -7,13 +7,15 @@ import (
 // Derived is what Ingest computes once per row so painting and sorting never
 // recompute labels or collation keys.
 type Derived struct {
-	CoreLabel string // site coreLabel(core)
-	TypeLabel string // "Arcade" or "<base> core"
-	SrcShort  string // MiSTer / Jotego / Coin-Op / Meathax
-	Title     string // ASCII-folded title for the bitmap font
-	Ctl       string // ASCII-folded controls
-	RotGroup  string // "h", "v" or ""
-	BatchN    int    // rows sharing this core's updated stamp (0 = not a batch stamp)
+	CoreLabel  string // site coreLabel(core)
+	TypeLabel  string // "Arcade" or "<base> core"
+	SrcShort   string // MiSTer / Jotego / Coin-Op / Meathax
+	Title      string // ASCII-folded title for the bitmap font
+	Ctl        string // ASCII-folded controls
+	RotGroup   string // "h", "v" or ""
+	Directions string
+	Buttons    string // numeric count; empty = zero or not specified by the feed
+	BatchN     int    // rows sharing this core's updated stamp (0 = not a batch stamp)
 
 	titleKey   []elem
 	coreKey    []elem
@@ -23,11 +25,13 @@ type Derived struct {
 
 // Facets are the distinct filterable values with row counts.
 type Facets struct {
-	Base  map[string]int
-	Src   map[string]int
-	Rot   map[string]int // "h", "v", ""
-	Plr   map[string]int // raw plr strings, "" = unknown
-	Genre map[string]int // raw genre strings, "" = no genre
+	Base       map[string]int
+	Src        map[string]int
+	Rot        map[string]int // "h", "v", ""
+	Plr        map[string]int // raw plr strings, "" = unknown
+	Genre      map[string]int // raw genre strings, "" = no genre
+	Directions map[string]int
+	Buttons    map[string]int
 }
 
 // Dataset is one ingested data.json with every derived index.
@@ -56,6 +60,7 @@ func Ingest(rows []Row, hash string, updated time.Time) *Dataset {
 		Facets: Facets{
 			Base: map[string]int{}, Src: map[string]int{}, Rot: map[string]int{},
 			Plr: map[string]int{}, Genre: map[string]int{},
+			Directions: map[string]int{}, Buttons: map[string]int{},
 		},
 	}
 	for i := range rows {
@@ -80,6 +85,9 @@ func Ingest(rows []Row, hash string, updated time.Time) *Dataset {
 		d.SrcShort = SrcShort(r.Src)
 		d.Title = ASCII(r.Title)
 		d.Ctl = ASCII(r.Ctl)
+		d.Directions, d.Buttons = ControlFacets(r.Ctl)
+		ds.Facets.Directions[d.Directions]++
+		ds.Facets.Buttons[d.Buttons]++
 		d.RotGroup = r.RotGroup()
 		d.BatchN = ds.ClusterN(i)
 		d.titleKey = Key(r.Title)

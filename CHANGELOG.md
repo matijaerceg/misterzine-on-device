@@ -2,6 +2,9 @@
 
 ## v0.2.2
 
+- Filters: smaller font, Input directions and Buttons sections, and Players
+  last. Options keeps the version and data timestamp visible in either
+  orientation; horizontal help uses three lines. Rescan follows Update All.
 - Options: Run Update All opens a dedicated stage bar and live-log screen.
   Normal navigation is blocked; hold B for two seconds to request
   cancellation, with system writes allowed to finish. An early restart

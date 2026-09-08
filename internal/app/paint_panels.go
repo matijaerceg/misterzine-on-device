@@ -123,15 +123,30 @@ func (a *App) filterEntries() []panelEntry {
 		}
 		return "unknown"
 	})
-	section("Players", "plr", a.ds.Facets.Plr, f.PlrOff, func(s string) string {
-		if s == "" {
-			return "unknown"
-		}
-		return s
-	})
 	section("Genre", "genre", a.ds.Facets.Genre, f.GenreOff, func(s string) string {
 		if s == "" {
 			return "No genre"
+		}
+		return s
+	})
+	section("Input directions", "directions", a.ds.Facets.Directions, f.DirectionsOff, func(s string) string {
+		if s == "" {
+			return "not specified"
+		}
+		return s
+	})
+	section("Buttons", "buttons", a.ds.Facets.Buttons, f.ButtonsOff, func(s string) string {
+		if s == "" {
+			return "0 / not specified"
+		}
+		if s == "1" {
+			return "1 button"
+		}
+		return s + " buttons"
+	})
+	section("Players", "plr", a.ds.Facets.Plr, f.PlrOff, func(s string) string {
+		if s == "" {
+			return "unknown"
 		}
 		return s
 	})
@@ -167,10 +182,10 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Download every screenshot in the background (about 55 MB) so browsing never waits; the tally counts up as they land. Off: only what you look at."},
 		{text: "Main menu launcher", kind: "launcher", vals: []string{"off", "on"}, idx: launcherIdx,
 			help: "Puts a MisterZine entry in the MiSTer main menu, next to Arcade and Console. Adds one line to linux/user-startup.sh and ships MisterZine.mgl. Off removes both; the Scripts menu entry keeps working."},
-		{text: "Rescan card", kind: "rescan",
-			help: "Re-read which cores and MRAs are on the card. Do this after running update_all."},
 		{text: "Run Update All", kind: "update",
 			help: "Update with live output and a stage bar. Browsing waits until it finishes. Hold B for 2 seconds to cancel; system writes finish first. A restart may be required."},
+		{text: "Rescan card", kind: "rescan",
+			help: "Refresh on-card status after an external update. The built-in Update All rescans automatically when it finishes."},
 		{text: "Refresh data now", kind: "refresh",
 			help: "Ask misterzine.fyi for new releases right now. The app also checks on launch and every 30 minutes while open; new rows show a notice and their dates in green."},
 		{text: "Clear image cache", kind: "clearimg",
@@ -224,6 +239,10 @@ func short(h string) string {
 
 func (a *App) paintPanel(c *gfx.Canvas) {
 	l := &a.lay
+	font := a.body
+	if a.screen == ScreenFilter {
+		font = a.sm
+	}
 	a.paintStatus(c)
 	if a.notice == "" {
 		c.Fill(l.Status, gen.Eva.Surface)
@@ -254,7 +273,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 		c.Text(inner.Min.X+2, footerY+a.body.H, a.body, gfx.Fit("data "+a.ds.Updated.Format("2006-01-02 15:04")+"  "+short(a.ds.Hash), cols), gen.Eva.Muted)
 		inner.Max.Y = footerY - 3
 	}
-	lh := a.body.H
+	lh := font.H
 	lines := inner.Dy() / lh
 	p := &a.panel
 	p.lines = lines
@@ -264,7 +283,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 	if p.cursor >= p.top+lines {
 		p.top = p.cursor - lines + 1
 	}
-	cols := a.body.Cols(inner.Dx() - 4)
+	cols := font.Cols(inner.Dx() - 4)
 	y := inner.Min.Y
 	for n := p.top; n < len(p.entries) && n < p.top+lines; n++ {
 		e := p.entries[n]
@@ -274,10 +293,10 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 		}
 		switch {
 		case e.header && e.info:
-			c.Text(inner.Min.X+2, y, a.body, gfx.Fit(e.text, cols), gen.Eva.Muted)
+			c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, cols), gen.Eva.Muted)
 		case e.header:
-			c.Text(inner.Min.X+2, y, a.body, gfx.Fit(e.text, cols), gen.Eva.Accent)
-		case e.kind == "base" || e.kind == "src" || e.kind == "rot" || e.kind == "plr" || e.kind == "genre" || e.kind == "install" || e.kind == "fav" || e.kind == "since":
+			c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, cols), gen.Eva.Accent)
+		case e.kind == "base" || e.kind == "src" || e.kind == "rot" || e.kind == "plr" || e.kind == "genre" || e.kind == "directions" || e.kind == "buttons" || e.kind == "install" || e.kind == "fav" || e.kind == "since":
 			mark := "[ ] "
 			if e.checked {
 				mark = "[x] "
@@ -290,7 +309,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			if n == p.cursor {
 				col = gen.Eva.Accent
 			}
-			c.Text(inner.Min.X+2, y, a.body, gfx.Fit(text, cols), col)
+			c.Text(inner.Min.X+2, y, font, gfx.Fit(text, cols), col)
 		case len(e.vals) > 0:
 			col := gen.Eva.Fg
 			if n == p.cursor {
@@ -482,7 +501,7 @@ func (a *App) togglePanel() bool {
 		p.cursor = 0
 		a.buildPanel()
 		return true
-	case "base", "src", "rot", "plr", "genre":
+	case "base", "src", "rot", "plr", "genre", "directions", "buttons":
 		var m map[string]bool
 		var facet map[string]int
 		switch e.kind {
@@ -496,6 +515,10 @@ func (a *App) togglePanel() bool {
 			m, facet = off(f.PlrOff), a.ds.Facets.Plr
 		case "genre":
 			m, facet = off(f.GenreOff), a.ds.Facets.Genre
+		case "directions":
+			m, facet = off(f.DirectionsOff), a.ds.Facets.Directions
+		case "buttons":
+			m, facet = off(f.ButtonsOff), a.ds.Facets.Buttons
 		}
 		if e.header {
 			// a header toggles its whole section: all on, or all off when already all on
@@ -522,6 +545,10 @@ func (a *App) togglePanel() bool {
 			f.PlrOff = m
 		case "genre":
 			f.GenreOff = m
+		case "directions":
+			f.DirectionsOff = m
+		case "buttons":
+			f.ButtonsOff = m
 		}
 	case "install":
 		if !e.header {
