@@ -55,7 +55,7 @@ func (a *App) paintRows(c *gfx.Canvas) {
 	l := &a.lay
 	c.Fill(l.List, gen.Eva.Bg)
 	if len(a.view) == 0 {
-		c.Text(l.List.Min.X+a.body.W, l.List.Min.Y+l.Line, a.body, "nothing matches these filters", gen.Eva.Muted)
+		c.Text(l.List.Min.X+a.body.W, l.List.Min.Y+l.Line, a.body, gfx.Fit("no rows match, X: filters", l.Cols-1), gen.Eva.Muted)
 		return
 	}
 	// which view position sits on each visible line
@@ -138,11 +138,12 @@ func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {
 	if a.mode == data.SortDebut {
 		date = row.Date
 	}
-	c.Text(x, y, a.body, a.dateCol(date), gen.Eva.Muted)
-	// unseen rows get a dot in the type hue at the far right
+	// rows changed since the last look show their date in the accent
+	dateCol := gen.Eva.Muted
 	if a.seen != nil && a.seen.MarkerOn(a.mode) && a.seen.Unseen(row) {
-		c.Fill(image.Rect(r.Max.X-3, r.Min.Y+4, r.Max.X-1, r.Min.Y+8), typeHue(row.Base))
+		dateCol = gen.Eva.Accent
 	}
+	c.Text(x, y, a.body, a.dateCol(date), dateCol)
 }
 
 // paintPane draws the highlighted row's thumbnail and specs.
@@ -165,6 +166,12 @@ func (a *App) paintPane(c *gfx.Canvas) {
 	for _, t := range gfx.Wrap(d.Title, cols, 2) {
 		lines = append(lines, paneLine{t, gen.Eva.Fg})
 	}
+	// the card answer comes right after the title: it is the point of the app
+	if a.cfg.Status != nil {
+		st := a.status(i)
+		_, sc := statusGlyph(st)
+		lines = append(lines, paneLine{statusText(st, ""), sc})
+	}
 	kind := d.TypeLabel
 	if row.IsArcade() {
 		kind = "Arcade / " + d.SrcShort
@@ -184,11 +191,6 @@ func (a *App) paintPane(c *gfx.Canvas) {
 		if d.Ctl != "" {
 			lines = append(lines, paneLine{d.Ctl, gen.Eva.Fg})
 		}
-	}
-	if a.cfg.Status != nil {
-		st := a.status(i)
-		_, sc := statusGlyph(st)
-		lines = append(lines, paneLine{statusText(st, ""), sc})
 	}
 	if ch := chips(row, d); len(ch) > 0 {
 		col := gen.Eva.Muted

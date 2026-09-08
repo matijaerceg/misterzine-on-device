@@ -4,6 +4,7 @@ import (
 	"image"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/gen"
@@ -14,26 +15,38 @@ import (
 // launchEntry is one thing the details view can launch.
 type launchEntry struct {
 	label string
-	path  string // card-relative
+	path  string // card-relative, or "core:NAME"
+	ok    bool   // present on the card
 }
 
-// launchEntries lists the mainline file and installed alternatives.
-func (a *App) launchEntries(row *data.Row) []launchEntry {
+// launchEntries lists the mainline file and installed alternatives, each
+// marked with whether it is actually on the card.
+func (a *App) launchEntries(row *data.Row, i int) []launchEntry {
 	var out []launchEntry
+	st := a.status(i)
 	if row.MRA != "" {
-		out = append(out, launchEntry{path.Base(row.MRA), row.MRA})
+		ok := true
+		if a.cfg.Exists != nil {
+			ok = a.cfg.Exists(row.MRA)
+		} else if a.cfg.Status != nil {
+			ok = st != data.StatusNotFound
+		}
+		out = append(out, launchEntry{path.Base(row.MRA), row.MRA, ok})
 	} else if row.Core != "" {
-		out = append(out, launchEntry{"load the " + row.Core + " core", "core:" + row.Core})
+		ok := a.cfg.Status == nil || st != data.StatusNotFound
+		out = append(out, launchEntry{"load the " + row.Core + " core", "core:" + row.Core, ok})
 	}
 	if a.cfg.Alternatives != nil {
 		for _, alt := range a.cfg.Alternatives(row) {
-			out = append(out, launchEntry{"alt: " + path.Base(alt), alt})
+			out = append(out, launchEntry{"alt: " + path.Base(alt), alt, true})
 		}
 	}
 	return out
 }
 
-// detailLines builds the text of the details view in the site's panel order.
+// detailLines builds the text of the details view: the release decision
+// first (when it shipped, is it on the card, how does it boot), then the
+// rest of the site's panel fields.
 func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 	now := a.cfg.Now()
 	rel := func(iso string) string {
@@ -59,6 +72,27 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 		}
 		return fg
 	}
+	add("Updated", row.Updated+rel(row.Updated), fg)
+	if d.BatchN >= 2 {
+		L = append(L, paneLine{"  shipped together with " + itoa(d.BatchN-1) + " other game(s) on this core", mu})
+	}
+	kind := "Debut"
+	if row.DateKind == "build" {
+		kind = "Latest build"
+	}
+	add(kind, row.Date+rel(row.Date), fg)
+	if a.cfg.Status != nil {
+		st := a.status(i)
+		_, sc := statusGlyph(st)
+		L = append(L, paneLine{"Card: " + statusText(st, ""), sc})
+	}
+	if row.Rot != "" {
+		add("Rotation", row.Rot, prov("rot"))
+		if row.Brot != "" {
+			L = append(L, paneLine{"  boots " + row.Brot + ", no screen flip", gen.Eva.Warn})
+		}
+	}
+	L = append(L, paneLine{"", fg})
 	add("Type", d.TypeLabel, typeHue(row.Base))
 	add("Genre", row.Genre, fg)
 	add("Maker", row.Manufacturer, fg)
@@ -76,12 +110,6 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 		add("Year", y, fg)
 	}
 	add("Region", row.Reg, fg)
-	if row.Rot != "" {
-		add("Rotation", row.Rot, prov("rot"))
-		if row.Brot != "" {
-			L = append(L, paneLine{"  boots " + row.Brot + ", no screen flip", gen.Eva.Warn})
-		}
-	}
 	if row.Scr == 2 {
 		add("Screens", "dual screen", fg)
 	} else if row.Scr == 3 {
@@ -92,16 +120,6 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 	add("Controls", d.Ctl, prov("ctl"))
 	add("Special", row.Spc, prov("spc"))
 	add("Flip", row.Flip, fg)
-	kind := "Debut"
-	if row.DateKind == "build" {
-		kind = "Latest build"
-	}
-	add(kind, row.Date+rel(row.Date), fg)
-	upd := row.Updated + rel(row.Updated)
-	add("Updated", upd, fg)
-	if d.BatchN >= 2 {
-		L = append(L, paneLine{"  shipped together with " + itoa(d.BatchN-1) + " other game(s) on this core", mu})
-	}
 	add("Commit", row.Act+rel(row.Act), mu)
 	add("Source", data.SrcFull(row.Src), fg)
 	add("Repo", row.Repo, mu)
@@ -112,11 +130,6 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 		L = append(L, paneLine{"Patreon beta: needs Jotego's jtbeta.zip", mu})
 	}
 	add("Note", row.Note, fg)
-	if a.cfg.Status != nil {
-		st := a.status(i)
-		_, sc := statusGlyph(st)
-		L = append(L, paneLine{"", fg}, paneLine{"Card: " + statusText(st, ""), sc})
-	}
 	return L
 }
 
@@ -132,7 +145,11 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 	body := l.Body
 	cols := a.body.Cols(body.Dx())
 	y := body.Min.Y
-	for _, t := range gfx.Wrap(d.Title, cols, 2) {
+	title := d.Title
+	if a.cfg.Favorites[row.K] {
+		title = "* " + title
+	}
+	for _, t := range gfx.Wrap(title, cols, 2) {
 		c.Text(body.Min.X, y, a.body, t, gen.Eva.Accent)
 		y += l.Line
 	}
@@ -166,7 +183,7 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 	}
 	// spec lines, scrollable
 	lines := a.detailLines(row, d, i)
-	entries := a.launchEntries(row)
+	entries := a.launchEntries(row, i)
 	avail := body.Max.Y - y
 	lh := a.sm.H + 1
 	const launchMax = 5 // visible launch entries; more scroll under the pick
@@ -215,6 +232,10 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 			prefix = "> "
 		}
 		label := e.label
+		if !e.ok {
+			label += " (not on card)"
+			col = gen.Eva.Muted
+		}
 		if n == first+shown-1 && n < len(entries)-1 {
 			label += " (+" + itoa(len(entries)-1-n) + " more)"
 		}
@@ -222,9 +243,9 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 		y += lh
 	}
 	if l.Portrait {
-		a.paintHint(c, "A launch  </> next  U/D pick  L/R scroll  B back")
+		a.paintHint(c, "A launch  Y fav  </> next  L/R info  B back")
 	} else {
-		a.paintHint(c, "A launch  </> prev/next  U/D pick  L/R scroll  B back")
+		a.paintHint(c, "A launch  Y fav  </> next row  U/D pick  L/R info  B back")
 	}
 }
 
@@ -272,7 +293,11 @@ func (a *App) actDetails(k platform.Key) bool {
 	}
 	switch k {
 	case platform.KeyBack:
-		a.screen = ScreenList
+		if a.detail.from == ScreenShot {
+			a.screen = ScreenShot
+		} else {
+			a.screen = ScreenList
+		}
 	case platform.KeyUp:
 		if a.detail.pick > 0 {
 			a.detail.pick--
@@ -286,19 +311,22 @@ func (a *App) actDetails(k platform.Key) bool {
 	case platform.KeyLeft:
 		if a.cursor > 0 {
 			a.cursor--
-			a.detail = detailState{}
+			a.detail = detailState{from: a.detail.from}
 			a.ensureVisible()
 		}
 	case platform.KeyRight:
 		if a.cursor < len(a.view)-1 {
 			a.cursor++
-			a.detail = detailState{}
+			a.detail = detailState{from: a.detail.from}
 			a.ensureVisible()
 		}
 	case platform.KeySpace:
 		a.cfg.Favorites[row.K] = !a.cfg.Favorites[row.K]
 		if !a.cfg.Favorites[row.K] {
 			delete(a.cfg.Favorites, row.K)
+			a.Notice("favorite removed", 2*time.Second)
+		} else {
+			a.Notice("favorite added", 2*time.Second)
 		}
 		if a.cfg.FavChanged != nil {
 			a.cfg.FavChanged()
@@ -310,9 +338,14 @@ func (a *App) actDetails(k platform.Key) bool {
 			a.screen = ScreenList // the row left the filtered view
 		}
 	case platform.KeyEnter:
-		entries := a.launchEntries(row)
+		_, _, i := a.current()
+		entries := a.launchEntries(row, i)
 		if len(entries) > 0 && a.cfg.Launch != nil {
 			e := entries[min(a.detail.pick, len(entries)-1)]
+			if !e.ok {
+				a.Notice("that file is not on the card", 3*time.Second)
+				return true
+			}
 			a.cfg.Launch(e.path)
 		}
 		return false

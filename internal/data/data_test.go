@@ -297,11 +297,11 @@ func TestFilters(t *testing.T) {
 	ds := Ingest(rows, "", time.Time{})
 	order := []int{0, 1}
 	none := &Filters{}
-	if got := Apply(ds, order, none, nil, nil); len(got) != 2 {
+	if got := Apply(ds, order, none, nil, nil, nil); len(got) != 2 {
 		t.Fatal("no filters must pass everything")
 	}
 	f := &Filters{RotOff: map[string]bool{"": true}}
-	if got := Apply(ds, order, f, nil, nil); len(got) != 1 || got[0] != 0 {
+	if got := Apply(ds, order, f, nil, nil, nil); len(got) != 1 || got[0] != 0 {
 		t.Fatalf("rot filter = %v", got)
 	}
 	f = &Filters{Install: InstallFound}
@@ -311,11 +311,15 @@ func TestFilters(t *testing.T) {
 		}
 		return StatusNotFound
 	}
-	if got := Apply(ds, order, f, st, nil); len(got) != 1 || got[0] != 1 {
+	if got := Apply(ds, order, f, st, nil, nil); len(got) != 1 || got[0] != 1 {
 		t.Fatalf("install filter = %v", got)
 	}
+	f = &Filters{Since: true}
+	if got := Apply(ds, order, f, nil, nil, func(i int) bool { return i == 1 }); len(got) != 1 || got[0] != 1 {
+		t.Fatalf("since filter = %v", got)
+	}
 	f = &Filters{FavOnly: true}
-	if got := Apply(ds, order, f, nil, func(k string) bool { return k == "a" }); len(got) != 1 || got[0] != 0 {
+	if got := Apply(ds, order, f, nil, func(k string) bool { return k == "a" }, nil); len(got) != 1 || got[0] != 0 {
 		t.Fatalf("fav filter = %v", got)
 	}
 }

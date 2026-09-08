@@ -83,13 +83,13 @@ func (a *App) actShot(k platform.Key) bool {
 	case platform.KeyLeft:
 		if a.cursor > 0 {
 			a.cursor--
-			a.slot = 0
+			a.pickSlot()
 			a.ensureVisible()
 		}
 	case platform.KeyRight:
 		if a.cursor < len(a.view)-1 {
 			a.cursor++
-			a.slot = 0
+			a.pickSlot()
 			a.ensureVisible()
 		}
 	case platform.KeyUp, platform.KeyDown:
@@ -102,14 +102,36 @@ func (a *App) actShot(k platform.Key) bool {
 				} else {
 					a.slot = (a.slot + n - 1) % n
 				}
+				a.slotName = shotSlots(row)[a.slot]
 			}
 		}
 	case platform.KeyEnter:
 		a.screen = ScreenDetails
-		a.detail = detailState{}
+		a.detail = detailState{from: ScreenShot}
 	default:
 		return false
 	}
 	a.all = true
 	return true
+}
+
+// pickSlot chooses the slot for the current row: the slot the viewer chose
+// last when the row has it, else the list's preference (snap, title, ingame).
+func (a *App) pickSlot() {
+	a.slot = 0
+	row, _, _ := a.current()
+	if row == nil {
+		return
+	}
+	slots := shotSlots(row)
+	want := a.slotName
+	if want == "" {
+		_, want = thumbSlot(row)
+	}
+	for i, s := range slots {
+		if s == want {
+			a.slot = i
+			return
+		}
+	}
 }

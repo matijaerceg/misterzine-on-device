@@ -119,8 +119,10 @@ func (a *App) filterEntries() []panelEntry {
 		}
 		return s
 	})
+	E = append(E, panelEntry{text: "Since last look", header: true, kind: "since"})
+	E = append(E, panelEntry{text: "only rows changed since my last look", kind: "since", checked: f.Since})
 	E = append(E, panelEntry{text: "On the card", header: true, kind: "install"})
-	for _, v := range []struct{ val, text string }{{data.InstallAll, "everything"}, {data.InstallFound, "found on card"}, {data.InstallMissing, "not found on card"}} {
+	for _, v := range []struct{ val, text string }{{data.InstallAll, "everything"}, {data.InstallFound, "found on card (any build)"}, {data.InstallCurrent, "current build"}, {data.InstallOlder, "older build than shipped"}, {data.InstallUndated, "build date unknown"}, {data.InstallMissing, "not found on card"}} {
 		cur := f.Install
 		if cur == "" {
 			cur = data.InstallAll
@@ -200,7 +202,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 		switch {
 		case e.header:
 			c.Text(inner.Min.X+2, y, a.body, gfx.Fit(e.text, cols), gen.Eva.Accent)
-		case e.kind == "base" || e.kind == "src" || e.kind == "rot" || e.kind == "plr" || e.kind == "genre" || e.kind == "install" || e.kind == "fav":
+		case e.kind == "base" || e.kind == "src" || e.kind == "rot" || e.kind == "plr" || e.kind == "genre" || e.kind == "install" || e.kind == "fav" || e.kind == "since":
 			mark := "[ ] "
 			if e.checked {
 				mark = "[x] "
@@ -368,6 +370,10 @@ func (a *App) togglePanel() bool {
 	case "fav":
 		if !e.header {
 			f.FavOnly = !f.FavOnly
+		}
+	case "since":
+		if !e.header {
+			f.Since = !f.Since
 		}
 	case "rotation":
 		a.SetRotation((a.rot + 1) % 3)

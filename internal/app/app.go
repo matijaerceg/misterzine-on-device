@@ -57,6 +57,8 @@ type Config struct {
 	Action func(kind, arg string)
 	// Progress reports the picture prefetch state (files present, total).
 	Progress func() (have, total int)
+	// Exists reports whether a card-relative file is present (launch targets).
+	Exists func(rel string) bool
 }
 
 // App is the state machine.
@@ -79,12 +81,13 @@ type App struct {
 	split   int  // marker after view[split]; -1 none
 	topMark bool // "nothing new" marker on top
 
-	screen Screen
-	cursor int // index into view
-	top    int // first visible screen line
-	slot   int // screen view slot index
-	detail detailState
-	panel  panelState
+	screen   Screen
+	cursor   int    // index into view
+	top      int    // first visible screen line
+	slot     int    // screen view slot index
+	slotName string // preferred slot, kept across rows
+	detail   detailState
+	panel    panelState
 
 	wants  []ImageReq // pictures this frame asked for, in priority order
 	rep    repeater
@@ -97,7 +100,8 @@ type App struct {
 
 type detailState struct {
 	scroll int
-	pick   int // launch entry cursor
+	pick   int    // launch entry cursor
+	from   Screen // where B returns to
 }
 
 // New builds an app around a dataset. stored is the persisted last-look
@@ -186,7 +190,8 @@ func (a *App) Data() *data.Dataset { return a.ds }
 func (a *App) rebuild() {
 	a.order = a.ds.Order(a.mode)
 	fav := func(k string) bool { return a.cfg.Favorites[k] }
-	a.view = data.Apply(a.ds, a.order, &a.filters, a.cfg.Status, fav)
+	unseen := func(i int) bool { return a.seen != nil && a.seen.Unseen(&a.ds.Rows[i]) }
+	a.view = data.Apply(a.ds, a.order, &a.filters, a.cfg.Status, fav, unseen)
 	a.split = -1
 	a.topMark = false
 	if a.seen != nil && a.seen.MarkerOn(a.mode) {
@@ -454,14 +459,14 @@ func (a *App) actList(k platform.Key) bool {
 	case platform.KeyEnter:
 		if n > 0 {
 			a.screen = ScreenDetails
-			a.detail = detailState{}
+			a.detail = detailState{from: ScreenList}
 			a.all = true
 		}
 		return true
 	case platform.KeyRight:
 		if n > 0 {
 			a.screen = ScreenShot
-			a.slot = 0
+			a.pickSlot()
 			a.all = true
 		}
 		return true
@@ -495,6 +500,17 @@ func (a *App) status(i int) data.Status {
 		return data.StatusUnknown
 	}
 	return a.cfg.Status(i)
+}
+
+// Refilter re-applies the filters after an input to them changed (install
+// statuses arrived), keeping the cursor on its row.
+func (a *App) Refilter() {
+	k := a.CursorKey()
+	a.rebuild()
+	if k != "" {
+		a.moveToKey(k)
+	}
+	a.all = true
 }
 
 // Invalidate forces a full repaint on the next Paint (a picture landed,

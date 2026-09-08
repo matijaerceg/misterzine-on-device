@@ -11,6 +11,7 @@ import (
 	"flag"
 	"fmt"
 	"image"
+	"image/png"
 	"log"
 	"os"
 	"os/signal"
@@ -29,6 +30,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/images"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform/mister"
+	"github.com/matijaerceg/misterzine-on-device/internal/scan"
 	"github.com/matijaerceg/misterzine-on-device/internal/snapshot"
 	"github.com/matijaerceg/misterzine-on-device/internal/store"
 )
@@ -59,6 +61,10 @@ type host struct {
 	clock      platform.Clock
 	client     *fetch.Client
 	img        *images.Service
+	index      *scan.Index
+	status     []data.Status
+	alts       []scan.Alt
+	scanCh     chan scanResult
 	dataCh     chan fetch.Fresh
 	netCh      chan string
 }
@@ -86,7 +92,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	lg := openLog(filepath.Join(root, "log.txt"))
 	lg.Printf("==== misterzine %s pid %d args %v", buildinfo.String(), os.Getpid(), os.Args[1:])
 	t0 := time.Now()
-	h := &host{root: root, card: card, lg: lg, events: make(chan platform.Event, 256), uiRun: make(chan func(), 8), quit: make(chan struct{}), dataCh: make(chan fetch.Fresh, 1), netCh: make(chan string, 4)}
+	h := &host{root: root, card: card, lg: lg, events: make(chan platform.Event, 256), uiRun: make(chan func(), 8), quit: make(chan struct{}), dataCh: make(chan fetch.Fresh, 1), netCh: make(chan string, 4), scanCh: make(chan scanResult, 1)}
 
 	// settings, state, favorites
 	h.settings = store.DefaultSettings()
@@ -176,7 +182,18 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	cfg := app.Config{
 		PhysW: canvasW, PhysH: canvasH, Rotation: rotation, SafeInset: h.settings.Inset,
 		Now: time.Now, ClockTrusted: trusted, Favorites: favSet, Images: h.img,
-		Progress:        func() (int, int) { return h.img.Progress() },
+		Progress: func() (int, int) { return h.img.Progress() },
+		Status: func(i int) data.Status {
+			if i < len(h.status) {
+				return h.status[i]
+			}
+			return data.StatusUnknown
+		},
+		Alternatives: func(r *data.Row) []string { return scan.Alternatives(h.alts, r) },
+		Exists: func(rel string) bool {
+			_, err := os.Stat(filepath.Join(card, filepath.FromSlash(rel)))
+			return err == nil
+		},
 		Launch:          func(target string) { h.launch = target; h.stop() },
 		Quit:            h.stop,
 		Version:         buildinfo.String(),
@@ -186,6 +203,9 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 			lg.Printf("action: %s %s", kind, arg)
 			if kind == "refresh" {
 				go h.check(ds.Hash)
+			}
+			if kind == "rescan" {
+				go h.scan(h.a.Data().Rows)
 			}
 			if kind == "prefetch" {
 				h.settings.Prefetch = arg == "on"
@@ -213,6 +233,9 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 		}
 	}
 	h.a.SetNet(h.netLabel(ds))
+	if ini.Found && !ini.AnalogVisible() {
+		h.a.Notice("CRT only? add direct_video=1 under [Menu], see README", 20*time.Second)
+	}
 	h.present()
 	lg.Printf("first frame at %v", time.Since(t0).Round(time.Millisecond))
 
@@ -234,6 +257,9 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 			Log:  filepath.Join(root, "log.txt"),
 		}, lg)
 	}
+
+	// card scan: cores, MRA presence, then alternatives
+	go h.scan(ds.Rows)
 
 	// freshness: first check shortly after boot, then every 30 minutes
 	go func() {
@@ -277,6 +303,12 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 			h.saveAll(true)
 			return 130
 		case ev := <-h.events:
+			if ev.Key == platform.KeyScreenshot {
+				if ev.Pressed {
+					h.screenshot()
+				}
+				break
+			}
 			h.a.Handle(ev)
 			// drain whatever else arrived
 		drain:
@@ -297,6 +329,13 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 			h.img.SetOffline(s == "offline")
 		case <-h.img.Ready():
 			h.a.Invalidate()
+		case r := <-h.scanCh:
+			first := h.index == nil
+			h.index, h.status, h.alts = r.index, r.status, r.alts
+			h.a.Refilter()
+			if first || r.notice != "" {
+				h.a.Notice(r.notice, 8*time.Second)
+			}
 		case <-tick:
 		}
 		h.a.Tick(time.Now())
@@ -491,6 +530,9 @@ func (h *host) swap(fr fetch.Fresh) {
 	upd, _ := data.ParseMetaTime(fr.Meta.Updated)
 	ds := data.Ingest(fr.Rows, fr.Meta.Hash, upd)
 	news := data.DiffNews(old, fr.Rows)
+	if h.index != nil {
+		h.status = scan.Statuses(h.card, h.index, fr.Rows)
+	}
 	h.a.SetData(ds, nil)
 	h.img.SetPrefetch(picsFor(ds), h.settings.Prefetch)
 	h.a.SetNet(h.netLabel(ds))
@@ -498,6 +540,51 @@ func (h *host) swap(fr fetch.Fresh) {
 		h.a.Notice(news, 12*time.Second)
 	}
 	h.dirty = true
+}
+
+type scanResult struct {
+	index  *scan.Index
+	status []data.Status
+	alts   []scan.Alt
+	notice string
+}
+
+// scan reads the card off the UI goroutine: cores and MRA stats first (fast),
+// alternatives after (slow the first time).
+func (h *host) scan(rows []data.Row) {
+	t0 := time.Now()
+	idx := scan.ScanCores(h.card)
+	st := scan.Statuses(h.card, idx, rows)
+	counts := map[data.Status]int{}
+	for _, s := range st {
+		counts[s]++
+	}
+	h.lg.Printf("scan: %d cores; current %d, outdated %d, undated %d, not found %d (%v)", len(idx.Cores),
+		counts[data.StatusCurrent], counts[data.StatusOutdated], counts[data.StatusFoundUndated], counts[data.StatusNotFound], time.Since(t0).Round(time.Millisecond))
+	h.scanCh <- scanResult{index: idx, status: st, alts: h.alts, notice: fmt.Sprintf("card: %d current, %d older, %d not found", counts[data.StatusCurrent], counts[data.StatusOutdated], counts[data.StatusNotFound])}
+	t1 := time.Now()
+	alts := scan.ScanAlternatives(h.card, filepath.Join(h.root, "cache", "alts.json"))
+	h.lg.Printf("scan: %d alternatives (%v)", len(alts), time.Since(t1).Round(time.Millisecond))
+	h.scanCh <- scanResult{index: idx, status: st, alts: alts}
+}
+
+// screenshot saves the logical canvas (F12 on a keyboard).
+func (h *host) screenshot() {
+	dir := filepath.Join(h.root, "debug")
+	os.MkdirAll(dir, 0755)
+	p := filepath.Join(dir, h.a.Screen().String()+"-"+time.Now().Format("20060102-150405")+".png")
+	f, err := os.Create(p)
+	if err != nil {
+		h.lg.Printf("screenshot: %v", err)
+		return
+	}
+	defer f.Close()
+	if err := png.Encode(f, h.a.Logical()); err != nil {
+		h.lg.Printf("screenshot: %v", err)
+		return
+	}
+	h.lg.Printf("screenshot: %s", p)
+	h.a.Notice("saved "+filepath.Base(p), 3*time.Second)
 }
 
 // picsFor lists every picture the rows reference, newest updates first,
