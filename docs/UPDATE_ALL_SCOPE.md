@@ -127,4 +127,27 @@ Real Pi checks on official September 7 Main/Menu and Linux 6.18.38:
 
 No real Linux/Pocket write or automatic reboot was required by these runs;
 those paths have simulated coverage, not a new firmware-write hardware
-test. DE10-Nano was left untouched. No new public release was published.
+test. DE10-Nano was left untouched during those updater tests. No new
+public release was published.
+
+## Final installation on both devices
+
+At the user's subsequent request, build **update-all (924c3a9, 2026-09-08)**
+was installed on both the MiSTer Pi and DE10-Nano. Both reported that
+version through the running app. The installed binaries have identical
+SHA-256:
+
+`d821a5f8d429dbc66d8130db030017019ba03eb4d3c60f6a1a96e3d2bb0372e8`
+
+The DE10-Nano opened the new Filters and Options screens correctly at
+320×240; the Run Update All entry is present. Its existing Linux 5.15.1
+was retained. No Update All run or firmware change was performed on the
+DE10 for this installation. Both devices were left in Options.
+
+Previous executable backups:
+
+- Pi: `/media/fat/misterzine/misterzine.before-update-all`
+- DE10: `/media/fat/misterzine/misterzine.before-update-all-20260908`
+
+Full CI passed for the installed revision, including vet/tests, a 32-bit
+UI test, ARM cross-build, downloader package validation and render artifacts.
