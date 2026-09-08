@@ -7,7 +7,7 @@ type SortMode int
 
 const (
 	// SortUpdated is the site's default: newest shipped build first, equal
-	// dates grouped by core label, then title.
+	// dates ordered by arrival batch, then core label and title.
 	SortUpdated SortMode = iota
 	// SortDebut is newest MiSTer debut first, then title.
 	SortDebut
@@ -22,8 +22,9 @@ func (m SortMode) String() string {
 
 // Order returns row indexes in the site's order for the mode. It mirrors the
 // apply() comparator: blank dates sink to the bottom whatever the direction,
-// the date compares descending, the core tiebreak applies only to the
-// updated sort and is never direction-flipped, and title breaks the rest.
+// the date compares descending. Only the updated sort breaks equal dates by
+// arrival batch descending, then core ascending; title breaks the rest.
+// These tiebreaks are never direction-flipped.
 // The sort is stable over data.json order, like Array.prototype.sort.
 func (ds *Dataset) Order(mode SortMode) []int {
 	idx := make([]int, len(ds.Rows))
@@ -54,6 +55,11 @@ func (ds *Dataset) less(mode SortMode, a, b int) bool {
 		return c > 0 // descending
 	}
 	if mode == SortUpdated {
+		// Later same-day arrivals stay above earlier refreshes, matching the
+		// site. Old feeds omit b and tie at zero, preserving their prior order.
+		if ra.B != rb.B {
+			return ra.B > rb.B
+		}
 		if c := CompareKeys(da.coreKey, db.coreKey); c != 0 {
 			return c < 0
 		}

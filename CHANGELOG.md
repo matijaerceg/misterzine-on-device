@@ -2,6 +2,8 @@
 
 ## v0.2.2
 
+- Updated sort matches the site's arrival batches: later same-day refreshes
+  come first, then core and title. Debut order and older feeds are unchanged.
 - Filters: smaller font, Input directions and Buttons sections, and Players
   last. Options keeps the version and data timestamp visible in either
   orientation; horizontal help uses three lines. Rescan follows Update All.

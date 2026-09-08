@@ -24,6 +24,7 @@ type Row struct {
 	Core         string   `json:"core"` // rbf base name
 	Deprecated   bool     `json:"deprecated"`
 	Updated      string   `json:"updated"` // ISO date of the newest shipped build
+	B            int      `json:"b"`       // refresh run that first shipped this Updated value
 	K            string   `json:"k"`       // stable deep-link key
 	Src          string   `json:"src"`
 	FT           string   `json:"ft"`
