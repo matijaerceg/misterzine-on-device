@@ -173,6 +173,25 @@ func ToRGBA(img image.Image) *image.RGBA {
 
 // FitSize is the size (fw, fh) that fits (w, h) inside (bw, bh) keeping the
 // aspect ratio, never growing beyond 2x.
+// Scale produces the bitmap for a box: fitted with the aspect kept, or,
+// when native is asked and the picture is no more than 15% larger than the
+// box in either direction, the picture pixel for pixel cropped to the box
+// (a 240p shot on a 240p screen).
+func Scale(src *image.RGBA, bw, bh int, native bool) *image.RGBA {
+	w, h := src.Rect.Dx(), src.Rect.Dy()
+	if native && w <= bw*115/100 && h <= bh*115/100 {
+		cw, ch := min(w, bw), min(h, bh)
+		r := image.Rect((w-cw)/2, (h-ch)/2, (w-cw)/2+cw, (h-ch)/2+ch).Add(src.Rect.Min)
+		out := image.NewRGBA(image.Rect(0, 0, cw, ch))
+		for y := 0; y < ch; y++ {
+			copy(out.Pix[y*out.Stride:y*out.Stride+cw*4], src.Pix[src.PixOffset(r.Min.X, r.Min.Y+y):src.PixOffset(r.Max.X, r.Min.Y+y)])
+		}
+		return out
+	}
+	fw, fh := FitSize(w, h, bw, bh)
+	return Resample(src, fw, fh)
+}
+
 func FitSize(w, h, bw, bh int) (int, int) {
 	if w <= 0 || h <= 0 || bw <= 0 || bh <= 0 {
 		return 0, 0

@@ -34,7 +34,7 @@ func (a *App) paintShot(c *gfx.Canvas) {
 		if slot == "system" {
 			key = row.Core
 		}
-		req := ImageReq{Key: key, Slot: slot, W: area.Dx(), H: area.Dy()}
+		req := ImageReq{Key: key, Slot: slot, W: area.Dx(), H: area.Dy(), Native: true}
 		img, st := a.cfg.Images.Get(req)
 		if img == nil {
 			a.want(req)

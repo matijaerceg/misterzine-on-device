@@ -618,7 +618,7 @@ func (a *App) neighbourhood() {
 						key = row.Core
 					}
 					area := a.shotArea()
-					a.want(ImageReq{Key: key, Slot: slots[0], W: area.Dx(), H: area.Dy()})
+					a.want(ImageReq{Key: key, Slot: slots[0], W: area.Dx(), H: area.Dy(), Native: true})
 				}
 				continue
 			}

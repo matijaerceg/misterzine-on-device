@@ -12,6 +12,9 @@ type ImageReq struct {
 	Key  string // row.Img for shots, row.Core for system photos
 	Slot string // "title", "snap", "ingame", "system"
 	W, H int    // box to fit into, aspect kept
+	// Native: a picture close to the box (up to 15% larger) shows pixel
+	// for pixel, cropped centrally; only a much bigger one is scaled down
+	Native bool
 }
 
 // ImageState says why Get returned nil.

@@ -11,7 +11,9 @@
   saves, network checks) runs between two frames. Left/Right page at the
   same pace. A scrollbar beside the list.
 - L and R jump to the top and bottom.
-- Screen view uses the whole screen (a 240p shot shows pixel for pixel),
+- Screen view uses the whole screen: a shot up to 15% larger than the
+  screen shows pixel for pixel, cropped at the edges; only much bigger ones
+  are scaled down. (A 240p shot on a 240p screen is untouched.),
   with only the slot count overlaid in a corner. Pictures in the list pane
   and details draw without frames; missing ones are a black shape with a
   word on it. Details lose the status bar and the batch chip; the launch

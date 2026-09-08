@@ -26,7 +26,8 @@ type Pic struct {
 
 type scaledKey struct {
 	Pic
-	W, H int
+	W, H   int
+	Native bool
 }
 
 type entry struct {
@@ -192,7 +193,7 @@ func (s *Service) exists(p Pic) bool {
 // Get implements app.Images.
 func (s *Service) Get(req app.ImageReq) (*image.RGBA, app.ImageState) {
 	p := Pic{req.Key, req.Slot}
-	k := scaledKey{p, req.W, req.H}
+	k := scaledKey{p, req.W, req.H, req.Native}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if e, ok := s.cache[k]; ok {
@@ -215,7 +216,7 @@ func (s *Service) Want(reqs []app.ImageReq) {
 	s.mu.Lock()
 	s.wanted = s.wanted[:0]
 	for _, r := range reqs {
-		s.wanted = append(s.wanted, scaledKey{Pic{r.Key, r.Slot}, r.W, r.H})
+		s.wanted = append(s.wanted, scaledKey{Pic{r.Key, r.Slot}, r.W, r.H, r.Native})
 	}
 	s.mu.Unlock()
 	s.poke(s.kick)
@@ -296,8 +297,7 @@ func (s *Service) decode(k scaledKey) {
 		}
 		s.mu.Unlock()
 	}
-	fw, fh := FitSize(src.Rect.Dx(), src.Rect.Dy(), k.W, k.H)
-	scaled := Resample(src, fw, fh)
+	scaled := Scale(src, k.W, k.H, k.Native)
 	s.mu.Lock()
 	s.put(k, scaled)
 	s.mu.Unlock()

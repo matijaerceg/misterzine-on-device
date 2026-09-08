@@ -58,6 +58,8 @@ type host struct {
 	launch      string
 	dirty       bool          // state needs saving
 	lostCh      chan struct{} // the screen-lost probe fired
+	logInput    bool          // debug: log every input event
+	lastEv      time.Time
 	checkFailed atomic.Bool
 	dataUpdated time.Time // the data's build time, for the clock check
 	slowLog     time.Time
@@ -264,6 +266,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	h.present()
 	lg.Printf("first frame at %v", time.Since(t0).Round(time.Millisecond))
 
+	h.logInput = debugAddr != ""
 	if debugAddr != "" {
 		debugsrv.Serve(debugAddr, debugsrv.Hooks{
 			Run:    h.runOnUI,
@@ -404,6 +407,10 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 // handleEvent feeds one input event to the app (the screenshot key is the
 // host's own).
 func (h *host) handleEvent(ev platform.Event) {
+	if h.logInput {
+		h.lg.Printf("input: %v %s +%dms %s", ev.Key, map[bool]string{true: "down", false: "up"}[ev.Pressed], ev.At.Sub(h.lastEv).Milliseconds(), ev.Source)
+		h.lastEv = ev.At
+	}
 	if ev.Key == platform.KeyScreenshot {
 		if ev.Pressed {
 			h.screenshot()
