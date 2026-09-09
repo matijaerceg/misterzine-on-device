@@ -89,8 +89,8 @@ type FB struct {
 }
 
 // OpenFB opens /dev/fb0, asks Main for a canvasW x canvasH framebuffer and
-// maps it. When the request is not honoured within the timeout the reported
-// geometry is used with software scaling.
+// maps it. An unconfirmed sent request aborts startup after a restore attempt;
+// an asynchronous mode change must never race a newly mapped framebuffer.
 func OpenFB(cmd *Cmd, canvasW, canvasH int, lg *log.Logger) (*FB, error) {
 	f, err := os.OpenFile(fbPath, os.O_RDWR|syscall.O_CLOEXEC, 0)
 	if err != nil {
@@ -105,10 +105,19 @@ func OpenFB(cmd *Cmd, canvasW, canvasH int, lg *log.Logger) (*FB, error) {
 	lg.Printf("fb: native %s", b.geom)
 	if b.geom.W != canvasW || b.geom.H != canvasH {
 		if err := b.request(cmd, canvasW, canvasH, 2*time.Second); err != nil {
-			lg.Printf("fb: request %dx%d: %v (using %s with scaling)", canvasW, canvasH, err, b.geom)
+			lg.Printf("fb: request %dx%d: %v; restoring native mode before mapping", canvasW, canvasH, err)
+			if b.requested {
+				rollback := b.request(cmd, b.orig.W, b.orig.H, 2*time.Second)
+				f.Close()
+				return nil, fmt.Errorf("framebuffer request unconfirmed: %w (restore attempt: %v); refusing to map pending geometry", err, rollback)
+			}
 		} else {
 			b.requested = true
 		}
+	}
+	if err := b.refresh(); err != nil {
+		b.CloseRestore(cmd, true)
+		return nil, err
 	}
 	if err := b.mapMem(); err != nil {
 		b.CloseRestore(cmd, true)
@@ -154,6 +163,7 @@ func (b *FB) request(cmd *Cmd, w, h int, timeout time.Duration) error {
 	if err := cmd.Send(fmt.Sprintf("fb_cmd1 8888 1 %d %d", w, h)); err != nil {
 		return err
 	}
+	b.requested = true // a sent request may land after its confirmation timeout
 	for {
 		time.Sleep(10 * time.Millisecond)
 		if err := b.refresh(); err != nil {

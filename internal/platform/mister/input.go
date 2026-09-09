@@ -61,6 +61,7 @@ type device struct {
 	path string
 	name string
 	f    *os.File
+	held map[uint16]platform.Key
 	pad  bool // a gamepad node: only its Start button is read
 }
 
@@ -141,7 +142,7 @@ func (in *Input) rescan() {
 			f.Close()
 			continue
 		}
-		d := &device{path: p, name: name, f: f, pad: pad}
+		d := &device{path: p, name: name, f: f, pad: pad, held: map[uint16]platform.Key{}}
 		in.mu.Lock()
 		in.devs[p] = d
 		in.mu.Unlock()
@@ -196,6 +197,7 @@ func isPad(f *os.File) bool {
 func (in *Input) read(d *device) {
 	defer in.wg.Done()
 	defer func() {
+		in.releaseHeld(d)
 		in.mu.Lock()
 		if cur, ok := in.devs[d.path]; ok && cur == d {
 			delete(in.devs, d.path)
@@ -204,9 +206,10 @@ func (in *Input) read(d *device) {
 		d.f.Close()
 	}()
 	buf := make([]byte, 16*64)
+	dropped := false
 	for {
 		n, err := d.f.Read(buf)
-		if err != nil {
+		if err != nil || n == 0 {
 			if errors.Is(err, syscall.EAGAIN) {
 				time.Sleep(5 * time.Millisecond)
 				continue
@@ -215,10 +218,21 @@ func (in *Input) read(d *device) {
 		}
 		for i := 0; i+16 <= n; i += 16 {
 			typ := binary.LittleEndian.Uint16(buf[i+8:])
+			code := binary.LittleEndian.Uint16(buf[i+10:])
+			if typ == 0 && code == 3 {
+				dropped = true
+				continue
+			} // SYN_DROPPED
+			if dropped {
+				if typ == 0 && code == 0 { // SYN_REPORT ends the invalid batch
+					in.releaseHeld(d)
+					dropped = false
+				}
+				continue
+			}
 			if typ != evKey {
 				continue
 			}
-			code := binary.LittleEndian.Uint16(buf[i+10:])
 			val := int32(binary.LittleEndian.Uint32(buf[i+12:]))
 			if val != 0 && val != 1 {
 				continue // autorepeat
@@ -238,9 +252,13 @@ func (in *Input) read(d *device) {
 				k = platform.KeyOther
 			}
 			ev := platform.Event{Key: k, Code: code, Pressed: val == 1, At: time.Unix(sec, usec*1000), Source: d.name}
-			select {
-			case in.ch <- ev:
-			default: // a flooded queue drops the oldest-first semantics; fine for keys
+			if ev.Pressed {
+				d.held[code] = k
+			} else {
+				delete(d.held, code)
+			}
+			if !in.deliver(ev) {
+				return
 			}
 		}
 	}
@@ -297,4 +315,24 @@ func (in *Input) Close() error {
 		in.log.Printf("input: readers did not stop in time")
 	}
 	return nil
+}
+
+func (in *Input) deliver(ev platform.Event) bool {
+	select {
+	case in.ch <- ev:
+		return true
+	case <-in.stop:
+		return false
+	}
+}
+
+// Disconnect or kernel queue overflow releases held keys. After overflow the
+// user must press again; never invent a press from an asynchronous state query.
+func (in *Input) releaseHeld(d *device) {
+	for code, key := range d.held {
+		delete(d.held, code)
+		if !in.deliver(platform.Event{Key: key, Code: code, At: time.Now(), Source: d.name}) {
+			return
+		}
+	}
 }

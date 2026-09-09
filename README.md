@@ -204,3 +204,16 @@ Run Update All still starts a new run. Rescan card remains immediately below it.
 The Scripts wrapper keeps a temporary restore helper in RAM during the app run.
 On an error it shows the recent log and allows up to 15 seconds to read it before
 returning to Menu. Normal exits have no extra pause.
+
+### Render regression baseline
+
+CI compares all 16 deterministic harness PNGs against `testdata/render_golden.json`.
+For an intentional visual change, run the four Harness renders commands from
+`.github/workflows/ci.yml`, inspect the PNGs in `out/`, then update the baseline:
+
+```sh
+python3 tools/render_golden.py out testdata/render_golden.json --write
+```
+
+Do not regenerate the baseline merely to silence a failed comparison. Keep `out/`
+limited to those harness outputs; extra or missing PNGs also fail the check.

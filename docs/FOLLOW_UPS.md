@@ -216,6 +216,28 @@ it is not a list of unrelated website work.
   21 (golden-image assertions), 52 (unconfirmed framebuffer request), 53/54 (input
   loss/probe ownership), 61 (external updater launcher notice), 70 (inherited pipe
   drainage). Plus deferred 46 site parity and the explicitly retained limits above.
+  Final batch narrows this to demonstrated failures, per the user's instruction
+  to avoid speculative changes:
+  - 21: exact SHA-256 assertions for 16 deterministic harness renders in CI;
+    baseline visually inspected and identical under Windows and Linux. Negative
+    checks confirmed changed/missing renders fail. The baseline has no downloaded
+    artwork and does not substitute for a CRT inspection.
+  - 52: track a sent framebuffer request before polling; on unconfirmed geometry,
+    attempt restoration and abort without mapping. Re-read geometry before mapping
+    on success. Restoration remains best-effort; Main has no command acknowledgement.
+  - 53: preserve queued releases, release held keys on disconnect, and clear held
+    keys after SYN_DROPPED/SYN_REPORT. After overflow the user must press again.
+    No debounce, arbitrary hold timeout, or periodic state polling. The faulty
+    controller's double-input earmark stays closed.
+  - 70 remains parked: the attempted output-drain rewrite introduced uncertainty
+    around cancellation of surviving children after the leader exits. It was
+    removed before commit/deployment. Existing pipe-drain behavior is unchanged;
+    a representative stuck-child reproduction is needed before choosing a fix.
+  Not implementing without further agreement: 14's proposed timeout on the
+  protected-write latch (no defensible universal duration); 54's proposed virtual
+  input canary (new device/ownership assumptions); 61's automatic deferred launch
+  (new behavior; Main offers no safe arbitrary text notification). Existing
+  conservative behavior remains. These are retained limitations, not fixed claims.
   Priorities guide the batches, with related fixes grouped so each remains
   small and testable; this is not a strict traversal of the review's numbering.
 - **DE10 long idle stability:** short transitions passed on latest Main
