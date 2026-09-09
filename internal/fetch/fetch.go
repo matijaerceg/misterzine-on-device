@@ -154,6 +154,9 @@ func (c *Client) Check(ctx context.Context, current string) (Fresh, error) {
 	if err != nil {
 		return out, err
 	}
+	if len(rows) == 0 {
+		return out, fmt.Errorf("data.json contains no releases; keeping existing data")
+	}
 	out.Changed = true
 	out.Rows = rows
 	out.RawData = raw

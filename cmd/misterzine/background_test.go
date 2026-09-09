@@ -195,3 +195,47 @@ func TestBackgroundDeliveryStopsWhenUIQuits(t *testing.T) {
 		t.Fatal("worker blocked after UI quit")
 	}
 }
+
+func TestEmptyRefreshPreservesWorkingDataAndCache(t *testing.T) {
+	for _, raw := range []string{"[]", "null", "[ ]"} {
+		t.Run(raw, func(t *testing.T) {
+			h := backgroundHost(t)
+			h.a.SetData(data.Ingest([]data.Row{{K: "kept", Title: "Kept game"}}, "working", time.Now()), nil)
+			cache := filepath.Join(h.root, "cache")
+			if err := os.MkdirAll(cache, 0755); err != nil {
+				t.Fatal(err)
+			}
+			for _, name := range []string{"data.json", "meta.json"} {
+				if err := os.WriteFile(filepath.Join(cache, name), []byte("original "+name), 0644); err != nil {
+					t.Fatal(err)
+				}
+			}
+			hash := fmt.Sprintf("%x", sha256.Sum256([]byte(raw)))
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path == "/releases/meta.json" {
+					fmt.Fprintf(w, `{"hash":%q,"updated":"2026-09-08T00:00Z"}`, hash)
+				} else {
+					fmt.Fprint(w, raw)
+				}
+			}))
+			defer srv.Close()
+			old := fetch.Site
+			fetch.Site = srv.URL
+			defer func() { fetch.Site = old }()
+			h.requestCheck()
+			finishBackground(t, h)
+			if h.a.Data().Hash != "working" || len(h.a.Data().Rows) != 1 || h.a.CursorKey() != "kept" {
+				t.Fatal("empty response replaced working list")
+			}
+			if !h.checkFailed.Load() {
+				t.Fatal("empty response was accepted as success")
+			}
+			for _, name := range []string{"data.json", "meta.json"} {
+				got, err := os.ReadFile(filepath.Join(cache, name))
+				if err != nil || string(got) != "original "+name {
+					t.Fatalf("%s replaced: %q, %v", name, got, err)
+				}
+			}
+		})
+	}
+}

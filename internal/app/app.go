@@ -194,6 +194,9 @@ func (a *App) SetData(ds *data.Dataset, stored *data.SeenRecord) {
 	if curK != "" {
 		a.moveToKey(curK)
 	}
+	if a.screen == ScreenFilter || a.screen == ScreenOptions {
+		a.buildPanel()
+	}
 	a.all = true
 }
 
@@ -336,6 +339,9 @@ func (a *App) ensureVisible() {
 	}
 	if last >= a.top+a.lay.Lines {
 		a.top = last - a.lay.Lines + 1
+	}
+	if a.top > a.totalLines()-a.lay.Lines {
+		a.top = a.totalLines() - a.lay.Lines
 	}
 	if a.top < 0 {
 		a.top = 0

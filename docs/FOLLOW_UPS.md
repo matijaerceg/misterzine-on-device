@@ -73,8 +73,15 @@ it is not a list of unrelated website work.
   hash. The debug row count now follows that same current dataset.
   Full host tests passed on both devices; new refresh/cache, scan, update-deferral
   and shutdown tests also passed using temporary directories on their SD cards.
-  User acceptance is pending: repeat Refresh data and Rescan card, browse and
-  open game details, then quit/reopen. Do not begin batch 12 before confirmation.
+  The user confirmed batch 11.
+  Batch 12 rebuilds an open Filters/Options panel when new data arrives, keeps
+  the final list page filled after the view shrinks, and rejects empty network
+  datasets before replacing the working list or its saved cache. Tests reproduced
+  stale filter counts and the nearly blank final page before the fixes. Full app
+  and host suites passed on both devices, with empty-response cache preservation
+  also checked on their SD cards. User acceptance is pending: refresh data, use
+  filters to shorten the list, browse details, and quit/reopen. Do not begin
+  batch 13 until the user confirms batch 12.
   Priorities guide the batches, with related fixes grouped so each remains
   small and testable; this is not a strict traversal of the review's numbering.
 - **DE10 long idle stability:** short transitions passed on latest Main
