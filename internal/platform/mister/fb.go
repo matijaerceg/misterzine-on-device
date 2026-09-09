@@ -86,6 +86,7 @@ type FB struct {
 	requested        bool
 	presents         int
 	LastWait         time.Duration // vsync wait inside the last Present
+	MeasureTiming    bool          // opt-in performance diagnostics
 }
 
 // OpenFB opens /dev/fb0, asks Main for a canvasW x canvasH framebuffer and
@@ -251,9 +252,13 @@ func (b *FB) PresentWait(c *image.RGBA, dirty []image.Rectangle, wait bool) erro
 	}
 	b.LastWait = 0
 	if wait && area*4 > b.CanvasW*b.CanvasH {
-		t := time.Now()
-		b.WaitVSync()
-		b.LastWait = time.Since(t)
+		if b.MeasureTiming {
+			t := time.Now()
+			b.WaitVSync()
+			b.LastWait = time.Since(t)
+		} else {
+			b.WaitVSync()
+		}
 	}
 	for _, r := range dirty {
 		r = r.Intersect(full).Intersect(c.Rect)

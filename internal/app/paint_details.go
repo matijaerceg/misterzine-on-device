@@ -163,19 +163,14 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 	y += 4 // breathing room before the pictures
 	entries := a.launchEntries(row, i)
 	lh := a.sm.H + 1
-	const launchMax = 5 // visible launch entries; more scroll under the pick
-	shown := len(entries)
-	if shown > launchMax {
-		shown = launchMax
-	}
-	launchH := (shown + 1) * lh
+	launchH := lh
 	// shots strip: in horizontal the pictures share the row; in tate they
 	// are narrow, so each takes its own width and they pack from the left
 	stripH := 54
 	if !l.Portrait {
 		stripH = 72
 	}
-	// Reserve the launch list and at least one spec line before sizing art.
+	// Reserve the version selector and at least one information line.
 	stripH = min(stripH, max(0, body.Max.Y-y-launchH-2-lh-4))
 	slots := shotSlots(row)
 	if len(slots) > 0 && stripH > 0 {
@@ -207,53 +202,57 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 		y += bh + 4
 	}
 	// spec lines, scrollable
-	lines := a.detailLines(row, d, i)
+	sc := a.sm.Cols(body.Dx() - 4) // leave room for the information scrollbar
+	lines := wrapDetailLines(a.detailLines(row, d, i), sc)
 	avail := body.Max.Y - y
 	specH := avail - launchH - 2
 	maxLines := max(0, specH/lh)
+	a.detail.lines = maxLines
 	if a.detail.scroll > len(lines)-maxLines {
 		a.detail.scroll = len(lines) - maxLines
 	}
 	if a.detail.scroll < 0 {
 		a.detail.scroll = 0
 	}
-	sc := a.sm.Cols(body.Dx())
+	specTop := y
 	for n := a.detail.scroll; n < len(lines) && n < a.detail.scroll+maxLines; n++ {
 		c.Text(body.Min.X, y, a.sm, gfx.Fit(lines[n].text, sc), lines[n].col)
 		y += lh
 	}
-	// launch section
+	if len(lines) > maxLines && maxLines > 0 {
+		trackH := maxLines * lh
+		thumbH := max(2, trackH*maxLines/len(lines))
+		thumbY := specTop + (trackH-thumbH)*a.detail.scroll/(len(lines)-maxLines)
+		c.Fill(image.Rect(body.Max.X-2, specTop, body.Max.X, specTop+trackH), gen.Eva.Line)
+		c.Fill(image.Rect(body.Max.X-2, thumbY, body.Max.X, thumbY+thumbH), gen.Eva.Muted)
+	}
+	// One fixed-height selector leaves the same space for every game's details.
 	y = body.Max.Y - launchH
 	c.HLine(body.Min.X, body.Max.X-1, y-1, gen.Eva.Line)
-	c.Text(body.Min.X, y, a.sm, "Versions:", gen.Eva.Muted)
-	y += lh
 	if a.detail.pick >= len(entries) {
 		a.detail.pick = len(entries) - 1
 	}
 	if a.detail.pick < 0 {
 		a.detail.pick = 0
 	}
-	first := 0
-	if a.detail.pick >= shown {
-		first = a.detail.pick - shown + 1
-	}
-	for n := first; n < len(entries) && n < first+shown; n++ {
-		e := entries[n]
-		col := gen.Eva.Fg
-		prefix := "  "
-		if n == a.detail.pick {
-			col = gen.Eva.Accent
-			prefix = "> "
+	if len(entries) == 0 {
+		c.Text(body.Min.X, y, a.sm, "No version available", gen.Eva.Muted)
+	} else {
+		e := entries[a.detail.pick]
+		count := itoa(a.detail.pick+1) + "/" + itoa(len(entries))
+		c.TextRight(body.Max.X, y, a.sm, count, gen.Eva.Muted)
+		prefix := "Version: "
+		if len(entries) > 1 {
+			prefix = gfx.ArrowUp + gfx.ArrowDown + " "
 		}
+		col := gen.Eva.Accent
 		label := e.label
 		if !e.ok {
-			label += " (not on card)"
+			prefix = "- " + prefix
 			col = gen.Eva.Muted
 		}
-		if n == first+shown-1 && n < len(entries)-1 {
-			label += " (+" + itoa(len(entries)-1-n) + " more)"
-		}
-		c.Text(body.Min.X, y, a.sm, gfx.Fit(prefix+label, sc), col)
+		labelCols := a.sm.Cols(body.Dx() - a.sm.Width(count) - a.sm.W)
+		c.Text(body.Min.X, y, a.sm, gfx.Fit(prefix+label, labelCols), col)
 		y += lh
 	}
 	if a.notice != "" {
@@ -261,11 +260,32 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 		c.Text(l.Hint.Min.X+2, l.Hint.Min.Y+2, a.sm, gfx.Fit(a.notice, a.sm.Cols(l.Hint.Dx()-4)), gen.Eva.Fg)
 		return
 	}
-	hint := "Start launch  A shots  Y fav"
-	if len(entries) > 1 {
-		hint += "  " + gfx.ArrowUp + " " + gfx.ArrowDown + " pick"
+	hint := "Start launch  A shots  Y fav  L/R info"
+	if a.sm.Width(hint) > l.Hint.Dx()-4 {
+		hint = "Start go  A art  Y fav  L/R info"
 	}
 	a.paintHint(c, hint)
+}
+
+// Preserve aligned labels on the first line and wrap continuations underneath.
+func wrapDetailLines(lines []paneLine, cols int) []paneLine {
+	var out []paneLine
+	for _, line := range lines {
+		s := line.text
+		for len(s) > cols && cols > 0 {
+			cut := cols
+			if space := strings.LastIndexByte(s[:cols], ' '); space > cols/2 {
+				cut = space
+			}
+			out = append(out, paneLine{strings.TrimRight(s[:cut], " "), line.col})
+			s = strings.TrimLeft(s[cut:], " ")
+			if cols > 2 {
+				s = "  " + s
+			}
+		}
+		out = append(out, paneLine{s, line.col})
+	}
+	return out
 }
 
 // shotSlots is the list of picture slots to show for a row.
@@ -323,9 +343,9 @@ func (a *App) actDetails(k platform.Key) bool {
 	case platform.KeyDown:
 		a.detail.pick++
 	case platform.KeyPageUp:
-		a.detail.scroll -= 4
+		a.detail.scroll -= max(1, a.detail.lines-1)
 	case platform.KeyPageDown:
-		a.detail.scroll += 4
+		a.detail.scroll += max(1, a.detail.lines-1)
 	case platform.KeySpace:
 		if a.cfg.FavoritesUnavailable {
 			a.Notice(FavoritesUnavailableNotice, 8*time.Second)

@@ -175,38 +175,31 @@ func (a *App) optionsEntries() []panelEntry {
 		prefetchIdx = 1
 	}
 	return []panelEntry{
+		{text: "Refresh data now", kind: "refresh",
+			help: "Check misterzine.fyi for new releases now. This also happens on launch and every 30 minutes."},
+		{text: "Run Update All", kind: "update",
+			help: "Update with live output and a stage bar. Hold B for 2 seconds to cancel; system writes finish first. A restart may be required."},
+		{text: "Rescan card", kind: "rescan",
+			help: "Refresh on-card status after an external update. The built-in Update All rescans automatically when it finishes."},
+		{text: "Last update result", kind: "update-result",
+			help: "Review the last Update All result and its saved output. This does not start another update."},
 		{text: "Rotation", kind: "rotation", vals: []string{"monitor CW", "horizontal", "monitor CCW"}, idx: rotIdx,
 			help: "Left/Right turn the image. Label = monitor turn. Default: osd_rotate in MiSTer.ini."},
-		{text: "Edit safe zone", kind: "inset",
-			help: "Margin kept clear of the screen edge (overscan): now " + itoa(a.cfg.SafeInsetX) + " px at the sides, " + itoa(a.cfg.SafeInsetY) + " px top and bottom. A opens the frame; fit it just inside the picture."},
 		{text: "Scroll speed", kind: "scroll", vals: []string{"20 Hz", "30 Hz", "60 Hz"}, idx: scrollIdx,
 			help: "How many rows (or pages, with Left/Right) a held direction moves per second. 60 Hz is one row every frame."},
+		{text: "Hold delay", kind: "hold-delay", vals: []string{"short", "normal", "long"}, idx: map[int]int{200: 0, 300: 1, 500: 2}[a.HoldDelay()],
+			help: "Wait before held navigation repeats: short 200 ms, normal 300 ms, long 500 ms. Scroll speed sets the pace after this delay."},
+		{text: "Edit safe zone", kind: "inset",
+			help: "Margin kept clear of the screen edge (overscan): now " + itoa(a.cfg.SafeInsetX) + " px at the sides, " + itoa(a.cfg.SafeInsetY) + " px top and bottom. A opens the frame; fit it just inside the picture."},
 		{text: "Prefetch shots" + a.progressText(), kind: "prefetch", vals: []string{"off", "on"}, idx: prefetchIdx,
 			help: "Download every screenshot in the background (about 55 MB) so browsing never waits; the tally counts up as they land. Off: only what you look at."},
 		{text: "Main menu launcher", kind: "launcher", vals: []string{"off", "on"}, idx: launcherIdx,
 			help: "Show MisterZine in the MiSTer main menu. Off removes the entry when you return to Menu. You can still open MisterZine from Scripts and turn this back on."},
-		{text: "Run Update All", kind: "update",
-			help: "Update with live output and a stage bar. Browsing waits until it finishes. Hold B for 2 seconds to cancel; system writes finish first. A restart may be required."},
-		{text: "Rescan card", kind: "rescan",
-			help: "Refresh on-card status after an external update. The built-in Update All rescans automatically when it finishes."},
-		{text: "Last update result", kind: "update-result", help: "Review the last Update All result and its saved output. This does not start another update."},
-		{text: "Refresh data now", kind: "refresh",
-			help: "Ask misterzine.fyi for new releases right now. The app also checks on launch and every 30 minutes while open; new rows show a notice and their dates in green."},
 		{text: "Clear image cache", kind: "clearimg",
 			help: "Delete the downloaded screenshots and system photos; they come back as you browse."},
 		{text: "Quit MisterZine", kind: "quit",
 			help: "Back to the MiSTer menu. The pad's menu button does the same."},
 	}
-}
-
-func (a *App) launcherText() string {
-	if a.cfg.Launcher == nil {
-		return "n/a"
-	}
-	if a.cfg.Launcher() {
-		return "on  (A turns off)"
-	}
-	return "off  (A puts misterzine in the main menu)"
 }
 
 func (a *App) scrollText() string {
@@ -463,6 +456,8 @@ func (a *App) stepValue(d int) bool {
 		}
 	case "scroll":
 		a.cfg.Scroll = ScrollValues[i]
+	case "hold-delay":
+		a.cfg.HoldDelay = []int{200, 300, 500}[i]
 	case "prefetch":
 		a.panel.prefetch = i == 1
 		if a.cfg.Action != nil {
@@ -576,7 +571,7 @@ func (a *App) togglePanel() bool {
 		if !e.header {
 			f.Since = !f.Since
 		}
-	case "rotation", "launcher", "scroll", "prefetch":
+	case "rotation", "launcher", "scroll", "hold-delay", "prefetch":
 		return true // Left/Right pick these
 	case "inset":
 		a.screen = ScreenCalibrate

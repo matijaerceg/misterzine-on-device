@@ -1,0 +1,21 @@
+MisterZine
+https://misterzine.fyi
+https://github.com/matijaerceg/misterzine-on-device
+
+Application code: MIT; see LICENSE.
+
+Spleen bitmap fonts by Frederic Cambus: BSD-2-Clause; see SPLEEN-LICENSE.
+https://www.cambus.net/spleen-monospaced-bitmap-fonts/
+
+The embedded release catalogue comes from MiSTerZine by Matija Erceg,
+licensed under Creative Commons Attribution 4.0 International.
+https://misterzine.fyi
+https://creativecommons.org/licenses/by/4.0/
+
+Downloaded game screenshots and hardware photos remain the property of
+their respective owners. Sources and individual attribution are available
+through the website and its image manifest:
+https://github.com/matijaerceg/misterzine#the-image-pipeline-tools
+
+MisterZine uses the separately installed MiSTer Downloader and Update All.
+Those projects and the MiSTer cores retain their own licenses.

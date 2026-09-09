@@ -1,7 +1,7 @@
 //go:build linux
 
 // misterzine is the device binary: it runs the app on the MiSTer's
-// framebuffer from the Scripts menu. See deploy/Scripts/misterzine.sh.
+// framebuffer from the main-menu launcher. See deploy/launch.sh.
 package main
 
 import (
@@ -60,7 +60,7 @@ type host struct {
 	dirty           bool // state needs saving
 	stopRequested   atomic.Bool
 	lostCh          chan struct{} // the screen-lost probe fired
-	logInput        bool          // debug: log every input event
+	debugEnabled    bool          // input logging and frame performance measurements
 	lastEv          time.Time
 	checkFailed     atomic.Bool
 	dataUpdated     time.Time // the data's build time, for the clock check
@@ -213,7 +213,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	favSet := h.favs.Set()
 	cfg := app.Config{
 		PhysW: canvasW, PhysH: canvasH, Rotation: rotation, SafeInsetX: h.settings.InsetX, SafeInsetY: h.settings.InsetY,
-		Now: h.now, TimerNow: time.Now, ClockTrusted: trusted, Favorites: favSet, Images: h.img, Scroll: h.settings.Scroll,
+		Now: h.now, TimerNow: time.Now, ClockTrusted: trusted, Favorites: favSet, Images: h.img, Scroll: h.settings.Scroll, HoldDelay: h.settings.HoldDelay,
 		FavoritesUnavailable: h.favLoadFailed,
 		Progress:             func() (int, int) { return h.img.Progress() },
 		Launcher:             launcherEnabled,
@@ -305,7 +305,8 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	h.present()
 	lg.Printf("first frame at %v", time.Since(t0).Round(time.Millisecond))
 
-	h.logInput = debugAddr != ""
+	h.debugEnabled = debugAddr != ""
+	h.fb.MeasureTiming = h.debugEnabled
 	if debugAddr != "" {
 		if debugsrv.Serve(debugAddr, debugsrv.Hooks{
 			Run:    h.runOnUI,
@@ -437,7 +438,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 // handleEvent feeds one input event to the app (the screenshot key is the
 // host's own).
 func (h *host) handleEvent(ev platform.Event) {
-	if h.logInput {
+	if h.debugEnabled {
 		h.lg.Printf("input: %v %s +%dms %s", ev.Key, map[bool]string{true: "down", false: "up"}[ev.Pressed], ev.At.Sub(h.lastEv).Milliseconds(), ev.Source)
 		h.lastEv = ev.At
 	}
@@ -469,7 +470,11 @@ func (h *host) frameLoop() {
 	// the decoder shares the memory bus and the GC with us: quiet it once
 	// the key really repeats (a tap leaves it working on the neighbours)
 	paused := false
-	t0, iters, p0, late := time.Now(), 0, h.stats.n, 0
+	var t0 time.Time
+	if h.debugEnabled {
+		t0 = time.Now()
+	}
+	iters, p0, late := 0, h.stats.n, 0
 	var longWait time.Duration
 	longWaits := 0
 	defer func() {
@@ -477,7 +482,7 @@ func (h *host) frameLoop() {
 			h.img.SetPaused(false)
 		}
 		h.a.Invalidate()
-		if d := time.Since(t0); d > time.Second {
+		if d := time.Since(t0); h.debugEnabled && d > time.Second {
 			h.lg.Printf("frame loop: %d frames in %s (%.1f/s), %d presents, %d over budget, %d vsync waits over 20ms (max %s)", iters, d.Round(time.Millisecond), float64(iters)/d.Seconds(), h.stats.n-p0, late, longWaits, longWait.Round(100*time.Microsecond))
 		}
 	}()
@@ -501,22 +506,30 @@ func (h *host) frameLoop() {
 			h.img.SetPaused(true)
 		}
 		frame, dirty := h.a.Paint()
-		paint := time.Since(t)
-		t = time.Now()
-		h.fb.WaitVSync()
-		if w := time.Since(t); w > longWait {
-			longWait = w
+		var paint time.Duration
+		if h.debugEnabled {
+			paint = time.Since(t)
+			t = time.Now()
 		}
-		if time.Since(t) > 20*time.Millisecond {
-			longWaits++
+		h.fb.WaitVSync()
+		if h.debugEnabled {
+			w := time.Since(t)
+			longWait = max(longWait, w)
+			if w > 20*time.Millisecond {
+				longWaits++
+			}
 		}
 		if dirty != nil {
-			t = time.Now()
+			if h.debugEnabled {
+				t = time.Now()
+			}
 			h.fb.PresentWait(frame, dirty, false)
-			cp := time.Since(t)
-			h.stats.add(paint, 0, cp)
-			if paint+cp > 16*time.Millisecond {
-				late++
+			if h.debugEnabled {
+				cp := time.Since(t)
+				h.stats.add(paint, 0, cp)
+				if paint+cp > 16*time.Millisecond {
+					late++
+				}
 			}
 		}
 		select {
@@ -564,6 +577,13 @@ func (h *host) runOnUI(f func()) {
 }
 
 func (h *host) present() {
+	if !h.debugEnabled {
+		frame, dirty := h.a.Paint()
+		if dirty != nil {
+			h.fb.Present(frame, dirty)
+		}
+		return
+	}
 	t0 := time.Now()
 	frame, dirty := h.a.Paint()
 	if dirty != nil {
@@ -645,6 +665,7 @@ func (h *host) saveAll(final bool) {
 		h.settings.InsetX, h.settings.InsetY = h.a.Inset()
 		h.settings.Inset = h.settings.InsetX
 		h.settings.Scroll = h.a.ScrollSpeed()
+		h.settings.HoldDelay = h.a.HoldDelay()
 		if err := store.Save(filepath.Join(h.root, "settings.json"), h.settings); err != nil {
 			h.lg.Printf("settings: %v", err)
 			h.setDirty = true
@@ -851,7 +872,7 @@ func (h *host) scan(rows []data.Row, hash string) {
 
 // screenshot saves the logical canvas (F12 on a keyboard).
 func (h *host) screenshot() {
-	dir := filepath.Join(h.root, "debug")
+	dir := filepath.Join(h.root, "screenshots")
 	os.MkdirAll(dir, 0755)
 	p := filepath.Join(dir, h.a.Screen().String()+"-"+time.Now().Format("20060102-150405")+".png")
 	f, err := os.Create(p)

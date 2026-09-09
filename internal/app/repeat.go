@@ -8,7 +8,7 @@ import (
 
 // repeater turns a held key into repeated actions. Which keys repeat, and
 // how fast, depends on the screen (see App.repeatStep): list scrolling
-// accelerates, screenshot paging is slow and flat, and action keys never
+// uses the chosen pace, screenshot paging is slower, and action keys never
 // repeat, so a held Enter cannot open details and then launch. Main's
 // virtual keyboard autorepeats too, but those events are dropped by the
 // platform layer so the feel is ours.
@@ -26,9 +26,6 @@ const frameDur = 16667 * time.Microsecond
 
 const (
 	repeatDelay = 500 * time.Millisecond // a tap held a little long is still one step
-	repeatSlow  = 48 * time.Millisecond
-	repeatMid   = 28 * time.Millisecond
-	repeatFast  = 16 * time.Millisecond
 	repeatPage  = 150 * time.Millisecond
 	repeatStep  = 200 * time.Millisecond // flat pace for row/slot walking
 	repeatCalib = 60 * time.Millisecond
@@ -108,9 +105,8 @@ var scrollSpeeds = map[string]time.Duration{"20": 3 * frameDur, "30": 2 * frameD
 // ScrollValues are the setting's choices in order.
 var ScrollValues = []string{"20", "30", "60"}
 
-// accel is the list scrolling pace for the chosen speed: full speed from
-// the first repeat (the half-second delay before it is the only guard).
-func accel(speed string, count int) time.Duration {
+// scrollPace applies the chosen speed from the first repeat.
+func scrollPace(speed string) time.Duration {
 	d, ok := scrollSpeeds[speed]
 	if !ok {
 		d = scrollSpeeds["30"]

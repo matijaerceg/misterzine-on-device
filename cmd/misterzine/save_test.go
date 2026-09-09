@@ -126,15 +126,19 @@ func TestRotationIntentSurvivesSaves(t *testing.T) {
 				h.a.Handle(platform.Event{Key: k, At: now.Add(time.Millisecond)})
 			}
 			tap(platform.KeyBack) // Options
-			tap(platform.KeyDown)
-			tap(platform.KeyDown) // Scroll speed
+			for n := 0; n < 5; n++ {
+				tap(platform.KeyDown) // Scroll speed follows the four actions and Rotation
+			}
 			tap(platform.KeyRight)
 			if !h.setDirty {
 				t.Fatal("settings input did not reach callback")
 			}
 			h.saveAll(false)
 			check("auto")
-			tap(platform.KeyHome) // Rotation
+			tap(platform.KeyHome)
+			for n := 0; n < 4; n++ {
+				tap(platform.KeyDown) // Rotation follows the four actions
+			}
 			if rotation == gfx.RotLeft {
 				tap(platform.KeyLeft)
 			} else {

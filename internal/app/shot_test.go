@@ -101,11 +101,17 @@ func TestRotationKeysTurnImageInPressedDirection(t *testing.T) {
 	} {
 		a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest(nil, "test", time.Now()), nil)
 		a.openPanel(ScreenOptions)
+		for i, entry := range a.panel.entries {
+			if entry.kind == "rotation" {
+				a.panel.cursor = i
+				break
+			}
+		}
 		a.actPanel(tc.key)
 		if a.Rotation() != tc.want {
 			t.Fatalf("%v selected %v", tc.key, a.Rotation())
 		}
-		e := a.panel.entries[0]
+		e := a.panel.entries[a.panel.cursor]
 		if e.vals[e.idx] != tc.label {
 			t.Fatalf("monitor label=%q", e.vals[e.idx])
 		}

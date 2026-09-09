@@ -42,7 +42,7 @@ func TestOverscanLayoutsStayInsideTheirRegions(t *testing.T) {
 				a.screen = ScreenDetails
 				a.Paint()
 				saveLayoutCheck(t, a, fmt.Sprintf("details-%v-%d", rot, inset))
-				launchH := (min(5, len(a.launchEntries(&a.ds.Rows[0], 0))) + 1) * (a.sm.H + 1)
+				launchH := a.sm.H + 1
 				r := image.Rect(a.lay.Body.Min.X, a.lay.Body.Max.Y-launchH-1, a.lay.Body.Max.X, a.lay.Body.Max.Y)
 				pixels := func() []byte {
 					var b []byte

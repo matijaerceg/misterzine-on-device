@@ -8,7 +8,12 @@ permissions:
   contents: write
 
 jobs:
+  checks:
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
   build:
+    needs: checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,59 +21,49 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
-      - name: Test
+      - name: Validate release version
         run: |
-          go vet ./...
-          go test ./...
-      - name: Build the device binary
+          [[ "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]] || {
+            echo "Use vX.Y.Z or vX.Y.Z-rc.N"; exit 1;
+          }
+      - name: Build device binary
         run: |
-          TAG="${GITHUB_REF_NAME}"
           SHA="$(git rev-parse --short HEAD)"
           DATE="$(date -u +%Y-%m-%d)"
           M=github.com/matijaerceg/misterzine-on-device/internal/buildinfo
           GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go build -trimpath \
-            -ldflags "-s -w -X $M.Version=$TAG -X $M.Commit=$SHA -X $M.Date=$DATE" \
+            -ldflags "-s -w -X $M.Version=$GITHUB_REF_NAME -X $M.Commit=$SHA -X $M.Date=$DATE" \
             -o dist/misterzine ./cmd/misterzine
-          file dist/misterzine | tee /dev/stderr | grep -q "ELF 32-bit LSB executable, ARM" || { echo "not a static ARM binary"; exit 1; }
-          file dist/misterzine | grep -q "statically linked" || { echo "not statically linked"; exit 1; }
-      - name: Build the downloader database
+          file dist/misterzine | grep -q "ELF 32-bit LSB executable, ARM"
+          file dist/misterzine | grep -q "statically linked"
+      - name: Package and verify local assets
         run: |
-          python3 tools/make-db.py "${GITHUB_REF_NAME}" dist/misterzine dist/misterzine.json.zip
-          cp deploy/Scripts/misterzine.sh dist/misterzine.sh
-          cp deploy/downloader_misterzine.ini dist/downloader_misterzine.ini
-          cp deploy/MisterZine.mgl dist/MisterZine.mgl
-          (cd dist && sha256sum misterzine misterzine.sh downloader_misterzine.ini MisterZine.mgl misterzine.json.zip > SHA256SUMS)
-          cat dist/SHA256SUMS
-      - name: Publish the release
+          python3 tools/make-db.py "$GITHUB_REF_NAME" dist/misterzine dist/release/misterzine.json.zip
+          python3 tools/verify_package.py dist/release "$GITHUB_REF_NAME"
+      - name: Upload draft
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            dist/misterzine
-            dist/misterzine.sh
-            dist/downloader_misterzine.ini
-            dist/MisterZine.mgl
-            dist/misterzine.json.zip
-            dist/SHA256SUMS
-          generate_release_notes: true
-
-  verify:
+          draft: true
+          prerelease: ${{ contains(github.ref_name, '-rc.') }}
+          make_latest: "false"
+          files: dist/release/*
+          fail_on_unmatched_files: true
+          body_path: docs/RELEASE_NOTES.md
+  publish:
     needs: build
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
-      - name: Every database URL must serve the bytes the database hashes
+      - uses: actions/checkout@v4
+      - name: Verify uploaded draft assets
         run: |
-          sleep 30
-          curl -sfL -o db.zip "https://github.com/matijaerceg/misterzine-on-device/releases/download/${GITHUB_REF_NAME}/misterzine.json.zip"
-          python3 - <<'EOF'
-          import hashlib, json, sys, urllib.request, zipfile
-          with zipfile.ZipFile("db.zip") as z:
-              db = json.loads(z.read("misterzine.json"))
-          bad = 0
-          for path, e in db["files"].items():
-              data = urllib.request.urlopen(e["url"], timeout=60).read()
-              h = hashlib.md5(data).hexdigest()
-              ok = h == e["hash"] and len(data) == e["size"]
-              print(("ok  " if ok else "BAD ") + path + " " + e["url"])
-              bad += 0 if ok else 1
-          sys.exit(1 if bad else 0)
-          EOF
+          gh release download "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --dir downloaded
+          python3 tools/verify_package.py downloaded "$GITHUB_REF_NAME"
+      - name: Publish verified release
+        run: |
+          if [[ "$GITHUB_REF_NAME" == *-rc.* ]]; then
+            gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease --latest=false
+          else
+            gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease=false --latest
+          fi

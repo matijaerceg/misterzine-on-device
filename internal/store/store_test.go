@@ -15,6 +15,33 @@ func writeSettings(t *testing.T, body string) string {
 	return p
 }
 
+func TestHoldDelayMigrationAndSave(t *testing.T) {
+	for _, tc := range []struct {
+		body string
+		want int
+	}{
+		{`{"scroll":"60","rotation":"left"}`, 300},
+		{`{"hold_delay_ms":0}`, 300},
+		{`{"hold_delay_ms":999}`, 300},
+		{`{"hold_delay_ms":200}`, 200},
+		{`{"hold_delay_ms":500}`, 500},
+	} {
+		path := writeSettings(t, tc.body)
+		s, err := LoadSettings(path)
+		if err != nil || s.HoldDelay != tc.want {
+			t.Fatalf("load %s: delay=%d err=%v", tc.body, s.HoldDelay, err)
+		}
+		s.HoldDelay = 500
+		if err := Save(path, s); err != nil {
+			t.Fatal(err)
+		}
+		reloaded, err := LoadSettings(path)
+		if err != nil || reloaded.HoldDelay != 500 || reloaded.Rotation != s.Rotation || reloaded.Scroll != s.Scroll {
+			t.Fatalf("preferences did not survive restart: %+v err=%v", reloaded, err)
+		}
+	}
+}
+
 // A file from before the two-axis inset carries only "inset": both axes
 // inherit it, even though the defaults (15/15) were loaded first.
 func TestLoadSettingsLegacyInset(t *testing.T) {

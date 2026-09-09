@@ -19,16 +19,8 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/updater"
 )
 
-// The menu launcher. Main's core browser only lists cores and MGL files, and
-// sorgelig will not add script entries to it (Main issue #664), so the app
-// gets there the way he suggested for TapTo: a resident helper. The database
-// ships MisterZine.mgl at the card root (the menu shows the file name);
-// picking it reloads the menu core with the setname "misterzine", which
-// Main writes to /tmp/CORENAME. The
-// watcher sees that, opens the framebuffer console the way Main's own
-// Scripts entry does (F9 from a virtual keyboard, then tty2, where Main
-// ignores OSD keys), runs the app there, and reloads the plain menu when it
-// exits.
+// Main lists cores and MGL files. The resident launcher watches for our MGL's
+// setname, opens the script console, and restores Menu when the app exits.
 
 const (
 	startupScript = "/media/fat/linux/user-startup.sh"
@@ -40,7 +32,7 @@ const (
 	watchLog      = "/media/fat/misterzine/watch.log"
 	corenameFile  = "/tmp/CORENAME"
 	launchedFile  = "/media/fat/misterzine/launched" // written by the app right before it loads a core
-	scriptEntry   = "/media/fat/Scripts/misterzine.sh"
+	scriptEntry   = "/media/fat/misterzine/launch.sh"
 )
 
 // launcherCmd handles: launcher start | stop | status | enable | disable
@@ -424,7 +416,7 @@ func watch() int {
 	}
 }
 
-// runFromMenu opens the console and runs the Scripts entry on tty2, like
+// runFromMenu opens the console and runs the app wrapper on tty2, like
 // Main does for its own Scripts menu, and returns when the app exits.
 func runFromMenu(lg *log.Logger, kbd *mister.VKeyboard) error {
 	time.Sleep(1200 * time.Millisecond) // Main has just re-executed itself
@@ -449,7 +441,13 @@ func runFromMenu(lg *log.Logger, kbd *mister.VKeyboard) error {
 		return err
 	}
 	lg.Printf("watch: console open after %d F9 press(es): active %s, fb mode %q", presses, mister.ActiveTTY(), mister.SysfsMode())
-	launcher := "#!/bin/bash\nexport LC_ALL=en_US.UTF-8\nexport HOME=/root\ncd " + filepath.Dir(scriptEntry) + "\n" + scriptEntry + "\n"
+	entry := scriptEntry
+	if !fileExists(entry) {
+		// Allow an older installation to finish an update before its new
+		// wrapper arrives. Downloader removes this old Scripts entry.
+		entry = "/media/fat/Scripts/misterzine.sh"
+	}
+	launcher := "#!/bin/bash\nexport LC_ALL=en_US.UTF-8\nexport HOME=/root\ncd " + filepath.Dir(entry) + "\n" + entry + "\n"
 	if err := os.WriteFile("/tmp/script", []byte(launcher), 0700); err != nil {
 		return err
 	}

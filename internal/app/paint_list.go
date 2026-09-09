@@ -28,7 +28,7 @@ func (a *App) paintList(c *gfx.Canvas) {
 func (a *App) paintStatus(c *gfx.Canvas) {
 	l := &a.lay
 	c.Fill(l.Status, gen.Eva.Surface)
-	c.HLine(l.Status.Min.X, l.Status.Max.X-1, l.Status.Max.Y-1, gen.Eva.Fg)
+	c.HLine(l.Status.Min.X, l.Status.Max.X-1, l.Status.Max.Y-1, gen.Eva.Muted)
 	y := l.Status.Min.Y + 2
 	if a.query != "" {
 		count := itoa(len(a.view)) + " matches"

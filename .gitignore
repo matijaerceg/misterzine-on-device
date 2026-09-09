@@ -4,3 +4,5 @@ out/
 *.png.tmp
 /misterzine
 .claude/
+/CLAUDE.md
+__pycache__/

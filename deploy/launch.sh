@@ -1,6 +1,5 @@
 #!/bin/bash
-# misterzine: the release tracker on your MiSTer. Main runs this from the
-# Scripts menu on the framebuffer console; the binary does everything else.
+# MisterZine's console wrapper, opened by the main-menu launcher.
 DIR=/media/fat/misterzine
 BIN="$DIR/misterzine"
 [ -x "$BIN" ] || { echo "misterzine: binary missing at $BIN (run update_all)"; exit 1; }

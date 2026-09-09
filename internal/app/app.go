@@ -70,8 +70,10 @@ type Config struct {
 	Exists func(rel string) bool
 	// Launcher reports whether the main-menu launcher is enabled (nil = unsupported).
 	Launcher func() bool
-	// Scroll is the held-scrolling speed: normal, fast (default), turbo.
+	// Scroll is the held-scrolling speed in rows per second: 20, 30, 60.
 	Scroll string
+	// HoldDelay is the navigation repeat delay in milliseconds: 200, 300, 500.
+	HoldDelay int
 }
 
 // App is the state machine.
@@ -115,6 +117,7 @@ type App struct {
 
 type detailState struct {
 	scroll int
+	lines  int    // visible information lines, used for paging
 	pick   int    // launch entry cursor
 	from   Screen // where B returns to
 }
@@ -176,6 +179,15 @@ func clampInset(px int) int {
 
 // ScrollSpeed reports the held-scrolling speed setting.
 func (a *App) ScrollSpeed() string { return a.scrollText() }
+
+func (a *App) HoldDelay() int {
+	switch a.cfg.HoldDelay {
+	case 200, 500:
+		return a.cfg.HoldDelay
+	default:
+		return 300
+	}
+}
 
 // Rotation and Inset report the current display settings.
 func (a *App) Rotation() gfx.Rotation { return a.rot }
@@ -397,6 +409,12 @@ func (a *App) Handle(ev platform.Event) bool {
 	}
 	a.down[ev.Key] = true
 	a.rep.press(ev.Key, ev.At)
+	if a.screen == ScreenList || a.screen == ScreenFilter || a.screen == ScreenOptions {
+		switch ev.Key {
+		case platform.KeyUp, platform.KeyDown, platform.KeyLeft, platform.KeyRight:
+			a.rep.next = ev.At.Add(time.Duration(a.HoldDelay()) * time.Millisecond)
+		}
+	}
 	return a.act(ev.Key)
 }
 
@@ -409,7 +427,7 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 		case platform.KeyBackspace:
 			return repeatStep
 		case platform.KeyUp, platform.KeyDown, platform.KeyLeft, platform.KeyRight:
-			return accel(a.cfg.Scroll, count) // pages at the row pace
+			return scrollPace(a.cfg.Scroll) // pages at the row pace
 		}
 	case ScreenShot:
 		switch k {
@@ -426,7 +444,7 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 	case ScreenFilter, ScreenOptions:
 		switch k {
 		case platform.KeyUp, platform.KeyDown:
-			return accel("normal", count)
+			return scrollPace(a.cfg.Scroll)
 		case platform.KeyLeft, platform.KeyRight, platform.KeyPageUp, platform.KeyPageDown:
 			return repeatStep
 		}

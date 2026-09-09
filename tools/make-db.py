@@ -4,13 +4,8 @@
     make-db.py <tag> <binary> <out.json.zip>
     make-db.py --check <json.zip>
 
-The database lists two files, both served from the GitHub release of <tag>,
-so the md5 in the database is the md5 of exactly the bytes those URLs serve:
-a mismatch would make downloader fetch the file again on every run.
-
-    Scripts/misterzine.sh         from deploy/Scripts/misterzine.sh
-    misterzine/misterzine         the cross-built binary
-    MisterZine.mgl                from deploy/MisterZine.mgl (the main-menu entry)
+Stages all release assets beside the database and hashes those exact bytes.
+User-created preferences, favorites and debug flags are never packaged.
 
 The drop-in downloader_misterzine.ini is a release asset for manual use only:
 downloader rejects root-level ini files inside a database ("illegal path").
@@ -20,13 +15,25 @@ Schema: https://github.com/MiSTer-devel/Downloader_MiSTer/blob/main/docs/custom-
 import hashlib
 import json
 import os
+import shutil
 import sys
 import time
 import zipfile
+from urllib.parse import quote
 
 DB_ID = "misterzine"
 REPO = "matijaerceg/misterzine-on-device"
 NAME = "misterzine.json"
+ASSETS = {
+    "misterzine/launch.sh": ("deploy/launch.sh", "launch.sh"),
+    "misterzine/maintenance.py": ("deploy/maintenance.py", "maintenance.py"),
+    "Scripts/MisterZine Setup.sh": ("deploy/Scripts/MisterZine Setup.sh", "MisterZine-Setup.sh"),
+    "Scripts/MisterZine Uninstall.sh": ("deploy/Scripts/MisterZine Uninstall.sh", "MisterZine-Uninstall.sh"),
+    "MisterZine.mgl": ("deploy/MisterZine.mgl", "MisterZine.mgl"),
+    "misterzine/LICENSE": ("LICENSE", "LICENSE"),
+    "misterzine/SPLEEN-LICENSE": ("internal/fonts/SPLEEN-LICENSE", "SPLEEN-LICENSE"),
+    "misterzine/THIRD-PARTY-NOTICES.txt": ("deploy/THIRD-PARTY-NOTICES.txt", "THIRD-PARTY-NOTICES.txt"),
+}
 
 
 def md5(path):
@@ -44,11 +51,21 @@ def entry(path, url):
 def build(tag, binary, out):
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     base = f"https://github.com/{REPO}/releases/download/{tag}/"
-    files = {
-        "Scripts/misterzine.sh": entry(os.path.join(root, "deploy", "Scripts", "misterzine.sh"), base + "misterzine.sh"),
-        "misterzine/misterzine": entry(binary, base + "misterzine"),
-        "MisterZine.mgl": entry(os.path.join(root, "deploy", "MisterZine.mgl"), base + "MisterZine.mgl"),
-    }
+    staging = os.path.dirname(os.path.abspath(out))
+    os.makedirs(staging, exist_ok=True)
+    binary_asset = os.path.join(staging, "misterzine")
+    if os.path.abspath(binary) != binary_asset:
+        shutil.copyfile(binary, binary_asset)
+    files = {"misterzine/misterzine": entry(binary_asset, base + "misterzine")}
+    asset_names = ["misterzine"]
+    for path, (source, asset) in ASSETS.items():
+        target = os.path.join(staging, asset)
+        shutil.copyfile(os.path.join(root, source), target)
+        files[path] = entry(target, base + quote(asset))
+        asset_names.append(asset)
+    shutil.copyfile(os.path.join(root, "deploy/downloader_misterzine.ini"),
+                    os.path.join(staging, "downloader_misterzine.ini"))
+    asset_names += ["downloader_misterzine.ini", os.path.basename(out)]
     db = {
         "v": 1,
         "db_id": DB_ID,
@@ -60,6 +77,10 @@ def build(tag, binary, out):
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr(NAME, json.dumps(db, indent=1, sort_keys=True))
     check(out)
+    with open(os.path.join(staging, "SHA256SUMS"), "w", newline="\n") as sums:
+        for name in sorted(asset_names):
+            with open(os.path.join(staging, name), "rb") as asset:
+                sums.write(hashlib.sha256(asset.read()).hexdigest() + "  " + name + "\n")
     print(f"{out}: {len(files)} files for {tag}")
     for p, e in files.items():
         print(f"  {p}  {e['size']} bytes  {e['hash']}")

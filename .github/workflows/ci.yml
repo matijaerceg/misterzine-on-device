@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_call:
 
 permissions:
   contents: read
@@ -22,6 +23,8 @@ jobs:
           node --test tools/sort_golden.test.js
           python3 tools/test_snapshot.py
           python3 tools/test_wrapper.py
+          python3 tools/test_maintenance.py
+          python3 tools/test_package.py
           go vet ./...
           go test ./...
           GOARCH=386 CGO_ENABLED=0 go test ./internal/app -run TestUpdate
@@ -36,13 +39,7 @@ jobs:
           python3 tools/make-db.py v0.0.0-ci dist/misterzine dist/misterzine.json.zip
           python3 tools/make-db.py --check dist/misterzine.json.zip
       - name: Harness renders
-        run: |
-          go run ./cmd/mzharness -rot none -out out/h -images ""
-          go run ./cmd/mzharness -rot left -out out/t -images "" -logical
-          go run ./cmd/mzharness -update-state testdata/update-running.json -out out/update-h -images "" -script "shot running; hold back 2200; shot cancel"
-          go run ./cmd/mzharness -update-state testdata/update-running.json -rot left -logical -out out/update-t -images "" -script "shot running; hold back 2200; shot cancel"
-          go run ./cmd/mzharness -out out/search-h -images "" -script "type 1943; shot matches; type xyz; shot empty"
-          go run ./cmd/mzharness -rot left -logical -out out/search-t -images "" -script "type 1943; shot matches; type xyz; shot empty"
+        run: python3 tools/render_all.py
       - name: Verify golden renders
         run: python3 tools/render_golden.py out testdata/render_golden.json
       - uses: actions/upload-artifact@v4

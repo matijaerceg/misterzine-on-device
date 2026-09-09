@@ -1,0 +1,123 @@
+# Development
+
+## Build and test
+
+Use the Go version in `go.mod`. Go code uses the standard library; the bitmap
+fonts and an initial catalogue are embedded in the device binary.
+
+```sh
+go vet ./...
+go test ./...
+GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go vet ./...
+GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o dist/misterzine ./cmd/misterzine
+python3 tools/test_maintenance.py
+python3 tools/test_package.py
+python3 tools/test_wrapper.py
+python3 tools/test_snapshot.py
+node --test tools/sort_golden.test.js
+```
+
+Wrapper and snapshot tests require Bash. Linux-specific host, input and updater
+tests run on Linux; Windows tests do not cover those packages. ARM test binaries
+can run in a temporary directory on the device. The complete suite includes Unix
+permissions checks, so run it in `/tmp` rather than on a FAT card.
+
+To check package installation, legacy upgrade and both removal paths against
+an installed Downloader:
+
+```sh
+python3 tools/test_downloader_integration.py /path/to/downloader_latest.zip dist/release
+```
+
+This uses temporary card directories. Only HTTP transport is replaced with
+fixture bytes; Downloader's URL validation, hash checks, file operations and
+local registration/removal run normally. It does not run a real system update.
+
+## Visual checks
+
+`cmd/mzharness` runs the UI against fixed data and a controllable clock.
+Generate the CI scenarios and compare them with the checked-in baseline:
+
+```sh
+python3 tools/render_all.py
+python3 tools/render_golden.py out testdata/render_golden.json
+```
+
+An intentional UI change requires inspecting the affected PNGs in both
+orientations before updating the baseline:
+
+```sh
+python3 tools/render_golden.py out testdata/render_golden.json --write
+```
+
+Keep `out/` limited to those scenarios. Missing, changed or extra PNGs fail the
+comparison. Placeholder-image renders are deterministic and do not replace
+checking real artwork, controller feel, and physical CRT/HDMI output.
+
+For a separate picture-enabled review:
+
+```sh
+go run ./cmd/mzharness -images /path/to/misterzine/docs/images -out preview
+go run ./cmd/mzharness -rot left -logical -images /path/to/misterzine/docs/images -out preview-tate
+```
+
+## Device tools and debugging
+
+Set `PI` to your device's IP or SSH hostname when using `tools/dev.sh`; Go
+must be on PATH for its build command. It uses SSH and, for some commands, the
+separately installed Remote service. Run it against an idle test device.
+
+```sh
+tools/dev.sh build
+PI=your-device tools/dev.sh deploy
+PI=your-device tools/dev.sh launch
+```
+
+Debugging is **off by default**, including packaged installations. To enable
+remote debugging, create `/media/fat/misterzine/debug.flag` and restart the app.
+The wrapper then adds `--debug-http=:8195`. Explicitly passing that argument
+also enables debugging. A startup notice confirms it is on.
+
+Every request needs `X-MisterZine-Token`. Retrieve the persistent token from
+`/media/fat/misterzine/debug-token` over SSH; the dev tool does this automatically.
+Keep tokens out of logs, screenshots, issue reports and source control.
+Mutations require POST. Browser-origin requests and non-IP Host names are rejected,
+except localhost for tunnels. This opt-in HTTP interface is for a private LAN.
+
+Debug mode enables remote input, state/canvas inspection, detailed input logs and
+frame performance collection. Ordinary mode retains failure/startup/scan logs and
+the F12 screenshot feature, but skips the detailed input and timing instrumentation.
+To return a test device to ordinary mode, remove `debug.flag`, remove any explicit
+debug argument, and restart. Removing the file cannot stop an already running server.
+
+## Data and generated files
+
+`tools/snapshot.sh` refreshes the embedded first-run catalogue. It does not
+replace the coupled sorting fixtures in `testdata/`; those belong to
+`tools/sort_golden.js`. The regular network client updates the on-device cache.
+
+`cmd/mzgen` imports the site's display names and Unit-01 palette into
+`internal/gen/`. Regenerate those files from the website source rather than
+editing generated values by hand.
+
+## Host and updater behavior
+
+The UI owns dataset and navigation state. Background workers deliver results to
+it; image decoding and network work stay off the drawing loop. Held navigation
+advances at framebuffer pace. The launcher watches an MGL selection, opens the
+script console and restores Menu afterward.
+
+Update All runs under a detached supervisor so it can survive the UI closing or
+its executable being replaced. Live state is in RAM, with recovery checkpoints
+and bounded output under `misterzine/update-all/`. A run ID, worker PID and boot
+ID distinguish a live run from saved history. Acknowledgements do not delete the
+original result.
+
+Protected-write detection follows known upstream output markers and checks
+known writers before cancellation signals. Unknown output stays visible;
+MisterZine cannot guarantee protection against arbitrary external root commands
+or loss of power. No timeout guesses when a protected write is safe to kill.
+Launcher entry is deferred while known external updaters own the console.
+
+Regression tests use simulated updaters and temporary files. Run a real system
+update only as a separately planned device test.

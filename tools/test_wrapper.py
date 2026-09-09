@@ -12,7 +12,7 @@ class WrapperTest(unittest.TestCase):
             binary.write_text('#!/bin/bash\nif [ "$1" = console-restore ]; then echo restored >> "'+tmp+'/restored"; exit 0; fi\nprintf "#!/bin/bash\\nexit 99\\n" > "'+tmp+'/replacement"\nmv "'+tmp+'/replacement" "'+tmp+'/misterzine"\nexit 7\n')
             binary.chmod(0o700)
             (root/"log.txt").write_text("framebuffer unavailable fixture\n")
-            source=(Path(__file__).parent.parent/"deploy/Scripts/misterzine.sh").read_text()
+            source=(Path(__file__).parent.parent/"deploy/launch.sh").read_text()
             source=source.replace("DIR=/media/fat/misterzine",'DIR="'+tmp+'"')
             source=source.replace("/tmp/misterzine-restore.XXXXXX",tmp+"/restore.XXXXXX")
             wrapper=root/"wrapper.sh";wrapper.write_text(source)
