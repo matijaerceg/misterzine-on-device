@@ -15,7 +15,8 @@ ARGS=()
 [ -e "$DIR/debug.flag" ] && ARGS+=(--debug-http=:8195)
 "$BIN" "${ARGS[@]}" "$@"
 ST=$?
-if [ "$ST" -ne 0 ]; then
+# Interrupts and requested shutdowns still restore the console through EXIT.
+if [ "$ST" -ne 0 ] && [ "$ST" -ne 130 ] && [ "$ST" -ne 143 ]; then
   "$RESTORE" console-restore >/dev/null 2>&1
   echo "MisterZine could not continue (status $ST). Recent log:"
   tail -n 6 "$DIR/log.txt" 2>/dev/null

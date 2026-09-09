@@ -5,6 +5,30 @@ import tempfile
 import unittest
 
 class WrapperTest(unittest.TestCase):
+    def test_requested_shutdown_restores_without_error_prompt(self):
+        for status in (130, 143):
+            with self.subTest(status=status), tempfile.TemporaryDirectory(prefix="mz-wrapper-") as tmp:
+                root = Path(tmp)
+                binary = root / "misterzine"
+                binary.write_text(
+                    '#!/bin/bash\nif [ "$1" = console-restore ]; then\n'
+                    f'  echo restored >> "{tmp}/restored"; exit 0\nfi\nexit {status}\n'
+                )
+                binary.chmod(0o700)
+                source = (Path(__file__).parent.parent / "deploy/launch.sh").read_text()
+                source = source.replace("DIR=/media/fat/misterzine", f'DIR="{tmp}"')
+                source = source.replace("/tmp/misterzine-restore.XXXXXX", tmp + "/restore.XXXXXX")
+                wrapper = root / "wrapper.sh"
+                wrapper.write_text(source)
+                result = subprocess.run(
+                    ["bash", str(wrapper)], input="", text=True, capture_output=True, timeout=5
+                )
+                self.assertEqual(result.returncode, status, result.stderr)
+                self.assertNotIn("could not continue", result.stdout)
+                self.assertNotIn("Press a key", result.stdout)
+                self.assertEqual((root / "restored").read_text().splitlines(), ["restored"])
+                self.assertEqual(list(root.glob("restore.*")), [])
+
     def test_replaced_binary_still_restores_and_reports_error(self):
         with tempfile.TemporaryDirectory(prefix="mz-wrapper-") as tmp:
             root=Path(tmp)
