@@ -160,7 +160,10 @@ it is not a list of unrelated website work.
   invalid replacements keep the current watcher alive, with retries after errors.
   Menu restoration waits for managed/external updaters and never replaces a
   different selected core. Host suites passed on both devices; replacement
-  detection was also tested on both SD cards. Live upgrade/reopen checks pending.
+  detection was also tested on both SD cards. Live replacement checks passed on
+  both: replacing the executable during an app session left the old watcher in
+  place until Menu, then it adopted the new inode with the same PID. Reopening
+  passed afterward. Build 514265d is installed on both; its CI passed.
   Remaining review scope is roughly two dozen items, including partial findings
   and items needing triage (not two dozen confirmed bugs): 4/5, 11, 14/15, 21,
   27, 33/35, 46/50/51/52/53/54, 59, 61/63, 70/71. This excludes separate
