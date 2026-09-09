@@ -63,9 +63,18 @@ it is not a list of unrelated website work.
   passed on Linux and both MiSTers; save/retry/rotation and favorites-protection
   tests passed in temporary directories on both actual SD cards. The complete
   host suite runs on /tmp: its Unix-permissions test cannot run unchanged on FAT.
-  User acceptance is pending: change an Option, toggle a favorite, wait briefly,
-  then quit/reopen and check persistence and normal navigation. Do not begin
-  batch 11 until the user confirms batch 10.
+  The user confirmed batch 10 and approved broader related batches.
+  Batch 11 serializes freshness checks and coalesces card scans, snapshots the
+  current dataset on the UI thread, and only replaces alternatives on a final
+  scan result (including an empty result). Stale positional statuses are discarded
+  and rebuilt off the UI thread. New scan/refresh requests wait during Update All;
+  already-running work may finish. Worker deliveries can stop when the UI quits.
+  Freshness retries are scheduled from completion; manual checks use the installed
+  hash. The debug row count now follows that same current dataset.
+  Full host tests passed on both devices; new refresh/cache, scan, update-deferral
+  and shutdown tests also passed using temporary directories on their SD cards.
+  User acceptance is pending: repeat Refresh data and Rescan card, browse and
+  open game details, then quit/reopen. Do not begin batch 12 before confirmation.
   Priorities guide the batches, with related fixes grouped so each remains
   small and testable; this is not a strict traversal of the review's numbering.
 - **DE10 long idle stability:** short transitions passed on latest Main

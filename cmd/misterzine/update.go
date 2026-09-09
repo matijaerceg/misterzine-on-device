@@ -97,11 +97,15 @@ func (h *host) receiveUpdate(u updateResult) {
 	}
 	h.a.SetUpdate(u.state, u.start || u.state.Active() && !h.updateRunning)
 	active := u.state.Active()
-	if h.updateRunning && !active {
-		go h.scan(h.a.Data().Rows, h.a.Data().Hash)
-	}
+	finished := h.updateRunning && !active
 	if active != h.updateRunning {
 		h.img.SetPaused(active)
 	}
 	h.updateRunning = active
+	if finished || (!active && h.scanPending) {
+		h.requestScan()
+	}
+	if !active && h.checkPending {
+		h.requestCheck()
+	}
 }

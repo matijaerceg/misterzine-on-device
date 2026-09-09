@@ -78,7 +78,11 @@ type host struct {
 	alts          []scan.Alt
 	scanCh        chan scanResult
 	offset        atomic.Int64 // added to the system clock (from the site's Date header until NTP lands)
-	dataCh        chan fetch.Fresh
+	checkRunning  bool         // UI-owned; held until the result is installed
+	checkPending  bool
+	nextCheck     time.Time
+	scanRunning   bool
+	scanPending   bool
 	netCh         chan string
 	updates       chan updateResult
 	updatePending bool
@@ -119,7 +123,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	lg := openLog(filepath.Join(root, "log.txt"))
 	lg.Printf("==== misterzine %s pid %d args %v", buildinfo.String(), os.Getpid(), os.Args[1:])
 	t0 := time.Now()
-	h := &host{root: root, card: card, lg: lg, events: make(chan platform.Event, 256), uiRun: make(chan func(), 8), quit: make(chan struct{}), dataCh: make(chan fetch.Fresh, 1), netCh: make(chan string, 4), scanCh: make(chan scanResult, 1)}
+	h := &host{root: root, card: card, lg: lg, events: make(chan platform.Event, 256), uiRun: make(chan func(), 8), quit: make(chan struct{}), netCh: make(chan string, 4), scanCh: make(chan scanResult, 1)}
 
 	// settings, state, favorites
 	var serr error
@@ -246,10 +250,10 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 				h.setDirty = true
 			}
 			if kind == "refresh" {
-				go h.check(ds.Hash)
+				h.requestCheck()
 			}
 			if kind == "rescan" {
-				go h.scan(h.a.Data().Rows, h.a.Data().Hash)
+				h.requestScan()
 			}
 			if kind == "prefetch" {
 				h.settings.Prefetch = arg == "on"
@@ -307,7 +311,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 			State: func() any {
 				return map[string]any{
 					"version": buildinfo.String(), "screen": h.a.Screen().String(), "cursor": h.a.CursorKey(),
-					"sort": h.a.Sort().String(), "rows": len(ds.Rows), "fb": h.fb.Geometry().String(),
+					"sort": h.a.Sort().String(), "rows": len(h.a.Data().Rows), "fb": h.fb.Geometry().String(),
 					"rotation": h.a.Rotation().String(), "inset": fmt.Sprint(h.a.Inset()), "devices": h.input.Devices(),
 					"sysfs": mister.SysfsMode(), "uptime": time.Since(t0).String(), "frames": h.stats.String(),
 					"update": h.a.UpdateState(),
@@ -341,25 +345,25 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	}()
 
 	// card scan: cores, MRA presence, then alternatives
-	go h.scan(ds.Rows, ds.Hash)
+	h.requestScan()
 
 	// freshness: first check shortly after boot, then every 30 minutes;
 	// while the clock is unset (the first seconds after a cold boot, before
 	// NTP) or the last check failed, every 15 seconds instead
 	go func() {
-		time.Sleep(300 * time.Millisecond)
-		h.check(ds.Hash)
+		wait := 300 * time.Millisecond
 		for {
-			wait := 30 * time.Minute
-			if !h.clockTrusted() || h.checkFailed.Load() {
-				wait = 15 * time.Second
-			}
 			select {
 			case <-h.quit:
 				return
 			case <-time.After(wait):
-				h.check(h.a.Data().Hash)
 			}
+			h.runOnUI(func() {
+				if !time.Now().Before(h.nextCheck) {
+					h.requestCheck()
+				}
+			})
+			wait = 15 * time.Second
 		}
 	}()
 
@@ -394,27 +398,13 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 			f()
 		case u := <-h.updates:
 			h.receiveUpdate(u)
-		case fr := <-h.dataCh:
-			h.swap(fr)
 		case s := <-h.netCh:
 			h.a.SetNet(s)
 			h.img.SetOffline(s == "no connection")
 		case <-h.img.Ready():
 			h.a.Invalidate()
 		case r := <-h.scanCh:
-			first := h.index == nil
-			h.index, h.status, h.alts = r.index, r.status, r.alts
-			if ds := h.a.Data(); ds != nil && r.hash != ds.Hash {
-				// the data moved under the scan: redo the cheap part now
-				h.status = scan.Statuses(h.card, r.index, ds.Rows)
-			}
-			h.a.Refilter()
-			if first && h.favLoadFailed {
-				// Keep the startup scan from immediately hiding the read error.
-				h.a.Notice(app.FavoritesUnavailableNotice, 12*time.Second)
-			} else if first || r.notice != "" {
-				h.a.Notice(r.notice, 8*time.Second)
-			}
+			h.receiveScan(r)
 		case <-h.lostCh:
 			lg.Printf("Main took the screen back (menu button): leaving")
 			h.stop()
@@ -551,8 +541,15 @@ func (h *host) stop() {
 
 func (h *host) runOnUI(f func()) {
 	done := make(chan struct{})
-	h.uiRun <- func() { f(); close(done) }
-	<-done
+	select {
+	case h.uiRun <- func() { f(); close(done) }:
+	case <-h.quit:
+		return
+	}
+	select {
+	case <-done:
+	case <-h.quit:
+	}
 }
 
 func (h *host) present() {
@@ -719,7 +716,7 @@ func (h *host) clockTrusted() bool {
 	}
 	if !h.dataUpdated.IsZero() && h.now().After(h.dataUpdated.Add(-24*time.Hour)) {
 		h.clock.Trusted = true
-		h.runOnUI(func() { h.a.SetClockTrusted(true) })
+		h.a.SetClockTrusted(true)
 		h.lg.Printf("clock: now set")
 	}
 	return h.clock.Trusted
@@ -739,16 +736,17 @@ func (h *host) now() time.Time {
 }
 
 // check runs a freshness check off the UI goroutine.
-func (h *host) check(current string) {
-	h.netCh <- "checking" + gfx.Ellipsis
-	if !h.clockTrusted() {
+func (h *host) check(current string, trusted bool) {
+	defer h.runOnUI(h.finishCheck)
+	h.sendNet("checking" + gfx.Ellipsis)
+	if !trusted {
 		// the clock is still unset: TLS will fail, but a plain HTTP answer
 		// tells the time, so relative dates work before NTP does
 		if t, err := h.client.ServerTime(context.Background()); err == nil {
 			h.offset.Store(int64(t.Sub(time.Now())))
 			h.lg.Printf("clock: from the site's Date header, %v ahead of the system clock", t.Sub(time.Now()).Round(time.Second))
-			h.clock.Trusted = true
-			h.runOnUI(func() { h.a.SetClockTrusted(true) })
+			trusted = true
+			h.runOnUI(func() { h.clock.Trusted = true; h.a.SetClockTrusted(true) })
 		} else {
 			h.lg.Printf("clock: %v", err)
 		}
@@ -756,12 +754,12 @@ func (h *host) check(current string) {
 	fr, err := h.client.Check(context.Background(), current)
 	if err != nil {
 		h.lg.Printf("check: %v", err)
-		if !h.clockTrusted() {
-			h.netCh <- "" // the clock is not set yet: nothing to tell the user
+		if !trusted {
+			h.sendNet("") // the clock is not set yet: nothing to tell the user
 		} else if errors.Is(err, fetch.ErrOffline) {
-			h.netCh <- "no connection"
+			h.sendNet("no connection")
 		} else {
-			h.netCh <- "check failed"
+			h.sendNet("check failed")
 		}
 		h.checkFailed.Store(true)
 		return
@@ -769,7 +767,7 @@ func (h *host) check(current string) {
 	h.checkFailed.Store(false)
 	if !fr.Changed {
 		h.lg.Printf("check: current (%.8s)", fr.Meta.Hash)
-		h.netCh <- ""
+		h.sendNet("")
 		return
 	}
 	cache := filepath.Join(h.root, "cache")
@@ -779,7 +777,7 @@ func (h *host) check(current string) {
 		h.lg.Printf("cache: %v", err)
 	}
 	h.lg.Printf("check: new data %.8s, %d rows", fr.Meta.Hash, len(fr.Rows))
-	h.dataCh <- fr
+	h.runOnUI(func() { h.swap(fr) })
 }
 
 // swap installs fetched data on the UI goroutine.
@@ -788,10 +786,10 @@ func (h *host) swap(fr fetch.Fresh) {
 	upd, _ := data.ParseMetaTime(fr.Meta.Updated)
 	ds := data.Ingest(fr.Rows, fr.Meta.Hash, upd)
 	news := data.DiffNews(old, fr.Rows)
-	if h.index != nil {
-		h.status = scan.Statuses(h.card, h.index, fr.Rows)
-	}
+	// Old status indices belong to the previous row order. Rebuild off the UI.
+	h.status = nil
 	h.a.SetData(ds, nil)
+	h.requestScan()
 	h.img.SetPrefetch(picsFor(ds), h.settings.Prefetch)
 	h.a.SetNet(h.netLabel(ds))
 	if news != "" {
@@ -806,6 +804,7 @@ type scanResult struct {
 	hash   string // the dataset the statuses index into
 	alts   []scan.Alt
 	notice string
+	final  bool // alternatives pass finished, including an empty result
 }
 
 // scan reads the card off the UI goroutine: cores and MRA stats first (fast),
@@ -820,11 +819,13 @@ func (h *host) scan(rows []data.Row, hash string) {
 	}
 	h.lg.Printf("scan: %d cores; current %d, outdated %d, undated %d, not found %d (%v)", len(idx.Cores),
 		counts[data.StatusCurrent], counts[data.StatusOutdated], counts[data.StatusFoundUndated], counts[data.StatusNotFound], time.Since(t0).Round(time.Millisecond))
-	h.scanCh <- scanResult{index: idx, status: st, hash: hash, alts: h.alts, notice: fmt.Sprintf("card: %d current, %d older, %d not found", counts[data.StatusCurrent], counts[data.StatusOutdated], counts[data.StatusNotFound])}
+	if !h.sendScan(scanResult{index: idx, status: st, hash: hash, notice: fmt.Sprintf("card: %d current, %d older, %d not found", counts[data.StatusCurrent], counts[data.StatusOutdated], counts[data.StatusNotFound])}) {
+		return
+	}
 	t1 := time.Now()
 	alts := scan.ScanAlternatives(h.card, filepath.Join(h.root, "cache", "alts.json"))
 	h.lg.Printf("scan: %d alternatives (%v)", len(alts), time.Since(t1).Round(time.Millisecond))
-	h.scanCh <- scanResult{index: idx, status: st, hash: hash, alts: alts}
+	h.sendScan(scanResult{index: idx, status: st, hash: hash, alts: alts, final: true})
 }
 
 // screenshot saves the logical canvas (F12 on a keyboard).
