@@ -135,14 +135,14 @@ func TestRotationIntentSurvivesSaves(t *testing.T) {
 			h.saveAll(false)
 			check("auto")
 			tap(platform.KeyHome) // Rotation
-			if rotation == gfx.RotRight {
+			if rotation == gfx.RotLeft {
 				tap(platform.KeyLeft)
 			} else {
 				tap(platform.KeyRight)
 			}
 			h.saveAll(false)
 			if rotation == gfx.RotNone {
-				check("right")
+				check("left")
 			} else {
 				check("off")
 			}

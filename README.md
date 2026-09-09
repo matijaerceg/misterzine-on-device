@@ -131,12 +131,12 @@ MiSTer turns the gamepad into these keys while a script runs.
 | D-pad up/down | arrows | move (hold to fly) | pick launch target | | move | move |
 | D-pad left/right | arrows | page (hold to fly) | | previous/next shot | page | change value |
 | L / R | PageUp/Down | top / bottom | scroll info | | top / bottom | top / bottom |
-| A | Enter | details | shots | back to details | toggle | open action |
+| A | Enter | details | shots | | toggle | open action |
 | B | Esc | Options | back | back to details | back to list | back to list |
 | Start | gamepad Start | launch main version | launch picked version | | | |
 | Menu | | back to the MiSTer menu (the app closes) | | | | |
 | Y | Space | sort: updated/debut | favorite | | toggle | |
-| X | Tab | Filters | | back to details | | |
+| X | Tab | Filters | | | | |
 
 In Options, Left/Right change a value; A opens the safe-zone editor.
 There, the d-pad moves the top-right corner of the safe frame, and B saves

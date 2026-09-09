@@ -72,8 +72,8 @@ func (a *App) shotArea() image.Rectangle {
 
 func (a *App) actShot(k platform.Key) bool {
 	switch k {
-	case platform.KeyBack, platform.KeyEnter, platform.KeyTab:
-		// a leaf view: every way out goes back to the details it came from
+	case platform.KeyBack:
+		// Only B returns to the details this artwork came from.
 		a.screen = ScreenDetails
 	case platform.KeyLeft, platform.KeyRight:
 		row, _, _ := a.current()

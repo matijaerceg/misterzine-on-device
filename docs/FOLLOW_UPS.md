@@ -19,6 +19,15 @@ it is not a list of unrelated website work.
 
 ## Active verification / current scope
 
+- **Second UI notes batch:** Options keeps its larger font, with a right-edge
+  down arrow for hidden rows and an up arrow after scrolling. Left/Right from
+  horizontal now turn the image that way: choices are monitor CW / horizontal /
+  monitor CCW. Existing saved rotations and INI interpretation are unchanged.
+  Full-screen artwork exits only with B; A and X do nothing. Main rows have a
+  two-pixel gap below the header border. App tests, ARM vet and device rotation
+  persistence tests passed. The render gate now includes the bottom of Options
+  (22 images total); live deployment/verification follows.
+
 - **September 8 user notes:** keyboard title find (case/space-insensitive,
   composed with Filters; Backspace edits, B/Esc clears), saved filter choices,
   rotation ordered left / horizontal / right, full "Hold B" accent, immediate

@@ -60,6 +60,8 @@ func NewLayout(w, h, ix, iy int, body *gfx.Font) Layout {
 		l.Thumb = image.Rect(tx, l.Pane.Min.Y+3, tx+thumbW, l.Pane.Min.Y+3+thumbH)
 		l.PaneText = image.Rect(tx, l.Thumb.Max.Y+3, l.Pane.Max.X, l.Pane.Max.Y)
 	}
+	// Separate the main list from the header without moving modal panels.
+	l.List.Min.Y += 2
 	// a 2 px scrollbar beside the rows
 	l.Scroll = image.Rect(l.List.Max.X-2, l.List.Min.Y, l.List.Max.X, l.List.Max.Y)
 	l.List.Max.X -= 4

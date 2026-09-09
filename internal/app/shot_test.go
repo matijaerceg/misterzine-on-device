@@ -26,7 +26,7 @@ func TestShotReturnPreservesSelectedVersion(t *testing.T) {
 					Img: "example", ImgSlots: []string{"snap", "title"}, ImgW: 320, ImgH: 240,
 					Rot: "Horizontal", Brot: "upside down", Genre: "Shooter", Manufacturer: "Example",
 					SN: "example", Year: "1985", Reg: "World", Scr: 2, Res: "320x240", Plr: "2",
-					Ctl: "8-way · 2 buttons", Spc: "Example controls", Flip: "yes", Act: "2026-09-08",
+					Ctl: "8-way Â· 2 buttons", Spc: "Example controls", Flip: "yes", Act: "2026-09-08",
 					Src: "official", Deprecated: true, Beta: true, Note: "Example note",
 				}
 				alts := []string{"_Arcade/_alternatives/Example A.mra", "_Arcade/_alternatives/Example B.mra"}
@@ -60,6 +60,12 @@ func TestShotReturnPreservesSelectedVersion(t *testing.T) {
 				}
 				tap(platform.KeyRight)
 				tap(exit.key)
+				if exit.key != platform.KeyBack {
+					if a.Screen() != ScreenShot || a.slot != 1 {
+						t.Fatal("A/X changed or closed artwork")
+					}
+					tap(platform.KeyBack)
+				}
 				if a.Screen() != ScreenDetails || a.detail.pick != 2 || a.detail.scroll != scroll {
 					t.Errorf("return lost details state: screen=%v pick=%d scroll=%d (wanted %d)", a.Screen(), a.detail.pick, a.detail.scroll, scroll)
 				}
@@ -80,6 +86,28 @@ func TestShotReturnPreservesSelectedVersion(t *testing.T) {
 					t.Fatal("a fresh details visit retained the previous visit's selection")
 				}
 			})
+		}
+	}
+}
+
+func TestRotationKeysTurnImageInPressedDirection(t *testing.T) {
+	for _, tc := range []struct {
+		key   platform.Key
+		want  gfx.Rotation
+		label string
+	}{
+		{platform.KeyLeft, gfx.RotRight, "monitor CW"},
+		{platform.KeyRight, gfx.RotLeft, "monitor CCW"},
+	} {
+		a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest(nil, "test", time.Now()), nil)
+		a.openPanel(ScreenOptions)
+		a.actPanel(tc.key)
+		if a.Rotation() != tc.want {
+			t.Fatalf("%v selected %v", tc.key, a.Rotation())
+		}
+		e := a.panel.entries[0]
+		if e.vals[e.idx] != tc.label {
+			t.Fatalf("monitor label=%q", e.vals[e.idx])
 		}
 	}
 }

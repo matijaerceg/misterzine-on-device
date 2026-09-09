@@ -159,7 +159,7 @@ func (a *App) filterEntries() []panelEntry {
 }
 
 func (a *App) optionsEntries() []panelEntry {
-	rotIdx := map[gfx.Rotation]int{gfx.RotLeft: 0, gfx.RotNone: 1, gfx.RotRight: 2}[a.rot]
+	rotIdx := map[gfx.Rotation]int{gfx.RotRight: 0, gfx.RotNone: 1, gfx.RotLeft: 2}[a.rot]
 	scrollIdx := 1
 	for i, v := range ScrollValues {
 		if v == a.scrollText() {
@@ -175,8 +175,8 @@ func (a *App) optionsEntries() []panelEntry {
 		prefetchIdx = 1
 	}
 	return []panelEntry{
-		{text: "Rotation", kind: "rotation", vals: []string{"turned left", "horizontal", "turned right"}, idx: rotIdx,
-			help: "How your monitor is turned. The default follows osd_rotate in MiSTer.ini."},
+		{text: "Rotation", kind: "rotation", vals: []string{"monitor CW", "horizontal", "monitor CCW"}, idx: rotIdx,
+			help: "Left/Right turn the image. Label = monitor turn. Default: osd_rotate in MiSTer.ini."},
 		{text: "Edit safe zone", kind: "inset",
 			help: "Margin kept clear of the screen edge (overscan): now " + itoa(a.cfg.SafeInsetX) + " px at the sides, " + itoa(a.cfg.SafeInsetY) + " px top and bottom. A opens the frame; fit it just inside the picture."},
 		{text: "Scroll speed", kind: "scroll", vals: []string{"20 Hz", "30 Hz", "60 Hz"}, idx: scrollIdx,
@@ -286,6 +286,16 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 	}
 	if p.cursor >= p.top+lines {
 		p.top = p.cursor - lines + 1
+	}
+	if a.screen == ScreenOptions && len(p.entries) > lines {
+		x := inner.Max.X - a.sm.W
+		if p.top > 0 {
+			c.Text(x, inner.Min.Y, a.sm, gfx.ArrowUp, gen.Eva.Accent)
+		}
+		if p.top+lines < len(p.entries) {
+			c.Text(x, inner.Min.Y+(lines-1)*lh, a.sm, gfx.ArrowDown, gen.Eva.Accent)
+		}
+		inner.Max.X -= a.sm.W + 3
 	}
 	cols := font.Cols(inner.Dx() - 4)
 	y := inner.Min.Y
@@ -460,9 +470,9 @@ func (a *App) stepValue(d int) bool {
 	}
 	switch e.kind {
 	case "rotation":
-		a.SetRotation([]gfx.Rotation{gfx.RotLeft, gfx.RotNone, gfx.RotRight}[i])
+		a.SetRotation([]gfx.Rotation{gfx.RotRight, gfx.RotNone, gfx.RotLeft}[i])
 		if a.cfg.Action != nil {
-			a.cfg.Action("rotation", []string{"left", "off", "right"}[i])
+			a.cfg.Action("rotation", []string{"right", "off", "left"}[i])
 		}
 	case "scroll":
 		a.cfg.Scroll = ScrollValues[i]
