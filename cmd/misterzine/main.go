@@ -57,7 +57,8 @@ type host struct {
 	uiRun         chan func()
 	quit          chan struct{}
 	launch        string
-	dirty         bool          // state needs saving
+	dirty         bool // state needs saving
+	stopRequested atomic.Bool
 	lostCh        chan struct{} // the screen-lost probe fired
 	logInput      bool          // debug: log every input event
 	lastEv        time.Time
@@ -226,7 +227,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 			_, err := os.Stat(filepath.Join(card, filepath.FromSlash(rel)))
 			return err == nil
 		},
-		Launch:          func(target string) { h.launch = target; h.stop() },
+		Launch:          h.requestLaunch,
 		Quit:            h.stop,
 		Version:         buildinfo.String(),
 		FavChanged:      func() { h.favDirty = true },
@@ -423,8 +424,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 		lastState = st
 		if h.launch != "" {
 			h.saveAll(true)
-			h.doLaunch()
-			return 0
+			return h.doLaunch()
 		}
 	}
 }
@@ -524,11 +524,17 @@ func (h *host) frameLoop() {
 	}
 }
 
+// closeQuit elects one shutdown caller without racing concurrent API/input exits.
+func (h *host) closeQuit() bool {
+	if !h.stopRequested.CompareAndSwap(false, true) {
+		return false
+	}
+	close(h.quit)
+	return true
+}
+
 func (h *host) stop() {
-	select {
-	case <-h.quit:
-	default:
-		close(h.quit)
+	if h.closeQuit() {
 		// watchdog: whatever else happens, the console comes back
 		go func() {
 			time.Sleep(3 * time.Second)
@@ -668,21 +674,39 @@ func (h *host) cleanup() {
 	}
 }
 
-func (h *host) doLaunch() {
-	abs, err := mister.LaunchPath(h.card, h.launch)
+// requestLaunch validates while the app can still show an error. In particular,
+// Start before a scan finishes must not turn a missing core into a silent exit.
+func (h *host) requestLaunch(target string) {
+	abs, err := mister.LaunchPath(h.card, target)
+	message := "Cannot launch: target missing or invalid"
+	if err == nil {
+		message = "Cannot launch: MiSTer not ready"
+		err = h.cmd.Available()
+	}
 	if err != nil {
-		h.lg.Printf("launch %q: %v", h.launch, err)
+		h.lg.Printf("launch %q: %v", target, err)
+		h.a.Notice(message, 8*time.Second)
 		return
 	}
+	h.launch = abs
+	h.stop()
+}
+
+func (h *host) doLaunch() int {
+	// Restore the old framebuffer before Main starts writing a new core's frame.
 	h.cleanup()
-	// tell the menu watcher this exit is a launch, not a quit: it must not
-	// put the menu back over the game
-	os.WriteFile(filepath.Join(h.root, "launched"), []byte(abs+"\n"), 0644)
-	if err := h.cmd.Send("load_core " + abs); err != nil {
-		h.lg.Printf("launch: %v", err)
-		os.Remove(filepath.Join(h.root, "launched"))
+	marker := filepath.Join(h.root, "launched")
+	if err := os.WriteFile(marker, []byte(h.launch+"\n"), 0644); err != nil {
+		h.lg.Printf("launch marker: %v", err)
+		return 1
 	}
-	h.lg.Printf("launched %s", abs)
+	if err := h.cmd.Send("load_core " + h.launch); err != nil {
+		h.lg.Printf("launch: %v", err)
+		os.Remove(marker)
+		return 1
+	}
+	h.lg.Printf("launched %s", h.launch)
+	return 0
 }
 
 func (h *host) loadData() ([]data.Row, data.Meta, string) {
@@ -823,7 +847,10 @@ func (h *host) scan(rows []data.Row, hash string) {
 		return
 	}
 	t1 := time.Now()
-	alts := scan.ScanAlternatives(h.card, filepath.Join(h.root, "cache", "alts.json"))
+	alts, err := scan.ScanAlternativesWithError(h.card, filepath.Join(h.root, "cache", "alts.json"))
+	if err != nil {
+		h.lg.Printf("scan: %v", err)
+	}
 	h.lg.Printf("scan: %d alternatives (%v)", len(alts), time.Since(t1).Round(time.Millisecond))
 	h.sendScan(scanResult{index: idx, status: st, hash: hash, alts: alts, final: true})
 }

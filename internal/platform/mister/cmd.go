@@ -5,6 +5,7 @@ package mister
 import (
 	"errors"
 	"fmt"
+	"github.com/matijaerceg/misterzine-on-device/internal/scan"
 	"log"
 	"os"
 	"path"
@@ -31,6 +32,19 @@ func NewCmd(lg *log.Logger) (*Cmd, error) {
 	return &Cmd{log: lg}, nil
 }
 
+// Available checks for a FIFO reader without sending a command. The reader
+// may still disappear later, so Send must continue handling its own errors.
+func (c *Cmd) Available() error {
+	if c == nil {
+		return errors.New("MiSTer command interface unavailable")
+	}
+	f, err := os.OpenFile(cmdPath, os.O_WRONLY|syscall.O_NONBLOCK|syscall.O_CLOEXEC, 0)
+	if err != nil {
+		return err
+	}
+	return f.Close()
+}
+
 // Send writes one command line.
 func (c *Cmd) Send(line string) error {
 	if strings.ContainsAny(line, "\n\x00") || len(line) > 900 || line == "" {
@@ -52,6 +66,9 @@ func (c *Cmd) Send(line string) error {
 // load_core: a card-relative .mra/.rbf/.mgl path, or "core:NAME" which
 // resolves to the newest NAME_*.rbf under the usual core folders.
 func LaunchPath(card, target string) (string, error) {
+	if strings.ContainsAny(target, "\r\n\x00") {
+		return "", errors.New("bad launch target")
+	}
 	if strings.HasPrefix(target, "core:") {
 		return findCore(card, strings.TrimPrefix(target, "core:"))
 	}
@@ -66,53 +83,21 @@ func LaunchPath(card, target string) (string, error) {
 	if !strings.HasPrefix(target, "/") {
 		abs = path.Join(card, target)
 	}
-	if _, err := os.Stat(abs); err != nil {
+	if len(abs)+len("load_core ") > 900 {
+		return "", errors.New("launch path too long")
+	}
+	if info, err := os.Stat(abs); err != nil {
 		return "", err
+	} else if !info.Mode().IsRegular() {
+		return "", errors.New("launch target is not a file")
 	}
 	return abs, nil
 }
 
-// findCore looks for NAME_YYYYMMDD.rbf (newest date) in the core folders.
+// findCore uses the same filename and alias rules as the card-status index.
 func findCore(card, name string) (string, error) {
-	lname := strings.ToLower(name)
-	best, bestDate := "", ""
-	for _, dir := range []string{"_Console", "_Computer", "_Other", "_Utility", "_Arcade/cores"} {
-		entries, err := os.ReadDir(path.Join(card, dir))
-		if err != nil {
-			continue
-		}
-		for _, e := range entries {
-			n := e.Name()
-			ln := strings.ToLower(n)
-			if !strings.HasSuffix(ln, ".rbf") {
-				continue
-			}
-			stem := strings.TrimSuffix(ln, ".rbf")
-			base, date := stem, ""
-			if i := strings.LastIndex(stem, "_"); i > 0 && len(stem)-i-1 >= 8 {
-				if d := stem[i+1 : i+9]; isDigits(d) {
-					base, date = stem[:i], d
-				}
-			}
-			if base != lname {
-				continue
-			}
-			if best == "" || date > bestDate {
-				best, bestDate = path.Join(card, dir, n), date
-			}
-		}
+	if core, ok := scan.ScanCores(card).Lookup(name); ok {
+		return LaunchPath(card, core.Path)
 	}
-	if best == "" {
-		return "", fmt.Errorf("core %s not found on the card", name)
-	}
-	return best, nil
-}
-
-func isDigits(s string) bool {
-	for i := 0; i < len(s); i++ {
-		if s[i] < '0' || s[i] > '9' {
-			return false
-		}
-	}
-	return len(s) > 0
+	return "", fmt.Errorf("core %s not found on the card", name)
 }

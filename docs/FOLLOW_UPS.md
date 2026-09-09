@@ -102,7 +102,19 @@ it is not a list of unrelated website work.
   pass, as do full app/host suites on both devices. Maximum-overscan renders were
   visually checked. User acceptance is pending: browse Details/Filters/Options,
   open calibration, and quit/reopen. No real Update All is needed for this batch.
-  Do not start batch 15 until the user confirms batch 14.
+  The user confirmed batch 14.
+  Batch 15 addresses launcher-hook detection (24), concurrent shutdown (32),
+  incomplete alternative-file caching (55), atomic/no-op alternatives cache saves
+  (56), and launch preflight/core resolution (5). Versioned cache entries invalidate
+  the old potentially incomplete cache. Cache/read failures reach the device log.
+  Invalid/missing launch targets and unavailable Main commands keep the app open;
+  later marker/send failures return failure and do not log a successful launch.
+  Late failures after framebuffer cleanup still return to Menu; a richer recovery
+  screen is separate. Core resolution uses the same suffix/alias rules as scanning.
+  Host/scan/platform suites passed on both devices; cache recovery and preservation
+  tests also passed on their actual SD cards. User acceptance is pending: rescan,
+  inspect alternate versions, launch an installed game, reopen, and quit normally.
+  Do not start batch 16 until the user confirms batch 15.
   Priorities guide the batches, with related fixes grouped so each remains
   small and testable; this is not a strict traversal of the review's numbering.
 - **DE10 long idle stability:** short transitions passed on latest Main

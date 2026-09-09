@@ -98,7 +98,21 @@ func warmCache() {
 // launcherEnabled reports whether the boot script starts the watcher.
 func launcherEnabled() bool {
 	b, err := os.ReadFile(startupScript)
-	return err == nil && strings.Contains(string(b), startupLine)
+	return err == nil && hasStartupHook(string(b))
+}
+
+func isStartupHook(line string) bool {
+	code, _, _ := strings.Cut(strings.TrimSpace(line), "#")
+	return strings.TrimSpace(code) == startupLine
+}
+
+func hasStartupHook(script string) bool {
+	for _, line := range strings.Split(script, "\n") {
+		if isStartupHook(line) {
+			return true
+		}
+	}
+	return false
 }
 
 // ensureMGL makes sure the MGL exists under its proper name. The card is
@@ -198,7 +212,7 @@ func disableLauncherFiles(startup, mgl string) error {
 	}
 	var out []string
 	for _, ln := range strings.Split(string(b), "\n") {
-		if strings.TrimSpace(ln) == startupMark || strings.TrimSpace(ln) == startupLine {
+		if strings.TrimSpace(ln) == startupMark || isStartupHook(ln) {
 			continue
 		}
 		out = append(out, ln)

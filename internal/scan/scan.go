@@ -5,8 +5,11 @@
 package scan
 
 import (
+	"bytes"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path"
@@ -17,6 +20,7 @@ import (
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
+	"github.com/matijaerceg/misterzine-on-device/internal/store"
 )
 
 // coreDirs are where MiSTer keeps rbf files, card-relative.
@@ -49,7 +53,7 @@ func ScanCores(card string) *Index {
 		}
 		for _, e := range entries {
 			name := e.Name()
-			if !strings.HasSuffix(strings.ToLower(name), ".rbf") {
+			if e.IsDir() || !strings.HasSuffix(strings.ToLower(name), ".rbf") {
 				continue
 			}
 			stem := strings.ToLower(strings.TrimSuffix(name, filepath.Ext(name)))
@@ -153,23 +157,42 @@ type Alt struct {
 }
 
 type altDir struct {
-	Mtime int64 `json:"mtime"`
-	Alts  []Alt `json:"alts"`
+	Version int   `json:"version"`
+	Mtime   int64 `json:"mtime"`
+	Alts    []Alt `json:"alts"`
 }
 
 // ScanAlternatives walks _Arcade/_alternatives, parsing only the header of
 // each MRA. A per-directory cache keyed by mtime (cachePath, JSON) makes
 // warm runs cheap; pass "" to disable the cache.
 func ScanAlternatives(card, cachePath string) []Alt {
+	alts, _ := ScanAlternativesWithError(card, cachePath)
+	return alts
+}
+
+// ScanAlternativesWithError returns usable entries even if some reads or the
+// optional cache write fail. Incomplete directories are never cached as complete.
+func ScanAlternativesWithError(card, cachePath string) ([]Alt, error) {
 	root := filepath.Join(card, "_Arcade", "_alternatives")
 	dirs, err := os.ReadDir(root)
 	if err != nil {
-		return nil
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
 	}
+	var problems []error
+	var original []byte
 	cache := map[string]altDir{}
 	if cachePath != "" {
-		if b, err := os.ReadFile(cachePath); err == nil {
-			json.Unmarshal(b, &cache)
+		original, err = os.ReadFile(cachePath)
+		if err == nil {
+			if err = json.Unmarshal(original, &cache); err != nil {
+				problems = append(problems, fmt.Errorf("alternatives cache: %w", err))
+				cache = map[string]altDir{}
+			}
+		} else if !os.IsNotExist(err) {
+			problems = append(problems, err)
 		}
 	}
 	fresh := map[string]altDir{}
@@ -180,17 +203,20 @@ func ScanAlternatives(card, cachePath string) []Alt {
 		}
 		info, err := d.Info()
 		if err != nil {
+			problems = append(problems, err)
 			continue
 		}
 		mt := info.ModTime().UnixNano()
-		if c, ok := cache[d.Name()]; ok && c.Mtime == mt {
+		if c, ok := cache[d.Name()]; ok && c.Version == 2 && c.Mtime == mt {
 			fresh[d.Name()] = c
 			out = append(out, c.Alts...)
 			continue
 		}
 		var alts []Alt
+		complete := true
 		files, err := os.ReadDir(filepath.Join(root, d.Name()))
 		if err != nil {
+			problems = append(problems, err)
 			continue
 		}
 		for _, f := range files {
@@ -198,38 +224,57 @@ func ScanAlternatives(card, cachePath string) []Alt {
 				continue
 			}
 			rel := path.Join("_Arcade", "_alternatives", d.Name(), f.Name())
-			a, ok := ParseMRAHeader(filepath.Join(card, filepath.FromSlash(rel)))
+			a, ok, readErr := parseMRAHeader(filepath.Join(card, filepath.FromSlash(rel)))
+			if readErr != nil {
+				complete = false
+				problems = append(problems, fmt.Errorf("%s: %w", rel, readErr))
+			}
 			if !ok {
 				continue
 			}
 			a.Path = rel
 			alts = append(alts, a)
 		}
-		fresh[d.Name()] = altDir{Mtime: mt, Alts: alts}
+		if complete {
+			fresh[d.Name()] = altDir{Version: 2, Mtime: mt, Alts: alts}
+		}
 		out = append(out, alts...)
 	}
 	if cachePath != "" {
-		if b, err := json.Marshal(fresh); err == nil {
-			os.MkdirAll(filepath.Dir(cachePath), 0755)
-			os.WriteFile(cachePath, b, 0644)
+		b, err := json.Marshal(fresh)
+		if err == nil && !bytes.Equal(b, original) {
+			err = store.WriteAtomic(cachePath, b)
+		}
+		if err != nil {
+			problems = append(problems, fmt.Errorf("alternatives cache save: %w", err))
 		}
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Path < out[j].Path })
-	return out
+	return out, errors.Join(problems...)
 }
 
 // ParseMRAHeader reads <rbf>, <setname> and the zip list of the first
 // <rom index="0"> from an MRA, stopping before the bulky <part> data.
 func ParseMRAHeader(p string) (Alt, bool) {
+	a, ok, _ := parseMRAHeader(p)
+	return a, ok
+}
+
+func parseMRAHeader(p string) (Alt, bool, error) {
 	f, err := os.Open(p)
 	if err != nil {
-		return Alt{}, false
+		return Alt{}, false, err
 	}
 	defer f.Close()
-	return parseMRA(io.LimitReader(f, 64<<10))
+	return parseMRAResult(io.LimitReader(f, 64<<10))
 }
 
 func parseMRA(r io.Reader) (Alt, bool) {
+	a, ok, _ := parseMRAResult(r)
+	return a, ok
+}
+
+func parseMRAResult(r io.Reader) (Alt, bool, error) {
 	var a Alt
 	dec := xml.NewDecoder(r)
 	dec.Strict = false
@@ -239,7 +284,10 @@ func parseMRA(r io.Reader) (Alt, bool) {
 	for {
 		tok, err := dec.Token()
 		if err != nil {
-			break
+			if err == io.EOF {
+				err = io.ErrUnexpectedEOF
+			}
+			return a, false, err
 		}
 		switch t := tok.(type) {
 		case xml.StartElement:
@@ -266,7 +314,7 @@ func parseMRA(r io.Reader) (Alt, bool) {
 						}
 					}
 					if a.RBF != "" && a.Setname != "" {
-						return a, true
+						return a, true, nil
 					}
 				}
 			}
@@ -285,11 +333,10 @@ func parseMRA(r io.Reader) (Alt, bool) {
 			depth--
 			want = ""
 			if depth <= 0 {
-				return a, a.RBF != ""
+				return a, a.RBF != "", nil
 			}
 		}
 	}
-	return a, a.RBF != ""
 }
 
 // Alternatives lists the alternative MRAs for a row: same rbf, and a rom zip
