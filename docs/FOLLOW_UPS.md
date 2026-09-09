@@ -19,7 +19,7 @@ it is not a list of unrelated website work.
 
 ## Active verification / current scope
 
-- **Code review fixes: one small batch at a time.** The user must test each
+- **Code review fixes: related batches, with user testing between them.** The user must test each
   batch before implementation proceeds to the next. Batch 1 (`efd13f9`)
   fixes image-worker shutdown. The user confirmed it works on DE10-Nano;
   its regression tests also passed on MiSTer Pi.
@@ -52,15 +52,20 @@ it is not a list of unrelated website work.
   The new regressions reproduced the old failures. The full updater and
   Update screen suites now pass on both devices with simulated updaters.
   The user confirmed it.
-  Batch 9 remembers B-dismissal of an interrupted/restarted update warning
-  using a separate run-ID record. It preserves the original recovery evidence
-  and never suppresses a live run or a different interrupted run. User
-  acceptance is pending: quit and reopen MisterZine, checking normal startup
-  and Options navigation. The interrupted-run dismissal is exercised with
-  temporary simulated recovery records in automated tests. Do not start
-  batch 10 before the user tests this batch.
-  Updater, Update screen and recovery-host tests passed on both devices;
-  dismissal/relaunch and failed-save tests also passed on their actual SD cards.
+  Batch 9 (`0ef953e`) remembers B-dismissal of an interrupted/restarted update
+  warning using a separate run-ID record. It preserves the original recovery
+  evidence and never suppresses a live run or a different interrupted run.
+  The user confirmed it; recovery tests passed on both devices and SD cards.
+  The user requested slightly larger related batches from batch 10 onward.
+  Batch 10 (`e64903f`) fixes autosave scheduling for settings, favorites and
+  data-state changes, retains failed saves for five-second retries, and
+  preserves automatic rotation until an explicit rotation choice. Host tests
+  passed on Linux and both MiSTers; save/retry/rotation and favorites-protection
+  tests passed in temporary directories on both actual SD cards. The complete
+  host suite runs on /tmp: its Unix-permissions test cannot run unchanged on FAT.
+  User acceptance is pending: change an Option, toggle a favorite, wait briefly,
+  then quit/reopen and check persistence and normal navigation. Do not begin
+  batch 11 until the user confirms batch 10.
   Priorities guide the batches, with related fixes grouped so each remains
   small and testable; this is not a strict traversal of the review's numbering.
 - **DE10 long idle stability:** short transitions passed on latest Main
