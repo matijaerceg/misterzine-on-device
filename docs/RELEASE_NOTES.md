@@ -1,26 +1,7 @@
-MisterZine brings the release tracker to MiSTer's main menu: see new releases
-and updated builds, check what's on your card, browse screenshots, and launch
-the version you want.
+Held scrolling now stops at either end of Options. Release the direction and
+press again while already on the first or last item to wrap to the opposite end.
 
-- Horizontal and rotated layouts, favorites, remembered filters and keyboard find.
-- A compact version selector with a tally and scrollable, wrapped game information.
-- Refresh and update actions at the top of Options, with adjustable scroll speed
-  and hold delay.
-- Wrapping Options navigation and a dimming screensaver with full-height black
-  scrolling lettering. Set its idle delay or preview it from Options.
-- Update All with live output, cancellation that waits for detected system writes,
-  reconnection after closing the app, and saved results.
-- One-time main-menu setup and two uninstall choices: preserve favorites/preferences
-  or remove all MisterZine data.
-- Reliability fixes for launching, shutdown, saved data, scanning and image loading.
+Menu remains the system exit; B opens Options from the release list.
 
-Install the downloader INI, run Update All, then run **MisterZine Setup** from
-Scripts once. Afterward, choose **MisterZine directly from the main menu**.
-Existing launcher installations stay enabled.
-
-See the [README](https://github.com/matijaerceg/misterzine-on-device#readme) for
-installation and display requirements.
-
-Choose HDMI or CRT for the interface: simultaneous normal HDMI resolution and
-native 240p CRT output is not supported. The framebuffer console is enabled by
-default in MiSTer; leave `fb_terminal=1`. Debugging is off in normal installs.
+Run Update All or Downloader to update an existing installation. New users can
+follow the [installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once).

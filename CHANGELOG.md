@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v1.0.1 — 2026-09-09
 
 - Held scrolling stops at either end of Options. Wrapping requires releasing
   the direction and pressing again while already at the end.
