@@ -6,8 +6,8 @@
 //
 //   node tools/sort_golden.js ../misterzine testdata
 //
-// Mirrors docs/releases/index.html: coreLabel (1498-1504), the ingest()
-// sole-title index (4029-4043) and the apply() comparator (2062-2091).
+// Mirrors docs/releases/index.html: coreLabel, the ingest() sole-title index,
+// and apply(): updated date, arrival batch descending, core label, title.
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -50,6 +50,8 @@ function sorted(sortKey, sortDir) {
     const cmp = sortDir * av.localeCompare(bv, undefined, { numeric: true, sensitivity: 'base' });
     if (cmp) return cmp;
     if (sortKey === 'updated') {
+      const ab = a.b || 0, bb = b.b || 0;
+      if (ab !== bb) return bb - ab;
       const cc = coreLabel(a.core).localeCompare(coreLabel(b.core), undefined, { numeric: true, sensitivity: 'base' });
       if (cc) return cc;
     }

@@ -19,6 +19,8 @@ jobs:
           cache: false
       - name: Vet and test
         run: |
+          node --test tools/sort_golden.test.js
+          python3 tools/test_snapshot.py
           go vet ./...
           go test ./...
           GOARCH=386 CGO_ENABLED=0 go test ./internal/app -run TestUpdate

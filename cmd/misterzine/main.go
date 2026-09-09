@@ -405,6 +405,10 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 			h.img.SetOffline(s == "no connection")
 		case <-h.img.Ready():
 			h.a.Invalidate()
+		case <-h.img.ProgressReady():
+			if h.a.Screen() == app.ScreenOptions {
+				h.a.Invalidate()
+			}
 		case r := <-h.scanCh:
 			h.receiveScan(r)
 		case <-h.lostCh:

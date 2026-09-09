@@ -14,10 +14,11 @@ import (
 // per glyph, ASCII 32..126 only, one bitmask byte per row (cells are at most
 // 8 px wide). Unknown characters draw as '?'.
 type Font struct {
-	Name   string
-	W, H   int
-	glyphs [128][]byte // rows, top to bottom, MSB = leftmost pixel
-	has    [128]bool
+	Name    string
+	W, H    int
+	descent int
+	glyphs  [128][]byte // rows, top to bottom, MSB = leftmost pixel
+	has     [128]bool
 }
 
 // ParseBDF reads a BDF font with cells up to 8 px wide.
@@ -82,7 +83,7 @@ func ParseBDF(data []byte) (*Font, error) {
 	if !haveFB || fbw <= 0 || fbw > 8 || fbh <= 0 {
 		return nil, fmt.Errorf("bdf: need a FONTBOUNDINGBOX up to 8 px wide, got %dx%d", fbw, fbh)
 	}
-	f.W, f.H = fbw, fbh
+	f.W, f.H, f.descent = fbw, fbh, descent
 	if !f.has['?'] {
 		return nil, fmt.Errorf("bdf: font has no '?' glyph")
 	}
@@ -163,10 +164,7 @@ func (f *Font) AddArrows() {
 	f.SetGlyph(ArrowRight[0], place(right))
 	// the ellipsis: three dots on the baseline in a single cell
 	dots := make([]byte, f.H)
-	base := f.H - 2
-	if f.H >= 12 {
-		base = f.H - 3
-	}
+	base := max(0, min(f.H-1, f.H-f.descent-1))
 	dots[base] = 0xA8
 	f.SetGlyph(Ellipsis[0], dots)
 	// a plus with one-pixel arms, so "a+b" does not touch its neighbours

@@ -164,9 +164,19 @@ it is not a list of unrelated website work.
   both: replacing the executable during an app session left the old watcher in
   place until Menu, then it adopted the new inode with the same PID. Reopening
   passed afterward. Build 514265d is installed on both; its CI passed.
+  Batch 20 addresses ellipsis baseline placement (50), background picture
+  completion redraws (51), and both fixture regeneration traps (59). The font
+  uses its parsed descent; downloads/counts send a separate Options-progress
+  notification while decoded images still trigger display updates. The golden
+  generator includes arrival batches; snapshot refresh stages downloads privately,
+  validates nonempty data, and leaves coupled golden fixtures untouched. New Node
+  and mocked-download Python tool tests run in CI. Full host/images/fonts suites
+  passed on both devices; local Go tests, ARM vet and both tool tests passed.
+  Finding 46 was checked against current site origin/main: its 23h30m rounding
+  matches the site exactly. Defer any change until both agree on revised behavior.
   Remaining review scope is roughly two dozen items, including partial findings
   and items needing triage (not two dozen confirmed bugs): 4/5, 11, 14/15, 21,
-  27, 33/35, 46/50/51/52/53/54, 59, 61/63, 70/71. This excludes separate
+  27, 33/35, 46 (site parity), 52/53/54, 61/63, 70/71. This excludes separate
   product earmarks and release/long-idle validation. Estimate 6–8 further related
   batches; re-evaluate findings against current code before choosing changes.
   Priorities guide the batches, with related fixes grouped so each remains

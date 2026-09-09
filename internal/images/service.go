@@ -43,35 +43,36 @@ type Service struct {
 	client *fetch.Client // nil = never download
 	lg     *log.Logger
 
-	mu          sync.Mutex
-	cache       map[scaledKey]*entry // scaled bitmaps, LRU by bytes
-	lru         *list.List           // front = most recent
-	bytes       int
-	budget      int
-	raw         map[Pic]*image.RGBA // decoded originals of the rows in view
-	rawOrder    []Pic
-	wanted      []scaledKey // priority order, replaced on every Want
-	inflight    map[scaledKey]bool
-	netBusy     map[Pic]bool
-	missing     map[Pic]bool
-	failed      map[Pic]bool      // decode failed this run
-	retryAt     map[Pic]time.Time // download failed: not before this
-	retries     map[Pic]int
-	offline     bool
-	prefetch    []Pic // background download list, in priority order
-	prefetchOn  bool
-	prefetchPos int
-	prefetched  int
-	kick        chan struct{}
-	decodeKick  chan struct{}
-	paused      bool // no decoding while the UI scrolls
-	have        int  // prefetch pictures on disk (kept current, never rescanned per call)
-	haveKnown   bool
-	ready       chan struct{}
-	stop        chan struct{}
-	ctx         context.Context // cancelled on Close
-	cancel      context.CancelFunc
-	wg          sync.WaitGroup
+	mu            sync.Mutex
+	cache         map[scaledKey]*entry // scaled bitmaps, LRU by bytes
+	lru           *list.List           // front = most recent
+	bytes         int
+	budget        int
+	raw           map[Pic]*image.RGBA // decoded originals of the rows in view
+	rawOrder      []Pic
+	wanted        []scaledKey // priority order, replaced on every Want
+	inflight      map[scaledKey]bool
+	netBusy       map[Pic]bool
+	missing       map[Pic]bool
+	failed        map[Pic]bool      // decode failed this run
+	retryAt       map[Pic]time.Time // download failed: not before this
+	retries       map[Pic]int
+	offline       bool
+	prefetch      []Pic // background download list, in priority order
+	prefetchOn    bool
+	prefetchPos   int
+	prefetched    int
+	kick          chan struct{}
+	decodeKick    chan struct{}
+	paused        bool // no decoding while the UI scrolls
+	have          int  // prefetch pictures on disk (kept current, never rescanned per call)
+	haveKnown     bool
+	progressReady chan struct{}
+	ready         chan struct{}
+	stop          chan struct{}
+	ctx           context.Context // cancelled on Close
+	cancel        context.CancelFunc
+	wg            sync.WaitGroup
 }
 
 // New opens a service over dir (created on demand). client may be nil.
@@ -85,7 +86,7 @@ func New(dir string, client *fetch.Client, lg *log.Logger, budget int) *Service 
 		raw: map[Pic]*image.RGBA{}, inflight: map[scaledKey]bool{}, netBusy: map[Pic]bool{},
 		missing: map[Pic]bool{}, failed: map[Pic]bool{}, retryAt: map[Pic]time.Time{}, retries: map[Pic]int{},
 		kick: make(chan struct{}, 1), decodeKick: make(chan struct{}, 1),
-		ready: make(chan struct{}, 1), stop: make(chan struct{}),
+		progressReady: make(chan struct{}, 1), ready: make(chan struct{}, 1), stop: make(chan struct{}),
 	}
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 	for _, sub := range []string{"title", "snap", "ingame", "systems"} {
@@ -102,6 +103,9 @@ func New(dir string, client *fetch.Client, lg *log.Logger, budget int) *Service 
 // Ready delivers a token whenever a picture became available; the UI loop
 // repaints on it.
 func (s *Service) Ready() <-chan struct{} { return s.ready }
+
+// ProgressReady updates the Options tally without repainting unrelated screens.
+func (s *Service) ProgressReady() <-chan struct{} { return s.progressReady }
 
 func (s *Service) signal() {
 	select {
@@ -166,7 +170,7 @@ func (s *Service) countHave(pics []Pic) {
 	s.mu.Lock()
 	s.have, s.haveKnown = n, true
 	s.mu.Unlock()
-	s.signal()
+	s.poke(s.progressReady)
 }
 
 // SetPaused stops the decoder (the UI is scrolling and wants both cores'
@@ -494,7 +498,7 @@ func (s *Service) download(p Pic) {
 	}
 	s.mu.Unlock()
 	s.poke(s.decodeKick)
-	s.signal()
+	s.poke(s.progressReady)
 }
 
 // missing.json remembers 404s so they are not retried every run.

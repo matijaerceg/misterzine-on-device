@@ -211,3 +211,32 @@ func TestPrefetchDownloadsAfterTemporaryServerFailure(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestDownloadProgressDoesNotSignalDrawableImage(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { png.Encode(w, image.NewRGBA(image.Rect(0, 0, 4, 4))) }))
+	defer server.Close()
+	oldSite := fetch.Site
+	fetch.Site = server.URL
+	defer func() { fetch.Site = oldSite }()
+	s := New(t.TempDir(), fetch.NewClient("test"), log.New(io.Discard, "", 0), 0)
+	defer s.Close()
+	// No wanted image: completing a background download only changes Options.
+	s.download(Pic{Key: "background", Slot: "snap"})
+	select {
+	case <-s.Ready():
+		t.Fatal("background download requested full repaint")
+	default:
+	}
+	select {
+	case <-s.ProgressReady():
+	default:
+		t.Fatal("Options progress was not signalled")
+	}
+	// The same cached image becomes drawable only after it is requested/decoded.
+	s.Want([]app.ImageReq{{Key: "background", Slot: "snap", W: 4, H: 4}})
+	select {
+	case <-s.Ready():
+	case <-time.After(2 * time.Second):
+		t.Fatal("decoded picture did not request repaint")
+	}
+}
