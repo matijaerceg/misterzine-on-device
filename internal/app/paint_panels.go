@@ -243,10 +243,7 @@ func short(h string) string {
 
 func (a *App) paintPanel(c *gfx.Canvas) {
 	l := &a.lay
-	font := a.body
-	if a.screen == ScreenFilter {
-		font = a.sm
-	}
+	font := a.sm
 	a.paintStatus(c)
 	if a.notice == "" {
 		c.Fill(l.Status, gen.Eva.Surface)
@@ -271,10 +268,10 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 	inner := box.Inset(2)
 	if a.screen == ScreenOptions {
 		// Keep build and data details visible even when the action list scrolls.
-		footerY := inner.Max.Y - 2*a.body.H
-		cols := a.body.Cols(inner.Dx() - 4)
-		c.Text(inner.Min.X+2, footerY, a.body, gfx.Fit("misterzine "+a.cfg.Version, cols), gen.Eva.Muted)
-		c.Text(inner.Min.X+2, footerY+a.body.H, a.body, gfx.Fit("data "+a.ds.Updated.Format("2006-01-02 15:04")+"  "+short(a.ds.Hash), cols), gen.Eva.Muted)
+		footerY := inner.Max.Y - 2*font.H
+		cols := font.Cols(inner.Dx() - 4)
+		c.Text(inner.Min.X+2, footerY, font, gfx.Fit("misterzine "+a.cfg.Version, cols), gen.Eva.Muted)
+		c.Text(inner.Min.X+2, footerY+font.H, font, gfx.Fit("data "+a.ds.Updated.Format("2006-01-02 15:04")+"  "+short(a.ds.Hash), cols), gen.Eva.Muted)
 		inner.Max.Y = footerY - 3
 	}
 	lh := font.H
@@ -286,16 +283,6 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 	}
 	if p.cursor >= p.top+lines {
 		p.top = p.cursor - lines + 1
-	}
-	if a.screen == ScreenOptions && len(p.entries) > lines {
-		x := inner.Max.X - a.sm.W
-		if p.top > 0 {
-			c.Text(x, inner.Min.Y, a.sm, gfx.ArrowUp, gen.Eva.Accent)
-		}
-		if p.top+lines < len(p.entries) {
-			c.Text(x, inner.Min.Y+(lines-1)*lh, a.sm, gfx.ArrowDown, gen.Eva.Accent)
-		}
-		inner.Max.X -= a.sm.W + 3
 	}
 	cols := font.Cols(inner.Dx() - 4)
 	y := inner.Min.Y
