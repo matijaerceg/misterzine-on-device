@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — v1.0.0
+## v1.0.0 — 2026-09-09
 
 - Main-menu installation with one-time Setup and two removal choices: keep
   favorites/preferences or remove all MisterZine data.

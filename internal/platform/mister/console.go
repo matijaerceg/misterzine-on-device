@@ -26,7 +26,7 @@ const (
 )
 
 // ErrNotConsole means we are not on a virtual console (run over SSH).
-var ErrNotConsole = errors.New("not on a virtual console: run this from the Scripts menu")
+var ErrNotConsole = errors.New("not on a virtual console: open MisterZine from the MiSTer main menu (run MisterZine Setup in Scripts once if its entry is missing)")
 
 // Console puts the virtual console into graphics mode with a raw, silent
 // stdin, and restores both. Restore is idempotent and must run on every

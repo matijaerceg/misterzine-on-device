@@ -20,3 +20,7 @@ Existing launcher installations stay enabled.
 
 See the [README](https://github.com/matijaerceg/misterzine-on-device#readme) for
 installation and display requirements.
+
+Choose HDMI or CRT for the interface: simultaneous normal HDMI resolution and
+native 240p CRT output is not supported. The framebuffer console is enabled by
+default in MiSTer; leave `fb_terminal=1`. Debugging is off in normal installs.

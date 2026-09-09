@@ -4,7 +4,7 @@ Normal installations follow the latest stable GitHub release. Development
 builds identify themselves as `v1.0.0-dev`; the release workflow stamps the
 actual tag, commit and build date.
 
-## Before announcing v1.0.0
+## Before publishing a release
 
 - Recheck physical HDMI after the final UI changes: menu entry, list/details/artwork,
   rotation, safe zone, screensaver, launch, quit and reopening. The September 9
@@ -19,8 +19,8 @@ actual tag, commit and build date.
 - Check an initial launch without network access against the embedded catalogue.
 - Refresh the embedded snapshot shortly before the final build, then rerun checks.
 
-The overnight long-idle check and initial HDMI walkthrough passed on September 9,
-2026. Final UI acceptance and release approval are required before announcing.
+Record the completed device checks with the release handoff. Final UI acceptance
+and release approval are required before announcing.
 
 ## Candidate and stable releases
 
@@ -28,8 +28,7 @@ Use `vX.Y.Z-rc.N` for a candidate and `vX.Y.Z` for a stable release. A candidate
 is explicitly marked prerelease and is never promoted to GitHub's latest release.
 The downloader database ID stays `misterzine` for every version.
 
-Update `docs/RELEASE_NOTES.md` and the changelog before tagging, and remove the
-README's preparation notice when v1.0.0 is approved. Run the full CI checks,
+Update `docs/RELEASE_NOTES.md` and the changelog before tagging. Run the full CI checks,
 including the ARM build and deterministic render comparisons. The
 release workflow calls the same CI workflow, packages exact staged assets, and
 uploads a draft. A subsequent job downloads the draft assets and verifies their

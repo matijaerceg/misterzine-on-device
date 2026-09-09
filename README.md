@@ -1,8 +1,5 @@
 # MisterZine for MiSTer
 
-These instructions describe v1.0.0, currently in preparation. For the published
-v0.2.1 setup, see [that version's README](https://github.com/matijaerceg/misterzine-on-device/blob/v0.2.1/README.md).
-
 See what's new, check what's on your card, and launch a game from the
 MiSTer main menu. MisterZine brings the [release tracker](https://misterzine.fyi)
 to your display, with screenshots, favorites, filters, and keyboard search.
