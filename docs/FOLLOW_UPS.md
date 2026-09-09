@@ -24,11 +24,16 @@ it is not a list of unrelated website work.
   rotation ordered left / horizontal / right, full "Hold B" accent, immediate
   A-to-artwork, artwork starting at shot 1 on every open, and a light one-pixel
   main-header separator. Search is session-only and uses US keyboard key mapping.
-  Local app/store tests, ARM vet, platform tests and focused host tests passed
-  on both MiSTers. Twenty deterministic renders inspected/gated. Live deployment
-  and user CRT acceptance to be recorded after installation.
+  Local app/store tests and ARM vet passed; platform tests and focused host
+  tests passed on both MiSTers. Twenty deterministic renders inspected/gated.
+  Build `9b91b71` is installed on both; CI run `34315499348` passed. Live evdev
+  typing of 1943, Backspace/B, sorting while searching, filter persistence across
+  app restart, rotation stepping/restoration, immediate A, and cross-game artwork
+  reset passed. Captures show 1943 at 2/3 followed by 1943kai at 1/3 on both boards.
+  Both were left on the list, with the temporary test filters cleared and the
+  original rotations restored. User CRT acceptance remains pending.
 - **Framebuffer setting investigation (no behavior change):** official Main
-  September 7 `menu.cpp` gates F9 and Scripts framebuffer startup on `fb_terminal`;
+  [September 7 Main source](https://github.com/MiSTer-devel/Main_MiSTer/tree/f8dc68e3dcf4694f5593e6552aea56cd852982af): `menu.cpp` gates F9 and Scripts framebuffer startup on `fb_terminal`;
   `video.cpp::video_cmd` only acts once that framebuffer is active. The command
   interface has no runtime option to enable it or change the analog routing
   flags. `video_fb_enable` routes framebuffer to analog conditionally on
