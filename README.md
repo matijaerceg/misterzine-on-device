@@ -119,7 +119,7 @@ MiSTer turns the gamepad into these keys while a script runs.
 
 | Pad | Key | List | Details | Screen | Filters | Options |
 |---|---|---|---|---|---|---|
-| D-pad up/down | arrows | move (hold to fly) | pick launch target | previous/next release | move | move |
+| D-pad up/down | arrows | move (hold to fly) | pick launch target | | move | move |
 | D-pad left/right | arrows | page (hold to fly) | | previous/next shot | page | change value |
 | L / R | PageUp/Down | top / bottom | scroll info | | top / bottom | top / bottom |
 | A | Enter | details | shots | back to details | toggle | open action |
@@ -146,8 +146,8 @@ After the file is readable or restored from a backup, reopen MisterZine
 to load it and enable favorite edits again.
 
 Options (B from the main list) has the safe-zone calibration for
-overscan, rotation override, screenshot prefetch, Update All, rescan, refresh and cache
-clearing. A safe zone up to 40 px is available for consumer sets.
+overscan, rotation override, held-scroll speed, screenshot prefetch, the menu
+launcher, Update All, rescan, refresh, cache clearing and Quit MisterZine. A safe zone up to 40 px is available for consumer sets.
 
 Filters (X from the main list) is a separate screen, ordered: On the card,
 Favorites, Since last look, Type, Source, Rotation, Genre, Input directions,
@@ -162,14 +162,15 @@ Rows, screenshots and system photos come from misterzine.fyi (data CC BY
 4.0, screenshots as credited there). The app checks for new data on launch
 and every 30 minutes, keeps a cache under `/media/fat/misterzine/`, and works
 offline from that cache. Pictures download on demand while you browse;
-"Prefetch all shots" fetches the whole set (about 55 MB).
+"Prefetch shots" is an off/on setting changed with Left/Right; its tally shows
+how many images are on the card. When on, it downloads the full image set.
 
 A MiSTer without a clock (no RTC, no network) hides relative times rather
 than showing wrong ones.
 
 ## Building
 
-Go 1.22 or newer. The device binary is a static ARMv7 build:
+Go 1.27 or newer (matching `go.mod`). The device binary is a static ARMv7 build:
 
 ```
 GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o dist/misterzine ./cmd/misterzine

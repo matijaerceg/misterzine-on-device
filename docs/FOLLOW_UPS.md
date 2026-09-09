@@ -89,8 +89,20 @@ it is not a list of unrelated website work.
   the UI thread before encoding (48). Rename failures now also enter backoff.
   App/image/debug-server suites passed on both devices; unreadable-file and
   prefetch retry tests passed on their SD cards using temporary fixtures.
-  User acceptance is pending: browse thumbnails, open and return from full-screen
-  artwork, and check Filters. Do not begin batch 14 before confirmation.
+  The user confirmed batch 13 and requested another larger batch.
+  Batch 14 fixes seven review findings: details/spec/Versions overlap at high
+  overscan (39), status-count overflow (40), first-visit Since filtering and its
+  empty message (41), calibration text bounds (44), repeated repainting of an
+  unchanged terminal Update All result (45), and README control/options/build
+  drift (22/23). Artwork shrinks where needed to reserve space for Versions.
+  The update poll still checks at 500 ms to detect external changes; unchanged
+  states no longer repaint. CI now renders all six screens in both orientations
+  (coverage portion of 21; comprehensive golden-image comparison remains deferred).
+  New pixel-boundary, launch-region isolation, first-visit and update-idle tests
+  pass, as do full app/host suites on both devices. Maximum-overscan renders were
+  visually checked. User acceptance is pending: browse Details/Filters/Options,
+  open calibration, and quit/reopen. No real Update All is needed for this batch.
+  Do not start batch 15 until the user confirms batch 14.
   Priorities guide the batches, with related fixes grouped so each remains
   small and testable; this is not a strict traversal of the review's numbering.
 - **DE10 long idle stability:** short transitions passed on latest Main

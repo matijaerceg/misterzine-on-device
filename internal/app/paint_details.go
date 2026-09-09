@@ -161,14 +161,24 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 		y += a.sm.H + 2
 	}
 	y += 4 // breathing room before the pictures
+	entries := a.launchEntries(row, i)
+	lh := a.sm.H + 1
+	const launchMax = 5 // visible launch entries; more scroll under the pick
+	shown := len(entries)
+	if shown > launchMax {
+		shown = launchMax
+	}
+	launchH := (shown + 1) * lh
 	// shots strip: in horizontal the pictures share the row; in tate they
 	// are narrow, so each takes its own width and they pack from the left
 	stripH := 54
 	if !l.Portrait {
 		stripH = 72
 	}
+	// Reserve the launch list and at least one spec line before sizing art.
+	stripH = min(stripH, max(0, body.Max.Y-y-launchH-2-lh-4))
 	slots := shotSlots(row)
-	if len(slots) > 0 {
+	if len(slots) > 0 && stripH > 0 {
 		bw := (body.Dx() - (len(slots)-1)*4) / len(slots)
 		if bw > 96 {
 			bw = 96
@@ -198,20 +208,9 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 	}
 	// spec lines, scrollable
 	lines := a.detailLines(row, d, i)
-	entries := a.launchEntries(row, i)
 	avail := body.Max.Y - y
-	lh := a.sm.H + 1
-	const launchMax = 5 // visible launch entries; more scroll under the pick
-	shown := len(entries)
-	if shown > launchMax {
-		shown = launchMax
-	}
-	launchH := (shown + 1) * lh
 	specH := avail - launchH - 2
-	if specH < lh*4 {
-		specH = lh * 4
-	}
-	maxLines := specH / lh
+	maxLines := max(0, specH/lh)
 	if a.detail.scroll > len(lines)-maxLines {
 		a.detail.scroll = len(lines) - maxLines
 	}

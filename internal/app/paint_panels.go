@@ -99,7 +99,11 @@ func (a *App) filterEntries() []panelEntry {
 	E = append(E, panelEntry{text: "Favorites", header: true, kind: "fav"})
 	E = append(E, panelEntry{text: "favorites only", kind: "fav", checked: f.FavOnly})
 	E = append(E, panelEntry{text: "Since last look", header: true, kind: "since"})
-	E = append(E, panelEntry{text: "only rows changed since my last look", kind: "since", checked: f.Since})
+	if a.seen == nil || a.seen.BaseRows == nil {
+		E = append(E, panelEntry{text: "available after your first visit", info: true})
+	} else {
+		E = append(E, panelEntry{text: "only rows changed since my last look", kind: "since", checked: f.Since})
+	}
 	section := func(title, kind string, facet map[string]int, off map[string]bool, label func(string) string) {
 		E = append(E, panelEntry{text: title, header: true, kind: kind})
 		for _, v := range sortedFacet(facet) {
@@ -562,6 +566,9 @@ func (a *App) togglePanel() bool {
 			f.FavOnly = !f.FavOnly
 		}
 	case "since":
+		if a.seen == nil || a.seen.BaseRows == nil {
+			return false
+		}
 		if !e.header {
 			f.Since = !f.Since
 		}
@@ -614,14 +621,16 @@ func (a *App) paintCalibrate(c *gfx.Canvas) {
 		c.HLine(ax-8+i, ax-1, ay+i, gen.Eva.Fg)
 	}
 	lines := []string{
-		"Safe zone: sides " + itoa(a.cfg.SafeInsetX) + " px, top/bottom " + itoa(a.cfg.SafeInsetY) + " px",
+		"Sides: " + itoa(a.cfg.SafeInsetX) + " px",
+		"Top/bottom: " + itoa(a.cfg.SafeInsetY) + " px",
 		gfx.ArrowLeft + " " + gfx.ArrowRight + " " + gfx.ArrowUp + " " + gfx.ArrowDown + " nudge the corner",
 		"B save and go back",
 		"the green frame should sit just",
 		"inside the edge of your screen",
 	}
-	y := cy + 30
+	y := min(cy+24, l.Root.Max.Y-4-(len(lines)-1)*(a.sm.H+2)-a.sm.H)
 	for _, s := range lines {
+		s = gfx.Fit(s, a.sm.Cols(l.Root.Dx()-4))
 		c.Text(cx-a.sm.Width(s)/2, y, a.sm, s, gen.Eva.Fg)
 		y += a.sm.H + 2
 	}

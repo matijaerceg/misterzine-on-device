@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"image"
+	"reflect"
 	"strings"
 	"time"
 
@@ -38,10 +39,16 @@ func (a *App) OpenUpdate() {
 }
 
 func (a *App) SetUpdate(s updater.State, open bool) {
+	if !open && reflect.DeepEqual(a.update, s) {
+		return
+	}
 	if a.update.ID != s.ID {
 		a.updateView = updateView{now: a.cfg.Now()}
 	}
 	a.update = s
+	if !s.Active() {
+		a.updateView.backAt = time.Time{}
+	}
 	if open {
 		a.screen = ScreenUpdate
 		a.rep = repeater{}
@@ -100,6 +107,9 @@ func (a *App) handleUpdate(ev platform.Event) bool {
 }
 
 func (a *App) tickUpdate(now time.Time) bool {
+	if !a.update.Active() {
+		return false
+	}
 	v := &a.updateView
 	if !v.backAt.IsZero() && !v.cancelSent && now.Sub(v.backAt) >= cancelHold && a.update.Active() {
 		v.cancelSent = true

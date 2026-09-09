@@ -40,7 +40,15 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 		return
 	}
 	c.Text(l.Status.Min.X+2, y, a.sm, left, gen.Eva.Accent)
-	c.Text(l.Status.Min.X+2+a.sm.Width(left)+a.sm.W*2, y, a.sm, count, gen.Eva.Muted)
+	x := l.Status.Min.X + 2 + a.sm.Width(left) + a.sm.W*2
+	if a.sm.Width(count) > l.Status.Max.X-2-x {
+		count = itoa(len(a.ds.Rows))
+		if a.filters.Active() {
+			count = itoa(len(a.view)) + "/" + count
+		}
+	}
+	count = gfx.Fit(count, a.sm.Cols(l.Status.Max.X-2-x))
+	c.Text(x, y, a.sm, count, gen.Eva.Muted)
 	left += "  " + count
 	if a.net != "" {
 		c.TextRight(l.Status.Max.X-2, y, a.sm, gfx.Fit(a.net, a.sm.Cols(l.Status.Dx()-a.sm.Width(left)-8)), gen.Eva.Fg)
@@ -80,12 +88,26 @@ func isArrow(s string) bool {
 	return s == gfx.ArrowUp || s == gfx.ArrowDown || s == gfx.ArrowLeft || s == gfx.ArrowRight
 }
 
+func (a *App) emptyListMessage() string {
+	if a.filters.Since {
+		if a.seen == nil || a.seen.BaseRows == nil {
+			return "no previous visit yet"
+		}
+		other := a.filters
+		other.Since = false
+		if !other.Active() {
+			return "nothing new since last look"
+		}
+	}
+	return "no rows match, X: filters"
+}
+
 // paintRows draws the visible list lines: rows, and the last-look marker.
 func (a *App) paintRows(c *gfx.Canvas) {
 	l := &a.lay
 	c.Fill(l.List, gen.Eva.Bg)
 	if len(a.view) == 0 {
-		c.Text(l.List.Min.X+a.body.W, l.List.Min.Y+l.Line, a.body, gfx.Fit("no rows match, X: filters", l.Cols-1), gen.Eva.Muted)
+		c.Text(l.List.Min.X+a.body.W, l.List.Min.Y+l.Line, a.body, gfx.Fit(a.emptyListMessage(), l.Cols-1), gen.Eva.Muted)
 		return
 	}
 	// which view position sits on each visible line

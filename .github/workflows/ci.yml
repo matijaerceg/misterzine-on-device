@@ -34,8 +34,8 @@ jobs:
           python3 tools/make-db.py --check dist/misterzine.json.zip
       - name: Harness renders
         run: |
-          go run ./cmd/mzharness -rot none -out out/h -images "" -script "shot list; enter; shot details"
-          go run ./cmd/mzharness -rot left -out out/t -images "" -logical -script "shot list; tab; shot filter"
+          go run ./cmd/mzharness -rot none -out out/h -images ""
+          go run ./cmd/mzharness -rot left -out out/t -images "" -logical
           go run ./cmd/mzharness -update-state testdata/update-running.json -out out/update-h -images "" -script "shot running; hold back 2200; shot cancel"
           go run ./cmd/mzharness -update-state testdata/update-running.json -rot left -logical -out out/update-t -images "" -script "shot running; hold back 2200; shot cancel"
       - uses: actions/upload-artifact@v4
