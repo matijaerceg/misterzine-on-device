@@ -130,6 +130,9 @@ func (s *Service) SetOffline(off bool) {
 	s.mu.Lock()
 	changed := s.offline != off
 	s.offline = off
+	if changed && !off {
+		s.prefetchPos = 0
+	}
 	s.mu.Unlock()
 	if changed {
 		s.poke(s.kick)
@@ -286,6 +289,11 @@ func (s *Service) decode(k scaledKey) {
 	if src == nil {
 		b, err := os.ReadFile(s.path(k.Pic))
 		if err != nil {
+			s.lg.Printf("images: read %s: %v (skipping this session)", s.path(k.Pic), err)
+			s.mu.Lock()
+			s.failed[k.Pic] = true
+			s.mu.Unlock()
+			s.signal()
 			return
 		}
 		img, err := png.Decode(bytes.NewReader(b))
@@ -368,7 +376,21 @@ func (s *Service) nextDownload() (Pic, bool) {
 		for s.prefetchPos < len(s.prefetch) {
 			p := s.prefetch[s.prefetchPos]
 			s.prefetchPos++
-			if s.missing[p] || s.netBusy[p] || s.exists(p) || now.Before(s.retryAt[p]) {
+			if s.missing[p] || s.failed[p] || s.netBusy[p] || s.exists(p) || now.Before(s.retryAt[p]) {
+				continue
+			}
+			s.netBusy[p] = true
+			return p, true
+		}
+		// The first pass advances past failures. Revisit only delayed entries,
+		// without stat-ing every successfully cached file on each idle wake.
+		for _, p := range s.prefetch {
+			at, retry := s.retryAt[p]
+			if !retry || now.Before(at) || s.missing[p] || s.failed[p] || s.netBusy[p] {
+				continue
+			}
+			if s.exists(p) {
+				delete(s.retryAt, p)
 				continue
 			}
 			s.netBusy[p] = true
@@ -452,10 +474,15 @@ func (s *Service) download(p Pic) {
 	}
 	if err := os.Rename(tmp, path); err != nil {
 		os.Remove(tmp)
+		s.mu.Lock()
+		s.backoff(p)
+		s.mu.Unlock()
 		s.lg.Printf("images: rename %s: %v", tmp, err)
 		return
 	}
 	s.mu.Lock()
+	delete(s.retryAt, p)
+	delete(s.retries, p)
 	s.prefetched++
 	s.mu.Unlock()
 	s.mu.Lock()

@@ -8,6 +8,7 @@ package debugsrv
 import (
 	"encoding/json"
 	"image"
+	"image/draw"
 	"image/png"
 	"log"
 	"net"
@@ -34,12 +35,24 @@ type Hooks struct {
 	Log    string         // log file path
 }
 
+// captureShot copies on the UI thread; PNG encoding may then run while the
+// app paints its next frame without reading a changing canvas.
+func captureShot(h Hooks) *image.RGBA {
+	var img *image.RGBA
+	h.Run(func() {
+		if frame := h.Shot(); frame != nil {
+			img = image.NewRGBA(frame.Bounds())
+			draw.Draw(img, img.Bounds(), frame, frame.Bounds().Min, draw.Src)
+		}
+	})
+	return img
+}
+
 // Serve starts the server; it returns immediately.
 func Serve(addr string, h Hooks, lg *log.Logger) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/shot.png", func(w http.ResponseWriter, r *http.Request) {
-		var img *image.RGBA
-		h.Run(func() { img = h.Shot() })
+		img := captureShot(h)
 		if img == nil {
 			http.Error(w, "no frame", 500)
 			return

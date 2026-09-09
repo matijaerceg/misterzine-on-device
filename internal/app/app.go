@@ -633,7 +633,7 @@ func (a *App) want(req ImageReq) {
 // order and only while nothing nearer is missing, and a held key pauses it,
 // so this never competes with scrolling.
 func (a *App) neighbourhood() {
-	if a.screen != ScreenList && a.screen != ScreenShot {
+	if a.screen != ScreenList {
 		return
 	}
 	box := a.lay.Thumb
@@ -643,21 +643,9 @@ func (a *App) neighbourhood() {
 				continue
 			}
 			row := &a.ds.Rows[a.view[pos]]
-			if a.screen == ScreenShot {
-				slots := shotSlots(row)
-				if len(slots) > 0 {
-					key := row.Img
-					if slots[0] == "system" {
-						key = row.Core
-					}
-					area := a.shotArea()
-					a.want(ImageReq{Key: key, Slot: slots[0], W: area.Dx(), H: area.Dy(), Native: true})
-				}
-				continue
-			}
 			key, slot := thumbSlot(row)
 			if key != "" {
-				a.want(ImageReq{Key: key, Slot: slot, W: box.Dx(), H: box.Dy()})
+				a.want(ImageReq{Key: key, Slot: slot, W: box.Dx(), H: box.Dy(), Stretch: slot != "system" && row.ImgW > row.ImgH})
 			}
 		}
 	}

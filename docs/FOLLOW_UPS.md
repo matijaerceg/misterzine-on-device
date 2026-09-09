@@ -79,9 +79,18 @@ it is not a list of unrelated website work.
   datasets before replacing the working list or its saved cache. Tests reproduced
   stale filter counts and the nearly blank final page before the fixes. Full app
   and host suites passed on both devices, with empty-response cache preservation
-  also checked on their SD cards. User acceptance is pending: refresh data, use
-  filters to shorten the list, browse details, and quit/reopen. Do not begin
-  batch 13 until the user confirms batch 12.
+  also checked on their SD cards. The user confirmed batch 12 and requested
+  a larger next batch.
+  Batch 13 addresses six image/display findings: matching thumbnail prewarm
+  variants (9), skipping unreadable cached images for the session without deleting
+  them (12), retrying delayed prefetch downloads and resetting the cursor on
+  reconnect (13), removing unreachable full-screen neighbour requests (38), using
+  the Filters font for Clear all filters (43), and copying debug screenshots on
+  the UI thread before encoding (48). Rename failures now also enter backoff.
+  App/image/debug-server suites passed on both devices; unreadable-file and
+  prefetch retry tests passed on their SD cards using temporary fixtures.
+  User acceptance is pending: browse thumbnails, open and return from full-screen
+  artwork, and check Filters. Do not begin batch 14 before confirmation.
   Priorities guide the batches, with related fixes grouped so each remains
   small and testable; this is not a strict traversal of the review's numbering.
 - **DE10 long idle stability:** short transitions passed on latest Main

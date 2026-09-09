@@ -332,7 +332,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			if n == p.cursor {
 				col = gen.Eva.Accent
 			}
-			c.Text(inner.Min.X+2, y, a.body, gfx.Fit(e.text, cols), col)
+			c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, cols), col)
 		}
 		y += lh
 	}
