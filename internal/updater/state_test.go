@@ -1,10 +1,37 @@
 package updater
 
 import (
+	"bytes"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 )
+
+func TestCardCheckpointFailureKeepsPreviousRecord(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "state.json")
+	previous := State{ID: "previous", Status: "completed", SawSuccess: true}
+	if err := saveCard(path, previous); err != nil {
+		t.Fatal(err)
+	}
+	before, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// A directory at the staging path reliably rejects file creation even
+	// when the tests run as root on a MiSTer.
+	if err := os.Mkdir(path+".tmp", 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := saveCard(path, State{ID: "next", Status: "running"}); err == nil {
+		t.Fatal("checkpoint failure was not reported")
+	}
+	after, err := os.ReadFile(path)
+	if err != nil || !bytes.Equal(before, after) {
+		t.Fatalf("failed save changed the previous recovery record: %q, %v", after, err)
+	}
+}
 
 func TestStagesAndEarlyRestart(t *testing.T) {
 	s := State{Status: "running"}

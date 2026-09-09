@@ -34,14 +34,21 @@ it is not a list of unrelated website work.
   a stale timer from forcing continuous redraws. Regression tests reproduced
   the old failure and now pass on both devices, along with the existing
   progress-rendering and long-B cancellation tests. The user confirmed it.
-  Batch 6 applies the same system-write guard to both cancel signals, including
+  Batch 6 (`93ec3b5`) applies the same system-write guard to both cancel signals, including
   force-stop escalation; the screen explains when cancellation is waiting.
   A known writer is checked before pausing the group, avoiding repeated pauses
   while a cancellation waits. The updater suite and Update screen tests passed
   on both MiSTers using temporary simulated updaters, with no firmware writes.
-  User acceptance is pending: start Update All,
-  hold B for two seconds once running, and check it reaches a readable result
-  screen and returns to Options with B. Do not start batch 7 before this test.
+  The user confirmed it.
+  Batch 7 flushes recovery checkpoints before replacing the previous record
+  and moves card saves outside the output-reader lock. The full updater and
+  Update screen tests passed on both devices; checkpoint/recovery tests also
+  passed using temporary directories on each device's actual SD card.
+  User acceptance is
+  pending: let Update All finish normally, check the live log stays responsive,
+  and return to Options with B. Do not start batch 8 before this test.
+  Priorities guide the batches, with related fixes grouped so each remains
+  small and testable; this is not a strict traversal of the review's numbering.
 - **DE10 long idle stability:** short transitions passed on latest Main
   and Menu; the user's comparable long-idle CRT result is still pending.
 - **Pi after Linux update:** the framebuffer compatibility build runs;

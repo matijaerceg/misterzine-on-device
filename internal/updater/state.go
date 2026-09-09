@@ -10,6 +10,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/matijaerceg/misterzine-on-device/internal/store"
 )
 
 const TailLines = 160
@@ -59,6 +61,16 @@ func save(path string, v any) error {
 		return err
 	}
 	return os.Rename(path+".tmp", path)
+}
+
+// Card checkpoints must flush their contents before replacing the previous
+// record. The frequent live copy in /tmp can keep using the unsynced writer.
+func saveCard(path string, v any) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+	return store.WriteAtomic(path, b)
 }
 
 // Read never treats a vanished/rebooted worker as a successful update.

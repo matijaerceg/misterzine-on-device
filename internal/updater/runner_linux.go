@@ -283,7 +283,7 @@ func runWorker(root, card, id, script string) int {
 		return 1
 	}
 	defer o.log.Close()
-	if err = save(StatePath(root), o.s); err != nil {
+	if err = saveCard(StatePath(root), o.s); err != nil {
 		return 1
 	}
 	if err = save(livePath(root), o.s); err != nil {
@@ -298,7 +298,7 @@ func runWorker(root, card, id, script string) int {
 		o.s.Status = "failed"
 		o.s.Message = "Could not start Update All: " + err.Error()
 		o.s.Finished = time.Now()
-		save(StatePath(root), o.s)
+		saveCard(StatePath(root), o.s)
 		save(livePath(root), o.s)
 		return 1
 	}
@@ -348,10 +348,12 @@ func runWorker(root, card, id, script string) int {
 				}
 			}
 			o.s.Protected = false
-			save(StatePath(root), o.s)
-			save(livePath(root), o.s)
-			o.log.Sync()
+			s := o.s
+			s.Lines = append([]string(nil), s.Lines...)
 			o.mu.Unlock()
+			saveCard(StatePath(root), s)
+			save(livePath(root), s)
+			o.log.Sync()
 			return 0
 		case <-tick.C:
 			o.mu.Lock()
@@ -380,13 +382,16 @@ func runWorker(root, card, id, script string) int {
 			o.s.Heartbeat = time.Now()
 			o.s.Elapsed = int(time.Since(now).Seconds())
 			s := o.snapshot()
+			s.Lines = append([]string(nil), s.Lines...)
+			o.mu.Unlock()
+			// A slow SD flush must not hold the output lock. The copied state
+			// remains stable while the pipe reader continues accepting output.
 			save(livePath(root), s)
 			if time.Since(checkpoint) > 5*time.Second || s.Reboot != checkpointReboot || s.SawSuccess != checkpointSuccess || s.HadErrors != checkpointErrors {
-				save(StatePath(root), s)
+				saveCard(StatePath(root), s)
 				checkpointReboot, checkpointSuccess, checkpointErrors = s.Reboot, s.SawSuccess, s.HadErrors
 				checkpoint = time.Now()
 			}
-			o.mu.Unlock()
 		}
 	}
 }

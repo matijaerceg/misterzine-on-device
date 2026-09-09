@@ -72,6 +72,15 @@ func TestRunnerStreamsAndFinishes(t *testing.T) {
 	if !strings.Contains(string(b), "Downloading 2") {
 		t.Fatal("lost output")
 	}
+	// The live copy disappears at reboot. The card checkpoint must preserve
+	// the final result and log tail independently of that temporary copy.
+	if err := os.Remove(livePath(root)); err != nil {
+		t.Fatal(err)
+	}
+	recovered, err := Read(root)
+	if err != nil || recovered.ID != s.ID || recovered.Status != "completed" || !recovered.SawSuccess || !strings.Contains(strings.Join(recovered.Lines, "\n"), "Downloading 2") {
+		t.Fatalf("card-only result recovery failed: %+v, %v", recovered, err)
+	}
 }
 
 func TestCancelAndDuplicateRun(t *testing.T) {
@@ -135,7 +144,9 @@ func TestUnexpectedExitNotSuccess(t *testing.T) {
 func TestStaleWorkerIsInterrupted(t *testing.T) {
 	root, _ := fakeCard(t, "")
 	os.MkdirAll(stateDir(root), 0700)
-	save(StatePath(root), State{ID: "old", Status: "running", PID: 123, Boot: "previous-boot"})
+	if err := saveCard(StatePath(root), State{ID: "old", Status: "running", PID: 123, Boot: "previous-boot"}); err != nil {
+		t.Fatal(err)
+	}
 	s, err := Read(root)
 	if err != nil || s.Status != "interrupted" {
 		t.Fatalf("%+v %v", s, err)
@@ -245,7 +256,9 @@ func TestReportedPartialFailure(t *testing.T) {
 func TestRestartRecovery(t *testing.T) {
 	root, _ := fakeCard(t, "")
 	os.MkdirAll(stateDir(root), 0700)
-	save(StatePath(root), State{ID: "old", Status: "running", PID: 123, Boot: "previous-boot", SawSuccess: true, Reboot: true})
+	if err := saveCard(StatePath(root), State{ID: "old", Status: "running", PID: 123, Boot: "previous-boot", SawSuccess: true, Reboot: true}); err != nil {
+		t.Fatal(err)
+	}
 	s, err := Read(root)
 	if err != nil || s.Status != "restarted" || s.Reboot {
 		t.Fatalf("%+v %v", s, err)

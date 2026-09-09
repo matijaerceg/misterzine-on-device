@@ -59,7 +59,12 @@ are omitted from the small on-screen log.
   survives replacement of MisterZine's installed executable; replacing
   the UI with an older release could still remove reattachment support.
 - Status is published atomically in `/tmp`, with a card checkpoint every
-  five seconds and at important state changes. The last summary and log
+  five seconds and at important state changes. Card checkpoints use the
+  existing synced atomic writer: their contents are flushed before renaming
+  the replacement over the previous record. The frequent `/tmp` status does
+  not require that SD flush. Saves use a copied state outside the output lock,
+  so a slow checkpoint does not block the pipe reader from updating it.
+  The last summary and log
   are `/media/fat/misterzine/update-all/state.json` and `output.log`.
   The live tail is limited to 160 lines, individual lines to 512 characters,
   and the file log rotates by truncating after approximately 2 MiB.
@@ -119,6 +124,13 @@ A separate writer check verifies that an already detected writer is not paused
 and resumed repeatedly while cancellation waits. The updated updater suite
 and Update screen tests passed on both DE10-Nano and MiSTer Pi in review
 batch 6; these tests did not run the installed Update All or change firmware.
+
+Checkpoint tests also cover a failed replacement leaving the previous file
+unchanged, recovering the completed result and log tail after the temporary
+live file disappears, and distinguishing an interrupted run from success
+reported before a reboot. These are file/recovery tests, not physical power-cut
+tests. They passed on both devices using temporary directories on each actual
+SD card; the full updater and Update screen suites also passed in batch 7.
 
 The updater suite and Update screen/input tests passed directly on the
 MiSTer Pi's ARM CPU. This caught and fixed an epoch-time conversion overflow

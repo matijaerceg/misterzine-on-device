@@ -2,6 +2,8 @@
 
 ## v0.2.2
 
+- Update All flushes saved recovery checkpoints before replacing the previous
+  record. Card saves use a copied state without holding the output-reader lock.
 - Update All checks for protected system work before both the initial cancel
   signal and a later force-stop. A newly detected write can finish first;
   the screen explains the wait, and known writers are not repeatedly paused.
