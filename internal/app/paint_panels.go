@@ -325,9 +325,9 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 				right = gfx.ArrowRight
 			}
 			val := left + " " + e.vals[e.idx] + " " + right
-			vw := a.body.Width(val)
-			c.Text(inner.Min.X+2, y, a.body, gfx.Fit(e.text, a.body.Cols(inner.Dx()-6-vw)), col)
-			c.Text(inner.Max.X-2-vw, y, a.body, val, col)
+			vw := font.Width(val)
+			c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, font.Cols(inner.Dx()-6-vw)), col)
+			c.Text(inner.Max.X-2-vw, y, font, val, col)
 		default:
 			col := gen.Eva.Fg
 			if n == p.cursor {
