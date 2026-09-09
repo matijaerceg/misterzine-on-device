@@ -26,7 +26,12 @@ it is not a list of unrelated website work.
   Full-screen artwork exits only with B; A and X do nothing. Main rows have a
   two-pixel gap below the header border. App tests, ARM vet and device rotation
   persistence tests passed. The render gate now includes the bottom of Options
-  (22 images total); live deployment/verification follows.
+  (22 images total). Build `48939c7` installed on both MiSTers; CI
+  `34316743034` passed. Live direction selection/restoration, Options scrolling,
+  and A/X ignored versus B returning from artwork passed on both. Device captures
+  confirm both overflow arrows and the header gap. Original orientations and
+  filter choices were preserved; both apps were left on the main list.
+  User CRT acceptance remains pending.
 
 - **September 8 user notes:** keyboard title find (case/space-insensitive,
   composed with Filters; Backspace edits, B/Esc clears), saved filter choices,
