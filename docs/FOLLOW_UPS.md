@@ -174,11 +174,40 @@ it is not a list of unrelated website work.
   passed on both devices; local Go tests, ARM vet and both tool tests passed.
   Finding 46 was checked against current site origin/main: its 23h30m rounding
   matches the site exactly. Defer any change until both agree on revised behavior.
-  Remaining review scope is roughly two dozen items, including partial findings
-  and items needing triage (not two dozen confirmed bugs): 4/5, 11, 14/15, 21,
-  27, 33/35, 46 (site parity), 52/53/54, 61/63, 70/71. This excludes separate
-  product earmarks and release/long-idle validation. Estimate 6–8 further related
-  batches; re-evaluate findings against current code before choosing changes.
+  Batch 21 processes ten findings: 4, 5, 11, 15, 27, 33, 35, 46, 63, 71.
+  - 4: framebuffer/console restoration now precedes image-worker shutdown. Input
+    close remains bounded at 500 ms; cleanup still precedes load_core. SIGKILL
+    cannot run in-process cleanup; external geometry recovery remains a limitation.
+  - 5: earlier preflight tests still cover missing/invalid launch targets. The new
+    wrapper error display also makes late marker/command failures visible instead
+    of instantly disappearing; it does not attempt to recreate the app after exit.
+  - 11: persistent random debug-token authentication on every endpoint, POST-only
+    mutations, Origin rejection, IP/localhost Host validation, no-store responses,
+    and a debug-startup notice. tools/dev.sh fetches the token via SSH. Credentials
+    are never logged. This remains opt-in private-LAN HTTP, not an Internet service.
+  - 15: all terminal results can be acknowledged once; Options has Last update
+    result without triggering another run. Run Update All/Rescan remain adjacent.
+  - 27/35: wrapper keeps a restore executable in RAM, shows recent log/error status
+    for up to 15 seconds after failure, and cleans up its helper on normal exit.
+    A mock self-replacing failing executable validated restore and visible reason.
+  - 33: navigation no longer schedules state.json rewrites; unused cursor/sort/
+    filter fields are omitted. New-visit/clock/data state still autosaves, as do
+    settings/favorites independently. Every visit still starts with default view.
+  - 46: reviewed, no isolated change: matches current website rounding. Coordinated
+    date-ladder behavior remains deferred, not claimed as a fixed defect.
+  - 63: verified already fixed by batch 11: initial and periodic requests go through
+    updater-aware deferral; existing host tests cover draining queued work afterward.
+  - 71: output lines buffer in RAM; the supervisor flushes outside the state mutex.
+    A bounded 2 MB queue drops older buffered log text with an explicit marker if
+    the card stalls extremely long. Parser/live tail keep updating; a blocked pipe
+    test confirms a stuck log flush does not lock output parsing. Heartbeat can
+    still be delayed by synchronous card I/O; no claim of asynchronous storage.
+  Local tests, wrapper fixture, ARM vet and host/app/updater/debug suites on both
+  devices passed. Deployment/live acceptance pending at this checkpoint.
+  Remaining substantive review scope after this batch: 14 (protected latch),
+  21 (golden-image assertions), 52 (unconfirmed framebuffer request), 53/54 (input
+  loss/probe ownership), 61 (external updater launcher notice), 70 (inherited pipe
+  drainage). Plus deferred 46 site parity and the explicitly retained limits above.
   Priorities guide the batches, with related fixes grouped so each remains
   small and testable; this is not a strict traversal of the review's numbering.
 - **DE10 long idle stability:** short transitions passed on latest Main

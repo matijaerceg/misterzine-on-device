@@ -187,3 +187,20 @@ canvas as PNG and reports state. Remove the file to disable it.
 ## License
 
 MIT. Fonts: Spleen (BSD-2-Clause). Site data and pictures: see misterzine.fyi.
+
+### Debug access and update results
+
+The opt-in LAN debug server requires `X-MisterZine-Token` on every request.
+On first use it creates `/media/fat/misterzine/debug-token`; retrieve it through
+SSH, not through HTTP. `tools/dev.sh` reads it over SSH automatically. Mutations
+(keys, goto and quit) require POST. Browser-origin requests and non-IP Host names
+(other than localhost for tunnels) are rejected. The app shows a startup notice
+when remote debugging is enabled. Do not publish the token or include it in logs.
+
+Options → Last update result reviews the saved output without running Update All
+again. Unseen terminal results appear once on launch; B acknowledges that result.
+Run Update All still starts a new run. Rescan card remains immediately below it.
+
+The Scripts wrapper keeps a temporary restore helper in RAM during the app run.
+On an error it shows the recent log and allows up to 15 seconds to read it before
+returning to Menu. Normal exits have no extra pause.

@@ -21,6 +21,11 @@ PI=${PI:-192.168.1.96}
 SSH="ssh -T -o RemoteCommand=none -o RequestTTY=no -o BatchMode=yes root@$PI"
 DBG="http://$PI:8195"
 REMOTE="http://$PI:8182"
+debug_curl() {
+  local token
+  token=$($SSH "cat /media/fat/misterzine/debug-token")
+  curl -H "X-MisterZine-Token: $token" "$@"
+}
 case "$1" in
   build)
     V=$(git describe --tags --always --dirty 2>/dev/null || echo dev)
@@ -38,15 +43,15 @@ case "$1" in
     curl -s "$REMOTE/api/scripts/list" | python -c "import sys,json; print('canLaunch', json.load(sys.stdin)['canLaunch'])"
     curl -s -o /dev/null -w "launch: HTTP %{http_code}\n" -X POST "$REMOTE/api/scripts/launch/misterzine.sh" ;;
   menu) curl -s -o /dev/null -w "menu: HTTP %{http_code}\n" -X POST "$REMOTE/api/launch/menu" ;;
-  shot) curl -sf -o "${2:-shot}.png" "$DBG/api/shot.png" && echo "wrote ${2:-shot}.png" ;;
-  key) curl -sf -X POST "$DBG/api/key/$2?hold=${HOLD:-40}&count=${COUNT:-1}" ;;
-  keys) curl -sf -X POST -d "$2" "$DBG/api/keys" ;;
-  goto) curl -sf "$DBG/api/goto?k=$2" ;;
-  state) curl -sf "$DBG/api/state" ;;
-  stack) curl -sf "$DBG/api/stack" ;;
-  logs) curl -sf "$DBG/api/log?tail=${2:-60}" || $SSH "tail -n ${2:-60} /media/fat/misterzine/log.txt" ;;
+  shot) debug_curl -sf -o "${2:-shot}.png" "$DBG/api/shot.png" && echo "wrote ${2:-shot}.png" ;;
+  key) debug_curl -sf -X POST "$DBG/api/key/$2?hold=${HOLD:-40}&count=${COUNT:-1}" ;;
+  keys) debug_curl -sf -X POST -d "$2" "$DBG/api/keys" ;;
+  goto) debug_curl -sf -X POST "$DBG/api/goto?k=$2" ;;
+  state) debug_curl -sf "$DBG/api/state" ;;
+  stack) debug_curl -sf "$DBG/api/stack" ;;
+  logs) debug_curl -sf "$DBG/api/log?tail=${2:-60}" || $SSH "tail -n ${2:-60} /media/fat/misterzine/log.txt" ;;
   kill) $SSH "killall misterzine 2>/dev/null; sleep 0.5; /media/fat/misterzine/misterzine console-restore; echo killed" ;;
   restore) $SSH "/media/fat/misterzine/misterzine console-restore; echo restored" ;;
-  anykey) curl -s -o /dev/null -w "anykey: HTTP %{http_code}\n" -X POST "$REMOTE/api/controls/keyboard-raw/28" ;;
+  anykey) debug_curl -s -o /dev/null -w "anykey: HTTP %{http_code}\n" -X POST "$REMOTE/api/controls/keyboard-raw/28" ;;
   *) sed -n 2,16p "$0" ;;
 esac

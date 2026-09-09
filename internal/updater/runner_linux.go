@@ -157,6 +157,7 @@ type outputSink struct {
 	parser      outputParser
 	pending     []byte
 	log         *os.File
+	logPending  []byte
 	logBytes    int
 	writerGuard bool
 }
@@ -170,14 +171,33 @@ func (o *outputSink) line() {
 	if line == "" || o.log == nil {
 		return
 	}
-	if o.logBytes > 2<<20 {
+	// Keep pipe draining independent of card latency. The retained log already
+	// rotates at 2 MB; cap queued output too if the card stalls for a long time.
+	if len(o.logPending)+len(line)+1 > 2<<20 {
+		o.logPending = append([]byte("[older buffered output omitted during card stall]\n"), o.logPending[len(o.logPending)/2:]...)
+	}
+	o.logPending = append(o.logPending, line...)
+	o.logPending = append(o.logPending, '\n')
+}
+
+// Called only by the supervisor loop, never while holding the output mutex.
+func (o *outputSink) flushLog() {
+	o.mu.Lock()
+	pending := o.logPending
+	o.logPending = nil
+	o.mu.Unlock()
+	if len(pending) == 0 || o.log == nil {
+		return
+	}
+	if o.logBytes+len(pending) > 2<<20 {
 		o.log.Truncate(0)
 		o.log.Seek(0, 0)
 		o.logBytes = 0
 	}
-	n, _ := io.WriteString(o.log, line+"\n")
+	n, _ := o.log.Write(pending)
 	o.logBytes += n
 }
+
 func (o *outputSink) Write(b []byte) (int, error) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
@@ -358,6 +378,7 @@ func runWorker(root, card, id, script string) int {
 			o.mu.Unlock()
 			saveCard(StatePath(root), s)
 			save(livePath(root), s)
+			o.flushLog()
 			o.log.Sync()
 			return 0
 		case <-tick.C:
@@ -391,6 +412,7 @@ func runWorker(root, card, id, script string) int {
 			// A slow SD flush must not hold the output lock. The copied state
 			// remains stable while the pipe reader continues accepting output.
 			save(livePath(root), s)
+			o.flushLog()
 			if time.Since(checkpoint) > 5*time.Second || s.Reboot != checkpointReboot || s.SawSuccess != checkpointSuccess || s.HadErrors != checkpointErrors {
 				saveCard(StatePath(root), s)
 				checkpointReboot, checkpointSuccess, checkpointErrors = s.Reboot, s.SawSuccess, s.HadErrors

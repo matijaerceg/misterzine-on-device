@@ -299,3 +299,35 @@ func TestWorkerExitBeforeStatusIsFailure(t *testing.T) {
 		t.Fatalf("dead supervisor treated as live: %+v, %v", s, err)
 	}
 }
+
+func TestSlowLogFlushDoesNotBlockOutputState(t *testing.T) {
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer writer.Close()
+	defer reader.Close()
+	o := &outputSink{log: writer, logPending: make([]byte, 1<<20)}
+	flushed := make(chan struct{})
+	go func() { o.flushLog(); close(flushed) }()
+	time.Sleep(20 * time.Millisecond)
+	written := make(chan struct{})
+	go func() { o.Write([]byte("latest progress\n")); close(written) }()
+	select {
+	case <-written:
+	case <-time.After(time.Second):
+		t.Fatal("blocked log also blocked output parser")
+	}
+	o.mu.Lock()
+	line := o.s.Lines[len(o.s.Lines)-1]
+	o.mu.Unlock()
+	if line != "latest progress" {
+		t.Fatal("live output not updated during card stall")
+	}
+	reader.Close()
+	select {
+	case <-flushed:
+	case <-time.After(time.Second):
+		t.Fatal("flush did not finish after pipe closed")
+	}
+}

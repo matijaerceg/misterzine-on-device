@@ -6,6 +6,7 @@
 package debugsrv
 
 import (
+	"crypto/subtle"
 	"encoding/json"
 	"image"
 	"image/draw"
@@ -14,6 +15,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -49,7 +51,12 @@ func captureShot(h Hooks) *image.RGBA {
 }
 
 // Serve starts the server; it returns immediately.
-func Serve(addr string, h Hooks, lg *log.Logger) {
+func Serve(addr string, h Hooks, lg *log.Logger) bool {
+	token, err := loadToken(filepath.Join(filepath.Dir(h.Log), "debug-token"))
+	if err != nil {
+		lg.Printf("debug: disabled: %v", err)
+		return false
+	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/shot.png", func(w http.ResponseWriter, r *http.Request) {
 		img := captureShot(h)
@@ -164,17 +171,18 @@ func Serve(addr string, h Hooks, lg *log.Logger) {
 		w.Write([]byte("bye\n"))
 		go h.Quit()
 	})
-	srv := &http.Server{Addr: addr, Handler: guard(mux, lg), ReadHeaderTimeout: 5 * time.Second}
+	srv := &http.Server{Addr: addr, Handler: guard(mux, lg, token), ReadHeaderTimeout: 5 * time.Second}
 	go func() {
 		lg.Printf("debug: listening on %s", addr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			lg.Printf("debug: %v", err)
 		}
 	}()
+	return true
 }
 
 // guard allows private-network peers only and logs every call.
-func guard(next http.Handler, lg *log.Logger) http.Handler {
+func guard(next http.Handler, lg *log.Logger, token string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		host, _, _ := net.SplitHostPort(r.RemoteAddr)
 		ip := net.ParseIP(host)
@@ -182,6 +190,33 @@ func guard(next http.Handler, lg *log.Logger) http.Handler {
 			http.Error(w, "forbidden", 403)
 			return
 		}
+		if r.Header.Get("Origin") != "" || r.Header.Get("Sec-Fetch-Site") == "cross-site" {
+			http.Error(w, "browser requests forbidden", 403)
+			return
+		}
+		target := r.Host
+		if host, _, err := net.SplitHostPort(target); err == nil {
+			target = host
+		}
+		if net.ParseIP(strings.Trim(target, "[]")) == nil && target != "localhost" {
+			http.Error(w, "invalid host", 403)
+			return
+		}
+		if token == "" || subtle.ConstantTimeCompare([]byte(r.Header.Get("X-MisterZine-Token")), []byte(token)) != 1 {
+			http.Error(w, "authentication required", 401)
+			return
+		}
+		mutating := strings.HasPrefix(r.URL.Path, "/api/key/") || r.URL.Path == "/api/keys" || r.URL.Path == "/api/goto" || r.URL.Path == "/api/quit"
+		method := "GET"
+		if mutating {
+			method = "POST"
+		}
+		if r.Method != method {
+			w.Header().Set("Allow", method)
+			http.Error(w, "method not allowed", 405)
+			return
+		}
+		w.Header().Set("Cache-Control", "no-store")
 		lg.Printf("debug: %s %s from %s", r.Method, r.URL.Path, host)
 		next.ServeHTTP(w, r)
 	})

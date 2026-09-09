@@ -92,7 +92,7 @@ func (a *App) handleUpdate(ev platform.Event) bool {
 	case platform.KeyBack:
 		if !a.update.Active() {
 			a.openPanel(ScreenOptions)
-			if a.update.RecoveryNotice() && a.cfg.Action != nil {
+			if a.update.ResultNotice() && a.cfg.Action != nil {
 				a.cfg.Action("update-dismiss", a.update.ID)
 			}
 		} else if !a.update.CancelRequested && !a.updateView.cancelSent {

@@ -72,9 +72,6 @@ func (s *Settings) Migrate(legacy bool) {
 // State is what the app restores between runs.
 type State struct {
 	Schema   int             `json:"schema"`
-	CursorK  string          `json:"cursor_k"`
-	Sort     string          `json:"sort"` // updated, debut
-	Filters  data.Filters    `json:"filters"`
 	LastOpen string          `json:"last_open"`
 	DataHash string          `json:"data_hash"`
 	Seen     data.SeenRecord `json:"seen"`

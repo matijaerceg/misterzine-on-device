@@ -289,6 +289,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 		seen = &h.state.Seen
 	}
 	h.a = app.New(cfg, ds, seen)
+	h.dirty = true // persist the new visit even without input
 	h.initUpdates()
 	h.a.SetPrefetch(h.settings.Prefetch)
 	// like the site, every visit starts at the top of the updated sort with
@@ -306,7 +307,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 
 	h.logInput = debugAddr != ""
 	if debugAddr != "" {
-		debugsrv.Serve(debugAddr, debugsrv.Hooks{
+		if debugsrv.Serve(debugAddr, debugsrv.Hooks{
 			Run:    h.runOnUI,
 			Inject: func(ev platform.Event) { h.events <- ev },
 			Shot:   func() *image.RGBA { return h.a.Logical() },
@@ -322,7 +323,9 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 			Quit: h.stop,
 			Goto: func(k string) { h.a.MoveToKey(k); h.present() },
 			Log:  filepath.Join(root, "log.txt"),
-		}, lg)
+		}, lg) {
+			h.a.Notice("Remote debug enabled", 8*time.Second)
+		}
 	}
 
 	// the pad's menu button: Main takes the screen back and grabs the
@@ -370,7 +373,6 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	}()
 
 	// the loop
-	lastState := h.snapshotState()
 	for {
 		var tick <-chan time.Time
 		next := h.a.NextTick()
@@ -424,9 +426,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 			// nothing else (saves, checks) gets between two frames
 			h.frameLoop()
 		}
-		st := h.snapshotState()
-		h.autosave(time.Now(), st != lastState)
-		lastState = st
+		h.autosave(time.Now(), false)
 		if h.launch != "" {
 			h.saveAll(true)
 			return h.doLaunch()
@@ -577,10 +577,6 @@ func (h *host) present() {
 	}
 }
 
-func (h *host) snapshotState() string {
-	return h.a.CursorKey() + "|" + h.a.Sort().String() + "|" + fmt.Sprint(h.a.Filters())
-}
-
 func (h *host) loadFavorites() {
 	var err error
 	h.favs, err = store.LoadFavorites(filepath.Join(h.root, "favorites.json"))
@@ -624,8 +620,7 @@ func (h *host) pendingSave() bool {
 
 func (h *host) saveAll(final bool) {
 	if h.dirty || final {
-		f := h.a.Filters()
-		st := store.State{Schema: 1, CursorK: h.a.CursorKey(), Sort: strings.ToLower(h.a.Sort().String()), Filters: f,
+		st := store.State{Schema: 1,
 			LastOpen: h.now().UTC().Format(time.RFC3339), DataHash: h.a.Data().Hash}
 		if s := h.a.Seen(); s != nil {
 			st.Seen = s.State
@@ -661,10 +656,6 @@ func (h *host) saveAll(final bool) {
 
 // cleanup restores the machine; safe to call twice.
 func (h *host) cleanup() {
-	if h.img != nil {
-		h.img.Close()
-		h.img = nil
-	}
 	if h.input != nil {
 		h.input.Close()
 		h.input = nil
@@ -677,6 +668,11 @@ func (h *host) cleanup() {
 		h.console.Restore()
 		h.console = nil
 	}
+	if h.img != nil {
+		h.img.Close()
+		h.img = nil
+	}
+
 }
 
 // requestLaunch validates while the app can still show an error. In particular,

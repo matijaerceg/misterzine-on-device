@@ -100,3 +100,21 @@ func TestUpdateProtectedRenders(t *testing.T) {
 		}
 	}
 }
+
+func TestOptionsReviewsResultWithoutStartingUpdate(t *testing.T) {
+	calls := 0
+	now := time.Now()
+	a := New(Config{PhysW: 320, PhysH: 240, Action: func(string, string) { calls++ }}, data.Ingest(nil, "", now), nil)
+	a.SetUpdate(updater.State{ID: "old", Status: "completed", Lines: []string{"saved output"}}, false)
+	a.openPanel(ScreenOptions)
+	for i, e := range a.panel.entries {
+		if e.kind == "update-result" {
+			a.panel.cursor = i
+			break
+		}
+	}
+	a.actPanel(platform.KeyEnter)
+	if calls != 0 || a.Screen() != ScreenUpdate || a.update.ID != "old" {
+		t.Fatal("result review started/replaced update")
+	}
+}

@@ -4,6 +4,7 @@ import (
 	"image"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/gen"
@@ -190,6 +191,7 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Update with live output and a stage bar. Browsing waits until it finishes. Hold B for 2 seconds to cancel; system writes finish first. A restart may be required."},
 		{text: "Rescan card", kind: "rescan",
 			help: "Refresh on-card status after an external update. The built-in Update All rescans automatically when it finishes."},
+		{text: "Last update result", kind: "update-result", help: "Review the last Update All result and its saved output. This does not start another update."},
 		{text: "Refresh data now", kind: "refresh",
 			help: "Ask misterzine.fyi for new releases right now. The app also checks on launch and every 30 minutes while open; new rows show a notice and their dates in green."},
 		{text: "Clear image cache", kind: "clearimg",
@@ -500,6 +502,13 @@ func (a *App) togglePanel() bool {
 		return out
 	}
 	switch e.kind {
+	case "update-result":
+		if a.update.ID == "" {
+			a.Notice("No saved update result", 4*time.Second)
+		} else {
+			a.SetUpdate(a.update, true)
+		}
+		return true
 	case "update":
 		a.OpenUpdate()
 		return true

@@ -52,3 +52,24 @@ func TestFailedRecoveryAcknowledgementRemainsPending(t *testing.T) {
 		t.Fatal("a failed save suppressed the next recovery warning")
 	}
 }
+
+func TestTerminalResultsReopenOnce(t *testing.T) {
+	for _, status := range []string{"completed", "errors", "failed", "cancelled"} {
+		t.Run(status, func(t *testing.T) {
+			root := t.TempDir()
+			s := State{ID: "result", Status: status}
+			if err := saveCard(StatePath(root), s); err != nil {
+				t.Fatal(err)
+			}
+			if !ShouldOpen(root, s) {
+				t.Fatal("unseen result hidden")
+			}
+			if err := Acknowledge(root, s.ID); err != nil {
+				t.Fatal(err)
+			}
+			if ShouldOpen(root, s) {
+				t.Fatal("dismissed result reopened")
+			}
+		})
+	}
+}

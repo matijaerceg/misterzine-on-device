@@ -11,18 +11,22 @@ type acknowledgement struct {
 	ID string `json:"id"`
 }
 
-func (s State) RecoveryNotice() bool {
-	return s.Status == "interrupted" || s.Status == "restarted"
+func (s State) ResultNotice() bool {
+	switch s.Status {
+	case "interrupted", "restarted", "completed", "failed", "errors", "cancelled":
+		return true
+	}
+	return false
 }
 
-// ShouldOpen always reconnects an active run. A recovery warning reopens
+// ShouldOpen always reconnects an active run. A terminal result reopens
 // until the user explicitly dismisses that run; unreadable acknowledgements
 // cannot silently hide a warning.
 func ShouldOpen(root string, s State) bool {
 	if s.Active() {
 		return true
 	}
-	if !s.RecoveryNotice() {
+	if !s.ResultNotice() {
 		return false
 	}
 	var ack acknowledgement
@@ -37,8 +41,8 @@ func Acknowledge(root, id string) error {
 	if err != nil {
 		return err
 	}
-	if id == "" || s.ID != id || !s.RecoveryNotice() {
-		return fmt.Errorf("that recovery warning is no longer current")
+	if id == "" || s.ID != id || !s.ResultNotice() {
+		return fmt.Errorf("that result is no longer current")
 	}
 	return saveCard(filepath.Join(stateDir(root), "acknowledged.json"), acknowledgement{ID: id})
 }

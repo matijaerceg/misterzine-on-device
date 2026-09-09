@@ -121,7 +121,7 @@ func TestUpdateModalAndLongCancel(t *testing.T) {
 	}
 }
 
-func TestUpdateBackAcknowledgesOnlyRecovery(t *testing.T) {
+func TestUpdateBackAcknowledgesTerminalResults(t *testing.T) {
 	for _, status := range []string{"interrupted", "restarted", "completed", "failed", "cancelled", "running"} {
 		t.Run(status, func(t *testing.T) {
 			calls := 0
@@ -135,7 +135,7 @@ func TestUpdateBackAcknowledgesOnlyRecovery(t *testing.T) {
 			a.SetUpdate(updater.State{ID: "run", Status: status}, true)
 			a.Handle(platform.Event{Key: platform.KeyBack, Pressed: true, At: now})
 			want := 0
-			if status == "interrupted" || status == "restarted" {
+			if status != "running" {
 				want = 1
 			}
 			if calls != want {

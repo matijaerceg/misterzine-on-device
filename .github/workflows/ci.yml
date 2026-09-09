@@ -21,6 +21,7 @@ jobs:
         run: |
           node --test tools/sort_golden.test.js
           python3 tools/test_snapshot.py
+          python3 tools/test_wrapper.py
           go vet ./...
           go test ./...
           GOARCH=386 CGO_ENABLED=0 go test ./internal/app -run TestUpdate
