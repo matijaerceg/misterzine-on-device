@@ -1,7 +1,12 @@
 # On-device follow-ups
 
-Updated September 8, 2026. This consolidates the on-device project memory;
+Updated September 9, 2026. This consolidates the on-device project memory;
 it is not a list of unrelated website work.
+
+September 9: the user reports that long idle passed overnight. This closes
+the pending long-idle acceptance checks recorded below; it does not imply
+acceptance of every other visual/controller change. Release packaging and
+additional UI notes are under discussion; no release is authorized yet.
 
 ## Closed or superseded
 
@@ -290,11 +295,12 @@ it is not a list of unrelated website work.
 
   Priorities guide the batches, with related fixes grouped so each remains
   small and testable; this is not a strict traversal of the review's numbering.
-- **DE10 long idle stability:** short transitions passed on latest Main
-  and Menu; the user's comparable long-idle CRT result is still pending.
+- **Long idle stability:** the user reports an overnight pass on September 9.
+  The long-idle acceptance item is closed.
 - **Pi after Linux update:** the framebuffer compatibility build runs;
   the user confirmed the Update All result screen is readable and stable
-  on the CRT. Longer idle observation remains separate from that check.
+  on the CRT. The subsequent September 9 overnight pass closes the separate
+  long-idle observation item.
 - **Update All with visible feedback:** implemented as a dedicated screen,
   stage bar, live log, long-B cancellation and early restart ribbon. See
   [UPDATE_ALL_SCOPE.md](UPDATE_ALL_SCOPE.md) for validation and limits.
