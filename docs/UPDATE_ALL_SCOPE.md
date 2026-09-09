@@ -81,6 +81,12 @@ are omitted from the small on-screen log.
   persisted success is described as “reported success before restart”,
   not a newly verified successful run. Missing workers without that
   evidence show interruption. Nothing restarts Update All automatically.
+- Pressing B on an interrupted/restarted result remembers that run in
+  `update-all/acknowledged.json`, using a synced replacement file. Later
+  launches start normally after that dismissal. The saved result and log
+  remain intact; a live run or a different interrupted run still opens its
+  screen. Simply viewing a warning does not dismiss it. If the dismissal
+  cannot be saved, Options reports that it will appear on the next launch.
 
 The modal protects navigation inside MisterZine. It cannot block the
 physical power switch, Main's own menu button, or a separate root/Remote
@@ -147,6 +153,13 @@ reads, then checks that cancellation waits for the simulated write to finish.
 These regressions and the full updater/Update screen suites passed on both
 DE10-Nano and MiSTer Pi. No installed updater or firmware write was run by
 these tests.
+
+Recovery-dismissal tests reproduce the former repeat-on-every-launch behavior,
+then check dismissal across app instances for interrupted and restarted
+results, retained recovery evidence, new run IDs, active-run guards, unreadable
+acknowledgements and failed saves. All records and app instances are temporary.
+They passed on both devices, including runs using their actual SD cards, along
+with the full updater and Update screen test suites in batch 9.
 
 The updater suite and Update screen/input tests passed directly on the
 MiSTer Pi's ARM CPU. This caught and fixed an epoch-time conversion overflow

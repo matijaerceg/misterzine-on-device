@@ -94,6 +94,9 @@ func TestCancelAndDuplicateRun(t *testing.T) {
 	if err != nil || other.ID != s.ID {
 		t.Fatalf("duplicate run: %v %+v", err, other)
 	}
+	if err := Acknowledge(root, s.ID); err == nil {
+		t.Fatal("a live worker was acknowledged as a dismissed recovery warning")
+	}
 	if err := Cancel(root, "wrong-run"); err == nil {
 		t.Fatal("cancel accepted wrong id")
 	}

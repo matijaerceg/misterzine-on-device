@@ -18,7 +18,7 @@ type updateResult struct {
 func (h *host) initUpdates() {
 	h.updates = make(chan updateResult, 4)
 	if s, err := updater.Read(h.root); err == nil {
-		h.a.SetUpdate(s, s.Active() || s.Status == "interrupted" || s.Status == "restarted")
+		h.a.SetUpdate(s, updater.ShouldOpen(h.root, s))
 		h.updateRunning = s.Active()
 		h.img.SetPaused(h.updateRunning)
 	}
@@ -62,6 +62,13 @@ func (h *host) cancelUpdate(id string) {
 		case h.updates <- updateResult{cancelID: id, err: err}:
 		case <-h.quit:
 		}
+	}
+}
+
+func (h *host) dismissUpdate(id string) {
+	if err := updater.Acknowledge(h.root, id); err != nil {
+		h.lg.Printf("update dismissal: %v", err)
+		h.a.Notice("Dismissal not saved; shown next launch", 8*time.Second)
 	}
 }
 

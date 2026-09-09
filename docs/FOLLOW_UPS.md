@@ -45,15 +45,22 @@ it is not a list of unrelated website work.
   Update screen tests passed on both devices; checkpoint/recovery tests also
   passed using temporary directories on each device's actual SD card.
   The user confirmed it.
-  Batch 8 separates warning detection from the shortened display log. Known
+  Batch 8 (`a0d8344`) separates warning detection from the shortened display log. Known
   markers are recognized beyond 512 characters and across 4096-byte flushes,
   including split terminal escapes, and are consumed in arrival order.
   A display flush cannot manufacture a line-start success announcement.
   The new regressions reproduced the old failures. The full updater and
   Update screen suites now pass on both devices with simulated updaters.
-  User acceptance is pending: run Update All, check its stage/log display,
-  let it finish, then return to Options with B. Do not start batch 9 before
-  the user tests this batch.
+  The user confirmed it.
+  Batch 9 remembers B-dismissal of an interrupted/restarted update warning
+  using a separate run-ID record. It preserves the original recovery evidence
+  and never suppresses a live run or a different interrupted run. User
+  acceptance is pending: quit and reopen MisterZine, checking normal startup
+  and Options navigation. The interrupted-run dismissal is exercised with
+  temporary simulated recovery records in automated tests. Do not start
+  batch 10 before the user tests this batch.
+  Updater, Update screen and recovery-host tests passed on both devices;
+  dismissal/relaunch and failed-save tests also passed on their actual SD cards.
   Priorities guide the batches, with related fixes grouped so each remains
   small and testable; this is not a strict traversal of the review's numbering.
 - **DE10 long idle stability:** short transitions passed on latest Main

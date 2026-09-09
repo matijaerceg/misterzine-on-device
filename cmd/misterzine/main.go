@@ -235,6 +235,10 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 				go h.cancelUpdate(arg)
 				return
 			}
+			if kind == "update-dismiss" {
+				h.dismissUpdate(arg)
+				return
+			}
 			if kind == "refresh" {
 				go h.check(ds.Hash)
 			}

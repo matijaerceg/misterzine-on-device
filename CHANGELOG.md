@@ -2,6 +2,8 @@
 
 ## v0.2.2
 
+- B dismisses an interrupted/restarted Update All warning for that run across
+  later launches, preserving its result and log. New runs still show warnings.
 - Update All recognizes system-update warnings beyond the display's line
   limit and across output-buffer boundaries. Detection follows incoming text
   in order, independently of the shortened and redacted visible log.

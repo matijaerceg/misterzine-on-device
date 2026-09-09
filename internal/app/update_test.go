@@ -121,6 +121,33 @@ func TestUpdateModalAndLongCancel(t *testing.T) {
 	}
 }
 
+func TestUpdateBackAcknowledgesOnlyRecovery(t *testing.T) {
+	for _, status := range []string{"interrupted", "restarted", "completed", "failed", "cancelled", "running"} {
+		t.Run(status, func(t *testing.T) {
+			calls := 0
+			now := time.Now()
+			a := New(Config{PhysW: 320, PhysH: 240, Action: func(kind, id string) {
+				if kind != "update-dismiss" || id != "run" {
+					t.Fatalf("unexpected action: %s %s", kind, id)
+				}
+				calls++
+			}}, data.Ingest(nil, "test", now), nil)
+			a.SetUpdate(updater.State{ID: "run", Status: status}, true)
+			a.Handle(platform.Event{Key: platform.KeyBack, Pressed: true, At: now})
+			want := 0
+			if status == "interrupted" || status == "restarted" {
+				want = 1
+			}
+			if calls != want {
+				t.Fatalf("acknowledgements=%d, want %d", calls, want)
+			}
+			if status == "running" && a.Screen() != ScreenUpdate {
+				t.Fatal("B dismissed an active run")
+			}
+		})
+	}
+}
+
 // Run this on ARM as well: converting a full epoch time to int before reducing
 // the animation index overflows on the MiSTer's 32-bit CPU.
 func TestUpdatePaintOnDeviceClock(t *testing.T) {
