@@ -171,11 +171,11 @@ func (s *State) observe(line string) {
 }
 
 func (s State) Summary() string {
+	if s.Active() && s.CancelRequested && s.Protected {
+		return "Cancel requested; finishing system update"
+	}
 	if s.Message != "" {
 		return s.Message
-	}
-	if s.CancelRequested && s.Protected {
-		return "Cancel requested; finishing system update"
 	}
 	if s.Protected {
 		return "System update: cancellation waits until safe"

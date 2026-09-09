@@ -2,6 +2,9 @@
 
 ## v0.2.2
 
+- Update All checks for protected system work before both the initial cancel
+  signal and a later force-stop. A newly detected write can finish first;
+  the screen explains the wait, and known writers are not repeatedly paused.
 - Scan messages expire while Update All is open, preventing an expired
   message from driving continuous full-screen redraws during or after a run.
 - Returning from artwork keeps the selected game version and details scroll

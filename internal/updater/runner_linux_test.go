@@ -165,7 +165,7 @@ func TestWorkerSurvivesStartingProcess(t *testing.T) {
 
 func TestSystemWriterWithoutStageOutput(t *testing.T) {
 	root, card := fakeCard(t, "echo start\nbash ./dd\nsleep 8\necho 'Success! Log saved.'\n")
-	if err := os.WriteFile(filepath.Join(card, "Scripts", "dd"), []byte("#!/bin/bash\necho writing\nsleep 2\necho write-finished\n"), 0700); err != nil {
+	if err := os.WriteFile(filepath.Join(card, "Scripts", "dd"), []byte("#!/bin/bash\ntrap 'echo writer-resumed' CONT\necho writing\nsleep 2\necho write-finished\n"), 0700); err != nil {
 		t.Fatal(err)
 	}
 	s, err := Start(root, card)
@@ -179,6 +179,55 @@ func TestSystemWriterWithoutStageOutput(t *testing.T) {
 	s = waitState(t, root, func(s State) bool { return !s.Active() })
 	if s.Status != "cancelled" || !strings.Contains(strings.Join(s.Lines, "\n"), "write-finished") {
 		t.Fatalf("%+v", s)
+	}
+	if strings.Contains(strings.Join(s.Lines, "\n"), "writer-resumed") {
+		t.Fatal("cancellation paused a writer that was already detectable")
+	}
+}
+
+// These are ordinary shell fixtures in a temporary card directory. The fake
+// writer starts only after TERM, so it exercises the later force-stop guard;
+// it never invokes dd or writes firmware.
+func TestCancelEscalationWaitsForLateSystemWrite(t *testing.T) {
+	for _, kind := range []string{"announcement", "process"} {
+		t.Run(kind, func(t *testing.T) {
+			write := "echo 'Linux will be updated from distribution_mister:'\nsleep 5\necho 'Linux has been updated!'\necho write-finished\n"
+			if kind == "process" {
+				write = "bash ./dd\n"
+			}
+			root, card := fakeCard(t, "start_write=0\ntrap 'start_write=1' TERM\necho ready\nwhile [ \"$start_write\" = 0 ]; do sleep .1; done\ntrap '' TERM\n"+write+"sleep 8\necho 'Success! Log saved.'\n")
+			if kind == "process" {
+				if err := os.WriteFile(filepath.Join(card, "Scripts", "dd"), []byte("#!/bin/bash\necho writer-started\nsleep 5\necho write-finished\n"), 0700); err != nil {
+					t.Fatal(err)
+				}
+			}
+			s, err := Start(root, card)
+			if err != nil {
+				t.Fatal(err)
+			}
+			waitState(t, root, func(s State) bool { return strings.Contains(strings.Join(s.Lines, "\n"), "ready") })
+			if err := Cancel(root, s.ID); err != nil {
+				t.Fatal(err)
+			}
+			waitState(t, root, func(s State) bool {
+				lines := strings.Join(s.Lines, "\n")
+				return strings.Contains(lines, "Linux will be updated") || strings.Contains(lines, "writer-started")
+			})
+			// Go past the ordinary three-second escalation deadline, but stay
+			// within the fixture's five-second protected operation.
+			time.Sleep(3500 * time.Millisecond)
+			s, err = Read(root)
+			if err != nil || !s.Active() || !s.CancelRequested || !s.Protected {
+				t.Errorf("late system write was not protected from escalation: %+v, %v", s, err)
+			}
+			if !strings.Contains(s.Summary(), "finishing system update") {
+				t.Errorf("UI does not explain why cancellation is waiting: %q", s.Summary())
+			}
+			s = waitState(t, root, func(s State) bool { return !s.Active() })
+			if s.Status != "cancelled" || !strings.Contains(strings.Join(s.Lines, "\n"), "write-finished") {
+				t.Fatalf("cancellation must wait for the write, then finish: %+v", s)
+			}
+		})
 	}
 }
 

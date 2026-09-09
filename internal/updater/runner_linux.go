@@ -233,6 +233,34 @@ func systemWriter(group int) bool {
 	return false
 }
 
+// signalGroup uses the same protection for the initial TERM and later KILL.
+// Check known writers before stopping the group, so a deferred cancellation
+// does not repeatedly pause a writer. Recheck with the group stopped before
+// signalling, allowing queued phase announcements to reach the output sink.
+func (o *outputSink) signalGroup(group int, signal syscall.Signal) bool {
+	writer := systemWriter(group)
+	o.mu.Lock()
+	o.writerGuard = writer
+	protected := o.snapshot().Protected
+	o.mu.Unlock()
+	if protected {
+		return false
+	}
+	if err := syscall.Kill(-group, syscall.SIGSTOP); err != nil {
+		return false
+	}
+	defer syscall.Kill(-group, syscall.SIGCONT)
+	time.Sleep(75 * time.Millisecond)
+	writer = systemWriter(group)
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	o.writerGuard = writer
+	if o.snapshot().Protected {
+		return false
+	}
+	return syscall.Kill(-group, signal) == nil
+}
+
 // Worker runs in a detached copy of the binary, never on the script console.
 // The entry point owns inherited lock FD 3 until this entire run is finished.
 func Worker(root, card, id string) int {
@@ -336,29 +364,17 @@ func runWorker(root, card, id, script string) int {
 			if _, e := os.Stat(cancelPath); e == nil {
 				o.s.CancelRequested = true
 			}
-			cancel := o.s.CancelRequested && !o.s.Protected
+			cancel := o.s.CancelRequested
 			o.mu.Unlock()
-			if cancel && terminateAt.IsZero() {
-				// Freeze the group while checking for writers and draining its
-				// queued output. Resume promptly if this is a protected phase.
-				syscall.Kill(-cmd.Process.Pid, syscall.SIGSTOP)
-				time.Sleep(75 * time.Millisecond)
-				protected := systemWriter(cmd.Process.Pid)
+			if cancel && terminateAt.IsZero() && o.signalGroup(cmd.Process.Pid, syscall.SIGTERM) {
+				terminateAt = time.Now()
 				o.mu.Lock()
-				o.snapshot()
-				o.writerGuard = protected
-				protected = protected || o.s.Protected
-				if !protected {
-					syscall.Kill(-cmd.Process.Pid, syscall.SIGTERM)
-					terminateAt = time.Now()
-					o.s.Status = "cancelling"
-					o.s.Message = "Cancelling Update All"
-				}
+				o.s.Status = "cancelling"
+				o.s.Message = "Cancelling Update All"
 				o.mu.Unlock()
-				syscall.Kill(-cmd.Process.Pid, syscall.SIGCONT)
 			}
 			if !terminateAt.IsZero() && time.Since(terminateAt) > 3*time.Second {
-				syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+				o.signalGroup(cmd.Process.Pid, syscall.SIGKILL)
 			}
 			o.mu.Lock()
 			o.s.Heartbeat = time.Now()

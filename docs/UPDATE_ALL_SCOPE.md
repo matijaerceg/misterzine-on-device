@@ -20,6 +20,15 @@ firmware update, the request waits for that phase to finish. A process
 check additionally protects known bootloader/flash writers. Cancellation
 does not roll back files already changed.
 
+Both the initial termination signal and force-stop escalation use the same
+phase and process checks. If a protected operation appears after the first
+signal, escalation waits and the screen says it is finishing a system update.
+Known writers are checked before briefly pausing the process group; the check
+is repeated with the group paused before either signal is sent. The group is
+resumed on every exit from that check. Protection is not overridden by a time
+limit: cancellation remains pending until the detected operation clears or
+the updater exits.
+
 A persistent **Restart expected** ribbon appears on the first Linux-update
 announcement or detected reboot requirement. This can precede the actual
 kernel write. Update All's saved configuration, including automatic
@@ -101,6 +110,15 @@ deferral, a writer without a preceding announcement, detached parent exit,
 partial updater errors, an unconfirmed zero exit, and recovery after a
 simulated reboot. The detached tests run real shell processes against
 temporary fake card directories, with no firmware writes.
+
+The cancellation escalation regression starts a simulated protected phase or
+fake writer only after the initial termination signal. It checks that the
+operation survives past the three-second escalation deadline, that the UI
+summary explains the wait, and that cancellation completes after the operation.
+A separate writer check verifies that an already detected writer is not paused
+and resumed repeatedly while cancellation waits. The updated updater suite
+and Update screen tests passed on both DE10-Nano and MiSTer Pi in review
+batch 6; these tests did not run the installed Update All or change firmware.
 
 The updater suite and Update screen/input tests passed directly on the
 MiSTer Pi's ARM CPU. This caught and fixed an epoch-time conversion overflow

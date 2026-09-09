@@ -30,13 +30,18 @@ it is not a list of unrelated website work.
   Batch 4 (`3878f43`) preserves the selected game version and details scroll
   position when returning from artwork. The user confirmed it on MiSTer Pi;
   regression tests passed on both devices for B/A/X returns in all rotations.
-  Batch 5 clears expired scan messages on the Update All screen, preventing
+  Batch 5 (`3188a00`) clears expired scan messages on the Update All screen, preventing
   a stale timer from forcing continuous redraws. Regression tests reproduced
   the old failure and now pass on both devices, along with the existing
-  progress-rendering and long-B cancellation tests. User acceptance is pending:
-  run Update All, check the live display remains responsive, leave its result
-  screen open for at least ten seconds, then return to Options with B.
-  Do not start batch 6 before the user tests batch 5.
+  progress-rendering and long-B cancellation tests. The user confirmed it.
+  Batch 6 applies the same system-write guard to both cancel signals, including
+  force-stop escalation; the screen explains when cancellation is waiting.
+  A known writer is checked before pausing the group, avoiding repeated pauses
+  while a cancellation waits. The updater suite and Update screen tests passed
+  on both MiSTers using temporary simulated updaters, with no firmware writes.
+  User acceptance is pending: start Update All,
+  hold B for two seconds once running, and check it reaches a readable result
+  screen and returns to Options with B. Do not start batch 7 before this test.
 - **DE10 long idle stability:** short transitions passed on latest Main
   and Menu; the user's comparable long-idle CRT result is still pending.
 - **Pi after Linux update:** the framebuffer compatibility build runs;
