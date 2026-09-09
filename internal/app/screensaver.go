@@ -2,6 +2,8 @@ package app
 
 import (
 	"image"
+	"math"
+	"sort"
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
@@ -134,32 +136,65 @@ func (a *App) saverMask(h int) *image.Alpha {
 		return a.saver.mask
 	}
 	const word = "MISTERZINE"
-	font := a.body
-	// Crop the font's blank ascender/descender padding. M has ink on every
-	// remaining row, so a complete horizontal pass blacks every screen pixel.
-	top, bottom := font.H, 0
+	w := -3
 	for _, ch := range []byte(word) {
-		for y, bits := range font.Glyph(ch) {
-			if bits != 0 {
-				top = min(top, y)
-				bottom = max(bottom, y+1)
-			}
-		}
+		w += saverLetters[ch].width + 3
 	}
-	inkH := bottom - top
-	w := len(word) * font.W * h / inkH
-	m := image.NewAlpha(image.Rect(0, 0, w, h))
-	for y := 0; y < h; y++ {
-		sy := top + y*inkH/h
-		for x := 0; x < w; x++ {
-			sx := x * inkH / h
-			if font.Glyph(word[sx/font.W])[sy]&(0x80>>uint(sx%font.W)) != 0 {
-				m.Pix[y*m.Stride+x] = 255
-			}
+	m := image.NewAlpha(image.Rect(0, 0, w*h/24, h))
+	x := 0
+	for _, ch := range []byte(word) {
+		letter := saverLetters[ch]
+		fillSaverPolygon(m, x, letter.outline, 255)
+		for _, counter := range letter.counters {
+			fillSaverPolygon(m, x, counter, 0)
 		}
+		x += letter.width + 3
 	}
 	a.saver.mask = m
 	return m
+}
+
+// Broad geometric capitals drawn for this overlay, in 24-unit-high outlines.
+// The full-height M and I strokes ensure a pass sweeps every row solid black.
+type saverLetter struct {
+	width    int
+	outline  []image.Point
+	counters [][]image.Point
+}
+
+var saverLetters = map[byte]saverLetter{
+	'M': {24, []image.Point{{0, 24}, {0, 0}, {6, 0}, {12, 10}, {18, 0}, {24, 0}, {24, 24}, {18, 24}, {18, 10}, {12, 19}, {6, 10}, {6, 24}}, nil},
+	'I': {6, []image.Point{{0, 0}, {6, 0}, {6, 24}, {0, 24}}, nil},
+	'S': {20, []image.Point{{4, 0}, {16, 0}, {20, 4}, {20, 7}, {14, 7}, {14, 5}, {6, 5}, {6, 9}, {16, 9}, {20, 13}, {20, 20}, {16, 24}, {4, 24}, {0, 20}, {0, 17}, {6, 17}, {6, 19}, {14, 19}, {14, 15}, {4, 15}, {0, 11}, {0, 4}}, nil},
+	'T': {20, []image.Point{{0, 0}, {20, 0}, {20, 6}, {13, 6}, {13, 24}, {7, 24}, {7, 6}, {0, 6}}, nil},
+	'E': {18, []image.Point{{0, 0}, {18, 0}, {18, 6}, {6, 6}, {6, 9}, {16, 9}, {16, 15}, {6, 15}, {6, 18}, {18, 18}, {18, 24}, {0, 24}}, nil},
+	'R': {22, []image.Point{{0, 0}, {17, 0}, {21, 4}, {21, 11}, {17, 15}, {22, 24}, {15, 24}, {10, 15}, {6, 15}, {6, 24}, {0, 24}}, [][]image.Point{{{6, 5}, {15, 5}, {15, 10}, {6, 10}}}},
+	'Z': {20, []image.Point{{0, 0}, {20, 0}, {20, 5}, {8, 18}, {20, 18}, {20, 24}, {0, 24}, {0, 19}, {12, 6}, {0, 6}}, nil},
+	'N': {22, []image.Point{{0, 24}, {0, 0}, {6, 0}, {16, 14}, {16, 0}, {22, 0}, {22, 24}, {16, 24}, {6, 10}, {6, 24}}, nil},
+}
+
+func fillSaverPolygon(m *image.Alpha, offset int, points []image.Point, ink uint8) {
+	scale := float64(m.Rect.Dy()) / 24
+	xs := make([]float64, 0, len(points))
+	for y := 0; y < m.Rect.Dy(); y++ {
+		py := (float64(y) + .5) / scale
+		xs = xs[:0]
+		for i, p := range points {
+			q := points[(i+1)%len(points)]
+			if (float64(p.Y) <= py && float64(q.Y) > py) || (float64(q.Y) <= py && float64(p.Y) > py) {
+				x := float64(p.X) + (py-float64(p.Y))*float64(q.X-p.X)/float64(q.Y-p.Y)
+				xs = append(xs, (float64(offset)+x)*scale)
+			}
+		}
+		sort.Float64s(xs)
+		for i := 0; i+1 < len(xs); i += 2 {
+			start := max(0, int(math.Ceil(xs[i]-.5)))
+			end := min(m.Rect.Dx(), int(math.Ceil(xs[i+1]-.5)))
+			for x := start; x < end; x++ {
+				m.Pix[y*m.Stride+x] = ink
+			}
+		}
+	}
 }
 
 func (a *App) paintSaver(c *gfx.Canvas) {
