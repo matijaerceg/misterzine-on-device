@@ -457,6 +457,9 @@ func (a *App) stepValue(d int) bool {
 	switch e.kind {
 	case "rotation":
 		a.SetRotation([]gfx.Rotation{gfx.RotNone, gfx.RotRight, gfx.RotLeft}[i])
+		if a.cfg.Action != nil {
+			a.cfg.Action("rotation", []string{"off", "right", "left"}[i])
+		}
 	case "scroll":
 		a.cfg.Scroll = ScrollValues[i]
 	case "prefetch":

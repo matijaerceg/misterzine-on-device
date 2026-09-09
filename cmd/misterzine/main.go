@@ -67,6 +67,8 @@ type host struct {
 	stats         frameStats
 	favDirty      bool
 	favLoadFailed bool // preserve a favorites file we could not read
+	saveAt        time.Time
+	saveRetry     bool
 	setDirty      bool
 	clock         platform.Clock
 	client        *fetch.Client
@@ -239,6 +241,10 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 				h.dismissUpdate(arg)
 				return
 			}
+			if kind == "rotation" {
+				h.settings.Rotation = arg
+				h.setDirty = true
+			}
 			if kind == "refresh" {
 				go h.check(ds.Hash)
 			}
@@ -358,7 +364,6 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	}()
 
 	// the loop
-	saveAt := time.Time{}
 	lastState := h.snapshotState()
 	for {
 		var tick <-chan time.Time
@@ -423,15 +428,9 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 			// nothing else (saves, checks) gets between two frames
 			h.frameLoop()
 		}
-		if st := h.snapshotState(); st != lastState {
-			lastState = st
-			h.dirty = true
-			saveAt = time.Now().Add(500 * time.Millisecond)
-		}
-		if (h.dirty || h.favDirty || h.setDirty) && !saveAt.IsZero() && time.Now().After(saveAt) {
-			h.saveAll(false)
-			saveAt = time.Time{}
-		}
+		st := h.snapshotState()
+		h.autosave(time.Now(), st != lastState)
+		lastState = st
 		if h.launch != "" {
 			h.saveAll(true)
 			h.doLaunch()
@@ -583,6 +582,38 @@ func (h *host) loadFavorites() {
 	}
 }
 
+// autosave runs only on the UI loop, outside held-key rendering. All kinds of
+// pending edits arm it; a failed write remains pending and retries at a bounded
+// pace, even if navigation continues.
+func (h *host) autosave(now time.Time, stateChanged bool) {
+	if stateChanged {
+		h.dirty = true
+		if !h.saveRetry {
+			h.saveAt = now.Add(500 * time.Millisecond)
+		}
+	}
+	if !h.pendingSave() {
+		return
+	}
+	if h.saveAt.IsZero() {
+		h.saveAt = now.Add(500 * time.Millisecond)
+	}
+	if now.Before(h.saveAt) {
+		return
+	}
+	h.saveAll(false)
+	h.saveRetry = h.pendingSave()
+	if h.saveRetry {
+		h.saveAt = now.Add(5 * time.Second)
+	} else {
+		h.saveAt = time.Time{}
+	}
+}
+
+func (h *host) pendingSave() bool {
+	return h.dirty || h.setDirty || (h.favDirty && !h.favLoadFailed)
+}
+
 func (h *host) saveAll(final bool) {
 	if h.dirty || final {
 		f := h.a.Filters()
@@ -593,39 +624,30 @@ func (h *host) saveAll(final bool) {
 		}
 		if err := store.Save(filepath.Join(h.root, "state.json"), st); err != nil {
 			h.lg.Printf("state: %v", err)
+			h.dirty = true
+		} else {
+			h.dirty = false
 		}
-		h.dirty = false
 	}
 	if !h.favLoadFailed && (h.favDirty || final) {
 		h.favs.Apply(h.a.FavoriteSet(), time.Now())
 		if err := store.Save(filepath.Join(h.root, "favorites.json"), h.favs); err != nil {
 			h.lg.Printf("favorites: %v", err)
+			h.favDirty = true
+		} else {
+			h.favDirty = false
 		}
-		h.favDirty = false
 	}
 	if h.setDirty || final {
 		h.settings.InsetX, h.settings.InsetY = h.a.Inset()
 		h.settings.Inset = h.settings.InsetX
 		h.settings.Scroll = h.a.ScrollSpeed()
-		switch h.a.Rotation() {
-		case gfx.RotLeft:
-			h.settings.Rotation = "left"
-		case gfx.RotRight:
-			h.settings.Rotation = "right"
-		default:
-			h.settings.Rotation = "off"
-		}
-		if !h.setDirty && h.settings.Rotation != "" {
-			// untouched: keep "auto" if that is what the file said
-			var on store.Settings
-			if store.Load(filepath.Join(h.root, "settings.json"), &on) == nil && on.Rotation == "auto" {
-				h.settings.Rotation = "auto"
-			}
-		}
 		if err := store.Save(filepath.Join(h.root, "settings.json"), h.settings); err != nil {
 			h.lg.Printf("settings: %v", err)
+			h.setDirty = true
+		} else {
+			h.setDirty = false
 		}
-		h.setDirty = false
 	}
 }
 
