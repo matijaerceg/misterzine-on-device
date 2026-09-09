@@ -203,7 +203,15 @@ it is not a list of unrelated website work.
     test confirms a stuck log flush does not lock output parsing. Heartbeat can
     still be delayed by synchronous card I/O; no claim of asynchronous storage.
   Local tests, wrapper fixture, ARM vet and host/app/updater/debug suites on both
-  devices passed. Deployment/live acceptance pending at this checkpoint.
+  devices passed. Build 27f8ca2 and its Scripts wrapper are installed on both;
+  CI passed. Live tests verified 401 without token, 405 for mutation GET, 403 for
+  browser Origin, result review without a new run, unchanged state.json after
+  cursor movement, restore-helper removal on exit, persistent token access, and
+  no repeat greeting after result acknowledgement. Options layouts were inspected.
+  IMPORTANT for future device tools: every debug request now needs the
+  X-MisterZine-Token header, read via SSH from /media/fat/misterzine/debug-token.
+  Keep that credential out of tool output and logs. Options row 7 is Last update
+  result; Refresh/Clear/Quit move to rows 8/9/10, respectively (zero-based).
   Remaining substantive review scope after this batch: 14 (protected latch),
   21 (golden-image assertions), 52 (unconfirmed framebuffer request), 53/54 (input
   loss/probe ownership), 61 (external updater launcher notice), 70 (inherited pipe
