@@ -174,6 +174,12 @@ func (a *App) optionsEntries() []panelEntry {
 	if a.panel.prefetch {
 		prefetchIdx = 1
 	}
+	saverIdx := 1
+	for i, v := range saverValues {
+		if v == a.Screensaver() {
+			saverIdx = i
+		}
+	}
 	return []panelEntry{
 		{text: "Refresh data now", kind: "refresh",
 			help: "Check misterzine.fyi for new releases now. This also happens on launch and every 30 minutes."},
@@ -189,6 +195,8 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "How many rows (or pages, with Left/Right) a held direction moves per second. 60 Hz is one row every frame."},
 		{text: "Hold delay", kind: "hold-delay", vals: []string{"short", "normal", "long"}, idx: map[int]int{200: 0, 300: 1, 500: 2}[a.HoldDelay()],
 			help: "Wait before held navigation repeats: short 200 ms, normal 300 ms, long 500 ms. Scroll speed sets the pace after this delay."},
+		{text: "Screensaver", kind: "screensaver", vals: []string{"off", "1 min", "2 min", "5 min", "10 min"}, idx: saverIdx,
+			help: "Dim the screen and scroll black lettering after idle time. Left/Right sets the delay; A previews. A browsing button wakes without acting. Menu still exits."},
 		{text: "Edit safe zone", kind: "inset",
 			help: "Margin kept clear of the screen edge (overscan): now " + itoa(a.cfg.SafeInsetX) + " px at the sides, " + itoa(a.cfg.SafeInsetY) + " px top and bottom. A opens the frame; fit it just inside the picture."},
 		{text: "Prefetch shots" + a.progressText(), kind: "prefetch", vals: []string{"off", "on"}, idx: prefetchIdx,
@@ -356,15 +364,18 @@ func (a *App) actPanel(k platform.Key) bool {
 		a.screen = ScreenList
 		a.all = true
 		return true
-	case platform.KeyUp:
-		for i := p.cursor - 1; i >= 0; i-- {
-			if selectable(i) {
-				p.cursor = i
+	case platform.KeyUp, platform.KeyDown:
+		d := 1
+		if k == platform.KeyUp {
+			d = -1
+		}
+		for step := 1; step <= n; step++ {
+			i := p.cursor + step*d
+			if a.screen == ScreenOptions {
+				i = (i%n + n) % n
+			} else if i < 0 || i >= n {
 				break
 			}
-		}
-	case platform.KeyDown:
-		for i := p.cursor + 1; i < n; i++ {
 			if selectable(i) {
 				p.cursor = i
 				break
@@ -458,6 +469,8 @@ func (a *App) stepValue(d int) bool {
 		a.cfg.Scroll = ScrollValues[i]
 	case "hold-delay":
 		a.cfg.HoldDelay = []int{200, 300, 500}[i]
+	case "screensaver":
+		a.cfg.Screensaver = saverValues[i]
 	case "prefetch":
 		a.panel.prefetch = i == 1
 		if a.cfg.Action != nil {
@@ -492,6 +505,9 @@ func (a *App) togglePanel() bool {
 		return out
 	}
 	switch e.kind {
+	case "screensaver":
+		a.startSaver(a.cfg.TimerNow())
+		return true
 	case "update-result":
 		if a.update.ID == "" {
 			a.Notice("No saved update result", 4*time.Second)

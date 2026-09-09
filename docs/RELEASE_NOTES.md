@@ -6,6 +6,8 @@ the version you want.
 - A compact version selector with a tally and scrollable, wrapped game information.
 - Refresh and update actions at the top of Options, with adjustable scroll speed
   and hold delay.
+- Wrapping Options navigation and a dimming screensaver with full-height black
+  scrolling lettering. Set its idle delay or preview it from Options.
 - Update All with live output, cancellation that waits for detected system writes,
   reconnection after closing the app, and saved results.
 - One-time main-menu setup and two uninstall choices: preserve favorites/preferences

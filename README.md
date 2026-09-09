@@ -10,13 +10,22 @@ to your display, with screenshots, favorites, filters, and keyboard search.
 It follows new releases and updated builds across the catalogue. The interface
 uses a 320x240 framebuffer, with horizontal and rotated CRT layouts.
 
-![Horizontal release list](docs/screenshots/list.png)
+| Horizontal browsing | Details in tate |
+|---|---|
+| ![Horizontal release list](docs/screenshots/list.png) | ![Details on a vertically rotated display](docs/screenshots/details-tate.png) |
+| **Artwork** | **Safe-zone adjustment** |
+| ![Full-screen game artwork](docs/screenshots/artwork.png) | ![Safe-zone calibration screen](docs/screenshots/safe-zone.png) |
 
 ## Install once
 
 You need a current MiSTer system with Downloader (usually run through Update All).
-`fb_terminal=1` must be enabled in MiSTer.ini. **Using a CRT through an analog
-board?** Check the [display setup](docs/TROUBLESHOOTING.md#display-setup) first.
+MisterZine uses MiSTer's framebuffer console, enabled by default. Only change
+`fb_terminal` in MiSTer.ini if you previously set it to `0`; it needs to be `1`.
+
+**Choose HDMI or CRT for MisterZine's interface.** It does not currently mirror
+to a normal HDMI display and a 15 kHz CRT at their separate resolutions.
+Game cores keep their own display settings. For CRT setup or switching outputs,
+see [display setup](docs/TROUBLESHOOTING.md#display-setup).
 
 1. Download [downloader_misterzine.ini](https://github.com/matijaerceg/misterzine-on-device/releases/latest/download/downloader_misterzine.ini).
 2. Copy it to the root of your SD card, beside `downloader.ini`.
@@ -53,6 +62,10 @@ Filter choices are remembered between visits. Search text is temporary.
 
 The app checks for new catalogue data on launch and every 30 minutes. Cached
 data and pictures remain available without a connection.
+
+After one minute idle, a screensaver dims the picture and sweeps full-height
+black **MISTERZINE** lettering across it. Change the delay or turn it off in
+Options; press A on that setting to preview it.
 
 ## Remove
 

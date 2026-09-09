@@ -15,6 +15,10 @@ scenarios = [
     ["-out", "out/search-h", "-script", "type 1943; shot matches; type xyz; shot empty"],
     ["-rot", "left", "-logical", "-out", "out/search-t",
      "-script", "type 1943; shot matches; type xyz; shot empty"],
+    ["-out", "out/saver-h", "-script",
+     "back; down*7; shot option; enter; wait 12000; shot preview; back; up*7; up; shot wrap; down; shot top"],
+    ["-rot", "left", "-logical", "-out", "out/saver-t", "-script",
+     "back; down*7; shot option; enter; wait 12000; shot preview; back; up*7; up; shot wrap; down; shot top"],
 ]
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)

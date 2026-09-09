@@ -2,32 +2,53 @@
 
 ## Display setup
 
-`fb_terminal=1` must be enabled in MiSTer.ini. It lets Main open the
-framebuffer console used by MisterZine and other scripts.
+MisterZine draws into Linux's framebuffer: a memory area containing the screen's
+pixels. Its launcher needs Main's framebuffer console to display those pixels.
+`fb_terminal=1` is already the MiSTer default, even if the line is absent from
+MiSTer.ini. Only change it if you previously disabled it with `fb_terminal=0`.
 
-HDMI uses Main's framebuffer output. A CRT connected through an HDMI-to-VGA
-DAC in direct-video mode already receives that output. For the analog board's
-VGA/YPbPr port with no HDMI display attached, configure:
+Choose the output for Menu and MisterZine in the existing `[Menu]` section of
+MiSTer.ini. Save a backup before editing, quit MisterZine, and restart MiSTer
+afterward. These settings apply to Menu/script output; game cores use their
+own settings. MisterZine does not rewrite MiSTer.ini.
+
+For a normal HDMI display:
+
+```ini
+[Menu]
+direct_video=0
+vga_scaler=0
+```
+
+For a 15 kHz CRT on the analog board's VGA/YPbPr port:
 
 ```ini
 [Menu]
 direct_video=1
+vga_scaler=0
 ```
 
-For simultaneous HDMI and analog CRT output, the analog port needs the scaler
-and a suitable 15 kHz mode. One example is:
+A CRT connected through a supported HDMI-to-VGA direct-video adapter already
+receives the direct-video output. Power off before changing between that adapter
+and a normal HDMI display. Keep the sync and RGB/YPbPr settings your CRT needs.
 
-```ini
-[Menu]
-vga_scaler=1
-video_mode=640,54,56,106,224,16,0,28,13764
-```
+### Can HDMI and CRT show MisterZine together?
 
-Put these settings in the existing Menu section rather than creating competing
-sections. They configure Menu/script output, not individual game cores. Adjust
-for your display; MisterZine does not rewrite MiSTer.ini.
+The current interface cannot provide normal HDMI resolution and native 240p CRT
+output simultaneously. Unlike a game core's native picture, Linux's framebuffer
+enters through MiSTer's scaler. Enabling `vga_scaler=1` copies that scaler output
+to the analog port at the same timing; it does not separately convert 1080p to
+240p. See MiSTer's [video settings](https://mister-devel.github.io/MkDocs_MiSTer/advanced/ini/#general-video-settings).
 
-If Main displays its message about `vga_scaler=1`, review this routing setup.
+An advanced shared-timing setup may work if **both displays accept the same
+CRT-compatible mode**. Ordinary HDMI TVs often do not accept that signal. Do not
+enable `vga_scaler=1` with a 720p/1080p mode on a 15 kHz CRT.
+
+Main's CRT message suggesting `fb_terminal=0` or `vga_scaler=1` is generic console
+help. Disabling the console prevents MisterZine's launcher from working; choose
+the output configuration above instead. For frequent switching, MiSTer supports
+[named alternate INI files](https://mister-devel.github.io/MkDocs_MiSTer/advanced/ini/#alternate-mister-ini-naming-option).
+
 Use Options -> Edit safe zone if text reaches outside the visible CRT picture.
 
 The September 7, 2026 MiSTer Linux framebuffer driver lacked the usual mapping

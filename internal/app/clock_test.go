@@ -43,7 +43,7 @@ func TestNoticeUsesInputClockDespiteCalendarCorrection(t *testing.T) {
 		} else {
 			a.Tick(deadline)
 		}
-		if a.notice != "" || !a.NextTick().IsZero() {
+		if next := a.NextTick(); a.notice != "" || (!next.IsZero() && !next.After(deadline)) {
 			t.Fatal("notice did not expire on input clock")
 		}
 	}

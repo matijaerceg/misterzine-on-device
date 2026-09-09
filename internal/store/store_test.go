@@ -42,6 +42,28 @@ func TestHoldDelayMigrationAndSave(t *testing.T) {
 	}
 }
 
+func TestScreensaverMigrationAndSave(t *testing.T) {
+	for _, tc := range []struct{ body, want string }{
+		{`{"rotation":"left","inset":15}`, "1"},
+		{`{"screensaver_minutes":"off"}`, "off"},
+		{`{"screensaver_minutes":"5"}`, "5"},
+		{`{"screensaver_minutes":"invalid"}`, "1"},
+	} {
+		path := writeSettings(t, tc.body)
+		s, err := LoadSettings(path)
+		if err != nil || s.Screensaver != tc.want {
+			t.Fatalf("load %s: %+v, %v", tc.body, s, err)
+		}
+		if err := Save(path, s); err != nil {
+			t.Fatal(err)
+		}
+		got, err := LoadSettings(path)
+		if err != nil || got != s {
+			t.Fatalf("settings changed after save: %+v, %v", got, err)
+		}
+	}
+}
+
 // A file from before the two-axis inset carries only "inset": both axes
 // inherit it, even though the defaults (15/15) were loaded first.
 func TestLoadSettingsLegacyInset(t *testing.T) {

@@ -7,6 +7,10 @@
 - Keyboard title find and remembered filters; separate Filters and Options.
 - A single-row version selector, wrapped information, and L/R paging in Details.
 - Action-first Options, a shorter default hold delay, and separate delay/speed choices.
+- Options navigation wraps from the first item to Quit and back.
+- A one-minute idle screensaver with dimming, full-height black scrolling lettering,
+  a selectable delay/Off, and an immediate preview from Options.
+- Clearer unknown-build-date wording and HDMI/CRT setup guidance.
 - Refined rotation, artwork controls, safe-zone layout and header styling.
 - Supervised Update All with live output, protected-write cancellation handling,
   recovery checkpoints, reconnection and saved result review.

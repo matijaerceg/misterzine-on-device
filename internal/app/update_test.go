@@ -42,7 +42,7 @@ func TestUpdateNoticeExpiryReleasesWakeDeadline(t *testing.T) {
 					now = deadline.Add(elapsed)
 					a.Tick(now)
 					a.Paint()
-					if next := a.NextTick(); !next.IsZero() || a.notice != "" {
+					if next := a.NextTick(); (!next.IsZero() && !next.After(now)) || a.notice != "" {
 						t.Errorf("at deadline + %v: stale notice %q keeps wake deadline %v", elapsed, a.notice, next)
 					}
 					if a.Screen() != ScreenUpdate || a.UpdateState().Status != status {
@@ -71,7 +71,7 @@ func TestNoticeExpiresAtDeadline(t *testing.T) {
 		if frame {
 			tick = a.Frame
 		}
-		if !tick(now) || a.notice != "" || !a.NextTick().IsZero() {
+		if !tick(now) || a.notice != "" || (!a.NextTick().IsZero() && !a.NextTick().After(now)) {
 			t.Fatalf("frame=%v: notice did not expire when the host woke at its deadline", frame)
 		}
 		if _, dirty := a.Paint(); len(dirty) == 0 {

@@ -16,19 +16,20 @@ import (
 
 // Settings are the user's device settings.
 type Settings struct {
-	Schema    int    `json:"schema"`
-	Rotation  string `json:"rotation"` // auto, left, right, off
-	Inset     int    `json:"inset"`
-	Prefetch  bool   `json:"prefetch"`
-	Scroll    string `json:"scroll"` // rows per second: 20, 30, 60
-	HoldDelay int    `json:"hold_delay_ms"`
-	InsetX    int    `json:"inset_x"`
-	InsetY    int    `json:"inset_y"`
+	Schema      int    `json:"schema"`
+	Rotation    string `json:"rotation"` // auto, left, right, off
+	Inset       int    `json:"inset"`
+	Prefetch    bool   `json:"prefetch"`
+	Scroll      string `json:"scroll"` // rows per second: 20, 30, 60
+	HoldDelay   int    `json:"hold_delay_ms"`
+	Screensaver string `json:"screensaver_minutes"`
+	InsetX      int    `json:"inset_x"`
+	InsetY      int    `json:"inset_y"`
 }
 
 // DefaultSettings for a fresh install.
 func DefaultSettings() Settings {
-	return Settings{Schema: 1, Rotation: "auto", Inset: 15, InsetX: 15, InsetY: 15, Scroll: "30", HoldDelay: 300}
+	return Settings{Schema: 1, Rotation: "auto", Inset: 15, InsetX: 15, InsetY: 15, Scroll: "30", HoldDelay: 300, Screensaver: "1"}
 }
 
 // LoadSettings reads path over the defaults and migrates older files.
@@ -57,6 +58,11 @@ func LoadSettings(path string) (Settings, error) {
 // becomes two (when legacy says the file predates the split), and the
 // speed adjectives become rows per second.
 func (s *Settings) Migrate(legacy bool) {
+	switch s.Screensaver {
+	case "off", "1", "2", "5", "10":
+	default:
+		s.Screensaver = "1"
+	}
 	switch s.HoldDelay {
 	case 200, 300, 500:
 	default:

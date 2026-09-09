@@ -33,6 +33,12 @@ Each row has a favorite marker, title, on-card status, and date:
 | ~ | On the card, build date unknown |
 | - | Not found on the card |
 
+“On card, date unknown” means the scan found the files but cannot compare their
+build date with the catalogue. Some core filenames carry no date; sometimes the
+catalogue lacks a comparison date or core mapping. It does not mean the build is
+old. File modification times are not used as build dates, since copying or
+installing a file can change them.
+
 Dates highlighted in green and the last-look divider help find changes since
 your previous visit. Visits start at the top of the latest-update sort.
 The app checks data on launch and every 30 minutes; Options can request a check
@@ -75,7 +81,8 @@ Screenshots work without remote debugging.
 
 Options starts with Refresh data now, Run Update All, Rescan card and Last
 update result. Display and browsing preferences follow, with maintenance and
-Quit at the bottom. R jumps to the bottom.
+Quit at the bottom. Up from the first item wraps to Quit, and Down from Quit
+wraps to the first item. R also jumps to the bottom.
 
 - **Rotation:** Left/Right turns the image in that direction. The labels describe
   the monitor's clockwise/counterclockwise turn. Initially follows `osd_rotate`
@@ -83,6 +90,13 @@ Quit at the bottom. R jumps to the bottom.
 - **Scroll speed:** 20, 30 or 60 rows/pages per second once a hold repeats.
 - **Hold delay:** short 200 ms, normal 300 ms (default), or long 500 ms before
   navigation repeats. Artwork and calibration retain their own timing.
+- **Screensaver:** after 1 minute idle by default, dim the picture and scroll
+  full-height black MISTERZINE lettering across it. Left/Right chooses Off, 1, 2,
+  5 or 10 minutes. A previews it immediately, even when Off. The first browsing
+  button or typing key wakes without acting; release it before pressing again.
+  MiSTer's Menu button still exits the app. The sweep covers the whole picture,
+  including safe-zone margins, in horizontal and tate layouts. Background data
+  downloads and Update All continue while dimmed.
 - **Edit safe zone:** D-pad moves the top-right corner of the safe frame;
   Right/Up grows it and Left/Down shrinks it. B saves. Margins can reach 40 px.
 - **Prefetch shots:** downloads the full picture set in the background.

@@ -74,6 +74,8 @@ type Config struct {
 	Scroll string
 	// HoldDelay is the navigation repeat delay in milliseconds: 200, 300, 500.
 	HoldDelay int
+	// Screensaver is the idle timeout: "off", "1", "2", "5", "10" minutes.
+	Screensaver string
 }
 
 // App is the state machine.
@@ -113,6 +115,7 @@ type App struct {
 	until  time.Time
 	net    string // status bar right text: "offline", "updating", "data 2h ago"
 	all    bool   // full repaint pending
+	saver  screensaver
 }
 
 type detailState struct {
@@ -141,6 +144,7 @@ func New(cfg Config, ds *data.Dataset, stored *data.SeenRecord) *App {
 	a.physical = image.NewRGBA(image.Rect(0, 0, cfg.PhysW, cfg.PhysH))
 	a.setRotation(cfg.Rotation)
 	a.SetData(ds, stored)
+	a.saver.lastInput = cfg.TimerNow()
 	return a
 }
 
@@ -385,6 +389,9 @@ func (a *App) ensureVisible() {
 // that Main also translates delivers every press twice (raw and through the
 // virtual keyboard), and this folds the pair into one.
 func (a *App) Handle(ev platform.Event) bool {
+	if a.handleSaverInput(ev) {
+		return true
+	}
 	if a.screen == ScreenUpdate {
 		return a.handleUpdate(ev)
 	}
@@ -468,19 +475,21 @@ func (a *App) Tick(now time.Time) bool {
 		changed = true
 	}
 	if a.screen == ScreenUpdate {
-		return a.tickUpdate(now) || changed
+		changed = a.tickUpdate(now) || changed
+		return a.tickSaver(now) || changed
 	}
 	if k := a.rep.due(now, a.repeatStep); k != platform.KeyNone {
 		if a.act(k) {
 			changed = true
 		}
 	}
-	return changed
+	return a.tickSaver(now) || changed
 }
 
 // Frame is Tick for the vsync-driven loop the host runs while a key is
 // held: called once per frame, it moves at most one step.
 func (a *App) Frame(now time.Time) bool {
+	a.saver.lastInput = now // a held direction is still activity
 	changed := false
 	if k := a.rep.frameDue(now, a.repeatStep); k != platform.KeyNone {
 		if a.act(k) {
@@ -500,6 +509,9 @@ func (a *App) NextTick() time.Time {
 	t := a.rep.nextAt()
 	if a.notice != "" && (t.IsZero() || a.until.Before(t)) {
 		t = a.until
+	}
+	if next := a.nextSaverTick(); !next.IsZero() && (t.IsZero() || next.Before(t)) {
+		t = next
 	}
 	return t
 }
@@ -733,6 +745,9 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 	}
 	a.neighbourhood()
 	a.cfg.Images.Want(a.wants)
+	if a.saver.active {
+		a.paintSaver(c)
+	}
 	dirty := c.TakeDirty()
 	var out []image.Rectangle
 	for _, r := range dirty {
@@ -807,7 +822,7 @@ func statusText(st data.Status, cardDate string) string {
 		}
 		return "older build"
 	case data.StatusFoundUndated:
-		return "on card, undated"
+		return "on card, date unknown"
 	case data.StatusNotFound:
 		return "not on card"
 	}

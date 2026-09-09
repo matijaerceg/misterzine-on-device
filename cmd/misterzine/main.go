@@ -214,6 +214,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	cfg := app.Config{
 		PhysW: canvasW, PhysH: canvasH, Rotation: rotation, SafeInsetX: h.settings.InsetX, SafeInsetY: h.settings.InsetY,
 		Now: h.now, TimerNow: time.Now, ClockTrusted: trusted, Favorites: favSet, Images: h.img, Scroll: h.settings.Scroll, HoldDelay: h.settings.HoldDelay,
+		Screensaver:          h.settings.Screensaver,
 		FavoritesUnavailable: h.favLoadFailed,
 		Progress:             func() (int, int) { return h.img.Progress() },
 		Launcher:             launcherEnabled,
@@ -318,7 +319,8 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 					"sort": h.a.Sort().String(), "rows": len(h.a.Data().Rows), "fb": h.fb.Geometry().String(),
 					"search": h.a.Search(), "filters": h.a.Filters(), "rotation": h.a.Rotation().String(), "inset": fmt.Sprint(h.a.Inset()), "devices": h.input.Devices(),
 					"sysfs": mister.SysfsMode(), "uptime": time.Since(t0).String(), "frames": h.stats.String(),
-					"update": h.a.UpdateState(),
+					"update":      h.a.UpdateState(),
+					"screensaver": h.a.Screensaver(), "screensaver_active": h.a.ScreensaverActive(),
 				}
 			},
 			Quit: h.stop,
@@ -666,6 +668,7 @@ func (h *host) saveAll(final bool) {
 		h.settings.Inset = h.settings.InsetX
 		h.settings.Scroll = h.a.ScrollSpeed()
 		h.settings.HoldDelay = h.a.HoldDelay()
+		h.settings.Screensaver = h.a.Screensaver()
 		if err := store.Save(filepath.Join(h.root, "settings.json"), h.settings); err != nil {
 			h.lg.Printf("settings: %v", err)
 			h.setDirty = true

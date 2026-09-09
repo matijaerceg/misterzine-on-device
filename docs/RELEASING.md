@@ -6,9 +6,9 @@ actual tag, commit and build date.
 
 ## Before announcing v1.0.0
 
-- Complete physical HDMI testing: menu entry, list/details/artwork, rotation,
-  safe-zone behavior, launch, quit and reopening. Discuss any HDMI layout changes
-  after that test. A denser layout is not part of this release preparation.
+- Recheck physical HDMI after the final UI changes: menu entry, list/details/artwork,
+  rotation, safe zone, screensaver, launch, quit and reopening. The September 9
+  HDMI walkthrough passed before the screensaver was added.
 - Accept the final CRT/controller changes, including version selection,
   information paging and hold delay.
 - Exercise packaged fresh installation, upgrade, both uninstall choices and
@@ -19,8 +19,8 @@ actual tag, commit and build date.
 - Check an initial launch without network access against the embedded catalogue.
 - Refresh the embedded snapshot shortly before the final build, then rerun checks.
 
-The overnight long-idle check passed on September 9, 2026. HDMI acceptance and
-final release approval are still required before the first announcement.
+The overnight long-idle check and initial HDMI walkthrough passed on September 9,
+2026. Final UI acceptance and release approval are required before announcing.
 
 ## Candidate and stable releases
 
