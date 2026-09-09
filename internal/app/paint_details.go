@@ -301,10 +301,6 @@ func (a *App) paintImageBox(c *gfx.Canvas, box image.Rectangle, key, slot string
 	}
 }
 
-// launchGuard is how long after opening details an A press is ignored,
-// so a double tap in the list cannot launch.
-const launchGuard = 500 * time.Millisecond
-
 const FavoritesUnavailableNotice = "Favorites unreadable; file kept"
 
 func (a *App) actDetails(k platform.Key) bool {
@@ -318,11 +314,8 @@ func (a *App) actDetails(k platform.Key) bool {
 	case platform.KeyBack:
 		a.screen = ScreenList
 	case platform.KeyEnter:
-		if a.cfg.TimerNow().Sub(a.detail.opened) < launchGuard {
-			return true // a second tap right after opening is not an action
-		}
 		a.screen = ScreenShot
-		a.pickSlot()
+		a.slot = 0
 	case platform.KeyUp:
 		if a.detail.pick > 0 {
 			a.detail.pick--

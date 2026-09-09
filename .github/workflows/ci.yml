@@ -41,6 +41,8 @@ jobs:
           go run ./cmd/mzharness -rot left -out out/t -images "" -logical
           go run ./cmd/mzharness -update-state testdata/update-running.json -out out/update-h -images "" -script "shot running; hold back 2200; shot cancel"
           go run ./cmd/mzharness -update-state testdata/update-running.json -rot left -logical -out out/update-t -images "" -script "shot running; hold back 2200; shot cancel"
+          go run ./cmd/mzharness -out out/search-h -images "" -script "type 1943; shot matches; type xyz; shot empty"
+          go run ./cmd/mzharness -rot left -logical -out out/search-t -images "" -script "type 1943; shot matches; type xyz; shot empty"
       - name: Verify golden renders
         run: python3 tools/render_golden.py out testdata/render_golden.json
       - uses: actions/upload-artifact@v4

@@ -22,30 +22,32 @@ import (
 // NEVER grabs: a grab held here would leave the user's controller dead until
 // a reboot. Main also turns the gamepad into keyboard events through its
 // "MiSTer virtual input" device while a script runs, so reading keyboards is
-// enough to support a controller. Kernel autorepeat (value 2) is dropped;
-// the app repeats on its own.
+// enough to support a controller. Navigation repeats in the app; printable
+// keyboard characters keep their normal kernel autorepeat.
 
 const (
-	evKey      = 1
-	keyEsc     = 1
-	keyTab     = 15
-	keyEnter   = 28
-	keySpace   = 57
-	keyF12     = 88
-	keyKPEnter = 96
-	keyHome    = 102
-	keyUp      = 103
-	keyPageUp  = 104
-	keyLeft    = 105
-	keyRight   = 106
-	keyEnd     = 107
-	keyDown    = 108
-	keyPageDn  = 109
-	btnStart   = 315 // BTN_START on a gamepad
+	evKey        = 1
+	keyEsc       = 1
+	keyBackspace = 14
+	keyTab       = 15
+	keyEnter     = 28
+	keySpace     = 57
+	keyF12       = 88
+	keyKPEnter   = 96
+	keyHome      = 102
+	keyUp        = 103
+	keyPageUp    = 104
+	keyLeft      = 105
+	keyRight     = 106
+	keyEnd       = 107
+	keyDown      = 108
+	keyPageDn    = 109
+	btnStart     = 315 // BTN_START on a gamepad
 )
 
 var keyMap = map[uint16]platform.Key{
-	keyUp: platform.KeyUp, keyDown: platform.KeyDown, keyLeft: platform.KeyLeft, keyRight: platform.KeyRight,
+	keyBackspace: platform.KeyBackspace,
+	keyUp:        platform.KeyUp, keyDown: platform.KeyDown, keyLeft: platform.KeyLeft, keyRight: platform.KeyRight,
 	keyEnter: platform.KeyEnter, keyKPEnter: platform.KeyEnter, keyEsc: platform.KeyBack, keySpace: platform.KeySpace,
 	keyTab: platform.KeyTab, keyPageUp: platform.KeyPageUp, keyPageDn: platform.KeyPageDown,
 	keyHome: platform.KeyHome, keyEnd: platform.KeyEnd, keyF12: platform.KeyScreenshot,
@@ -234,8 +236,9 @@ func (in *Input) read(d *device) {
 				continue
 			}
 			val := int32(binary.LittleEndian.Uint32(buf[i+12:]))
-			if val != 0 && val != 1 {
-				continue // autorepeat
+			text := d.keyboardText(code)
+			if val != 0 && val != 1 && !(val == 2 && text != 0) {
+				continue // navigation repeats in the app; typing uses keyboard repeat
 			}
 			sec := int64(int32(binary.LittleEndian.Uint32(buf[i:])))
 			usec := int64(int32(binary.LittleEndian.Uint32(buf[i+4:])))
@@ -251,7 +254,7 @@ func (in *Input) read(d *device) {
 			if !ok {
 				k = platform.KeyOther
 			}
-			ev := platform.Event{Key: k, Code: code, Pressed: val == 1, At: time.Unix(sec, usec*1000), Source: d.name}
+			ev := platform.Event{Key: k, Text: text, Code: code, Pressed: val != 0, At: time.Unix(sec, usec*1000), Source: d.name}
 			if ev.Pressed {
 				d.held[code] = k
 			} else {

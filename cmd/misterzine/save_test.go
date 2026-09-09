@@ -5,6 +5,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
 
@@ -134,19 +135,43 @@ func TestRotationIntentSurvivesSaves(t *testing.T) {
 			h.saveAll(false)
 			check("auto")
 			tap(platform.KeyHome) // Rotation
-			if rotation == gfx.RotLeft {
+			if rotation == gfx.RotRight {
 				tap(platform.KeyLeft)
-				h.saveAll(false)
-				check("right")
 			} else {
 				tap(platform.KeyRight)
-				h.saveAll(false)
-				if rotation == gfx.RotNone {
-					check("right")
-				} else {
-					check("left")
-				}
+			}
+			h.saveAll(false)
+			if rotation == gfx.RotNone {
+				check("right")
+			} else {
+				check("off")
 			}
 		})
+	}
+}
+
+func TestFiltersAutosaveAndRestore(t *testing.T) {
+	root := t.TempDir()
+	h := favoritesHost(root)
+	h.a = app.New(app.Config{PhysW: 320, PhysH: 240, FiltersChanged: func() { h.dirty = true }}, data.Ingest([]data.Row{{K: "game"}}, "test", time.Now()), nil)
+	choices := data.Filters{Install: data.InstallFound, FavOnly: true, Since: true, BaseOff: map[string]bool{"Console": true}, SrcOff: map[string]bool{"other": true}, RotOff: map[string]bool{"v": true}, PlrOff: map[string]bool{"4": true}, GenreOff: map[string]bool{"Racing": true}, DirectionsOff: map[string]bool{"4": true}, ButtonsOff: map[string]bool{"6": true}}
+	h.a.SetFilters(choices)
+	now := time.Now()
+	h.autosave(now, false)
+	h.autosave(now.Add(time.Second), false)
+	var state store.State
+	if err := store.Load(filepath.Join(root, "state.json"), &state); err != nil {
+		t.Fatal(err)
+	}
+	reopened := app.New(app.Config{PhysW: 320, PhysH: 240}, h.a.Data(), &state.Seen)
+	reopened.SetFilters(state.Filters)
+	if !reflect.DeepEqual(reopened.Filters(), choices) {
+		t.Fatalf("lost filter choices: %+v", reopened.Filters())
+	}
+	h.a.SetFilters(data.Filters{})
+	h.saveAll(false)
+	state = store.State{}
+	if err := store.Load(filepath.Join(root, "state.json"), &state); err != nil || state.Filters.Active() {
+		t.Fatalf("cleared filters returned: %+v %v", state.Filters, err)
 	}
 }

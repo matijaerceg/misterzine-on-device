@@ -232,6 +232,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 		Quit:            h.stop,
 		Version:         buildinfo.String(),
 		FavChanged:      func() { h.favDirty = true },
+		FiltersChanged:  func() { h.dirty = true },
 		SettingsChanged: func() { h.setDirty = true },
 		Action: func(kind, arg string) {
 			lg.Printf("action: %s %s", kind, arg)
@@ -292,9 +293,8 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	h.dirty = true // persist the new visit even without input
 	h.initUpdates()
 	h.a.SetPrefetch(h.settings.Prefetch)
-	// like the site, every visit starts at the top of the updated sort with
-	// no filters; only the last-look baseline and favorites carry over
-	_ = hasState
+	// Every visit starts in the updated sort, keeping the user's filter choices.
+	h.a.SetFilters(h.state.Filters)
 	h.a.SetNet(h.netLabel(ds))
 	if ini.Found && !ini.AnalogVisible() && !hasState { // first run only: HDMI users need nothing
 		h.a.Notice("CRT only? add direct_video=1 under [Menu], see README", 20*time.Second)
@@ -315,7 +315,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 				return map[string]any{
 					"version": buildinfo.String(), "screen": h.a.Screen().String(), "cursor": h.a.CursorKey(),
 					"sort": h.a.Sort().String(), "rows": len(h.a.Data().Rows), "fb": h.fb.Geometry().String(),
-					"rotation": h.a.Rotation().String(), "inset": fmt.Sprint(h.a.Inset()), "devices": h.input.Devices(),
+					"search": h.a.Search(), "filters": h.a.Filters(), "rotation": h.a.Rotation().String(), "inset": fmt.Sprint(h.a.Inset()), "devices": h.input.Devices(),
 					"sysfs": mister.SysfsMode(), "uptime": time.Since(t0).String(), "frames": h.stats.String(),
 					"update": h.a.UpdateState(),
 				}
@@ -621,7 +621,7 @@ func (h *host) pendingSave() bool {
 func (h *host) saveAll(final bool) {
 	if h.dirty || final {
 		st := store.State{Schema: 1,
-			LastOpen: h.now().UTC().Format(time.RFC3339), DataHash: h.a.Data().Hash}
+			LastOpen: h.now().UTC().Format(time.RFC3339), DataHash: h.a.Data().Hash, Filters: h.a.Filters()}
 		if s := h.a.Seen(); s != nil {
 			st.Seen = s.State
 		}

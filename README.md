@@ -4,7 +4,7 @@ The [misterzine](https://misterzine.fyi) release tracker, running on the MiSTer
 itself. It answers three questions from the Scripts menu, on a 240p CRT in
 horizontal or tate orientation, with a gamepad:
 
-- what shipped or got rebuilt, newest first (the same rows and order as the site),
+- what shipped or got rebuilt, newest first (the same default rows and order as the site),
 - is it on my card, and is my copy the current build,
 - launch it.
 
@@ -112,6 +112,15 @@ video_mode=640,54,56,106,224,16,0,28,13764
 
 Game cores are untouched either way. If you see MiSTer's own "modify
 MiSTer.ini ... vga_scaler=1" box when the app starts, this is what it means.
+
+## Keyboard find
+
+Start typing in the main list to narrow titles immediately. Matching ignores
+case and spaces, and combines with your Filters. The top bar shows the query
+and match count. Backspace edits; Esc/B clears the query before opening Options.
+Space adds a space once searching; the gamepad's Y still changes sorting.
+Typing is currently mapped for a US-layout keyboard. Search text clears when
+you restart MisterZine; choices on the Filters screen are saved between runs.
 
 ## Controls
 

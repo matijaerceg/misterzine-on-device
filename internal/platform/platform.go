@@ -32,13 +32,14 @@ const (
 	KeyScreenshot // F12 on a keyboard, or the debug channel
 	KeyStart      // the pad's Start button (read from the pad itself: Main does not forward it)
 	KeyOther      // anything else; Event.Code says what
+	KeyBackspace
 )
 
 var keyNames = map[Key]string{
 	KeyNone: "none", KeyUp: "up", KeyDown: "down", KeyLeft: "left", KeyRight: "right",
 	KeyEnter: "enter", KeyBack: "back", KeySpace: "space", KeyTab: "tab",
 	KeyPageUp: "pageup", KeyPageDown: "pagedown", KeyHome: "home", KeyEnd: "end",
-	KeyScreenshot: "screenshot", KeyStart: "start", KeyOther: "other",
+	KeyScreenshot: "screenshot", KeyStart: "start", KeyOther: "other", KeyBackspace: "backspace",
 }
 
 func (k Key) String() string {
@@ -72,6 +73,7 @@ func ParseKey(name string) Key {
 // Event is one key press or release.
 type Event struct {
 	Key     Key
+	Text    rune   // printable keyboard character; zero for gamepad/navigation input
 	Code    uint16 // raw evdev code
 	Pressed bool
 	At      time.Time

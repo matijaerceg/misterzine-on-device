@@ -58,6 +58,8 @@ type Config struct {
 	Alternatives func(r *data.Row) []string
 	// FavChanged fires after a favorite toggle so the host can persist.
 	FavChanged func()
+	// FiltersChanged fires when filter choices change so the host can persist them.
+	FiltersChanged func()
 	// SettingsChanged fires after rotation or safe-zone changes.
 	SettingsChanged func()
 	// Action asks the host for: prefetch (arg on/off), rescan, refresh, clearimg.
@@ -85,6 +87,7 @@ type App struct {
 
 	ds      *data.Dataset
 	mode    data.SortMode
+	query   string // keyboard title search, kept only for this session
 	filters data.Filters
 	order   []int // ds.Order(mode)
 	view    []int // after filters
@@ -93,10 +96,9 @@ type App struct {
 	topMark bool // "nothing new" marker on top
 
 	screen     Screen
-	cursor     int    // index into view
-	top        int    // first visible screen line
-	slot       int    // screen view slot index
-	slotName   string // preferred slot, kept across rows
+	cursor     int // index into view
+	top        int // first visible screen line
+	slot       int // screen view slot index
 	detail     detailState
 	panel      panelState
 	update     updater.State
@@ -113,9 +115,8 @@ type App struct {
 
 type detailState struct {
 	scroll int
-	pick   int       // launch entry cursor
-	from   Screen    // where B returns to
-	opened time.Time // A launches only after a short guard from here
+	pick   int    // launch entry cursor
+	from   Screen // where B returns to
 }
 
 // New builds an app around a dataset. stored is the persisted last-look
@@ -219,6 +220,15 @@ func (a *App) rebuild() {
 	fav := func(k string) bool { return a.cfg.Favorites[k] }
 	unseen := func(i int) bool { return a.seen != nil && a.seen.Unseen(&a.ds.Rows[i]) }
 	a.view = data.Apply(a.ds, a.order, &a.filters, a.cfg.Status, fav, unseen)
+	if q := searchText(a.query); q != "" {
+		matched := a.view[:0]
+		for _, i := range a.view {
+			if strings.Contains(searchText(a.ds.Der[i].Title), q) {
+				matched = append(matched, i)
+			}
+		}
+		a.view = matched
+	}
 	a.split = -1
 	a.topMark = false
 	if a.seen != nil && a.seen.MarkerOn(a.mode) {
@@ -276,6 +286,9 @@ func (a *App) Filters() data.Filters { return a.filters }
 func (a *App) SetFilters(f data.Filters) {
 	k := a.CursorKey()
 	a.filters = f
+	if a.cfg.FiltersChanged != nil {
+		a.cfg.FiltersChanged()
+	}
 	a.cursor = 0
 	a.rebuild()
 	if k != "" {
@@ -363,6 +376,12 @@ func (a *App) Handle(ev platform.Event) bool {
 	if a.screen == ScreenUpdate {
 		return a.handleUpdate(ev)
 	}
+	if ev.Pressed && ev.Text != 0 && a.screen == ScreenList {
+		// Space still sorts before a search begins; while searching it is text.
+		if ev.Text != ' ' || a.query != "" {
+			return a.typeSearch(ev.Text)
+		}
+	}
 	if ev.Key == platform.KeyNone || ev.Key == platform.KeyOther {
 		return false
 	}
@@ -387,6 +406,8 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 	switch a.screen {
 	case ScreenList:
 		switch k {
+		case platform.KeyBackspace:
+			return repeatStep
 		case platform.KeyUp, platform.KeyDown, platform.KeyLeft, platform.KeyRight:
 			return accel(a.cfg.Scroll, count) // pages at the row pace
 		}
@@ -485,6 +506,12 @@ func (a *App) act(k platform.Key) bool {
 func (a *App) actList(k platform.Key) bool {
 	n := len(a.view)
 	switch k {
+	case platform.KeyBackspace:
+		if a.query == "" {
+			return false
+		}
+		a.setSearch(a.query[:len(a.query)-1])
+		return true
 	case platform.KeyUp:
 		if a.cursor > 0 {
 			a.cursor--
@@ -510,7 +537,7 @@ func (a *App) actList(k platform.Key) bool {
 	case platform.KeyEnter:
 		if n > 0 {
 			a.screen = ScreenDetails
-			a.detail = detailState{from: ScreenList, opened: a.cfg.TimerNow()}
+			a.detail = detailState{from: ScreenList}
 			a.all = true
 		}
 		return true
@@ -524,6 +551,10 @@ func (a *App) actList(k platform.Key) bool {
 	case platform.KeyRight: // the top row of the next page
 		a.pageTo(a.top+a.lay.Lines, 1)
 	case platform.KeyBack:
+		if a.query != "" {
+			a.setSearch("")
+			return true
+		}
 		a.openPanel(ScreenOptions)
 		return true
 	default:

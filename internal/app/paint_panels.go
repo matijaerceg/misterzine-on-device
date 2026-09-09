@@ -159,9 +159,7 @@ func (a *App) filterEntries() []panelEntry {
 }
 
 func (a *App) optionsEntries() []panelEntry {
-	rot := map[gfx.Rotation]string{gfx.RotNone: "off", gfx.RotRight: "turned right", gfx.RotLeft: "turned left"}[a.rot]
-	_ = rot
-	rotIdx := map[gfx.Rotation]int{gfx.RotNone: 0, gfx.RotRight: 1, gfx.RotLeft: 2}[a.rot]
+	rotIdx := map[gfx.Rotation]int{gfx.RotLeft: 0, gfx.RotNone: 1, gfx.RotRight: 2}[a.rot]
 	scrollIdx := 1
 	for i, v := range ScrollValues {
 		if v == a.scrollText() {
@@ -177,7 +175,7 @@ func (a *App) optionsEntries() []panelEntry {
 		prefetchIdx = 1
 	}
 	return []panelEntry{
-		{text: "Rotation", kind: "rotation", vals: []string{"off", "turned right", "turned left"}, idx: rotIdx,
+		{text: "Rotation", kind: "rotation", vals: []string{"turned left", "horizontal", "turned right"}, idx: rotIdx,
 			help: "How your monitor is turned. The default follows osd_rotate in MiSTer.ini."},
 		{text: "Edit safe zone", kind: "inset",
 			help: "Margin kept clear of the screen edge (overscan): now " + itoa(a.cfg.SafeInsetX) + " px at the sides, " + itoa(a.cfg.SafeInsetY) + " px top and bottom. A opens the frame; fit it just inside the picture."},
@@ -462,9 +460,9 @@ func (a *App) stepValue(d int) bool {
 	}
 	switch e.kind {
 	case "rotation":
-		a.SetRotation([]gfx.Rotation{gfx.RotNone, gfx.RotRight, gfx.RotLeft}[i])
+		a.SetRotation([]gfx.Rotation{gfx.RotLeft, gfx.RotNone, gfx.RotRight}[i])
 		if a.cfg.Action != nil {
-			a.cfg.Action("rotation", []string{"off", "right", "left"}[i])
+			a.cfg.Action("rotation", []string{"left", "off", "right"}[i])
 		}
 	case "scroll":
 		a.cfg.Scroll = ScrollValues[i]

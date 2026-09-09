@@ -159,6 +159,12 @@ func main() {
 				die(err)
 			}
 			fmt.Println("wrote", p, "screen", a.Screen())
+		case "type":
+			for _, ch := range strings.TrimPrefix(tok, "type ") {
+				a.Handle(platform.Event{Text: ch, Pressed: true, At: clock, Source: "script"})
+				clock = clock.Add(30 * time.Millisecond)
+			}
+			present()
 		case "wait":
 			ms, _ := strconv.Atoi(f[1])
 			clock = advance(a, clock, time.Duration(ms)*time.Millisecond, present)

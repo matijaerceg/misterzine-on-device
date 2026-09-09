@@ -75,8 +75,6 @@ func (a *App) actShot(k platform.Key) bool {
 	case platform.KeyBack, platform.KeyEnter, platform.KeyTab:
 		// a leaf view: every way out goes back to the details it came from
 		a.screen = ScreenDetails
-		// Re-arm the A-press guard without losing the selected version or scroll.
-		a.detail.opened = a.cfg.TimerNow()
 	case platform.KeyLeft, platform.KeyRight:
 		row, _, _ := a.current()
 		if row != nil {
@@ -87,7 +85,6 @@ func (a *App) actShot(k platform.Key) bool {
 				} else {
 					a.slot = (a.slot + n - 1) % n
 				}
-				a.slotName = shotSlots(row)[a.slot]
 			}
 		}
 	default:
@@ -95,25 +92,4 @@ func (a *App) actShot(k platform.Key) bool {
 	}
 	a.all = true
 	return true
-}
-
-// pickSlot chooses the slot for the current row: the slot the viewer chose
-// last when the row has it, else the list's preference (snap, title, ingame).
-func (a *App) pickSlot() {
-	a.slot = 0
-	row, _, _ := a.current()
-	if row == nil {
-		return
-	}
-	slots := shotSlots(row)
-	want := a.slotName
-	if want == "" {
-		_, want = thumbSlot(row)
-	}
-	for i, s := range slots {
-		if s == want {
-			a.slot = i
-			return
-		}
-	}
 }

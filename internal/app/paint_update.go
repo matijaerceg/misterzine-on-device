@@ -239,7 +239,7 @@ func (a *App) paintUpdate(c *gfx.Canvas) {
 	}
 	hint := "B Options  " + gfx.ArrowUp + " " + gfx.ArrowDown + " log"
 	if s.Active() {
-		hint = "B hold: cancel  " + gfx.ArrowUp + " " + gfx.ArrowDown + " log"
+		hint = "Hold B cancel  " + gfx.ArrowUp + " " + gfx.ArrowDown + " log"
 	}
 	if s.Active() && s.CancelRequested {
 		hint = gfx.ArrowUp + " " + gfx.ArrowDown + " log"

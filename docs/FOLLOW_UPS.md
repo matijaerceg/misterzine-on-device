@@ -19,6 +19,28 @@ it is not a list of unrelated website work.
 
 ## Active verification / current scope
 
+- **September 8 user notes:** keyboard title find (case/space-insensitive,
+  composed with Filters; Backspace edits, B/Esc clears), saved filter choices,
+  rotation ordered left / horizontal / right, full "Hold B" accent, immediate
+  A-to-artwork, artwork starting at shot 1 on every open, and a light one-pixel
+  main-header separator. Search is session-only and uses US keyboard key mapping.
+  Local app/store tests, ARM vet, platform tests and focused host tests passed
+  on both MiSTers. Twenty deterministic renders inspected/gated. Live deployment
+  and user CRT acceptance to be recorded after installation.
+- **Framebuffer setting investigation (no behavior change):** official Main
+  September 7 `menu.cpp` gates F9 and Scripts framebuffer startup on `fb_terminal`;
+  `video.cpp::video_cmd` only acts once that framebuffer is active. The command
+  interface has no runtime option to enable it or change the analog routing
+  flags. `video_fb_enable` routes framebuffer to analog conditionally on
+  `direct_video`; `vga_scaler` is the other configured route. Thus this cannot
+  safely become an app-side toggle using the current supported interface.
+  A narrower `[misterzine]` INI section is a possible follow-up for MGL launches:
+  Main's INI matcher accepts both original and overridden core names. That still
+  needs configuration, careful section ordering and physical validation; it is
+  not implemented or promised for Scripts launches. No INI edits were made.
+  Rotation follows `osd_rotate` until explicitly overridden; both users' devices
+  currently match (Pi left/2, DE10 horizontal/0).
+
 - **Code review fixes: related batches.** Initially the user tested each batch;
   from batch 16 onward they authorized continuing with automated/device checks
   while unavailable. Keep visual acceptance pending rather than claiming it passed. Batch 1 (`efd13f9`)
@@ -191,7 +213,8 @@ it is not a list of unrelated website work.
     for up to 15 seconds after failure, and cleans up its helper on normal exit.
     A mock self-replacing failing executable validated restore and visible reason.
   - 33: navigation no longer schedules state.json rewrites; unused cursor/sort/
-    filter fields are omitted. New-visit/clock/data state still autosaves, as do
+    filter fields were omitted then; the later explicit user request above
+    restores filter persistence. New-visit/clock/data state still autosaves, as do
     settings/favorites independently. Every visit still starts with default view.
   - 46: reviewed, no isolated change: matches current website rounding. Coordinated
     date-ladder behavior remains deferred, not claimed as a fixed defect.

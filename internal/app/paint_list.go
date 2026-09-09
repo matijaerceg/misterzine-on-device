@@ -18,13 +18,29 @@ func (a *App) paintList(c *gfx.Canvas) {
 	a.paintRows(c)
 	a.paintScrollbar(c)
 	a.paintPane(c)
-	a.paintHint(c, "A details  Y sort  X Filters  B Options")
+	hint := "A details  Y sort  X Filters  B Options"
+	if a.query != "" {
+		hint = "A details  X Filters  B clear find"
+	}
+	a.paintHint(c, hint)
 }
 
 func (a *App) paintStatus(c *gfx.Canvas) {
 	l := &a.lay
 	c.Fill(l.Status, gen.Eva.Surface)
+	c.HLine(l.Status.Min.X, l.Status.Max.X-1, l.Status.Max.Y-1, gen.Eva.Fg)
 	y := l.Status.Min.Y + 2
+	if a.query != "" {
+		count := itoa(len(a.view)) + " matches"
+		c.TextRight(l.Status.Max.X-2, y, a.sm, count, gen.Eva.Muted)
+		cols := a.sm.Cols(l.Status.Dx()-8-a.sm.Width(count)) - len("Find: ") - 1
+		query := a.query
+		if len(query) > cols {
+			query = query[len(query)-max(0, cols):]
+		}
+		c.Text(l.Status.Min.X+2, y, a.sm, "Find: "+query+"_", gen.Eva.Accent)
+		return
+	}
 	left := "by: latest update"
 	if a.mode == data.SortDebut {
 		left = "by: MiSTer debut"
@@ -71,6 +87,10 @@ func (a *App) hintLine(c *gfx.Canvas, x, y, w int, s string) {
 			continue
 		}
 		btn, rest, _ := strings.Cut(chunk, " ")
+		if btn == "Hold" {
+			button, tail, _ := strings.Cut(rest, " ")
+			btn, rest = btn+" "+button, tail
+		}
 		if isArrow(btn) { // a pair of arrows is one button
 			if b2, r2, ok := strings.Cut(rest, " "); ok && isArrow(b2) {
 				btn, rest = btn+" "+b2, r2
@@ -89,6 +109,9 @@ func isArrow(s string) bool {
 }
 
 func (a *App) emptyListMessage() string {
+	if a.query != "" {
+		return "no matches, B: clear find"
+	}
 	if a.filters.Since {
 		if a.seen == nil || a.seen.BaseRows == nil {
 			return "no previous visit yet"

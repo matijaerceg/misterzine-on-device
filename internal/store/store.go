@@ -75,6 +75,7 @@ type State struct {
 	LastOpen string          `json:"last_open"`
 	DataHash string          `json:"data_hash"`
 	Seen     data.SeenRecord `json:"seen"`
+	Filters  data.Filters    `json:"filters"`
 }
 
 // FavEntry is one favorite with its change time.

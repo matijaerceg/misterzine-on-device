@@ -63,11 +63,12 @@ func TestShotReturnPreservesSelectedVersion(t *testing.T) {
 				if a.Screen() != ScreenDetails || a.detail.pick != 2 || a.detail.scroll != scroll {
 					t.Errorf("return lost details state: screen=%v pick=%d scroll=%d (wanted %d)", a.Screen(), a.detail.pick, a.detail.scroll, scroll)
 				}
-				// Returning with A must still absorb a quick second press.
+				// A is artwork now: even an immediate new press should work.
 				tap(platform.KeyEnter)
-				if a.Screen() != ScreenDetails {
-					t.Fatal("return did not re-arm the short A-press guard")
+				if a.Screen() != ScreenShot || a.slot != 0 {
+					t.Fatal("immediate A did not reopen the first shot")
 				}
+				tap(platform.KeyBack)
 				tap(platform.KeyStart)
 				if launched != alts[1] {
 					t.Fatalf("Start launched %q instead of selected version %q", launched, alts[1])
