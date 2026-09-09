@@ -194,7 +194,7 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "Prefetch shots" + a.progressText(), kind: "prefetch", vals: []string{"off", "on"}, idx: prefetchIdx,
 			help: "Download every screenshot in the background (about 55 MB) so browsing never waits; the tally counts up as they land. Off: only what you look at."},
 		{text: "Main menu launcher", kind: "launcher", vals: []string{"off", "on"}, idx: launcherIdx,
-			help: "Show MisterZine in the MiSTer main menu. Off removes the entry when you return to Menu. You can still open MisterZine from Scripts and turn this back on."},
+			help: "Show MisterZine in the MiSTer main menu. Off removes the entry when you return to Menu. Run MisterZine Setup in Scripts to restore it."},
 		{text: "Clear image cache", kind: "clearimg",
 			help: "Delete the downloaded screenshots and system photos; they come back as you browse."},
 		{text: "Quit MisterZine", kind: "quit",
