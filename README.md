@@ -10,11 +10,14 @@ to your display, with screenshots, favorites, filters, and keyboard search.
 It follows new releases and updated builds across the catalogue. The interface
 uses a 320x240 framebuffer, with horizontal and rotated CRT layouts.
 
-| Horizontal browsing | Details in tate |
-|---|---|
-| ![Horizontal release list](docs/screenshots/list.png) | ![Details on a vertically rotated display](docs/screenshots/details-tate.png) |
-| **Artwork** | **Safe-zone adjustment** |
-| ![Full-screen game artwork](docs/screenshots/artwork.png) | ![Safe-zone calibration screen](docs/screenshots/safe-zone.png) |
+<p>
+  <img src="docs/screenshots/list.png" alt="Horizontal release list" width="320" height="240">
+  <img src="docs/screenshots/details-tate.png" alt="Details in tate" width="240" height="320">
+  <img src="docs/screenshots/artwork.png" alt="Full-screen game artwork" width="320" height="240">
+  <img src="docs/screenshots/safe-zone.png" alt="Safe-zone adjustment" width="320" height="240">
+  <img src="docs/screenshots/options.png" alt="Options with the screensaver setting selected" width="320" height="240">
+  <img src="docs/screenshots/filters-tate.png" alt="Filters in tate" width="240" height="320">
+</p>
 
 ## Install once
 

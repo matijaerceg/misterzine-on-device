@@ -61,6 +61,11 @@ go run ./cmd/mzharness -images /path/to/misterzine/docs/images -out preview
 go run ./cmd/mzharness -rot left -logical -images /path/to/misterzine/docs/images -out preview-tate
 ```
 
+README screenshots are individual PNGs enlarged to 2x with nearest-neighbor
+resampling. Their HTML dimensions stay at 320x240 (240x320 in tate), providing
+sharp pixels on 2x displays. Keep the images inline so the gallery wraps with the
+available width; do not combine views into one image or put them in a table.
+
 ## Device tools and debugging
 
 Set `PI` to your device's IP or SSH hostname when using `tools/dev.sh`; Go
