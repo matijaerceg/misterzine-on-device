@@ -152,9 +152,18 @@ it is not a list of unrelated website work.
   preservation, deduplicated diagnostics, and leaving a missing-status dead run.
   Cold/failure cases use temporary fixtures, never the devices' actual updater.
   Visual/controller acceptance for batches 16–18 remains pending.
+  The user said batch 18 seems fine and asked to continue.
+  Batch 19 addresses the old resident launcher after updates (26) and Menu
+  restoration while an updater survives the UI (62). Idle launchers detect an
+  atomically replaced executable and re-exec with their PID unchanged, only when
+  no updater is active and no MisterZine console session is owned. Missing or
+  invalid replacements keep the current watcher alive, with retries after errors.
+  Menu restoration waits for managed/external updaters and never replaces a
+  different selected core. Host suites passed on both devices; replacement
+  detection was also tested on both SD cards. Live upgrade/reopen checks pending.
   Remaining review scope is roughly two dozen items, including partial findings
   and items needing triage (not two dozen confirmed bugs): 4/5, 11, 14/15, 21,
-  26/27, 33/35, 46/50/51/52/53/54, 59, 61/62/63, 70/71. This excludes separate
+  27, 33/35, 46/50/51/52/53/54, 59, 61/63, 70/71. This excludes separate
   product earmarks and release/long-idle validation. Estimate 6–8 further related
   batches; re-evaluate findings against current code before choosing changes.
   Priorities guide the batches, with related fixes grouped so each remains

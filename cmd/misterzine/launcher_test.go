@@ -3,7 +3,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -171,5 +173,67 @@ func TestWatcherStopHelper(t *testing.T) {
 	}
 	if err := os.WriteFile(filepath.Join(dir, "menu-restored"), []byte("ok"), 0644); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestWatcherDetectsAtomicBinaryReplacement(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "binary")
+	if err := os.WriteFile(path, []byte("old"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	running, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if binaryReplaced(path, running) {
+		t.Fatal("unchanged binary triggered restart")
+	}
+	if err := os.WriteFile(path+".new", []byte("new"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(path+".new", path); err != nil {
+		t.Fatal(err)
+	}
+	if !binaryReplaced(path, running) {
+		t.Fatal("atomic replacement was missed")
+	}
+	if err := os.Remove(path); err != nil {
+		t.Fatal(err)
+	}
+	if binaryReplaced(path, running) {
+		t.Fatal("missing binary triggered restart")
+	}
+	if err := os.Mkdir(path, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if binaryReplaced(path, running) {
+		t.Fatal("directory triggered restart")
+	}
+}
+
+func TestMenuRestoreWaitsForUpdateAndRespectsCoreChanges(t *testing.T) {
+	for _, nextCore := range []string{"misterzine", "SNES", "MENU", ""} {
+		t.Run(nextCore, func(t *testing.T) {
+			var logs bytes.Buffer
+			polls, waits := 0, 0
+			restore := waitForMenuRestore(log.New(&logs, "", 0), func() (string, bool) {
+				polls++
+				if polls <= 3 {
+					return "misterzine", true
+				}
+				return nextCore, false
+			}, func(time.Duration) {
+				waits++
+				if waits > 3 {
+					t.Fatal("never stopped waiting")
+				}
+			})
+			if waits != 3 || restore != (nextCore == "misterzine") {
+				t.Fatalf("restore=%v waits=%d", restore, waits)
+			}
+			if strings.Count(logs.String(), "waiting for updater") != 1 {
+				t.Fatal("wait logging missing or repeated")
+			}
+		})
 	}
 }

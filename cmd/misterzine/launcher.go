@@ -326,6 +326,9 @@ func watch() int {
 	os.WriteFile(pidFile, []byte(strconv.Itoa(os.Getpid())), 0644)
 	defer removeWatcherPID(pidFile, os.Getpid())
 	lg.Printf("watch: started, pid %d", os.Getpid())
+	exe, _ := os.Executable()
+	runningBinary, _ := os.Stat("/proc/self/exe")
+	nextBinaryCheck := time.Now()
 	warmCache()
 	var kbd *mister.VKeyboard
 	defer func() {
@@ -346,7 +349,24 @@ func watch() int {
 			continue
 		}
 		b, err := os.ReadFile(corenameFile)
-		if err != nil || strings.TrimSpace(string(b)) != "misterzine" {
+		if err != nil {
+			continue
+		}
+		if strings.TrimSpace(string(b)) != "misterzine" {
+			if time.Now().After(nextBinaryCheck) {
+				nextBinaryCheck = time.Now().Add(2 * time.Second)
+				if binaryReplaced(exe, runningBinary) && !launcherUpdateActive() {
+					lg.Printf("watch: binary replaced; restarting launcher")
+					if kbd != nil {
+						kbd.Close()
+						kbd = nil
+					}
+					if err := syscall.Exec(exe, []string{exe, "launcher", "watch"}, os.Environ()); err != nil {
+						lg.Printf("watch: replacement could not start: %v; keeping current launcher", err)
+						nextBinaryCheck = time.Now().Add(30 * time.Second)
+					}
+				}
+			}
 			continue
 		}
 		handled = st.ModTime()
@@ -379,10 +399,15 @@ func watch() int {
 			// the app itself loaded a core: leave it alone
 			os.Remove(launchedFile)
 			lg.Printf("watch: the app launched %s; not touching the menu", strings.TrimSpace(string(b)))
-		} else if f, err := os.OpenFile("/dev/MiSTer_cmd", os.O_WRONLY|syscall.O_NONBLOCK, 0); err == nil {
-			// back to a plain menu: resets CORENAME so this does not retrigger
-			f.WriteString("load_core /media/fat/menu.rbf\n")
-			f.Close()
+		} else if waitForMenuRestore(lg, func() (string, bool) {
+			b, _ := os.ReadFile(corenameFile)
+			return strings.TrimSpace(string(b)), launcherUpdateActive()
+		}, time.Sleep) {
+			if f, err := os.OpenFile("/dev/MiSTer_cmd", os.O_WRONLY|syscall.O_NONBLOCK, 0); err == nil {
+				// back to a plain menu: resets CORENAME so this does not retrigger
+				f.WriteString("load_core /media/fat/menu.rbf\n")
+				f.Close()
+			}
 		}
 		// wait for CORENAME to change before watching again
 		for i := 0; i < 40; i++ {
@@ -434,4 +459,39 @@ func runFromMenu(lg *log.Logger, kbd *mister.VKeyboard) error {
 	err := cmd.Run()
 	lg.Printf("watch: app finished after %v (err=%v)", time.Since(t0).Round(time.Second), err)
 	return nil
+}
+
+// The idle launcher may be an old inode after Downloader replaced the file.
+// Missing or non-regular replacements leave the working process alone.
+func binaryReplaced(path string, running os.FileInfo) bool {
+	if running == nil || path == "" {
+		return false
+	}
+	current, err := os.Stat(path)
+	return err == nil && current.Mode().IsRegular() && !os.SameFile(running, current)
+}
+
+func launcherUpdateActive() bool {
+	s, _ := updater.Read(filepath.Dir(pidFile))
+	return s.Active() || updater.OtherScript()
+}
+
+// Keep the updater's console/core intact after the UI exits. If another core
+// has already been selected, it owns the screen and must not be replaced.
+func waitForMenuRestore(lg *log.Logger, probe func() (string, bool), pause func(time.Duration)) bool {
+	announced := false
+	for {
+		core, active := probe()
+		if core != "misterzine" {
+			return false
+		}
+		if !active {
+			return true
+		}
+		if !announced {
+			lg.Printf("watch: waiting for updater before restoring Menu")
+			announced = true
+		}
+		pause(500 * time.Millisecond)
+	}
 }
