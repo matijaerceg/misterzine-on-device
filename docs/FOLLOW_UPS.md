@@ -19,8 +19,9 @@ it is not a list of unrelated website work.
 
 ## Active verification / current scope
 
-- **Code review fixes: related batches, with user testing between them.** The user must test each
-  batch before implementation proceeds to the next. Batch 1 (`efd13f9`)
+- **Code review fixes: related batches.** Initially the user tested each batch;
+  from batch 16 onward they authorized continuing with automated/device checks
+  while unavailable. Keep visual acceptance pending rather than claiming it passed. Batch 1 (`efd13f9`)
   fixes image-worker shutdown. The user confirmed it works on DE10-Nano;
   its regression tests also passed on MiSTer Pi.
   Batch 2 (`2c9389a`) protects favorites after read errors and fixes the
@@ -140,6 +141,22 @@ it is not a list of unrelated website work.
   startup handoff/release and log-tail replacement regressions. Protected/restart
   renders were checked in horizontal and tate orientations. No real Update All
   was run for these UI changes. Visual/controller acceptance remains pending.
+  Batch 18 addresses unreadable update status (64) and slow supervisor startup
+  being mislabeled as failure (65). Status read errors are logged once per repeated
+  error and shown as a brief notice; missing history on first install stays quiet.
+  Unreadable records are preserved. A known active run keeps its last state while
+  the worker lives; a vanished worker becomes an interruption instead of leaving
+  the modal stuck. A live supervisor that has not yet published status after the
+  startup wait returns its real run ID/PID as starting and reconnects via polling.
+  Tests cover delayed startup, supervisor exit before status, corrupt checkpoint
+  preservation, deduplicated diagnostics, and leaving a missing-status dead run.
+  Cold/failure cases use temporary fixtures, never the devices' actual updater.
+  Visual/controller acceptance for batches 16–18 remains pending.
+  Remaining review scope is roughly two dozen items, including partial findings
+  and items needing triage (not two dozen confirmed bugs): 4/5, 11, 14/15, 21,
+  26/27, 33/35, 46/50/51/52/53/54, 59, 61/62/63, 70/71. This excludes separate
+  product earmarks and release/long-idle validation. Estimate 6–8 further related
+  batches; re-evaluate findings against current code before choosing changes.
   Priorities guide the batches, with related fixes grouped so each remains
   small and testable; this is not a strict traversal of the review's numbering.
 - **DE10 long idle stability:** short transitions passed on latest Main

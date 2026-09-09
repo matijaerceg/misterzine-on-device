@@ -131,7 +131,11 @@ func Start(root, card string) (State, error) {
 			return s, nil
 		}
 	}
-	return State{}, fmt.Errorf("updater is starting; open Update All again to reconnect")
+	s := State{ID: id, PID: cmd.Process.Pid, Boot: bootID(), Status: "starting", Label: "Starting Update All", Message: "Supervisor started; waiting for status", Started: time.Now()}
+	if workerAlive(s) {
+		return s, nil
+	}
+	return State{}, fmt.Errorf("updater supervisor exited before publishing status; check the update log and card")
 }
 
 func Cancel(root, id string) error {

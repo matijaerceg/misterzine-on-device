@@ -43,51 +43,52 @@ const (
 )
 
 type host struct {
-	root, card    string
-	lg            *log.Logger
-	console       *mister.Console
-	cmd           *mister.Cmd
-	fb            *mister.FB
-	input         *mister.Input
-	a             *app.App
-	settings      store.Settings
-	state         store.State
-	favs          store.Favorites
-	events        chan platform.Event
-	uiRun         chan func()
-	quit          chan struct{}
-	launch        string
-	dirty         bool // state needs saving
-	stopRequested atomic.Bool
-	lostCh        chan struct{} // the screen-lost probe fired
-	logInput      bool          // debug: log every input event
-	lastEv        time.Time
-	checkFailed   atomic.Bool
-	dataUpdated   time.Time // the data's build time, for the clock check
-	slowLog       time.Time
-	stats         frameStats
-	favDirty      bool
-	favLoadFailed bool // preserve a favorites file we could not read
-	saveAt        time.Time
-	saveRetry     bool
-	setDirty      bool
-	clock         platform.Clock
-	client        *fetch.Client
-	img           *images.Service
-	index         *scan.Index
-	status        []data.Status
-	alts          []scan.Alt
-	scanCh        chan scanResult
-	timeSample    atomic.Pointer[serverClockSample]
-	checkRunning  bool // UI-owned; held until the result is installed
-	checkPending  bool
-	nextCheck     time.Time
-	scanRunning   bool
-	scanPending   bool
-	netCh         chan string
-	updates       chan updateResult
-	updatePending bool
-	updateRunning bool
+	root, card      string
+	lg              *log.Logger
+	console         *mister.Console
+	cmd             *mister.Cmd
+	fb              *mister.FB
+	input           *mister.Input
+	a               *app.App
+	settings        store.Settings
+	state           store.State
+	favs            store.Favorites
+	events          chan platform.Event
+	uiRun           chan func()
+	quit            chan struct{}
+	launch          string
+	dirty           bool // state needs saving
+	stopRequested   atomic.Bool
+	lostCh          chan struct{} // the screen-lost probe fired
+	logInput        bool          // debug: log every input event
+	lastEv          time.Time
+	checkFailed     atomic.Bool
+	dataUpdated     time.Time // the data's build time, for the clock check
+	slowLog         time.Time
+	stats           frameStats
+	favDirty        bool
+	favLoadFailed   bool // preserve a favorites file we could not read
+	saveAt          time.Time
+	saveRetry       bool
+	setDirty        bool
+	clock           platform.Clock
+	client          *fetch.Client
+	img             *images.Service
+	index           *scan.Index
+	status          []data.Status
+	alts            []scan.Alt
+	scanCh          chan scanResult
+	timeSample      atomic.Pointer[serverClockSample]
+	checkRunning    bool // UI-owned; held until the result is installed
+	checkPending    bool
+	nextCheck       time.Time
+	scanRunning     bool
+	scanPending     bool
+	netCh           chan string
+	updates         chan updateResult
+	updatePending   bool
+	updateReadError string // UI-owned; suppress repeated status-read diagnostics
+	updateRunning   bool
 }
 
 func main() {

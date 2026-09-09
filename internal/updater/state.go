@@ -86,6 +86,12 @@ func Read(root string) (State, error) {
 	if err = json.Unmarshal(b, &s); err != nil {
 		return s, err
 	}
+	return ReconcileWorker(s), nil
+}
+
+// ReconcileWorker keeps a known run usable when its status file cannot be read.
+// A missing supervisor is an interruption, never evidence of success.
+func ReconcileWorker(s State) State {
 	if s.Active() && !workerAlive(s) {
 		s.Status = "interrupted"
 		s.Message = "Updater stopped or system restarted. Check the log."
@@ -100,7 +106,7 @@ func Read(root string) (State, error) {
 			}
 		}
 	}
-	return s, nil
+	return s
 }
 
 var ansi = regexp.MustCompile(`\x1b\[[0-?]*[ -/]*[@-~]|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)`)

@@ -14,6 +14,9 @@ import (
 
 func TestMain(m *testing.M) {
 	if len(os.Args) == 5 && os.Args[1] == "update-worker" {
+		if delay, err := time.ParseDuration(os.Getenv("MZ_TEST_WORKER_DELAY")); err == nil {
+			time.Sleep(delay)
+		}
 		os.Exit(Worker(os.Args[2], os.Args[3], os.Args[4]))
 	}
 	if len(os.Args) == 4 && os.Args[1] == "test-start" {
@@ -267,5 +270,32 @@ func TestRestartRecovery(t *testing.T) {
 	s, err := Read(root)
 	if err != nil || s.Status != "restarted" || s.Reboot {
 		t.Fatalf("%+v %v", s, err)
+	}
+}
+
+func TestSlowWorkerStartupRemainsActive(t *testing.T) {
+	t.Setenv("MZ_TEST_WORKER_DELAY", "4s")
+	root, card := fakeCard(t, "echo 'Success! Log saved.'\n")
+	s, err := Start(root, card)
+	if err != nil || !s.Active() || s.ID == "" || s.PID == 0 {
+		t.Fatalf("slow live supervisor mislabeled: %+v, %v", s, err)
+	}
+	if !ReconcileWorker(s).Active() {
+		t.Fatal("live supervisor treated as interrupted")
+	}
+	done := waitState(t, root, func(s State) bool { return s.Status == "completed" })
+	if done.ID != s.ID {
+		t.Fatal("lost run identity while reconnecting")
+	}
+}
+
+func TestWorkerExitBeforeStatusIsFailure(t *testing.T) {
+	root, card := fakeCard(t, "echo 'Success! Log saved.'\n")
+	if err := os.MkdirAll(LogPath(root), 0700); err != nil {
+		t.Fatal(err)
+	}
+	s, err := Start(root, card)
+	if err == nil || s.Active() {
+		t.Fatalf("dead supervisor treated as live: %+v, %v", s, err)
 	}
 }

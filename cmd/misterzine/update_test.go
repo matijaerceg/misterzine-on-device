@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -78,5 +79,65 @@ func TestRecoveryDismissalSurvivesRelaunch(t *testing.T) {
 				t.Fatal("an old acknowledgement hid a later interrupted run")
 			}
 		})
+	}
+}
+
+func TestUnreadableUpdateStatusIsLoggedWithoutReplacingEvidence(t *testing.T) {
+	root := t.TempDir()
+	path := updater.StatePath(root)
+	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+		t.Fatal(err)
+	}
+	original := []byte("broken checkpoint {")
+	if err := os.WriteFile(path, original, 0600); err != nil {
+		t.Fatal(err)
+	}
+	h := recoveryHost(t, root)
+	var logs bytes.Buffer
+	h.lg = log.New(&logs, "", 0)
+	h.updateReadError = ""
+	_, err := updater.Read(root)
+	if err == nil {
+		t.Fatal("fixture should fail to decode")
+	}
+	for i := 0; i < 4; i++ {
+		h.receiveUpdate(updateResult{err: err})
+	}
+	if strings.Count(logs.String(), "update status:") != 1 {
+		t.Fatalf("missing or repeated diagnostic: %s", logs.String())
+	}
+	after, readErr := os.ReadFile(path)
+	if readErr != nil || !bytes.Equal(after, original) {
+		t.Fatal("read failure replaced checkpoint")
+	}
+	if h.a.Screen() != app.ScreenList {
+		t.Fatal("unreadable history opened a fake failed run")
+	}
+	h.receiveUpdate(updateResult{state: updater.State{ID: "recovered", Status: "completed"}})
+	if h.updateReadError != "" {
+		t.Fatal("successful read did not reset diagnostic latch")
+	}
+}
+
+func TestMissingUpdateStatusDoesNotStrandDeadRun(t *testing.T) {
+	h := recoveryHost(t, t.TempDir())
+	var logs bytes.Buffer
+	h.lg = log.New(&logs, "", 0)
+	h.receiveUpdate(updateResult{err: os.ErrNotExist})
+	if logs.Len() != 0 {
+		t.Fatal("first install warned about missing history")
+	}
+	h.updateRunning = true
+	h.a.SetUpdate(updater.State{ID: "dead-run", PID: 0, Status: "starting"}, true)
+	h.receiveUpdate(updateResult{err: os.ErrNotExist})
+	if h.updateRunning || h.a.UpdateState().Status != "interrupted" {
+		t.Fatal("dead startup remained active")
+	}
+	if logs.Len() == 0 {
+		t.Fatal("lost active status was not logged")
+	}
+	h.a.Handle(platform.Event{Key: platform.KeyBack, Pressed: true, At: time.Now()})
+	if h.a.Screen() != app.ScreenOptions {
+		t.Fatal("interrupted result remained modal")
 	}
 }

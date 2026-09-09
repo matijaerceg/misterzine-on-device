@@ -3,6 +3,7 @@
 package main
 
 import (
+	"os"
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/updater"
@@ -21,6 +22,8 @@ func (h *host) initUpdates() {
 		h.a.SetUpdate(s, updater.ShouldOpen(h.root, s))
 		h.updateRunning = s.Active()
 		h.img.SetPaused(h.updateRunning)
+	} else {
+		h.updateReadFailure(err)
 	}
 	go func() {
 		t := time.NewTicker(500 * time.Millisecond)
@@ -30,11 +33,10 @@ func (h *host) initUpdates() {
 			case <-h.quit:
 				return
 			case <-t.C:
-				if s, err := updater.Read(h.root); err == nil {
-					select {
-					case h.updates <- updateResult{state: s}:
-					default:
-					}
+				s, err := updater.Read(h.root)
+				select {
+				case h.updates <- updateResult{state: s, err: err}:
+				default:
 				}
 			}
 		}
@@ -82,6 +84,11 @@ func (h *host) receiveUpdate(u updateResult) {
 	if h.updatePending && !u.start {
 		return
 	}
+	if !u.start && u.err != nil {
+		h.updateReadFailure(u.err)
+		return
+	}
+	h.updateReadError = ""
 	if u.start {
 		h.updatePending = false
 	}
@@ -95,8 +102,29 @@ func (h *host) receiveUpdate(u updateResult) {
 	if current := h.a.UpdateState(); !u.start && current.Active() && current.ID != "" && u.state.ID != current.ID {
 		return // a queued snapshot from before this run started
 	}
-	h.a.SetUpdate(u.state, u.start || u.state.Active() && !h.updateRunning)
-	active := u.state.Active()
+	h.applyUpdate(u.state, u.start || u.state.Active() && !h.updateRunning)
+}
+
+func (h *host) updateReadFailure(err error) {
+	if os.IsNotExist(err) && !h.updateRunning {
+		return
+	}
+	if message := err.Error(); message != h.updateReadError {
+		h.updateReadError = message
+		h.lg.Printf("update status: %v", err)
+		h.a.Notice("Update status unreadable; see log", 8*time.Second)
+	}
+	if h.updateRunning {
+		// Keep the last status while its supervisor lives. If it has exited, do not
+		// strand the user in a modal waiting for a file that may never be written.
+		s := updater.ReconcileWorker(h.a.UpdateState())
+		h.applyUpdate(s, false)
+	}
+}
+
+func (h *host) applyUpdate(s updater.State, open bool) {
+	h.a.SetUpdate(s, open)
+	active := s.Active()
 	finished := h.updateRunning && !active
 	if active != h.updateRunning {
 		h.img.SetPaused(active)
