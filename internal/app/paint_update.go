@@ -21,6 +21,7 @@ type updateView struct {
 	cancelSent bool
 	scroll     int
 	lines      int
+	log        []string // last painted log; held still while scrolled back
 	error      string
 }
 
@@ -42,17 +43,25 @@ func (a *App) SetUpdate(s updater.State, open bool) {
 	if !open && reflect.DeepEqual(a.update, s) {
 		return
 	}
-	if a.update.ID != s.ID {
+	newRun := a.update.ID != s.ID
+	pendingStart := a.screen == ScreenUpdate && a.update.ID == "" && a.update.Active() && s.Active()
+	if newRun {
+		held := a.updateView.backAt
 		a.updateView = updateView{now: a.cfg.TimerNow()}
+		if pendingStart {
+			a.updateView.backAt = held
+		}
 	}
 	a.update = s
 	if !s.Active() {
 		a.updateView.backAt = time.Time{}
 	}
 	if open {
+		if a.screen != ScreenUpdate || (newRun && !pendingStart) {
+			a.rep = repeater{}
+			a.down = map[platform.Key]bool{}
+		}
 		a.screen = ScreenUpdate
-		a.rep = repeater{}
-		a.down = map[platform.Key]bool{}
 	}
 	if a.screen == ScreenUpdate {
 		a.all = true
@@ -86,7 +95,7 @@ func (a *App) handleUpdate(ev platform.Event) bool {
 			if a.update.RecoveryNotice() && a.cfg.Action != nil {
 				a.cfg.Action("update-dismiss", a.update.ID)
 			}
-		} else if !a.update.CancelRequested && !a.updateView.cancelSent && a.update.ID != "" {
+		} else if !a.update.CancelRequested && !a.updateView.cancelSent {
 			a.updateView.backAt = ev.At
 			a.updateView.error = ""
 		}
@@ -111,7 +120,7 @@ func (a *App) tickUpdate(now time.Time) bool {
 		return false
 	}
 	v := &a.updateView
-	if !v.backAt.IsZero() && !v.cancelSent && now.Sub(v.backAt) >= cancelHold && a.update.Active() {
+	if !v.backAt.IsZero() && !v.cancelSent && now.Sub(v.backAt) >= cancelHold && a.update.Active() && a.update.ID != "" {
 		v.cancelSent = true
 		if a.cfg.Action != nil {
 			a.cfg.Action("update-cancel", a.update.ID)
@@ -140,6 +149,12 @@ func (a *App) paintUpdate(c *gfx.Canvas) {
 	}
 	c.TextRight(l.Status.Max.X-2, l.Status.Min.Y+2, a.sm, status, gen.Eva.Fg)
 	y := l.Body.Min.Y + 3
+	if s.Active() && s.Protected {
+		r := image.Rect(l.Body.Min.X, y, l.Body.Max.X, y+12)
+		c.Fill(r, gen.Eva.Surface)
+		c.Text(r.Min.X+3, y+2, a.sm, gfx.Fit("System write: keep power on", a.sm.Cols(r.Dx()-6)), gen.Eva.Accent)
+		y += 15
+	}
 	if s.Reboot {
 		r := image.Rect(l.Body.Min.X, y, l.Body.Max.X, y+12)
 		c.Fill(r, gen.Eva.Surface)
@@ -172,13 +187,18 @@ func (a *App) paintUpdate(c *gfx.Canvas) {
 		age = max(0, int(v.now.Sub(s.LastOutput).Seconds()))
 	}
 	elapsed := fmt.Sprintf("%d:%02d elapsed", s.Elapsed/60, s.Elapsed%60)
-	if s.Active() {
+	if v.scroll > 0 {
+		elapsed += "  log paused"
+	} else if s.Active() {
 		elapsed += fmt.Sprintf("  output %ds ago", age)
 	}
 	c.Text(l.Body.Min.X+2, y, a.sm, gfx.Fit(elapsed, a.sm.Cols(l.Body.Dx()-4)), gen.Eva.Muted)
 	y += a.sm.H + 3
 	message := s.Summary()
-	if s.Active() && v.cancelSent && !s.CancelRequested {
+	if s.Active() && s.Protected && (s.CancelRequested || v.cancelSent) {
+		message = "Cancel queued until system write ends"
+	}
+	if s.Active() && v.cancelSent && !s.CancelRequested && !s.Protected {
 		message = "Requesting cancellation"
 	}
 	if s.Active() && v.error != "" {
@@ -196,16 +216,19 @@ func (a *App) paintUpdate(c *gfx.Canvas) {
 	box := image.Rect(l.Body.Min.X, y, l.Body.Max.X, l.Body.Max.Y-2)
 	c.Box(box, gen.Eva.Line)
 	v.lines = max(1, (box.Dy()-4)/(a.sm.H+1))
-	var lines []string
-	for _, line := range s.Lines {
-		if strings.Trim(line, "#=-_*+|│─━═╔╗╚╝╠╣╦╩╬ ") == "" {
-			continue // keep decorative separators out of the small CRT log view
+	if v.scroll == 0 || v.log == nil {
+		v.log = nil
+		for _, line := range s.Lines {
+			if strings.Trim(line, "#=-_*+|│─━═╔╗╚╝╠╣╦╩╬ ") == "" {
+				continue
+			}
+			v.log = append(v.log, gfx.Wrap(strings.TrimSpace(line), a.sm.Cols(box.Dx()-6), 20)...)
 		}
-		lines = append(lines, gfx.Wrap(strings.TrimSpace(line), a.sm.Cols(box.Dx()-6), 20)...)
+		if len(v.log) == 0 {
+			v.log = []string{"Waiting for updater output..."}
+		}
 	}
-	if len(lines) == 0 {
-		lines = []string{"Waiting for updater output..."}
-	}
+	lines := v.log
 	v.scroll = min(v.scroll, max(0, len(lines)-v.lines))
 	end := len(lines) - v.scroll
 	start := max(0, end-v.lines)
@@ -216,10 +239,10 @@ func (a *App) paintUpdate(c *gfx.Canvas) {
 	}
 	hint := "B Options  " + gfx.ArrowUp + " " + gfx.ArrowDown + " log"
 	if s.Active() {
-		hint = "Hold B cancel  " + gfx.ArrowUp + " " + gfx.ArrowDown + " log"
+		hint = "B hold: cancel  " + gfx.ArrowUp + " " + gfx.ArrowDown + " log"
 	}
 	if s.Active() && s.CancelRequested {
-		hint = "Cancel requested  " + gfx.ArrowUp + " " + gfx.ArrowDown + " log"
+		hint = gfx.ArrowUp + " " + gfx.ArrowDown + " log"
 	}
 	a.paintHint(c, hint)
 }

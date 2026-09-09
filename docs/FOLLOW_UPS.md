@@ -128,7 +128,18 @@ it is not a list of unrelated website work.
   recovery persistence on both SD cards passed. Cold clocks were simulated in
   tests; neither device's system clock was changed. User acceptance is pending:
   browse Details/Filters/Options, check date labels and quit/reopen normally.
-  Do not start batch 17 until the user confirms batch 16.
+  The user is unavailable to test and explicitly authorized continuing with
+  automated/on-device checks. Batch 16 visual acceptance remains pending.
+  Batch 17 addresses Update All startup B-holds (66), protected-write feedback
+  (67), stable log reading (68), and button hint accents (69). A hold made before
+  the run ID arrives is retained, but cancellation is sent only once an ID exists;
+  releasing early still cancels nothing. Protected active runs show a keep-power-on
+  ribbon, and queued cancellation explains why it waits. Scrolling back pauses
+  the displayed log snapshot; reaching the bottom resumes current output.
+  Local tests/ARM vet and full app/host suites on both devices passed, including
+  startup handoff/release and log-tail replacement regressions. Protected/restart
+  renders were checked in horizontal and tate orientations. No real Update All
+  was run for these UI changes. Visual/controller acceptance remains pending.
   Priorities guide the batches, with related fixes grouped so each remains
   small and testable; this is not a strict traversal of the review's numbering.
 - **DE10 long idle stability:** short transitions passed on latest Main
