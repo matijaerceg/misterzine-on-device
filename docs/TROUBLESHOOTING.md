@@ -56,9 +56,27 @@ operation. MisterZine includes a fallback for that driver and uses normal mappin
 when available. The [kernel fix](https://github.com/MiSTer-devel/Linux-Kernel_MiSTer/commit/ea2212221ad137cf26bf5caa7ad3dab7216435a6)
 is also available upstream. Downgrading Main or Linux is not an installation step.
 
+## Installer recognised, but Scripts entries are missing
+
+Check the `SECTION: misterzine` part of Update All's latest log. Recognising the
+INI does not mean its files were installed. A global positive filter such as
+`filter = arcade console` can exclude the whole app. In `downloader_misterzine.ini`,
+add an empty `filter =` below `db_url` in the `[misterzine]` section, then run
+Update All again. Current copies of the installer INI include this line.
+If you configured MisterZine directly in `downloader.ini`, add the line to its
+existing `[misterzine]` section there instead.
+
+After installation, the card should contain `Scripts/MisterZine-Setup.sh` and
+`Scripts/MisterZine-Uninstall.sh`. If they exist on the card, leave and reopen
+the Scripts menu. If they do not, keep the log's MisterZine section and any
+download errors for troubleshooting. Avoid deleting Downloader's stored state.
+
+Scripts from v1.0.0 and v1.0.1 had spaces in their filenames, which MiSTer's
+Scripts launcher does not handle. Updating replaces them with the hyphenated names.
+
 ## Main-menu entry missing or not opening
 
-Run **MisterZine Setup** in Scripts. It creates the menu entry and enables the
+Run **MisterZine-Setup** in Scripts. It creates the menu entry and enables the
 startup helper. Setup is repeatable. If files are missing, run Downloader first.
 After a successful setup, return to the main menu and select MisterZine.
 

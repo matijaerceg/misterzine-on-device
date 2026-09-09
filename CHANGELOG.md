@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.0.2 — 2026-09-09
+
+- Setup and Uninstall scripts use hyphenated filenames so MiSTer's Scripts menu
+  can launch them. Downloader removes the previous filenames during an update.
+- The installer INI includes an empty MisterZine-specific filter so global core
+  filters do not exclude the app. Existing installer files need this line added
+  manually or replaced with the current download if affected.
+
 ## v1.0.1 — 2026-09-09
 
 - Held scrolling stops at either end of Options. Wrapping requires releasing

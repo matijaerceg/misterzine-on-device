@@ -4,7 +4,7 @@
 
 The recommended installation uses the downloadable `downloader_misterzine.ini`
 file. Keep it beside `downloader.ini` on the card, run Update All/Downloader,
-then run **MisterZine Setup** from Scripts once. Setup enables the **MisterZine**
+then run **MisterZine-Setup** from Scripts once. Setup enables the **MisterZine**
 main-menu entry and its automatic startup helper.
 
 Alternatively, add this section to `/media/fat/downloader.ini`:
@@ -12,11 +12,15 @@ Alternatively, add this section to `/media/fat/downloader.ini`:
 ```ini
 [misterzine]
 db_url = https://github.com/matijaerceg/misterzine-on-device/releases/latest/download/misterzine.json.zip
+filter =
 ```
 
 Use one configuration method to avoid duplicate database warnings. Keep the
 database ID `misterzine` unchanged. Normal installations follow the latest
 stable release; release candidates use an explicitly selected version.
+
+The empty `filter =` applies only to MisterZine. It prevents global core filters
+from excluding the app's files; your other databases keep their existing filters.
 
 Existing launcher settings and saved favorites/preferences survive an update.
 Earlier versions' Scripts launch entry is replaced by the one-time Setup entry.
@@ -137,7 +141,7 @@ an external updater. Use the Options action when you want the supervised screen.
 ## Removal
 
 Quit MisterZine and wait for any updater to finish. In Scripts, choose
-**MisterZine Uninstall**. Up/Down selects a choice, A/Enter selects and confirms,
+**MisterZine-Uninstall**. Up/Down selects a choice, A/Enter selects and confirms,
 and B/Esc cancels.
 
 - **Keep favorites and preferences:** removes app files, pictures, logs and

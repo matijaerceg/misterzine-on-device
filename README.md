@@ -30,7 +30,7 @@ see [display setup](docs/TROUBLESHOOTING.md#display-setup).
 1. Download [downloader_misterzine.ini](https://github.com/matijaerceg/misterzine-on-device/releases/latest/download/downloader_misterzine.ini).
 2. Copy it to the root of your SD card, beside `downloader.ini`.
 3. Run Update All or Downloader.
-4. Run **MisterZine Setup** from Scripts once.
+4. Run **MisterZine-Setup** from Scripts once.
 5. Return to the main menu and choose **MisterZine**.
 
 **After setup, open MisterZine directly from the main menu.** Its launcher
@@ -69,7 +69,7 @@ Options; press A on that setting to preview it.
 
 ## Remove
 
-Quit MisterZine, then run **MisterZine Uninstall** from Scripts. Choose to keep
+Quit MisterZine, then run **MisterZine-Uninstall** from Scripts. Choose to keep
 favorites and preferences, or remove everything. The helper removes the
 main-menu launcher and Downloader registration as well as the app.
 

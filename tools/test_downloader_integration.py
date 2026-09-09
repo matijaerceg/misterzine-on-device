@@ -7,6 +7,7 @@ hash checks, installation, local store and removal run against a temporary card.
 import hashlib
 import importlib.util
 import json
+import configparser
 import os
 from pathlib import Path
 import shutil
@@ -100,7 +101,8 @@ def exercise(archive, package):
         (server_dir / "old-launch.sh").write_bytes(b"#!/bin/bash\n")
         old = {"v": 1, "db_id": "misterzine", "timestamp": 1,
                "folders": {"Scripts": {}, "misterzine": {}}, "files": {}}
-        for path, name in (("misterzine/misterzine", "old-binary"), ("Scripts/misterzine.sh", "old-launch.sh")):
+        for path, name in (("misterzine/misterzine", "old-binary"), ("Scripts/misterzine.sh", "old-launch.sh"),
+                           ("Scripts/MisterZine Setup.sh", "old-launch.sh"), ("Scripts/MisterZine Uninstall.sh", "old-launch.sh")):
             data = (server_dir / name).read_bytes()
             old["files"][path] = {"url": base + name, "size": len(data), "hash": hashlib.md5(data).hexdigest()}
         publish(old)
@@ -112,6 +114,15 @@ def exercise(archive, package):
         for name, data in saved.items():
             (app / name).write_bytes(data)
 
+        # Use the packaged database-specific filter with a restrictive global
+        # core filter. The application must still install as a complete package.
+        drop_in = configparser.ConfigParser()
+        drop_in.read(package / "downloader_misterzine.ini")
+        app_filter = drop_in.get("misterzine", "filter")
+        config.write_text(config.read_text()
+            .replace("storage_priority=off\n", "storage_priority=off\nfilter=arcade console\n")
+            .replace("[misterzine]\n", "[misterzine]\nfilter=" + app_filter + "\n"))
+
         with zipfile.ZipFile(package / "misterzine.json.zip") as z:
             current = json.loads(z.read("misterzine.json"))
         for entry in current["files"].values():
@@ -119,6 +130,8 @@ def exercise(archive, package):
         publish(current)
         update()
         assert not (card / "Scripts/misterzine.sh").exists(), "old launcher was not removed"
+        assert not (card / "Scripts/MisterZine Setup.sh").exists(), "old Setup filename was not removed"
+        assert not (card / "Scripts/MisterZine Uninstall.sh").exists(), "old Uninstall filename was not removed"
         for path, entry in current["files"].items():
             assert hashlib.md5((card / path).read_bytes()).hexdigest() == entry["hash"], path
         for name, data in saved.items():
@@ -141,14 +154,14 @@ def exercise(archive, package):
 
         # Reinstall the same version; Downloader must have forgotten its old records.
         with config.open("a") as f:
-            f.write("\n[misterzine]\ndb_url=" + base + "fixture.json.zip\n")
+            f.write("\n[misterzine]\nfilter=" + app_filter + "\ndb_url=" + base + "fixture.json.zip\n")
         update()
         assert (app / "launch.sh").exists()
         assert (app / "favorites.json").read_bytes() == saved["favorites.json"]
         maintenance.uninstall(card, False, run=run, proc_root=proc)
         assert not app.exists()
         assert "[unrelated]" in config.read_text()
-        print("PASS: packaged install, legacy upgrade, keep-data removal, same-version reinstall, full removal")
+        print("PASS: packaged install with global filters, legacy/space-name upgrade, keep-data removal, same-version reinstall, full removal")
 
 
 if __name__ == "__main__":
