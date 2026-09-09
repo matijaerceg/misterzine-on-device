@@ -150,6 +150,7 @@ func Cancel(root, id string) error {
 type outputSink struct {
 	mu          sync.Mutex
 	s           State
+	parser      outputParser
 	pending     []byte
 	log         *os.File
 	logBytes    int
@@ -160,7 +161,7 @@ func (o *outputSink) line() {
 	if len(o.pending) == 0 {
 		return
 	}
-	line := o.s.output(string(o.pending), time.Now())
+	line := o.s.recordOutput(string(o.pending), time.Now())
 	o.pending = o.pending[:0]
 	if line == "" || o.log == nil {
 		return
@@ -179,6 +180,7 @@ func (o *outputSink) Write(b []byte) (int, error) {
 	if len(b) > 0 {
 		o.s.LastOutput = time.Now()
 	}
+	o.parser.write(&o.s, b)
 	for _, c := range b {
 		if c == '\n' || c == '\r' {
 			o.line()
@@ -196,7 +198,6 @@ func (o *outputSink) Write(b []byte) (int, error) {
 // complete a stage announcement or an ANSI sequence split across writes.
 func (o *outputSink) snapshot() State {
 	line := cleanLine(string(o.pending))
-	o.s.observe(line)
 	s := o.s
 	s.Protected = s.Protected || o.writerGuard
 	if line != "" {
@@ -357,7 +358,6 @@ func runWorker(root, card, id, script string) int {
 			return 0
 		case <-tick.C:
 			o.mu.Lock()
-			o.snapshot()
 			for _, marker := range []string{"/tmp/MiSTer_downloader_needs_reboot", "/tmp/downloader_needs_reboot_after_linux_update"} {
 				if _, e := os.Stat(marker); e == nil {
 					o.s.Reboot = true

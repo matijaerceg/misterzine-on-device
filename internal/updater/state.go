@@ -134,6 +134,14 @@ func cleanLine(line string) string {
 }
 
 func (s *State) output(line string, now time.Time) string {
+	var parser outputParser
+	parser.write(s, []byte(line))
+	return s.recordOutput(line, now)
+}
+
+// Detection consumes the original stream; only its displayed/logged copy is
+// redacted and shortened. Repainting or flushing a line must not replay events.
+func (s *State) recordOutput(line string, now time.Time) string {
 	line = cleanLine(line)
 	if line == "" {
 		return ""
@@ -143,42 +151,42 @@ func (s *State) output(line string, now time.Time) string {
 	if len(s.Lines) > TailLines {
 		s.Lines = append([]string(nil), s.Lines[len(s.Lines)-TailLines:]...)
 	}
-	s.observe(line)
 	return line
 }
 
-func (s *State) observe(line string) {
-	l := strings.ToLower(line)
+func (s *State) observe(event outputEvent) {
 	advance := func(stage int, label string) {
 		if stage >= s.Stage {
 			s.Stage, s.Label = stage, label
 		}
 	}
-	switch {
-	case strings.Contains(l, "there were some errors in the updaters"):
+	switch event {
+	case outputErrors:
 		s.HadErrors = true
 		advance(4, "Finished with errors")
-	case strings.Contains(l, "linux will be updated"), strings.Contains(l, "fetching the new linux image"), strings.Contains(l, "hold your breath"), strings.Contains(l, "installing analogue pocket firmware"):
+	case linuxStart, pocketStart:
 		s.Protected = true
-		if strings.Contains(l, "linux") || strings.Contains(l, "hold your breath") {
+		if event == linuxStart {
 			s.Reboot = true
 		}
 		advance(2, "Updating system files")
-	case strings.Contains(l, "linux has been updated"), strings.Contains(l, "your pocket firmware is on"), strings.Contains(l, "your pocket firmware could not"):
+	case linuxDone, pocketDone:
 		s.Protected = false
-		s.Reboot = strings.Contains(l, "linux has been updated") || s.Reboot
-	case strings.Contains(l, "rebooting "), strings.Contains(l, "you should reboot"):
+		s.Reboot = event == linuxDone || s.Reboot
+	case rebootNeeded:
 		s.Reboot = true
 		advance(4, "Restart required")
-	case strings.HasPrefix(l, "success! log"), strings.HasPrefix(l, "success! more details at:"):
+	case outputSuccess:
 		s.SawSuccess = true
 		advance(4, "Finishing")
-	case strings.Contains(l, "running arcade organizer"), strings.Contains(l, "backing up analogue pocket"):
+	case outputExtras:
 		advance(3, "Running extras")
-	case strings.Contains(l, "running mister downloader"), strings.HasPrefix(l, "reading sections from"):
+	case outputCheck:
 		advance(1, "Checking for updates")
-	case s.Stage >= 1 && (strings.HasPrefix(l, "downloading ") || strings.HasPrefix(l, "fetching ") || strings.HasPrefix(l, "installing ") || strings.HasPrefix(l, "removing ") || strings.HasPrefix(l, "updates found")):
-		advance(2, "Updating files")
+	case outputFiles:
+		if s.Stage >= 1 {
+			advance(2, "Updating files")
+		}
 	}
 }
 

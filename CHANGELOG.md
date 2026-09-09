@@ -2,6 +2,9 @@
 
 ## v0.2.2
 
+- Update All recognizes system-update warnings beyond the display's line
+  limit and across output-buffer boundaries. Detection follows incoming text
+  in order, independently of the shortened and redacted visible log.
 - Update All flushes saved recovery checkpoints before replacing the previous
   record. Card saves use a copied state without holding the output-reader lock.
 - Update All checks for protected system work before both the initial cancel

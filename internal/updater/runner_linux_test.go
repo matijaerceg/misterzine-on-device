@@ -107,7 +107,9 @@ func TestCancelAndDuplicateRun(t *testing.T) {
 }
 
 func TestCancelWaitsForSystemWrite(t *testing.T) {
-	root, card := fakeCard(t, "echo 'Linux will be updated from distribution_mister:'\nsleep 2\necho 'Linux has been updated!'\nsleep 8\necho 'Success! Log saved.'\n")
+	// The warning starts past the display limit, crosses the 4096-byte
+	// buffer flush, and finishes in a later pipe read before cancellation.
+	root, card := fakeCard(t, "printf '%4090sLinux will be up' ''\nsleep .3\nprintf 'dated from distribution_mister:\\n'\nsleep 2\necho 'Linux has been updated!'\nsleep 8\necho 'Success! Log saved.'\n")
 	s, err := Start(root, card)
 	if err != nil {
 		t.Fatal(err)

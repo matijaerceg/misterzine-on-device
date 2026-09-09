@@ -61,6 +61,40 @@ func TestStagesAndEarlyRestart(t *testing.T) {
 	}
 }
 
+func TestPocketAndOtherOutputMarkers(t *testing.T) {
+	s := State{}
+	for _, tc := range []struct {
+		line              string
+		stage             int
+		protected, reboot bool
+	}{
+		{"  Reading sections from downloader.ini", 1, false, false},
+		{"Fetching new files", 2, false, false},
+		{"Installing a core", 2, false, false},
+		{"Removing an old core", 2, false, false},
+		{"Updates found", 2, false, false},
+		{"Fetching the new Linux image", 2, true, true},
+		{"Linux has been updated", 2, false, true},
+		{"Installing Analogue Pocket firmware", 2, true, true},
+		{"Your Pocket firmware is on the current version", 2, false, true},
+		{"Installing Analogue Pocket firmware", 2, true, true},
+		{"Your Pocket firmware could not be updated", 2, false, true},
+		{"Backing up Analogue Pocket", 3, false, true},
+		{"You should reboot", 4, false, true},
+		{"Rebooting now", 4, false, true},
+		{"There were some errors in the Updaters", 4, false, true},
+		{"Success! More details at: log.txt", 4, false, true},
+	} {
+		s.output(tc.line, time.Now())
+		if s.Stage != tc.stage || s.Protected != tc.protected || s.Reboot != tc.reboot {
+			t.Fatalf("%q: stage=%d protected=%v reboot=%v", tc.line, s.Stage, s.Protected, s.Reboot)
+		}
+	}
+	if !s.HadErrors || !s.SawSuccess {
+		t.Fatal("success erased earlier reported errors")
+	}
+}
+
 func TestLogBoundsAndSanitization(t *testing.T) {
 	s := State{}
 	for i := 0; i < 1000; i++ {
@@ -76,5 +110,18 @@ func TestLogBoundsAndSanitization(t *testing.T) {
 	}
 	if len(cleanLine(strings.Repeat("x", 10000))) > 512 {
 		t.Fatal("unbounded line")
+	}
+}
+
+func TestSafetyWarningPastDisplayLimit(t *testing.T) {
+	for _, prefix := range []string{strings.Repeat("x", 600), strings.Repeat("界", 600), "password=private " + strings.Repeat("x", 600)} {
+		s := State{}
+		shown := s.output(prefix+"Linux will be updated", time.Now())
+		if !s.Protected || !s.Reboot {
+			t.Fatal("display clipping or redaction hid a system-update warning")
+		}
+		if len([]rune(shown)) > 512 || strings.Contains(shown, "password=") {
+			t.Fatal("warning detection changed display clipping or redaction")
+		}
 	}
 }

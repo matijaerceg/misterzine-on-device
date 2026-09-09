@@ -40,13 +40,20 @@ it is not a list of unrelated website work.
   while a cancellation waits. The updater suite and Update screen tests passed
   on both MiSTers using temporary simulated updaters, with no firmware writes.
   The user confirmed it.
-  Batch 7 flushes recovery checkpoints before replacing the previous record
+  Batch 7 (`df85a0d`) flushes recovery checkpoints before replacing the previous record
   and moves card saves outside the output-reader lock. The full updater and
   Update screen tests passed on both devices; checkpoint/recovery tests also
   passed using temporary directories on each device's actual SD card.
-  User acceptance is
-  pending: let Update All finish normally, check the live log stays responsive,
-  and return to Options with B. Do not start batch 8 before this test.
+  The user confirmed it.
+  Batch 8 separates warning detection from the shortened display log. Known
+  markers are recognized beyond 512 characters and across 4096-byte flushes,
+  including split terminal escapes, and are consumed in arrival order.
+  A display flush cannot manufacture a line-start success announcement.
+  The new regressions reproduced the old failures. The full updater and
+  Update screen suites now pass on both devices with simulated updaters.
+  User acceptance is pending: run Update All, check its stage/log display,
+  let it finish, then return to Options with B. Do not start batch 9 before
+  the user tests this batch.
   Priorities guide the batches, with related fixes grouped so each remains
   small and testable; this is not a strict traversal of the review's numbering.
 - **DE10 long idle stability:** short transitions passed on latest Main

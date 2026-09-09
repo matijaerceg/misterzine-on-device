@@ -71,6 +71,12 @@ are omitted from the small on-screen log.
 - Terminal escape sequences are stripped. Common credentials, secret URL
   parameters and HTTP URL passwords are redacted on a best-effort basis.
   The integration captures ordinary output, not the upstream debug log.
+  Warning detection reads the original stream through a separate bounded
+  parser, before display shortening or redaction. Its 64-byte look-behind
+  survives pipe reads and display-buffer flushes; CSI/OSC escape state also
+  survives split writes. Real line endings reset prefix matching, and each
+  recognized marker is applied in arrival order. The 512-character display
+  limit cannot hide a known warning or replay an earlier protected phase.
 - PID, run ID and boot ID validate a live worker. On a later boot,
   persisted success is described as “reported success before restart”,
   not a newly verified successful run. Missing workers without that
@@ -131,6 +137,16 @@ live file disappears, and distinguishing an interrupted run from success
 reported before a reboot. These are file/recovery tests, not physical power-cut
 tests. They passed on both devices using temporary directories on each actual
 SD card; the full updater and Update screen suites also passed in batch 7.
+
+Batch 8 regression tests cover known warnings past 512 characters, all split
+positions across a 4096-byte flush for Linux/Pocket start and Linux completion
+warnings and reported errors, bytewise ANSI/OSC input, warning/completion
+ordering, and line-start success detection. The protected-cancellation shell
+fixture now emits a long warning split across both a display flush and pipe
+reads, then checks that cancellation waits for the simulated write to finish.
+These regressions and the full updater/Update screen suites passed on both
+DE10-Nano and MiSTer Pi. No installed updater or firmware write was run by
+these tests.
 
 The updater suite and Update screen/input tests passed directly on the
 MiSTer Pi's ARM CPU. This caught and fixed an epoch-time conversion overflow
