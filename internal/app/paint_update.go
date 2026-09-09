@@ -29,7 +29,7 @@ func (a *App) UpdateState() updater.State { return a.update }
 func (a *App) OpenUpdate() {
 	a.rep = repeater{}
 	a.down = map[platform.Key]bool{}
-	a.updateView = updateView{now: a.cfg.Now()}
+	a.updateView = updateView{now: a.cfg.TimerNow()}
 	a.update = updater.State{Status: "starting", Label: "Starting Update All", Started: a.cfg.Now()}
 	a.screen = ScreenUpdate
 	a.all = true
@@ -43,7 +43,7 @@ func (a *App) SetUpdate(s updater.State, open bool) {
 		return
 	}
 	if a.update.ID != s.ID {
-		a.updateView = updateView{now: a.cfg.Now()}
+		a.updateView = updateView{now: a.cfg.TimerNow()}
 	}
 	a.update = s
 	if !s.Active() {

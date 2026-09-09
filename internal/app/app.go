@@ -39,9 +39,10 @@ func (s Screen) String() string {
 type Config struct {
 	PhysW, PhysH int // physical frame, 320x240
 	Rotation     gfx.Rotation
-	SafeInsetX   int // safe-zone margin at the left and right edges, as viewed
-	SafeInsetY   int // and at the top and bottom
-	Now          func() time.Time
+	SafeInsetX   int              // safe-zone margin at the left and right edges, as viewed
+	SafeInsetY   int              // and at the top and bottom
+	Now          func() time.Time // calendar dates, possibly corrected before NTP
+	TimerNow     func() time.Time // same clock as input events and Tick/Frame
 	ClockTrusted bool
 	Images       Images
 	Status       func(i int) data.Status // install status per row index; nil = unknown
@@ -122,6 +123,9 @@ type detailState struct {
 func New(cfg Config, ds *data.Dataset, stored *data.SeenRecord) *App {
 	if cfg.Now == nil {
 		cfg.Now = time.Now
+	}
+	if cfg.TimerNow == nil {
+		cfg.TimerNow = cfg.Now
 	}
 	if cfg.Images == nil {
 		cfg.Images = noImages{}
@@ -282,12 +286,15 @@ func (a *App) SetFilters(f data.Filters) {
 // Notice shows a short message in the status bar.
 func (a *App) Notice(s string, d time.Duration) {
 	a.notice = s
-	a.until = a.cfg.Now().Add(d)
+	a.until = a.cfg.TimerNow().Add(d)
 	a.all = true
 }
 
 // SetClockTrusted flips the clock state once NTP has set it.
 func (a *App) SetClockTrusted(t bool) {
+	if t && !a.cfg.ClockTrusted && a.seen != nil {
+		a.seen.State.T = a.cfg.Now().UTC().Format(time.RFC3339)
+	}
 	a.cfg.ClockTrusted = t
 	a.all = true
 }
@@ -503,7 +510,7 @@ func (a *App) actList(k platform.Key) bool {
 	case platform.KeyEnter:
 		if n > 0 {
 			a.screen = ScreenDetails
-			a.detail = detailState{from: ScreenList, opened: a.cfg.Now()}
+			a.detail = detailState{from: ScreenList, opened: a.cfg.TimerNow()}
 			a.all = true
 		}
 		return true

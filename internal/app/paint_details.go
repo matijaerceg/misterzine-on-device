@@ -318,7 +318,7 @@ func (a *App) actDetails(k platform.Key) bool {
 	case platform.KeyBack:
 		a.screen = ScreenList
 	case platform.KeyEnter:
-		if a.cfg.Now().Sub(a.detail.opened) < launchGuard {
+		if a.cfg.TimerNow().Sub(a.detail.opened) < launchGuard {
 			return true // a second tap right after opening is not an action
 		}
 		a.screen = ScreenShot

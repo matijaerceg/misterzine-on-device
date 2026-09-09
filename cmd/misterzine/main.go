@@ -78,8 +78,8 @@ type host struct {
 	status        []data.Status
 	alts          []scan.Alt
 	scanCh        chan scanResult
-	offset        atomic.Int64 // added to the system clock (from the site's Date header until NTP lands)
-	checkRunning  bool         // UI-owned; held until the result is installed
+	timeSample    atomic.Pointer[serverClockSample]
+	checkRunning  bool // UI-owned; held until the result is installed
 	checkPending  bool
 	nextCheck     time.Time
 	scanRunning   bool
@@ -212,7 +212,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	favSet := h.favs.Set()
 	cfg := app.Config{
 		PhysW: canvasW, PhysH: canvasH, Rotation: rotation, SafeInsetX: h.settings.InsetX, SafeInsetY: h.settings.InsetY,
-		Now: h.now, ClockTrusted: trusted, Favorites: favSet, Images: h.img, Scroll: h.settings.Scroll,
+		Now: h.now, TimerNow: time.Now, ClockTrusted: trusted, Favorites: favSet, Images: h.img, Scroll: h.settings.Scroll,
 		FavoritesUnavailable: h.favLoadFailed,
 		Progress:             func() (int, int) { return h.img.Progress() },
 		Launcher:             launcherEnabled,
@@ -621,7 +621,7 @@ func (h *host) saveAll(final bool) {
 	if h.dirty || final {
 		f := h.a.Filters()
 		st := store.State{Schema: 1, CursorK: h.a.CursorKey(), Sort: strings.ToLower(h.a.Sort().String()), Filters: f,
-			LastOpen: time.Now().UTC().Format(time.RFC3339), DataHash: h.a.Data().Hash}
+			LastOpen: h.now().UTC().Format(time.RFC3339), DataHash: h.a.Data().Hash}
 		if s := h.a.Seen(); s != nil {
 			st.Seen = s.State
 		}
@@ -633,7 +633,7 @@ func (h *host) saveAll(final bool) {
 		}
 	}
 	if !h.favLoadFailed && (h.favDirty || final) {
-		h.favs.Apply(h.a.FavoriteSet(), time.Now())
+		h.favs.Apply(h.a.FavoriteSet(), h.now())
 		if err := store.Save(filepath.Join(h.root, "favorites.json"), h.favs); err != nil {
 			h.lg.Printf("favorites: %v", err)
 			h.favDirty = true
@@ -739,8 +739,7 @@ func (h *host) clockTrusted() bool {
 		return true
 	}
 	if !h.dataUpdated.IsZero() && h.now().After(h.dataUpdated.Add(-24*time.Hour)) {
-		h.clock.Trusted = true
-		h.a.SetClockTrusted(true)
+		h.trustClock()
 		h.lg.Printf("clock: now set")
 	}
 	return h.clock.Trusted
@@ -750,13 +749,7 @@ func (h *host) netLabel(ds *data.Dataset) string {
 	if ds.Updated.IsZero() || !h.clock.Trusted {
 		return ""
 	}
-	return "data " + data.RelUpdated(time.Now(), ds.Updated)
-}
-
-// now is the system clock plus whatever the site's Date header taught us
-// while the system clock was still at 1970.
-func (h *host) now() time.Time {
-	return time.Now().Add(time.Duration(h.offset.Load()))
+	return "data " + data.RelUpdated(h.now(), ds.Updated)
 }
 
 // check runs a freshness check off the UI goroutine.
@@ -767,10 +760,10 @@ func (h *host) check(current string, trusted bool) {
 		// the clock is still unset: TLS will fail, but a plain HTTP answer
 		// tells the time, so relative dates work before NTP does
 		if t, err := h.client.ServerTime(context.Background()); err == nil {
-			h.offset.Store(int64(t.Sub(time.Now())))
+			h.timeSample.Store(&serverClockSample{wall: t, local: time.Now()})
 			h.lg.Printf("clock: from the site's Date header, %v ahead of the system clock", t.Sub(time.Now()).Round(time.Second))
 			trusted = true
-			h.runOnUI(func() { h.clock.Trusted = true; h.a.SetClockTrusted(true) })
+			h.runOnUI(h.trustClock)
 		} else {
 			h.lg.Printf("clock: %v", err)
 		}

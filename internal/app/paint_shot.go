@@ -76,7 +76,7 @@ func (a *App) actShot(k platform.Key) bool {
 		// a leaf view: every way out goes back to the details it came from
 		a.screen = ScreenDetails
 		// Re-arm the A-press guard without losing the selected version or scroll.
-		a.detail.opened = a.cfg.Now()
+		a.detail.opened = a.cfg.TimerNow()
 	case platform.KeyLeft, platform.KeyRight:
 		row, _, _ := a.current()
 		if row != nil {

@@ -42,7 +42,8 @@ func rowMap(rows []Row) map[string]string {
 // the same visit (keep its baseline), an older one promotes its cur snapshot
 // to the new baseline. An empty baseline reads as none. The returned State
 // must be persisted by the caller. Pass a zero clock when the device clock is
-// not trusted; the baseline is then kept but never advanced.
+// not trusted; an existing baseline is kept. Without one, the previous snapshot
+// is still useful for comparison even though the visit age is unknown.
 func InitSeen(stored *SeenRecord, rows []Row, now time.Time, clockTrusted bool) *Seen {
 	s := &Seen{}
 	if stored != nil {
@@ -52,7 +53,7 @@ func InitSeen(stored *SeenRecord, rows []Row, now time.Time, clockTrusted bool) 
 		if t, ok := ParseMetaTime(stored.T); ok && clockTrusted {
 			sameVisit = now.Sub(t) < SeenHold
 		}
-		if sameVisit {
+		if sameVisit && (clockTrusted || len(stored.Base) > 0) {
 			s.BaseRows, s.BaseTime = stored.Base, stored.BT
 		} else {
 			s.BaseRows, s.BaseTime = stored.Cur, stored.T

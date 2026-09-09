@@ -114,7 +114,21 @@ it is not a list of unrelated website work.
   Host/scan/platform suites passed on both devices; cache recovery and preservation
   tests also passed on their actual SD cards. User acceptance is pending: rescan,
   inspect alternate versions, launch an installed game, reopen, and quit normally.
-  Do not start batch 16 until the user confirms batch 15.
+  The user approved continuing after batch 15. The DE10's missing alternatives
+  are explained by its downloader.ini !alternatives filter (and screen_no_tate
+  for vertical 1943), not an app scan defect. Leave downloader preferences alone.
+  Batch 16 addresses cold-boot clock correction (8) and last-look recovery (47).
+  Server time advances from a monotonic sample instead of reapplying an offset
+  after NTP catches up; calendar labels and saved dates use that corrected clock.
+  Notices, Details guards and update animation use the input/timer clock.
+  A clockless return can use the previous snapshot if no baseline exists; an
+  existing baseline stays fixed. First clock recovery stamps and autosaves this
+  visit without advancing its comparison baseline. Trusted quick-return rules stay.
+  Local tests, ARM vet, full host/app suites on both devices, last-look tests and
+  recovery persistence on both SD cards passed. Cold clocks were simulated in
+  tests; neither device's system clock was changed. User acceptance is pending:
+  browse Details/Filters/Options, check date labels and quit/reopen normally.
+  Do not start batch 17 until the user confirms batch 16.
   Priorities guide the batches, with related fixes grouped so each remains
   small and testable; this is not a strict traversal of the review's numbering.
 - **DE10 long idle stability:** short transitions passed on latest Main
