@@ -238,6 +238,14 @@ it is not a list of unrelated website work.
   input canary (new device/ownership assumptions); 61's automatic deferred launch
   (new behavior; Main offers no safe arbitrary text notification). Existing
   conservative behavior remains. These are retained limitations, not fixed claims.
+  User confirmed parking 14, 54, 61, and 70 unless a real failure is reproduced.
+  Build 260c0b2 is installed on both devices, with pre-final binaries backed up.
+  Local Go tests, ARM vet, input/host suites on both boards, and CI passed.
+  Live Filters/Options navigation, restoration to Menu, and reopening passed on
+  both. DE10's first command after Main restarted hit the known stale-FIFO timeout;
+  a bounded retry from confirmed MENU succeeded. Long-idle CRT observation remains
+  a user check. No real Update All was run and no public release was made.
+
   Priorities guide the batches, with related fixes grouped so each remains
   small and testable; this is not a strict traversal of the review's numbering.
 - **DE10 long idle stability:** short transitions passed on latest Main
