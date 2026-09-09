@@ -1,7 +1,7 @@
 # Release procedure
 
 Normal installations follow the latest stable GitHub release. Development
-builds identify themselves as `v1.0.0-dev`; the release workflow stamps the
+builds identify themselves with a `-dev` suffix; the release workflow stamps the
 actual tag, commit and build date.
 
 ## Before publishing a release

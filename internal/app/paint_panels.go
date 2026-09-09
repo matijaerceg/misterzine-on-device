@@ -371,7 +371,8 @@ func (a *App) actPanel(k platform.Key) bool {
 		}
 		for step := 1; step <= n; step++ {
 			i := p.cursor + step*d
-			if a.screen == ScreenOptions {
+			// Only a fresh press at the end of Options can wrap.
+			if a.screen == ScreenOptions && a.rep.count == 0 {
 				i = (i%n + n) % n
 			} else if i < 0 || i >= n {
 				break

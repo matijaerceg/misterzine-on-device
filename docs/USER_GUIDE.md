@@ -81,8 +81,9 @@ Screenshots work without remote debugging.
 
 Options starts with Refresh data now, Run Update All, Rescan card and Last
 update result. Display and browsing preferences follow, with maintenance and
-Quit at the bottom. Up from the first item wraps to Quit, and Down from Quit
-wraps to the first item. R also jumps to the bottom.
+Quit at the bottom. Held scrolling stops at either end. Release and press Up
+again from the first item to wrap to Quit, or Down from Quit to wrap to the first
+item. R also jumps to the bottom.
 
 - **Rotation:** Left/Right turns the image in that direction. The labels describe
   the monitor's clockwise/counterclockwise turn. Initially follows `osd_rotate`
