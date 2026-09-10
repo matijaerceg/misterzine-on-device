@@ -98,6 +98,11 @@ preferences unchanged. A missing or invalid launch target reports an error.
 
 ## Start does not launch games
 
+MisterZine uses the Start button saved through MiSTer's main-menu **Define
+joystick buttons** for ordinary global controller mappings. Reopen MisterZine
+after changing that assignment. Without a saved mapping, standard Linux Start
+remains the default. The app does not modify your MiSTer configuration.
+
 Open **Options -> Troubleshooting -> Test Start button**. Release all buttons
 during the countdown. When **GO** appears, press and release your Start button
 once or twice. The test ends automatically after six seconds and freezes a
@@ -110,8 +115,11 @@ each device. Connect the controller before starting; rerun the test after
 changing connections. MiSTer's Menu button still closes the app.
 
 **Button received: YES / App saw Start: NO** suggests an input compatibility
-problem. MisterZine currently reads the standard Linux gamepad Start signal
-directly; remapping Start in MiSTer's menu does not change that raw signal.
+problem. The device pages show the selected Start button and mapping source.
+Raw button numbers stay the same after remapping; the app uses the saved
+assignment to interpret them. Per-device hashed or alternate-mode maps and
+Start assignments represented as keyboard keys or axes are not imported by
+this release's direct Start reader.
 **No button received** means further device investigation is needed, not that
 the controller has necessarily failed. The test also observes devices that
 the normal reader skips.
@@ -128,7 +136,7 @@ previous report; a subsequent launch test adds its result. The report is kept
 locally in `misterzine/troubleshooting.json`; sharing a photo is sufficient.
 No extra tools, file uploads, account or remote-debug setup are needed.
 
-Raw input is observed only during an explicit controller test. Troubleshooting
+Additional raw input is observed only during an explicit controller test. Troubleshooting
 does not change mappings, enable the remote-debug server, or upload information.
 
 ## No connection or an old catalogue

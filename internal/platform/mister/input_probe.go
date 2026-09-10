@@ -44,6 +44,10 @@ func OpenInputProbe(c *support.Capture, until time.Time) *InputProbe {
 		}
 		d.Keyboard, d.StandardStart = isKeyboard(f), isPad(f)
 		d.Virtual = d.Name == "MiSTer virtual input"
+		if !d.Virtual {
+			m := deviceStart(f)
+			d.StartCode, d.StartMapping, d.StartNote = m.Code, m.Source, m.Note
+		}
 		var id [4]uint16
 		if err := ioctl(f.Fd(), 0x80084502, unsafe.Pointer(&id[0])); err == nil { // EVIOCGID
 			d.Bus, d.Vendor, d.Product, d.Version = id[0], id[1], id[2], id[3]

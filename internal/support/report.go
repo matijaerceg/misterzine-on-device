@@ -3,6 +3,7 @@
 package support
 
 import (
+	"fmt"
 	"sync"
 	"time"
 )
@@ -17,6 +18,8 @@ type Device struct {
 	Bus, Vendor, Product, Version    uint16
 	Keyboard, StandardStart, Virtual bool
 	Error                            string
+	StartCode                        uint16 `json:",omitempty"`
+	StartMapping, StartNote          string `json:",omitempty"`
 }
 
 // Route describes the normal reader, not the more inclusive diagnostic reader.
@@ -26,6 +29,12 @@ func (d Device) Route() string {
 	}
 	if d.Virtual {
 		return "MiSTer translated input"
+	}
+	if d.StartMapping != "" {
+		if d.StartCode == 0 {
+			return d.StartNote
+		}
+		return fmt.Sprintf("Start button: %d", d.StartCode)
 	}
 	if d.Keyboard {
 		return "Keyboard input"

@@ -21,8 +21,8 @@ import (
 // a script runs, re-grabbing blindly when it ends. This reader therefore
 // NEVER grabs: a grab held here would leave the user's controller dead until
 // a reboot. Main also turns the gamepad into keyboard events through its
-// "MiSTer virtual input" device while a script runs, so reading keyboards is
-// enough to support a controller. Navigation repeats in the app; printable
+// "MiSTer virtual input" device while a script runs. Start is read directly
+// using the saved global controller map. Navigation repeats in the app; printable
 // keyboard characters keep their normal kernel autorepeat.
 
 const (
@@ -60,11 +60,12 @@ func eviocgbitKey(n int) uintptr {
 }
 
 type device struct {
-	path string
-	name string
-	f    *os.File
-	held map[uint16]platform.Key
-	pad  bool // a gamepad node: only its Start button is read
+	path  string
+	name  string
+	f     *os.File
+	held  map[uint16]platform.Key
+	pad   bool // a gamepad node: only its Start button is read
+	start startMapping
 }
 
 // Input reads every keyboard-class evdev device, rescanning for hotplug.
@@ -129,27 +130,31 @@ func (in *Input) rescan() {
 		if err != nil {
 			continue
 		}
-		pad := false
-		if !isKeyboard(f) {
-			// Main turns the pad's face buttons into keys for us but not
-			// Start, so gamepad nodes are read for that one button
-			if !isPad(f) {
-				f.Close()
-				continue
-			}
-			pad = true
-		}
 		name := devName(f)
 		if name == "misterzine launcher" { // our own console-opening keyboard
 			f.Close()
 			continue
 		}
-		d := &device{path: p, name: name, f: f, pad: pad, held: map[uint16]platform.Key{}}
+		start := startMapping{}
+		if name != "MiSTer virtual input" {
+			start = deviceStart(f)
+		}
+		pad := false
+		if !isKeyboard(f) {
+			// Main turns the pad's face buttons into keys for us but not
+			// Start, so gamepad nodes are read for that one button
+			if start.Code == 0 {
+				f.Close()
+				continue
+			}
+			pad = true
+		}
+		d := &device{path: p, name: name, f: f, pad: pad, start: start, held: map[uint16]platform.Key{}}
 		in.mu.Lock()
 		in.devs[p] = d
 		in.mu.Unlock()
 		if pad {
-			in.log.Printf("input: reading %s (%s) for its Start button", p, d.name)
+			in.log.Printf("input: reading %s (%s) Start button %d via %s", p, d.name, start.Code, start.Source)
 		} else {
 			in.log.Printf("input: reading %s (%s)", p, d.name)
 		}
@@ -242,17 +247,12 @@ func (in *Input) read(d *device) {
 			}
 			sec := int64(int32(binary.LittleEndian.Uint32(buf[i:])))
 			usec := int64(int32(binary.LittleEndian.Uint32(buf[i+4:])))
-			if d.pad {
-				if code != btnStart {
-					continue // Main already turned the rest into keys
-				}
+			k, accept := d.inputKey(code)
+			if !accept {
+				continue
 			}
-			k, ok := keyMap[code]
-			if code == btnStart {
-				k, ok = platform.KeyStart, true
-			}
-			if !ok {
-				k = platform.KeyOther
+			if k == platform.KeyStart {
+				text = 0
 			}
 			ev := platform.Event{Key: k, Text: text, Code: code, Pressed: val != 0, At: time.Unix(sec, usec*1000), Source: d.name}
 			if ev.Pressed {
@@ -268,6 +268,19 @@ func (in *Input) read(d *device) {
 }
 
 func (in *Input) Events() <-chan platform.Event { return in.ch }
+
+func (d *device) inputKey(code uint16) (platform.Key, bool) {
+	if d.start.Code != 0 && code == d.start.Code {
+		return platform.KeyStart, true
+	}
+	if d.pad {
+		return platform.KeyOther, false // Main already turned the rest into keys
+	}
+	if k, ok := keyMap[code]; ok {
+		return k, true
+	}
+	return platform.KeyOther, true
+}
 
 const eviocgrab = 0x40044590 // _IOW('E', 0x90, int)
 

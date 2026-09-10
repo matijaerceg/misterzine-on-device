@@ -1,0 +1,16 @@
+{
+  "Schema": 1,
+  "Version": "v1.0.4-dev (test123, 2026-09-10)",
+  "Kernel": "6.18.38-MiSTer",
+  "Display": "Rotation left; inset 15,15; 320x240",
+  "Data": "2026-09-10 12:35",
+  "Created": "2026-09-10T12:00:00Z",
+  "Tested": true,
+  "Devices": [
+    {"Node": "event2", "Name": "USB Arcade Controller", "Bus": 3, "Vendor": 4660, "Product": 22136, "Version": 256,
+     "StartCode": 299, "StartMapping": "/media/fat/config/inputs/input_1234_5678_v3.map"}
+  ],
+  "Signals": [{"Node": "event2", "Type": 1, "Code": 299, "Down": 2, "Up": 2}],
+  "StartDown": 2,
+  "StartUp": 2
+}

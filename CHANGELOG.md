@@ -2,6 +2,9 @@
 
 ## v1.0.4 — 2026-09-10
 
+- Fixed launching with arcade USB encoders whose Start button uses a different
+  Linux button code. Start now follows the controller's saved global MiSTer
+  assignment; the standard Linux Start button remains the fallback without a map.
 - Added Options -> Troubleshooting with a guided Start-button test. It detects
   raw controller signals even from devices the normal input reader skips, and
   freezes a paged result with device IDs, button codes and press/release counts.

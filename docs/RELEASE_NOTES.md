@@ -1,5 +1,9 @@
-Troubleshoot Start-button and game-launch problems directly on your MiSTer.
+Fixed Start-button launching on arcade USB encoders with a saved MiSTer mapping,
+and added troubleshooting directly on your MiSTer.
 
+- **Start follows your MiSTer assignment:** the button saved in the global
+  controller mapping through Define joystick buttons now launches games, even when its raw button
+  code differs from standard gamepads. Navigation keeps its existing behavior.
 - **Test Start button:** open Options -> Troubleshooting, wait for GO, then
   press and release Start. A frozen result shows whether the button reached
   MisterZine and was recognised as Start, along with its device and button code.
@@ -10,7 +14,7 @@ Troubleshoot Start-button and game-launch problems directly on your MiSTer.
   L/R or arrows show additional device information and any launch failure.
 
 Diagnostics run only when requested. They do not change controller mappings,
-enable remote debugging or upload information. Normal controls are unchanged.
+enable remote debugging or upload information.
 The bundled offline catalogue has also been refreshed.
 
 Existing installations can update through Update All/Downloader. Favorites,

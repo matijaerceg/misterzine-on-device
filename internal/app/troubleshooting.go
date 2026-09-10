@@ -157,8 +157,12 @@ func yesNo(b bool) string {
 }
 
 func deviceLines(d support.Device) []string {
-	return []string{"Device: " + d.Name, fmt.Sprintf("ID %04x:%04x  bus %04x", d.Vendor, d.Product, d.Bus),
+	lines := []string{"Device: " + d.Name, fmt.Sprintf("ID %04x:%04x  bus %04x", d.Vendor, d.Product, d.Bus),
 		fmt.Sprintf("%s  revision %04x", d.Node, d.Version), d.Route()}
+	if d.StartMapping != "" {
+		lines = append(lines, "Start mapping: "+d.StartMapping)
+	}
+	return lines
 }
 
 func signalLine(s support.Signal) string {

@@ -6,6 +6,10 @@ import subprocess
 os.chdir(Path(__file__).resolve().parents[1])
 go = os.environ.get("GO", "go")
 scenarios = [
+    ["-support-report", "testdata/support-mapped-start.json", "-out", "out/support-mapped-h", "-script",
+     "back; end; up; enter; down*2; enter; shot result; right; shot mapping"],
+    ["-support-report", "testdata/support-mapped-start.json", "-inset", "40", "-rot", "left", "-logical", "-out", "out/support-mapped-t", "-script",
+     "back; end; up; enter; down*2; enter; shot result; right; shot mapping"],
     ["-rot", "none", "-out", "out/h"],
     ["-rot", "left", "-out", "out/t", "-logical"],
     ["-out", "out/filters-h", "-script",
