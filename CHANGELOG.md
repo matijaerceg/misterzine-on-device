@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v1.0.5 — 2026-09-10
 
 - Remember the last selected sort order by default. Options -> Remember sort
   order can restore the previous behavior of starting each visit with latest updates.
@@ -16,6 +16,7 @@
   first/last jumps in every sort order.
 - Holding L/R repeats letter/month jumps with the same hold delay and scroll
   speed as Up/Down row scrolling.
+- Refreshed the bundled catalogue for offline first use.
 
 ## v1.0.4 — 2026-09-10
 
