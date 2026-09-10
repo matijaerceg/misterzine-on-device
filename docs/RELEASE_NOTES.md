@@ -1,26 +1,20 @@
-Faster controller browsing, remembered sorting and launching from fullscreen artwork.
+Favorites as a main-view mode, quieter startup and app-update notifications.
 
-- **Remember your sort order:** MisterZine now reopens with your last selected
-  sort. This is on by default for new and existing installations. Turn off
-  **Options -> Remember sort order** to start each visit with latest updates.
-- **Jump by letter or month:** use L/R to jump between letters in alphabetical
-  order, or months in Latest update and MiSTer debut order. For dates, L moves
-  newer and R moves older. Jumps respect your search and filters, skip empty
-  groups, and place the first matching title at the top in either direction.
-  The selected month and year appear briefly. Keyboard Home/End still jumps
-  to the first or last entry.
-- **Hold L/R to keep jumping:** letter and month jumps use the same Hold delay
-  and Scroll speed settings as Up/Down row scrolling.
-- **Scroll Update All logs by holding a button:** hold Up/Down for rows or L/R
-  for pages, using your saved scrolling settings. This works during an update
-  and when reviewing its saved result.
-- **Launch from fullscreen artwork:** press Start to launch the version chosen
-  in Details. Any launch failure is shown over the picture.
-- **Fresh offline catalogue:** updated the bundled data for first use without
-  a network connection.
-
-The saved MiSTer Start assignment fix and Options -> Troubleshooting from
-v1.0.4 are included.
+- **Favorites view:** press Y to cycle Latest update, MiSTer debut,
+  Alphabetical and Favorites. Favorites uses alphabetical order and the same
+  held L/R letter jumps. Search and filters still apply, and Remember sort
+  order also remembers Favorites.
+- **Quieter startup:** automatic card scans no longer cover the title bar
+  with routine totals. Scan failures still show a prominent notice.
+- **Clear manual scan results:** Options -> Rescan card shows a readable
+  result screen in horizontal and tate layouts. B leaves the screen while the
+  scan continues. On-card filters also show counts across the catalogue.
+- **App-update notification:** when a newer stable MisterZine version is
+  available, the main bar shows App update. Options identifies the version and
+  offers Update All. Checks happen on launch and at most every 30 minutes;
+  offline checks stay quiet. Quit and reopen after updating to use the new app.
+- **Narrow-screen hints:** compact main-view button hints keep Options visible
+  even with a large safe-zone margin.
 
 Existing installations can update through Update All/Downloader. Favorites,
 settings and filter choices are preserved.

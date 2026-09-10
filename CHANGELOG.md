@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v1.0.6 — 2026-09-10
 
 - Quiet automatic card scans; manual Rescan opens a readable result screen.
   Card-status filters show catalogue-wide counts. Scan failures retain a banner.
