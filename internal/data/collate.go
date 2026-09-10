@@ -183,3 +183,12 @@ func CompareKeys(a, b []elem) int {
 
 // Compare orders two strings the way the site's localeCompare does.
 func Compare(a, b string) int { return CompareKeys(Key(a), Key(b)) }
+
+// TitleInitial groups titles using the same leading element as alphabetical
+// sorting. Numbers, punctuation and empty titles share the initial # group.
+func (d *Derived) TitleInitial() rune {
+	if len(d.titleKey) > 0 && d.titleKey[0].cls == clsLetter {
+		return d.titleKey[0].val
+	}
+	return '#'
+}

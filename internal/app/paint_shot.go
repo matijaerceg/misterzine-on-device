@@ -63,6 +63,14 @@ func (a *App) paintShot(c *gfx.Canvas) {
 		c.Fill(tab, rgb{R: 0, G: 0, B: 0, A: 255})
 		c.Text(tab.Min.X+3, tab.Min.Y+2, a.sm, s, gen.Eva.Fg)
 	}
+	if a.notice != "" {
+		lines := gfx.Wrap(a.notice, a.sm.Cols(l.Root.Dx()-8), 4)
+		box := image.Rect(l.Root.Min.X, l.Root.Max.Y-len(lines)*(a.sm.H+1)-6, l.Root.Max.X, l.Root.Max.Y)
+		c.Fill(box, gen.Eva.Surface)
+		for i, line := range lines {
+			c.Text(box.Min.X+4, box.Min.Y+3+i*(a.sm.H+1), a.sm, line, gen.Eva.Fg)
+		}
+	}
 }
 
 // shotArea is the picture area of the screen view: the whole canvas.
@@ -72,6 +80,8 @@ func (a *App) shotArea() image.Rectangle {
 
 func (a *App) actShot(k platform.Key) bool {
 	switch k {
+	case platform.KeyStart:
+		return a.launchPick(a.detail.pick)
 	case platform.KeyBack:
 		// Only B returns to the details this artwork came from.
 		a.screen = ScreenDetails

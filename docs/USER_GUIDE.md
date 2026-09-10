@@ -44,12 +44,18 @@ old. File modification times are not used as build dates, since copying or
 installing a file can change them.
 
 Dates highlighted in green and the last-look divider help find changes since
-your previous visit. Visits start at the top of the latest-update sort.
+your previous visit. Visits start at the top of your last selected sort order.
+Options -> Remember sort order is on by default; turn it off to start each visit
+with latest updates instead.
 Y cycles through latest update, MiSTer debut, and alphabetical title order.
 Alphabetical sorting ignores case and accents and puts Game 2 before Game 10.
 Changing sort keeps the selected title, search and filters. Dates in alphabetical
 order still show the latest update; the last-look divider appears only in the
 latest-update order.
+In alphabetical order, L/R jumps to the first title of the previous/next letter
+in your current search and filters. Empty letters are skipped; numbers and
+symbols share a group before A. Jumps stop at either end. In the date sorts,
+L/R still jumps to the first/last title. Keyboard Home/End always does that.
 The app checks data on launch and every 30 minutes; Options can request a check
 immediately. An unset system clock hides relative dates until trusted time is
 available.
@@ -65,12 +71,12 @@ filter choices are saved.
 |---|---|---|---|---|---|---|
 | Up/Down | arrows | move | choose version | | move | move |
 | Left/Right | arrows | page | | change shot | page | change value |
-| L/R | PageUp/PageDown | first/last | scroll information | | first/last | first/last |
+| L/R | PageUp/PageDown | previous/next letter in A-Z; otherwise first/last | scroll information | | first/last | first/last |
 | A | Enter | details | artwork | | toggle | run action |
 | B | Esc | Options / clear search | back | back | back | back |
 | X | Tab | Filters | | | | |
 | Y | Space | change sort | favorite | | toggle | |
-| Start | gamepad Start | launch main version | launch selected version | | | |
+| Start | gamepad Start | launch main version | launch selected version | launch selected version | | |
 | Menu | | return to MiSTer Menu from any screen; closes the app | | | | |
 
 The Details version selector uses one row. Its tally shows the selection and
@@ -81,7 +87,8 @@ and L/R pages with an overlapping line. Returning from artwork preserves the
 selected version and information position.
 
 Artwork starts at the first image each time it is opened. Left/Right chooses a
-shot and B returns; A and X have no action in artwork.
+shot and B returns; A and X have no action in artwork. Start launches the version
+selected in Details. Any launch failure appears over the artwork.
 
 F12 on a keyboard saves a PNG to `/media/fat/misterzine/screenshots/`.
 Screenshots work without remote debugging.
@@ -100,6 +107,9 @@ item. R also jumps to the bottom.
 - **Scroll speed:** 20, 30 or 60 rows/pages per second once a hold repeats.
 - **Hold delay:** short 200 ms, normal 300 ms (default), or long 500 ms before
   navigation repeats. Artwork and calibration retain their own timing.
+- **Remember sort order:** on by default, including after upgrading. Reopens
+  with your last sort choice; off starts new visits with latest updates. Changing
+  this preference leaves the current sort order alone.
 - **Screensaver:** after 1 minute idle by default, dim the picture and scroll
   full-height black MISTERZINE lettering across it. Left/Right chooses Off, 1, 2,
   5 or 10 minutes. A previews it immediately, even when Off. The first browsing
@@ -146,7 +156,8 @@ Choose **Run Update All** in Options. Browsing pauses while a dedicated screen
 shows stages, elapsed time, an activity spinner and a live log. Stages are
 milestones, not a percentage of bytes downloaded.
 
-Up/Down scrolls output; L/R pages. Scrolling back freezes the displayed log
+Up/Down scrolls output; L/R pages. Hold either to repeat using your Hold delay and
+Scroll speed settings, during a run or in a saved result. Scrolling back freezes the displayed log
 snapshot, and reaching the bottom resumes live output.
 
 **Hold B for two seconds to request cancellation.** If a system write is

@@ -216,6 +216,8 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 		PhysW: canvasW, PhysH: canvasH, Rotation: rotation, SafeInsetX: h.settings.InsetX, SafeInsetY: h.settings.InsetY,
 		Now: h.now, TimerNow: time.Now, ClockTrusted: trusted, Favorites: favSet, Images: h.img, Scroll: h.settings.Scroll, HoldDelay: h.settings.HoldDelay,
 		Screensaver:          h.settings.Screensaver,
+		RememberSort:         h.settings.RememberSort,
+		LastSort:             h.settings.LastSort,
 		FavoritesUnavailable: h.favLoadFailed,
 		Progress:             func() (int, int) { return h.img.Progress() },
 		Launcher:             launcherEnabled,
@@ -296,7 +298,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	h.dirty = true // persist the new visit even without input
 	h.initUpdates()
 	h.a.SetPrefetch(h.settings.Prefetch)
-	// Every visit starts in the updated sort, keeping the user's filter choices.
+	// Keep the user's filter choices alongside the startup sort preference.
 	h.a.SetFilters(h.state.Filters)
 	h.a.SetNet(h.netLabel(ds))
 	if ini.Found && !ini.AnalogVisible() && !hasState { // first run only: HDMI users need nothing
@@ -672,6 +674,8 @@ func (h *host) saveAll(final bool) {
 		h.settings.Scroll = h.a.ScrollSpeed()
 		h.settings.HoldDelay = h.a.HoldDelay()
 		h.settings.Screensaver = h.a.Screensaver()
+		h.settings.RememberSort = h.a.RememberSort()
+		h.settings.LastSort = h.a.Sort()
 		if err := store.Save(filepath.Join(h.root, "settings.json"), h.settings); err != nil {
 			h.lg.Printf("settings: %v", err)
 			h.setDirty = true

@@ -62,7 +62,7 @@ type Config struct {
 	FavChanged func()
 	// FiltersChanged fires when filter choices change so the host can persist them.
 	FiltersChanged func()
-	// SettingsChanged fires after rotation or safe-zone changes.
+	// SettingsChanged fires after a preference or sort order changes.
 	SettingsChanged func()
 	// Action asks the host for: prefetch (arg on/off), rescan, refresh, clearimg.
 	Action func(kind, arg string)
@@ -78,6 +78,9 @@ type Config struct {
 	HoldDelay int
 	// Screensaver is the idle timeout: "off", "1", "2", "5", "10" minutes.
 	Screensaver string
+	// RememberSort restores LastSort at startup; otherwise start with latest updates.
+	RememberSort bool
+	LastSort     data.SortMode
 }
 
 // App is the state machine.
@@ -144,6 +147,9 @@ func New(cfg Config, ds *data.Dataset, stored *data.SeenRecord) *App {
 		cfg.Favorites = map[string]bool{}
 	}
 	a := &App{cfg: cfg, body: fonts.Body(), sm: fonts.Small(), rot: cfg.Rotation, split: -1, down: map[platform.Key]bool{}}
+	if cfg.RememberSort && cfg.LastSort >= data.SortUpdated && cfg.LastSort <= data.SortAlphabetical {
+		a.mode = cfg.LastSort
+	}
 	a.physical = image.NewRGBA(image.Rect(0, 0, cfg.PhysW, cfg.PhysH))
 	a.setRotation(cfg.Rotation)
 	a.SetData(ds, stored)
@@ -287,16 +293,24 @@ func (a *App) MoveToKey(k string) { a.moveToKey(k); a.all = true }
 
 // SetSort switches the sort mode.
 func (a *App) SetSort(m data.SortMode) {
+	if m < data.SortUpdated || m > data.SortAlphabetical || m == a.mode {
+		return
+	}
 	k := a.CursorKey()
 	a.mode = m
 	a.rebuild()
 	if k != "" {
 		a.moveToKey(k)
 	}
+	if a.cfg.SettingsChanged != nil {
+		a.cfg.SettingsChanged()
+	}
 }
 
 // Sort reports the mode.
 func (a *App) Sort() data.SortMode { return a.mode }
+
+func (a *App) RememberSort() bool { return a.cfg.RememberSort }
 
 // Filters exposes the filters (copy).
 func (a *App) Filters() data.Filters { return a.filters }
@@ -473,6 +487,11 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 		case platform.KeyLeft, platform.KeyRight, platform.KeyUp, platform.KeyDown:
 			return repeatCalib
 		}
+	case ScreenUpdate:
+		switch k {
+		case platform.KeyUp, platform.KeyDown, platform.KeyPageUp, platform.KeyPageDown:
+			return scrollPace(a.cfg.Scroll)
+		}
 	}
 	return 0
 }
@@ -488,6 +507,11 @@ func (a *App) Tick(now time.Time) bool {
 		changed = true
 	}
 	if a.screen == ScreenUpdate {
+		// Stay in the host's normal event loop so update progress and cancellation
+		// keep arriving while the log scrolls. NextTick schedules these repeats.
+		if k := a.rep.due(now, a.repeatStep); k != platform.KeyNone {
+			changed = a.scrollUpdate(k) || changed
+		}
 		changed = a.tickUpdate(now) || changed
 		return a.tickSaver(now) || changed
 	}
@@ -571,9 +595,21 @@ func (a *App) actList(k platform.Key) bool {
 		if a.cursor < n-1 {
 			a.cursor++
 		}
-	case platform.KeyPageUp, platform.KeyHome: // L: top
+	case platform.KeyPageUp:
+		if a.mode == data.SortAlphabetical {
+			a.jumpLetter(-1)
+		} else {
+			a.cursor = 0
+		}
+	case platform.KeyPageDown:
+		if a.mode == data.SortAlphabetical {
+			a.jumpLetter(1)
+		} else {
+			a.cursor = n - 1
+		}
+	case platform.KeyHome:
 		a.cursor = 0
-	case platform.KeyPageDown, platform.KeyEnd: // R: bottom
+	case platform.KeyEnd:
 		a.cursor = n - 1
 	case platform.KeySpace:
 		a.SetSort((a.mode + 1) % (data.SortAlphabetical + 1))

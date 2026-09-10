@@ -78,6 +78,7 @@ func (a *App) UpdateCancelError(message string) {
 func (a *App) handleUpdate(ev platform.Event) bool {
 	if !ev.Pressed {
 		delete(a.down, ev.Key)
+		a.rep.release(ev.Key)
 		if ev.Key == platform.KeyBack {
 			a.updateView.backAt = time.Time{}
 			a.all = true
@@ -91,6 +92,7 @@ func (a *App) handleUpdate(ev platform.Event) bool {
 	switch ev.Key {
 	case platform.KeyBack:
 		if !a.update.Active() {
+			a.rep = repeater{}
 			a.openPanel(ScreenOptions)
 			if a.update.ResultNotice() && a.cfg.Action != nil {
 				a.cfg.Action("update-dismiss", a.update.ID)
@@ -99,6 +101,19 @@ func (a *App) handleUpdate(ev platform.Event) bool {
 			a.updateView.backAt = ev.At
 			a.updateView.error = ""
 		}
+	case platform.KeyUp, platform.KeyDown, platform.KeyPageUp, platform.KeyPageDown:
+		a.rep.press(ev.Key, ev.At)
+		a.rep.next = ev.At.Add(time.Duration(a.HoldDelay()) * time.Millisecond)
+		return a.scrollUpdate(ev.Key)
+	default:
+		return false // no launch, filter, options or quit action during the run
+	}
+	a.all = true
+	return true
+}
+
+func (a *App) scrollUpdate(k platform.Key) bool {
+	switch k {
 	case platform.KeyUp:
 		a.updateView.scroll++
 	case platform.KeyDown:
@@ -108,7 +123,7 @@ func (a *App) handleUpdate(ev platform.Event) bool {
 	case platform.KeyPageDown:
 		a.updateView.scroll -= max(1, a.updateView.lines)
 	default:
-		return false // no launch, filter, options or quit action during the run
+		return false
 	}
 	a.updateView.scroll = max(0, a.updateView.scroll)
 	a.all = true

@@ -32,7 +32,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/updater"
 )
 
-const allViews = "shot list; enter; shot details; wait 600; enter; shot screen; back; back; tab; shot filter; back; back; shot options; down*8; enter; shot calibrate; back; end; shot options-bottom; back"
+const allViews = "shot list; enter; shot details; wait 600; enter; shot screen; back; back; tab; shot filter; back; back; shot options; down*9; enter; shot calibrate; back; end; shot options-bottom; back"
 
 func main() {
 	dataPath := flag.String("data", "testdata/data.json", "data.json")
@@ -42,7 +42,7 @@ func main() {
 	out := flag.String("out", "out", "output directory")
 	script := flag.String("script", "", "key script; empty = every view")
 	nowStr := flag.String("now", "2026-09-08T12:00Z", "virtual clock start")
-	status := flag.String("status", "fake", "fake or unknown install statuses")
+	status := flag.String("status", "fake", "fake, missing or unknown install statuses")
 	seenAge := flag.Duration("seen", 48*time.Hour, "pretend the last look was this long ago (0 = first run)")
 	logical := flag.Bool("logical", false, "save the unrotated logical canvas instead of the physical frame")
 	imgDir := flag.String("images", "../misterzine/docs/images", "directory laid out like the site's docs/images; empty = placeholders")
@@ -76,6 +76,7 @@ func main() {
 		Launch:       func(p string) { fmt.Println("launch:", p); cmd.Send("load_core " + p) },
 		Quit:         func() { fmt.Println("quit") },
 		Version:      "harness",
+		RememberSort: true,
 		Alternatives: func(r *data.Row) []string {
 			if r.SN == "galagamw" {
 				return []string{"_Arcade/_alternatives/_Galaga/Galaga (Namco).mra"}
@@ -110,6 +111,8 @@ func main() {
 	}
 	if *status == "fake" {
 		cfg.Status = func(i int) data.Status { return data.Status(1 + i%4) }
+	} else if *status == "missing" {
+		cfg.Status = func(int) data.Status { return data.StatusNotFound }
 	}
 	// favorite a few rows so the star shows
 	for i := 0; i < len(rows) && i < 40; i += 7 {

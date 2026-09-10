@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- Remember the last selected sort order by default. Options -> Remember sort
+  order can restore the previous behavior of starting each visit with latest updates.
+- Hold Up/Down or L/R to scroll/page the Update All log using the configured
+  hold delay and scroll speed, including saved results.
+- Start launches the selected version from full-screen artwork. Launch failures
+  appear over the picture.
+- L/R jumps between letters in alphabetical order, using the current search and
+  filters. Other sort orders retain first/last jumps; Home/End always do so.
+
 ## v1.0.4 — 2026-09-10
 
 - Fixed launching with arcade USB encoders whose Start button uses a different

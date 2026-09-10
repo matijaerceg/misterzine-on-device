@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/matijaerceg/misterzine-on-device/internal/data"
 )
 
 func writeSettings(t *testing.T, body string) string {
@@ -13,6 +15,36 @@ func writeSettings(t *testing.T, body string) string {
 		t.Fatal(err)
 	}
 	return p
+}
+
+func TestRememberSortMigration(t *testing.T) {
+	for _, tc := range []struct {
+		body     string
+		remember bool
+		sort     data.SortMode
+	}{
+		{`{"rotation":"left"}`, true, data.SortUpdated},
+		{`{"remember_sort":false,"last_sort":2}`, false, data.SortAlphabetical},
+		{`{"remember_sort":true,"last_sort":1}`, true, data.SortDebut},
+		{`{"last_sort":-1}`, true, data.SortUpdated},
+		{`{"last_sort":999}`, true, data.SortUpdated},
+	} {
+		path := writeSettings(t, tc.body)
+		s, err := LoadSettings(path)
+		if err != nil || s.RememberSort != tc.remember || s.LastSort != tc.sort {
+			t.Fatalf("load %s: %+v, %v", tc.body, s, err)
+		}
+		if err := Save(path, s); err != nil {
+			t.Fatal(err)
+		}
+		got, err := LoadSettings(path)
+		if err != nil || got != s {
+			t.Fatalf("restart lost preferences: %+v, %v", got, err)
+		}
+	}
+	if !DefaultSettings().RememberSort {
+		t.Fatal("new installations must remember sort by default")
+	}
 }
 
 func TestHoldDelayMigrationAndSave(t *testing.T) {

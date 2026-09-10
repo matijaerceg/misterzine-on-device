@@ -24,9 +24,9 @@ scenarios = [
     ["-rot", "left", "-logical", "-out", "out/search-t",
      "-script", "type 1943; shot matches; type xyz; shot empty"],
     ["-out", "out/saver-h", "-script",
-     "back; down*7; shot option; enter; wait 12000; shot preview; back; up*7; up; shot wrap; down; shot top"],
+     "back; down*8; shot option; enter; wait 12000; shot preview; back; up*8; up; shot wrap; down; shot top"],
     ["-rot", "left", "-logical", "-out", "out/saver-t", "-script",
-     "back; down*7; shot option; enter; wait 12000; shot preview; back; up*7; up; shot wrap; down; shot top"],
+     "back; down*8; shot option; enter; wait 12000; shot preview; back; up*8; up; shot wrap; down; shot top"],
     ["-support-report", "testdata/support-controller.json", "-out", "out/support-h", "-script",
      "back; end; up; enter; shot menu; enter; shot ready; wait 3500; shot capture; wait 6000; shot result; right; shot evidence; back; down; enter; shot launch; enter; shot launch-result"],
     ["-support-report", "testdata/support-controller.json", "-rot", "left", "-logical", "-out", "out/support-t", "-script",
@@ -36,5 +36,12 @@ scenarios = [
     ["-support-report", "testdata/support-no-input.json", "-inset", "40", "-rot", "left", "-logical", "-out", "out/support-small-t", "-script",
      "back; end; up; enter; down*2; enter; shot result; right; shot evidence"],
 ]
+for rotation in ([], ["-rot", "left", "-logical"]):
+    orientation = "t" if rotation else "h"
+    for inset in (15, 40):
+        scenarios.append([*rotation, "-inset", str(inset), "-status", "missing",
+                          "-out", f"out/browsing-{orientation}-{inset}", "-script",
+                          "back; down*7; shot remember-on; left; shot remember-off; back; "
+                          "space*2; home; pagedown; shot letter-jump; enter; enter; start; shot launch-failure"])
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)

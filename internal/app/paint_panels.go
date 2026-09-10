@@ -257,6 +257,8 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "How many rows (or pages, with Left/Right) a held direction moves per second. 60 Hz is one row every frame."},
 		{text: "Hold delay", kind: "hold-delay", vals: []string{"short", "normal", "long"}, idx: map[int]int{200: 0, 300: 1, 500: 2}[a.HoldDelay()],
 			help: "Wait before held navigation repeats: short 200 ms, normal 300 ms, long 500 ms. Scroll speed sets the pace after this delay."},
+		{text: "Remember sort order", kind: "remember-sort", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.RememberSort()],
+			help: "On: reopen with your last sort order (default). Off: start new visits with latest updates."},
 		{text: "Screensaver", kind: "screensaver", vals: []string{"off", "1 min", "2 min", "5 min", "10 min"}, idx: saverIdx,
 			help: "Dim the screen and scroll black lettering after idle time. Left/Right sets the delay; A previews. A browsing button wakes without acting. Menu still exits."},
 		{text: "Edit safe zone", kind: "inset",
@@ -535,6 +537,8 @@ func (a *App) stepValue(d int) bool {
 		a.cfg.Scroll = ScrollValues[i]
 	case "hold-delay":
 		a.cfg.HoldDelay = []int{200, 300, 500}[i]
+	case "remember-sort":
+		a.cfg.RememberSort = i == 1
 	case "screensaver":
 		a.cfg.Screensaver = saverValues[i]
 	case "prefetch":
@@ -660,7 +664,7 @@ func (a *App) togglePanel() bool {
 		if !e.header {
 			f.Since = !f.Since
 		}
-	case "rotation", "launcher", "scroll", "hold-delay", "prefetch":
+	case "rotation", "launcher", "scroll", "hold-delay", "remember-sort", "prefetch":
 		return true // Left/Right pick these
 	case "inset":
 		a.screen = ScreenCalibrate

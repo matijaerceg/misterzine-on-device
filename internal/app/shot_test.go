@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"testing"
 	"time"
 
@@ -8,6 +9,47 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
+
+func TestArtworkStartLaunchesSelectedVersionAndShowsFailure(t *testing.T) {
+	for _, installed := range []bool{true, false} {
+		now := time.Unix(100, 0)
+		calls := 0
+		target := ""
+		a := New(Config{PhysW: 320, PhysH: 240, SafeInsetX: 40, SafeInsetY: 40,
+			Now:          func() time.Time { return now },
+			Launch:       func(p string) { calls++; target = p },
+			Exists:       func(string) bool { return installed },
+			Status:       func(int) data.Status { return data.StatusCurrent },
+			Alternatives: func(*data.Row) []string { return []string{"_Arcade/Alternative.mra"} },
+		}, data.Ingest([]data.Row{{K: "game", Title: "Game", Base: "Arcade", Core: "game", MRA: "_Arcade/Game.mra"}}, "", now), nil)
+		a.actList(platform.KeyEnter)
+		pick := 0
+		if installed {
+			a.actDetails(platform.KeyDown)
+			pick = 1
+		}
+		a.actDetails(platform.KeyEnter)
+		a.Paint()
+		before := append([]byte(nil), a.Logical().Pix...)
+		a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: now})
+		a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: now})
+		a.Tick(now.Add(time.Second))
+		a.Handle(platform.Event{Key: platform.KeyStart, At: now})
+		a.Paint()
+		if a.Screen() != ScreenShot || a.detail.pick != pick {
+			t.Fatal("Start lost artwork/version context")
+		}
+		if installed {
+			if calls != 1 || target != "_Arcade/Alternative.mra" {
+				t.Fatalf("launches=%d target=%q", calls, target)
+			}
+		} else {
+			if calls != 0 || a.notice == "" || bytes.Equal(before, a.Logical().Pix) {
+				t.Fatal("missing target did not show a visible failure in artwork")
+			}
+		}
+	}
+}
 
 func TestShotReturnPreservesSelectedVersion(t *testing.T) {
 	for _, rotation := range []struct {

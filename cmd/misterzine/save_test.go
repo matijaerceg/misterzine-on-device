@@ -16,6 +16,57 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/store"
 )
 
+func TestSortAutosaveRestoreAndOption(t *testing.T) {
+	root := t.TempDir()
+	h := favoritesHost(root)
+	rows := []data.Row{{K: "z", Title: "Zoo", Updated: "2026-09-10"}, {K: "a", Title: "Alpha", Updated: "2020-01-01"}}
+	open := func() {
+		h.a = app.New(app.Config{PhysW: 320, PhysH: 240, RememberSort: h.settings.RememberSort, LastSort: h.settings.LastSort,
+			SettingsChanged: func() { h.setDirty = true },
+		}, data.Ingest(rows, "test", time.Now()), nil)
+	}
+	open()
+	tap := func(key platform.Key) {
+		now := time.Now()
+		h.a.Handle(platform.Event{Key: key, Pressed: true, At: now})
+		h.a.Handle(platform.Event{Key: key, At: now})
+	}
+	restart := func() {
+		t.Helper()
+		now := time.Now()
+		h.autosave(now, false)
+		h.autosave(now.Add(500*time.Millisecond), false)
+		var err error
+		h.settings, err = store.LoadSettings(filepath.Join(root, "settings.json"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		open()
+	}
+	tap(platform.KeySpace)
+	restart()
+	if h.a.Sort() != data.SortDebut || !h.a.RememberSort() {
+		t.Fatal("debut sort did not survive restart")
+	}
+	tap(platform.KeySpace)
+	restart()
+	if h.a.Sort() != data.SortAlphabetical || h.a.CursorKey() != "a" {
+		t.Fatal("alphabetical restart did not start at its first title")
+	}
+	tap(platform.KeyBack)
+	for i := 0; i < 7; i++ {
+		tap(platform.KeyDown)
+	}
+	tap(platform.KeyLeft) // Remember sort order: off
+	if h.a.RememberSort() || h.a.Sort() != data.SortAlphabetical {
+		t.Fatal("toggle changed current order or failed to turn off")
+	}
+	restart()
+	if h.a.Sort() != data.SortUpdated || h.a.RememberSort() {
+		t.Fatal("disabled preference did not restart in latest updates")
+	}
+}
+
 func TestAutosaveWithoutNavigationOrQuit(t *testing.T) {
 	for _, kind := range []string{"settings", "favorites", "state"} {
 		t.Run(kind, func(t *testing.T) {
