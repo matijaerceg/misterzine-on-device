@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v1.0.3 — 2026-09-10
 
 - Added alphabetical title sorting as the third Y sort choice.
 - Grouped game-specific filters under Arcade game filters, excluding system
