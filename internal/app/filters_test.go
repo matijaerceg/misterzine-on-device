@@ -2,10 +2,13 @@ package app
 
 import (
 	"encoding/json"
+	"image"
 	"testing"
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
+	"github.com/matijaerceg/misterzine-on-device/internal/gen"
+	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
 
@@ -127,5 +130,43 @@ func TestResolutionFilterSelectionAndRestore(t *testing.T) {
 	choose("clear", "", false)
 	if len(a.view) != 4 || a.filters.Active() {
 		t.Fatal("clear must reset resolution")
+	}
+}
+
+func TestResolutionFilterRendersCheckboxAndCount(t *testing.T) {
+	for _, rot := range []gfx.Rotation{gfx.RotNone, gfx.RotLeft} {
+		a := New(Config{PhysW: 320, PhysH: 240, Rotation: rot, SafeInsetX: 15, SafeInsetY: 15}, data.Ingest([]data.Row{
+			{K: "a", Res: "15kHz"}, {K: "b", Res: "31kHz"}, {K: "c"},
+		}, "", time.Now()), nil)
+		a.openPanel(ScreenFilter)
+		for _, value := range []string{"", "15kHz", "31kHz"} {
+			for i, e := range a.panel.entries {
+				if e.kind == "res" && !e.header && e.value == value {
+					a.panel.cursor = i
+					break
+				}
+			}
+			for _, mark := range []string{"[x] ", "[ ] "} {
+				a.Paint()
+				label := value
+				if label == "" {
+					label = "unknown"
+				}
+				inner := a.lay.Body.Inset(2)
+				y := inner.Min.Y + (a.panel.cursor-a.panel.top)*a.sm.H
+				row := image.Rect(inner.Min.X, y, inner.Max.X, y+a.sm.H)
+				want := gfx.New(a.logical.W(), a.logical.H())
+				want.Fill(row, gen.Eva.Surface)
+				want.Text(inner.Min.X+2, y, a.sm, mark+label+" (1)", gen.Eva.Accent)
+				for py := row.Min.Y; py < row.Max.Y; py++ {
+					for px := row.Min.X; px < row.Max.X; px++ {
+						if a.logical.RGBAAt(px, py) != want.RGBAAt(px, py) {
+							t.Fatalf("rotation %v: resolution row must display %q", rot, mark+label+" (1)")
+						}
+					}
+				}
+				a.actPanel(platform.KeyEnter)
+			}
+		}
 	}
 }
