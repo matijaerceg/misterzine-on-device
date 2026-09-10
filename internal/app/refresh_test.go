@@ -12,7 +12,7 @@ import (
 func TestOpenFiltersFollowNewDataset(t *testing.T) {
 	now := time.Now()
 	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest([]data.Row{
-		{K: "one", Genre: "Puzzle"}, {K: "two", Genre: "Sports"},
+		{K: "one", Base: "Arcade", Genre: "Puzzle"}, {K: "two", Base: "Arcade", Genre: "Sports"},
 	}, "old", now), nil)
 	a.openPanel(ScreenFilter)
 	for i, e := range a.panel.entries {
@@ -21,7 +21,7 @@ func TestOpenFiltersFollowNewDataset(t *testing.T) {
 		}
 	}
 	a.SetData(data.Ingest([]data.Row{
-		{K: "one", Genre: "Puzzle"}, {K: "three", Genre: "Puzzle"}, {K: "four", Genre: "Action"},
+		{K: "one", Base: "Arcade", Genre: "Puzzle"}, {K: "three", Base: "Arcade", Genre: "Puzzle"}, {K: "four", Base: "Arcade", Genre: "Action"},
 	}, "new", now), nil)
 	counts := map[string]int{}
 	for _, e := range a.panel.entries {

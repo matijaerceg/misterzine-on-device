@@ -56,7 +56,10 @@ func (f *Filters) Pass(r *Row, d *Derived, st Status, fav, unseen bool) bool {
 	if f == nil {
 		return true
 	}
-	if f.ResOff[r.Res] || f.BaseOff[r.Base] || f.SrcOff[r.Src] || f.RotOff[d.RotGroup] || f.PlrOff[r.Plr] || f.GenreOff[r.Genre] || f.DirectionsOff[d.Directions] || f.ButtonsOff[d.Buttons] {
+	if f.BaseOff[r.Base] || f.SrcOff[r.Src] {
+		return false
+	}
+	if r.IsArcade() && (f.ResOff[r.Res] || f.RotOff[d.RotGroup] || f.PlrOff[r.Plr] || f.GenreOff[r.Genre] || f.DirectionsOff[d.Directions] || f.ButtonsOff[d.Buttons]) {
 		return false
 	}
 	switch f.Install {

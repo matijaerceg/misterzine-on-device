@@ -3,7 +3,7 @@ package buildinfo
 
 // Set with -ldflags "-X .../buildinfo.Version=v0.1.0 -X .../buildinfo.Commit=abc -X .../buildinfo.Date=2026-09-08".
 var (
-	Version = "v1.0.2-dev"
+	Version = "v1.0.3-dev"
 	Commit  = ""
 	Date    = ""
 )

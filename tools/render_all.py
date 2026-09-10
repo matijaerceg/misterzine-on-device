@@ -8,6 +8,10 @@ go = os.environ.get("GO", "go")
 scenarios = [
     ["-rot", "none", "-out", "out/h"],
     ["-rot", "left", "-out", "out/t", "-logical"],
+    ["-out", "out/filters-h", "-script",
+     "space*2; home; shot alphabetical; tab; down*30; shot arcade; end; shot controls-players"],
+    ["-rot", "left", "-logical", "-out", "out/filters-t", "-script",
+     "space*2; home; shot alphabetical; tab; down*30; shot arcade; end; shot controls-players"],
     ["-update-state", "testdata/update-running.json", "-out", "out/update-h",
      "-script", "shot running; hold back 2200; shot cancel"],
     ["-update-state", "testdata/update-running.json", "-rot", "left", "-logical",

@@ -555,11 +555,7 @@ func (a *App) actList(k platform.Key) bool {
 	case platform.KeyPageDown, platform.KeyEnd: // R: bottom
 		a.cursor = n - 1
 	case platform.KeySpace:
-		if a.mode == data.SortUpdated {
-			a.SetSort(data.SortDebut)
-		} else {
-			a.SetSort(data.SortUpdated)
-		}
+		a.SetSort((a.mode + 1) % (data.SortAlphabetical + 1))
 		return true
 	case platform.KeyTab:
 		a.openPanel(ScreenFilter)
@@ -661,6 +657,9 @@ func (a *App) Refilter() {
 	a.rebuild()
 	if k != "" {
 		a.moveToKey(k)
+	}
+	if a.screen == ScreenFilter {
+		a.buildPanel()
 	}
 	a.all = true
 }

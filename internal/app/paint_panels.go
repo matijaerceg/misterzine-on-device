@@ -14,16 +14,17 @@ import (
 
 // panelEntry is one line of the Filters or Options screen.
 type panelEntry struct {
-	text    string
-	header  bool
-	info    bool     // plain text, never selectable
-	help    string   // shown in the help area while selected
-	kind    string   // filter section: "base","src","rot","plr","genre","install","fav"; settings: "rotation","inset","prefetch","rescan","refresh","clear","about","settings","back"
-	value   string   // facet value for filter entries
-	vals    []string // settings: the choices, Left/Right pick one
-	idx     int      // settings: the current choice
-	checked bool
-	count   int
+	text      string
+	header    bool
+	info      bool     // plain text, never selectable
+	help      string   // shown in the help area while selected
+	kind      string   // filter section: "base","src","rot","plr","genre","install","fav"; settings: "rotation","inset","prefetch","rescan","refresh","clear","about","settings","back"
+	value     string   // facet value for filter entries
+	vals      []string // settings: the choices, Left/Right pick one
+	idx       int      // settings: the current choice
+	checked   bool
+	count     int
+	showCount bool
 }
 
 type panelState struct {
@@ -83,6 +84,55 @@ func sortedFacet(m map[string]int) []string {
 	return keys
 }
 
+// facetCounts applies the search and every filter except the section being
+// counted. Unchecked choices keep their potential counts and remain selectable.
+func (a *App) facetCounts(kind string) map[string]int {
+	f := a.filters
+	value := func(r *data.Row, d *data.Derived) string { return "" }
+	switch kind {
+	case "base":
+		f.BaseOff = nil
+		value = func(r *data.Row, d *data.Derived) string { return r.Base }
+	case "src":
+		f.SrcOff = nil
+		value = func(r *data.Row, d *data.Derived) string { return r.Src }
+	case "rot":
+		f.RotOff = nil
+		value = func(r *data.Row, d *data.Derived) string { return d.RotGroup }
+	case "res":
+		f.ResOff = nil
+		value = func(r *data.Row, d *data.Derived) string { return r.Res }
+	case "genre":
+		f.GenreOff = nil
+		value = func(r *data.Row, d *data.Derived) string { return r.Genre }
+	case "directions":
+		f.DirectionsOff = nil
+		value = func(r *data.Row, d *data.Derived) string { return d.Directions }
+	case "buttons":
+		f.ButtonsOff = nil
+		value = func(r *data.Row, d *data.Derived) string { return d.Buttons }
+	case "plr":
+		f.PlrOff = nil
+		value = func(r *data.Row, d *data.Derived) string { return r.Plr }
+	}
+	counts := map[string]int{}
+	query := searchText(a.query)
+	for i := range a.ds.Rows {
+		r, d := &a.ds.Rows[i], &a.ds.Der[i]
+		if kind != "base" && kind != "src" && !r.IsArcade() {
+			continue
+		}
+		if query != "" && !strings.Contains(searchText(d.Title), query) {
+			continue
+		}
+		unseen := a.seen != nil && a.seen.Unseen(r)
+		if f.Pass(r, d, a.status(i), a.cfg.Favorites[r.K], unseen) {
+			counts[value(r, d)]++
+		}
+	}
+	return counts
+}
+
 func (a *App) filterEntries() []panelEntry {
 	f := &a.filters
 	var E []panelEntry
@@ -106,19 +156,25 @@ func (a *App) filterEntries() []panelEntry {
 		E = append(E, panelEntry{text: "only rows changed since my last look", kind: "since", checked: f.Since})
 	}
 	section := func(title, kind string, facet map[string]int, off map[string]bool, label func(string) string) {
+		counts := a.facetCounts(kind)
 		E = append(E, panelEntry{text: title, header: true, kind: kind})
 		for _, v := range sortedFacet(facet) {
-			E = append(E, panelEntry{text: label(v), kind: kind, value: v, checked: !off[v], count: facet[v]})
+			E = append(E, panelEntry{text: label(v), kind: kind, value: v, checked: !off[v], count: counts[v], showCount: true})
 		}
 	}
 	ident := func(s string) string { return s }
 	section("Type", "base", a.ds.Facets.Base, f.BaseOff, ident)
 	section("Source", "src", a.ds.Facets.Src, f.SrcOff, func(s string) string {
 		if s == "" {
-			return "unknown"
+			return "Unknown"
 		}
 		return data.SrcShort(s)
 	})
+	if f.BaseOff["Arcade"] || a.ds.Facets.Base["Arcade"] == 0 {
+		return E
+	}
+	E = append(E, panelEntry{text: "Arcade game filters", header: true, info: true},
+		panelEntry{text: "System cores are unaffected", info: true})
 	section("Rotation", "rot", a.ds.Facets.Rot, f.RotOff, func(s string) string {
 		switch s {
 		case "h":
@@ -126,29 +182,29 @@ func (a *App) filterEntries() []panelEntry {
 		case "v":
 			return "Vertical"
 		}
-		return "unknown"
+		return "Unknown"
 	})
 	section("Resolution", "res", a.ds.Facets.Res, f.ResOff, func(s string) string {
 		if s == "" {
-			return "unknown"
+			return "Unknown"
 		}
 		return s
 	})
 	section("Genre", "genre", a.ds.Facets.Genre, f.GenreOff, func(s string) string {
 		if s == "" {
-			return "No genre"
+			return "Unknown"
 		}
 		return s
 	})
-	section("Input directions", "directions", a.ds.Facets.Directions, f.DirectionsOff, func(s string) string {
+	section("Controls", "directions", a.ds.Facets.Directions, f.DirectionsOff, func(s string) string {
 		if s == "" {
-			return "not specified"
+			return "Unknown"
 		}
 		return s
 	})
 	section("Buttons", "buttons", a.ds.Facets.Buttons, f.ButtonsOff, func(s string) string {
 		if s == "" {
-			return "0 / not specified"
+			return "Unknown"
 		}
 		if s == "1" {
 			return "1 button"
@@ -157,7 +213,7 @@ func (a *App) filterEntries() []panelEntry {
 	})
 	section("Players", "plr", a.ds.Facets.Plr, f.PlrOff, func(s string) string {
 		if s == "" {
-			return "unknown"
+			return "Unknown"
 		}
 		return s
 	})
@@ -309,10 +365,11 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			if e.checked {
 				mark = "[x] "
 			}
-			text := mark + e.text
-			if e.count > 0 {
-				text += " (" + itoa(e.count) + ")"
+			suffix := ""
+			if e.showCount {
+				suffix = " (" + itoa(e.count) + ")"
 			}
+			text := mark + gfx.Fit(e.text, cols-len(mark)-len(suffix)) + suffix
 			col := gen.Eva.Fg
 			if n == p.cursor {
 				col = gen.Eva.Accent

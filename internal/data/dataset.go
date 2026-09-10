@@ -14,7 +14,7 @@ type Derived struct {
 	Ctl        string // ASCII-folded controls
 	RotGroup   string // "h", "v" or ""
 	Directions string
-	Buttons    string // numeric count; empty = zero or not specified by the feed
+	Buttons    string // numeric count including zero; empty = unknown
 	BatchN     int    // rows sharing this core's updated stamp (0 = not a batch stamp)
 
 	titleKey   []elem
@@ -74,10 +74,12 @@ func Ingest(rows []Row, hash string, updated time.Time) *Dataset {
 		}
 		ds.Facets.Base[r.Base]++
 		ds.Facets.Src[r.Src]++
-		ds.Facets.Rot[r.RotGroup()]++
-		ds.Facets.Plr[r.Plr]++
-		ds.Facets.Genre[r.Genre]++
-		ds.Facets.Res[r.Res]++
+		if r.IsArcade() {
+			ds.Facets.Rot[r.RotGroup()]++
+			ds.Facets.Plr[r.Plr]++
+			ds.Facets.Genre[r.Genre]++
+			ds.Facets.Res[r.Res]++
+		}
 	}
 	for i := range rows {
 		r := &rows[i]
@@ -87,9 +89,11 @@ func Ingest(rows []Row, hash string, updated time.Time) *Dataset {
 		d.SrcShort = SrcShort(r.Src)
 		d.Title = ASCII(r.Title)
 		d.Ctl = ASCII(r.Ctl)
-		d.Directions, d.Buttons = ControlFacets(r.Ctl)
-		ds.Facets.Directions[d.Directions]++
-		ds.Facets.Buttons[d.Buttons]++
+		d.Directions, d.Buttons = r.ControlFacets()
+		if r.IsArcade() {
+			ds.Facets.Directions[d.Directions]++
+			ds.Facets.Buttons[d.Buttons]++
+		}
 		d.RotGroup = r.RotGroup()
 		d.BatchN = ds.ClusterN(i)
 		d.titleKey = Key(r.Title)

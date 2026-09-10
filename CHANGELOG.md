@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Added alphabetical title sorting as the third Y sort choice.
+- Grouped game-specific filters under Arcade game filters, excluding system
+  cores from their counts and effects. Counts now reflect other filters and
+  search, including zero-count choices.
+- Controls includes separately recorded special controls; explicit zero-button
+  counts are separate from Unknown. Provisional values are labelled in Details.
 - Added a remembered Resolution filter for 15kHz, 31kHz and unknown entries.
 
 ## v1.0.2 — 2026-09-09

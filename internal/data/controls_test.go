@@ -19,7 +19,7 @@ func TestControlFacets(t *testing.T) {
 		{"buttons · 5 buttons", "buttons only", "5"},
 		{"8-way,Positional · 2 buttons", "8-way + positional", "2"},
 		{"2 buttons", "", "2"},
-		{"8-way · 0 buttons", "8-way", ""},
+		{"8-way · 0 buttons", "8-way", "0"},
 		{"2", "", ""},
 		{"", "", ""},
 	} {
@@ -32,10 +32,10 @@ func TestControlFacets(t *testing.T) {
 
 func TestControlFiltersCombineAndKeepUnspecified(t *testing.T) {
 	ds := Ingest([]Row{
-		{K: "a", Ctl: "8-way · 2 buttons"},
-		{K: "b", Ctl: "4-way · 2 buttons"},
-		{K: "c", Ctl: "8-way · 3 buttons"},
-		{K: "d", Ctl: ""},
+		{K: "a", Base: "Arcade", Ctl: "8-way · 2 buttons"},
+		{K: "b", Base: "Arcade", Ctl: "4-way · 2 buttons"},
+		{K: "c", Base: "Arcade", Ctl: "8-way · 3 buttons"},
+		{K: "d", Base: "Arcade", Ctl: ""},
 	}, "", time.Time{})
 	f := &Filters{DirectionsOff: map[string]bool{"4-way": true}, ButtonsOff: map[string]bool{"3": true}}
 	if !f.Active() {

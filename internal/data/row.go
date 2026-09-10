@@ -38,6 +38,7 @@ type Row struct {
 	Rot          string   `json:"rot"`
 	Plr          string   `json:"plr"`
 	Ctl          string   `json:"ctl"`
+	Buttons      *int     `json:"buttons,omitempty"` // nil = unknown; zero is an explicit count
 	Reg          string   `json:"reg"`
 	Res          string   `json:"res"`
 	Act          string   `json:"act"` // latest commit, only when != updated

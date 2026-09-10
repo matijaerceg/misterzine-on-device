@@ -44,6 +44,8 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 	left := "by: latest update"
 	if a.mode == data.SortDebut {
 		left = "by: MiSTer debut"
+	} else if a.mode == data.SortAlphabetical {
+		left = "by: alphabetical"
 	}
 	count := itoa(len(a.ds.Rows)) + " releases"
 	if a.filters.Active() {

@@ -77,6 +77,12 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 		}
 		return fg
 	}
+	addSpec := func(label, field, val string) {
+		if val != "" && row.HasProv(field) {
+			val += " (provisional)"
+		}
+		add(label, val, prov(field))
+	}
 	add("Updated", row.Updated+rel(row.Updated), fg)
 	kind := "Debut"
 	if row.DateKind == "build" {
@@ -89,7 +95,7 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 		L = append(L, paneLine{"Card:     " + statusText(st, ""), sc})
 	}
 	if row.Rot != "" {
-		add("Rotation", row.Rot, prov("rot"))
+		addSpec("Rotation", "rot", row.Rot)
 		if row.Brot != "" {
 			L = append(L, paneLine{"  boots " + row.Brot + ", no screen flip", gen.Eva.Warn})
 		}
@@ -120,9 +126,12 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 		add("Screens", "triple screen", fg)
 	}
 	add("Video", row.Res, fg)
-	add("Players", row.Plr, prov("plr"))
-	add("Controls", d.Ctl, prov("ctl"))
-	add("Special", row.Spc, prov("spc"))
+	addSpec("Players", "plr", row.Plr)
+	addSpec("Controls", "ctl", d.Ctl)
+	addSpec("Special", "spc", row.Spc)
+	if row.HasProv("buttons") && !row.HasProv("ctl") && d.Buttons != "" {
+		addSpec("Buttons", "buttons", d.Buttons)
+	}
 	add("Flip", row.Flip, fg)
 	add("Commit", row.Act+rel(row.Act), mu)
 	add("Source", data.SrcFull(row.Src), fg)

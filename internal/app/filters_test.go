@@ -15,8 +15,8 @@ import (
 func TestControlFilterSelectionAndClear(t *testing.T) {
 	now := time.Now()
 	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest([]data.Row{
-		{K: "a", Title: "A", Ctl: "8-way · 2 buttons"},
-		{K: "b", Title: "B", Ctl: "4-way · 3 buttons"},
+		{K: "a", Base: "Arcade", Title: "A", Ctl: "8-way · 2 buttons"},
+		{K: "b", Base: "Arcade", Title: "B", Ctl: "4-way · 3 buttons"},
 	}, "", now), nil)
 	a.openPanel(ScreenFilter)
 	choose := func(kind, value string, header bool) {
@@ -59,10 +59,10 @@ func TestControlFilterSelectionAndClear(t *testing.T) {
 
 func TestResolutionFilterSelectionAndRestore(t *testing.T) {
 	rows := []data.Row{
-		{K: "a", Title: "A", Res: "15kHz", Rot: "Horizontal"},
-		{K: "b", Title: "B", Res: "31kHz", Rot: "Horizontal"},
-		{K: "c", Title: "C"},
-		{K: "d", Title: "D", Res: "15kHz", Rot: "Vertical"},
+		{K: "a", Base: "Arcade", Title: "A", Res: "15kHz", Rot: "Horizontal"},
+		{K: "b", Base: "Arcade", Title: "B", Res: "31kHz", Rot: "Horizontal"},
+		{K: "c", Base: "Arcade", Title: "C"},
+		{K: "d", Base: "Arcade", Title: "D", Res: "15kHz", Rot: "Vertical"},
 	}
 	ds := data.Ingest(rows, "", time.Now())
 	a := New(Config{PhysW: 320, PhysH: 240}, ds, nil)
@@ -83,7 +83,7 @@ func TestResolutionFilterSelectionAndRestore(t *testing.T) {
 			if !e.checked || e.count != ds.Facets.Res[e.value] {
 				t.Fatalf("bad resolution entry: %+v", e)
 			}
-			if e.value == "" && e.text != "unknown" {
+			if e.value == "" && e.text != "Unknown" {
 				t.Fatal("missing unknown label")
 			}
 		}
@@ -114,7 +114,7 @@ func TestResolutionFilterSelectionAndRestore(t *testing.T) {
 		t.Fatal("saved filters changed results")
 	}
 	// A resolution added by a later catalogue remains visible by default.
-	row := data.Row{Res: "24kHz"}
+	row := data.Row{Base: "Arcade", Res: "24kHz"}
 	if !restored.Pass(&row, &data.Derived{}, data.StatusUnknown, false, false) {
 		t.Fatal("new resolution hidden")
 	}
@@ -136,7 +136,7 @@ func TestResolutionFilterSelectionAndRestore(t *testing.T) {
 func TestResolutionFilterRendersCheckboxAndCount(t *testing.T) {
 	for _, rot := range []gfx.Rotation{gfx.RotNone, gfx.RotLeft} {
 		a := New(Config{PhysW: 320, PhysH: 240, Rotation: rot, SafeInsetX: 15, SafeInsetY: 15}, data.Ingest([]data.Row{
-			{K: "a", Res: "15kHz"}, {K: "b", Res: "31kHz"}, {K: "c"},
+			{K: "a", Base: "Arcade", Res: "15kHz"}, {K: "b", Base: "Arcade", Res: "31kHz"}, {K: "c", Base: "Arcade"},
 		}, "", time.Now()), nil)
 		a.openPanel(ScreenFilter)
 		for _, value := range []string{"", "15kHz", "31kHz"} {
@@ -150,7 +150,7 @@ func TestResolutionFilterRendersCheckboxAndCount(t *testing.T) {
 				a.Paint()
 				label := value
 				if label == "" {
-					label = "unknown"
+					label = "Unknown"
 				}
 				inner := a.lay.Body.Inset(2)
 				y := inner.Min.Y + (a.panel.cursor-a.panel.top)*a.sm.H

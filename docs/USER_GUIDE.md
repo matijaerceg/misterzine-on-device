@@ -45,6 +45,11 @@ installing a file can change them.
 
 Dates highlighted in green and the last-look divider help find changes since
 your previous visit. Visits start at the top of the latest-update sort.
+Y cycles through latest update, MiSTer debut, and alphabetical title order.
+Alphabetical sorting ignores case and accents and puts Game 2 before Game 10.
+Changing sort keeps the selected title, search and filters. Dates in alphabetical
+order still show the latest update; the last-look divider appears only in the
+latest-update order.
 The app checks data on launch and every 30 minutes; Options can request a check
 immediately. An unset system clock hides relative dates until trusted time is
 available.
@@ -111,10 +116,26 @@ item. R also jumps to the bottom.
   from Scripts to re-enable it later.
 - **Clear image cache:** removes downloaded pictures, which return as needed.
 
-Filters are ordered On the card, Favorites, Since last look, Type, Source,
-Rotation, Resolution, Genre, Input directions, Buttons and Players. Resolution
-uses the catalogue labels (15kHz or 31kHz), with unknown for entries without a value. The feed combines zero
-and unspecified button counts, so they appear together.
+Filters start with On the card, Favorites, Since last look, Type and Source.
+The **Arcade game filters** section contains Rotation, Resolution, Genre,
+Controls, Buttons and Players. These choices affect arcade games only; Type
+controls whether console, computer and other cores appear. Excluding Arcade
+hides its filter section while retaining your choices for later.
+
+Counts reflect your search and the other filter sections. A choice's count
+ignores its own section, so unchecked choices still show how many entries they
+could include. Choices remain selectable at zero. Each section heading toggles
+all its choices; Clear all filters restores everything.
+
+Resolution uses the catalogue's 15kHz/31kHz labels. **Unknown** means that value
+is missing. Controls includes separately recorded special controls such as
+spinners, paddles and trackballs. A button count alone does not identify a
+buttons-only game. **0 buttons** requires an explicit zero in the catalogue;
+older feeds that omitted zero counts still show those entries as Unknown.
+
+Provisional values are supplied from fallback sources pending the curated
+Arcade Database. They match their ordinary filter categories and are marked
+"(provisional)" in the game's details.
 
 ## Update All
 

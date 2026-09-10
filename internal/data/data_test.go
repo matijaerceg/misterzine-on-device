@@ -121,6 +121,11 @@ func TestDebutOrderMatchesSite(t *testing.T) {
 	firstDiff(t, "debut order", keysOf(ds, ds.Order(SortDebut)), g.Debut, ds)
 }
 
+func TestAlphabeticalOrderMatchesBrowser(t *testing.T) {
+	ds, g := loadFixture(t)
+	firstDiff(t, "alphabetical order", keysOf(ds, ds.Order(SortAlphabetical)), g.Title, ds)
+}
+
 func TestCompareBasics(t *testing.T) {
 	cases := []struct {
 		a, b string
@@ -301,7 +306,7 @@ func TestFilters(t *testing.T) {
 		t.Fatal("no filters must pass everything")
 	}
 	f := &Filters{RotOff: map[string]bool{"": true}}
-	if got := Apply(ds, order, f, nil, nil, nil); len(got) != 1 || got[0] != 0 {
+	if got := Apply(ds, order, f, nil, nil, nil); len(got) != 2 {
 		t.Fatalf("rot filter = %v", got)
 	}
 	f = &Filters{Install: InstallFound}

@@ -2,7 +2,7 @@ package data
 
 import "sort"
 
-// SortMode selects one of the two orders the device offers.
+// SortMode selects the device's list order.
 type SortMode int
 
 const (
@@ -11,11 +11,16 @@ const (
 	SortUpdated SortMode = iota
 	// SortDebut is newest MiSTer debut first, then title.
 	SortDebut
+	// SortAlphabetical orders titles naturally, ignoring case and accents.
+	SortAlphabetical
 )
 
 func (m SortMode) String() string {
-	if m == SortDebut {
+	switch m {
+	case SortDebut:
 		return "Debut"
+	case SortAlphabetical:
+		return "Alphabetical"
 	}
 	return "Updated"
 }
@@ -40,6 +45,9 @@ func (ds *Dataset) Order(mode SortMode) []int {
 func (ds *Dataset) less(mode SortMode, a, b int) bool {
 	ra, rb := &ds.Rows[a], &ds.Rows[b]
 	da, db := &ds.Der[a], &ds.Der[b]
+	if mode == SortAlphabetical {
+		return CompareKeys(da.titleKey, db.titleKey) < 0
+	}
 	var av, bv string
 	var ak, bk []elem
 	if mode == SortDebut {
