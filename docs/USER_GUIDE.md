@@ -61,6 +61,8 @@ L goes to a newer month, R to an older one. Empty months are skipped, each
 month's first result appears at the top, and its month/year briefly appears in
 the status bar. Unknown dates share a final group. Jumps stop at either end.
 Keyboard Home/End still jumps to the first/last title.
+Hold L/R to keep jumping letters or months with the same Hold delay and Scroll
+speed as Up/Down row scrolling. Releasing the button stops the jumps.
 The app checks data on launch and every 30 minutes; Options can request a check
 immediately. An unset system clock hides relative dates until trusted time is
 available.

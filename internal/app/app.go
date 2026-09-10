@@ -453,6 +453,10 @@ func (a *App) Handle(ev platform.Event) bool {
 		switch ev.Key {
 		case platform.KeyUp, platform.KeyDown, platform.KeyLeft, platform.KeyRight:
 			a.rep.next = ev.At.Add(time.Duration(a.HoldDelay()) * time.Millisecond)
+		case platform.KeyPageUp, platform.KeyPageDown:
+			if a.screen == ScreenList {
+				a.rep.next = ev.At.Add(time.Duration(a.HoldDelay()) * time.Millisecond)
+			}
 		}
 	}
 	return a.act(ev.Key)
@@ -466,8 +470,8 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 		switch k {
 		case platform.KeyBackspace:
 			return repeatStep
-		case platform.KeyUp, platform.KeyDown, platform.KeyLeft, platform.KeyRight:
-			return scrollPace(a.cfg.Scroll) // pages at the row pace
+		case platform.KeyUp, platform.KeyDown, platform.KeyLeft, platform.KeyRight, platform.KeyPageUp, platform.KeyPageDown:
+			return scrollPace(a.cfg.Scroll) // rows, pages and groups share the same pace
 		}
 	case ScreenShot:
 		switch k {

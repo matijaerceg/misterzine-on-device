@@ -10,6 +10,64 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
 
+func TestHeldGroupJumpsMatchRowScrolling(t *testing.T) {
+	now := time.Unix(100, 0)
+	var groups, singles []data.Row
+	for i := 0; i < 26; i++ {
+		date := time.Date(2024, time.Month(i+1), 1, 0, 0, 0, 0, time.UTC).Format("2006-01-02")
+		for j := 0; j < 2; j++ {
+			title := fmt.Sprintf("%c %d", 'A'+i, j)
+			row := data.Row{K: title, Title: title, Date: date, Updated: date}
+			groups = append(groups, row)
+			if j == 0 {
+				singles = append(singles, row)
+			}
+		}
+	}
+	for _, mode := range []data.SortMode{data.SortUpdated, data.SortDebut, data.SortAlphabetical} {
+		for _, delay := range []int{200, 300, 500} {
+			for _, speed := range []string{"20", "30", "60"} {
+				for _, direction := range []struct{ group, row platform.Key }{
+					{platform.KeyPageUp, platform.KeyUp}, {platform.KeyPageDown, platform.KeyDown},
+				} {
+					t.Run(fmt.Sprintf("%v/%d/%s/%v", mode, delay, speed, direction.group), func(t *testing.T) {
+						cfg := Config{PhysW: 320, PhysH: 240, RememberSort: true, LastSort: mode, HoldDelay: delay, Scroll: speed, Now: func() time.Time { return now }}
+						a := New(cfg, data.Ingest(groups, "test", now), nil)
+						ref := New(cfg, data.Ingest(singles, "test", now), nil)
+						a.MoveToKey("N 0")
+						ref.MoveToKey("N 0")
+						a.Handle(platform.Event{Key: direction.group, Pressed: true, At: now})
+						ref.Handle(platform.Event{Key: direction.row, Pressed: true, At: now})
+						first := a.CursorKey()
+						deadline := now.Add(time.Duration(delay) * time.Millisecond)
+						a.Frame(deadline.Add(-time.Millisecond))
+						if first == "N 0" || a.CursorKey() != first || !a.NextTick().Equal(deadline) {
+							t.Fatal("first jump or selected hold delay was not respected")
+						}
+						for frame := 0; frame < 9; frame++ {
+							at := deadline.Add(time.Duration(frame) * frameDur)
+							a.Frame(at)
+							ref.Frame(at)
+							if a.CursorKey() != ref.CursorKey() || a.top != a.screenLine(a.cursor) {
+								t.Fatalf("frame %d: group %q / row %q, or lost top alignment", frame, a.CursorKey(), ref.CursorKey())
+							}
+						}
+						last := a.CursorKey()
+						if last == first {
+							t.Fatal("held shoulder never repeated")
+						}
+						a.Handle(platform.Event{Key: direction.group, At: deadline.Add(9 * frameDur)})
+						a.Frame(deadline.Add(time.Second))
+						if a.CursorKey() != last || a.Repeating() {
+							t.Fatal("release did not stop jumps")
+						}
+					})
+				}
+			}
+		}
+	}
+}
+
 func TestLetterJumpsPutGroupAtTopInBothDirections(t *testing.T) {
 	for _, rot := range []gfx.Rotation{gfx.RotNone, gfx.RotLeft} {
 		for _, groupSize := range []int{2, 30} {

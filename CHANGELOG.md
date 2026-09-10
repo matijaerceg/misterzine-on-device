@@ -14,6 +14,8 @@
 - L/R jumps between months in latest-update and MiSTer-debut order. Empty months
   are skipped and the selected month/year is shown briefly. Home/End retains
   first/last jumps in every sort order.
+- Holding L/R repeats letter/month jumps with the same hold delay and scroll
+  speed as Up/Down row scrolling.
 
 ## v1.0.4 — 2026-09-10
 
