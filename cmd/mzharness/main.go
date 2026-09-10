@@ -28,6 +28,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/images"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform/headless"
+	"github.com/matijaerceg/misterzine-on-device/internal/support"
 	"github.com/matijaerceg/misterzine-on-device/internal/updater"
 )
 
@@ -46,6 +47,7 @@ func main() {
 	logical := flag.Bool("logical", false, "save the unrotated logical canvas instead of the physical frame")
 	imgDir := flag.String("images", "../misterzine/docs/images", "directory laid out like the site's docs/images; empty = placeholders")
 	updatePath := flag.String("update-state", "", "render an Update All state JSON without running an updater")
+	supportPath := flag.String("support-report", "", "controller diagnostic fixture; no devices are opened")
 	flag.Parse()
 
 	rows, meta := load(*dataPath, *metaPath)
@@ -84,6 +86,26 @@ func main() {
 	if *imgDir != "" {
 		if _, err := os.Stat(*imgDir); err == nil {
 			cfg.Images = images.NewLocal(*imgDir)
+		}
+	}
+	if *supportPath != "" {
+		b, err := os.ReadFile(*supportPath)
+		if err != nil {
+			die(err)
+		}
+		var report support.Report
+		if err := json.Unmarshal(b, &report); err != nil {
+			die(err)
+		}
+		cfg.Support = &app.SupportHooks{
+			Start:  func(time.Time, time.Time) {},
+			Finish: func() support.Report { return report },
+			Load:   func() support.Report { return report },
+			Launch: func(game, target string) support.Report {
+				r := report
+				r.Launch = support.Launch{Game: game, Target: target, Result: "Cannot launch: target missing or invalid", Detail: "Example failure for visual review"}
+				return r
+			},
 		}
 	}
 	if *status == "fake" {

@@ -1,0 +1,12 @@
+{
+  "Schema": 1,
+  "Version": "v1.0.4-dev (test123, 2026-09-10)",
+  "Kernel": "6.18.38-MiSTer",
+  "Display": "Rotation off; inset 40,40; 320x240",
+  "Data": "2026-09-10 02:33",
+  "Created": "2026-09-10T12:00:00Z",
+  "Tested": true,
+  "Devices": [
+    {"Node": "event2", "Name": "A very long controller name that must remain readable in full across the report pages", "Bus": 3, "Vendor": 4660, "Product": 22136, "Version": 256, "Error": "read /dev/input/event2: no such device"}
+  ]
+}

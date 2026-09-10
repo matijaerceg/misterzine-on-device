@@ -89,6 +89,7 @@ type host struct {
 	updatePending   bool
 	updateReadError string // UI-owned; suppress repeated status-read diagnostics
 	updateRunning   bool
+	troubleshooting supportHost
 }
 
 func main() {
@@ -232,6 +233,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 		Launch:          h.requestLaunch,
 		Quit:            h.stop,
 		Version:         buildinfo.String(),
+		Support:         h.supportHooks(),
 		FavChanged:      func() { h.favDirty = true },
 		FiltersChanged:  func() { h.dirty = true },
 		SettingsChanged: func() { h.setDirty = true },
@@ -440,6 +442,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 // handleEvent feeds one input event to the app (the screenshot key is the
 // host's own).
 func (h *host) handleEvent(ev platform.Event) {
+	h.recordSupportInput(ev)
 	if h.debugEnabled {
 		h.lg.Printf("input: %v %s +%dms %s", ev.Key, map[bool]string{true: "down", false: "up"}[ev.Pressed], ev.At.Sub(h.lastEv).Milliseconds(), ev.Source)
 		h.lastEv = ev.At
@@ -680,6 +683,9 @@ func (h *host) saveAll(final bool) {
 
 // cleanup restores the machine; safe to call twice.
 func (h *host) cleanup() {
+	if h.troubleshooting.capture != nil {
+		h.finishSupport(true)
+	}
 	if h.input != nil {
 		h.input.Close()
 		h.input = nil
@@ -710,10 +716,12 @@ func (h *host) requestLaunch(target string) {
 	}
 	if err != nil {
 		h.lg.Printf("launch %q: %v", target, err)
+		h.supportLaunchResult(message, err)
 		h.a.Notice(message, 8*time.Second)
 		return
 	}
 	h.launch = abs
+	h.supportLaunchResult("Target found; preparing launch", nil)
 	h.stop()
 }
 
@@ -723,14 +731,17 @@ func (h *host) doLaunch() int {
 	marker := filepath.Join(h.root, "launched")
 	if err := os.WriteFile(marker, []byte(h.launch+"\n"), 0644); err != nil {
 		h.lg.Printf("launch marker: %v", err)
+		h.supportLaunchResult("Could not prepare launch", err)
 		return 1
 	}
 	if err := h.cmd.Send("load_core " + h.launch); err != nil {
 		h.lg.Printf("launch: %v", err)
+		h.supportLaunchResult("Launch command failed", err)
 		os.Remove(marker)
 		return 1
 	}
 	h.lg.Printf("launched %s", h.launch)
+	h.supportLaunchResult("Command sent; game startup not verified", nil)
 	return 0
 }
 

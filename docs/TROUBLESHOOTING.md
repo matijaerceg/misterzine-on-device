@@ -96,6 +96,41 @@ Use Rescan card after an external update. Alternatives must be installed:
 Downloader filters can intentionally exclude them. MisterZine leaves those
 preferences unchanged. A missing or invalid launch target reports an error.
 
+## Start does not launch games
+
+Open **Options -> Troubleshooting -> Test Start button**. Release all buttons
+during the countdown. When **GO** appears, press and release your Start button
+once or twice. The test ends automatically after six seconds and freezes a
+result for a photo. Games cannot launch from button presses during this test.
+
+Send a photo of the first result page to the person helping you. L/R or the
+arrows show additional pages, including full controller names, device IDs,
+button codes, press/release counts, and whether the normal input reader uses
+each device. Connect the controller before starting; rerun the test after
+changing connections. MiSTer's Menu button still closes the app.
+
+**Button received: YES / App saw Start: NO** suggests an input compatibility
+problem. MisterZine currently reads the standard Linux gamepad Start signal
+directly; remapping Start in MiSTer's menu does not change that raw signal.
+**No button received** means further device investigation is needed, not that
+the controller has necessarily failed. The test also observes devices that
+the normal reader skips.
+
+To check launching separately, highlight an installed game in the list, then
+open **Options -> Troubleshooting -> Test game launch**. Press **A / Enter**
+again to launch its main version. This uses the normal launch path without
+requiring a Start button. Tell the person helping you whether the game actually
+started; a saved "Command sent" result cannot establish that by itself.
+
+**Last troubleshooting result** remains available after closing or restarting
+the app. Results do not dim while being viewed. A controller test replaces the
+previous report; a subsequent launch test adds its result. The report is kept
+locally in `misterzine/troubleshooting.json`; sharing a photo is sufficient.
+No extra tools, file uploads, account or remote-debug setup are needed.
+
+Raw input is observed only during an explicit controller test. Troubleshooting
+does not change mappings, enable the remote-debug server, or upload information.
+
 ## No connection or an old catalogue
 
 Cached data remains usable. Check the connection, then use Refresh data now.
@@ -108,3 +143,7 @@ Include the app version and data date from Options, your board, display
 connection, rotation, and the steps that reproduce it. A photo helps for physical
 display problems; F12 captures what the app draws. Remote debugging is optional
 and described in the development guide.
+
+For Start/controller problems, begin with the built-in test above and a photo
+of its result. For launch failures, also give the game title and the outcome of
+**Test game launch**.

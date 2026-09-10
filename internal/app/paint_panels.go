@@ -267,6 +267,8 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Show MisterZine in the MiSTer main menu. Off removes the entry when you return to Menu. Run MisterZine-Setup in Scripts to restore it."},
 		{text: "Clear image cache", kind: "clearimg",
 			help: "Delete the downloaded screenshots and system photos; they come back as you browse."},
+		{text: "Troubleshooting", kind: "troubleshooting",
+			help: "Test your Start button or game launching. Results stay on screen for a photo; no keyboard or log files needed."},
 		{text: "Quit MisterZine", kind: "quit",
 			help: "Back to the MiSTer menu. The pad's menu button does the same."},
 	}
@@ -569,6 +571,9 @@ func (a *App) togglePanel() bool {
 		return out
 	}
 	switch e.kind {
+	case "troubleshooting":
+		a.OpenTroubleshooting()
+		return true
 	case "screensaver":
 		a.startSaver(a.cfg.TimerNow())
 		return true

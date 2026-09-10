@@ -1,20 +1,17 @@
-Alphabetical sorting and clearer arcade filters make it easier to find a game.
+Troubleshoot Start-button and game-launch problems directly on your MiSTer.
 
-- **Alphabetical sorting:** Y now cycles through latest update, MiSTer debut
-  and alphabetical title order. Your selected title, search and filters stay
-  in place when you change sort.
-- **Arcade game filters:** rotation, resolution, genre, controls, buttons and
-  players affect arcade games only. Console, computer and other cores remain
-  controlled by Type, and no longer inflate the unknown counts.
-- **Useful counts:** filter counts respond to your search and other selections.
-  Unchecked choices retain their potential counts, and zero-count choices stay
-  available.
-- **Clearer controls:** separately recorded spinners, paddles and trackballs
-  appear under Controls. Explicit zero-button counts have their own choice;
-  missing values consistently say Unknown. Provisional values are labelled in
-  Details and still match their normal filter categories.
-- **Resolution filter:** choose the catalogue's 15kHz and 31kHz categories,
-  with your choices remembered between visits.
+- **Test Start button:** open Options -> Troubleshooting, wait for GO, then
+  press and release Start. A frozen result shows whether the button reached
+  MisterZine and was recognised as Start, along with its device and button code.
+  Share a photo; no keyboard, computer or log-file upload is needed.
+- **Test game launch:** launch the highlighted game's main version with A/Enter
+  to check launching independently of your Start button.
+- **Saved results:** reopen Last troubleshooting result after restarting.
+  L/R or arrows show additional device information and any launch failure.
+
+Diagnostics run only when requested. They do not change controller mappings,
+enable remote debugging or upload information. Normal controls are unchanged.
+The bundled offline catalogue has also been refreshed.
 
 Existing installations can update through Update All/Downloader. Favorites,
 settings and filter choices are preserved.

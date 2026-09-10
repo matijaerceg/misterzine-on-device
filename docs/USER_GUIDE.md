@@ -115,6 +115,9 @@ item. R also jumps to the bottom.
   launcher opened this session, it returns to Menu before stopping. Run Setup
   from Scripts to re-enable it later.
 - **Clear image cache:** removes downloaded pictures, which return as needed.
+- **Troubleshooting:** a guided Start-button test and an A/Enter game-launch
+  test, with results you can photograph. The last result survives restarting.
+  See [troubleshooting](TROUBLESHOOTING.md#start-does-not-launch-games).
 
 Filters start with On the card, Favorites, Since last look, Type and Source.
 The **Arcade game filters** section contains Rotation, Resolution, Genre,

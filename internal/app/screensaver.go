@@ -107,6 +107,9 @@ func (a *App) startSaver(now time.Time) {
 }
 
 func (a *App) nextSaverTick() time.Time {
+	if a.screen == ScreenTroubleshooting {
+		return time.Time{}
+	}
 	if a.saver.active {
 		return a.saver.next
 	}

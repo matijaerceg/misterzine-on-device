@@ -29,10 +29,11 @@ const (
 	ScreenOptions
 	ScreenCalibrate
 	ScreenUpdate
+	ScreenTroubleshooting
 )
 
 func (s Screen) String() string {
-	return [...]string{"list", "details", "screen", "filter", "options", "calibrate", "update"}[s]
+	return [...]string{"list", "details", "screen", "filter", "options", "calibrate", "update", "troubleshooting"}[s]
 }
 
 // Config is what the app needs from its host.
@@ -50,6 +51,7 @@ type Config struct {
 	Launch       func(path string) // called with a card-relative path; the host exits
 	Quit         func()
 	Version      string
+	Support      *SupportHooks
 
 	// FavoritesUnavailable prevents edits after the host could not read the file.
 	FavoritesUnavailable bool
@@ -107,6 +109,7 @@ type App struct {
 	panel      panelState
 	update     updater.State
 	updateView updateView
+	support    supportView
 
 	wants  []ImageReq // pictures this frame asked for, in priority order
 	rep    repeater
@@ -392,6 +395,16 @@ func (a *App) Handle(ev platform.Event) bool {
 	if a.handleSaverInput(ev) {
 		return true
 	}
+	if a.supportCapturing() {
+		// Observe releases but do not navigate, search, launch or repeat. A
+		// button held across the result boundary still needs a fresh press.
+		if ev.Pressed {
+			a.down[ev.Key] = true
+		} else {
+			delete(a.down, ev.Key)
+		}
+		return false
+	}
 	if a.screen == ScreenUpdate {
 		return a.handleUpdate(ev)
 	}
@@ -478,6 +491,9 @@ func (a *App) Tick(now time.Time) bool {
 		changed = a.tickUpdate(now) || changed
 		return a.tickSaver(now) || changed
 	}
+	if a.screen == ScreenTroubleshooting {
+		return a.tickSupport(now) || changed
+	}
 	if k := a.rep.due(now, a.repeatStep); k != platform.KeyNone {
 		if a.act(k) {
 			changed = true
@@ -507,6 +523,9 @@ func (a *App) Frame(now time.Time) bool {
 // NextTick reports when Tick next needs to run; zero when nothing is pending.
 func (a *App) NextTick() time.Time {
 	t := a.rep.nextAt()
+	if a.screen == ScreenTroubleshooting {
+		t = a.support.next
+	}
 	if a.notice != "" && (t.IsZero() || a.until.Before(t)) {
 		t = a.until
 	}
@@ -523,6 +542,8 @@ func (a *App) act(k platform.Key) bool {
 		return a.actList(k)
 	case ScreenDetails:
 		return a.actDetails(k)
+	case ScreenTroubleshooting:
+		return a.actSupport(k)
 	case ScreenShot:
 		return a.actShot(k)
 	case ScreenFilter, ScreenOptions:
@@ -675,7 +696,9 @@ func (a *App) Invalidate() {
 
 // Repeating reports whether a held key is driving repeats right now; the
 // host then runs its vsync-driven frame loop (see Frame).
-func (a *App) Repeating() bool { return a.screen != ScreenUpdate && a.rep.held }
+func (a *App) Repeating() bool {
+	return a.screen != ScreenUpdate && a.screen != ScreenTroubleshooting && a.rep.held
+}
 
 // RepeatActive reports whether a held key has started repeating (a tap
 // released before the delay never does), which is when background work
@@ -741,6 +764,8 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 		a.paintCalibrate(c)
 	case ScreenUpdate:
 		a.paintUpdate(c)
+	case ScreenTroubleshooting:
+		a.paintSupport(c)
 	}
 	a.neighbourhood()
 	a.cfg.Images.Want(a.wants)

@@ -95,6 +95,20 @@ the F12 screenshot feature, but skips the detailed input and timing instrumentat
 To return a test device to ordinary mode, remove `debug.flag`, remove any explicit
 debug argument, and restart. Removing the file cannot stop an already running server.
 
+## On-device troubleshooting
+
+The on-device Troubleshooting screen is separate from remote debugging. Its
+explicit controller test temporarily opens independent read-only evdev readers,
+including devices omitted by normal keyboard/Start filtering. It never grabs
+devices or injects raw events into navigation. A three-second arming interval
+precedes a six-second capture; the UI suppresses normal actions until the result.
+Original and MiSTer-translated sources remain separate. Device and signal counts
+are bounded, and SYN_DROPPED is recorded while invalid event batches are skipped.
+Readers close at completion or shutdown. The last report is saved atomically as
+`troubleshooting.json`; no listener, detailed normal-input logging, or upload is
+enabled. Support launch results distinguish command delivery from game startup.
+Harness `-support-report` fixtures render this flow without opening devices.
+
 ## Data and generated files
 
 `tools/snapshot.sh` refreshes the embedded first-run catalogue. It does not

@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.0.4 — 2026-09-10
+
+- Added Options -> Troubleshooting with a guided Start-button test. It detects
+  raw controller signals even from devices the normal input reader skips, and
+  freezes a paged result with device IDs, button codes and press/release counts.
+- Added an A/Enter launch test for the highlighted game's main version, with
+  saved failure details and a clear distinction between sending a launch command
+  and confirming that the game started.
+- Troubleshooting results survive restarting and can be shared with a photo.
+  Tests do not change mappings, enable remote debugging or upload information;
+  extra input observation stops when the test ends.
+- Refreshed the bundled catalogue for offline first use.
+
 ## v1.0.3 — 2026-09-10
 
 - Added alphabetical title sorting as the third Y sort choice.

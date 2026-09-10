@@ -23,6 +23,14 @@ scenarios = [
      "back; down*7; shot option; enter; wait 12000; shot preview; back; up*7; up; shot wrap; down; shot top"],
     ["-rot", "left", "-logical", "-out", "out/saver-t", "-script",
      "back; down*7; shot option; enter; wait 12000; shot preview; back; up*7; up; shot wrap; down; shot top"],
+    ["-support-report", "testdata/support-controller.json", "-out", "out/support-h", "-script",
+     "back; end; up; enter; shot menu; enter; shot ready; wait 3500; shot capture; wait 6000; shot result; right; shot evidence; back; down; enter; shot launch; enter; shot launch-result"],
+    ["-support-report", "testdata/support-controller.json", "-rot", "left", "-logical", "-out", "out/support-t", "-script",
+     "back; end; up; enter; shot menu; enter; shot ready; wait 3500; shot capture; wait 6000; shot result; right; shot evidence; back; down; enter; shot launch; enter; shot launch-result"],
+    ["-support-report", "testdata/support-no-input.json", "-inset", "40", "-out", "out/support-small-h", "-script",
+     "back; end; up; enter; down*2; enter; shot result; right; shot evidence"],
+    ["-support-report", "testdata/support-no-input.json", "-inset", "40", "-rot", "left", "-logical", "-out", "out/support-small-t", "-script",
+     "back; end; up; enter; down*2; enter; shot result; right; shot evidence"],
 ]
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)
