@@ -47,26 +47,32 @@ func (h *host) requestScan() {
 
 func (h *host) receiveScan(r scanResult) {
 	first := h.index == nil
-	h.index = r.index
-	if r.hash == h.a.Data().Hash {
+	if r.index != nil {
+		h.index = r.index
+	}
+	if r.hash == h.a.Data().Hash && r.index != nil {
 		h.status = r.status
-	} else {
+	} else if r.hash != h.a.Data().Hash {
 		// Reordered/new rows cannot use old positional statuses. Queue one scan
 		// of the latest data rather than doing filesystem work during painting.
 		h.scanPending = true
 	}
 	// A nil alternatives result means genuinely empty only on the final pass.
-	if r.final {
+	if r.final && r.index != nil {
 		h.alts = r.alts
 	}
 	h.a.Refilter()
-	if first && h.favLoadFailed {
-		h.a.Notice(app.FavoritesUnavailableNotice, 12*time.Second)
-	} else if r.hash == h.a.Data().Hash && (first || r.notice != "") {
+	if r.hash == h.a.Data().Hash && r.notice != "" {
 		h.a.Notice(r.notice, 8*time.Second)
+	} else if first && h.favLoadFailed {
+		h.a.Notice(app.FavoritesUnavailableNotice, 12*time.Second)
 	}
 	if r.final {
 		h.scanRunning = false
+		if h.manualScan && !h.scanPending && r.hash == h.a.Data().Hash {
+			h.manualScan = false
+			h.a.FinishScan(r.notice)
+		}
 		if h.scanPending {
 			h.requestScan()
 		}

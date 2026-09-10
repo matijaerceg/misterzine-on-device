@@ -74,7 +74,7 @@ func TestAlphabeticalSortCyclePreservesSelectionAndFilters(t *testing.T) {
 	a := New(Config{PhysW: 320, PhysH: 240, Favorites: map[string]bool{"z": true, "a": true, "n": true, "m": true}}, data.Ingest(rows, "", time.Now()), &data.SeenRecord{Cur: map[string]string{}})
 	a.SetFilters(data.Filters{FavOnly: true})
 	a.MoveToKey("z")
-	for _, mode := range []data.SortMode{data.SortDebut, data.SortAlphabetical, data.SortUpdated} {
+	for _, mode := range []data.SortMode{data.SortDebut, data.SortAlphabetical, data.SortFavorites, data.SortUpdated} {
 		a.actList(platform.KeySpace)
 		if a.Sort() != mode || a.CursorKey() != "z" || !a.filters.FavOnly {
 			t.Fatal("sort cycle changed selection or filters")

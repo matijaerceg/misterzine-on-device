@@ -60,7 +60,7 @@ func LoadSettings(path string) (Settings, error) {
 // becomes two (when legacy says the file predates the split), and the
 // speed adjectives become rows per second.
 func (s *Settings) Migrate(legacy bool) {
-	if s.LastSort < data.SortUpdated || s.LastSort > data.SortAlphabetical {
+	if s.LastSort < data.SortUpdated || s.LastSort > data.SortFavorites {
 		s.LastSort = data.SortUpdated
 	}
 	switch s.Screensaver {

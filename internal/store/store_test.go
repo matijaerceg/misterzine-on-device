@@ -28,6 +28,7 @@ func TestRememberSortMigration(t *testing.T) {
 		{`{"remember_sort":true,"last_sort":1}`, true, data.SortDebut},
 		{`{"last_sort":-1}`, true, data.SortUpdated},
 		{`{"last_sort":999}`, true, data.SortUpdated},
+		{`{"last_sort":3}`, true, data.SortFavorites},
 	} {
 		path := writeSettings(t, tc.body)
 		s, err := LoadSettings(path)

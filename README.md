@@ -50,7 +50,7 @@ For configuration by hand, see [installation details](docs/USER_GUIDE.md#install
 | A | Open details |
 | Start | Launch the main version |
 | X | Filters |
-| Y | Sort by latest update or MiSTer debut |
+| Y | Cycle latest update, MiSTer debut, alphabetical, and Favorites |
 | B | Options |
 | Menu | Return to MiSTer's main menu |
 

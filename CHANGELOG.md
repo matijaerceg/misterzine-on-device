@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Quiet automatic card scans; manual Rescan opens a readable result screen.
+  Card-status filters show catalogue-wide counts. Scan failures retain a banner.
+- Main view quietly indicates when a newer stable MisterZine app is available;
+  Options identifies the version and offers Update All. Reopen after updating.
+- Favorites is a fourth main-view mode after Alphabetical, with alphabetical
+  ordering, held letter jumps, search/filter support and saved view restoration.
+
 ## v1.0.5 — 2026-09-10
 
 - Remember the last selected sort order by default. Options -> Remember sort

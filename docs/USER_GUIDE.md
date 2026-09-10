@@ -49,6 +49,9 @@ Options -> Remember sort order is on by default; turn it off to start each visit
 with latest updates instead.
 Y cycles through latest update, MiSTer debut, and alphabetical title order.
 Alphabetical sorting ignores case and accents and puts Game 2 before Game 10.
+Y cycles Updated, Debut, Alphabetical, then Favorites. Favorites shows only your
+starred entries in alphabetical order, with the same letter jumps as A-Z.
+Search and filters still apply. Remember sort order also remembers Favorites.
 Changing sort keeps the selected title, search and filters. Dates in alphabetical
 order still show the latest update; the last-look divider appears only in the
 latest-update order.
@@ -82,7 +85,7 @@ filter choices are saved.
 | A | Enter | details | artwork | | toggle | run action |
 | B | Esc | Options / clear search | back | back | back | back |
 | X | Tab | Filters | | | | |
-| Y | Space | change sort | favorite | | toggle | |
+| Y | Space | change view | favorite | | toggle | |
 | Start | gamepad Start | launch main version | launch selected version | launch selected version | | |
 | Menu | | return to MiSTer Menu from any screen; closes the app | | | | |
 
@@ -137,6 +140,21 @@ item. R also jumps to the bottom.
   See [troubleshooting](TROUBLESHOOTING.md#start-does-not-launch-games).
 
 Filters start with On the card, Favorites, Since last look, Type and Source.
+On-card choices include counts across the whole catalogue, independent of the
+current search and other filters. Favorites mode always shows favorites only;
+use Y in the main view to leave it.
+
+Card scans run quietly on launch. Options -> Rescan card shows a result screen
+with up-to-date, older, undated, missing and unknown totals. B closes it even
+while scanning; completion does not interrupt the screen you moved to.
+Unreadable card scans retain the previous inventory and show a failure banner.
+
+MisterZine checks GitHub for a newer stable app release on launch and at most
+every 30 minutes. When available, the main bar shows **App update**, and Options
+shows the version beside the Update All instructions. Run Update All, then quit
+and reopen MisterZine to use the new app. Offline checks stay quiet. This is
+separate from automatically refreshing the games catalogue; prerelease and
+development builds do not advertise stable downgrades.
 The **Arcade game filters** section contains Rotation, Resolution, Genre,
 Controls, Buttons and Players. These choices affect arcade games only; Type
 controls whether console, computer and other cores appear. Excluding Arcade

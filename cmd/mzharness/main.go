@@ -48,6 +48,8 @@ func main() {
 	imgDir := flag.String("images", "../misterzine/docs/images", "directory laid out like the site's docs/images; empty = placeholders")
 	updatePath := flag.String("update-state", "", "render an Update All state JSON without running an updater")
 	supportPath := flag.String("support-report", "", "controller diagnostic fixture; no devices are opened")
+	appUpdate := flag.String("app-update", "", "available app version fixture")
+	scanResult := flag.Bool("scan-result", false, "show completed card scan fixture")
 	flag.Parse()
 
 	rows, meta := load(*dataPath, *metaPath)
@@ -133,6 +135,11 @@ func main() {
 		stored = &data.SeenRecord{T: now.Add(-*seenAge).UTC().Format(time.RFC3339), Cur: cur}
 	}
 	a := app.New(cfg, ds, stored)
+	a.SetAppUpdate(*appUpdate)
+	if *scanResult {
+		a.OpenScan()
+		a.FinishScan("")
+	}
 	a.SetNet("data " + data.RelUpdated(now, upd))
 	if *updatePath != "" {
 		b, err := os.ReadFile(*updatePath)

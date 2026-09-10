@@ -13,6 +13,8 @@ const (
 	SortDebut
 	// SortAlphabetical orders titles naturally, ignoring case and accents.
 	SortAlphabetical
+	// SortFavorites is an alphabetical favorites-only browsing mode.
+	SortFavorites
 )
 
 func (m SortMode) String() string {
@@ -21,6 +23,8 @@ func (m SortMode) String() string {
 		return "Debut"
 	case SortAlphabetical:
 		return "Alphabetical"
+	case SortFavorites:
+		return "Favorites"
 	}
 	return "Updated"
 }
@@ -45,7 +49,7 @@ func (ds *Dataset) Order(mode SortMode) []int {
 func (ds *Dataset) less(mode SortMode, a, b int) bool {
 	ra, rb := &ds.Rows[a], &ds.Rows[b]
 	da, db := &ds.Der[a], &ds.Der[b]
-	if mode == SortAlphabetical {
+	if mode == SortAlphabetical || mode == SortFavorites {
 		return CompareKeys(da.titleKey, db.titleKey) < 0
 	}
 	var av, bv string

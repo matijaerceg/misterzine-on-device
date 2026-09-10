@@ -30,10 +30,11 @@ const (
 	ScreenCalibrate
 	ScreenUpdate
 	ScreenTroubleshooting
+	ScreenScan
 )
 
 func (s Screen) String() string {
-	return [...]string{"list", "details", "screen", "filter", "options", "calibrate", "update", "troubleshooting"}[s]
+	return [...]string{"list", "details", "screen", "filter", "options", "calibrate", "update", "troubleshooting", "scan"}[s]
 }
 
 // Config is what the app needs from its host.
@@ -115,14 +116,17 @@ type App struct {
 	updateView updateView
 	support    supportView
 
-	wants  []ImageReq // pictures this frame asked for, in priority order
-	rep    repeater
-	down   map[platform.Key]bool // keys currently held, across all devices
-	notice string
-	until  time.Time
-	net    string // status bar right text: "offline", "updating", "data 2h ago"
-	all    bool   // full repaint pending
-	saver  screensaver
+	wants     []ImageReq // pictures this frame asked for, in priority order
+	rep       repeater
+	down      map[platform.Key]bool // keys currently held, across all devices
+	notice    string
+	until     time.Time
+	net       string // status bar right text: "offline", "updating", "data 2h ago"
+	appUpdate string
+	scanReady bool
+	scanError string
+	all       bool // full repaint pending
+	saver     screensaver
 }
 
 type detailState struct {
@@ -148,7 +152,7 @@ func New(cfg Config, ds *data.Dataset, stored *data.SeenRecord) *App {
 		cfg.Favorites = map[string]bool{}
 	}
 	a := &App{cfg: cfg, body: fonts.Body(), sm: fonts.Small(), rot: cfg.Rotation, split: -1, down: map[platform.Key]bool{}}
-	if cfg.RememberSort && cfg.LastSort >= data.SortUpdated && cfg.LastSort <= data.SortAlphabetical {
+	if cfg.RememberSort && cfg.LastSort >= data.SortUpdated && cfg.LastSort <= data.SortFavorites {
 		a.mode = cfg.LastSort
 	}
 	a.physical = image.NewRGBA(image.Rect(0, 0, cfg.PhysW, cfg.PhysH))
@@ -246,7 +250,11 @@ func (a *App) rebuild() {
 	a.order = a.ds.Order(a.mode)
 	fav := func(k string) bool { return a.cfg.Favorites[k] }
 	unseen := func(i int) bool { return a.seen != nil && a.seen.Unseen(&a.ds.Rows[i]) }
-	a.view = data.Apply(a.ds, a.order, &a.filters, a.cfg.Status, fav, unseen)
+	filters := a.filters
+	if a.mode == data.SortFavorites {
+		filters.FavOnly = true
+	}
+	a.view = data.Apply(a.ds, a.order, &filters, a.cfg.Status, fav, unseen)
 	if q := searchText(a.query); q != "" {
 		matched := a.view[:0]
 		for _, i := range a.view {
@@ -295,7 +303,7 @@ func (a *App) MoveToKey(k string) { a.moveToKey(k); a.all = true }
 
 // SetSort switches the sort mode.
 func (a *App) SetSort(m data.SortMode) {
-	if m < data.SortUpdated || m > data.SortAlphabetical || m == a.mode {
+	if m < data.SortUpdated || m > data.SortFavorites || m == a.mode {
 		return
 	}
 	k := a.CursorKey()
@@ -572,6 +580,12 @@ func (a *App) NextTick() time.Time {
 // act performs a key on the current screen.
 func (a *App) act(k platform.Key) bool {
 	switch a.screen {
+	case ScreenScan:
+		if k == platform.KeyBack || (k == platform.KeyEnter && a.scanReady) {
+			a.openPanel(ScreenOptions)
+			return true
+		}
+		return false
 	case ScreenList:
 		return a.actList(k)
 	case ScreenDetails:
@@ -616,7 +630,7 @@ func (a *App) actList(k platform.Key) bool {
 		a.shortPage = false
 		a.cursor = n - 1
 	case platform.KeySpace:
-		a.SetSort((a.mode + 1) % (data.SortAlphabetical + 1))
+		a.SetSort((a.mode + 1) % (data.SortFavorites + 1))
 		return true
 	case platform.KeyTab:
 		a.openPanel(ScreenFilter)
@@ -807,6 +821,8 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 		a.paintUpdate(c)
 	case ScreenTroubleshooting:
 		a.paintSupport(c)
+	case ScreenScan:
+		a.paintScan(c)
 	}
 	a.neighbourhood()
 	a.cfg.Images.Want(a.wants)

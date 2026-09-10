@@ -40,15 +40,23 @@ type Core struct {
 type Index struct {
 	Cores map[string]Core
 	At    time.Time
+	Err   error // unreadable card/core folders; absent optional folders are fine
 }
 
 // ScanCores lists the core folders. Missing folders are fine (an arcade-only
 // card has no _Console).
 func ScanCores(card string) *Index {
 	idx := &Index{Cores: map[string]Core{}, At: time.Now()}
+	if _, err := os.ReadDir(card); err != nil {
+		idx.Err = err
+		return idx
+	}
 	for _, dir := range coreDirs {
 		entries, err := os.ReadDir(filepath.Join(card, dir))
 		if err != nil {
+			if !os.IsNotExist(err) {
+				idx.Err = errors.Join(idx.Err, err)
+			}
 			continue
 		}
 		for _, e := range entries {

@@ -134,6 +134,9 @@ func TestScanCoalescesAndReplacesStaleRowStatuses(t *testing.T) {
 		t.Fatal("scan not started")
 	}
 	h.receiveScan(first)
+	if first.notice != "" {
+		t.Fatal("automatic scan announced routine totals")
+	}
 	if len(h.status) != 0 || len(h.alts) != 1 {
 		t.Fatal("stale statuses applied or fast pass erased alternatives")
 	}

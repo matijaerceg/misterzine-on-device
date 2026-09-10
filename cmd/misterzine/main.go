@@ -82,8 +82,11 @@ type host struct {
 	checkRunning    bool // UI-owned; held until the result is installed
 	checkPending    bool
 	nextCheck       time.Time
+	nextAppCheck    time.Time
+	appCheckRunning bool
 	scanRunning     bool
 	scanPending     bool
+	manualScan      bool
 	netCh           chan string
 	updates         chan updateResult
 	updatePending   bool
@@ -261,6 +264,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 				h.requestCheck()
 			}
 			if kind == "rescan" {
+				h.manualScan = true
 				h.requestScan()
 			}
 			if kind == "prefetch" {
@@ -373,6 +377,9 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 			h.runOnUI(func() {
 				if !time.Now().Before(h.nextCheck) {
 					h.requestCheck()
+					if !h.updateRunning && !h.updatePending {
+						h.requestAppCheck()
+					}
 				}
 			})
 			wait = 15 * time.Second
@@ -876,7 +883,12 @@ func (h *host) scan(rows []data.Row, hash string) {
 	}
 	h.lg.Printf("scan: %d cores; current %d, outdated %d, undated %d, not found %d (%v)", len(idx.Cores),
 		counts[data.StatusCurrent], counts[data.StatusOutdated], counts[data.StatusFoundUndated], counts[data.StatusNotFound], time.Since(t0).Round(time.Millisecond))
-	if !h.sendScan(scanResult{index: idx, status: st, hash: hash, notice: fmt.Sprintf("card: %d current, %d older, %d not found", counts[data.StatusCurrent], counts[data.StatusOutdated], counts[data.StatusNotFound])}) {
+	if idx.Err != nil {
+		h.lg.Printf("scan failed: %v", idx.Err)
+		h.sendScan(scanResult{hash: hash, notice: "Card scan failed", final: true})
+		return
+	}
+	if !h.sendScan(scanResult{index: idx, status: st, hash: hash}) {
 		return
 	}
 	t1 := time.Now()
@@ -885,7 +897,11 @@ func (h *host) scan(rows []data.Row, hash string) {
 		h.lg.Printf("scan: %v", err)
 	}
 	h.lg.Printf("scan: %d alternatives (%v)", len(alts), time.Since(t1).Round(time.Millisecond))
-	h.sendScan(scanResult{index: idx, status: st, hash: hash, alts: alts, final: true})
+	notice := ""
+	if err != nil {
+		notice = "Card scan incomplete"
+	}
+	h.sendScan(scanResult{index: idx, status: st, hash: hash, alts: alts, notice: notice, final: true})
 }
 
 // screenshot saves the logical canvas (F12 on a keyboard).

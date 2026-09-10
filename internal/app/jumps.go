@@ -27,7 +27,7 @@ func (a *App) jumpGroup(direction int) {
 	a.cursor = i
 	a.top = a.screenLine(i)
 	a.shortPage = true
-	if a.mode != data.SortAlphabetical {
+	if a.mode != data.SortAlphabetical && a.mode != data.SortFavorites {
 		label := "Date unknown"
 		if month, err := time.Parse("2006-01", group); err == nil {
 			label = month.Format("January 2006")
@@ -38,7 +38,7 @@ func (a *App) jumpGroup(direction int) {
 
 func (a *App) jumpGroupKey(pos int) string {
 	i := a.view[pos]
-	if a.mode == data.SortAlphabetical {
+	if a.mode == data.SortAlphabetical || a.mode == data.SortFavorites {
 		return string(a.ds.Der[i].TitleInitial())
 	}
 	date := a.ds.Rows[i].Updated

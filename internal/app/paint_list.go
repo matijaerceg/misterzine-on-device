@@ -18,7 +18,10 @@ func (a *App) paintList(c *gfx.Canvas) {
 	a.paintRows(c)
 	a.paintScrollbar(c)
 	a.paintPane(c)
-	hint := "A details  Y sort  X Filters  B Options"
+	hint := "A details  Y view  X Filters  B Options"
+	if a.sm.Width(hint) > a.lay.Hint.Dx()-4 {
+		hint = "A open  Y mode  X filt  B opts"
+	}
 	if a.query != "" {
 		hint = "A details  X Filters  B clear find"
 	}
@@ -52,16 +55,25 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 		left = "by: debut  L/R month"
 	} else if a.mode == data.SortAlphabetical {
 		left = "by: A-Z  L/R jump"
+	} else if a.mode == data.SortFavorites {
+		left = "Favorites  L/R jump"
+	}
+	if a.appUpdate != "" {
+		// Reserve space for a persistent app notice even on narrow tate screens.
+		left = map[data.SortMode]string{data.SortUpdated: "Updated", data.SortDebut: "Debut", data.SortAlphabetical: "A-Z", data.SortFavorites: "Favorites"}[a.mode]
+		c.Text(l.Status.Min.X+2, y, a.sm, left, gen.Eva.Accent)
+		c.TextRight(l.Status.Max.X-2, y, a.sm, "App update", gen.Eva.Accent)
+		return
 	}
 	count := itoa(len(a.ds.Rows)) + " releases"
-	if a.filters.Active() {
+	if a.filters.Active() || a.mode == data.SortFavorites {
 		count = itoa(len(a.view)) + " of " + itoa(len(a.ds.Rows)) + " releases"
 	}
 	c.Text(l.Status.Min.X+2, y, a.sm, left, gen.Eva.Accent)
 	x := l.Status.Min.X + 2 + a.sm.Width(left) + a.sm.W*2
 	if a.sm.Width(count) > l.Status.Max.X-2-x {
 		count = itoa(len(a.ds.Rows))
-		if a.filters.Active() {
+		if a.filters.Active() || a.mode == data.SortFavorites {
 			count = itoa(len(a.view)) + "/" + count
 		}
 	}
@@ -111,6 +123,9 @@ func isArrow(s string) bool {
 }
 
 func (a *App) emptyListMessage() string {
+	if a.mode == data.SortFavorites && len(a.cfg.Favorites) == 0 {
+		return "No favorites yet"
+	}
 	if a.query != "" {
 		return "no matches, B: clear find"
 	}

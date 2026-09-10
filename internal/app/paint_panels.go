@@ -88,6 +88,9 @@ func sortedFacet(m map[string]int) []string {
 // counted. Unchecked choices keep their potential counts and remain selectable.
 func (a *App) facetCounts(kind string) map[string]int {
 	f := a.filters
+	if a.mode == data.SortFavorites {
+		f.FavOnly = true
+	}
 	value := func(r *data.Row, d *data.Derived) string { return "" }
 	switch kind {
 	case "base":
@@ -140,15 +143,26 @@ func (a *App) filterEntries() []panelEntry {
 		E = append(E, panelEntry{text: "Clear all filters", kind: "clear"})
 	}
 	E = append(E, panelEntry{text: "On the card", header: true, kind: "install"})
-	for _, v := range []struct{ val, text string }{{data.InstallAll, "everything"}, {data.InstallFound, "found on card (any build)"}, {data.InstallCurrent, "current build"}, {data.InstallOlder, "older build than shipped"}, {data.InstallUndated, "build date unknown"}, {data.InstallMissing, "not found on card"}} {
+	counts := a.cardCounts()
+	installCounts := map[string]int{
+		data.InstallAll:     len(a.ds.Rows),
+		data.InstallFound:   counts[data.StatusCurrent] + counts[data.StatusOutdated] + counts[data.StatusFoundUndated],
+		data.InstallCurrent: counts[data.StatusCurrent], data.InstallOlder: counts[data.StatusOutdated],
+		data.InstallUndated: counts[data.StatusFoundUndated], data.InstallMissing: counts[data.StatusNotFound],
+	}
+	for _, v := range []struct{ val, text string }{{data.InstallAll, "everything"}, {data.InstallFound, "found on card"}, {data.InstallCurrent, "up to date"}, {data.InstallOlder, "older installed"}, {data.InstallUndated, "date unknown"}, {data.InstallMissing, "not found on card"}} {
 		cur := f.Install
 		if cur == "" {
 			cur = data.InstallAll
 		}
-		E = append(E, panelEntry{text: v.text, kind: "install", value: v.val, checked: cur == v.val})
+		E = append(E, panelEntry{text: v.text, kind: "install", value: v.val, checked: cur == v.val, count: installCounts[v.val], showCount: counts[data.StatusUnknown] < len(a.ds.Rows)})
 	}
 	E = append(E, panelEntry{text: "Favorites", header: true, kind: "fav"})
-	E = append(E, panelEntry{text: "favorites only", kind: "fav", checked: f.FavOnly})
+	if a.mode == data.SortFavorites {
+		E = append(E, panelEntry{text: "Favorites view active", info: true})
+	} else {
+		E = append(E, panelEntry{text: "favorites only", kind: "fav", checked: f.FavOnly})
+	}
 	E = append(E, panelEntry{text: "Since last look", header: true, kind: "since"})
 	if a.seen == nil || a.seen.BaseRows == nil {
 		E = append(E, panelEntry{text: "available after your first visit", info: true})
@@ -242,11 +256,16 @@ func (a *App) optionsEntries() []panelEntry {
 			saverIdx = i
 		}
 	}
+	updateText := "Run Update All"
+	updateHelp := "Update with live output and a stage bar. Hold B for 2 seconds to cancel; system writes finish first. A restart may be required."
+	if a.appUpdate != "" {
+		updateText = "Update MisterZine + all"
+		updateHelp = "MisterZine " + a.appUpdate + " is available. Run Update All, then quit and reopen MisterZine to use it."
+	}
 	return []panelEntry{
 		{text: "Refresh data now", kind: "refresh",
 			help: "Check misterzine.fyi for new releases now. This also happens on launch and every 30 minutes."},
-		{text: "Run Update All", kind: "update",
-			help: "Update with live output and a stage bar. Hold B for 2 seconds to cancel; system writes finish first. A restart may be required."},
+		{text: updateText, kind: "update", help: updateHelp},
 		{text: "Rescan card", kind: "rescan",
 			help: "Refresh on-card status after an external update. The built-in Update All rescans automatically when it finishes."},
 		{text: "Last update result", kind: "update-result",
@@ -258,7 +277,7 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "Hold delay", kind: "hold-delay", vals: []string{"short", "normal", "long"}, idx: map[int]int{200: 0, 300: 1, 500: 2}[a.HoldDelay()],
 			help: "Wait before held navigation repeats: short 200 ms, normal 300 ms, long 500 ms. Scroll speed sets the pace after this delay."},
 		{text: "Remember sort order", kind: "remember-sort", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.RememberSort()],
-			help: "On: reopen with your last sort order (default). Off: start new visits with latest updates."},
+			help: "On: reopen with your last view, including Favorites (default). Off: start new visits with latest updates."},
 		{text: "Screensaver", kind: "screensaver", vals: []string{"off", "1 min", "2 min", "5 min", "10 min"}, idx: saverIdx,
 			help: "Dim the screen and scroll black lettering after idle time. Left/Right sets the delay; A previews. A browsing button wakes without acting. Menu still exits."},
 		{text: "Edit safe zone", kind: "inset",
@@ -675,7 +694,10 @@ func (a *App) togglePanel() bool {
 			a.cfg.Quit()
 		}
 		return false
-	case "rescan", "refresh", "clearimg":
+	case "rescan":
+		a.OpenScan()
+		return true
+	case "refresh", "clearimg":
 		if a.cfg.Action != nil {
 			a.cfg.Action(e.kind, "")
 		}
