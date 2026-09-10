@@ -105,9 +105,10 @@ type App struct {
 	topMark bool // "nothing new" marker on top
 
 	screen     Screen
-	cursor     int // index into view
-	top        int // first visible screen line
-	slot       int // screen view slot index
+	cursor     int  // index into view
+	top        int  // first visible screen line
+	shortPage  bool // group jumps may leave space below the last group
+	slot       int  // screen view slot index
 	detail     detailState
 	panel      panelState
 	update     updater.State
@@ -241,6 +242,7 @@ func (a *App) Data() *data.Dataset { return a.ds }
 
 // rebuild recomputes order, view and marker from the current state.
 func (a *App) rebuild() {
+	a.shortPage = false
 	a.order = a.ds.Order(a.mode)
 	fav := func(k string) bool { return a.cfg.Favorites[k] }
 	unseen := func(i int) bool { return a.seen != nil && a.seen.Unseen(&a.ds.Rows[i]) }
@@ -393,8 +395,12 @@ func (a *App) ensureVisible() {
 	if last >= a.top+a.lay.Lines {
 		a.top = last - a.lay.Lines + 1
 	}
-	if a.top > a.totalLines()-a.lay.Lines {
-		a.top = a.totalLines() - a.lay.Lines
+	maxTop := a.totalLines() - a.lay.Lines
+	if a.shortPage {
+		maxTop = a.totalLines() - 1
+	}
+	if a.top > maxTop {
+		a.top = maxTop
 	}
 	if a.top < 0 {
 		a.top = 0
@@ -596,20 +602,14 @@ func (a *App) actList(k platform.Key) bool {
 			a.cursor++
 		}
 	case platform.KeyPageUp:
-		if a.mode == data.SortAlphabetical {
-			a.jumpLetter(-1)
-		} else {
-			a.cursor = 0
-		}
+		a.jumpGroup(-1)
 	case platform.KeyPageDown:
-		if a.mode == data.SortAlphabetical {
-			a.jumpLetter(1)
-		} else {
-			a.cursor = n - 1
-		}
+		a.jumpGroup(1)
 	case platform.KeyHome:
+		a.shortPage = false
 		a.cursor = 0
 	case platform.KeyEnd:
+		a.shortPage = false
 		a.cursor = n - 1
 	case platform.KeySpace:
 		a.SetSort((a.mode + 1) % (data.SortAlphabetical + 1))
@@ -655,6 +655,7 @@ func (a *App) actList(k platform.Key) bool {
 // row in direction dir when that line is a marker) and scrolls so that row
 // sits at the top (dir > 0) or the bottom (dir < 0) of the screen.
 func (a *App) pageTo(target, dir int) {
+	a.shortPage = false
 	n := len(a.view)
 	if n == 0 {
 		return

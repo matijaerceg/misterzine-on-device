@@ -9,7 +9,11 @@
 - Start launches the selected version from full-screen artwork. Launch failures
   appear over the picture.
 - L/R jumps between letters in alphabetical order, using the current search and
-  filters. Other sort orders retain first/last jumps; Home/End always do so.
+  filters. Each jump puts the letter's first title at the top of the view in both
+  directions, including short groups at the end of the list.
+- L/R jumps between months in latest-update and MiSTer-debut order. Empty months
+  are skipped and the selected month/year is shown briefly. Home/End retains
+  first/last jumps in every sort order.
 
 ## v1.0.4 — 2026-09-10
 

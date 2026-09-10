@@ -53,9 +53,14 @@ Changing sort keeps the selected title, search and filters. Dates in alphabetica
 order still show the latest update; the last-look divider appears only in the
 latest-update order.
 In alphabetical order, L/R jumps to the first title of the previous/next letter
-in your current search and filters. Empty letters are skipped; numbers and
-symbols share a group before A. Jumps stop at either end. In the date sorts,
-L/R still jumps to the first/last title. Keyboard Home/End always does that.
+in your current search and filters, placing that title at the top of the list
+in either direction (even when the final group leaves blank space below).
+Empty letters are skipped; numbers and
+symbols share a group before A. In the date sorts, L/R jumps between months:
+L goes to a newer month, R to an older one. Empty months are skipped, each
+month's first result appears at the top, and its month/year briefly appears in
+the status bar. Unknown dates share a final group. Jumps stop at either end.
+Keyboard Home/End still jumps to the first/last title.
 The app checks data on launch and every 30 minutes; Options can request a check
 immediately. An unset system clock hides relative dates until trusted time is
 available.
@@ -71,7 +76,7 @@ filter choices are saved.
 |---|---|---|---|---|---|---|
 | Up/Down | arrows | move | choose version | | move | move |
 | Left/Right | arrows | page | | change shot | page | change value |
-| L/R | PageUp/PageDown | previous/next letter in A-Z; otherwise first/last | scroll information | | first/last | first/last |
+| L/R | PageUp/PageDown | previous/next letter in A-Z; newer/older month in date sorts | scroll information | | first/last | first/last |
 | A | Enter | details | artwork | | toggle | run action |
 | B | Esc | Options / clear search | back | back | back | back |
 | X | Tab | Filters | | | | |

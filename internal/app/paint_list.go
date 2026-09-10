@@ -30,6 +30,12 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 	c.Fill(l.Status, gen.Eva.Surface)
 	c.HLine(l.Status.Min.X, l.Status.Max.X-1, l.Status.Max.Y-1, gen.Eva.Muted)
 	y := l.Status.Min.Y + 2
+	if a.notice != "" {
+		// Notices (including the month/year after a jump) remain visible while
+		// searching; the query/count comes back when the notice expires.
+		c.Text(l.Status.Min.X+2, y, a.sm, gfx.Fit(a.notice, a.sm.Cols(l.Status.Dx()-4)), gen.Eva.Fg)
+		return
+	}
 	if a.query != "" {
 		count := itoa(len(a.view)) + " matches"
 		c.TextRight(l.Status.Max.X-2, y, a.sm, count, gen.Eva.Muted)
@@ -41,21 +47,15 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 		c.Text(l.Status.Min.X+2, y, a.sm, "Find: "+query+"_", gen.Eva.Accent)
 		return
 	}
-	left := "by: latest update"
+	left := "by: updated  L/R month"
 	if a.mode == data.SortDebut {
-		left = "by: MiSTer debut"
+		left = "by: debut  L/R month"
 	} else if a.mode == data.SortAlphabetical {
 		left = "by: A-Z  L/R jump"
 	}
 	count := itoa(len(a.ds.Rows)) + " releases"
 	if a.filters.Active() {
 		count = itoa(len(a.view)) + " of " + itoa(len(a.ds.Rows)) + " releases"
-	}
-	if a.notice != "" {
-		// a notice takes the whole line while it shows; the right half alone
-		// is 27 characters and cut most of them off
-		c.Text(l.Status.Min.X+2, y, a.sm, gfx.Fit(a.notice, a.sm.Cols(l.Status.Dx()-4)), gen.Eva.Fg)
-		return
 	}
 	c.Text(l.Status.Min.X+2, y, a.sm, left, gen.Eva.Accent)
 	x := l.Status.Min.X + 2 + a.sm.Width(left) + a.sm.W*2
@@ -180,7 +180,9 @@ func (a *App) paintScrollbar(c *gfx.Canvas) {
 	if h < 4 {
 		h = 4
 	}
-	y := t.Min.Y + (t.Dy()-h)*a.top/(total-l.Lines)
+	// A group jump can put the last group at the top with blank rows below.
+	// Its thumb still stops at the end of the track.
+	y := t.Min.Y + (t.Dy()-h)*min(a.top, total-l.Lines)/(total-l.Lines)
 	c.Fill(image.Rect(t.Min.X, y, t.Max.X, y+h), gen.Eva.Accent)
 }
 
