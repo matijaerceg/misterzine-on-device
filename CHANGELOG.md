@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Added a remembered Resolution filter for 15kHz, 31kHz and unknown entries.
+
 ## v1.0.2 — 2026-09-09
 
 - Setup and Uninstall scripts use hyphenated filenames so MiSTer's Scripts menu

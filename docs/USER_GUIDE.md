@@ -112,7 +112,8 @@ item. R also jumps to the bottom.
 - **Clear image cache:** removes downloaded pictures, which return as needed.
 
 Filters are ordered On the card, Favorites, Since last look, Type, Source,
-Rotation, Genre, Input directions, Buttons and Players. The feed combines zero
+Rotation, Resolution, Genre, Input directions, Buttons and Players. Resolution
+uses the catalogue labels (15kHz or 31kHz), with unknown for entries without a value. The feed combines zero
 and unspecified button counts, so they appear together.
 
 ## Update All

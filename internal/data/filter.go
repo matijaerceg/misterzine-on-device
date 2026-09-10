@@ -29,6 +29,7 @@ const (
 // Filters follow the site's all-checked model: a value listed in an Off set
 // is hidden, so a value the data gains later defaults to visible.
 type Filters struct {
+	ResOff        map[string]bool `json:"res_off,omitempty"` // raw resolution, "" = unknown
 	BaseOff       map[string]bool `json:"base_off,omitempty"`
 	SrcOff        map[string]bool `json:"src_off,omitempty"`
 	RotOff        map[string]bool `json:"rot_off,omitempty"`   // "h", "v", ""
@@ -47,7 +48,7 @@ func (f *Filters) Active() bool {
 		return false
 	}
 	return len(f.BaseOff) > 0 || len(f.SrcOff) > 0 || len(f.RotOff) > 0 || len(f.PlrOff) > 0 ||
-		len(f.GenreOff) > 0 || len(f.DirectionsOff) > 0 || len(f.ButtonsOff) > 0 || (f.Install != "" && f.Install != InstallAll) || f.FavOnly || f.Since
+		len(f.ResOff) > 0 || len(f.GenreOff) > 0 || len(f.DirectionsOff) > 0 || len(f.ButtonsOff) > 0 || (f.Install != "" && f.Install != InstallAll) || f.FavOnly || f.Since
 }
 
 // Pass reports whether one row survives the filters.
@@ -55,7 +56,7 @@ func (f *Filters) Pass(r *Row, d *Derived, st Status, fav, unseen bool) bool {
 	if f == nil {
 		return true
 	}
-	if f.BaseOff[r.Base] || f.SrcOff[r.Src] || f.RotOff[d.RotGroup] || f.PlrOff[r.Plr] || f.GenreOff[r.Genre] || f.DirectionsOff[d.Directions] || f.ButtonsOff[d.Buttons] {
+	if f.ResOff[r.Res] || f.BaseOff[r.Base] || f.SrcOff[r.Src] || f.RotOff[d.RotGroup] || f.PlrOff[r.Plr] || f.GenreOff[r.Genre] || f.DirectionsOff[d.Directions] || f.ButtonsOff[d.Buttons] {
 		return false
 	}
 	switch f.Install {

@@ -25,6 +25,7 @@ type Derived struct {
 
 // Facets are the distinct filterable values with row counts.
 type Facets struct {
+	Res        map[string]int // raw resolution, "" = unknown
 	Base       map[string]int
 	Src        map[string]int
 	Rot        map[string]int // "h", "v", ""
@@ -60,7 +61,7 @@ func Ingest(rows []Row, hash string, updated time.Time) *Dataset {
 		Facets: Facets{
 			Base: map[string]int{}, Src: map[string]int{}, Rot: map[string]int{},
 			Plr: map[string]int{}, Genre: map[string]int{},
-			Directions: map[string]int{}, Buttons: map[string]int{},
+			Directions: map[string]int{}, Buttons: map[string]int{}, Res: map[string]int{},
 		},
 	}
 	for i := range rows {
@@ -76,6 +77,7 @@ func Ingest(rows []Row, hash string, updated time.Time) *Dataset {
 		ds.Facets.Rot[r.RotGroup()]++
 		ds.Facets.Plr[r.Plr]++
 		ds.Facets.Genre[r.Genre]++
+		ds.Facets.Res[r.Res]++
 	}
 	for i := range rows {
 		r := &rows[i]

@@ -128,6 +128,12 @@ func (a *App) filterEntries() []panelEntry {
 		}
 		return "unknown"
 	})
+	section("Resolution", "res", a.ds.Facets.Res, f.ResOff, func(s string) string {
+		if s == "" {
+			return "unknown"
+		}
+		return s
+	})
 	section("Genre", "genre", a.ds.Facets.Genre, f.GenreOff, func(s string) string {
 		if s == "" {
 			return "No genre"
@@ -524,7 +530,7 @@ func (a *App) togglePanel() bool {
 		p.cursor = 0
 		a.buildPanel()
 		return true
-	case "base", "src", "rot", "plr", "genre", "directions", "buttons":
+	case "base", "src", "rot", "plr", "genre", "directions", "buttons", "res":
 		var m map[string]bool
 		var facet map[string]int
 		switch e.kind {
@@ -536,6 +542,8 @@ func (a *App) togglePanel() bool {
 			m, facet = off(f.RotOff), a.ds.Facets.Rot
 		case "plr":
 			m, facet = off(f.PlrOff), a.ds.Facets.Plr
+		case "res":
+			m, facet = off(f.ResOff), a.ds.Facets.Res
 		case "genre":
 			m, facet = off(f.GenreOff), a.ds.Facets.Genre
 		case "directions":
@@ -566,6 +574,8 @@ func (a *App) togglePanel() bool {
 			f.RotOff = m
 		case "plr":
 			f.PlrOff = m
+		case "res":
+			f.ResOff = m
 		case "genre":
 			f.GenreOff = m
 		case "directions":
