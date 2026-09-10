@@ -54,7 +54,7 @@ func TestSortAutosaveRestoreAndOption(t *testing.T) {
 		t.Fatal("alphabetical restart did not start at its first title")
 	}
 	tap(platform.KeyBack)
-	for i := 0; i < 7; i++ {
+	for i := 0; i < 8; i++ {
 		tap(platform.KeyDown)
 	}
 	tap(platform.KeyLeft) // Remember sort order: off
@@ -177,8 +177,8 @@ func TestRotationIntentSurvivesSaves(t *testing.T) {
 				h.a.Handle(platform.Event{Key: k, At: now.Add(time.Millisecond)})
 			}
 			tap(platform.KeyBack) // Options
-			for n := 0; n < 5; n++ {
-				tap(platform.KeyDown) // Scroll speed follows the four actions and Rotation
+			for n := 0; n < 6; n++ {
+				tap(platform.KeyDown) // Scroll speed follows the four actions and rotation options
 			}
 			tap(platform.KeyRight)
 			if !h.setDirty {

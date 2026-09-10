@@ -48,6 +48,31 @@ func TestRememberSortMigration(t *testing.T) {
 	}
 }
 
+func TestFollowRotationMigration(t *testing.T) {
+	for _, tc := range []struct {
+		body string
+		want bool
+	}{
+		{`{"rotation":"right"}`, true}, {`{"follow_ini_rotation":false,"rotation":"left"}`, false},
+	} {
+		p := writeSettings(t, tc.body)
+		s, err := LoadSettings(p)
+		if err != nil || s.FollowRotation != tc.want {
+			t.Fatal(s, err)
+		}
+		if err := Save(p, s); err != nil {
+			t.Fatal(err)
+		}
+		again, err := LoadSettings(p)
+		if err != nil || again != s {
+			t.Fatal("rotation setting did not persist", err)
+		}
+	}
+	if !DefaultSettings().FollowRotation {
+		t.Fatal("must default on")
+	}
+}
+
 func TestHoldDelayMigrationAndSave(t *testing.T) {
 	for _, tc := range []struct {
 		body string

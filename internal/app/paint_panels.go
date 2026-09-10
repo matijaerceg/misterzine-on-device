@@ -271,7 +271,9 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "Last update result", kind: "update-result",
 			help: "Review the last Update All result and its saved output. This does not start another update."},
 		{text: "Rotation", kind: "rotation", vals: []string{"monitor CW", "horizontal", "monitor CCW"}, idx: rotIdx,
-			help: "Left/Right turn the image. Label = monitor turn. Default: osd_rotate in MiSTer.ini."},
+			help: "Left/Right turn the image now. With Follow INI rotation on, the next startup uses MiSTer.ini again."},
+		{text: "Follow INI rotation", kind: "follow-rotation", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.FollowRotation()],
+			help: "On (default): match MiSTer.ini osd_rotate on every startup. Off: keep your chosen rotation. Never edits the INI."},
 		{text: "Scroll speed", kind: "scroll", vals: []string{"20 Hz", "30 Hz", "60 Hz"}, idx: scrollIdx,
 			help: "How many rows (or pages, with Left/Right) a held direction moves per second. 60 Hz is one row every frame."},
 		{text: "Hold delay", kind: "hold-delay", vals: []string{"short", "normal", "long"}, idx: map[int]int{200: 0, 300: 1, 500: 2}[a.HoldDelay()],
@@ -435,7 +437,14 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 		}
 		a.paintHint(c, gfx.ArrowLeft+" "+gfx.ArrowRight+" change  A open  B back")
 	} else {
-		a.paintHint(c, "A toggle  "+gfx.ArrowLeft+" "+gfx.ArrowRight+" page  B back")
+		hint := "A toggle  " + gfx.ArrowLeft + " " + gfx.ArrowRight + " page  B back"
+		if a.canOnlyFilter() {
+			hint = "A toggle  Y only this  B back"
+			if a.sm.Width(hint) > l.Hint.Dx()-4 {
+				hint = "A toggle  Y only  B back"
+			}
+		}
+		a.paintHint(c, hint)
 	}
 }
 
@@ -502,7 +511,12 @@ func (a *App) actPanel(k platform.Key) bool {
 				break
 			}
 		}
-	case platform.KeyEnter, platform.KeySpace:
+	case platform.KeySpace:
+		if a.screen == ScreenFilter {
+			return a.onlyFilter()
+		}
+		return a.togglePanel()
+	case platform.KeyEnter:
 		return a.togglePanel()
 	default:
 		return false
@@ -558,6 +572,11 @@ func (a *App) stepValue(d int) bool {
 		a.cfg.HoldDelay = []int{200, 300, 500}[i]
 	case "remember-sort":
 		a.cfg.RememberSort = i == 1
+	case "follow-rotation":
+		a.cfg.FollowRotation = i == 1
+		if i == 0 && a.cfg.Action != nil {
+			a.cfg.Action("rotation", map[gfx.Rotation]string{gfx.RotNone: "off", gfx.RotLeft: "left", gfx.RotRight: "right"}[a.rot])
+		}
 	case "screensaver":
 		a.cfg.Screensaver = saverValues[i]
 	case "prefetch":
@@ -683,7 +702,7 @@ func (a *App) togglePanel() bool {
 		if !e.header {
 			f.Since = !f.Since
 		}
-	case "rotation", "launcher", "scroll", "hold-delay", "remember-sort", "prefetch":
+	case "rotation", "follow-rotation", "launcher", "scroll", "hold-delay", "remember-sort", "prefetch":
 		return true // Left/Right pick these
 	case "inset":
 		a.screen = ScreenCalibrate

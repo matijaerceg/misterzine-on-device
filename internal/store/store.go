@@ -16,22 +16,23 @@ import (
 
 // Settings are the user's device settings.
 type Settings struct {
-	Schema       int           `json:"schema"`
-	Rotation     string        `json:"rotation"` // auto, left, right, off
-	Inset        int           `json:"inset"`
-	Prefetch     bool          `json:"prefetch"`
-	Scroll       string        `json:"scroll"` // rows per second: 20, 30, 60
-	HoldDelay    int           `json:"hold_delay_ms"`
-	Screensaver  string        `json:"screensaver_minutes"`
-	RememberSort bool          `json:"remember_sort"`
-	LastSort     data.SortMode `json:"last_sort"`
-	InsetX       int           `json:"inset_x"`
-	InsetY       int           `json:"inset_y"`
+	Schema         int           `json:"schema"`
+	Rotation       string        `json:"rotation"` // auto, left, right, off
+	FollowRotation bool          `json:"follow_ini_rotation"`
+	Inset          int           `json:"inset"`
+	Prefetch       bool          `json:"prefetch"`
+	Scroll         string        `json:"scroll"` // rows per second: 20, 30, 60
+	HoldDelay      int           `json:"hold_delay_ms"`
+	Screensaver    string        `json:"screensaver_minutes"`
+	RememberSort   bool          `json:"remember_sort"`
+	LastSort       data.SortMode `json:"last_sort"`
+	InsetX         int           `json:"inset_x"`
+	InsetY         int           `json:"inset_y"`
 }
 
 // DefaultSettings for a fresh install.
 func DefaultSettings() Settings {
-	return Settings{Schema: 1, Rotation: "auto", Inset: 15, InsetX: 15, InsetY: 15, Scroll: "30", HoldDelay: 300, Screensaver: "1", RememberSort: true}
+	return Settings{Schema: 1, Rotation: "auto", FollowRotation: true, Inset: 15, InsetX: 15, InsetY: 15, Scroll: "30", HoldDelay: 300, Screensaver: "1", RememberSort: true}
 }
 
 // LoadSettings reads path over the defaults and migrates older files.

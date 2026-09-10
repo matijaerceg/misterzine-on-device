@@ -80,8 +80,9 @@ type Config struct {
 	// Screensaver is the idle timeout: "off", "1", "2", "5", "10" minutes.
 	Screensaver string
 	// RememberSort restores LastSort at startup; otherwise start with latest updates.
-	RememberSort bool
-	LastSort     data.SortMode
+	RememberSort   bool
+	FollowRotation bool
+	LastSort       data.SortMode
 }
 
 // App is the state machine.
@@ -320,7 +321,8 @@ func (a *App) SetSort(m data.SortMode) {
 // Sort reports the mode.
 func (a *App) Sort() data.SortMode { return a.mode }
 
-func (a *App) RememberSort() bool { return a.cfg.RememberSort }
+func (a *App) RememberSort() bool   { return a.cfg.RememberSort }
+func (a *App) FollowRotation() bool { return a.cfg.FollowRotation }
 
 // Filters exposes the filters (copy).
 func (a *App) Filters() data.Filters { return a.filters }

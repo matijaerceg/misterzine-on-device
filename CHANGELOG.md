@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Follow MiSTer.ini rotation at every startup by default, with an Options toggle.
+  Manual session rotation remains available; turning following off retains it.
+- Y selects only the highlighted filter value within its section; the legend
+  advertises the shortcut. A retains individual toggling.
+- Last-look messages distinguish an unchanged top-200 window from an unchanged
+  complete view, instead of claiming nothing new across the whole catalogue.
+
 ## v1.0.6 — 2026-09-10
 
 - Quiet automatic card scans; manual Rescan opens a readable result screen.

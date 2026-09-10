@@ -136,7 +136,7 @@ func (a *App) emptyListMessage() string {
 		other := a.filters
 		other.Since = false
 		if !other.Active() {
-			return "nothing new since last look"
+			return "No changed matches"
 		}
 	}
 	return "no rows match, X: filters"
@@ -161,12 +161,7 @@ func (a *App) paintRows(c *gfx.Canvas) {
 		r := l.lineRect(n)
 		switch {
 		case a.topMark && line == 0:
-			// short: the list column is 36 characters wide
-			ago := data.VisitAgo(a.cfg.Now(), a.seen.BaseTime, a.cfg.ClockTrusted)
-			if ago == "" {
-				ago = "your last look"
-			}
-			a.paintMarker(c, r, "nothing new since "+ago)
+			a.paintMarker(c, r, a.noChangesLabel())
 		case a.split >= 0 && line == a.screenLine(a.split)+1:
 			a.paintMarker(c, r, a.seen.Label(a.cfg.Now(), a.cfg.ClockTrusted))
 		default:

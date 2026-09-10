@@ -32,7 +32,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/updater"
 )
 
-const allViews = "shot list; enter; shot details; wait 600; enter; shot screen; back; back; tab; shot filter; back; back; shot options; down*9; enter; shot calibrate; back; end; shot options-bottom; back"
+const allViews = "shot list; enter; shot details; wait 600; enter; shot screen; back; back; tab; shot filter; back; back; shot options; down*10; enter; shot calibrate; back; end; shot options-bottom; back"
 
 func main() {
 	dataPath := flag.String("data", "testdata/data.json", "data.json")
@@ -50,6 +50,7 @@ func main() {
 	supportPath := flag.String("support-report", "", "controller diagnostic fixture; no devices are opened")
 	appUpdate := flag.String("app-update", "", "available app version fixture")
 	scanResult := flag.Bool("scan-result", false, "show completed card scan fixture")
+	unchanged := flag.Bool("unchanged", false, "previous visit saw every release")
 	flag.Parse()
 
 	rows, meta := load(*dataPath, *metaPath)
@@ -72,13 +73,14 @@ func main() {
 	cmd := &headless.Cmd{}
 	cfg := app.Config{
 		PhysW: 320, PhysH: 240, Rotation: rotation, SafeInsetX: *inset, SafeInsetY: *inset,
-		Now:          func() time.Time { return clock },
-		ClockTrusted: true,
-		Favorites:    map[string]bool{},
-		Launch:       func(p string) { fmt.Println("launch:", p); cmd.Send("load_core " + p) },
-		Quit:         func() { fmt.Println("quit") },
-		Version:      "harness",
-		RememberSort: true,
+		Now:            func() time.Time { return clock },
+		ClockTrusted:   true,
+		Favorites:      map[string]bool{},
+		Launch:         func(p string) { fmt.Println("launch:", p); cmd.Send("load_core " + p) },
+		Quit:           func() { fmt.Println("quit") },
+		Version:        "harness",
+		RememberSort:   true,
+		FollowRotation: true,
 		Alternatives: func(r *data.Row) []string {
 			if r.SN == "galagamw" {
 				return []string{"_Arcade/_alternatives/_Galaga/Galaga (Namco).mra"}
@@ -127,7 +129,7 @@ func main() {
 		order := prev.Order(data.SortUpdated)
 		cur := map[string]string{}
 		for n, i := range order {
-			if n < 5 {
+			if n < 5 && !*unchanged {
 				continue
 			}
 			cur[rows[i].K] = rows[i].Updated

@@ -112,8 +112,13 @@ again from the first item to wrap to Quit, or Down from Quit to wrap to the firs
 item. R also jumps to the bottom.
 
 - **Rotation:** Left/Right turns the image in that direction. The labels describe
-  the monitor's clockwise/counterclockwise turn. Initially follows `osd_rotate`
-  in MiSTer.ini until you choose an override.
+  the monitor's clockwise/counterclockwise turn.
+- **Follow INI rotation:** on by default, including after upgrading. Every
+  startup reads `osd_rotate` from MiSTer.ini (Menu overrides the global setting).
+  Manual rotation changes work for the current session. Turn this off to retain
+  your current orientation across launches. Enabling it applies on the next
+  startup; MisterZine never edits the INI. If the file cannot be read, the saved
+  manual rotation is used.
 - **Scroll speed:** 20, 30 or 60 rows/pages per second once a hold repeats.
 - **Hold delay:** short 200 ms, normal 300 ms (default), or long 500 ms before
   navigation repeats. Artwork and calibration retain their own timing.
@@ -140,6 +145,15 @@ item. R also jumps to the bottom.
   See [troubleshooting](TROUBLESHOOTING.md#start-does-not-launch-games).
 
 Filters start with On the card, Favorites, Since last look, Type and Source.
+Press Y on a value to select only that value in its section, leaving all other
+sections and your search unchanged. A still toggles values individually.
+The bottom legend shows the Y shortcut where available; Y does nothing on
+section headings. For Favorites/Since, Y enables the choice without toggling it off.
+
+The latest-update view's last-look marker examines at most the first 200 matching
+entries. With no changes there it says **No changes in top 200**; if the entire
+view fits within that window it says **No changes in this view**. These compare
+against your previous visit. The Since last look filter checks the full catalogue.
 On-card choices include counts across the whole catalogue, independent of the
 current search and other filters. Favorites mode always shows favorites only;
 use Y in the main view to leave it.

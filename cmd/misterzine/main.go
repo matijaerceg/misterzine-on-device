@@ -151,21 +151,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	if ini.Found && !ini.AnalogVisible() {
 		lg.Printf("WARNING: the framebuffer cannot reach the analog port with this MiSTer.ini; on a CRT-only setup add direct_video=1 (or vga_scaler=1 + a 15 kHz video_mode) under a [Menu] section")
 	}
-	rotation := gfx.RotNone
-	switch h.settings.Rotation {
-	case "left":
-		rotation = gfx.RotLeft
-	case "right":
-		rotation = gfx.RotRight
-	case "off":
-	default: // auto
-		switch ini.OSDRotate {
-		case 1:
-			rotation = gfx.RotRight
-		case 2:
-			rotation = gfx.RotLeft
-		}
-	}
+	rotation := startupRotation(h.settings, ini)
 
 	// data: cache, else the embedded snapshot
 	rows, meta, source := h.loadData()
@@ -220,6 +206,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 		Now: h.now, TimerNow: time.Now, ClockTrusted: trusted, Favorites: favSet, Images: h.img, Scroll: h.settings.Scroll, HoldDelay: h.settings.HoldDelay,
 		Screensaver:          h.settings.Screensaver,
 		RememberSort:         h.settings.RememberSort,
+		FollowRotation:       h.settings.FollowRotation,
 		LastSort:             h.settings.LastSort,
 		FavoritesUnavailable: h.favLoadFailed,
 		Progress:             func() (int, int) { return h.img.Progress() },
@@ -682,6 +669,7 @@ func (h *host) saveAll(final bool) {
 		h.settings.HoldDelay = h.a.HoldDelay()
 		h.settings.Screensaver = h.a.Screensaver()
 		h.settings.RememberSort = h.a.RememberSort()
+		h.settings.FollowRotation = h.a.FollowRotation()
 		h.settings.LastSort = h.a.Sort()
 		if err := store.Save(filepath.Join(h.root, "settings.json"), h.settings); err != nil {
 			h.lg.Printf("settings: %v", err)
