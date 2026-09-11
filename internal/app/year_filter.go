@@ -1,6 +1,9 @@
 package app
 
-import "github.com/matijaerceg/misterzine-on-device/internal/data"
+import (
+	"github.com/matijaerceg/misterzine-on-device/internal/data"
+	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
+)
 
 func (a *App) yearEntries() []panelEntry {
 	entries := []panelEntry{{text: "Original release year", header: true, kind: "year"}}
@@ -27,7 +30,11 @@ func (a *App) yearEntries() []panelEntry {
 			count += counts[y]
 			years = append(years, panelEntry{text: "  " + y, kind: "year", value: y, checked: !a.filters.YearOff[y], count: counts[y], showCount: true})
 		}
-		entries = append(entries, panelEntry{text: decade, kind: "decade", value: decade, checked: on == total, partial: on > 0 && on < total, count: count, showCount: true})
+		arrow := gfx.ArrowRight
+		if a.panel.yearOpen[decade] {
+			arrow = gfx.ArrowDown
+		}
+		entries = append(entries, panelEntry{text: arrow + " " + decade, kind: "decade", value: decade, checked: on == total, partial: on > 0 && on < total, count: count, showCount: true})
 		if a.panel.yearOpen[decade] {
 			entries = append(entries, years...)
 		}
