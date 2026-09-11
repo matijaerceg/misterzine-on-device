@@ -72,24 +72,14 @@ func (a *App) onlyFilter() bool {
 		f.Since = true
 	}
 	if sameSection(e.kind, a.filters, f) {
-		previous := data.Filters{}
-		if saved, ok := a.onlyRestore[e.kind]; ok {
-			previous = saved
-		}
-		copySection(e.kind, &f, previous)
-		delete(a.onlyRestore, e.kind)
-	} else {
-		if a.onlyRestore == nil {
-			a.onlyRestore = map[string]data.Filters{}
-		}
-		a.onlyRestore[e.kind] = a.filters
+		copySection(e.kind, &f, data.Filters{})
 	}
 	a.SetFilters(f)
 	a.buildPanel()
 	return true
 }
 
-// Compare/copy only one section so undo never overwrites unrelated choices.
+// Compare/copy only one section so enabling all never changes other sections.
 func copySection(kind string, to *data.Filters, from data.Filters) {
 	switch kind {
 	case "base":

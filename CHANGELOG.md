@@ -5,7 +5,7 @@
 - Follow MiSTer.ini rotation at every startup by default, with an Options toggle.
   Manual session rotation remains available; turning following off retains it.
 - Y toggles isolation of the highlighted filter value within its section,
-  restoring the previous section selection on a second press. The legend
+  enabling every value in that section on a second press. The legend
   advertises the shortcut. A retains individual toggling.
 - Last-look messages distinguish an unchanged top-200 window from an unchanged
   complete view, instead of claiming nothing new across the whole catalogue.

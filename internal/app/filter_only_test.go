@@ -33,8 +33,8 @@ func TestOnlyFilterKeepsOtherSectionsAndSearch(t *testing.T) {
 		t.Fatal("isolation changed other filters/search or failed to include unchecked value")
 	}
 	a.actPanel(platform.KeySpace)
-	if len(a.view) != 1 || a.CursorKey() != "b" || !a.filters.GenreOff["Shooter"] || a.filters.GenreOff["Puzzle"] {
-		t.Fatal("second Y did not restore previous section")
+	if len(a.view) != 2 || len(a.filters.GenreOff) != 0 || !a.filters.SrcOff["excluded"] {
+		t.Fatal("second Y did not enable entire section while preserving other filters")
 	}
 	a.actPanel(platform.KeySpace) // isolate again before testing A
 	a.actPanel(platform.KeyEnter)
