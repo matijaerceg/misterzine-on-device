@@ -439,7 +439,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 	} else {
 		hint := "A toggle  " + gfx.ArrowLeft + " " + gfx.ArrowRight + " page  B back"
 		if a.canOnlyFilter() {
-			hint = "A toggle  Y only this  B back"
+			hint = "A toggle  Y only/undo  B back"
 			if a.sm.Width(hint) > l.Hint.Dx()-4 {
 				hint = "A toggle  Y only  B back"
 			}
@@ -604,6 +604,7 @@ func (a *App) togglePanel() bool {
 		return false
 	}
 	e := p.entries[p.cursor]
+	delete(a.onlyRestore, e.kind)
 	f := a.filters
 	off := func(m map[string]bool) map[string]bool {
 		out := map[string]bool{}
@@ -630,6 +631,7 @@ func (a *App) togglePanel() bool {
 		a.OpenUpdate()
 		return true
 	case "clear":
+		a.onlyRestore = nil
 		a.SetFilters(data.Filters{})
 		p.cursor = 0
 		a.buildPanel()

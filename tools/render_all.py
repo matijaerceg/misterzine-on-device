@@ -61,6 +61,6 @@ for rotation in ([], ["-rot", "left", "-logical"]):
         scenarios.append([*rotation, "-inset", str(inset), "-unchanged",
                           "-out", f"out/rotation-only-{orientation}-{inset}", "-script",
                           "shot unchanged; back; down*5; shot follow-on; left; shot follow-off; "
-                          "right; back; tab; down*14; shot only-legend; space; shot only-selected; back; shot filtered-unchanged"])
+                          "right; back; tab; down*14; shot only-legend; space; shot only-selected; space; shot only-restored; space; back; shot filtered-unchanged"])
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)

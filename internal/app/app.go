@@ -96,15 +96,16 @@ type App struct {
 	logical  *gfx.Canvas // what views paint into
 	physical *image.RGBA // rotated frame handed to the display
 
-	ds      *data.Dataset
-	mode    data.SortMode
-	query   string // keyboard title search, kept only for this session
-	filters data.Filters
-	order   []int // ds.Order(mode)
-	view    []int // after filters
-	seen    *data.Seen
-	split   int  // marker after view[split]; -1 none
-	topMark bool // "nothing new" marker on top
+	ds          *data.Dataset
+	mode        data.SortMode
+	query       string // keyboard title search, kept only for this session
+	filters     data.Filters
+	onlyRestore map[string]data.Filters
+	order       []int // ds.Order(mode)
+	view        []int // after filters
+	seen        *data.Seen
+	split       int  // marker after view[split]; -1 none
+	topMark     bool // "nothing new" marker on top
 
 	screen     Screen
 	cursor     int  // index into view

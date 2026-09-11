@@ -1,6 +1,9 @@
 package app
 
-import "github.com/matijaerceg/misterzine-on-device/internal/data"
+import (
+	"github.com/matijaerceg/misterzine-on-device/internal/data"
+	"reflect"
+)
 
 func (a *App) onlyFacet(kind string) map[string]int {
 	switch kind {
@@ -68,9 +71,57 @@ func (a *App) onlyFilter() bool {
 	case "since":
 		f.Since = true
 	}
+	if sameSection(e.kind, a.filters, f) {
+		previous := data.Filters{}
+		if saved, ok := a.onlyRestore[e.kind]; ok {
+			previous = saved
+		}
+		copySection(e.kind, &f, previous)
+		delete(a.onlyRestore, e.kind)
+	} else {
+		if a.onlyRestore == nil {
+			a.onlyRestore = map[string]data.Filters{}
+		}
+		a.onlyRestore[e.kind] = a.filters
+	}
 	a.SetFilters(f)
 	a.buildPanel()
 	return true
+}
+
+// Compare/copy only one section so undo never overwrites unrelated choices.
+func copySection(kind string, to *data.Filters, from data.Filters) {
+	switch kind {
+	case "base":
+		to.BaseOff = from.BaseOff
+	case "src":
+		to.SrcOff = from.SrcOff
+	case "rot":
+		to.RotOff = from.RotOff
+	case "plr":
+		to.PlrOff = from.PlrOff
+	case "res":
+		to.ResOff = from.ResOff
+	case "genre":
+		to.GenreOff = from.GenreOff
+	case "directions":
+		to.DirectionsOff = from.DirectionsOff
+	case "buttons":
+		to.ButtonsOff = from.ButtonsOff
+	case "install":
+		to.Install = from.Install
+	case "fav":
+		to.FavOnly = from.FavOnly
+	case "since":
+		to.Since = from.Since
+	}
+}
+
+func sameSection(kind string, a, b data.Filters) bool {
+	var left, right data.Filters
+	copySection(kind, &left, a)
+	copySection(kind, &right, b)
+	return reflect.DeepEqual(left, right)
 }
 
 func (a *App) noChangesLabel() string {

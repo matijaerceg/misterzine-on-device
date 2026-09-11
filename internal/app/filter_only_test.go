@@ -33,9 +33,10 @@ func TestOnlyFilterKeepsOtherSectionsAndSearch(t *testing.T) {
 		t.Fatal("isolation changed other filters/search or failed to include unchecked value")
 	}
 	a.actPanel(platform.KeySpace)
-	if len(a.view) != 1 {
-		t.Fatal("second Y toggled selection away")
+	if len(a.view) != 1 || a.CursorKey() != "b" || !a.filters.GenreOff["Shooter"] || a.filters.GenreOff["Puzzle"] {
+		t.Fatal("second Y did not restore previous section")
 	}
+	a.actPanel(platform.KeySpace) // isolate again before testing A
 	a.actPanel(platform.KeyEnter)
 	if len(a.view) != 0 {
 		t.Fatal("A no longer toggles")
@@ -48,6 +49,39 @@ func TestOnlyFilterKeepsOtherSectionsAndSearch(t *testing.T) {
 	}
 	if a.canOnlyFilter() || a.actPanel(platform.KeySpace) {
 		t.Fatal("Y acted on header")
+	}
+}
+
+func TestOnlyToggleAfterRestartAndOtherSectionEdits(t *testing.T) {
+	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest([]data.Row{
+		{K: "a", Base: "Arcade", Genre: "Shooter"}, {K: "b", Base: "Arcade", Genre: "Puzzle"},
+	}, "", time.Now()), nil)
+	choose := func(kind, value string) {
+		t.Helper()
+		for i, e := range a.panel.entries {
+			if !e.header && e.kind == kind && e.value == value {
+				a.panel.cursor = i
+				return
+			}
+		}
+		t.Fatal("missing choice", kind, value)
+	}
+	a.SetFilters(data.Filters{GenreOff: map[string]bool{"Puzzle": true}})
+	a.openPanel(ScreenFilter)
+	choose("genre", "Shooter")
+	a.onlyFilter()
+	if len(a.filters.GenreOff) != 0 {
+		t.Fatal("saved isolation without history did not toggle back to all")
+	}
+	choose("genre", "Shooter")
+	a.onlyFilter()
+	// Editing another section must not make Y restore that other section.
+	choose("install", data.InstallFound)
+	a.togglePanel()
+	choose("genre", "Shooter")
+	a.onlyFilter()
+	if a.filters.Install != data.InstallFound || len(a.filters.GenreOff) != 0 {
+		t.Fatal("restoration changed unrelated filters")
 	}
 }
 

@@ -146,9 +146,11 @@ item. R also jumps to the bottom.
 
 Filters start with On the card, Favorites, Since last look, Type and Source.
 Press Y on a value to select only that value in its section, leaving all other
-sections and your search unchanged. A still toggles values individually.
+sections and your search unchanged. Press Y again on that value to restore the
+section's previous selection. If an isolated selection was loaded from a previous
+session, Y restores all values in that section. A still toggles values individually.
 The bottom legend shows the Y shortcut where available; Y does nothing on
-section headings. For Favorites/Since, Y enables the choice without toggling it off.
+section headings. For Favorites/Since, Y toggles the choice.
 
 The latest-update view's last-look marker examines at most the first 200 matching
 entries. With no changes there it says **No changes in top 200**; if the entire
