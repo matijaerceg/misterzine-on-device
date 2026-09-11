@@ -50,6 +50,19 @@ func TestFilterSectionsAndCenteredRows(t *testing.T) {
 		}, "", time.Now()), nil)
 		openExpandedFilters(a)
 		a.Paint()
+		// the last screen is filled from the end, spacer rows counting half
+		bottom, height := len(a.panel.entries), 0
+		for bottom > 0 {
+			rh := a.sm.H
+			if e := a.panel.entries[bottom-1]; e.header && e.info && e.text == "" {
+				rh = a.sm.H / 2
+			}
+			if height+rh > a.lay.Body.Inset(2).Dy() {
+				break
+			}
+			height += rh
+			bottom--
+		}
 		for steps := 0; steps < len(a.panel.entries)+2; steps++ {
 			a.actPanel(platform.KeyDown)
 			a.Paint()
@@ -57,12 +70,12 @@ func TestFilterSectionsAndCenteredRows(t *testing.T) {
 			if p.top < 0 || p.top > max(0, len(p.entries)-p.lines) {
 				t.Fatal("scroll beyond end")
 			}
-			if p.top > 0 && p.top < len(p.entries)-p.lines && p.cursor-p.top != p.lines/2 {
+			if p.top > 0 && p.top < bottom && p.cursor-p.top != p.lines/2 {
 				t.Fatal("selection not centered")
 			}
 		}
-		if a.panel.top != max(0, len(a.panel.entries)-a.panel.lines) {
-			t.Fatal("bottom not filled")
+		if a.panel.top != bottom {
+			t.Fatalf("bottom not filled: top %d, want %d", a.panel.top, bottom)
 		}
 		for steps := 0; steps < len(a.panel.entries)+2; steps++ {
 			a.actPanel(platform.KeyUp)

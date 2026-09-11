@@ -13,9 +13,9 @@ scenarios = [
     ["-rot", "none", "-out", "out/h"],
     ["-rot", "left", "-out", "out/t", "-logical"],
     ["-out", "out/filters-h", "-script",
-     "space*2; home; shot alphabetical; tab; pagedown*4; right; shot arcade; end; right; shot controls-players"],
+     "space*3; home; shot alphabetical; tab; pagedown*4; right; shot arcade; end; right; shot controls-players"],
     ["-rot", "left", "-logical", "-out", "out/filters-t", "-script",
-     "space*2; home; shot alphabetical; tab; pagedown*4; right; shot arcade; end; right; shot controls-players"],
+     "space*3; home; shot alphabetical; tab; pagedown*4; right; shot arcade; end; right; shot controls-players"],
     ["-update-state", "testdata/update-running.json", "-out", "out/update-h",
      "-script", "shot running; hold back 2200; shot cancel"],
     ["-update-state", "testdata/update-running.json", "-rot", "left", "-logical",
@@ -42,17 +42,18 @@ for rotation in ([], ["-rot", "left", "-logical"]):
         scenarios.append([*rotation, "-inset", str(inset), "-status", "missing",
                           "-out", f"out/browsing-{orientation}-{inset}", "-script",
                           "back; down*16; shot remember-on; left; shot remember-off; back; "
-                          "space*2; home; pagedown; shot letter-jump; enter; enter; start; shot launch-failure; "
+                          "space*3; home; pagedown; shot letter-jump; enter; enter; start; shot launch-failure; "
                           "back; back; wait 3200; end; pageup; pagedown; shot last-letter; "
                           "space*2; home; pagedown; shot updated-month; wait 2200; shot updated-month-settled; "
-                          "space; home; pagedown; shot debut-month; wait 2200; shot debut-month-settled"])
+                          "space; home; pagedown; shot debut-month; wait 2200; shot debut-month-settled; "
+                          "space; home; shot year-top; pagedown; shot year-jump; wait 2200; shot year-settled"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):
         scenarios.append([*rotation, "-inset", str(inset), "-app-update", "v1.0.6",
                           "-out", f"out/new-modes-{orientation}-{inset}", "-script",
                           "shot update-notice; back; down; shot update-option; back; "
-                          "enter; space; back; space*3; wait 2200; shot favorites; tab; shot counts"])
+                          "enter; space; back; space*4; wait 2200; shot favorites; tab; shot counts"])
         scenarios.append([*rotation, "-inset", str(inset), "-scan-result",
                           "-out", f"out/card-scan-{orientation}-{inset}", "-script", "shot result"])
 for rotation in ([], ["-rot", "left", "-logical"]):
@@ -80,7 +81,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     scenarios.append([*rotation, "-inset", "40",
                       "-out", f"out/center-scroll-{orientation}", "-script",
-                      "space*2; home; down*12; shot middle; end; up*4; shot bottom; "
+                      "space*3; home; down*12; shot middle; end; up*4; shot bottom; "
                       "home; shot top; tab; pagedown*4; right; shot section; left; shot closed; "
                       "right; down*2; right; shot years; left; left; shot nested-closed; "
                       "pagedown; shot next-section; pageup; shot previous-section"])

@@ -59,10 +59,12 @@ Dates highlighted in green and the last-look divider help find changes since
 your previous visit. Visits start at the top of your last selected sort order.
 Options -> Remember sort order is on by default; turn it off to start each visit
 with latest updates instead.
-Y cycles through latest update, MiSTer debut, and alphabetical title order.
+Y cycles Updated, Debut, Year, Alphabetical, then Favorites. Year orders games
+by their original release year, newest first, with titles alphabetical within
+a year and unknown or uncertain years last; the date column shows the year.
 Alphabetical sorting ignores case and accents and puts Game 2 before Game 10.
-Y cycles Updated, Debut, Alphabetical, then Favorites. Favorites shows only your
-starred entries in alphabetical order, with the same letter jumps as A-Z.
+Favorites shows only your starred entries in alphabetical order, with the same
+letter jumps as A-Z.
 Search and filters still apply. Remember sort order also remembers Favorites.
 Changing sort keeps the selected title, search and filters. Dates in alphabetical
 order still show the latest update; the last-look divider appears only in the
@@ -74,7 +76,8 @@ Empty letters are skipped; numbers and
 symbols share a group before A. In the date sorts, L/R jumps between months:
 L goes to a newer month, R to an older one. Empty months are skipped, each
 month's first result appears at the top, and its month/year briefly appears in
-the status bar. Unknown dates share a final group. Jumps stop at either end.
+the status bar. Unknown dates share a final group. In the Year order the same
+keys jump between release years. Jumps stop at either end.
 Keyboard Home/End still jumps to the first/last title.
 Hold L/R to keep jumping letters or months with the same Hold delay and Scroll
 speed as Up/Down row scrolling. Releasing the button stops the jumps.

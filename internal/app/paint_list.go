@@ -53,6 +53,8 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 	left := "by: updated"
 	if a.mode == data.SortDebut {
 		left = "by: debut"
+	} else if a.mode == data.SortYear {
+		left = "by: year"
 	} else if a.mode == data.SortAlphabetical {
 		left = "by: A-Z"
 	} else if a.mode == data.SortFavorites {
@@ -60,7 +62,7 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 	}
 	if a.appUpdate != "" {
 		// Reserve space for a persistent app notice even on narrow tate screens.
-		left = map[data.SortMode]string{data.SortUpdated: "Updated", data.SortDebut: "Debut", data.SortAlphabetical: "A-Z", data.SortFavorites: "Favorites"}[a.mode]
+		left = map[data.SortMode]string{data.SortUpdated: "Updated", data.SortDebut: "Debut", data.SortYear: "Year", data.SortAlphabetical: "A-Z", data.SortFavorites: "Favorites"}[a.mode]
 		c.Text(l.Status.Min.X+2, y, a.sm, left, gen.Eva.Accent)
 		c.TextRight(l.Status.Max.X-2, y, a.sm, "App update", gen.Eva.Accent)
 		return
@@ -251,7 +253,15 @@ func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {
 	if a.seen != nil && a.seen.MarkerOn(a.mode) && a.seen.Unseen(row) {
 		dateCol = gen.Eva.Accent
 	}
-	c.Text(r.Max.X-a.dateCols()*rf.W, y-1, rf, a.dateCol(date), dateCol)
+	text := a.dateCol(date)
+	if a.mode == data.SortYear {
+		// the original release year as the catalogue has it, "198?" included
+		text = gfx.Fit(strings.TrimSpace(row.Year), a.dateCols())
+		for len(text) < a.dateCols() {
+			text = " " + text
+		}
+	}
+	c.Text(r.Max.X-a.dateCols()*rf.W, y-1, rf, text, dateCol)
 }
 
 // paintTitle draws a list title into w pixels, in the narrow font when

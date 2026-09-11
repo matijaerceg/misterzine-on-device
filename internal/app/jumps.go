@@ -29,7 +29,12 @@ func (a *App) jumpGroup(direction int) {
 	a.shortPage = true
 	if a.mode != data.SortAlphabetical && a.mode != data.SortFavorites {
 		label := "Date unknown"
-		if month, err := time.Parse("2006-01", group); err == nil {
+		if a.mode == data.SortYear {
+			label = "Year unknown"
+			if group != "" {
+				label = group
+			}
+		} else if month, err := time.Parse("2006-01", group); err == nil {
 			label = month.Format("January 2006")
 		}
 		a.Notice(label, 2*time.Second)
@@ -40,6 +45,9 @@ func (a *App) jumpGroupKey(pos int) string {
 	i := a.view[pos]
 	if a.mode == data.SortAlphabetical || a.mode == data.SortFavorites {
 		return string(a.ds.Der[i].TitleInitial())
+	}
+	if a.mode == data.SortYear {
+		return data.ReleaseYear(a.ds.Rows[i].Year) // "" gathers the unknown years at the end
 	}
 	date := a.ds.Rows[i].Updated
 	if a.mode == data.SortDebut {

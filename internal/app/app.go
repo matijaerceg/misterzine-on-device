@@ -167,7 +167,7 @@ func New(cfg Config, ds *data.Dataset, stored *data.SeenRecord) *App {
 		cfg.Favorites = map[string]bool{}
 	}
 	a := &App{cfg: cfg, body: fonts.Body(), sm: fonts.Small(), narrow: fonts.Narrow(), tall: fonts.NarrowTall(), rot: cfg.Rotation, split: -1, down: map[platform.Key]bool{}}
-	if cfg.RememberSort && cfg.LastSort >= data.SortUpdated && cfg.LastSort <= data.SortFavorites {
+	if cfg.RememberSort && cfg.LastSort >= data.SortUpdated && cfg.LastSort <= data.SortYear {
 		a.mode = cfg.LastSort
 	}
 	a.physical = image.NewRGBA(image.Rect(0, 0, cfg.PhysW, cfg.PhysH))
@@ -322,7 +322,7 @@ func (a *App) MoveToKey(k string) { a.moveToKey(k); a.all = true }
 
 // SetSort switches the sort mode.
 func (a *App) SetSort(m data.SortMode) {
-	if m < data.SortUpdated || m > data.SortFavorites || m == a.mode {
+	if m < data.SortUpdated || m > data.SortYear || m == a.mode {
 		return
 	}
 	k := a.CursorKey()
@@ -711,7 +711,7 @@ func (a *App) actList(k platform.Key) bool {
 		a.shortPage = false
 		a.cursor = n - 1
 	case platform.KeySpace:
-		a.SetSort((a.mode + 1) % (data.SortFavorites + 1))
+		a.SetSort(data.NextSort(a.mode))
 		return true
 	case platform.KeyTab:
 		a.openPanel(ScreenFilter)

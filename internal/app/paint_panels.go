@@ -342,7 +342,7 @@ func (a *App) optionsEntries() []panelEntry {
 	}
 	group := func(title string) panelEntry { return panelEntry{text: title, header: true, info: true} }
 	spacer := panelEntry{header: true, info: true}
-	E := []panelEntry{group("Data"),
+	E := []panelEntry{group("Data:"),
 		{text: "Refresh data now", kind: "refresh",
 			help: "Check misterzine.fyi for new releases now. This also happens on launch and every 30 minutes."},
 		{text: updateText, kind: "update", help: updateHelp},
@@ -354,7 +354,7 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Download every screenshot in the background (about 55 MB) so browsing never waits; the tally counts up as they land. Off: only what you look at."},
 		{text: "Clear image cache", kind: "clearimg",
 			help: "Delete the downloaded screenshots and system photos; they come back as you browse."},
-		spacer, group("Display"),
+		spacer, group("Display:"),
 		{text: "Follow INI rotation", kind: "follow-rotation", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.FollowRotation()],
 			help: "On (default): match osd_rotate in the active MiSTer INI at every startup. Off: rotate manually below. Never edits the INI."},
 		{text: "Rotation", kind: "rotation", vals: []string{"monitor CW", "horizontal", "monitor CCW"}, idx: rotIdx, disabled: a.FollowRotation(),
@@ -371,7 +371,7 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Dim the screen and scroll black lettering after idle time. Left/Right sets the delay; A previews. A browsing button wakes without acting. Menu still exits."},
 		{text: "Edit safe zone", kind: "inset",
 			help: "Margin kept clear of the screen edge (overscan): now " + itoa(a.cfg.SafeInsetX) + " px at the sides, " + itoa(a.cfg.SafeInsetY) + " px top and bottom. A opens the frame; fit it just inside the picture."},
-		spacer, group("Operation"),
+		spacer, group("Operation:"),
 		{text: "Scroll speed", kind: "scroll", vals: []string{"20 Hz", "30 Hz", "60 Hz"}, idx: scrollIdx,
 			help: "How many rows (or pages, with Left/Right) a held direction moves per second. 60 Hz is one row every frame."},
 		{text: "Hold delay", kind: "hold-delay", vals: []string{"short", "normal", "long"}, idx: map[int]int{200: 0, 300: 1, 500: 2}[a.HoldDelay()],
@@ -469,9 +469,9 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 	lines := inner.Dy() / lh
 	p := &a.panel
 	p.lines = lines
-	// Options group spacers are half a row; everything else is a full row
+	// spacer rows are half a row; everything else is a full row
 	rowH := func(i int) int {
-		if e := p.entries[i]; a.screen == ScreenOptions && e.header && e.info && e.text == "" {
+		if e := p.entries[i]; e.header && e.info && e.text == "" {
 			return lh / 2
 		}
 		return lh

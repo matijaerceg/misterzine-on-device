@@ -406,6 +406,69 @@ func TestDetailsInformationSlides(t *testing.T) {
 	}
 }
 
+func TestYearSortOrderAndJumps(t *testing.T) {
+	clock := time.Date(2026, 9, 12, 12, 0, 0, 0, time.UTC)
+	rows := []data.Row{
+		{K: "u", Title: "Unknown", Base: "Arcade", Updated: "2026-09-01"},
+		{K: "b", Title: "Bravo", Base: "Arcade", Year: "1985", Updated: "2026-09-02"},
+		{K: "q", Title: "Quirk", Base: "Arcade", Year: "198?", Updated: "2026-09-03"},
+		{K: "n", Title: "New", Base: "Arcade", Year: "1990", Updated: "2026-09-04"},
+		{K: "a", Title: "Alpha", Base: "Arcade", Year: "1985", Updated: "2026-09-05"},
+	}
+	ds := data.Ingest(rows, "", clock)
+	var got []string
+	for _, i := range ds.Order(data.SortYear) {
+		got = append(got, ds.Rows[i].K)
+	}
+	if strings.Join(got, "") != "nabqu" {
+		t.Fatalf("year order %v, want newest year first, titles within a year, unknown years last", got)
+	}
+	if data.NextSort(data.SortDebut) != data.SortYear || data.NextSort(data.SortYear) != data.SortAlphabetical || data.NextSort(data.SortFavorites) != data.SortUpdated {
+		t.Fatal("Y must walk Updated, Debut, Year, A-Z, Favorites")
+	}
+	a := New(Config{PhysW: 320, PhysH: 240, Now: func() time.Time { return clock }, TimerNow: func() time.Time { return clock }}, ds, nil)
+	a.actList(platform.KeySpace)
+	a.actList(platform.KeySpace)
+	if a.Sort() != data.SortYear || a.CursorKey() != "a" {
+		t.Fatalf("two presses reach the year order and keep the row: %v %q", a.Sort(), a.CursorKey())
+	}
+	a.actList(platform.KeyHome)
+	if a.CursorKey() != "n" {
+		t.Fatalf("the newest year leads: %q", a.CursorKey())
+	}
+	a.actList(platform.KeyPageDown)
+	if a.CursorKey() != "a" || a.notice != "1985" {
+		t.Fatalf("R must jump to the next year's first title: %q notice %q", a.CursorKey(), a.notice)
+	}
+	a.actList(platform.KeyPageDown)
+	if a.CursorKey() != "q" || a.notice != "Year unknown" {
+		t.Fatalf("R must jump to the unknown years: %q notice %q", a.CursorKey(), a.notice)
+	}
+	a.actList(platform.KeyPageUp)
+	if a.CursorKey() != "a" {
+		t.Fatal("L must jump back a year")
+	}
+	a.Paint()
+	rf := a.rowFont()
+	r := a.lay.lineRect(0)
+	col := image.Rect(r.Max.X-a.dateCols()*rf.W, r.Min.Y-1, r.Max.X, r.Max.Y)
+	lit := 0
+	for y := col.Min.Y; y < col.Max.Y; y++ {
+		for x := col.Min.X; x < col.Max.X; x++ {
+			if a.logical.RGBA.RGBAAt(x, y) == gen.Eva.Muted {
+				lit++
+			}
+		}
+	}
+	if lit == 0 {
+		t.Fatal("the date column must show the year")
+	}
+	b := New(Config{PhysW: 320, PhysH: 240, RememberSort: true, LastSort: data.SortYear}, ds, nil)
+	if b.Sort() != data.SortYear {
+		t.Fatal("the year order must be remembered")
+	}
+}
+
 func TestFilterHeadingOpensAndCloses(t *testing.T) {
 	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest([]data.Row{
 		{K: "a", Base: "Arcade", Title: "A", Genre: "Shooter"}, {K: "b", Base: "Arcade", Title: "B", Genre: "Puzzle"},

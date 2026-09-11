@@ -15,7 +15,25 @@ const (
 	SortAlphabetical
 	// SortFavorites is an alphabetical favorites-only browsing mode.
 	SortFavorites
+	// SortYear is newest original release year first (the catalogue has
+	// years only, so titles order within a year); unknown years last. It
+	// follows SortFavorites in value because the value is saved, but sits
+	// after Debut in the browsing cycle.
+	SortYear
 )
+
+// SortCycle is the order Y walks the modes in.
+var SortCycle = []SortMode{SortUpdated, SortDebut, SortYear, SortAlphabetical, SortFavorites}
+
+// NextSort is the mode after m in the cycle.
+func NextSort(m SortMode) SortMode {
+	for i, mode := range SortCycle {
+		if mode == m {
+			return SortCycle[(i+1)%len(SortCycle)]
+		}
+	}
+	return SortUpdated
+}
 
 func (m SortMode) String() string {
 	switch m {
@@ -25,6 +43,8 @@ func (m SortMode) String() string {
 		return "Alphabetical"
 	case SortFavorites:
 		return "Favorites"
+	case SortYear:
+		return "Year"
 	}
 	return "Updated"
 }
@@ -50,6 +70,16 @@ func (ds *Dataset) less(mode SortMode, a, b int) bool {
 	ra, rb := &ds.Rows[a], &ds.Rows[b]
 	da, db := &ds.Der[a], &ds.Der[b]
 	if mode == SortAlphabetical || mode == SortFavorites {
+		return CompareKeys(da.titleKey, db.titleKey) < 0
+	}
+	if mode == SortYear {
+		ay, by := ReleaseYear(ra.Year), ReleaseYear(rb.Year)
+		if (ay == "") != (by == "") {
+			return ay != "" // a known year comes first
+		}
+		if ay != by {
+			return ay > by // newest first
+		}
 		return CompareKeys(da.titleKey, db.titleKey) < 0
 	}
 	var av, bv string

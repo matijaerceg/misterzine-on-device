@@ -164,7 +164,14 @@ func TestResolutionFilterRendersCheckboxAndCount(t *testing.T) {
 					label = "Unknown"
 				}
 				inner := a.lay.Body.Inset(2)
-				y := inner.Min.Y + (a.panel.cursor-a.panel.top)*a.sm.H
+				y := inner.Min.Y
+				for i := a.panel.top; i < a.panel.cursor; i++ {
+					if e := a.panel.entries[i]; e.header && e.info && e.text == "" {
+						y += a.sm.H / 2 // a spacer row
+					} else {
+						y += a.sm.H
+					}
+				}
 				row := image.Rect(inner.Min.X, y, inner.Max.X, y+a.sm.H)
 				want := gfx.New(a.logical.W(), a.logical.H())
 				want.Fill(row, gen.Eva.Surface)
