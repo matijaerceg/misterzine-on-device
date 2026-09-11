@@ -175,8 +175,10 @@ func TestSaverSweepsEveryPixel(t *testing.T) {
 							covered[i] = true
 							remaining--
 						}
-					} else if p != (color.RGBA{R: 50, G: 40, B: 30, A: 255}) {
-						t.Fatalf("pixel not black or correctly dimmed: %v", p)
+					} else if p == (color.RGBA{R: 50, G: 40, B: 30, A: 255}) {
+						continue
+					} else if sx := x - (c.W() - travel%(c.W()+mask.Rect.Dx())); sx < 0 || sx >= mask.Rect.Dx() || mask.Pix[y*mask.Stride+sx] == 0 || mask.Pix[y*mask.Stride+sx] == saverInk {
+						t.Fatalf("pixel not black, dimmed or a lit outline: %v", p)
 					}
 				}
 			}
@@ -189,5 +191,65 @@ func TestSaverSweepsEveryPixel(t *testing.T) {
 		if got := gfx.RotateRect(physical, c.RGBA, c.Rect, rot); got != physical.Rect {
 			t.Fatalf("saver left physical margins uncovered: %v", got)
 		}
+	}
+}
+
+func TestSaverRimGlints(t *testing.T) {
+	a, _ := saverApp()
+	c := a.logical
+	m := a.saverMask(c.H())
+	w, h := m.Rect.Dx(), m.Rect.Dy()
+	rim, interior := 0, 0
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			switch v := m.Pix[y*m.Stride+x]; {
+			case v == 0:
+			case v == saverInk:
+				interior++
+			case v < 1 || v > 9 || v == 5:
+				t.Fatalf("bad facing code %d at %d,%d", v, x, y)
+			default:
+				rim++
+				open := x == 0 || x == w-1
+				for _, d := range []image.Point{{-1, 0}, {1, 0}, {0, -1}, {0, 1}} {
+					nx, ny := x+d.X, y+d.Y
+					if nx >= 0 && nx < w && ny >= 0 && ny < h && m.Pix[ny*m.Stride+nx] == 0 {
+						open = true
+					}
+				}
+				if !open {
+					t.Fatalf("outline pixel %d,%d is not on the edge", x, y)
+				}
+			}
+		}
+	}
+	if rim == 0 || rim*10 > interior {
+		t.Fatalf("outline is %d pixels against %d interior", rim, interior)
+	}
+	// Sample frames across a full pass of the word: the glint must reach its
+	// cap somewhere, while any given edge pixel is black most of the time.
+	lit, total, peak := 0, 0, uint8(0)
+	for travel := 0; travel < c.W()+w; travel += 7 {
+		c.Fill(c.Rect, color.RGBA{R: 200, G: 160, B: 120, A: 255})
+		a.saver.travel = travel
+		a.paintSaver(c)
+		x0 := c.W() - travel%(c.W()+w)
+		for y := 0; y < c.H(); y++ {
+			for x := max(x0, 0); x < min(x0+w, c.W()); x++ {
+				if v := m.Pix[y*m.Stride+x-x0]; v != 0 && v != saverInk {
+					total++
+					if q := c.RGBAAt(x, y); q.R != 0 || q.G != 0 || q.B != 0 {
+						lit++
+						peak = max(peak, q.R, q.G, q.B)
+					}
+				}
+			}
+		}
+	}
+	if peak != saverGlintMax || peak > 102 {
+		t.Fatalf("glint peak %d; it must reach exactly the cap and stay at or under 40%% of white", peak)
+	}
+	if lit*3 > total {
+		t.Fatalf("outline lit for %d of %d pixel-frames; it should be black most of the time", lit, total)
 	}
 }

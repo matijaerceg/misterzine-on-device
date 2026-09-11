@@ -153,8 +153,99 @@ func (a *App) saverMask(h int) *image.Alpha {
 		}
 		x += letter.width + 3
 	}
+	saverRim(m)
 	a.saver.mask = m
 	return m
+}
+
+// Rim lighting: the letters' one-pixel outline carries a facing code instead
+// of solid ink, 1 + (nx+1) + 3*(ny+1) for the quantized outward normal
+// (nx, ny), so the paint loop can light the edge without a second mask. Two
+// still columns of light, tilted a little off vertical, stand on the screen:
+// a violet one that only the left-facing edges reflect and a lime one,
+// leaning the other way, that only the right-facing edges reflect (horizontal edges split by whether
+// they face up or down). The letters scroll through them, so each glint
+// slides along an edge purely as a result of the lettering's own motion.
+// The glint never exceeds saverGlintMax and edges outside a column stay
+// black.
+const (
+	saverInk       = 255
+	saverGlintMax  = 102 // brightest any channel of the edge gets: 40% of white
+	saverBandHalf  = 40  // half-width of a column in pixels
+	saverBandFloor = 0.3 // share of the glint a glancing facing shows
+)
+
+// saverTilts lean the two columns opposite ways, x per row, so the two glints
+// travel vertically in opposite directions; the steeper lean moves slower.
+var saverTilts = [2]float64{0.2, -0.5}
+
+// saverHues are the two lights, left-facing then right-facing, from the
+// Unit-01 palette's violet and lime, pushed more saturated.
+var saverHues = [2][3]uint8{{140, 40, 255}, {120, 255, 0}}
+
+// saverBand is the smooth glint profile by distance from a column centre.
+var saverBand = func() []uint8 {
+	t := make([]uint8, saverBandHalf)
+	for i := range t {
+		k := 1 - float64(i)/saverBandHalf
+		t[i] = uint8(saverGlintMax * k * k)
+	}
+	return t
+}()
+
+// saverSide says which light each facing code reflects, and saverFacing how
+// strongly: squarely sideways facings fully, glancing ones less.
+var saverSide, saverFacing = func() (side [10]uint8, f [10]uint8) {
+	for ny := -1; ny <= 1; ny++ {
+		for nx := -1; nx <= 1; nx++ {
+			if nx == 0 && ny == 0 {
+				continue
+			}
+			code := 1 + (nx + 1) + 3*(ny+1)
+			if nx > 0 || (nx == 0 && ny > 0) {
+				side[code] = 1
+			}
+			d := math.Abs(float64(nx)) / math.Hypot(float64(nx), float64(ny))
+			f[code] = uint8(255 * (saverBandFloor + (1-saverBandFloor)*d))
+		}
+	}
+	return side, f
+}()
+
+func saverRim(m *image.Alpha) {
+	w, h := m.Rect.Dx(), m.Rect.Dy()
+	ink := func(x, y int) bool {
+		if y < 0 || y >= h {
+			return true // the letters run past the top and bottom of the screen
+		}
+		return x >= 0 && x < w && m.Pix[y*m.Stride+x] != 0
+	}
+	sign := func(v int) int {
+		if v < 0 {
+			return -1
+		}
+		if v > 0 {
+			return 1
+		}
+		return 0
+	}
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			if !ink(x, y) || (ink(x-1, y) && ink(x+1, y) && ink(x, y-1) && ink(x, y+1)) {
+				continue
+			}
+			sx, sy := 0, 0
+			for dy := -1; dy <= 1; dy++ {
+				for dx := -1; dx <= 1; dx++ {
+					if (dx != 0 || dy != 0) && !ink(x+dx, y+dy) {
+						sx += dx
+						sy += dy
+					}
+				}
+			}
+			m.Pix[y*m.Stride+x] = uint8(1 + (sign(sx) + 1) + 3*(sign(sy)+1))
+		}
+	}
 }
 
 // Broad geometric capitals drawn for this overlay, in 24-unit-high outlines.
@@ -205,17 +296,31 @@ func (a *App) paintSaver(c *gfx.Canvas) {
 	// One logical pixel per frame; the whole word enters at the right and
 	// leaves at the left. Safe-zone insets don't clip this overlay.
 	x0 := c.W() - a.saver.travel%(c.W()+m.Rect.Dx())
+	// the columns lean through the screen's thirds
+	centres := [2]int{c.W()*3/10 + int(saverTilts[0]*float64(c.H())/2), c.W()*7/10 + int(saverTilts[1]*float64(c.H())/2)}
 	for y := 0; y < c.H(); y++ {
 		for x := 0; x < c.W(); x++ {
 			i := c.PixOffset(x, y)
 			sx := x - x0
-			if sx >= 0 && sx < m.Rect.Dx() && m.Pix[y*m.Stride+sx] != 0 {
-				c.Pix[i], c.Pix[i+1], c.Pix[i+2] = 0, 0, 0
-			} else {
-				c.Pix[i] /= 4
-				c.Pix[i+1] /= 4
-				c.Pix[i+2] /= 4
+			if sx >= 0 && sx < m.Rect.Dx() {
+				if v := m.Pix[y*m.Stride+sx]; v == saverInk {
+					c.Pix[i], c.Pix[i+1], c.Pix[i+2] = 0, 0, 0
+					continue
+				} else if v != 0 {
+					side := saverSide[v]
+					if d := x + int(saverTilts[side]*float64(y)) - centres[side]; d < len(saverBand) && d > -len(saverBand) {
+						g := int(saverBand[max(d, -d)]) * int(saverFacing[v]) / 255
+						hue := saverHues[side]
+						c.Pix[i], c.Pix[i+1], c.Pix[i+2] = uint8(int(hue[0])*g/255), uint8(int(hue[1])*g/255), uint8(int(hue[2])*g/255)
+					} else {
+						c.Pix[i], c.Pix[i+1], c.Pix[i+2] = 0, 0, 0
+					}
+					continue
+				}
 			}
+			c.Pix[i] /= 4
+			c.Pix[i+1] /= 4
+			c.Pix[i+2] /= 4
 		}
 	}
 	c.DirtyAll()

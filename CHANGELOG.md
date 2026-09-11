@@ -2,6 +2,9 @@
 
 ## v1.0.9 — 2026-09-11
 
+- The screensaver lettering carries a one-pixel chrome edge: as the letters
+  scroll through a still diagonal light, their outline glints where it passes,
+  brightest on the lit side, and stays black elsewhere.
 - Card status compares against the shipped core build itself (the catalogue's
   new build date and checksum fields) instead of the catalogue's last-updated
   date, so an MRA-only fix or a date rollover no longer shows a current core
