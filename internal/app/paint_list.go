@@ -50,13 +50,13 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 		c.Text(l.Status.Min.X+2, y, a.sm, "Find: "+query+"_", gen.Eva.Accent)
 		return
 	}
-	left := "by: updated  L/R month"
+	left := "by: updated"
 	if a.mode == data.SortDebut {
-		left = "by: debut  L/R month"
+		left = "by: debut"
 	} else if a.mode == data.SortAlphabetical {
-		left = "by: A-Z  L/R jump"
+		left = "by: A-Z"
 	} else if a.mode == data.SortFavorites {
-		left = "Favorites  L/R jump"
+		left = "Favorites"
 	}
 	if a.appUpdate != "" {
 		// Reserve space for a persistent app notice even on narrow tate screens.

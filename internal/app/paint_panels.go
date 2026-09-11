@@ -476,7 +476,13 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			if a.panel.yearOpen[decade] {
 				action = "hide"
 			}
-			hint = "A toggle Y only/all X " + action + " years B back"
+			hint = "A toggle  Y only/all  X " + action + " years  B back"
+			if a.sm.Width(hint) > l.Hint.Dx()-4 {
+				hint = "A toggle  Y only  X " + action + "  B back"
+			}
+			if a.sm.Width(hint) > l.Hint.Dx()-4 {
+				hint = "A set  Y only  X " + action + "  B"
+			}
 		}
 		a.paintHint(c, hint)
 	}
