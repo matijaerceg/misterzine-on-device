@@ -65,6 +65,9 @@ func TestFilterOpenShowsOnlyEditsAndRemovesFavorites(t *testing.T) {
 	}, "", time.Now()), nil)
 	a.openPanel(ScreenFilter)
 	for _, e := range a.panel.entries {
+		if e.kind == "clear" {
+			continue
+		}
 		if !e.info && (!e.header || !strings.HasPrefix(e.text, gfx.ArrowRight)) {
 			t.Fatal("unset section should be collapsed", e)
 		}

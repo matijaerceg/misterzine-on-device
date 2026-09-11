@@ -52,7 +52,7 @@ func main() {
 	scanResult := flag.Bool("scan-result", false, "show completed card scan fixture")
 	unchanged := flag.Bool("unchanged", false, "previous visit saw every release")
 	filterRotation := flag.Bool("filter-rotation", false, "start with the strict current-rotation filter on")
-	narrow := flag.Bool("narrow", true, "list titles in the narrow font")
+	titleFont := flag.String("title-font", "narrow", "list title font: narrow, tall or normal")
 	listShot := flag.String("list-shot", "gameplay", "list thumbnail preference: gameplay or title")
 	dateFormat := flag.String("date-format", "mm-dd", "list date column: mm-dd, dd-mm, mon-d, d-mon or yymmdd")
 	flag.Parse()
@@ -86,7 +86,7 @@ func main() {
 		RememberSort:   true,
 		FollowRotation: true,
 		FilterRotation: *filterRotation,
-		NarrowTitles:   *narrow,
+		TitleFont:      *titleFont,
 		ListShot:       *listShot,
 		DateFormat:     *dateFormat,
 		Alternatives: func(r *data.Row) []string {

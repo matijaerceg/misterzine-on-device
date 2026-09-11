@@ -21,12 +21,12 @@ func TestListPreferencesPersist(t *testing.T) {
 	rows := []data.Row{{K: "a", Title: "Alpha", Updated: "2026-09-10"}}
 	open := func() {
 		h.a = app.New(app.Config{PhysW: 320, PhysH: 240,
-			NarrowTitles: h.settings.NarrowTitles, ListShot: h.settings.ListShot, DateFormat: h.settings.DateFormat,
+			TitleFont: h.settings.TitleFont, ListShot: h.settings.ListShot, DateFormat: h.settings.DateFormat,
 			SettingsChanged: func() { h.setDirty = true },
 		}, data.Ingest(rows, "test", time.Now()), nil)
 	}
 	open()
-	if !h.a.NarrowTitles() || h.a.ListShot() != "gameplay" || h.a.DateFormat() != "mm-dd" {
+	if h.a.TitleFont() != "narrow" || h.a.ListShot() != "gameplay" || h.a.DateFormat() != "mm-dd" {
 		t.Fatal("fresh defaults: narrow titles, gameplay shots, MM-DD")
 	}
 	tap := func(key platform.Key) {
@@ -38,7 +38,7 @@ func TestListPreferencesPersist(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		tap(platform.KeyDown)
 	}
-	tap(platform.KeyLeft) // Title font: normal
+	tap(platform.KeyRight) // Title font: narrow tall
 	tap(platform.KeyDown)
 	tap(platform.KeyRight) // List shots: title
 	tap(platform.KeyDown)
@@ -51,11 +51,11 @@ func TestListPreferencesPersist(t *testing.T) {
 	if h.settings, err = store.LoadSettings(filepath.Join(root, "settings.json")); err != nil {
 		t.Fatal(err)
 	}
-	if h.settings.NarrowTitles || h.settings.ListShot != "title" || h.settings.DateFormat != "mon-d" {
+	if h.settings.TitleFont != "tall" || h.settings.ListShot != "title" || h.settings.DateFormat != "mon-d" {
 		t.Fatalf("saved %+v", h.settings)
 	}
 	open()
-	if h.a.NarrowTitles() || h.a.ListShot() != "title" || h.a.DateFormat() != "mon-d" {
+	if h.a.TitleFont() != "tall" || h.a.ListShot() != "title" || h.a.DateFormat() != "mon-d" {
 		t.Fatal("preferences did not survive a restart")
 	}
 }

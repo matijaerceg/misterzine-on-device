@@ -4,7 +4,9 @@
 
 - List titles are drawn in a narrow font (scientifica, SIL Open Font License)
   with proportional spacing, so a row fits about a third more of a title.
-  Options -> Title font switches back to the body font.
+  Options -> Title font also offers "narrow tall", the same font made one
+  pixel taller to match the body font's capital and lowercase heights, and
+  "normal", the body font.
 - Patreon beta cores carry a yellow β after their title in the list, and the
   pane's "beta" chip is yellow to match the details page.
 - Options -> Date format chooses how list dates read: MM-DD (default), DD-MM,
@@ -18,6 +20,9 @@
 - Filters: A on a section heading opens or closes it, like Left/Right; the
   legend says so while a heading is selected. Headings no longer toggle every
   value of their section (Y only/all still does).
+- Filters always lists Clear all filters at the top, greyed out until a filter
+  is active, with a blank line below it; the page opens on the first heading
+  while the row is greyed out.
 
 ## v1.0.12 — 2026-09-11
 

@@ -84,8 +84,9 @@ type Config struct {
 	FollowRotation bool
 	FilterRotation bool // strict filter on the current orientation
 	LastSort       data.SortMode
-	// NarrowTitles draws list titles in the narrow proportional font.
-	NarrowTitles bool
+	// TitleFont draws list titles in "narrow" (default), "tall" (the narrow
+	// font at the body font's height) or "normal" (the body font).
+	TitleFont string
 	// ListShot is the pane thumbnail preference: "gameplay" (default) or "title".
 	ListShot string
 	// DateFormat is the list date column: "mm-dd" (default), "dd-mm",
@@ -99,6 +100,7 @@ type App struct {
 	body   *gfx.Font
 	sm     *gfx.Font
 	narrow *gfx.Font // list titles, proportionally spaced
+	tall   *gfx.Font // the same at the body font's height
 	lay    Layout
 	rot    gfx.Rotation
 
@@ -162,7 +164,7 @@ func New(cfg Config, ds *data.Dataset, stored *data.SeenRecord) *App {
 	if cfg.Favorites == nil {
 		cfg.Favorites = map[string]bool{}
 	}
-	a := &App{cfg: cfg, body: fonts.Body(), sm: fonts.Small(), narrow: fonts.Narrow(), rot: cfg.Rotation, split: -1, down: map[platform.Key]bool{}}
+	a := &App{cfg: cfg, body: fonts.Body(), sm: fonts.Small(), narrow: fonts.Narrow(), tall: fonts.NarrowTall(), rot: cfg.Rotation, split: -1, down: map[platform.Key]bool{}}
 	if cfg.RememberSort && cfg.LastSort >= data.SortUpdated && cfg.LastSort <= data.SortFavorites {
 		a.mode = cfg.LastSort
 	}
@@ -338,7 +340,30 @@ func (a *App) Sort() data.SortMode { return a.mode }
 func (a *App) RememberSort() bool   { return a.cfg.RememberSort }
 func (a *App) FollowRotation() bool { return a.cfg.FollowRotation }
 func (a *App) FilterRotation() bool { return a.cfg.FilterRotation }
-func (a *App) NarrowTitles() bool   { return a.cfg.NarrowTitles }
+
+// titleFonts are the list title choices, in Options order.
+var titleFonts = []string{"normal", "narrow", "tall"}
+
+// TitleFont is the list title font choice, one of titleFonts.
+func (a *App) TitleFont() string {
+	switch a.cfg.TitleFont {
+	case "normal", "tall":
+		return a.cfg.TitleFont
+	}
+	return "narrow"
+}
+
+// titleFont is the proportional font list titles draw in, nil for the
+// body font.
+func (a *App) titleFont() *gfx.Font {
+	switch a.TitleFont() {
+	case "narrow":
+		return a.narrow
+	case "tall":
+		return a.tall
+	}
+	return nil
+}
 
 // ListShot is the pane thumbnail preference, "gameplay" or "title".
 func (a *App) ListShot() string {

@@ -256,8 +256,7 @@ func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {
 // paintTitle draws a list title into w pixels, in the narrow font when
 // chosen, with a beta sign after a Patreon beta core's name.
 func (a *App) paintTitle(c *gfx.Canvas, x, y, w int, title string, beta bool, col rgb) {
-	if a.cfg.NarrowTitles {
-		f := a.narrow
+	if f := a.titleFont(); f != nil {
 		y-- // scientifica's baseline is one pixel lower than the body font's
 		if beta {
 			w -= f.Advance(' ') + f.Advance(gfx.Beta[0])

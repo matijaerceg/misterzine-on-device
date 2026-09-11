@@ -151,7 +151,9 @@ item. R also jumps to the bottom.
   with your last sort choice; off starts new visits with latest updates. Changing
   this preference leaves the current sort order alone.
 - **Title font:** narrow by default, a condensed proportional font that fits
-  about a third more of each title on a row. Normal uses the body font.
+  about a third more of each title on a row. Narrow tall is the same font
+  made one pixel taller so its capitals and lowercase match the body font's
+  height. Normal uses the body font.
 - **List shots:** which screenshot the list pane shows for the selected row:
   gameplay (default) or the title screen. Details and the artwork view still
   show every shot.
@@ -178,7 +180,8 @@ item. R also jumps to the bottom.
   test, with results you can photograph. The last result survives restarting.
   See [troubleshooting](TROUBLESHOOTING.md#start-does-not-launch-games).
 
-Filters start with On the card, Since last look, Type and Source.
+Filters start with Clear all filters, greyed out until a filter is active,
+then On the card, Since last look, Type and Source.
 Favorites is a main-view mode and still respects all these filters.
 Press Y on a value to select only that value in its section, leaving all other
 sections and your search unchanged. Press Y again on that value to enable all

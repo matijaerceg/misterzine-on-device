@@ -20,9 +20,12 @@ var spleen5x8 []byte
 //go:embed scientifica-11.bdf
 var scientifica11 []byte
 
+//go:embed scientifica-11-tall.bdf
+var scientifica11Tall []byte
+
 var (
-	once6, once5, onceN sync.Once
-	f6, f5, fN          *gfx.Font
+	once6, once5, onceN, onceT sync.Once
+	f6, f5, fN, fT             *gfx.Font
 )
 
 // Body is the 6x12 body font: 53 columns on a 320 px canvas, 40 in tate.
@@ -49,6 +52,20 @@ func Narrow() *gfx.Font {
 		fN.AddArrows()
 	})
 	return fN
+}
+
+// NarrowTall is scientifica made one pixel taller in the x-height band by
+// tools/tall_font.py, so its capitals (8 px) and lowercase (6 px) match
+// the body font's while keeping the narrow widths.
+func NarrowTall() *gfx.Font {
+	onceT.Do(func() {
+		var err error
+		if fT, err = gfx.ParseBDF(scientifica11Tall); err != nil {
+			panic("fonts: scientifica-11-tall: " + err.Error())
+		}
+		fT.AddArrows()
+	})
+	return fT
 }
 
 // Small is the 5x8 secondary font for pane text, captions and chips.

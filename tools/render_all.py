@@ -93,7 +93,8 @@ for rotation in ([], ["-rot", "left", "-logical"]):
         scenarios.append([*rotation, "-inset", str(inset),
                           "-out", f"out/list-polish-{orientation}-{inset}", "-script",
                           "type gradius; shot beta-narrow; back; back; down*10; shot title-font; left; back; "
-                          "type gradius; shot beta-normal; back; back; down*10; right; "
+                          "type gradius; shot beta-normal; back; back; down*10; right; right; back; "
+                          "type gradius; shot beta-tall; back; back; down*10; left; "
                           "down; shot list-shots; right; back; shot title-shot; back; down*11; left; "
                           "down; right; shot date-dd-mm; back; shot list-dd-mm; back; down*12; right; shot date-mon-d; back; shot list-mon-d; "
                           "back; down*12; right; shot date-d-mon; back; shot list-d-mon; back; down*12; right; shot date-yymmdd; back; shot list-yymmdd; "

@@ -49,6 +49,13 @@ func (a *App) openPanel(s Screen) {
 		a.resetFilterExpansion()
 	}
 	a.buildPanel()
+	// Filters opens on its first heading while Clear all filters is greyed out.
+	for a.panel.cursor < len(a.panel.entries)-1 && a.panel.entries[a.panel.cursor].disabled {
+		a.panel.cursor++
+		for a.panel.cursor < len(a.panel.entries)-1 && (a.panel.entries[a.panel.cursor].info || (a.panel.entries[a.panel.cursor].header && a.panel.entries[a.panel.cursor].text == "")) {
+			a.panel.cursor++
+		}
+	}
 	a.all = true
 }
 
@@ -175,13 +182,11 @@ func (a *App) filterEntries() []panelEntry {
 func (a *App) rawFilterEntries() []panelEntry {
 	f := &a.filters
 	var E []panelEntry
-	if f.Active() {
-		text := "Clear all filters"
-		if a.rotationFilter() != "" {
-			text = "Clear other filters"
-		}
-		E = append(E, panelEntry{text: text, kind: "clear"})
+	text := "Clear all filters"
+	if a.rotationFilter() != "" {
+		text = "Clear other filters"
 	}
+	E = append(E, panelEntry{text: text, kind: "clear", disabled: !f.Active()}, panelEntry{header: true, info: true})
 	if a.rotationFilter() != "" {
 		E = append(E, panelEntry{text: a.rotationFilterLabel(), info: true},
 			panelEntry{text: "Change in Options", info: true})
@@ -335,8 +340,8 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Wait before held navigation repeats: short 200 ms, normal 300 ms, long 500 ms. Scroll speed sets the pace after this delay."},
 		{text: "Remember sort order", kind: "remember-sort", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.RememberSort()],
 			help: "On: reopen with your last view, including Favorites (default). Off: start new visits with latest updates."},
-		{text: "Title font", kind: "title-font", vals: []string{"normal", "narrow"}, idx: map[bool]int{false: 0, true: 1}[a.NarrowTitles()],
-			help: "Narrow (default) fits about a third more of each title on a list row with a condensed font. Normal uses the body font."},
+		{text: "Title font", kind: "title-font", vals: []string{"normal", "narrow", "narrow tall"}, idx: map[string]int{"normal": 0, "narrow": 1, "tall": 2}[a.TitleFont()],
+			help: "Narrow (default) fits about a third more of each title on a row with a condensed font. Narrow tall is the same font at the body font's height. Normal uses the body font."},
 		{text: "List shots", kind: "list-shot", vals: []string{"gameplay", "title"}, idx: map[string]int{"gameplay": 0, "title": 1}[a.ListShot()],
 			help: "Which screenshot the list pane shows: gameplay (default) or the title screen. Details and the artwork view still show every shot."},
 		{text: "Date format", kind: "date-format", vals: dateFormatLabels, idx: dateIdx,
@@ -500,7 +505,9 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			c.Text(inner.Max.X-2-vw, y, font, val, col)
 		default:
 			col := gen.Eva.Fg
-			if n == p.cursor && a.screen != ScreenFilter {
+			if e.disabled {
+				col = gen.Eva.Muted // nothing to do yet
+			} else if n == p.cursor && a.screen != ScreenFilter {
 				col = gen.Eva.Accent
 			}
 			c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, cols), col)
@@ -526,7 +533,7 @@ func (a *App) actPanel(k platform.Key) bool {
 	p := &a.panel
 	n := len(p.entries)
 	selectable := func(i int) bool {
-		return i >= 0 && i < n && !p.entries[i].info && !(p.entries[i].header && p.entries[i].text == "")
+		return i >= 0 && i < n && !p.entries[i].info && !(p.entries[i].header && p.entries[i].text == "") && !(a.screen == ScreenFilter && p.entries[i].disabled)
 	}
 	switch k {
 	case platform.KeyBack:
@@ -655,7 +662,7 @@ func (a *App) stepValue(d int) bool {
 	case "screensaver":
 		a.cfg.Screensaver = saverValues[i]
 	case "title-font":
-		a.cfg.NarrowTitles = i == 1
+		a.cfg.TitleFont = titleFonts[i]
 	case "list-shot":
 		a.cfg.ListShot = []string{"gameplay", "title"}[i]
 	case "date-format":
@@ -720,6 +727,9 @@ func (a *App) togglePanel() bool {
 		a.OpenUpdate()
 		return true
 	case "clear":
+		if e.disabled {
+			return false
+		}
 		a.SetFilters(data.Filters{})
 		p.cursor = 0
 		a.buildPanel()

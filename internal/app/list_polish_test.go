@@ -106,10 +106,16 @@ func titleInk(a *App, col rgb) int {
 func TestNarrowTitlesAndBetaSign(t *testing.T) {
 	long := strings.Repeat("Mmmmmmmmm ", 8)
 	rows := []data.Row{{K: "a", Title: long, Updated: "2026-09-07", Beta: true}}
-	a := New(Config{PhysW: 320, PhysH: 240, NarrowTitles: true}, data.Ingest(rows, "", time.Now()), nil)
+	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest(rows, "", time.Now()), nil)
+	if a.TitleFont() != "narrow" {
+		t.Fatal("narrow is the default")
+	}
 	a.Paint()
 	if titleInk(a, gen.Eva.Warn) == 0 {
 		t.Fatal("beta sign missing after a narrow title")
+	}
+	if a.narrow.PropWidth(long) != a.tall.PropWidth(long) || a.tall.Glyph('M')[2] == 0 || a.narrow.Glyph('M')[2] != 0 {
+		t.Fatal("the tall font must keep the narrow widths and add a row to capitals")
 	}
 	w := a.lay.TitleCol * a.body.W
 	narrow, normal := gfx.FitProp(a.narrow, long, w), gfx.Fit(long, a.lay.TitleCol)
@@ -123,13 +129,56 @@ func TestNarrowTitlesAndBetaSign(t *testing.T) {
 		}
 	}
 	a.actPanel(platform.KeyLeft)
-	if a.NarrowTitles() {
+	if a.TitleFont() != "normal" {
 		t.Fatal("Left did not choose the normal font")
 	}
 	a.actPanel(platform.KeyBack)
 	a.Paint()
 	if titleInk(a, gen.Eva.Warn) == 0 {
 		t.Fatal("beta sign missing after a normal title")
+	}
+	a.openPanel(ScreenOptions)
+	for i, e := range a.panel.entries {
+		if e.kind == "title-font" {
+			a.panel.cursor = i
+		}
+	}
+	a.actPanel(platform.KeyRight)
+	a.actPanel(platform.KeyRight)
+	if a.TitleFont() != "tall" || a.actPanel(platform.KeyRight) {
+		t.Fatal("Right twice must reach narrow tall, the last choice")
+	}
+	a.actPanel(platform.KeyBack)
+	a.Paint()
+	if titleInk(a, gen.Eva.Warn) == 0 {
+		t.Fatal("beta sign missing after a tall title")
+	}
+}
+
+func TestClearAllFiltersRowIsAlwaysListed(t *testing.T) {
+	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest([]data.Row{
+		{K: "a", Base: "Arcade", Title: "A", Genre: "Shooter"}, {K: "b", Base: "Arcade", Title: "B", Genre: "Puzzle"},
+	}, "", time.Now()), nil)
+	a.openPanel(ScreenFilter)
+	e := a.panel.entries
+	if e[0].kind != "clear" || !e[0].disabled || !(e[1].header && e[1].info && e[1].text == "") || e[2].kind != "install" || !e[2].header {
+		t.Fatalf("want a greyed Clear row, a blank line, then the first heading; got %+v %+v %+v", e[0], e[1], e[2])
+	}
+	if a.panel.cursor != 2 {
+		t.Fatalf("cursor starts on the first heading, not the greyed row: %d", a.panel.cursor)
+	}
+	a.panel.cursor = 0
+	if a.actPanel(platform.KeyEnter) || a.filters.Active() {
+		t.Fatal("a greyed Clear row does nothing")
+	}
+	a.SetFilters(data.Filters{GenreOff: map[string]bool{"Puzzle": true}})
+	a.openPanel(ScreenFilter)
+	if a.panel.entries[0].disabled || a.panel.cursor != 0 {
+		t.Fatal("an active filter enables the row and opens on it")
+	}
+	a.actPanel(platform.KeyEnter)
+	if a.filters.Active() || !a.panel.entries[0].disabled || len(a.view) != 2 {
+		t.Fatal("Clear must reset the filters and grey out again")
 	}
 }
 
