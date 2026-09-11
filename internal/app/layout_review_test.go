@@ -91,7 +91,7 @@ func TestOverscanLayoutsStayInsideTheirRegions(t *testing.T) {
 
 func TestFirstVisitCannotEnableSinceFilter(t *testing.T) {
 	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest([]data.Row{{K: "game"}}, "test", time.Now()), nil)
-	a.openPanel(ScreenFilter)
+	openExpandedFilters(a)
 	explained := false
 	for i, e := range a.panel.entries {
 		if e.text == "available after your first visit" && e.info {

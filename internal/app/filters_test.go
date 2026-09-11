@@ -18,7 +18,7 @@ func TestControlFilterSelectionAndClear(t *testing.T) {
 		{K: "a", Base: "Arcade", Title: "A", Ctl: "8-way · 2 buttons"},
 		{K: "b", Base: "Arcade", Title: "B", Ctl: "4-way · 3 buttons"},
 	}, "", now), nil)
-	a.openPanel(ScreenFilter)
+	openExpandedFilters(a)
 	choose := func(kind, value string, header bool) {
 		t.Helper()
 		for i, e := range a.panel.entries {
@@ -52,7 +52,7 @@ func TestControlFilterSelectionAndClear(t *testing.T) {
 			lastHeader = e.text
 		}
 	}
-	if lastHeader != "Players" {
+	if lastHeader != gfx.ArrowDown+" Players" {
 		t.Fatalf("last section is %q", lastHeader)
 	}
 }
@@ -66,7 +66,7 @@ func TestResolutionFilterSelectionAndRestore(t *testing.T) {
 	}
 	ds := data.Ingest(rows, "", time.Now())
 	a := New(Config{PhysW: 320, PhysH: 240}, ds, nil)
-	a.openPanel(ScreenFilter)
+	openExpandedFilters(a)
 	choose := func(kind, value string, header bool) {
 		t.Helper()
 		for i, e := range a.panel.entries {
@@ -138,7 +138,7 @@ func TestResolutionFilterRendersCheckboxAndCount(t *testing.T) {
 		a := New(Config{PhysW: 320, PhysH: 240, Rotation: rot, SafeInsetX: 15, SafeInsetY: 15}, data.Ingest([]data.Row{
 			{K: "a", Base: "Arcade", Res: "15kHz"}, {K: "b", Base: "Arcade", Res: "31kHz"}, {K: "c", Base: "Arcade"},
 		}, "", time.Now()), nil)
-		a.openPanel(ScreenFilter)
+		openExpandedFilters(a)
 		for _, value := range []string{"", "15kHz", "31kHz"} {
 			for i, e := range a.panel.entries {
 				if e.kind == "res" && !e.header && e.value == value {
@@ -157,7 +157,7 @@ func TestResolutionFilterRendersCheckboxAndCount(t *testing.T) {
 				row := image.Rect(inner.Min.X, y, inner.Max.X, y+a.sm.H)
 				want := gfx.New(a.logical.W(), a.logical.H())
 				want.Fill(row, gen.Eva.Surface)
-				want.Text(inner.Min.X+2, y, a.sm, mark+label+" (1)", gen.Eva.Accent)
+				want.Text(inner.Min.X+2, y, a.sm, mark+label+" (1)", gen.Eva.Fg)
 				for py := row.Min.Y; py < row.Max.Y; py++ {
 					for px := row.Min.X; px < row.Max.X; px++ {
 						if a.logical.RGBAAt(px, py) != want.RGBAAt(px, py) {

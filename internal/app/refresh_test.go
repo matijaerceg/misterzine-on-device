@@ -14,7 +14,7 @@ func TestOpenFiltersFollowNewDataset(t *testing.T) {
 	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest([]data.Row{
 		{K: "one", Base: "Arcade", Genre: "Puzzle"}, {K: "two", Base: "Arcade", Genre: "Sports"},
 	}, "old", now), nil)
-	a.openPanel(ScreenFilter)
+	openExpandedFilters(a)
 	for i, e := range a.panel.entries {
 		if e.kind == "genre" && e.value == "Puzzle" {
 			a.panel.cursor = i

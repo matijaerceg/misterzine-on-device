@@ -14,7 +14,7 @@ func TestOnlyFilterKeepsOtherSectionsAndSearch(t *testing.T) {
 	a := New(Config{PhysW: 320, PhysH: 240, FiltersChanged: func() { saves++ }}, data.Ingest(rows, "", time.Now()), nil)
 	a.SetFilters(data.Filters{SrcOff: map[string]bool{"excluded": true}, GenreOff: map[string]bool{"Shooter": true}})
 	a.setSearch("Game")
-	a.openPanel(ScreenFilter)
+	openExpandedFilters(a)
 	for i, e := range a.panel.entries {
 		if e.kind == "genre" && !e.header && e.value == "Shooter" {
 			a.panel.cursor = i
@@ -67,7 +67,7 @@ func TestOnlyToggleAfterRestartAndOtherSectionEdits(t *testing.T) {
 		t.Fatal("missing choice", kind, value)
 	}
 	a.SetFilters(data.Filters{GenreOff: map[string]bool{"Puzzle": true}})
-	a.openPanel(ScreenFilter)
+	openExpandedFilters(a)
 	choose("genre", "Shooter")
 	a.onlyFilter()
 	if len(a.filters.GenreOff) != 0 {

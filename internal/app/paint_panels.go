@@ -44,6 +44,9 @@ func (a *App) openPanel(s Screen) {
 	a.panel.entries = nil
 	a.panel.cursor = 0
 	a.panel.top = 0
+	if s == ScreenFilter {
+		a.resetFilterExpansion()
+	}
 	a.buildPanel()
 	a.all = true
 }
@@ -150,9 +153,11 @@ func (a *App) filterEntries() []panelEntry {
 			hidden = false
 			if !e.info && e.kind != "" {
 				hidden = a.panel.sectionClosed[e.kind]
+				arrow := gfx.ArrowDown
 				if hidden {
-					e.text = "[+] " + e.text
+					arrow = gfx.ArrowRight
 				}
+				e.text = arrow + " " + e.text
 			}
 			out = append(out, e)
 		} else if !hidden {
@@ -191,12 +196,6 @@ func (a *App) rawFilterEntries() []panelEntry {
 		}
 		E = append(E, panelEntry{text: v.text, kind: "install", value: v.val, checked: cur == v.val, count: installCounts[v.val], showCount: counts[data.StatusUnknown] < len(a.ds.Rows)})
 	}
-	E = append(E, panelEntry{text: "Favorites", header: true, kind: "fav"})
-	if a.mode == data.SortFavorites {
-		E = append(E, panelEntry{text: "Favorites view active", info: true})
-	} else {
-		E = append(E, panelEntry{text: "favorites only", kind: "fav", checked: f.FavOnly})
-	}
 	E = append(E, panelEntry{text: "Since last look", header: true, kind: "since"})
 	if a.seen == nil || a.seen.BaseRows == nil {
 		E = append(E, panelEntry{text: "available after your first visit", info: true})
@@ -225,12 +224,8 @@ func (a *App) rawFilterEntries() []panelEntry {
 	if f.BaseOff["Arcade"] || a.ds.Facets.Base["Arcade"] == 0 {
 		return E
 	}
-	coreNote := "System cores are unaffected"
-	if a.iniFilter() != "" {
-		coreNote = "INI rule applies to all"
-	}
-	E = append(E, panelEntry{text: "Arcade game filters", header: true, info: true},
-		panelEntry{text: coreNote, info: true})
+	E = append(E, panelEntry{header: true, info: true},
+		panelEntry{text: "Arcade game filters:", header: true, info: true})
 	E = append(E, a.yearEntries()...)
 	section("Rotation", "rot", a.ds.Facets.Rot, f.RotOff, func(s string) string {
 		switch s {
@@ -447,7 +442,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			}
 			text := mark + gfx.Fit(e.text, cols-len(mark)-len(suffix)) + suffix
 			col := gen.Eva.Fg
-			if n == p.cursor {
+			if n == p.cursor && a.screen != ScreenFilter {
 				col = gen.Eva.Accent
 			}
 			c.Text(inner.Min.X+2, y, font, gfx.Fit(text, cols), col)
@@ -470,7 +465,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			c.Text(inner.Max.X-2-vw, y, font, val, col)
 		default:
 			col := gen.Eva.Fg
-			if n == p.cursor {
+			if n == p.cursor && a.screen != ScreenFilter {
 				col = gen.Eva.Accent
 			}
 			c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, cols), col)
@@ -488,27 +483,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 		}
 		a.paintHint(c, gfx.ArrowLeft+" "+gfx.ArrowRight+" change  A open  B back")
 	} else {
-		hint := "A toggle  B back"
-		if a.canOnlyFilter() {
-			hint = "A toggle  Y only/all  B back"
-			if a.sm.Width(hint) > l.Hint.Dx()-4 {
-				hint = "A toggle  Y only  B back"
-			}
-		}
-		if decade := a.selectedDecade(); decade != "" {
-			action := "show"
-			if a.panel.yearOpen[decade] {
-				action = "hide"
-			}
-			hint = "A toggle  Y only/all  X " + action + " years  B back"
-			if a.sm.Width(hint) > l.Hint.Dx()-4 {
-				hint = "A toggle  Y only  X " + action + "  B back"
-			}
-			if a.sm.Width(hint) > l.Hint.Dx()-4 {
-				hint = "A set  Y only  X " + action + "  B"
-			}
-		}
-		a.paintHint(c, hint)
+		a.paintHint(c, a.filterHint())
 	}
 }
 

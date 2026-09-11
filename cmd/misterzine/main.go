@@ -292,6 +292,12 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	h.initUpdates()
 	h.a.SetPrefetch(h.settings.Prefetch)
 	// Keep the user's filter choices alongside the startup sort preference.
+	// The old Favorites filter is now represented by the main Favorites mode.
+	// Avoid retaining an invisible narrowing after removing its filter section.
+	if h.state.Filters.FavOnly {
+		h.state.Filters.FavOnly = false
+		h.a.SetSort(data.SortFavorites)
+	}
 	h.a.SetFilters(h.state.Filters)
 	if h.settings.FilterRotation && iniOrientation(ini) == "" {
 		h.a.Notice("INI rotation unavailable; no auto-filter", 8*time.Second)

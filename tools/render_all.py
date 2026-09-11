@@ -13,9 +13,9 @@ scenarios = [
     ["-rot", "none", "-out", "out/h"],
     ["-rot", "left", "-out", "out/t", "-logical"],
     ["-out", "out/filters-h", "-script",
-     "space*2; home; shot alphabetical; tab; down*30; shot arcade; end; shot controls-players"],
+     "space*2; home; shot alphabetical; tab; pagedown*4; right; shot arcade; end; right; shot controls-players"],
     ["-rot", "left", "-logical", "-out", "out/filters-t", "-script",
-     "space*2; home; shot alphabetical; tab; down*30; shot arcade; end; shot controls-players"],
+     "space*2; home; shot alphabetical; tab; pagedown*4; right; shot arcade; end; right; shot controls-players"],
     ["-update-state", "testdata/update-running.json", "-out", "out/update-h",
      "-script", "shot running; hold back 2200; shot cancel"],
     ["-update-state", "testdata/update-running.json", "-rot", "left", "-logical",
@@ -61,7 +61,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
         scenarios.append([*rotation, "-inset", str(inset), "-unchanged",
                           "-out", f"out/rotation-only-{orientation}-{inset}", "-script",
                           "shot unchanged; back; down*5; shot follow-on; left; shot follow-off; "
-                          "right; back; tab; down*14; shot only-legend; space; shot only-selected; space; shot only-restored; space; back; shot filtered-unchanged"])
+                          "right; back; tab; pagedown*2; right; down; shot only-legend; space; shot only-selected; space; shot only-restored; space; back; shot filtered-unchanged"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for ini in ("h", "v"):
@@ -74,7 +74,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     for inset in (15, 40):
         scenarios.append([*rotation, "-inset", str(inset),
                           "-out", f"out/year-filter-{orientation}-{inset}", "-script",
-                          "tab; down*24; shot decades; tab; shot expanded; "
+                          "tab; pagedown*4; right; down*2; shot decades; tab; shot expanded; "
                           "down*2; enter; shot mixed; space; shot only-year; "
                           "space; shot all-years; tab; shot collapsed"])
 for rotation in ([], ["-rot", "left", "-logical"]):
@@ -82,7 +82,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     scenarios.append([*rotation, "-inset", "40",
                       "-out", f"out/center-scroll-{orientation}", "-script",
                       "space*2; home; down*12; shot middle; end; up*4; shot bottom; "
-                      "home; shot top; tab; pagedown*5; shot section; left; shot closed; "
+                      "home; shot top; tab; pagedown*4; right; shot section; left; shot closed; "
                       "right; down*2; right; shot years; left; left; shot nested-closed; "
                       "pagedown; shot next-section; pageup; shot previous-section"])
 for args in scenarios:

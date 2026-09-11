@@ -153,17 +153,20 @@ item. R also jumps to the bottom.
   test, with results you can photograph. The last result survives restarting.
   See [troubleshooting](TROUBLESHOOTING.md#start-does-not-launch-games).
 
-Filters start with On the card, Favorites, Since last look, Type and Source.
+Filters start with On the card, Since last look, Type and Source.
+Favorites is a main-view mode and still respects all these filters.
 Press Y on a value to select only that value in its section, leaving all other
 sections and your search unchanged. Press Y again on that value to enable all
 values in its section. A still toggles values individually.
 The bottom legend shows the Y shortcut where available; Y does nothing on
-section headings. For Favorites/Since, Y toggles the choice.
+section headings. For Since last look, Y toggles the choice.
 
 Filters -> Original release year groups arcade games into decades. A toggles
 the selected decade; X expands or collapses its individual years. On an individual
 year, X collapses the decade and returns to its row. Left collapses years or
-their section, and Right expands them. Sections start expanded; collapsing
+their section, and Right expands them. Each time you open Filters, only sections
+with active choices start expanded. Unchanged sections start collapsed.
+A right/down arrow marks collapsed/expanded sections. Collapsing
 changes only the display, not your filter choices. L/R jumps to the
 previous/next section heading. Keyboard Home/End still goes to the first/last row.
 

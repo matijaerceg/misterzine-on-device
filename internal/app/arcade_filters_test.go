@@ -34,7 +34,7 @@ func TestFacetCountsRespectOtherFiltersAndSearch(t *testing.T) {
 	if got := a.facetCounts("src"); !reflect.DeepEqual(got, map[string]int{"one": 2, "two": 1}) {
 		t.Fatal(got)
 	}
-	a.openPanel(ScreenFilter)
+	openExpandedFilters(a)
 	foundZero := false
 	for _, e := range a.panel.entries {
 		if e.kind == "res" && e.value == "31kHz" && !e.header {
@@ -63,7 +63,7 @@ func TestFacetCountsRespectOtherFiltersAndSearch(t *testing.T) {
 		t.Fatal("arcade choices filtered a system core")
 	}
 	for _, e := range a.filterEntries() {
-		if e.kind == "rot" || e.kind == "res" || e.text == "Arcade game filters" {
+		if e.kind == "rot" || e.kind == "res" || e.text == "Arcade game filters:" {
 			t.Fatal("arcade section visible with Arcade excluded")
 		}
 	}
@@ -116,7 +116,7 @@ func TestOpenFilterCountsFollowCardScan(t *testing.T) {
 	status := data.StatusNotFound
 	a := New(Config{PhysW: 320, PhysH: 240, Status: func(int) data.Status { return status }}, data.Ingest([]data.Row{{K: "a", Base: "Arcade", Rot: "Horizontal"}}, "", time.Now()), nil)
 	a.SetFilters(data.Filters{Install: data.InstallFound})
-	a.openPanel(ScreenFilter)
+	openExpandedFilters(a)
 	for i, e := range a.panel.entries {
 		if e.kind == "rot" && e.value == "h" {
 			a.panel.cursor = i

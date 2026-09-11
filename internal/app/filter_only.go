@@ -85,6 +85,8 @@ func (a *App) onlyFilter() bool {
 // Compare/copy only one section so enabling all never changes other sections.
 func copySection(kind string, to *data.Filters, from data.Filters) {
 	switch kind {
+	case "year":
+		to.YearOff = from.YearOff
 	case "base":
 		to.BaseOff = from.BaseOff
 	case "src":

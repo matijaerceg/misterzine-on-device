@@ -48,7 +48,7 @@ func TestFilterSectionsAndCenteredRows(t *testing.T) {
 			{K: "b", Base: "Arcade", Year: "1981", Genre: "Puzzle"},
 			{K: "c", Base: "Arcade", Year: "1990"},
 		}, "", time.Now()), nil)
-		a.openPanel(ScreenFilter)
+		openExpandedFilters(a)
 		a.Paint()
 		for steps := 0; steps < len(a.panel.entries)+2; steps++ {
 			a.actPanel(platform.KeyDown)
@@ -98,7 +98,7 @@ func TestFilterSectionsAndCenteredRows(t *testing.T) {
 			t.Fatal("Left must collapse section")
 		}
 		a.actPanel(platform.KeyPageDown)
-		if e := a.panel.entries[a.panel.cursor]; e.kind != "fav" || !e.header {
+		if e := a.panel.entries[a.panel.cursor]; e.kind != "since" || !e.header {
 			t.Fatal("R must skip collapsed section")
 		}
 		a.actPanel(platform.KeyPageUp)

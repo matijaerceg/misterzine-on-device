@@ -20,7 +20,7 @@ func TestYearDecadeFilteringAndPersistence(t *testing.T) {
 	}
 	saves := 0
 	a := New(Config{PhysW: 320, PhysH: 240, FiltersChanged: func() { saves++ }}, data.Ingest(rows, "", time.Now()), nil)
-	a.openPanel(ScreenFilter)
+	openExpandedFilters(a)
 	choose := func(kind, value string, header bool) {
 		t.Helper()
 		for i, e := range a.panel.entries {
