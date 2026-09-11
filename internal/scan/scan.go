@@ -36,11 +36,17 @@ type Core struct {
 	Path string `json:"path"` // card-relative
 }
 
-// Index is the card's core inventory keyed by lowercase core name.
+// Index is the card's core inventory keyed by lowercase core name. Cores is
+// the whole card (what the launcher resolves names against); arcade and
+// system split it by folder, because an arcade MRA only ever loads from
+// _Arcade/cores while a console/computer row's rbf lives elsewhere, and the
+// two can share a name (Astrocade ships both).
 type Index struct {
-	Cores map[string]Core
-	At    time.Time
-	Err   error // unreadable card/core folders; absent optional folders are fine
+	Cores  map[string]Core
+	arcade map[string]Core
+	system map[string]Core
+	At     time.Time
+	Err    error // unreadable card/core folders; absent optional folders are fine
 	// FeedAt is when the feed was generated. An undated rbf installed after
 	// that cannot be behind the feed's hash, so a mismatch reads as current
 	// rather than older. Zero disables the guard.
@@ -54,7 +60,7 @@ type Index struct {
 // ScanCores lists the core folders. Missing folders are fine (an arcade-only
 // card has no _Console).
 func ScanCores(card string) *Index {
-	idx := &Index{Cores: map[string]Core{}, At: time.Now()}
+	idx := &Index{Cores: map[string]Core{}, arcade: map[string]Core{}, system: map[string]Core{}, At: time.Now()}
 	if _, err := os.ReadDir(card); err != nil {
 		idx.Err = err
 		return idx
@@ -67,6 +73,10 @@ func ScanCores(card string) *Index {
 			}
 			continue
 		}
+		kind := idx.system
+		if dir == "_Arcade/cores" {
+			kind = idx.arcade
+		}
 		for _, e := range entries {
 			name := e.Name()
 			if e.IsDir() || !strings.HasSuffix(strings.ToLower(name), ".rbf") {
@@ -78,14 +88,15 @@ func ScanCores(card string) *Index {
 				base, date = strings.ToLower(m[1]), m[2]
 			}
 			rel := path.Join(dir, name)
-			cur, ok := idx.Cores[base]
-			if !ok || date > cur.Date {
-				idx.Cores[base] = Core{Date: date, Path: rel}
-			}
-			// the full stem too, for core values that carry a date suffix
-			if stem != base {
-				if cur, ok := idx.Cores[stem]; !ok || date > cur.Date {
-					idx.Cores[stem] = Core{Date: date, Path: rel}
+			for _, m := range []map[string]Core{idx.Cores, kind} {
+				if cur, ok := m[base]; !ok || date > cur.Date {
+					m[base] = Core{Date: date, Path: rel}
+				}
+				// the full stem too, for core values that carry a date suffix
+				if stem != base {
+					if cur, ok := m[stem]; !ok || date > cur.Date {
+						m[stem] = Core{Date: date, Path: rel}
+					}
 				}
 			}
 		}
@@ -97,23 +108,41 @@ func ScanCores(card string) *Index {
 // then the name with its own _YYYYMMDD suffix stripped, then an "arcade-"
 // prefix variant for Meathax-style names.
 func (idx *Index) Lookup(core string) (Core, bool) {
-	if idx == nil || core == "" {
+	if idx == nil {
+		return Core{}, false
+	}
+	return lookup(idx.Cores, core)
+}
+
+// lookupFor is Lookup restricted to the folders a row's kind loads from.
+func (idx *Index) lookupFor(arcade bool, core string) (Core, bool) {
+	if idx == nil {
+		return Core{}, false
+	}
+	if arcade {
+		return lookup(idx.arcade, core)
+	}
+	return lookup(idx.system, core)
+}
+
+func lookup(cores map[string]Core, core string) (Core, bool) {
+	if core == "" {
 		return Core{}, false
 	}
 	l := strings.ToLower(core)
-	if c, ok := idx.Cores[l]; ok {
+	if c, ok := cores[l]; ok {
 		return c, true
 	}
 	if m := rbfName.FindStringSubmatch(l + ".rbf"); m != nil {
-		if c, ok := idx.Cores[m[1]]; ok {
+		if c, ok := cores[m[1]]; ok {
 			return c, true
 		}
 	}
-	if c, ok := idx.Cores["arcade-"+l]; ok {
+	if c, ok := cores["arcade-"+l]; ok {
 		return c, true
 	}
 	if strings.HasPrefix(l, "arcade-") {
-		if c, ok := idx.Cores[strings.TrimPrefix(l, "arcade-")]; ok {
+		if c, ok := cores[strings.TrimPrefix(l, "arcade-")]; ok {
 			return c, true
 		}
 	}
@@ -140,7 +169,7 @@ func Status(card string, idx *Index, r *data.Row) data.Status {
 		}
 		return data.StatusUnknown
 	}
-	c, ok := idx.Lookup(r.Core)
+	c, ok := idx.lookupFor(r.IsArcade(), r.Core)
 	if !ok {
 		return data.StatusNotFound
 	}

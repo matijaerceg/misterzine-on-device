@@ -93,6 +93,10 @@ func TestStatusShippedBuild(t *testing.T) {
 	}
 	mk("_Arcade/cores/BoogieWings_20260708.rbf", "x")
 	mk("_Arcade/Boogie Wings.mra", "<misterromdescription/>")
+	// the arcade Astrocade core shares its name with the console core; an
+	// arcade-only card has the former and must not report the latter as older
+	mk("_Arcade/cores/Astrocade_20260318.rbf", "x")
+	mk("_Arcade/Gorf.mra", "<misterromdescription/>")
 	boogie := func(bd string) data.Row {
 		return data.Row{Base: "Arcade", MRA: "_Arcade/Boogie Wings.mra", Core: "BoogieWings", Updated: "2026-08-08", BD: bd}
 	}
@@ -112,6 +116,8 @@ func TestStatusShippedBuild(t *testing.T) {
 		{"undated rbf, feed has no md5", jt(""), data.StatusFoundUndated},
 		{"dated rbf, md5 differs: dates decide", data.Row{Base: "Console", Core: "SNES", Updated: "2026-06-11", BH: "ffff"}, data.StatusCurrent},
 		{"dated rbf, md5 matches despite later updated", data.Row{Base: "Console", Core: "SNES", Updated: "2026-09-01", BH: xMD5}, data.StatusCurrent},
+		{"console row does not match the arcade core of the same name", data.Row{Base: "Console", Core: "Astrocade", BD: "2026-06-03"}, data.StatusNotFound},
+		{"arcade row does match it", data.Row{Base: "Arcade", MRA: "_Arcade/Gorf.mra", Core: "Astrocade", BD: "2026-03-18"}, data.StatusCurrent},
 	}
 	idx := ScanCores(card)
 	for _, c := range cases {
