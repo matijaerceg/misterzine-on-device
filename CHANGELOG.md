@@ -24,7 +24,10 @@
 - Left/Right in the main list move a screen of rows at a time and keep the
   selected row centered, the same as stepping.
 - Options values start at the half mark of the list rather than two thirds.
-- Options is grouped under grey Data, Display and Operation headings.
+- Options is grouped under grey Data, Display and Operation headings, with
+  half-height gaps between the groups. The list scrolls with the selected row
+  kept near the center, like the main list and Filters, and the edge arrows
+  show only while entries are actually out of view.
 - Filters: Type > Arcade opens into Stable and Beta children, like a decade
   into years, so the Patreon beta cores can be hidden or shown alone.
 - The Details information slide is three times faster (six pixels a frame).

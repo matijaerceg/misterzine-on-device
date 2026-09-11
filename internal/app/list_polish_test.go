@@ -236,14 +236,25 @@ func TestOptionsLayoutCuesAndColumn(t *testing.T) {
 	}
 	edge := inner.Max.X - 2 - font.W
 	top := image.Rect(edge, inner.Min.Y, edge+font.W, inner.Min.Y+font.H)
-	bottom := image.Rect(edge, inner.Min.Y+(lines-1)*font.H, edge+font.W, inner.Min.Y+lines*font.H)
-	if count(top, gen.Eva.Muted) != 0 || count(bottom, gen.Eva.Muted) == 0 {
+	below := image.Rect(edge, inner.Min.Y+font.H, edge+font.W, inner.Max.Y) // the gutter under the first row
+	if count(top, gen.Eva.Muted) != 0 || count(below, gen.Eva.Muted) == 0 {
 		t.Fatal("want a down cue only, before any scrolling")
 	}
 	a.actPanel(platform.KeyEnd)
 	a.Paint()
-	if count(top, gen.Eva.Muted) == 0 || count(bottom, gen.Eva.Muted) != 0 {
+	if count(top, gen.Eva.Muted) == 0 || count(below, gen.Eva.Muted) != 0 {
 		t.Fatal("want an up cue only at the end")
+	}
+	// the selection sits near the middle while scrolling, as in the main list
+	mid := len(a.panel.entries) / 2
+	a.panel.cursor = mid
+	a.all = true
+	a.Paint()
+	if a.panel.top == 0 || mid-a.panel.top < lines/3 || mid-a.panel.top > 2*lines/3 {
+		t.Fatalf("cursor %d sits at row %d of %d visible, want it near the center", mid, mid-a.panel.top, lines)
+	}
+	if count(top, gen.Eva.Muted) == 0 || count(below, gen.Eva.Muted) == 0 {
+		t.Fatal("rows out of view both ways must show both cues")
 	}
 	// values start in one column at the two-thirds mark in the horizontal layout
 	vx := a.valueColumn(inner, edge)

@@ -469,23 +469,47 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 	lines := inner.Dy() / lh
 	p := &a.panel
 	p.lines = lines
-	if a.screen == ScreenFilter {
-		p.top = centeredTop(p.cursor, len(p.entries), lines)
+	// Options group spacers are half a row; everything else is a full row
+	rowH := func(i int) int {
+		if e := p.entries[i]; a.screen == ScreenOptions && e.header && e.info && e.text == "" {
+			return lh / 2
+		}
+		return lh
 	}
+	// fit is how many entries from top fill the area
+	fit := func(top int) int {
+		y, n := 0, 0
+		for i := top; i < len(p.entries) && y+rowH(i) <= inner.Dy(); i++ {
+			y += rowH(i)
+			n++
+		}
+		return n
+	}
+	// the selected row stays near the center, as in the main list, and the
+	// list stays filled at the end
+	p.top = centeredTop(p.cursor, len(p.entries), lines)
+	maxTop := len(p.entries)
+	for y := 0; maxTop > 0 && y+rowH(maxTop-1) <= inner.Dy(); maxTop-- {
+		y += rowH(maxTop - 1)
+	}
+	p.top = max(0, min(p.top, maxTop))
 	if p.cursor < p.top {
 		p.top = p.cursor
 	}
-	if p.cursor >= p.top+lines {
-		p.top = p.cursor - lines + 1
+	for p.cursor >= p.top+fit(p.top) {
+		p.top++
 	}
+	shown := fit(p.top)
 	// the last cell of every row is a gutter for the scroll cues
 	edge := inner.Max.X - 2 - font.W
 	cols := font.Cols(edge - inner.Min.X - 2)
 	vx := a.valueColumn(inner, edge)
 	y := inner.Min.Y
-	for n := p.top; n < len(p.entries) && n < p.top+lines; n++ {
+	lastY := y
+	for n := p.top; n < len(p.entries) && n < p.top+shown; n++ {
 		e := p.entries[n]
-		r := image.Rect(inner.Min.X, y, inner.Max.X, y+lh)
+		lastY = y
+		r := image.Rect(inner.Min.X, y, inner.Max.X, y+rowH(n))
 		if n == p.cursor {
 			c.Fill(r, gen.Eva.Surface)
 		}
@@ -547,15 +571,15 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			}
 			c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, cols), col)
 		}
-		y += lh
+		y += rowH(n)
 	}
-	// more above or below: a cue in the gutter of the first or last row,
-	// there before any scrolling starts
+	// more above or below: a cue in the gutter of the first or last drawn
+	// row, only while entries are actually out of view
 	if p.top > 0 {
 		c.Text(edge, inner.Min.Y, font, gfx.ArrowUp, gen.Eva.Muted)
 	}
-	if p.top+lines < len(p.entries) {
-		c.Text(edge, inner.Min.Y+(lines-1)*lh, font, gfx.ArrowDown, gen.Eva.Muted)
+	if p.top+shown < len(p.entries) {
+		c.Text(edge, lastY, font, gfx.ArrowDown, gen.Eva.Muted)
 	}
 	if a.screen == ScreenOptions {
 		c.Box(helpBox, gen.Eva.Line)

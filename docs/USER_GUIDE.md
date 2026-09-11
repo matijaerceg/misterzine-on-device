@@ -211,7 +211,7 @@ when that section returns to its defaults. Collapsing
 changes only the display, not your filter choices. L/R jumps to the
 previous/next section heading. Keyboard Home/End still goes to the first/last row.
 
-In the main list and Filters, Up/Down keeps the selected row near the center,
+In the main list, Filters and Options, Up/Down keeps the selected row near the center,
 and Left/Right moves a screen of rows at a time with the same centering.
 Scrolling stops at the beginning and end so the list stays filled. Main-list
 letter/month jumps still align the first row at the top; moving Up/Down resumes
