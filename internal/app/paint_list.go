@@ -234,13 +234,14 @@ func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {
 	} else if st == data.StatusNotFound {
 		titleCol = gen.Eva.Muted
 	}
-	a.paintTitle(c, x, y, l.TitleCol*fw, d.Title, row.Beta, titleCol)
-	x += fw * (l.TitleCol + 1)
-	// status glyph
+	a.paintTitle(c, x, y, l.TitleW, d.Title, row.Beta, titleCol)
+	// the status glyph and the date use the narrow font at the titles'
+	// height, whose baseline sits one pixel below the body font's
+	rf := a.rowFont()
+	x += l.TitleW + rf.W
 	g, gc := statusGlyph(st)
-	c.Text(x, y, a.body, g, gc)
-	x += fw * 2
-	// date
+	c.Text(x, y-1, rf, g, gc)
+	// date, right-aligned in its column
 	date := row.Updated
 	if a.mode == data.SortDebut {
 		date = row.Date
@@ -250,7 +251,7 @@ func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {
 	if a.seen != nil && a.seen.MarkerOn(a.mode) && a.seen.Unseen(row) {
 		dateCol = gen.Eva.Accent
 	}
-	c.Text(x, y, a.body, a.dateCol(date), dateCol)
+	c.Text(r.Max.X-a.dateCols()*rf.W, y-1, rf, a.dateCol(date), dateCol)
 }
 
 // paintTitle draws a list title into w pixels, in the narrow font when

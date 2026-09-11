@@ -52,7 +52,7 @@ func main() {
 	scanResult := flag.Bool("scan-result", false, "show completed card scan fixture")
 	unchanged := flag.Bool("unchanged", false, "previous visit saw every release")
 	filterRotation := flag.Bool("filter-rotation", false, "start with the strict current-rotation filter on")
-	titleFont := flag.String("title-font", "narrow", "list title font: narrow, tall or normal")
+	titleFont := flag.String("title-font", "tall", "list title font: tall, narrow or normal")
 	listShot := flag.String("list-shot", "gameplay", "list thumbnail preference: gameplay or title")
 	dateFormat := flag.String("date-format", "mm-dd", "list date column: mm-dd, dd-mm, mon-d, d-mon or yymmdd")
 	flag.Parse()

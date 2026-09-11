@@ -23,7 +23,7 @@ type Layout struct {
 	Line     int             // list line height (body font height)
 	Lines    int             // list lines that fit
 	Cols     int             // list columns (body font)
-	TitleCol int             // title width in columns
+	TitleW   int             // title width in pixels
 	Thumb    image.Rectangle // thumbnail box inside the pane
 	PaneText image.Rectangle // text area of the pane
 }
@@ -41,7 +41,7 @@ const (
 // the safe-zone margins as the viewer sees the picture: ix at the left and
 // right edges, iy at the top and bottom (the logical canvas is already the
 // viewer's orientation, so in tate ix is the tube's short side).
-func NewLayout(w, h, ix, iy int, body *gfx.Font, dateCols int) Layout {
+func NewLayout(w, h, ix, iy int, body *gfx.Font, rowW, dateCols int) Layout {
 	l := Layout{W: w, H: h, Inset: ix, Portrait: h > w, Line: body.H}
 	l.Root = image.Rect(ix, iy, w-ix, h-iy)
 	l.Status = image.Rect(l.Root.Min.X, l.Root.Min.Y, l.Root.Max.X, l.Root.Min.Y+statusH)
@@ -67,10 +67,11 @@ func NewLayout(w, h, ix, iy int, body *gfx.Font, dateCols int) Layout {
 	l.List.Max.X -= 4
 	l.Lines = l.List.Dy() / l.Line
 	l.Cols = l.List.Dx() / body.W
-	// columns: fav(1) title sp status(1) sp date(5 or 6)
-	l.TitleCol = l.Cols - 1 - 1 - 1 - 1 - dateCols
-	if l.TitleCol < 8 {
-		l.TitleCol = 8
+	// a row: the favorite star (body font), the title, then a gap, the
+	// status glyph, a gap and the date, all in rowW cells of the row font
+	l.TitleW = l.List.Dx() - body.W - rowW*(3+dateCols)
+	if l.TitleW < 8*body.W {
+		l.TitleW = 8 * body.W
 	}
 	return l
 }

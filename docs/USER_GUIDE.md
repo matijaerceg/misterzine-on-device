@@ -29,8 +29,9 @@ If the main-menu launcher was previously off, run Setup to enable it.
 ## List and search
 
 Each row has a favorite marker, title, on-card status, and date. Titles use a
-narrow font so more of each name fits; Options -> Title font switches back to
-the body font. A yellow β after a title marks a Patreon beta core, which needs
+narrow font so more of each name fits, and the status and date columns use
+the same narrow font at the titles' height; Options -> Title font chooses the
+font. A yellow β after a title marks a Patreon beta core, which needs
 Jotego's jtbeta.zip. The date column format is chosen in Options -> Date
 format.
 
@@ -120,9 +121,13 @@ Screenshots work without remote debugging.
 
 Options starts with Refresh data now, Run Update All, Rescan card and Last
 update result. Display and browsing preferences follow, with maintenance and
-Quit at the bottom. Held scrolling stops at either end. Release and press Up
-again from the first item to wrap to Quit, or Down from Quit to wrap to the first
-item. R also jumps to the bottom.
+Quit at the bottom. Values line up in one column; a small arrow at the right
+edge of the top or bottom row shows when more options sit above or below the
+visible part of the list. The framed text under the list describes the selected
+option, and the build version and catalogue date sit below it in grey. Held
+scrolling stops at either end. Release and press Up again from the first item
+to wrap to Quit, or Down from Quit to wrap to the first item. R also jumps to
+the bottom.
 
 - **Follow INI rotation:** on by default, including after upgrading. Every
   startup reads `osd_rotate` from the MiSTer INI that is currently active: the
@@ -150,10 +155,11 @@ item. R also jumps to the bottom.
 - **Remember sort order:** on by default, including after upgrading. Reopens
   with your last sort choice; off starts new visits with latest updates. Changing
   this preference leaves the current sort order alone.
-- **Title font:** narrow by default, a condensed proportional font that fits
-  about a third more of each title on a row. Narrow tall is the same font
-  made one pixel taller so its capitals and lowercase match the body font's
-  height. Normal uses the body font.
+- **Title font:** narrow tall by default, a condensed proportional font that
+  fits about a third more of each title on a row, made one pixel taller so
+  its capitals and lowercase match the body font's height. Narrow is the
+  original, shorter face. Normal uses the body font for titles. The status
+  and date columns always use the narrow font at the titles' height.
 - **List shots:** which screenshot the list pane shows for the selected row:
   gameplay (default) or the title screen. Details and the artwork view still
   show every shot.
@@ -181,7 +187,9 @@ item. R also jumps to the bottom.
   See [troubleshooting](TROUBLESHOOTING.md#start-does-not-launch-games).
 
 Filters start with Clear all filters, greyed out until a filter is active,
-then On the card, Since last look, Type and Source.
+then On the card, Since last look, Type and Source. Pressing Clear all filters
+moves the selection to the first heading. The same edge arrows as in Options
+show when the list continues above or below.
 Favorites is a main-view mode and still respects all these filters.
 Press Y on a value to select only that value in its section, leaving all other
 sections and your search unchanged. Press Y again on that value to enable all

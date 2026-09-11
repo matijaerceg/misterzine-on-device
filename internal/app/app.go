@@ -84,8 +84,8 @@ type Config struct {
 	FollowRotation bool
 	FilterRotation bool // strict filter on the current orientation
 	LastSort       data.SortMode
-	// TitleFont draws list titles in "narrow" (default), "tall" (the narrow
-	// font at the body font's height) or "normal" (the body font).
+	// TitleFont draws list titles in "tall" (default: the narrow font at the
+	// body font's height), "narrow" or "normal" (the body font).
 	TitleFont string
 	// ListShot is the pane thumbnail preference: "gameplay" (default) or "title".
 	ListShot string
@@ -183,7 +183,7 @@ func (a *App) setRotation(rot gfx.Rotation) {
 		w, h = h, w
 	}
 	a.logical = gfx.New(w, h)
-	a.lay = NewLayout(w, h, a.cfg.SafeInsetX, a.cfg.SafeInsetY, a.body, a.dateCols())
+	a.lay = NewLayout(w, h, a.cfg.SafeInsetX, a.cfg.SafeInsetY, a.body, a.rowFont().W, a.dateCols())
 	if a.ds != nil {
 		if orientationChanged && a.cfg.FilterRotation {
 			a.Refilter() // the strict filter follows the current orientation
@@ -347,10 +347,19 @@ var titleFonts = []string{"normal", "narrow", "tall"}
 // TitleFont is the list title font choice, one of titleFonts.
 func (a *App) TitleFont() string {
 	switch a.cfg.TitleFont {
-	case "normal", "tall":
+	case "normal", "narrow":
 		return a.cfg.TitleFont
 	}
-	return "narrow"
+	return "tall"
+}
+
+// rowFont draws a list row's status glyph and date: the narrow font at
+// the titles' height, so the tall one unless the titles are narrow.
+func (a *App) rowFont() *gfx.Font {
+	if a.TitleFont() == "narrow" {
+		return a.narrow
+	}
+	return a.tall
 }
 
 // titleFont is the proportional font list titles draw in, nil for the

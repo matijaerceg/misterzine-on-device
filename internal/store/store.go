@@ -27,7 +27,7 @@ type Settings struct {
 	Screensaver    string        `json:"screensaver_minutes"`
 	RememberSort   bool          `json:"remember_sort"`
 	LastSort       data.SortMode `json:"last_sort"`
-	TitleFont      string        `json:"title_font"`  // list titles: narrow (default), tall or normal
+	TitleFont      string        `json:"title_font"`  // list titles: tall (default), narrow or normal
 	ListShot       string        `json:"list_shot"`   // list thumbnail: gameplay (default) or title
 	DateFormat     string        `json:"date_format"` // list dates: mm-dd (default), dd-mm, mon-d, d-mon, yymmdd
 	InsetX         int           `json:"inset_x"`

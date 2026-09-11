@@ -9,7 +9,8 @@ rows above it move up by one. The descenders and the baseline stay put.
 
     python tools/tall_font.py internal/fonts/scientifica-11.bdf internal/fonts/scientifica-11-tall.bdf
 
-Every glyph is written as a full 5x12 cell (BBX 5 12 0 -2).
+Every glyph is written as a full 5x12 cell (BBX 5 12 0 -2). OVERRIDES
+replaces the x-height band of glyphs the rule serves badly.
 """
 import re
 import sys
@@ -23,6 +24,11 @@ W, H, descent = int(fb.group(1)), int(fb.group(2)), -int(fb.group(4))
 assert (W, H, descent) == (5, 12, 2), fb.group(0)
 baseline = H - descent - 1
 band = range(baseline - 4, baseline + 1)  # the x-height rows
+# hand-set x-height bands (six rows, baseline last), where duplicating a
+# row put a crossbar in the wrong place
+OVERRIDES = {
+    "s": [".###.", "#....", ".##..", "...#.", "...#.", "###.."],
+}
 head = head.replace("FONT_ASCENT 9", "FONT_ASCENT 10")
 head = re.sub(r"^FONT (.*)$", lambda m: "FONT " + m.group(1).replace("scientifica", "scientifica-tall"), head, flags=re.M)
 head = head.replace('FAMILY_NAME "scientifica"', 'FAMILY_NAME "scientifica-tall"')
@@ -43,7 +49,12 @@ for glyph in re.findall(r"STARTCHAR .*?ENDCHAR\n", rest, re.S):
         if 0 <= y < H:
             cell[y] = (r >> bbx) if bbx >= 0 else ((r << -bbx) & 0xFF)
     assert cell[0] == 0, ("glyph uses the top row", glyph[:30])
-    if any(cell):
+    name = re.match(r"STARTCHAR (\S+)", glyph).group(1)
+    if name in OVERRIDES:
+        rows6 = [int(r.replace(".", "0").replace("#", "1"), 2) << (8 - W) for r in OVERRIDES[name]]
+        cell = cell[1:baseline - 4] + rows6 + cell[baseline + 1:]
+        assert len(cell) == H
+    elif any(cell):
         pick = min(band, key=lambda y: (bin(cell[y]).count("1"), abs(y - (baseline - 2)), y))
         cell = cell[1:pick + 1] + [cell[pick]] + cell[pick + 1:]
         assert len(cell) == H

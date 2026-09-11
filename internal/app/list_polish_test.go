@@ -31,7 +31,7 @@ func TestListDateFormats(t *testing.T) {
 	if a.DateFormat() != "mm-dd" || a.dateCols() != 5 || a.dateCol("2025-01-02") != " 2025" {
 		t.Fatalf("default format: %q cols %d", a.dateCol("2025-01-02"), a.dateCols())
 	}
-	wide := a.lay.TitleCol
+	wide := a.lay.TitleW
 	a.openPanel(ScreenOptions)
 	for i, e := range a.panel.entries {
 		if e.kind == "date-format" {
@@ -45,8 +45,8 @@ func TestListDateFormats(t *testing.T) {
 		if a.DateFormat() != want.format || a.dateCol("2026-09-07") != want.day || a.dateCol("2025-01-02") != want.old {
 			t.Fatalf("%s: %q %q", a.DateFormat(), a.dateCol("2026-09-07"), a.dateCol("2025-01-02"))
 		}
-		if a.lay.TitleCol != wide-(a.dateCols()-5) {
-			t.Fatalf("%s: title columns %d, want %d", want.format, a.lay.TitleCol, wide-(a.dateCols()-5))
+		if a.lay.TitleW != wide-(a.dateCols()-5)*a.rowFont().W {
+			t.Fatalf("%s: title width %d, want %d", want.format, a.lay.TitleW, wide-(a.dateCols()-5)*a.rowFont().W)
 		}
 		if !strings.Contains(a.panel.entries[a.panel.cursor].help, strings.TrimSpace(a.dateCol("2026-09-11"))) {
 			t.Fatalf("%s: help %q lacks today's example", want.format, a.panel.entries[a.panel.cursor].help)
@@ -94,7 +94,7 @@ func titleInk(a *App, col rgb) int {
 	r := a.lay.lineRect(0)
 	n := 0
 	for y := r.Min.Y - 1; y < r.Max.Y; y++ {
-		for x := r.Min.X + a.body.W; x < r.Min.X+a.body.W*(a.lay.TitleCol+1); x++ {
+		for x := r.Min.X + a.body.W; x < r.Min.X+a.body.W+a.lay.TitleW; x++ {
 			if a.logical.RGBA.RGBAAt(x, y) == col {
 				n++
 			}
@@ -107,20 +107,20 @@ func TestNarrowTitlesAndBetaSign(t *testing.T) {
 	long := strings.Repeat("Mmmmmmmmm ", 8)
 	rows := []data.Row{{K: "a", Title: long, Updated: "2026-09-07", Beta: true}}
 	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest(rows, "", time.Now()), nil)
-	if a.TitleFont() != "narrow" {
-		t.Fatal("narrow is the default")
+	if a.TitleFont() != "tall" || a.rowFont() != a.tall {
+		t.Fatal("narrow tall is the default")
 	}
 	a.Paint()
 	if titleInk(a, gen.Eva.Warn) == 0 {
-		t.Fatal("beta sign missing after a narrow title")
+		t.Fatal("beta sign missing after a tall title")
 	}
 	if a.narrow.PropWidth(long) != a.tall.PropWidth(long) || a.tall.Glyph('M')[2] == 0 || a.narrow.Glyph('M')[2] != 0 {
 		t.Fatal("the tall font must keep the narrow widths and add a row to capitals")
 	}
-	w := a.lay.TitleCol * a.body.W
-	narrow, normal := gfx.FitProp(a.narrow, long, w), gfx.Fit(long, a.lay.TitleCol)
-	if !strings.HasSuffix(narrow, gfx.Ellipsis) || len(narrow) < len(normal)*5/4 {
-		t.Fatalf("narrow font fits %d characters, normal %d: want at least a quarter more", len(narrow), len(normal))
+	w := a.lay.TitleW
+	narrow, normal := gfx.FitProp(a.narrow, long, w), gfx.Fit(long, a.body.Cols(w))
+	if !strings.HasSuffix(narrow, gfx.Ellipsis) || len(narrow)*100 < len(normal)*115 {
+		t.Fatalf("narrow font fits %d characters, normal %d: want at least 15 percent more", len(narrow), len(normal))
 	}
 	a.openPanel(ScreenOptions)
 	for i, e := range a.panel.entries {
@@ -129,8 +129,23 @@ func TestNarrowTitlesAndBetaSign(t *testing.T) {
 		}
 	}
 	a.actPanel(platform.KeyLeft)
-	if a.TitleFont() != "normal" {
-		t.Fatal("Left did not choose the normal font")
+	if a.TitleFont() != "narrow" || a.rowFont() != a.narrow {
+		t.Fatal("Left did not choose the narrow font for titles and the row")
+	}
+	a.actPanel(platform.KeyBack)
+	a.Paint()
+	if titleInk(a, gen.Eva.Warn) == 0 {
+		t.Fatal("beta sign missing after a narrow title")
+	}
+	a.openPanel(ScreenOptions)
+	for i, e := range a.panel.entries {
+		if e.kind == "title-font" {
+			a.panel.cursor = i
+		}
+	}
+	a.actPanel(platform.KeyLeft)
+	if a.TitleFont() != "normal" || a.rowFont() != a.tall {
+		t.Fatal("normal titles keep the tall row font")
 	}
 	a.actPanel(platform.KeyBack)
 	a.Paint()
@@ -177,8 +192,72 @@ func TestClearAllFiltersRowIsAlwaysListed(t *testing.T) {
 		t.Fatal("an active filter enables the row and opens on it")
 	}
 	a.actPanel(platform.KeyEnter)
-	if a.filters.Active() || !a.panel.entries[0].disabled || len(a.view) != 2 {
-		t.Fatal("Clear must reset the filters and grey out again")
+	if a.filters.Active() || !a.panel.entries[0].disabled || len(a.view) != 2 || a.panel.cursor != 2 {
+		t.Fatal("Clear must reset the filters, grey out and move to the first heading")
+	}
+}
+
+func TestOptionsLayoutCuesAndColumn(t *testing.T) {
+	rows := []data.Row{{K: "a", Title: "A", Updated: "2026-09-07"}}
+	a := New(Config{PhysW: 320, PhysH: 240, Version: "v9.9.9-test"}, data.Ingest(rows, "", time.Now()), nil)
+	a.openPanel(ScreenOptions)
+	a.Paint()
+	l := &a.lay
+	font := a.sm
+	count := func(r image.Rectangle, col rgb) int {
+		n := 0
+		for y := r.Min.Y; y < r.Max.Y; y++ {
+			for x := r.Min.X; x < r.Max.X; x++ {
+				if a.logical.RGBA.RGBAAt(x, y) == col {
+					n++
+				}
+			}
+		}
+		return n
+	}
+	// the build and data lines sit just above the hint bar, greyed
+	versionRows := image.Rect(l.Body.Min.X, l.Body.Max.Y-2*font.H-2, l.Body.Max.X, l.Body.Max.Y)
+	if count(versionRows, gen.Eva.Muted) == 0 || count(versionRows, gen.Eva.Line) != 0 {
+		t.Fatal("version rows must be greyed and unframed above the hint bar")
+	}
+	// the help text is framed
+	helpBox := image.Rect(l.Body.Min.X, versionRows.Min.Y-(3*(font.H+1)+5), l.Body.Max.X, versionRows.Min.Y)
+	if count(image.Rect(helpBox.Min.X, helpBox.Min.Y, helpBox.Max.X, helpBox.Min.Y+1), gen.Eva.Line) != helpBox.Dx() {
+		t.Fatal("help text must be framed")
+	}
+	if count(image.Rect(l.Body.Min.X, l.Body.Min.Y, l.Body.Max.X, l.Body.Min.Y+1), gen.Eva.Line) != 0 {
+		t.Fatal("the entries must not be framed")
+	}
+	// more entries below than fit: a cue at the bottom, none at the top
+	inner := image.Rect(l.Body.Min.X+2, l.Body.Min.Y+2, l.Body.Max.X-2, helpBox.Min.Y-2)
+	lines := inner.Dy() / font.H
+	if lines >= len(a.panel.entries) {
+		t.Skip("every option fits")
+	}
+	edge := inner.Max.X - 2 - font.W
+	top := image.Rect(edge, inner.Min.Y, edge+font.W, inner.Min.Y+font.H)
+	bottom := image.Rect(edge, inner.Min.Y+(lines-1)*font.H, edge+font.W, inner.Min.Y+lines*font.H)
+	if count(top, gen.Eva.Muted) != 0 || count(bottom, gen.Eva.Muted) == 0 {
+		t.Fatal("want a down cue only, before any scrolling")
+	}
+	a.actPanel(platform.KeyEnd)
+	a.Paint()
+	if count(top, gen.Eva.Muted) == 0 || count(bottom, gen.Eva.Muted) != 0 {
+		t.Fatal("want an up cue only at the end")
+	}
+	// values start in one column at the two-thirds mark in the horizontal layout
+	vx := a.valueColumn(inner, edge)
+	if vx != inner.Min.X+inner.Dx()*2/3 {
+		t.Fatalf("value column %d, want the two-thirds mark %d", vx, inner.Min.X+inner.Dx()*2/3)
+	}
+	a.SetRotation(gfx.RotLeft)
+	a.SetInset(40, 40)
+	a.openPanel(ScreenOptions)
+	a.Paint()
+	l = &a.lay
+	inner = image.Rect(l.Body.Min.X+2, l.Body.Min.Y+2, l.Body.Max.X-2, l.Body.Max.Y-2*font.H-2-(4*(font.H+1)+5)-2)
+	if a.valueColumn(inner, inner.Max.X-2-font.W) != 0 {
+		t.Fatal("the narrow tate layout right-aligns values")
 	}
 }
 

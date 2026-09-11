@@ -3,10 +3,11 @@
 ## Unreleased
 
 - List titles are drawn in a narrow font (scientifica, SIL Open Font License)
-  with proportional spacing, so a row fits about a third more of a title.
-  Options -> Title font also offers "narrow tall", the same font made one
-  pixel taller to match the body font's capital and lowercase heights, and
-  "normal", the body font.
+  with proportional spacing, so a row fits about a third more of a title. The
+  default, "narrow tall", is that font made one pixel taller to match the body
+  font's capital and lowercase heights; Options -> Title font also offers the
+  original "narrow" face and "normal", the body font. The status and date
+  columns use the narrow font at the titles' height.
 - Patreon beta cores carry a yellow β after their title in the list, and the
   pane's "beta" chip is yellow to match the details page.
 - Options -> Date format chooses how list dates read: MM-DD (default), DD-MM,
@@ -22,7 +23,13 @@
   value of their section (Y only/all still does).
 - Filters always lists Clear all filters at the top, greyed out until a filter
   is active, with a blank line below it; the page opens on the first heading
-  while the row is greyed out.
+  while the row is greyed out, and pressing it moves on to the first heading.
+- Options: the list is unframed and the help text framed instead, with the
+  build version and catalogue date in grey just above the hint bar. Values
+  line up in one column at the two-thirds mark where the labels allow (the
+  narrow tate layout keeps them right-aligned). A small arrow at the right
+  edge of the top or bottom row shows when more entries sit above or below,
+  in Options and Filters alike.
 
 ## v1.0.12 — 2026-09-11
 

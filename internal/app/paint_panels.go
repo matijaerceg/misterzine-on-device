@@ -49,14 +49,20 @@ func (a *App) openPanel(s Screen) {
 		a.resetFilterExpansion()
 	}
 	a.buildPanel()
-	// Filters opens on its first heading while Clear all filters is greyed out.
-	for a.panel.cursor < len(a.panel.entries)-1 && a.panel.entries[a.panel.cursor].disabled {
-		a.panel.cursor++
-		for a.panel.cursor < len(a.panel.entries)-1 && (a.panel.entries[a.panel.cursor].info || (a.panel.entries[a.panel.cursor].header && a.panel.entries[a.panel.cursor].text == "")) {
-			a.panel.cursor++
+	a.skipDisabled() // Filters opens on its first heading while Clear all filters is greyed out
+	a.all = true
+}
+
+// skipDisabled moves the cursor off a greyed row onto the next row that
+// can be used.
+func (a *App) skipDisabled() {
+	p := &a.panel
+	for p.cursor < len(p.entries)-1 && p.entries[p.cursor].disabled {
+		p.cursor++
+		for p.cursor < len(p.entries)-1 && (p.entries[p.cursor].info || (p.entries[p.cursor].header && p.entries[p.cursor].text == "")) {
+			p.cursor++
 		}
 	}
-	a.all = true
 }
 
 func (a *App) buildPanel() {
@@ -341,7 +347,7 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "Remember sort order", kind: "remember-sort", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.RememberSort()],
 			help: "On: reopen with your last view, including Favorites (default). Off: start new visits with latest updates."},
 		{text: "Title font", kind: "title-font", vals: []string{"normal", "narrow", "narrow tall"}, idx: map[string]int{"normal": 0, "narrow": 1, "tall": 2}[a.TitleFont()],
-			help: "Narrow (default) fits about a third more of each title on a row with a condensed font. Narrow tall is the same font at the body font's height. Normal uses the body font."},
+			help: "Narrow fonts fit a third more title; tall (default) matches the body font height. Normal: body font."},
 		{text: "List shots", kind: "list-shot", vals: []string{"gameplay", "title"}, idx: map[string]int{"gameplay": 0, "title": 1}[a.ListShot()],
 			help: "Which screenshot the list pane shows: gameplay (default) or the title screen. Details and the artwork view still show every shot."},
 		{text: "Date format", kind: "date-format", vals: dateFormatLabels, idx: dateIdx,
@@ -417,26 +423,28 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 		}
 		c.Text(l.Status.Min.X+2, l.Status.Min.Y+2, a.sm, title, gen.Eva.Accent)
 	}
-	box := l.Body
-	helpH := 0
-	helpLines := 4
+	c.Fill(l.Body, gen.Eva.Bg)
+	// Filters frames its entries. Options frames the help text instead and
+	// lists the build and data details, greyed, just above the hint bar.
+	var inner, helpBox image.Rectangle
+	helpLines := 0
 	if a.screen == ScreenOptions {
+		// Horizontal uses three help lines; the narrower tate view keeps four.
+		helpLines = 4
 		if !l.Portrait {
 			helpLines = 3
 		}
-		helpH = helpLines*(a.sm.H+1) + 3
-	}
-	box.Max.Y -= helpH
-	c.Fill(l.Body, gen.Eva.Bg)
-	c.Box(box, gen.Eva.Line)
-	inner := box.Inset(2)
-	if a.screen == ScreenOptions {
-		// Keep build and data details visible even when the action list scrolls.
-		footerY := inner.Max.Y - 2*font.H
-		cols := font.Cols(inner.Dx() - 4)
-		c.Text(inner.Min.X+2, footerY, font, gfx.Fit("misterzine "+a.cfg.Version, cols), gen.Eva.Muted)
-		c.Text(inner.Min.X+2, footerY+font.H, font, gfx.Fit("data "+a.ds.Updated.Format("2006-01-02 15:04")+"  "+short(a.ds.Hash), cols), gen.Eva.Muted)
-		inner.Max.Y = footerY - 3
+		versionH := 2*font.H + 2
+		helpH := helpLines*(font.H+1) + 5
+		helpBox = image.Rect(l.Body.Min.X, l.Body.Max.Y-versionH-helpH, l.Body.Max.X, l.Body.Max.Y-versionH)
+		inner = image.Rect(l.Body.Min.X+2, l.Body.Min.Y+2, l.Body.Max.X-2, helpBox.Min.Y-2)
+		cols := font.Cols(l.Body.Dx() - 4)
+		vy := helpBox.Max.Y + 2
+		c.Text(l.Body.Min.X+2, vy, font, gfx.Fit("misterzine "+a.cfg.Version, cols), gen.Eva.Muted)
+		c.Text(l.Body.Min.X+2, vy+font.H, font, gfx.Fit("data "+a.ds.Updated.Format("2006-01-02 15:04")+"  "+short(a.ds.Hash), cols), gen.Eva.Muted)
+	} else {
+		c.Box(l.Body, gen.Eva.Line)
+		inner = l.Body.Inset(2)
 	}
 	lh := font.H
 	lines := inner.Dy() / lh
@@ -451,7 +459,10 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 	if p.cursor >= p.top+lines {
 		p.top = p.cursor - lines + 1
 	}
-	cols := font.Cols(inner.Dx() - 4)
+	// the last cell of every row is a gutter for the scroll cues
+	edge := inner.Max.X - 2 - font.W
+	cols := font.Cols(edge - inner.Min.X - 2)
+	vx := a.valueColumn(inner, edge)
 	y := inner.Min.Y
 	for n := p.top; n < len(p.entries) && n < p.top+lines; n++ {
 		e := p.entries[n]
@@ -488,21 +499,26 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 				col = gen.Eva.Accent
 			}
 			// the value with an arrow on each side that can still move
-			left, right := " ", " "
+			la, ra := " ", " "
 			if e.disabled {
 				col = gen.Eva.Muted // shown, not changeable here
 			} else {
 				if e.idx > 0 {
-					left = gfx.ArrowLeft
+					la = gfx.ArrowLeft
 				}
 				if e.idx < len(e.vals)-1 {
-					right = gfx.ArrowRight
+					ra = gfx.ArrowRight
 				}
 			}
-			val := left + " " + e.vals[e.idx] + " " + right
+			val := la + " " + e.vals[e.idx] + " " + ra
 			vw := font.Width(val)
-			c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, font.Cols(inner.Dx()-6-vw)), col)
-			c.Text(inner.Max.X-2-vw, y, font, val, col)
+			if vx > 0 {
+				c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, font.Cols(vx-inner.Min.X-2-font.W)), col)
+				c.Text(vx, y, font, val, col)
+			} else {
+				c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, font.Cols(edge-inner.Min.X-2-font.W-vw)), col)
+				c.Text(edge-vw, y, font, val, col)
+			}
 		default:
 			col := gen.Eva.Fg
 			if e.disabled {
@@ -514,19 +530,54 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 		}
 		y += lh
 	}
+	// more above or below: a cue in the gutter of the first or last row,
+	// there before any scrolling starts
+	if p.top > 0 {
+		c.Text(edge, inner.Min.Y, font, gfx.ArrowUp, gen.Eva.Muted)
+	}
+	if p.top+lines < len(p.entries) {
+		c.Text(edge, inner.Min.Y+(lines-1)*lh, font, gfx.ArrowDown, gen.Eva.Muted)
+	}
 	if a.screen == ScreenOptions {
-		// Horizontal uses three help lines; the narrower tate view keeps four.
+		c.Box(helpBox, gen.Eva.Line)
 		if p.cursor < len(p.entries) && p.entries[p.cursor].help != "" {
-			hy := box.Max.Y + 2
-			for _, ln := range gfx.Wrap(p.entries[p.cursor].help, a.sm.Cols(l.Body.Dx()-4), helpLines) {
-				c.Text(l.Body.Min.X+2, hy, a.sm, ln, gen.Eva.Fg)
-				hy += a.sm.H + 1
+			hy := helpBox.Min.Y + 3
+			for _, ln := range gfx.Wrap(p.entries[p.cursor].help, font.Cols(helpBox.Dx()-6), helpLines) {
+				c.Text(helpBox.Min.X+3, hy, font, ln, gen.Eva.Fg)
+				hy += font.H + 1
 			}
 		}
 		a.paintHint(c, gfx.ArrowLeft+" "+gfx.ArrowRight+" change  A open  B back")
 	} else {
 		a.paintHint(c, a.filterHint())
 	}
+}
+
+// valueColumn is where Options values start: a fixed column at the
+// two-thirds mark, or nearer the right edge (before the gutter at edge)
+// when the widest value needs the room. 0 means right-align each value
+// instead, because a fixed column would cut into the labels, as in the
+// narrow tate layout.
+func (a *App) valueColumn(inner image.Rectangle, edge int) int {
+	if a.screen != ScreenOptions {
+		return 0
+	}
+	font := a.sm
+	widest, maxVal := 0, 0
+	for _, e := range a.panel.entries {
+		widest = max(widest, font.Width(e.text))
+		for _, v := range e.vals {
+			maxVal = max(maxVal, font.Width(gfx.ArrowLeft+" "+v+" "+gfx.ArrowRight))
+		}
+	}
+	x := inner.Min.X + inner.Dx()*2/3
+	if x+maxVal > edge {
+		x = edge - maxVal
+	}
+	if x < inner.Min.X+2+widest+font.W {
+		return 0
+	}
+	return x
 }
 
 func (a *App) actPanel(k platform.Key) bool {
@@ -733,6 +784,7 @@ func (a *App) togglePanel() bool {
 		a.SetFilters(data.Filters{})
 		p.cursor = 0
 		a.buildPanel()
+		a.skipDisabled() // the row just greyed out; move on to the first heading
 		return true
 	case "base", "src", "rot", "plr", "genre", "directions", "buttons", "res":
 		var m map[string]bool
