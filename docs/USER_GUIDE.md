@@ -80,11 +80,11 @@ filter choices are saved.
 | Pad | Keyboard | List | Details | Artwork | Filters | Options |
 |---|---|---|---|---|---|---|
 | Up/Down | arrows | move | choose version | | move | move |
-| Left/Right | arrows | page | | change shot | page / close or expand decade | change value |
+| Left/Right | arrows | page | | change shot | page | change value |
 | L/R | PageUp/PageDown | previous/next letter in A-Z; newer/older month in date sorts | scroll information | | first/last | first/last |
 | A | Enter | details | artwork | | toggle | run action |
 | B | Esc | Options / clear search | back | back | back | back |
-| X | Tab | Filters | | | | |
+| X | Tab | Filters | | | show/hide years | |
 | Y | Space | change view | favorite | | only/all | |
 | Start | gamepad Start | launch main version | launch selected version | launch selected version | | |
 | Menu | | return to MiSTer Menu from any screen; closes the app | | | | |
@@ -161,7 +161,8 @@ The bottom legend shows the Y shortcut where available; Y does nothing on
 section headings. For Favorites/Since, Y toggles the choice.
 
 Filters -> Original release year groups arcade games into decades. A toggles
-the selected decade; Right expands it into individual years, and Left closes it.
+the selected decade; X expands or collapses its individual years. On an individual
+year, X collapses the decade and returns to its row. Left/Right always pages.
 Y shows only that decade or year; press Y again to enable all years. A mixed
 decade shows `[-]`. Choices are saved and combine with your other filters.
 Unknown or uncertain years have an Unknown choice. System cores are unaffected.

@@ -3,8 +3,7 @@ package app
 import "github.com/matijaerceg/misterzine-on-device/internal/data"
 
 func (a *App) yearEntries() []panelEntry {
-	entries := []panelEntry{{text: "Original release year", header: true, kind: "year"},
-		{text: "Right: years  Left: close", info: true}}
+	entries := []panelEntry{{text: "Original release year", header: true, kind: "year"}}
 	groups := map[string]int{}
 	for y, n := range a.ds.Facets.Year {
 		groups[data.Decade(y)] += n
@@ -28,11 +27,7 @@ func (a *App) yearEntries() []panelEntry {
 			count += counts[y]
 			years = append(years, panelEntry{text: "  " + y, kind: "year", value: y, checked: !a.filters.YearOff[y], count: counts[y], showCount: true})
 		}
-		arrow := " > years"
-		if a.panel.yearOpen[decade] {
-			arrow = " < close"
-		}
-		entries = append(entries, panelEntry{text: decade + arrow, kind: "decade", value: decade, checked: on == total, partial: on > 0 && on < total, count: count, showCount: true})
+		entries = append(entries, panelEntry{text: decade, kind: "decade", value: decade, checked: on == total, partial: on > 0 && on < total, count: count, showCount: true})
 		if a.panel.yearOpen[decade] {
 			entries = append(entries, years...)
 		}
@@ -40,18 +35,30 @@ func (a *App) yearEntries() []panelEntry {
 	return entries
 }
 
-// Left/Right expand or collapse only when on a decade or one of its years.
-func (a *App) expandYears(open bool) bool {
+func (a *App) selectedDecade() string {
+	if a.screen != ScreenFilter || a.panel.cursor >= len(a.panel.entries) {
+		return ""
+	}
+	e := a.panel.entries[a.panel.cursor]
+	if e.kind == "decade" {
+		return e.value
+	}
+	if e.kind == "year" && !e.header {
+		return data.Decade(e.value)
+	}
+	return ""
+}
+
+// X toggles expansion; from a child year it closes the parent decade.
+func (a *App) toggleYearExpansion() bool {
 	if a.panel.cursor >= len(a.panel.entries) {
 		return false
 	}
-	e := a.panel.entries[a.panel.cursor]
-	decade := e.value
-	if e.kind == "year" && !e.header && e.value != "" {
-		decade = data.Decade(e.value)
-	} else if e.kind != "decade" {
+	decade := a.selectedDecade()
+	if decade == "" {
 		return false
 	}
+	open := !a.panel.yearOpen[decade]
 	if a.panel.yearOpen == nil {
 		a.panel.yearOpen = map[string]bool{}
 	}

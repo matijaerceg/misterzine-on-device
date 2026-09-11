@@ -367,6 +367,14 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 	}
 	box := l.Body
 	helpH := 0
+	yearHint := ""
+	if decade := a.selectedDecade(); decade != "" {
+		yearHint = "X show years"
+		if a.panel.yearOpen[decade] {
+			yearHint = "X hide years"
+		}
+		helpH = a.sm.H + 1
+	}
 	helpLines := 4
 	if a.screen == ScreenOptions {
 		if !l.Portrait {
@@ -464,6 +472,9 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 		}
 		a.paintHint(c, gfx.ArrowLeft+" "+gfx.ArrowRight+" change  A open  B back")
 	} else {
+		if yearHint != "" {
+			c.Text(l.Body.Min.X+2, box.Max.Y+1, a.sm, yearHint, gen.Eva.Muted)
+		}
 		hint := "A toggle  " + gfx.ArrowLeft + " " + gfx.ArrowRight + " page  B back"
 		if a.canOnlyFilter() {
 			hint = "A toggle  Y only/all  B back"
@@ -508,9 +519,6 @@ func (a *App) actPanel(k platform.Key) bool {
 		if a.screen == ScreenOptions {
 			return a.stepValue(-1)
 		}
-		if a.expandYears(false) {
-			return true
-		}
 		// the last entry of the previous page, shown at the bottom
 		p.cursor = p.nearest(p.top-1, selectable)
 		p.top = p.cursor - max(p.lines, 1) + 1
@@ -520,9 +528,6 @@ func (a *App) actPanel(k platform.Key) bool {
 	case platform.KeyRight:
 		if a.screen == ScreenOptions {
 			return a.stepValue(1)
-		}
-		if a.expandYears(true) {
-			return true
 		}
 		// the first entry of the next page, shown at the top
 		p.cursor = p.nearest(p.top+max(p.lines, 1), selectable)
@@ -544,6 +549,8 @@ func (a *App) actPanel(k platform.Key) bool {
 				break
 			}
 		}
+	case platform.KeyTab:
+		return a.toggleYearExpansion()
 	case platform.KeySpace:
 		if a.screen == ScreenFilter {
 			return a.onlyFilter()
