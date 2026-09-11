@@ -25,7 +25,7 @@ func TestArtworkStartLaunchesSelectedVersionAndShowsFailure(t *testing.T) {
 		a.actList(platform.KeyEnter)
 		pick := 0
 		if installed {
-			a.actDetails(platform.KeyDown)
+			a.actDetails(platform.KeyRight)
 			pick = 1
 		}
 		a.actDetails(platform.KeyEnter)
@@ -88,9 +88,9 @@ func TestShotReturnPreservesSelectedVersion(t *testing.T) {
 					now = now.Add(20 * time.Millisecond)
 				}
 				tap(platform.KeyEnter)
+				tap(platform.KeyRight)
+				tap(platform.KeyRight)
 				tap(platform.KeyDown)
-				tap(platform.KeyDown)
-				tap(platform.KeyPageDown)
 				scroll := a.detail.scroll
 				if a.detail.pick != 2 || scroll <= 0 {
 					t.Fatal("fixture must select an alternative and scroll its details")

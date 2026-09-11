@@ -24,10 +24,14 @@ W, H, descent = int(fb.group(1)), int(fb.group(2)), -int(fb.group(4))
 assert (W, H, descent) == (5, 12, 2), fb.group(0)
 baseline = H - descent - 1
 band = range(baseline - 4, baseline + 1)  # the x-height rows
-# hand-set x-height bands (six rows, baseline last), where duplicating a
-# row put a crossbar in the wrong place
+# hand-set glyphs (rows ending at the baseline; descenders are kept) where
+# duplicating a row put a bar in the wrong place or flattened a bowl
 OVERRIDES = {
     "s": [".###.", "#....", ".##..", "...#.", "...#.", "###.."],
+    "three": ["####.", "...#.", "..#..", ".##..", "...#.", "...#.", "#..#.", ".##.."],
+    "five": ["####.", "#....", "#....", "###..", "...#.", "...#.", "#..#.", ".##.."],
+    "six": [".##..", "#..#.", "#....", "###..", "#..#.", "#..#.", "#..#.", ".##.."],
+    "nine": [".##..", "#..#.", "#..#.", "#..#.", ".###.", "...#.", "#..#.", ".##.."],
 }
 head = head.replace("FONT_ASCENT 9", "FONT_ASCENT 10")
 head = re.sub(r"^FONT (.*)$", lambda m: "FONT " + m.group(1).replace("scientifica", "scientifica-tall"), head, flags=re.M)
@@ -51,8 +55,8 @@ for glyph in re.findall(r"STARTCHAR .*?ENDCHAR\n", rest, re.S):
     assert cell[0] == 0, ("glyph uses the top row", glyph[:30])
     name = re.match(r"STARTCHAR (\S+)", glyph).group(1)
     if name in OVERRIDES:
-        rows6 = [int(r.replace(".", "0").replace("#", "1"), 2) << (8 - W) for r in OVERRIDES[name]]
-        cell = cell[1:baseline - 4] + rows6 + cell[baseline + 1:]
+        rows = [int(r.replace(".", "0").replace("#", "1"), 2) << (8 - W) for r in OVERRIDES[name]]
+        cell = [0] * (baseline + 1 - len(rows)) + rows + cell[baseline + 1:]
         assert len(cell) == H
     elif any(cell):
         pick = min(band, key=lambda y: (bin(cell[y]).count("1"), abs(y - (baseline - 2)), y))

@@ -91,9 +91,9 @@ filter choices are saved.
 
 | Pad | Keyboard | List | Details | Artwork | Filters | Options |
 |---|---|---|---|---|---|---|
-| Up/Down | arrows | move | choose version | | move | move |
-| Left/Right | arrows | page | | change shot | collapse/expand section or years | change value |
-| L/R | PageUp/PageDown | previous/next letter in A-Z; newer/older month in date sorts | scroll information | | previous/next section | first/last |
+| Up/Down | arrows | move | page information | | move | move |
+| Left/Right | arrows | page, keeping the row centered | choose version | change shot | collapse/expand section or years | change value |
+| L/R | PageUp/PageDown | previous/next letter in A-Z; newer/older month in date sorts | | | previous/next section | first/last |
 | A | Enter | details | artwork | | toggle a value; open/close a heading | run action |
 | B | Esc | Options / clear search | back | back | back | back |
 | X | Tab | Filters | | | show/hide years | |
@@ -102,13 +102,13 @@ filter choices are saved.
 | Menu | | return to MiSTer Menu from any screen; closes the app | | | | |
 
 The Details version selector uses one row. Its tally shows the selection and
-total, such as 2/5. Up/Down chooses among installed alternatives; Start launches
-the chosen version. A dim entry with a leading minus is not on the card. A
-version name too long for the row scrolls back and forth, pausing at each end,
-so alternatives that share a long prefix can be told apart.
-The information scrollbar shows when more text is available. Long values wrap,
-and L/R pages with an overlapping line. Returning from artwork preserves the
-selected version and information position.
+total, such as 2/5. Left/Right chooses among installed alternatives; Start
+launches the chosen version. A dim entry with a leading minus is not on the
+card. A version name too long for the row scrolls back and forth, pausing at
+each end, so alternatives that share a long prefix can be told apart.
+A green scrollbar thumb shows when more information is available. Long values
+wrap, and Up/Down pages with an overlapping line, sliding the text smoothly.
+Returning from artwork preserves the selected version and information position.
 
 Artwork starts at the first image each time it is opened. Left/Right chooses a
 shot and B returns; A and X have no action in artwork. Start launches the version
@@ -209,7 +209,8 @@ when that section returns to its defaults. Collapsing
 changes only the display, not your filter choices. L/R jumps to the
 previous/next section heading. Keyboard Home/End still goes to the first/last row.
 
-In the main list and Filters, Up/Down keeps the selected row near the center.
+In the main list and Filters, Up/Down keeps the selected row near the center,
+and Left/Right moves a screen of rows at a time with the same centering.
 Scrolling stops at the beginning and end so the list stays filled. Main-list
 letter/month jumps still align the first row at the top; moving Up/Down resumes
 centered scrolling.

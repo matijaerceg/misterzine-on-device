@@ -18,6 +18,12 @@
 - A Details version name too long for its line scrolls back and forth by the
   pixel, pausing briefly at each end, so alternatives that share a long prefix
   can be told apart.
+- Details swaps its keys: Left/Right choose the version and Up/Down page the
+  information, which now slides by the pixel (two pixels a frame) instead of
+  jumping. The information scrollbar is a green thumb alone, like the list's.
+- Left/Right in the main list move a screen of rows at a time and keep the
+  selected row centered, the same as stepping.
+- Options values start at the half mark of the list rather than two thirds.
 - Filters: A on a section heading opens or closes it, like Left/Right; the
   legend says so while a heading is selected. Headings no longer toggle every
   value of their section (Y only/all still does).

@@ -99,7 +99,8 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "down; right; shot date-dd-mm; back; shot list-dd-mm; back; down*12; right; shot date-mon-d; back; shot list-mon-d; "
                           "back; down*12; right; shot date-d-mon; back; shot list-d-mon; back; down*12; right; shot date-yymmdd; back; shot list-yymmdd; "
                           "back; down*12; left*4; back; "
-                          "type galaga; down*2; enter; down*2; shot alt-start; wait 1200; shot alt-mid; wait 1200; shot alt-end; "
+                          "type galaga; down*2; enter; right*2; shot alt-start; wait 1200; shot alt-mid; wait 1200; shot alt-end; "
+                          "down; shot info-page; wait 400; shot info-sliding; wait 2000; shot info-paged; "
                           "back; tab; shot heading; enter; shot heading-open; enter; shot heading-closed"])
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)

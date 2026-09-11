@@ -31,7 +31,7 @@ func TestDetailsSpaceDoesNotDependOnAlternativeCount(t *testing.T) {
 			}
 			for n := 0; n < 4; n++ {
 				old := a.detail.scroll
-				a.actDetails(platform.KeyPageDown)
+				a.actDetails(platform.KeyDown)
 				a.Paint()
 				if step := a.detail.scroll - old; step < 0 || step > a.detail.lines {
 					t.Fatalf("paging skipped information: step=%d visible=%d", step, a.detail.lines)

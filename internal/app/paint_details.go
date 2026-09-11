@@ -73,6 +73,36 @@ func (a *App) tickMarquee(now time.Time) bool {
 	return true
 }
 
+// The information pages by the pixel: two pixels a frame at 60 frames a
+// second toward the wanted line, so a page turn reads as a slide.
+const (
+	detailFrame = time.Second / 60
+	detailStep  = 2
+)
+
+// detailLine is the height of one information line.
+func (a *App) detailLine() int { return a.sm.H + 1 }
+
+func (a *App) nextDetailTick() time.Time {
+	if a.screen != ScreenDetails || a.saver.active || a.detail.pixel == a.detail.scroll*a.detailLine() {
+		return time.Time{}
+	}
+	return a.detail.next
+}
+
+// tickDetailScroll moves the information one step toward its target.
+func (a *App) tickDetailScroll(now time.Time) bool {
+	next := a.nextDetailTick()
+	if next.IsZero() || now.Before(next) {
+		return false
+	}
+	d := a.detail.scroll*a.detailLine() - a.detail.pixel
+	a.detail.pixel += max(-detailStep, min(detailStep, d))
+	a.detail.next = now.Add(detailFrame)
+	a.all = true
+	return true
+}
+
 // launchEntry is one thing the details view can launch.
 type launchEntry struct {
 	label string
@@ -285,16 +315,20 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 		a.detail.scroll = 0
 	}
 	specTop := y
-	for n := a.detail.scroll; n < len(lines) && n < a.detail.scroll+maxLines; n++ {
-		c.Text(body.Min.X, y, a.sm, gfx.Fit(lines[n].text, sc), lines[n].col)
-		y += lh
+	// the text sits at its animated pixel offset, clipped to the area, so a
+	// page turn slides the lines through
+	off := max(0, min(a.detail.pixel, max(0, len(lines)-maxLines)*lh))
+	a.detail.pixel = off
+	clip := image.Rect(body.Min.X, specTop, body.Max.X, specTop+maxLines*lh)
+	for n := off / lh; n < len(lines) && n*lh-off < maxLines*lh; n++ {
+		c.TextClip(body.Min.X, specTop+n*lh-off, a.sm, gfx.Fit(lines[n].text, sc), lines[n].col, clip)
 	}
 	if len(lines) > maxLines && maxLines > 0 {
+		// the thumb alone, in the list's green, following the slide
 		trackH := maxLines * lh
 		thumbH := max(2, trackH*maxLines/len(lines))
-		thumbY := specTop + (trackH-thumbH)*a.detail.scroll/(len(lines)-maxLines)
-		c.Fill(image.Rect(body.Max.X-2, specTop, body.Max.X, specTop+trackH), gen.Eva.Line)
-		c.Fill(image.Rect(body.Max.X-2, thumbY, body.Max.X, thumbY+thumbH), gen.Eva.Muted)
+		thumbY := specTop + (trackH-thumbH)*off/((len(lines)-maxLines)*lh)
+		c.Fill(image.Rect(body.Max.X-2, thumbY, body.Max.X, thumbY+thumbH), gen.Eva.Accent)
 	}
 	// One fixed-height selector leaves the same space for every game's details.
 	y = body.Max.Y - launchH
@@ -313,7 +347,7 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 		c.TextRight(body.Max.X, y, a.sm, count, gen.Eva.Muted)
 		prefix := "Version: "
 		if len(entries) > 1 {
-			prefix = gfx.ArrowUp + gfx.ArrowDown + " "
+			prefix = gfx.ArrowLeft + gfx.ArrowRight + " "
 		}
 		col := gen.Eva.Accent
 		label := e.label
@@ -338,9 +372,9 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 		c.Text(l.Hint.Min.X+2, l.Hint.Min.Y+2, a.sm, gfx.Fit(a.notice, a.sm.Cols(l.Hint.Dx()-4)), gen.Eva.Fg)
 		return
 	}
-	hint := "Start launch  A shots  Y fav  L/R info"
+	hint := "Start launch  A shots  Y fav  " + gfx.ArrowLeft + " " + gfx.ArrowRight + " version  " + gfx.ArrowUp + " " + gfx.ArrowDown + " info"
 	if a.sm.Width(hint) > l.Hint.Dx()-4 {
-		hint = "Start go  A art  Y fav  L/R info"
+		hint = "Start go  A art  Y fav  " + gfx.ArrowLeft + gfx.ArrowRight + " alt  " + gfx.ArrowUp + gfx.ArrowDown + " info"
 	}
 	a.paintHint(c, hint)
 }
@@ -414,16 +448,20 @@ func (a *App) actDetails(k platform.Key) bool {
 	case platform.KeyEnter:
 		a.screen = ScreenShot
 		a.slot = 0
-	case platform.KeyUp:
+	case platform.KeyLeft:
 		if a.detail.pick > 0 {
 			a.detail.pick--
 		}
-	case platform.KeyDown:
+	case platform.KeyRight:
 		a.detail.pick++
-	case platform.KeyPageUp:
-		a.detail.scroll -= max(1, a.detail.lines-1)
-	case platform.KeyPageDown:
-		a.detail.scroll += max(1, a.detail.lines-1)
+	case platform.KeyUp, platform.KeyDown:
+		// a page with one line of overlap; the slide starts at the next tick
+		page := max(1, a.detail.lines-1)
+		if k == platform.KeyUp {
+			page = -page
+		}
+		a.detail.scroll = max(0, a.detail.scroll+page)
+		a.detail.next = a.cfg.TimerNow()
 	case platform.KeySpace:
 		if a.cfg.FavoritesUnavailable {
 			a.Notice(FavoritesUnavailableNotice, 8*time.Second)

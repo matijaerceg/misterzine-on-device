@@ -554,8 +554,8 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 }
 
 // valueColumn is where Options values start: a fixed column at the
-// two-thirds mark, or nearer the right edge (before the gutter at edge)
-// when the widest value needs the room. 0 means right-align each value
+// half mark, or nearer the right edge (before the gutter at edge) when
+// the widest value needs the room. 0 means right-align each value
 // instead, because a fixed column would cut into the labels, as in the
 // narrow tate layout.
 func (a *App) valueColumn(inner image.Rectangle, edge int) int {
@@ -570,7 +570,7 @@ func (a *App) valueColumn(inner image.Rectangle, edge int) int {
 			maxVal = max(maxVal, font.Width(gfx.ArrowLeft+" "+v+" "+gfx.ArrowRight))
 		}
 	}
-	x := inner.Min.X + inner.Dx()*2/3
+	x := inner.Min.X + inner.Dx()/2
 	if x+maxVal > edge {
 		x = edge - maxVal
 	}

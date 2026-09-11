@@ -143,10 +143,12 @@ type App struct {
 }
 
 type detailState struct {
-	scroll int
-	lines  int    // visible information lines, used for paging
-	pick   int    // launch entry cursor
-	from   Screen // where B returns to
+	scroll int       // first information line wanted at the top
+	pixel  int       // where the information sits now, in pixels, easing toward scroll
+	next   time.Time // the next animation frame
+	lines  int       // visible information lines, used for paging
+	pick   int       // launch entry cursor
+	from   Screen    // where B returns to
 }
 
 // New builds an app around a dataset. stored is the persisted last-look
@@ -558,9 +560,9 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 		}
 	case ScreenDetails:
 		switch k {
-		case platform.KeyUp, platform.KeyDown:
+		case platform.KeyLeft, platform.KeyRight:
 			return repeatStep
-		case platform.KeyPageUp, platform.KeyPageDown:
+		case platform.KeyUp, platform.KeyDown:
 			return repeatPage
 		}
 	case ScreenFilter, ScreenOptions:
@@ -612,6 +614,7 @@ func (a *App) Tick(now time.Time) bool {
 		}
 	}
 	changed = a.tickMarquee(now) || changed
+	changed = a.tickDetailScroll(now) || changed
 	return a.tickSaver(now) || changed
 }
 
@@ -625,6 +628,7 @@ func (a *App) Frame(now time.Time) bool {
 			changed = true
 		}
 	}
+	changed = a.tickDetailScroll(now) || changed // keeps paging smooth under a held key
 	if a.notice != "" && !now.Before(a.until) {
 		a.notice = ""
 		a.all = true
@@ -646,6 +650,9 @@ func (a *App) NextTick() time.Time {
 		t = next
 	}
 	if next := a.nextMarqueeTick(); !next.IsZero() && (t.IsZero() || next.Before(t)) {
+		t = next
+	}
+	if next := a.nextDetailTick(); !next.IsZero() && (t.IsZero() || next.Before(t)) {
 		t = next
 	}
 	return t
@@ -721,10 +728,10 @@ func (a *App) actList(k platform.Key) bool {
 			a.launchPick(0)
 		}
 		return true
-	case platform.KeyLeft: // the bottom row of the previous page
-		a.pageTo(a.top-1, -1)
-	case platform.KeyRight: // the top row of the next page
-		a.pageTo(a.top+a.lay.Lines, 1)
+	case platform.KeyLeft: // a screen of rows up, the row centered like a step
+		a.pageBy(-1)
+	case platform.KeyRight:
+		a.pageBy(1)
 	case platform.KeyBack:
 		if a.query != "" {
 			a.setSearch("")
@@ -747,45 +754,16 @@ func (a *App) actList(k platform.Key) bool {
 	return true
 }
 
-// pageTo moves the cursor to the row on screen line target (or the next
-// row in direction dir when that line is a marker) and scrolls so that row
-// sits at the top (dir > 0) or the bottom (dir < 0) of the screen.
-func (a *App) pageTo(target, dir int) {
+// pageBy moves the cursor a screenful of rows in direction dir and keeps
+// it centered, the way a single step does.
+func (a *App) pageBy(dir int) {
 	a.shortPage = false
 	n := len(a.view)
 	if n == 0 {
 		return
 	}
-	pos := a.cursor
-	if dir > 0 {
-		pos = n - 1
-		for i := a.cursor; i < n; i++ {
-			if a.screenLine(i) >= target {
-				pos = i
-				break
-			}
-		}
-	} else {
-		pos = 0
-		for i := a.cursor; i >= 0; i-- {
-			if a.screenLine(i) <= target {
-				pos = i
-				break
-			}
-		}
-	}
-	a.cursor = pos
-	if dir > 0 {
-		a.top = a.screenLine(pos)
-	} else {
-		a.top = a.screenLine(pos) - a.lay.Lines + 1
-	}
-	if a.top > a.totalLines()-a.lay.Lines {
-		a.top = a.totalLines() - a.lay.Lines
-	}
-	if a.top < 0 {
-		a.top = 0
-	}
+	a.cursor = max(0, min(n-1, a.cursor+dir*a.lay.Lines))
+	a.top = centeredTop(a.screenLine(a.cursor), a.totalLines(), a.lay.Lines)
 }
 
 // current returns the row under the cursor, nil when the view is empty.

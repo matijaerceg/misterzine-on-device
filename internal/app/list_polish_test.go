@@ -247,8 +247,8 @@ func TestOptionsLayoutCuesAndColumn(t *testing.T) {
 	}
 	// values start in one column at the two-thirds mark in the horizontal layout
 	vx := a.valueColumn(inner, edge)
-	if vx != inner.Min.X+inner.Dx()*2/3 {
-		t.Fatalf("value column %d, want the two-thirds mark %d", vx, inner.Min.X+inner.Dx()*2/3)
+	if vx != inner.Min.X+inner.Dx()/2 {
+		t.Fatalf("value column %d, want the half mark %d", vx, inner.Min.X+inner.Dx()/2)
 	}
 	a.SetRotation(gfx.RotLeft)
 	a.SetInset(40, 40)
@@ -272,7 +272,7 @@ func TestVersionLineMarqueeScrolls(t *testing.T) {
 	if a.marquee.key != "" {
 		t.Fatal("a version that fits must not scroll")
 	}
-	a.actDetails(platform.KeyDown)
+	a.actDetails(platform.KeyRight)
 	a.Paint()
 	if a.marquee.key == "" || a.marquee.span <= 0 {
 		t.Fatalf("overlong alternative must start the marquee: %+v", a.marquee)
@@ -313,6 +313,85 @@ func TestVersionLineMarqueeScrolls(t *testing.T) {
 	a.Paint()
 	if a.marquee.key != "" || !a.NextTick().IsZero() && a.NextTick().Sub(clock) <= marqueeFrame {
 		t.Fatal("leaving Details must stop the marquee")
+	}
+}
+
+func TestPageJumpsCenterTheRow(t *testing.T) {
+	var rows []data.Row
+	for i := 0; i < 80; i++ {
+		rows = append(rows, data.Row{K: itoa(i), Title: "Game " + itoa(i), Updated: "2026-09-07"})
+	}
+	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest(rows, "", time.Now()), nil)
+	a.actList(platform.KeyRight)
+	if a.cursor != a.lay.Lines {
+		t.Fatalf("Right moved to %d, want a screen of rows (%d)", a.cursor, a.lay.Lines)
+	}
+	if a.top != centeredTop(a.screenLine(a.cursor), a.totalLines(), a.lay.Lines) || a.top == a.screenLine(a.cursor) {
+		t.Fatalf("Right left the row at line %d of top %d, want it centered", a.screenLine(a.cursor), a.top)
+	}
+	a.actList(platform.KeyLeft)
+	if a.cursor != 0 || a.top != 0 {
+		t.Fatal("Left must return to the first row at the top")
+	}
+	a.actList(platform.KeyEnd)
+	a.actList(platform.KeyLeft)
+	if a.cursor != len(a.view)-1-a.lay.Lines || a.top != centeredTop(a.screenLine(a.cursor), a.totalLines(), a.lay.Lines) {
+		t.Fatal("Left from the end must step a screen up and center")
+	}
+}
+
+func TestDetailsInformationSlides(t *testing.T) {
+	clock := time.Date(2026, 9, 12, 12, 0, 0, 0, time.UTC)
+	row := data.Row{K: "game", Title: "Game", Core: "Game", Note: strings.Repeat("Every word of this information must remain reachable. ", 20)}
+	a := New(Config{PhysW: 320, PhysH: 240, Now: func() time.Time { return clock },
+		Alternatives: func(*data.Row) []string {
+			return []string{"_Arcade/_alternatives/A.mra", "_Arcade/_alternatives/B.mra"}
+		}},
+		data.Ingest([]data.Row{row}, "", clock), nil)
+	a.actList(platform.KeyEnter)
+	a.Paint()
+	a.actDetails(platform.KeyRight)
+	if a.detail.pick != 1 {
+		t.Fatal("Right must choose the next version")
+	}
+	a.actDetails(platform.KeyLeft)
+	if a.detail.pick != 0 {
+		t.Fatal("Left must choose the previous version")
+	}
+	a.actDetails(platform.KeyDown)
+	a.Paint()
+	lh := a.detailLine()
+	page := max(1, a.detail.lines-1)
+	if a.detail.scroll <= 0 || a.detail.scroll > page || a.detail.pixel != 0 {
+		t.Fatalf("Down wants a page (up to line %d) and starts sliding from 0: scroll=%d pixel=%d", page, a.detail.scroll, a.detail.pixel)
+	}
+	page = a.detail.scroll // the note may be a little shorter than a full page
+	if next := a.NextTick(); next.IsZero() || next.After(clock) {
+		t.Fatalf("the slide must be due now, got %v", next)
+	}
+	for i := 1; i <= 3; i++ {
+		clock = clock.Add(detailFrame)
+		if !a.Tick(clock) || a.detail.pixel != detailStep*i {
+			t.Fatalf("frame %d: pixel %d, want %d", i, a.detail.pixel, detailStep*i)
+		}
+		a.Paint()
+	}
+	if next := a.NextTick(); next.Sub(clock) != detailFrame {
+		t.Fatalf("next frame in %v, want %v", next.Sub(clock), detailFrame)
+	}
+	for a.detail.pixel != a.detail.scroll*lh {
+		clock = clock.Add(detailFrame)
+		a.Tick(clock)
+		a.Paint()
+	}
+	if !a.NextTick().IsZero() && a.NextTick().Sub(clock) <= detailFrame {
+		t.Fatal("a finished slide must stop ticking")
+	}
+	// held Up under the frame loop slides back the same way
+	a.actDetails(platform.KeyUp)
+	clock = clock.Add(detailFrame)
+	if !a.Frame(clock) || a.detail.pixel != page*lh-detailStep {
+		t.Fatalf("Frame did not step the slide: pixel %d", a.detail.pixel)
 	}
 }
 
