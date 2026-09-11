@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v1.0.13 — 2026-09-12
 
 - List titles are drawn in a narrow font (scientifica, SIL Open Font License)
   with proportional spacing, so a row fits about a third more of a title. The
