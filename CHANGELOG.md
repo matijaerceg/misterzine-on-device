@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v1.0.14 — 2026-09-11
 
 - Options -> Sources: all (default) or installed only, which shows games only
   from the databases in the card's downloader.ini, read at every card scan,
