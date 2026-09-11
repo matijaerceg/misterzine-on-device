@@ -210,7 +210,7 @@ func (a *App) rawFilterEntries() []panelEntry {
 	E = append(E, panelEntry{text: "On the card", header: true, kind: "install"})
 	counts := a.cardCounts()
 	installCounts := map[string]int{
-		data.InstallAll:     len(a.ds.Rows),
+		data.InstallAll:     a.total,
 		data.InstallFound:   counts[data.StatusCurrent] + counts[data.StatusOutdated] + counts[data.StatusLikelyOutdated] + counts[data.StatusFoundUndated],
 		data.InstallCurrent: counts[data.StatusCurrent], data.InstallOlder: counts[data.StatusOutdated] + counts[data.StatusLikelyOutdated],
 		data.InstallUndated: counts[data.StatusFoundUndated], data.InstallMissing: counts[data.StatusNotFound],
@@ -220,7 +220,7 @@ func (a *App) rawFilterEntries() []panelEntry {
 		if cur == "" {
 			cur = data.InstallAll
 		}
-		E = append(E, panelEntry{text: v.text, kind: "install", value: v.val, checked: cur == v.val, count: installCounts[v.val], showCount: counts[data.StatusUnknown] < len(a.ds.Rows)})
+		E = append(E, panelEntry{text: v.text, kind: "install", value: v.val, checked: cur == v.val, count: installCounts[v.val], showCount: counts[data.StatusUnknown] < a.total})
 	}
 	E = append(E, panelEntry{text: "Since last look", header: true, kind: "since"})
 	if a.seen == nil || a.seen.BaseRows == nil {
@@ -228,6 +228,7 @@ func (a *App) rawFilterEntries() []panelEntry {
 	} else {
 		E = append(E, panelEntry{text: "only rows changed since my last look", kind: "since", checked: f.Since})
 	}
+	hiddenSrc := a.effectiveFilters().SrcHidden
 	section := func(title, kind string, facet map[string]int, off map[string]bool, label func(string) string) {
 		counts := a.facetCounts(kind)
 		E = append(E, panelEntry{text: title, header: true, kind: kind})
@@ -239,6 +240,9 @@ func (a *App) rawFilterEntries() []panelEntry {
 			if kind == "base" && v == "Arcade" {
 				E = append(E, a.arcadeEntries(counts[v])...)
 				continue
+			}
+			if kind == "src" && hiddenSrc[v] {
+				continue // Options -> Sources: installed; not a choice here
 			}
 			E = append(E, panelEntry{text: label(v), kind: kind, value: v, checked: !off[v], count: counts[v], showCount: true})
 		}
@@ -348,6 +352,8 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: updateText, kind: "update", help: updateHelp},
 		{text: "Rescan card", kind: "rescan",
 			help: "Refresh on-card status after an external update. The built-in Update All rescans automatically when it finishes."},
+		{text: "Sources", kind: "sources", vals: []string{"all", "installed"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.InstalledOnly],
+			help: a.sourcesHelp()},
 		{text: "Last update result", kind: "update-result",
 			help: "Review the last Update All result and its saved output. This does not start another update."},
 		{text: "Prefetch shots" + a.progressText(), kind: "prefetch", vals: []string{"off", "on"}, idx: prefetchIdx,
@@ -753,6 +759,9 @@ func (a *App) stepValue(d int) bool {
 	case "filter-rotation":
 		a.cfg.FilterRotation = i == 1
 		a.Refilter()
+	case "sources":
+		a.cfg.InstalledOnly = i == 1
+		a.Refilter()
 	case "screensaver":
 		a.cfg.Screensaver = saverValues[i]
 	case "title-font":
@@ -892,7 +901,7 @@ func (a *App) togglePanel() bool {
 		if !e.header {
 			f.Since = !f.Since
 		}
-	case "rotation", "follow-rotation", "filter-rotation", "launcher", "scroll", "hold-delay", "remember-sort", "prefetch", "title-font", "list-shot", "date-format":
+	case "rotation", "follow-rotation", "filter-rotation", "sources", "launcher", "scroll", "hold-delay", "remember-sort", "prefetch", "title-font", "list-shot", "date-format":
 		return true // Left/Right pick these
 	case "inset":
 		a.screen = ScreenCalibrate

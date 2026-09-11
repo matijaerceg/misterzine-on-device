@@ -67,14 +67,14 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 		c.TextRight(l.Status.Max.X-2, y, a.sm, "App update", gen.Eva.Accent)
 		return
 	}
-	count := itoa(len(a.ds.Rows)) + " releases"
+	count := itoa(a.total) + " releases"
 	if a.filtersActive() || a.mode == data.SortFavorites {
-		count = itoa(len(a.view)) + " of " + itoa(len(a.ds.Rows)) + " releases"
+		count = itoa(len(a.view)) + " of " + itoa(a.total) + " releases"
 	}
 	c.Text(l.Status.Min.X+2, y, a.sm, left, gen.Eva.Accent)
 	x := l.Status.Min.X + 2 + a.sm.Width(left) + a.sm.W*2
 	if a.sm.Width(count) > l.Status.Max.X-2-x {
-		count = itoa(len(a.ds.Rows))
+		count = itoa(a.total)
 		if a.filtersActive() || a.mode == data.SortFavorites {
 			count = itoa(len(a.view)) + "/" + count
 		}

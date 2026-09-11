@@ -17,6 +17,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime/debug"
+	"sort"
 	"strings"
 	"sync/atomic"
 	"syscall"
@@ -212,6 +213,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 		RememberSort:         h.settings.RememberSort,
 		FollowRotation:       h.settings.FollowRotation,
 		FilterRotation:       h.settings.FilterRotation,
+		InstalledOnly:        h.settings.InstalledOnly,
 		LastSort:             h.settings.LastSort,
 		TitleFont:            h.settings.TitleFont,
 		ListShot:             h.settings.ListShot,
@@ -688,6 +690,7 @@ func (h *host) saveAll(final bool) {
 		h.settings.RememberSort = h.a.RememberSort()
 		h.settings.FollowRotation = h.a.FollowRotation()
 		h.settings.FilterRotation = h.a.FilterRotation()
+		h.settings.InstalledOnly = h.a.InstalledOnly()
 		h.settings.LastSort = h.a.Sort()
 		h.settings.TitleFont = h.a.TitleFont()
 		h.settings.ListShot = h.a.ListShot()
@@ -878,6 +881,10 @@ type scanResult struct {
 	alts   []scan.Alt
 	notice string
 	final  bool // alternatives pass finished, including an empty result
+	// hidden are the sources without a Downloader database in the card's
+	// downloader.ini; iniFound is whether that file was read at all.
+	hidden   map[string]bool
+	iniFound bool
 }
 
 // scan reads the card off the UI goroutine: cores and MRA stats first (fast),
@@ -888,6 +895,8 @@ func (h *host) scan(rows []data.Row, hash string, feedAt time.Time) {
 	idx.FeedAt = feedAt
 	idx.HashCache = filepath.Join(h.root, "cache", "hashes.json")
 	st := scan.Statuses(h.card, idx, rows)
+	dbs, iniFound := scan.DownloaderDBs(h.card)
+	hidden := data.HiddenSources(dbs)
 	counts := map[data.Status]int{}
 	for _, s := range st {
 		counts[s]++
@@ -899,7 +908,17 @@ func (h *host) scan(rows []data.Row, hash string, feedAt time.Time) {
 		h.sendScan(scanResult{hash: hash, notice: "Card scan failed", final: true})
 		return
 	}
-	if !h.sendScan(scanResult{index: idx, status: st, hash: hash}) {
+	if !iniFound {
+		h.lg.Printf("scan: no downloader.ini on the card; Sources: installed hides nothing")
+	} else {
+		names := make([]string, 0, len(hidden))
+		for src := range hidden {
+			names = append(names, src)
+		}
+		sort.Strings(names)
+		h.lg.Printf("scan: downloader.ini lists %d databases; sources without one: %v", len(dbs), names)
+	}
+	if !h.sendScan(scanResult{index: idx, status: st, hash: hash, hidden: hidden, iniFound: iniFound}) {
 		return
 	}
 	t1 := time.Now()
@@ -912,7 +931,7 @@ func (h *host) scan(rows []data.Row, hash string, feedAt time.Time) {
 	if err != nil {
 		notice = "Card scan incomplete"
 	}
-	h.sendScan(scanResult{index: idx, status: st, hash: hash, alts: alts, notice: notice, final: true})
+	h.sendScan(scanResult{index: idx, status: st, hash: hash, alts: alts, notice: notice, final: true, hidden: hidden, iniFound: iniFound})
 }
 
 // screenshot saves the logical canvas (F12 on a keyboard).

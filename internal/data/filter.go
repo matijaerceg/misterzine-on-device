@@ -40,6 +40,7 @@ const (
 // is hidden, so a value the data gains later defaults to visible.
 type Filters struct {
 	MatchRotation string          `json:"-"`                 // runtime INI rule; includes system/unknown rows
+	SrcHidden     map[string]bool `json:"-"`                 // runtime rule: sources whose Downloader database the card lacks
 	ResOff        map[string]bool `json:"res_off,omitempty"` // raw resolution, "" = unknown
 	BaseOff       map[string]bool `json:"base_off,omitempty"`
 	BetaOff       map[string]bool `json:"beta_off,omitempty"` // arcade sub-type: "stable", "beta"
@@ -60,7 +61,7 @@ func (f *Filters) Active() bool {
 	if f == nil {
 		return false
 	}
-	return f.MatchRotation != "" || len(f.YearOff) > 0 || len(f.BaseOff) > 0 || len(f.BetaOff) > 0 || len(f.SrcOff) > 0 || len(f.RotOff) > 0 || len(f.PlrOff) > 0 ||
+	return f.MatchRotation != "" || len(f.SrcHidden) > 0 || len(f.YearOff) > 0 || len(f.BaseOff) > 0 || len(f.BetaOff) > 0 || len(f.SrcOff) > 0 || len(f.RotOff) > 0 || len(f.PlrOff) > 0 ||
 		len(f.ResOff) > 0 || len(f.GenreOff) > 0 || len(f.DirectionsOff) > 0 || len(f.ButtonsOff) > 0 || (f.Install != "" && f.Install != InstallAll) || f.FavOnly || f.Since
 }
 
@@ -72,7 +73,7 @@ func (f *Filters) Pass(r *Row, d *Derived, st Status, fav, unseen bool) bool {
 	if f.MatchRotation != "" && d.RotGroup != f.MatchRotation {
 		return false
 	}
-	if f.BaseOff[r.Base] || f.SrcOff[r.Src] {
+	if f.BaseOff[r.Base] || f.SrcOff[r.Src] || f.SrcHidden[r.Src] {
 		return false
 	}
 	if r.IsArcade() && f.BetaOff[BetaKind(r)] {

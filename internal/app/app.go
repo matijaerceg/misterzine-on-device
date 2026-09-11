@@ -89,7 +89,10 @@ type Config struct {
 	RememberSort   bool
 	FollowRotation bool
 	FilterRotation bool // strict filter on the current orientation
-	LastSort       data.SortMode
+	// InstalledOnly is Options -> Sources: installed. Sources whose Downloader
+	// database the card lacks (SetHiddenSources) leave every view.
+	InstalledOnly bool
+	LastSort      data.SortMode
 	// TitleFont draws list titles in "tall" (default: the narrow font at the
 	// body font's height), "narrow" or "normal" (the body font).
 	TitleFont string
@@ -119,9 +122,15 @@ type App struct {
 	filters data.Filters
 	order   []int // ds.Order(mode)
 	view    []int // after filters
-	seen    *data.Seen
-	split   int  // marker after view[split]; -1 none
-	topMark bool // "nothing new" marker on top
+	total   int   // rows the sources rule leaves, the list's "N releases"
+	// hiddenSrc are the sources without a Downloader database on the card,
+	// nil until a card scan reports; iniKnown/iniFound say whether that
+	// report found a downloader.ini at all.
+	hiddenSrc          map[string]bool
+	iniKnown, iniFound bool
+	seen               *data.Seen
+	split              int  // marker after view[split]; -1 none
+	topMark            bool // "nothing new" marker on top
 
 	screen     Screen
 	cursor     int  // index into view
@@ -285,6 +294,15 @@ func (a *App) rebuild() {
 	if a.mode == data.SortFavorites {
 		filters.FavOnly = true
 	}
+	a.total = len(a.ds.Rows)
+	if len(filters.SrcHidden) > 0 {
+		a.total = 0
+		for i := range a.ds.Rows {
+			if !filters.SrcHidden[a.ds.Rows[i].Src] {
+				a.total++
+			}
+		}
+	}
 	a.view = data.Apply(a.ds, a.order, &filters, a.cfg.Status, fav, unseen)
 	if q := searchText(a.query); q != "" {
 		matched := a.view[:0]
@@ -354,6 +372,27 @@ func (a *App) Sort() data.SortMode { return a.mode }
 func (a *App) RememberSort() bool   { return a.cfg.RememberSort }
 func (a *App) FollowRotation() bool { return a.cfg.FollowRotation }
 func (a *App) FilterRotation() bool { return a.cfg.FilterRotation }
+
+// InstalledOnly reports Options -> Sources: installed.
+func (a *App) InstalledOnly() bool { return a.cfg.InstalledOnly }
+
+// SetInstalledOnly is the Sources option; the host calls Refilter after.
+func (a *App) SetInstalledOnly(on bool) { a.cfg.InstalledOnly = on }
+
+// SetHiddenSources takes a card scan's report of the sources without a
+// Downloader database on the card (data.HiddenSources); found is whether
+// a downloader.ini was read at all. The host calls Refilter after.
+func (a *App) SetHiddenSources(hidden map[string]bool, found bool) {
+	a.hiddenSrc = hidden
+	a.iniKnown, a.iniFound = true, found
+	if a.screen == ScreenOptions {
+		a.buildPanel()
+		a.all = true
+	}
+}
+
+// Visible is the number of rows the list shows.
+func (a *App) Visible() int { return len(a.view) }
 
 // titleFonts are the list title choices, in Options order.
 var titleFonts = []string{"normal", "narrow", "tall"}

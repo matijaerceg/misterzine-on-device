@@ -131,7 +131,8 @@ Screenshots work without remote debugging.
 ## Options
 
 Options is in three groups under grey headings: Data (Refresh data now, Run
-Update All, Rescan card, Last update result, Prefetch shots, Clear image cache),
+Update All, Rescan card, Sources, Last update result, Prefetch shots, Clear
+image cache),
 Display (rotation, fonts, list shots, date format, screensaver, safe zone) and
 Operation (scrolling, sort memory, the launcher, Troubleshooting, Quit). The
 headings cannot be selected. Values line up in one column; a small arrow at the right
@@ -162,6 +163,15 @@ the bottom.
   filters remain active; saved manual rotation filters are temporarily
   superseded and restored when this option is turned off. Filters shows the
   active rule, and it follows the interface when the rotation changes.
+- **Sources:** all by default. Installed shows only games from the databases
+  listed in the card's `downloader.ini`, the file Update All rewrites on every
+  run, so a source you never enabled (Coin-Op, Meathax, or Jotego) stays out of
+  the list, search, Favorites and the Filters panel, and the release count
+  leaves it out too. The file is read at every card scan: launch, Rescan card
+  and the rescan after Update All. Without database sections Downloader
+  fetches MiSTer Distribution alone, and the option follows that; without any
+  `downloader.ini` nothing is hidden and the help text says so. Sources the
+  app does not know stay visible.
 - **Scroll speed:** 20, 30 or 60 rows/pages per second once a hold repeats.
 - **Hold delay:** short 200 ms, normal 300 ms (default), or long 500 ms before
   navigation repeats. Artwork and calibration retain their own timing.

@@ -32,7 +32,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/updater"
 )
 
-const allViews = "shot list; enter; shot details; wait 600; enter; shot screen; back; back; tab; shot filter; back; back; shot options; down*13; enter; shot calibrate; back; end; shot options-bottom; back"
+const allViews = "shot list; enter; shot details; wait 600; enter; shot screen; back; back; tab; shot filter; back; back; shot options; down*14; enter; shot calibrate; back; end; shot options-bottom; back"
 
 func main() {
 	dataPath := flag.String("data", "testdata/data.json", "data.json")
@@ -56,6 +56,7 @@ func main() {
 	listShot := flag.String("list-shot", "gameplay", "list thumbnail preference: gameplay or title")
 	dateFormat := flag.String("date-format", "mm-dd", "list date column: mm-dd, dd-mm, mon-d, d-mon or yymmdd")
 	rememberAlt := flag.Int("remember-alt", 0, "start with galagamw's alternative N (1 or 2) remembered as its version")
+	installed := flag.String("installed", "", "Downloader database ids the card has, comma separated (e.g. distribution_mister,jtcores): Sources starts on installed and the other sources are hidden")
 	flag.Parse()
 
 	rows, meta := load(*dataPath, *metaPath)
@@ -87,6 +88,7 @@ func main() {
 		RememberSort:   true,
 		FollowRotation: true,
 		FilterRotation: *filterRotation,
+		InstalledOnly:  *installed != "",
 		TitleFont:      *titleFont,
 		ListShot:       *listShot,
 		DateFormat:     *dateFormat,
@@ -155,6 +157,14 @@ func main() {
 		stored = &data.SeenRecord{T: now.Add(-*seenAge).UTC().Format(time.RFC3339), Cur: cur}
 	}
 	a := app.New(cfg, ds, stored)
+	if *installed != "" {
+		var dbs []data.DB
+		for _, id := range strings.Split(*installed, ",") {
+			dbs = append(dbs, data.DB{ID: strings.TrimSpace(id)})
+		}
+		a.SetHiddenSources(data.HiddenSources(dbs), true)
+		a.Refilter()
+	}
 	a.SetAppUpdate(*appUpdate)
 	if *scanResult {
 		a.OpenScan()

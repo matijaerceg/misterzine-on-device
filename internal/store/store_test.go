@@ -89,6 +89,22 @@ func TestFilterRotationDefaultAndSave(t *testing.T) {
 	}
 }
 
+func TestInstalledSourcesOnlyDefaultAndSave(t *testing.T) {
+	p := writeSettings(t, `{"rotation":"left"}`)
+	s, err := LoadSettings(p)
+	if err != nil || s.InstalledOnly {
+		t.Fatal("Sources must default to all")
+	}
+	s.InstalledOnly = true
+	if err := Save(p, s); err != nil {
+		t.Fatal(err)
+	}
+	restored, err := LoadSettings(p)
+	if err != nil || !restored.InstalledOnly {
+		t.Fatal("Sources: installed not saved")
+	}
+}
+
 func TestHoldDelayMigrationAndSave(t *testing.T) {
 	for _, tc := range []struct {
 		body string

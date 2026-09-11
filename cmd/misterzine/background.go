@@ -61,6 +61,9 @@ func (h *host) receiveScan(r scanResult) {
 	if r.final && r.index != nil {
 		h.alts = r.alts
 	}
+	if r.index != nil {
+		h.a.SetHiddenSources(r.hidden, r.iniFound)
+	}
 	h.a.Refilter()
 	if r.hash == h.a.Data().Hash && r.notice != "" {
 		h.a.Notice(r.notice, 8*time.Second)

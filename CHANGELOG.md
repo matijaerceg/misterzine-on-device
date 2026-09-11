@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Options -> Sources: all (default) or installed. Installed shows only games
+  from the databases in the card's downloader.ini, read at every card scan,
+  so sources you never enabled (Coin-Op, Meathax, Jotego) leave the list,
+  search, Favorites, the release count and the Filters panel. Without a
+  downloader.ini nothing is hidden and the help text says so.
+
 ## v1.0.13 — 2026-09-11
 
 - List titles are drawn in a narrow font (scientifica, SIL Open Font License)

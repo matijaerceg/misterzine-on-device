@@ -36,7 +36,11 @@ func (a *App) FinishScan(message string) {
 
 func (a *App) cardCounts() map[data.Status]int {
 	counts := map[data.Status]int{}
+	hidden := a.effectiveFilters().SrcHidden
 	for i := range a.ds.Rows {
+		if hidden[a.ds.Rows[i].Src] {
+			continue
+		}
 		counts[a.status(i)]++
 	}
 	return counts

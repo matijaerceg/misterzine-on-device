@@ -35,7 +35,7 @@ func TestListPreferencesPersist(t *testing.T) {
 		h.a.Handle(platform.Event{Key: key, At: now})
 	}
 	tap(platform.KeyBack)
-	for i := 0; i < 9; i++ {
+	for i := 0; i < 10; i++ {
 		tap(platform.KeyDown)
 	}
 	tap(platform.KeyLeft) // Title font: narrow
