@@ -29,6 +29,7 @@ const (
 // Filters follow the site's all-checked model: a value listed in an Off set
 // is hidden, so a value the data gains later defaults to visible.
 type Filters struct {
+	MatchRotation string          `json:"-"`                 // runtime INI rule; includes system/unknown rows
 	ResOff        map[string]bool `json:"res_off,omitempty"` // raw resolution, "" = unknown
 	BaseOff       map[string]bool `json:"base_off,omitempty"`
 	SrcOff        map[string]bool `json:"src_off,omitempty"`
@@ -47,7 +48,7 @@ func (f *Filters) Active() bool {
 	if f == nil {
 		return false
 	}
-	return len(f.BaseOff) > 0 || len(f.SrcOff) > 0 || len(f.RotOff) > 0 || len(f.PlrOff) > 0 ||
+	return f.MatchRotation != "" || len(f.BaseOff) > 0 || len(f.SrcOff) > 0 || len(f.RotOff) > 0 || len(f.PlrOff) > 0 ||
 		len(f.ResOff) > 0 || len(f.GenreOff) > 0 || len(f.DirectionsOff) > 0 || len(f.ButtonsOff) > 0 || (f.Install != "" && f.Install != InstallAll) || f.FavOnly || f.Since
 }
 
@@ -55,6 +56,9 @@ func (f *Filters) Active() bool {
 func (f *Filters) Pass(r *Row, d *Derived, st Status, fav, unseen bool) bool {
 	if f == nil {
 		return true
+	}
+	if f.MatchRotation != "" && d.RotGroup != f.MatchRotation {
+		return false
 	}
 	if f.BaseOff[r.Base] || f.SrcOff[r.Src] {
 		return false

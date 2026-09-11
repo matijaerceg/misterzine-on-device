@@ -28,3 +28,16 @@ func startupRotation(settings store.Settings, ini mister.IniSettings) gfx.Rotati
 		return gfx.RotNone
 	}
 }
+
+func iniOrientation(ini mister.IniSettings) string {
+	if !ini.Found {
+		return ""
+	}
+	switch ini.OSDRotate {
+	case 0:
+		return "h"
+	case 1, 2:
+		return "v"
+	}
+	return ""
+}

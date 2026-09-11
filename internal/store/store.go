@@ -19,6 +19,7 @@ type Settings struct {
 	Schema         int           `json:"schema"`
 	Rotation       string        `json:"rotation"` // auto, left, right, off
 	FollowRotation bool          `json:"follow_ini_rotation"`
+	FilterRotation bool          `json:"filter_ini_rotation"`
 	Inset          int           `json:"inset"`
 	Prefetch       bool          `json:"prefetch"`
 	Scroll         string        `json:"scroll"` // rows per second: 20, 30, 60

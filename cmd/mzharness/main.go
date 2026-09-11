@@ -32,7 +32,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/updater"
 )
 
-const allViews = "shot list; enter; shot details; wait 600; enter; shot screen; back; back; tab; shot filter; back; back; shot options; down*10; enter; shot calibrate; back; end; shot options-bottom; back"
+const allViews = "shot list; enter; shot details; wait 600; enter; shot screen; back; back; tab; shot filter; back; back; shot options; down*11; enter; shot calibrate; back; end; shot options-bottom; back"
 
 func main() {
 	dataPath := flag.String("data", "testdata/data.json", "data.json")
@@ -51,6 +51,7 @@ func main() {
 	appUpdate := flag.String("app-update", "", "available app version fixture")
 	scanResult := flag.Bool("scan-result", false, "show completed card scan fixture")
 	unchanged := flag.Bool("unchanged", false, "previous visit saw every release")
+	iniOrientation := flag.String("ini-orientation", "h", "INI orientation fixture: h/v")
 	flag.Parse()
 
 	rows, meta := load(*dataPath, *metaPath)
@@ -81,6 +82,7 @@ func main() {
 		Version:        "harness",
 		RememberSort:   true,
 		FollowRotation: true,
+		IniOrientation: *iniOrientation,
 		Alternatives: func(r *data.Row) []string {
 			if r.SN == "galagamw" {
 				return []string{"_Arcade/_alternatives/_Galaga/Galaga (Namco).mra"}

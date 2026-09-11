@@ -24,9 +24,9 @@ scenarios = [
     ["-rot", "left", "-logical", "-out", "out/search-t",
      "-script", "type 1943; shot matches; type xyz; shot empty"],
     ["-out", "out/saver-h", "-script",
-     "back; down*9; shot option; enter; wait 12000; shot preview; back; up*9; up; shot wrap; down; shot top"],
+     "back; down*10; shot option; enter; wait 12000; shot preview; back; up*10; up; shot wrap; down; shot top"],
     ["-rot", "left", "-logical", "-out", "out/saver-t", "-script",
-     "back; down*9; shot option; enter; wait 12000; shot preview; back; up*9; up; shot wrap; down; shot top"],
+     "back; down*10; shot option; enter; wait 12000; shot preview; back; up*10; up; shot wrap; down; shot top"],
     ["-support-report", "testdata/support-controller.json", "-out", "out/support-h", "-script",
      "back; end; up; enter; shot menu; enter; shot ready; wait 3500; shot capture; wait 6000; shot result; right; shot evidence; back; down; enter; shot launch; enter; shot launch-result"],
     ["-support-report", "testdata/support-controller.json", "-rot", "left", "-logical", "-out", "out/support-t", "-script",
@@ -41,7 +41,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     for inset in (15, 40):
         scenarios.append([*rotation, "-inset", str(inset), "-status", "missing",
                           "-out", f"out/browsing-{orientation}-{inset}", "-script",
-                          "back; down*8; shot remember-on; left; shot remember-off; back; "
+                          "back; down*9; shot remember-on; left; shot remember-off; back; "
                           "space*2; home; pagedown; shot letter-jump; enter; enter; start; shot launch-failure; "
                           "back; back; wait 3200; end; pageup; pagedown; shot last-letter; "
                           "space*2; home; pagedown; shot updated-month; wait 2200; shot updated-month-settled; "
@@ -62,5 +62,12 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "-out", f"out/rotation-only-{orientation}-{inset}", "-script",
                           "shot unchanged; back; down*5; shot follow-on; left; shot follow-off; "
                           "right; back; tab; down*14; shot only-legend; space; shot only-selected; space; shot only-restored; space; back; shot filtered-unchanged"])
+for rotation in ([], ["-rot", "left", "-logical"]):
+    orientation = "t" if rotation else "h"
+    for ini in ("h", "v"):
+        scenarios.append([*rotation, "-inset", "40", "-ini-orientation", ini,
+                          "-out", f"out/ini-filter-{orientation}-{ini}", "-script",
+                          "back; down*6; shot off; right; shot on; back; shot list; "
+                          "tab; shot filters; back; back; down*6; left; back; shot restored"])
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)

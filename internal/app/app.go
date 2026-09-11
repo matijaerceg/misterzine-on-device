@@ -82,6 +82,8 @@ type Config struct {
 	// RememberSort restores LastSort at startup; otherwise start with latest updates.
 	RememberSort   bool
 	FollowRotation bool
+	FilterRotation bool
+	IniOrientation string // h/v from INI; empty when unavailable
 	LastSort       data.SortMode
 }
 
@@ -251,7 +253,7 @@ func (a *App) rebuild() {
 	a.order = a.ds.Order(a.mode)
 	fav := func(k string) bool { return a.cfg.Favorites[k] }
 	unseen := func(i int) bool { return a.seen != nil && a.seen.Unseen(&a.ds.Rows[i]) }
-	filters := a.filters
+	filters := a.effectiveFilters()
 	if a.mode == data.SortFavorites {
 		filters.FavOnly = true
 	}
@@ -323,6 +325,7 @@ func (a *App) Sort() data.SortMode { return a.mode }
 
 func (a *App) RememberSort() bool   { return a.cfg.RememberSort }
 func (a *App) FollowRotation() bool { return a.cfg.FollowRotation }
+func (a *App) FilterRotation() bool { return a.cfg.FilterRotation }
 
 // Filters exposes the filters (copy).
 func (a *App) Filters() data.Filters { return a.filters }

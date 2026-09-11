@@ -120,6 +120,15 @@ item. R also jumps to the bottom.
   startup; MisterZine never edits the INI. If the file cannot be read, the saved
   manual rotation is used.
 - **Scroll speed:** 20, 30 or 60 rows/pages per second once a hold repeats.
+- **Filter by INI rotation:** off by default. On immediately shows only entries
+  explicitly marked Horizontal for an unrotated INI, or Vertical for either
+  rotated INI setting. Unknown orientations and system entries without matching
+  orientation metadata are hidden, including in Favorites. It uses the INI read
+  at startup, independently of interface rotation. Search and other filters
+  remain active; saved manual rotation filters are temporarily superseded and
+  restored when this option is turned off. Filters shows the active INI rule.
+  If the INI orientation is unavailable, a notice explains that automatic
+  filtering could not be applied.
 - **Hold delay:** short 200 ms, normal 300 ms (default), or long 500 ms before
   navigation repeats. Artwork and calibration retain their own timing.
 - **Remember sort order:** on by default, including after upgrading. Reopens

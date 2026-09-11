@@ -87,7 +87,7 @@ func sortedFacet(m map[string]int) []string {
 // facetCounts applies the search and every filter except the section being
 // counted. Unchecked choices keep their potential counts and remain selectable.
 func (a *App) facetCounts(kind string) map[string]int {
-	f := a.filters
+	f := a.effectiveFilters()
 	if a.mode == data.SortFavorites {
 		f.FavOnly = true
 	}
@@ -140,7 +140,15 @@ func (a *App) filterEntries() []panelEntry {
 	f := &a.filters
 	var E []panelEntry
 	if f.Active() {
-		E = append(E, panelEntry{text: "Clear all filters", kind: "clear"})
+		text := "Clear all filters"
+		if a.iniFilter() != "" {
+			text = "Clear other filters"
+		}
+		E = append(E, panelEntry{text: text, kind: "clear"})
+	}
+	if a.iniFilter() != "" {
+		E = append(E, panelEntry{text: a.iniFilterLabel(), info: true},
+			panelEntry{text: "Change in Options", info: true})
 	}
 	E = append(E, panelEntry{text: "On the card", header: true, kind: "install"})
 	counts := a.cardCounts()
@@ -172,6 +180,10 @@ func (a *App) filterEntries() []panelEntry {
 	section := func(title, kind string, facet map[string]int, off map[string]bool, label func(string) string) {
 		counts := a.facetCounts(kind)
 		E = append(E, panelEntry{text: title, header: true, kind: kind})
+		if kind == "rot" && a.iniFilter() != "" {
+			E = append(E, panelEntry{text: a.iniFilterLabel(), info: true})
+			return
+		}
 		for _, v := range sortedFacet(facet) {
 			E = append(E, panelEntry{text: label(v), kind: kind, value: v, checked: !off[v], count: counts[v], showCount: true})
 		}
@@ -187,8 +199,12 @@ func (a *App) filterEntries() []panelEntry {
 	if f.BaseOff["Arcade"] || a.ds.Facets.Base["Arcade"] == 0 {
 		return E
 	}
+	coreNote := "System cores are unaffected"
+	if a.iniFilter() != "" {
+		coreNote = "INI rule applies to all"
+	}
 	E = append(E, panelEntry{text: "Arcade game filters", header: true, info: true},
-		panelEntry{text: "System cores are unaffected", info: true})
+		panelEntry{text: coreNote, info: true})
 	section("Rotation", "rot", a.ds.Facets.Rot, f.RotOff, func(s string) string {
 		switch s {
 		case "h":
@@ -274,6 +290,8 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Left/Right turn the image now. With Follow INI rotation on, the next startup uses MiSTer.ini again."},
 		{text: "Follow INI rotation", kind: "follow-rotation", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.FollowRotation()],
 			help: "On (default): match MiSTer.ini osd_rotate on every startup. Off: keep your chosen rotation. Never edits the INI."},
+		{text: "Filter by INI rotation", kind: "filter-rotation", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.FilterRotation()],
+			help: "INI-matching games only; unknowns hidden. Off restores manual filters. Separate from UI rotation."},
 		{text: "Scroll speed", kind: "scroll", vals: []string{"20 Hz", "30 Hz", "60 Hz"}, idx: scrollIdx,
 			help: "How many rows (or pages, with Left/Right) a held direction moves per second. 60 Hz is one row every frame."},
 		{text: "Hold delay", kind: "hold-delay", vals: []string{"short", "normal", "long"}, idx: map[int]int{200: 0, 300: 1, 500: 2}[a.HoldDelay()],
@@ -577,6 +595,12 @@ func (a *App) stepValue(d int) bool {
 		if i == 0 && a.cfg.Action != nil {
 			a.cfg.Action("rotation", map[gfx.Rotation]string{gfx.RotNone: "off", gfx.RotLeft: "left", gfx.RotRight: "right"}[a.rot])
 		}
+	case "filter-rotation":
+		a.cfg.FilterRotation = i == 1
+		a.Refilter()
+		if i == 1 && a.iniFilter() == "" {
+			a.Notice("INI rotation unavailable; no auto-filter", 8*time.Second)
+		}
 	case "screensaver":
 		a.cfg.Screensaver = saverValues[i]
 	case "prefetch":
@@ -604,6 +628,9 @@ func (a *App) togglePanel() bool {
 		return false
 	}
 	e := p.entries[p.cursor]
+	if e.kind == "rot" && a.iniFilter() != "" {
+		return false
+	}
 	f := a.filters
 	off := func(m map[string]bool) map[string]bool {
 		out := map[string]bool{}
@@ -702,7 +729,7 @@ func (a *App) togglePanel() bool {
 		if !e.header {
 			f.Since = !f.Since
 		}
-	case "rotation", "follow-rotation", "launcher", "scroll", "hold-delay", "remember-sort", "prefetch":
+	case "rotation", "follow-rotation", "filter-rotation", "launcher", "scroll", "hold-delay", "remember-sort", "prefetch":
 		return true // Left/Right pick these
 	case "inset":
 		a.screen = ScreenCalibrate

@@ -40,3 +40,17 @@ func TestRotationRereadsIniAndRespectsToggle(t *testing.T) {
 		t.Fatal("missing INI discarded manual fallback")
 	}
 }
+
+func TestINIOrientationForStrictFilter(t *testing.T) {
+	for _, tc := range []struct {
+		found    bool
+		rotation int
+		want     string
+	}{
+		{true, 0, "h"}, {true, 1, "v"}, {true, 2, "v"}, {false, 0, ""}, {true, 3, ""},
+	} {
+		if got := iniOrientation(mister.IniSettings{Found: tc.found, OSDRotate: tc.rotation}); got != tc.want {
+			t.Fatal(tc, got)
+		}
+	}
+}

@@ -207,6 +207,8 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 		Screensaver:          h.settings.Screensaver,
 		RememberSort:         h.settings.RememberSort,
 		FollowRotation:       h.settings.FollowRotation,
+		FilterRotation:       h.settings.FilterRotation,
+		IniOrientation:       iniOrientation(ini),
 		LastSort:             h.settings.LastSort,
 		FavoritesUnavailable: h.favLoadFailed,
 		Progress:             func() (int, int) { return h.img.Progress() },
@@ -291,6 +293,9 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	h.a.SetPrefetch(h.settings.Prefetch)
 	// Keep the user's filter choices alongside the startup sort preference.
 	h.a.SetFilters(h.state.Filters)
+	if h.settings.FilterRotation && iniOrientation(ini) == "" {
+		h.a.Notice("INI rotation unavailable; no auto-filter", 8*time.Second)
+	}
 	h.a.SetNet(h.netLabel(ds))
 	if ini.Found && !ini.AnalogVisible() && !hasState { // first run only: HDMI users need nothing
 		h.a.Notice("CRT only? add direct_video=1 under [Menu], see README", 20*time.Second)
@@ -670,6 +675,7 @@ func (h *host) saveAll(final bool) {
 		h.settings.Screensaver = h.a.Screensaver()
 		h.settings.RememberSort = h.a.RememberSort()
 		h.settings.FollowRotation = h.a.FollowRotation()
+		h.settings.FilterRotation = h.a.FilterRotation()
 		h.settings.LastSort = h.a.Sort()
 		if err := store.Save(filepath.Join(h.root, "settings.json"), h.settings); err != nil {
 			h.lg.Printf("settings: %v", err)

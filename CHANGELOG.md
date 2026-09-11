@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Optional strict INI rotation filter: show only known matching orientations,
+  excluding unknown and opposite orientations, including in Favorites. Defaults
+  off; turning it off restores manual filters. Independent of UI rotation.
+
 - Follow MiSTer.ini rotation at every startup by default, with an Options toggle.
   Manual session rotation remains available; turning following off retains it.
 - Y toggles isolation of the highlighted filter value within its section,

@@ -73,6 +73,22 @@ func TestFollowRotationMigration(t *testing.T) {
 	}
 }
 
+func TestFilterRotationDefaultAndSave(t *testing.T) {
+	p := writeSettings(t, `{"rotation":"left"}`)
+	s, err := LoadSettings(p)
+	if err != nil || s.FilterRotation {
+		t.Fatal("INI filter must default off")
+	}
+	s.FilterRotation = true
+	if err := Save(p, s); err != nil {
+		t.Fatal(err)
+	}
+	restored, err := LoadSettings(p)
+	if err != nil || !restored.FilterRotation {
+		t.Fatal("INI filter not saved")
+	}
+}
+
 func TestHoldDelayMigrationAndSave(t *testing.T) {
 	for _, tc := range []struct {
 		body string

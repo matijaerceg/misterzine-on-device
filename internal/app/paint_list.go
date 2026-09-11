@@ -66,14 +66,14 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 		return
 	}
 	count := itoa(len(a.ds.Rows)) + " releases"
-	if a.filters.Active() || a.mode == data.SortFavorites {
+	if a.filtersActive() || a.mode == data.SortFavorites {
 		count = itoa(len(a.view)) + " of " + itoa(len(a.ds.Rows)) + " releases"
 	}
 	c.Text(l.Status.Min.X+2, y, a.sm, left, gen.Eva.Accent)
 	x := l.Status.Min.X + 2 + a.sm.Width(left) + a.sm.W*2
 	if a.sm.Width(count) > l.Status.Max.X-2-x {
 		count = itoa(len(a.ds.Rows))
-		if a.filters.Active() || a.mode == data.SortFavorites {
+		if a.filtersActive() || a.mode == data.SortFavorites {
 			count = itoa(len(a.view)) + "/" + count
 		}
 	}
