@@ -142,7 +142,7 @@ item. R also jumps to the bottom.
   with your last sort choice; off starts new visits with latest updates. Changing
   this preference leaves the current sort order alone.
 - **Screensaver:** after 1 minute idle by default, dim the picture and scroll
-  full-height black MISTERZINE lettering across it. Left/Right chooses Off, 1, 2,
+  full-height black MISTERZINE lettering, with glinting chrome edges, across it. Left/Right chooses Off, 1, 2,
   5 or 10 minutes. A previews it immediately, even when Off. The first browsing
   button or typing key wakes without acting; release it before pressing again.
   MiSTer's Menu button still exits the app. The sweep covers the whole picture,

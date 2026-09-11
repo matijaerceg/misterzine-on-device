@@ -64,7 +64,7 @@ The app checks for new catalogue data on launch and every 30 minutes. Cached
 data and pictures remain available without a connection.
 
 After one minute idle, a screensaver dims the picture and sweeps full-height
-black **MISTERZINE** lettering across it. Change the delay or turn it off in
+black **MISTERZINE** lettering, with glinting chrome edges, across it. Change the delay or turn it off in
 Options; press A on that setting to preview it.
 
 ## Remove
