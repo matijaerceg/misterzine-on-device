@@ -33,15 +33,22 @@ Each row has a favorite marker, title, on-card status, and date:
 | Mark | Meaning |
 |---|---|
 | + | Current build on the card |
-| ^ | Older build on the card |
+| ^ | Older build on the card, or an undated core that differs from the shipped build |
 | ~ | On the card, build date unknown |
 | - | Not found on the card |
 
-“On card, date unknown” means the scan found the files but cannot compare their
-build date with the catalogue. Some core filenames carry no date; sometimes the
-catalogue lacks a comparison date or core mapping. It does not mean the build is
-old. File modification times are not used as build dates, since copying or
-installing a file can change them.
+The scan compares each core file on the card with the build the catalogue
+ships. Dated core filenames are compared by build date. Undated cores (Jotego's,
+for example) are compared by file checksum against the shipped build, using the
+same record Update All keeps, so “older build likely” means Update All would
+replace the file. A core installed after the catalogue was generated is treated
+as current.
+
+“On card, date unknown” means the scan found the files but cannot compare them
+with the catalogue: the filename carries no date and the catalogue has no
+checksum or core mapping for the row. It does not mean the build is old. File
+modification times are not used as build dates, since copying or installing a
+file can change them.
 
 Dates highlighted in green and the last-look divider help find changes since
 your previous visit. Visits start at the top of your last selected sort order.

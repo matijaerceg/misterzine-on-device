@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 )
@@ -77,6 +78,102 @@ func TestScanCoresAndStatus(t *testing.T) {
 		if got := Status(card, idx, &c.row); got != c.want {
 			t.Errorf("case %d: status %v, want %v", i, got, c.want)
 		}
+	}
+}
+
+// md5 of the one-byte "x" every fake rbf holds.
+const xMD5 = "9dd4e461268c8034f5c8564e155c67a6"
+
+func TestStatusShippedBuild(t *testing.T) {
+	card := fakeCard(t)
+	mk := func(rel string, content string) {
+		p := filepath.Join(card, filepath.FromSlash(rel))
+		os.MkdirAll(filepath.Dir(p), 0755)
+		os.WriteFile(p, []byte(content), 0644)
+	}
+	mk("_Arcade/cores/BoogieWings_20260708.rbf", "x")
+	mk("_Arcade/Boogie Wings.mra", "<misterromdescription/>")
+	boogie := func(bd string) data.Row {
+		return data.Row{Base: "Arcade", MRA: "_Arcade/Boogie Wings.mra", Core: "BoogieWings", Updated: "2026-08-08", BD: bd}
+	}
+	jt := func(bh string) data.Row {
+		return data.Row{Base: "Arcade", MRA: "_Arcade/1942 (Revision B).mra", Core: "jt1942", Updated: "2026-08-21", BH: bh}
+	}
+	cases := []struct {
+		name string
+		row  data.Row
+		want data.Status
+	}{
+		{"mra-only fix: bd decides, not updated", boogie("2026-07-08"), data.StatusCurrent},
+		{"old feed without bd falls back to updated", boogie(""), data.StatusOutdated},
+		{"genuinely newer shipped build", boogie("2026-09-01"), data.StatusOutdated},
+		{"undated rbf, md5 matches", jt(xMD5), data.StatusCurrent},
+		{"undated rbf, md5 differs", jt("0123456789abcdef0123456789abcdef"), data.StatusLikelyOutdated},
+		{"undated rbf, feed has no md5", jt(""), data.StatusFoundUndated},
+		{"dated rbf, md5 differs: dates decide", data.Row{Base: "Console", Core: "SNES", Updated: "2026-06-11", BH: "ffff"}, data.StatusCurrent},
+		{"dated rbf, md5 matches despite later updated", data.Row{Base: "Console", Core: "SNES", Updated: "2026-09-01", BH: xMD5}, data.StatusCurrent},
+	}
+	idx := ScanCores(card)
+	for _, c := range cases {
+		if got := Status(card, idx, &c.row); got != c.want {
+			t.Errorf("%s: status %v, want %v", c.name, got, c.want)
+		}
+	}
+
+	// A file installed after the feed was generated cannot be behind it.
+	idx = ScanCores(card)
+	idx.FeedAt = time.Now().Add(-time.Hour)
+	if got := Status(card, idx, &[]data.Row{jt("0123456789abcdef0123456789abcdef")}[0]); got != data.StatusCurrent {
+		t.Errorf("newer than feed: status %v, want current", got)
+	}
+	idx = ScanCores(card)
+	idx.FeedAt = time.Now().Add(time.Hour)
+	if got := Status(card, idx, &[]data.Row{jt("0123456789abcdef0123456789abcdef")}[0]); got != data.StatusLikelyOutdated {
+		t.Errorf("older than feed: status %v, want likely outdated", got)
+	}
+}
+
+func TestStatusDownloaderStore(t *testing.T) {
+	card := fakeCard(t)
+	mk := func(rel string, content string) {
+		p := filepath.Join(card, filepath.FromSlash(rel))
+		os.MkdirAll(filepath.Dir(p), 0755)
+		os.WriteFile(p, []byte(content), 0644)
+	}
+	// the ledger's md5 is trusted when the size still matches (no hashing),
+	// ignored when it does not (hand-copied file under the same name)
+	mk(storePath, `{"dbs":{"jtcores":{"files":{"_Arcade/cores/jt1942.rbf":{"hash":"ledger","size":1},
+		"|_Console/SNES_20260611_22baeda_DB9.rbf":{"hash":"stale","size":999}}}}}`)
+	jt := data.Row{Base: "Arcade", MRA: "_Arcade/1942 (Revision B).mra", Core: "jt1942", BH: "ledger"}
+	idx := ScanCores(card)
+	if got := Status(card, idx, &jt); got != data.StatusCurrent {
+		t.Errorf("ledger match: status %v, want current", got)
+	}
+	snes := data.Row{Base: "Console", Core: "SNES", Updated: "2026-09-01", BH: xMD5}
+	if got := Status(card, idx, &snes); got != data.StatusCurrent {
+		t.Errorf("ledger size mismatch falls back to hashing: status %v, want current", got)
+	}
+
+	// own computations persist, keyed by size and mtime
+	cache := filepath.Join(card, "cache", "hashes.json")
+	idx = ScanCores(card)
+	idx.HashCache = cache
+	Statuses(card, idx, []data.Row{snes})
+	raw, err := os.ReadFile(cache)
+	if err != nil || !strings.Contains(string(raw), xMD5) {
+		t.Fatalf("hash cache = %q, %v", raw, err)
+	}
+	mk("_Console/SNES_20260611_22baeda_DB9.rbf", "yy") // changed on disk: cache entry must not be reused
+	idx = ScanCores(card)
+	idx.HashCache = cache
+	if got := Status(card, idx, &snes); got != data.StatusOutdated {
+		t.Errorf("dated rbf after change: status %v, want outdated (md5 differs, dates decide)", got)
+	}
+	jtCache := data.Row{Base: "Arcade", MRA: "_Arcade/1942 (Revision B).mra", Core: "jt1942", BH: xMD5}
+	mk(storePath, `{}`)
+	idx = ScanCores(card)
+	if got := Status(card, idx, &jtCache); got != data.StatusCurrent {
+		t.Errorf("no ledger, hashed: status %v, want current", got)
 	}
 }
 

@@ -52,7 +52,7 @@ func (a *App) paintScan(c *gfx.Canvas) {
 	if a.scanReady {
 		counts := a.cardCounts()
 		lines = []string{"Card scan complete", "", "Up to date: " + itoa(counts[data.StatusCurrent]),
-			"Older installed: " + itoa(counts[data.StatusOutdated]),
+			"Older installed: " + itoa(counts[data.StatusOutdated]+counts[data.StatusLikelyOutdated]),
 			"Build date unknown: " + itoa(counts[data.StatusFoundUndated]),
 			"Not found on card: " + itoa(counts[data.StatusNotFound]),
 			"Status unknown: " + itoa(counts[data.StatusUnknown]),

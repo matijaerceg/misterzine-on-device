@@ -873,16 +873,18 @@ type scanResult struct {
 
 // scan reads the card off the UI goroutine: cores and MRA stats first (fast),
 // alternatives after (slow the first time).
-func (h *host) scan(rows []data.Row, hash string) {
+func (h *host) scan(rows []data.Row, hash string, feedAt time.Time) {
 	t0 := time.Now()
 	idx := scan.ScanCores(h.card)
+	idx.FeedAt = feedAt
+	idx.HashCache = filepath.Join(h.root, "cache", "hashes.json")
 	st := scan.Statuses(h.card, idx, rows)
 	counts := map[data.Status]int{}
 	for _, s := range st {
 		counts[s]++
 	}
-	h.lg.Printf("scan: %d cores; current %d, outdated %d, undated %d, not found %d (%v)", len(idx.Cores),
-		counts[data.StatusCurrent], counts[data.StatusOutdated], counts[data.StatusFoundUndated], counts[data.StatusNotFound], time.Since(t0).Round(time.Millisecond))
+	h.lg.Printf("scan: %d cores; current %d, outdated %d, likely outdated %d, undated %d, not found %d (%v)", len(idx.Cores),
+		counts[data.StatusCurrent], counts[data.StatusOutdated], counts[data.StatusLikelyOutdated], counts[data.StatusFoundUndated], counts[data.StatusNotFound], time.Since(t0).Round(time.Millisecond))
 	if idx.Err != nil {
 		h.lg.Printf("scan failed: %v", idx.Err)
 		h.sendScan(scanResult{hash: hash, notice: "Card scan failed", final: true})

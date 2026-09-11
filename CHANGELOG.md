@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Card status compares against the shipped core build itself (the catalogue's
+  new build date and checksum fields) instead of the catalogue's last-updated
+  date, so an MRA-only fix or a date rollover no longer shows a current core
+  as an older build.
+- Undated cores such as Jotego's are matched by checksum, using the Update All
+  record on the card. A match shows as current; a mismatch shows as “older
+  build likely” and counts with older builds in the card summary and filters.
+
 ## v1.0.8 — 2026-09-11
 
 - Filter arcade games by original release year or decade. Expand decades into

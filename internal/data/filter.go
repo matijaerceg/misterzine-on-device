@@ -9,11 +9,21 @@ const (
 	StatusOutdated                   // on the card but older than the row's shipped date
 	StatusFoundUndated               // on the card, build date unknown (undated rbf)
 	StatusNotFound                   // not found on the card
+	// StatusLikelyOutdated is an undated rbf whose md5 differs from the
+	// shipped build's: the same evidence update_all acts on, so "older" is
+	// the working assumption even though the direction is unprovable.
+	// Appended after StatusNotFound so the harness's status cycle is stable.
+	StatusLikelyOutdated
 )
 
 // Found reports whether the status counts as "on the card".
 func (s Status) Found() bool {
-	return s == StatusCurrent || s == StatusOutdated || s == StatusFoundUndated
+	return s == StatusCurrent || s == StatusOutdated || s == StatusFoundUndated || s == StatusLikelyOutdated
+}
+
+// Older reports whether the status means the card is behind the shipped build.
+func (s Status) Older() bool {
+	return s == StatusOutdated || s == StatusLikelyOutdated
 }
 
 // Install filter values.
@@ -77,7 +87,7 @@ func (f *Filters) Pass(r *Row, d *Derived, st Status, fav, unseen bool) bool {
 			return false
 		}
 	case InstallOlder:
-		if st != StatusOutdated {
+		if !st.Older() {
 			return false
 		}
 	case InstallUndated:

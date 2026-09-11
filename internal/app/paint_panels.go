@@ -189,8 +189,8 @@ func (a *App) rawFilterEntries() []panelEntry {
 	counts := a.cardCounts()
 	installCounts := map[string]int{
 		data.InstallAll:     len(a.ds.Rows),
-		data.InstallFound:   counts[data.StatusCurrent] + counts[data.StatusOutdated] + counts[data.StatusFoundUndated],
-		data.InstallCurrent: counts[data.StatusCurrent], data.InstallOlder: counts[data.StatusOutdated],
+		data.InstallFound:   counts[data.StatusCurrent] + counts[data.StatusOutdated] + counts[data.StatusLikelyOutdated] + counts[data.StatusFoundUndated],
+		data.InstallCurrent: counts[data.StatusCurrent], data.InstallOlder: counts[data.StatusOutdated] + counts[data.StatusLikelyOutdated],
 		data.InstallUndated: counts[data.StatusFoundUndated], data.InstallMissing: counts[data.StatusNotFound],
 	}
 	for _, v := range []struct{ val, text string }{{data.InstallAll, "everything"}, {data.InstallFound, "found on card"}, {data.InstallCurrent, "up to date"}, {data.InstallOlder, "older installed"}, {data.InstallUndated, "date unknown"}, {data.InstallMissing, "not found on card"}} {

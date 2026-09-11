@@ -41,6 +41,14 @@ type Index struct {
 	Cores map[string]Core
 	At    time.Time
 	Err   error // unreadable card/core folders; absent optional folders are fine
+	// FeedAt is when the feed was generated. An undated rbf installed after
+	// that cannot be behind the feed's hash, so a mismatch reads as current
+	// rather than older. Zero disables the guard.
+	FeedAt time.Time
+	// HashCache persists the md5s the app computes itself; "" keeps them in
+	// memory only.
+	HashCache string
+	hashes    hashes
 }
 
 // ScanCores lists the core folders. Missing folders are fine (an arcade-only
@@ -113,8 +121,10 @@ func (idx *Index) Lookup(core string) (Core, bool) {
 }
 
 // Status decides a row's card status. Arcade rows need their MRA on the
-// card and their core in the index; others just the core. The shipped date
-// in the row (updated, ISO) is compared with the rbf date.
+// card and their core in the index; others just the core. The shipped
+// build's md5 (bh) decides when the card's file can be hashed; otherwise the
+// shipped rbf's build date (bd, falling back to updated) is compared with
+// the rbf filename date.
 func Status(card string, idx *Index, r *data.Row) data.Status {
 	if r.IsArcade() {
 		if r.MRA == "" {
@@ -134,10 +144,32 @@ func Status(card string, idx *Index, r *data.Row) data.Status {
 	if !ok {
 		return data.StatusNotFound
 	}
+	// An md5 match is current whatever the dates say. A mismatch on an
+	// undated rbf is the evidence update_all itself acts on, so it reads as
+	// likely older; a dated rbf still gets its answer from the dates.
+	if r.BH != "" {
+		if h, mtime := idx.hashes.of(card, c.Path, idx.HashCache); h != "" {
+			if h == r.BH {
+				return data.StatusCurrent
+			}
+			if c.Date == "" {
+				if !idx.FeedAt.IsZero() && mtime.After(idx.FeedAt) {
+					return data.StatusCurrent // installed after the feed was built: newer, not older
+				}
+				return data.StatusLikelyOutdated
+			}
+		}
+	}
 	if c.Date == "" {
 		return data.StatusFoundUndated
 	}
-	shipped := strings.ReplaceAll(r.Updated, "-", "")
+	// bd is the shipped rbf's own date; updated (the fallback for feeds
+	// without bd) also moves on MRA-only fixes and debut-commit rollovers,
+	// which read as "older build" when nothing newer ships.
+	shipped := strings.ReplaceAll(r.BD, "-", "")
+	if len(shipped) != 8 {
+		shipped = strings.ReplaceAll(r.Updated, "-", "")
+	}
 	if len(shipped) != 8 {
 		return data.StatusFoundUndated
 	}
@@ -147,12 +179,14 @@ func Status(card string, idx *Index, r *data.Row) data.Status {
 	return data.StatusOutdated
 }
 
-// Statuses computes every row's status.
+// Statuses computes every row's status and persists any md5s it had to
+// compute itself.
 func Statuses(card string, idx *Index, rows []data.Row) []data.Status {
 	out := make([]data.Status, len(rows))
 	for i := range rows {
 		out[i] = Status(card, idx, &rows[i])
 	}
+	idx.hashes.save()
 	return out
 }
 

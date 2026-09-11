@@ -42,7 +42,7 @@ func (h *host) requestScan() {
 	h.scanPending = false
 	h.scanRunning = true
 	ds := h.a.Data()
-	go h.scan(ds.Rows, ds.Hash)
+	go h.scan(ds.Rows, ds.Hash, ds.Updated)
 }
 
 func (h *host) receiveScan(r scanResult) {

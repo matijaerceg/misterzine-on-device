@@ -891,7 +891,7 @@ func statusGlyph(st data.Status) (string, rgb) {
 	switch st {
 	case data.StatusCurrent:
 		return "+", gen.Eva.Ok
-	case data.StatusOutdated:
+	case data.StatusOutdated, data.StatusLikelyOutdated:
 		return "^", gen.Eva.Warn
 	case data.StatusFoundUndated:
 		return "~", gen.Eva.Muted
@@ -911,6 +911,8 @@ func statusText(st data.Status, cardDate string) string {
 			return "older: " + cardDate
 		}
 		return "older build"
+	case data.StatusLikelyOutdated:
+		return "older build likely"
 	case data.StatusFoundUndated:
 		return "on card, date unknown"
 	case data.StatusNotFound:
