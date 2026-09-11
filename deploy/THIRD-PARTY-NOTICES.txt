@@ -7,6 +7,9 @@ Application code: MIT; see LICENSE.
 Spleen bitmap fonts by Frederic Cambus: BSD-2-Clause; see SPLEEN-LICENSE.
 https://www.cambus.net/spleen-monospaced-bitmap-fonts/
 
+scientifica bitmap font by Akshay Oppiliappan: SIL Open Font License 1.1;
+see SCIENTIFICA-LICENSE. https://github.com/oppiliappan/scientifica
+
 The embedded release catalogue comes from MiSTerZine by Matija Erceg,
 licensed under Creative Commons Attribution 4.0 International.
 https://misterzine.fyi

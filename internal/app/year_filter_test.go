@@ -102,8 +102,15 @@ func TestYearDecadeFilteringAndPersistence(t *testing.T) {
 	}
 	choose("year", "", true)
 	a.actPanel(platform.KeyEnter)
-	if len(a.view) != 1 || a.CursorKey() != "s" {
-		t.Fatal("header must hide arcade years only")
+	if len(a.view) != 5 || !a.panel.sectionClosed["year"] {
+		t.Fatal("A on the year heading must close it without filtering")
+	}
+	if e := a.panel.entries[a.panel.cursor]; e.kind != "year" || !e.header {
+		t.Fatal("cursor must stay on the closed heading")
+	}
+	a.actPanel(platform.KeyEnter)
+	if a.panel.sectionClosed["year"] {
+		t.Fatal("A on the closed heading must reopen it")
 	}
 	choose("year", "", false)
 	a.actPanel(platform.KeySpace)

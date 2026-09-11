@@ -88,10 +88,12 @@ reinstall. Removal requires a current Downloader with uninstall support.
 Thanks to the MiSTer community and core developers, the
 [Downloader](https://github.com/MiSTer-devel/Downloader_MiSTer) and
 [Update All](https://github.com/theypsilon/Update_All_MiSTer) maintainers,
-and [Frederic Cambus](https://www.cambus.net/spleen-monospaced-bitmap-fonts/)
-for the Spleen bitmap fonts.
+[Frederic Cambus](https://www.cambus.net/spleen-monospaced-bitmap-fonts/)
+for the Spleen bitmap fonts, and [Akshay Oppiliappan](https://github.com/oppiliappan/scientifica)
+for scientifica, the narrow title font.
 
-Code: [MIT](LICENSE). Fonts: [BSD-2-Clause](internal/fonts/SPLEEN-LICENSE).
+Code: [MIT](LICENSE). Fonts: Spleen [BSD-2-Clause](internal/fonts/SPLEEN-LICENSE),
+scientifica [SIL OFL 1.1](internal/fonts/SCIENTIFICA-LICENSE).
 Catalogue: MiSTerZine by Matija Erceg, CC BY 4.0.
 Screenshots and hardware photos retain their owners' rights; see the
 [website's image credits](https://github.com/matijaerceg/misterzine#the-image-pipeline-tools).

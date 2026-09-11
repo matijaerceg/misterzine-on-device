@@ -84,15 +84,23 @@ type Config struct {
 	FollowRotation bool
 	FilterRotation bool // strict filter on the current orientation
 	LastSort       data.SortMode
+	// NarrowTitles draws list titles in the narrow proportional font.
+	NarrowTitles bool
+	// ListShot is the pane thumbnail preference: "gameplay" (default) or "title".
+	ListShot string
+	// DateFormat is the list date column: "mm-dd" (default), "dd-mm",
+	// "mon-d", "d-mon" or "yymmdd".
+	DateFormat string
 }
 
 // App is the state machine.
 type App struct {
-	cfg  Config
-	body *gfx.Font
-	sm   *gfx.Font
-	lay  Layout
-	rot  gfx.Rotation
+	cfg    Config
+	body   *gfx.Font
+	sm     *gfx.Font
+	narrow *gfx.Font // list titles, proportionally spaced
+	lay    Layout
+	rot    gfx.Rotation
 
 	logical  *gfx.Canvas // what views paint into
 	physical *image.RGBA // rotated frame handed to the display
@@ -129,6 +137,7 @@ type App struct {
 	scanError string
 	all       bool // full repaint pending
 	saver     screensaver
+	marquee   marqueeState
 }
 
 type detailState struct {
@@ -153,7 +162,7 @@ func New(cfg Config, ds *data.Dataset, stored *data.SeenRecord) *App {
 	if cfg.Favorites == nil {
 		cfg.Favorites = map[string]bool{}
 	}
-	a := &App{cfg: cfg, body: fonts.Body(), sm: fonts.Small(), rot: cfg.Rotation, split: -1, down: map[platform.Key]bool{}}
+	a := &App{cfg: cfg, body: fonts.Body(), sm: fonts.Small(), narrow: fonts.Narrow(), rot: cfg.Rotation, split: -1, down: map[platform.Key]bool{}}
 	if cfg.RememberSort && cfg.LastSort >= data.SortUpdated && cfg.LastSort <= data.SortFavorites {
 		a.mode = cfg.LastSort
 	}
@@ -172,7 +181,7 @@ func (a *App) setRotation(rot gfx.Rotation) {
 		w, h = h, w
 	}
 	a.logical = gfx.New(w, h)
-	a.lay = NewLayout(w, h, a.cfg.SafeInsetX, a.cfg.SafeInsetY, a.body)
+	a.lay = NewLayout(w, h, a.cfg.SafeInsetX, a.cfg.SafeInsetY, a.body, a.dateCols())
 	if a.ds != nil {
 		if orientationChanged && a.cfg.FilterRotation {
 			a.Refilter() // the strict filter follows the current orientation
@@ -329,6 +338,25 @@ func (a *App) Sort() data.SortMode { return a.mode }
 func (a *App) RememberSort() bool   { return a.cfg.RememberSort }
 func (a *App) FollowRotation() bool { return a.cfg.FollowRotation }
 func (a *App) FilterRotation() bool { return a.cfg.FilterRotation }
+func (a *App) NarrowTitles() bool   { return a.cfg.NarrowTitles }
+
+// ListShot is the pane thumbnail preference, "gameplay" or "title".
+func (a *App) ListShot() string {
+	if a.cfg.ListShot == "title" {
+		return "title"
+	}
+	return "gameplay"
+}
+
+// DateFormat is the list date column format, one of dateFormats.
+func (a *App) DateFormat() string {
+	for _, f := range dateFormats {
+		if f == a.cfg.DateFormat {
+			return f
+		}
+	}
+	return dateFormats[0]
+}
 
 // Filters exposes the filters (copy).
 func (a *App) Filters() data.Filters { return a.filters }
@@ -549,6 +577,7 @@ func (a *App) Tick(now time.Time) bool {
 			changed = true
 		}
 	}
+	changed = a.tickMarquee(now) || changed
 	return a.tickSaver(now) || changed
 }
 
@@ -580,6 +609,9 @@ func (a *App) NextTick() time.Time {
 		t = a.until
 	}
 	if next := a.nextSaverTick(); !next.IsZero() && (t.IsZero() || next.Before(t)) {
+		t = next
+	}
+	if next := a.nextMarqueeTick(); !next.IsZero() && (t.IsZero() || next.Before(t)) {
 		t = next
 	}
 	return t
@@ -800,7 +832,7 @@ func (a *App) neighbourhood() {
 				continue
 			}
 			row := &a.ds.Rows[a.view[pos]]
-			key, slot := thumbSlot(row)
+			key, slot := thumbSlot(row, a.ListShot())
 			if key != "" {
 				a.want(ImageReq{Key: key, Slot: slot, W: box.Dx(), H: box.Dy(), Stretch: slot != "system" && row.ImgW > row.ImgH})
 			}
@@ -816,6 +848,9 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 	}
 	a.all = false
 	a.wants = a.wants[:0]
+	if a.screen != ScreenDetails {
+		a.marquee = marqueeState{} // a return to Details starts its scroll afresh
+	}
 	c := a.logical
 	c.Fill(c.Rect, gen.Eva.Bg)
 	switch a.screen {
@@ -854,18 +889,71 @@ func (a *App) Logical() *image.RGBA { return a.logical.RGBA }
 
 // helpers shared by the views
 
+// dateFormats are the list date column choices, in Options order.
+var dateFormats = []string{"mm-dd", "dd-mm", "mon-d", "d-mon", "yymmdd"}
+
+// dateFormatLabels name them in Options.
+var dateFormatLabels = []string{"MM-DD", "DD-MM", "Mon D", "D Mon", "YYMMDD"}
+
+// dateCols is the width of the list date column for the chosen format.
+func (a *App) dateCols() int {
+	switch a.DateFormat() {
+	case "mm-dd", "dd-mm":
+		return 5
+	}
+	return 6
+}
+
+// listYear is the year list dates are shown within: the catalogue's, or
+// the clock's before any catalogue has loaded.
+func (a *App) listYear() int {
+	if a.ds != nil && !a.ds.Updated.IsZero() {
+		return a.ds.Updated.Year()
+	}
+	return a.cfg.Now().Year()
+}
+
+// dateCol formats an ISO date for the list column, right-aligned in
+// dateCols cells: the day within the list year, the year alone otherwise.
 func (a *App) dateCol(iso string) string {
+	cols := a.dateCols()
+	s := formatListDate(a.DateFormat(), iso, a.listYear())
+	for len(s) < cols {
+		s = " " + s
+	}
+	return s
+}
+
+var monthShort = [...]string{"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"}
+
+// formatListDate renders "YYYY-MM-DD" in a list date format: YYMMDD always
+// carries the full date; the others show the day only within year and the
+// year alone for earlier ones. Anything unparsable is blank.
+func formatListDate(format, iso string, year int) string {
 	if len(iso) < 10 {
-		return "     "
+		return ""
 	}
-	year := a.cfg.Now().Year()
-	if !a.ds.Updated.IsZero() {
-		year = a.ds.Updated.Year()
+	yy, mm, dd := iso[2:4], iso[5:7], iso[8:10]
+	if format == "yymmdd" {
+		return yy + mm + dd
 	}
-	if iso[:4] == itoa(year) {
-		return iso[5:10]
+	if iso[:4] != itoa(year) {
+		return iso[:4]
 	}
-	return " " + iso[:4]
+	day := strings.TrimLeft(dd, "0")
+	mon := "???"
+	if m := (int(mm[0])-'0')*10 + int(mm[1]) - '0'; m >= 1 && m <= 12 {
+		mon = monthShort[m-1]
+	}
+	switch format {
+	case "dd-mm":
+		return dd + "-" + mm
+	case "mon-d":
+		return mon + " " + day
+	case "d-mon":
+		return day + " " + mon
+	}
+	return mm + "-" + dd
 }
 
 func itoa(n int) string {

@@ -105,10 +105,14 @@ func (a *App) hintLine(c *gfx.Canvas, x, y, w int, s string) {
 			button, tail, _ := strings.Cut(rest, " ")
 			btn, rest = btn+" "+button, tail
 		}
-		if isArrow(btn) { // a pair of arrows is one button
-			if b2, r2, ok := strings.Cut(rest, " "); ok && isArrow(b2) {
-				btn, rest = btn+" "+b2, r2
+		// arrows right after the button belong to it: a pair of arrows is
+		// one button, and "A < > open/close" names two controls for one action
+		for {
+			b2, r2, ok := strings.Cut(rest, " ")
+			if !ok || !isArrow(b2) || !(isArrow(btn[len(btn)-1:]) || btn == "A") {
+				break
 			}
+			btn, rest = btn+" "+b2, r2
 		}
 		if x+a.sm.Width(btn+" "+rest) > maxX {
 			break
@@ -230,7 +234,7 @@ func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {
 	} else if st == data.StatusNotFound {
 		titleCol = gen.Eva.Muted
 	}
-	c.Text(x, y, a.body, gfx.Fit(d.Title, l.TitleCol), titleCol)
+	a.paintTitle(c, x, y, l.TitleCol*fw, d.Title, row.Beta, titleCol)
 	x += fw * (l.TitleCol + 1)
 	// status glyph
 	g, gc := statusGlyph(st)
@@ -247,6 +251,32 @@ func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {
 		dateCol = gen.Eva.Accent
 	}
 	c.Text(x, y, a.body, a.dateCol(date), dateCol)
+}
+
+// paintTitle draws a list title into w pixels, in the narrow font when
+// chosen, with a beta sign after a Patreon beta core's name.
+func (a *App) paintTitle(c *gfx.Canvas, x, y, w int, title string, beta bool, col rgb) {
+	if a.cfg.NarrowTitles {
+		f := a.narrow
+		y-- // scientifica's baseline is one pixel lower than the body font's
+		if beta {
+			w -= f.Advance(' ') + f.Advance(gfx.Beta[0])
+		}
+		tw := c.TextProp(x, y, f, gfx.FitProp(f, title, w), col)
+		if beta {
+			c.TextProp(x+tw+f.Advance(' '), y, f, gfx.Beta, gen.Eva.Warn)
+		}
+		return
+	}
+	cols := a.body.Cols(w)
+	if beta {
+		cols -= 2
+	}
+	s := gfx.Fit(title, cols)
+	c.Text(x, y, a.body, s, col)
+	if beta {
+		c.Text(x+a.body.Width(s)+a.body.W, y, a.body, gfx.Beta, gen.Eva.Warn)
+	}
 }
 
 // paintPane draws the highlighted row's thumbnail and specs.
@@ -298,7 +328,7 @@ func (a *App) paintPane(c *gfx.Canvas) {
 	if ch := chips(row, d); len(ch) > 0 {
 		col := gen.Eva.Muted
 		for _, x := range ch {
-			if strings.HasPrefix(x, "boots") {
+			if x == "beta" || strings.HasPrefix(x, "boots") {
 				col = gen.Eva.Warn
 			}
 		}
@@ -327,7 +357,7 @@ func (a *App) paintPaneText(c *gfx.Canvas, r image.Rectangle, lines []paneLine) 
 
 // paintThumb draws a row's list thumbnail or a placeholder into box.
 func (a *App) paintThumb(c *gfx.Canvas, box image.Rectangle, row *data.Row) {
-	key, slot := thumbSlot(row)
+	key, slot := thumbSlot(row, a.ListShot())
 	if key == "" {
 		a.placeholder(c, box, "no shot")
 		return

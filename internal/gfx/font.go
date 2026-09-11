@@ -19,6 +19,10 @@ type Font struct {
 	descent int
 	glyphs  [128][]byte // rows, top to bottom, MSB = leftmost pixel
 	has     [128]bool
+	// proportional metrics: the first ink column and the advance (ink width
+	// plus a one-pixel gap; half a cell for a blank glyph)
+	lb  [128]uint8
+	adv [128]uint8
 }
 
 // ParseBDF reads a BDF font with cells up to 8 px wide.
@@ -87,7 +91,106 @@ func ParseBDF(data []byte) (*Font, error) {
 	if !f.has['?'] {
 		return nil, fmt.Errorf("bdf: font has no '?' glyph")
 	}
+	for ch := 0; ch < 128; ch++ {
+		f.measure(byte(ch))
+	}
 	return f, nil
+}
+
+// measure records the proportional metrics of one glyph.
+func (f *Font) measure(ch byte) {
+	first, last := f.W, -1
+	for _, r := range f.glyphs[ch] {
+		if r == 0 {
+			continue
+		}
+		for gx := 0; gx < f.W; gx++ {
+			if r&(0x80>>uint(gx)) != 0 {
+				first = min(first, gx)
+				last = max(last, gx)
+			}
+		}
+	}
+	if last < 0 {
+		f.lb[ch], f.adv[ch] = 0, uint8(max(1, (f.W+1)/2))
+		return
+	}
+	f.lb[ch], f.adv[ch] = uint8(first), uint8(last-first+2)
+}
+
+// Advance is the proportional width of a character: its ink plus a
+// one-pixel gap, half a cell when blank.
+func (f *Font) Advance(ch byte) int {
+	if ch >= 128 || !f.has[ch] {
+		ch = '?'
+	}
+	return int(f.adv[ch])
+}
+
+// PropWidth is the pixel width of s drawn proportionally.
+func (f *Font) PropWidth(s string) int {
+	w := 0
+	for i := 0; i < len(s); i++ {
+		w += f.Advance(s[i])
+	}
+	return w
+}
+
+// FitProp trims s to at most maxW pixels drawn proportionally, ending in
+// the ellipsis when it had to cut.
+func FitProp(f *Font, s string, maxW int) string {
+	if maxW <= 0 {
+		return ""
+	}
+	if f.PropWidth(s) <= maxW {
+		return s
+	}
+	room := maxW - f.Advance(Ellipsis[0])
+	w := 0
+	for i := 0; i < len(s); i++ {
+		if w+f.Advance(s[i]) > room {
+			return s[:i] + Ellipsis
+		}
+		w += f.Advance(s[i])
+	}
+	return s
+}
+
+// TextProp draws s proportionally spaced: each glyph's ink starts at the
+// pen, followed by a one-pixel gap. Returns the width drawn.
+func (c *Canvas) TextProp(x, y int, f *Font, s string, col color.RGBA) int {
+	cx := x
+	for i := 0; i < len(s); i++ {
+		ch := s[i]
+		if ch >= 128 || !f.has[ch] {
+			ch = '?'
+		}
+		c.glyphAt(cx-int(f.lb[ch]), y, f, f.Glyph(ch), col, c.Rect)
+		cx += int(f.adv[ch])
+	}
+	c.Dirty(image.Rect(x, y, cx, y+f.H))
+	return cx - x
+}
+
+// TextClip draws s with its top-left at (x, y), showing only what falls
+// inside clip (a marquee's window).
+func (c *Canvas) TextClip(x, y int, f *Font, s string, col color.RGBA, clip image.Rectangle) {
+	clip = clip.Intersect(c.Rect)
+	if clip.Empty() {
+		return
+	}
+	cx := x
+	for i := 0; i < len(s); i++ {
+		ch := s[i]
+		if ch >= 128 {
+			ch = '?'
+		}
+		if cx+f.W > clip.Min.X && cx < clip.Max.X {
+			c.glyphAt(cx, y, f, f.Glyph(ch), col, clip)
+		}
+		cx += f.W
+	}
+	c.Dirty(image.Rect(x, y, cx, y+f.H).Intersect(clip))
 }
 
 // placeGlyph puts a glyph's bitmap rows into the font cell using its BBX
@@ -129,6 +232,7 @@ const (
 	ArrowLeft  = "\x13"
 	ArrowRight = "\x14"
 	Ellipsis   = "\x15" // three dots in one cell
+	Beta       = "\x16" // a beta sign for Patreon beta cores
 )
 
 // SetGlyph installs a glyph (rows top to bottom, MSB = leftmost pixel).
@@ -136,6 +240,7 @@ func (f *Font) SetGlyph(ch byte, rows []byte) {
 	if ch < 128 {
 		f.glyphs[ch] = rows
 		f.has[ch] = true
+		f.measure(ch)
 	}
 }
 
@@ -172,6 +277,14 @@ func (f *Font) AddArrows() {
 	top := (f.H-3)/2 + 1
 	plus[top], plus[top+1], plus[top+2] = 0x20, 0x70, 0x20
 	f.SetGlyph('+', plus)
+	// a beta sign: two loops on a stem that reaches below the baseline
+	beta := make([]byte, f.H)
+	if f.H >= 12 {
+		copy(beta[1:], []byte{0x70, 0x88, 0x88, 0xB0, 0x88, 0x88, 0x88, 0xB0, 0x80, 0x80})
+	} else {
+		copy(beta[max(0, f.H-8):], []byte{0x60, 0x90, 0xA0, 0x90, 0x90, 0xA0, 0x80, 0x80})
+	}
+	f.SetGlyph(Beta[0], beta)
 }
 
 // Cols is how many cells fit in w pixels.
@@ -189,17 +302,17 @@ func (c *Canvas) Text(x, y int, f *Font, s string, col color.RGBA) int {
 		if ch >= 128 {
 			ch = '?'
 		}
-		c.glyph(cx, y, f, f.Glyph(ch), col)
+		c.glyphAt(cx, y, f, f.Glyph(ch), col, c.Rect)
 		cx += f.W
 	}
 	c.Dirty(image.Rect(x, y, cx, y+f.H))
 	return cx - x
 }
 
-func (c *Canvas) glyph(x, y int, f *Font, rows []byte, col color.RGBA) {
+func (c *Canvas) glyphAt(x, y int, f *Font, rows []byte, col color.RGBA, clip image.Rectangle) {
 	for gy, r := range rows {
 		py := y + gy
-		if py < c.Rect.Min.Y || py >= c.Rect.Max.Y || r == 0 {
+		if py < clip.Min.Y || py >= clip.Max.Y || r == 0 {
 			continue
 		}
 		for gx := 0; gx < f.W; gx++ {
@@ -207,7 +320,7 @@ func (c *Canvas) glyph(x, y int, f *Font, rows []byte, col color.RGBA) {
 				continue
 			}
 			px := x + gx
-			if px < c.Rect.Min.X || px >= c.Rect.Max.X {
+			if px < clip.Min.X || px >= clip.Max.X {
 				continue
 			}
 			o := c.PixOffset(px, py)

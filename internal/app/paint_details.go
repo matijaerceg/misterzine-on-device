@@ -12,6 +12,67 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
 
+// The version line scrolls a label that does not fit: a short pause at
+// each end, then a steady pixel-by-pixel pass to the other end and back.
+const (
+	marqueeFrame = time.Second / 30
+	marqueeSpeed = 40 // pixels per second
+	marqueePause = 500 * time.Millisecond
+)
+
+type marqueeState struct {
+	key   string    // the row and version scrolling, "" when idle
+	start time.Time // when the scroll began
+	next  time.Time // the next frame
+	span  int       // pixels the label overflows the line by
+}
+
+// marqueeOffset is how far the label has scrolled left at elapsed.
+func marqueeOffset(elapsed time.Duration, span int) int {
+	if span <= 0 {
+		return 0
+	}
+	travel := time.Duration(span) * time.Second / marqueeSpeed
+	t := elapsed % (2 * (marqueePause + travel))
+	switch {
+	case t < marqueePause:
+		return 0
+	case t < marqueePause+travel:
+		return int((t - marqueePause) * marqueeSpeed / time.Second)
+	case t < 2*marqueePause+travel:
+		return span
+	}
+	return span - int((t-2*marqueePause-travel)*marqueeSpeed/time.Second)
+}
+
+// runMarquee starts or continues the scroll of key, a label span pixels
+// too wide, and returns its offset for this paint.
+func (a *App) runMarquee(key string, span int) int {
+	now := a.cfg.TimerNow()
+	if a.marquee.key != key {
+		a.marquee = marqueeState{key: key, start: now, next: now.Add(marqueeFrame)}
+	}
+	a.marquee.span = span
+	return marqueeOffset(now.Sub(a.marquee.start), span)
+}
+
+func (a *App) nextMarqueeTick() time.Time {
+	if a.marquee.key == "" || a.screen != ScreenDetails || a.saver.active {
+		return time.Time{}
+	}
+	return a.marquee.next
+}
+
+func (a *App) tickMarquee(now time.Time) bool {
+	next := a.nextMarqueeTick()
+	if next.IsZero() || now.Before(next) {
+		return false
+	}
+	a.marquee.next = now.Add(marqueeFrame)
+	a.all = true
+	return true
+}
+
 // launchEntry is one thing the details view can launch.
 type launchEntry struct {
 	label string
@@ -260,8 +321,16 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 			prefix = "- " + prefix
 			col = gen.Eva.Muted
 		}
-		labelCols := a.sm.Cols(body.Dx() - a.sm.Width(count) - a.sm.W)
-		c.Text(body.Min.X, y, a.sm, gfx.Fit(prefix+label, labelCols), col)
+		labelW := body.Dx() - a.sm.Width(count) - a.sm.W
+		text := prefix + label
+		if over := a.sm.Width(text) - labelW; over > 0 {
+			// too long for the line: scroll it back and forth by the pixel
+			off := a.runMarquee(row.K+"#"+itoa(a.detail.pick), over)
+			c.TextClip(body.Min.X-off, y, a.sm, text, col, image.Rect(body.Min.X, y, body.Min.X+labelW, y+a.sm.H))
+		} else {
+			a.marquee = marqueeState{}
+			c.Text(body.Min.X, y, a.sm, text, col)
+		}
 		y += lh
 	}
 	if a.notice != "" {

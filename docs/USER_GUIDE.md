@@ -28,7 +28,11 @@ If the main-menu launcher was previously off, run Setup to enable it.
 
 ## List and search
 
-Each row has a favorite marker, title, on-card status, and date:
+Each row has a favorite marker, title, on-card status, and date. Titles use a
+narrow font so more of each name fits; Options -> Title font switches back to
+the body font. A yellow β after a title marks a Patreon beta core, which needs
+Jotego's jtbeta.zip. The date column format is chosen in Options -> Date
+format.
 
 | Mark | Meaning |
 |---|---|
@@ -89,7 +93,7 @@ filter choices are saved.
 | Up/Down | arrows | move | choose version | | move | move |
 | Left/Right | arrows | page | | change shot | collapse/expand section or years | change value |
 | L/R | PageUp/PageDown | previous/next letter in A-Z; newer/older month in date sorts | scroll information | | previous/next section | first/last |
-| A | Enter | details | artwork | | toggle | run action |
+| A | Enter | details | artwork | | toggle a value; open/close a heading | run action |
 | B | Esc | Options / clear search | back | back | back | back |
 | X | Tab | Filters | | | show/hide years | |
 | Y | Space | change view | favorite | | only/all | |
@@ -98,7 +102,9 @@ filter choices are saved.
 
 The Details version selector uses one row. Its tally shows the selection and
 total, such as 2/5. Up/Down chooses among installed alternatives; Start launches
-the chosen version. A dim entry with a leading minus is not on the card.
+the chosen version. A dim entry with a leading minus is not on the card. A
+version name too long for the row scrolls back and forth, pausing at each end,
+so alternatives that share a long prefix can be told apart.
 The information scrollbar shows when more text is available. Long values wrap,
 and L/R pages with an overlapping line. Returning from artwork preserves the
 selected version and information position.
@@ -144,6 +150,15 @@ item. R also jumps to the bottom.
 - **Remember sort order:** on by default, including after upgrading. Reopens
   with your last sort choice; off starts new visits with latest updates. Changing
   this preference leaves the current sort order alone.
+- **Title font:** narrow by default, a condensed proportional font that fits
+  about a third more of each title on a row. Normal uses the body font.
+- **List shots:** which screenshot the list pane shows for the selected row:
+  gameplay (default) or the title screen. Details and the artwork view still
+  show every shot.
+- **Date format:** how list dates read: MM-DD (default), DD-MM, Mon D (Sep 7),
+  D Mon (7 Sep) or YYMMDD (260907). The help line shows today's date in the
+  chosen format. Rows from earlier years show the year alone, except with
+  YYMMDD, which always carries the full date.
 - **Screensaver:** after 1 minute idle by default, dim the picture and scroll
   full-height black MISTERZINE lettering, with glinting chrome edges, across it. Left/Right chooses Off, 1, 2,
   5 or 10 minutes. A previews it immediately, even when Off. The first browsing
@@ -167,9 +182,10 @@ Filters start with On the card, Since last look, Type and Source.
 Favorites is a main-view mode and still respects all these filters.
 Press Y on a value to select only that value in its section, leaving all other
 sections and your search unchanged. Press Y again on that value to enable all
-values in its section. A still toggles values individually.
-The bottom legend shows the Y shortcut where available; Y does nothing on
-section headings. For Since last look, Y toggles the choice.
+values in its section. A still toggles values individually. On a section
+heading, A opens a closed section or closes an open one, the same as Left/Right;
+the legend reads "A ◀ ▶ open/close" while a heading is selected.
+Y does nothing on section headings. For Since last look, Y toggles the choice.
 
 Filters -> Original release year groups arcade games into decades. A toggles
 the selected decade; X expands or collapses its individual years. On an individual
@@ -217,8 +233,8 @@ hides its filter section while retaining your choices for later.
 
 Counts reflect your search and the other filter sections. A choice's count
 ignores its own section, so unchecked choices still show how many entries they
-could include. Choices remain selectable at zero. Each section heading toggles
-all its choices; Clear all filters restores everything.
+could include. Choices remain selectable at zero. Y on a value twice enables
+every choice in its section; Clear all filters restores everything.
 
 Resolution uses the catalogue's 15kHz/31kHz labels. **Unknown** means that value
 is missing. Controls includes separately recorded special controls such as

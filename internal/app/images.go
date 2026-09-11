@@ -45,11 +45,16 @@ func (noImages) Get(ImageReq) (*image.RGBA, ImageState) { return nil, ImageMissi
 func (noImages) SetPaused(bool)                         {}
 func (noImages) Want([]ImageReq)                        {}
 
-// thumbSlot picks the slot the list thumbnail shows: snap, then title, then
-// ingame; system photos for rows without shots.
-func thumbSlot(r *data.Row) (key, slot string) {
+// thumbSlot picks the slot the list thumbnail shows: for the "title"
+// preference the title screen first, otherwise a gameplay shot (snap, then
+// ingame) first; system photos for rows without shots.
+func thumbSlot(r *data.Row, pref string) (key, slot string) {
 	if r.Img != "" && len(r.ImgSlots) > 0 {
-		for _, want := range []string{"snap", "title", "ingame"} {
+		order := []string{"snap", "ingame", "title"}
+		if pref == "title" {
+			order = []string{"title", "snap", "ingame"}
+		}
+		for _, want := range order {
 			for _, s := range r.ImgSlots {
 				if s == want {
 					return r.Img, s

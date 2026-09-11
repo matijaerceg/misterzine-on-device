@@ -30,11 +30,20 @@ func TestControlFilterSelectionAndClear(t *testing.T) {
 		}
 		t.Fatalf("missing %s/%s", kind, value)
 	}
-	choose("directions", "", true) // deselect the whole section
-	if len(a.view) != 0 {
-		t.Fatal("direction header did not hide all")
+	choose("directions", "", true) // A on a heading closes it, changing nothing
+	if len(a.view) != 2 || a.filters.Active() || !a.panel.sectionClosed["directions"] {
+		t.Fatal("direction heading must close its section without filtering")
 	}
-	choose("directions", "8-way", false)
+	for _, e := range a.panel.entries {
+		if e.kind == "directions" && !e.header {
+			t.Fatal("closed section still lists its values")
+		}
+	}
+	choose("directions", "", true) // and opens it again
+	if a.panel.sectionClosed["directions"] {
+		t.Fatal("second press must reopen the section")
+	}
+	choose("directions", "4-way", false)
 	if len(a.view) != 1 || a.CursorKey() != "a" {
 		t.Fatal("direction selection")
 	}
@@ -89,10 +98,12 @@ func TestResolutionFilterSelectionAndRestore(t *testing.T) {
 		}
 	}
 	choose("res", "", true)
-	if len(a.view) != 0 || !a.filters.Active() {
-		t.Fatal("header must hide every resolution")
+	if len(a.view) != 4 || a.filters.Active() || !a.panel.sectionClosed["res"] {
+		t.Fatal("heading must close the section, not filter")
 	}
-	choose("res", "15kHz", false)
+	choose("res", "", true)
+	choose("res", "31kHz", false)
+	choose("res", "", false)
 	if len(a.view) != 2 {
 		t.Fatal("15kHz selection")
 	}
@@ -122,9 +133,9 @@ func TestResolutionFilterSelectionAndRestore(t *testing.T) {
 	if len(a.view) != 2 {
 		t.Fatal("unknown selection")
 	}
-	choose("res", "", true)
+	choose("res", "31kHz", false)
 	if len(a.view) != 3 {
-		t.Fatal("header must restore all resolutions")
+		t.Fatal("restoring 31kHz must show every resolution")
 	}
 	choose("res", "31kHz", false)
 	choose("clear", "", false)

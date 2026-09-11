@@ -32,7 +32,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/updater"
 )
 
-const allViews = "shot list; enter; shot details; wait 600; enter; shot screen; back; back; tab; shot filter; back; back; shot options; down*11; enter; shot calibrate; back; end; shot options-bottom; back"
+const allViews = "shot list; enter; shot details; wait 600; enter; shot screen; back; back; tab; shot filter; back; back; shot options; down*14; enter; shot calibrate; back; end; shot options-bottom; back"
 
 func main() {
 	dataPath := flag.String("data", "testdata/data.json", "data.json")
@@ -52,6 +52,9 @@ func main() {
 	scanResult := flag.Bool("scan-result", false, "show completed card scan fixture")
 	unchanged := flag.Bool("unchanged", false, "previous visit saw every release")
 	filterRotation := flag.Bool("filter-rotation", false, "start with the strict current-rotation filter on")
+	narrow := flag.Bool("narrow", true, "list titles in the narrow font")
+	listShot := flag.String("list-shot", "gameplay", "list thumbnail preference: gameplay or title")
+	dateFormat := flag.String("date-format", "mm-dd", "list date column: mm-dd, dd-mm, mon-d, d-mon or yymmdd")
 	flag.Parse()
 
 	rows, meta := load(*dataPath, *metaPath)
@@ -83,9 +86,13 @@ func main() {
 		RememberSort:   true,
 		FollowRotation: true,
 		FilterRotation: *filterRotation,
+		NarrowTitles:   *narrow,
+		ListShot:       *listShot,
+		DateFormat:     *dateFormat,
 		Alternatives: func(r *data.Row) []string {
 			if r.SN == "galagamw" {
-				return []string{"_Arcade/_alternatives/_Galaga/Galaga (Namco).mra"}
+				return []string{"_Arcade/_alternatives/_Galaga/Galaga (Namco).mra",
+					"_Arcade/_alternatives/_Galaga/Galaga (Midway set 1, fast shoot hack, bootleg set 2).mra"}
 			}
 			return nil
 		},

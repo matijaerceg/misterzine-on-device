@@ -32,6 +32,7 @@ ASSETS = {
     "MisterZine.mgl": ("deploy/MisterZine.mgl", "MisterZine.mgl"),
     "misterzine/LICENSE": ("LICENSE", "LICENSE"),
     "misterzine/SPLEEN-LICENSE": ("internal/fonts/SPLEEN-LICENSE", "SPLEEN-LICENSE"),
+    "misterzine/SCIENTIFICA-LICENSE": ("internal/fonts/SCIENTIFICA-LICENSE", "SCIENTIFICA-LICENSE"),
     "misterzine/THIRD-PARTY-NOTICES.txt": ("deploy/THIRD-PARTY-NOTICES.txt", "THIRD-PARTY-NOTICES.txt"),
 }
 

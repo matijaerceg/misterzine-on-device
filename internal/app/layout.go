@@ -41,7 +41,7 @@ const (
 // the safe-zone margins as the viewer sees the picture: ix at the left and
 // right edges, iy at the top and bottom (the logical canvas is already the
 // viewer's orientation, so in tate ix is the tube's short side).
-func NewLayout(w, h, ix, iy int, body *gfx.Font) Layout {
+func NewLayout(w, h, ix, iy int, body *gfx.Font, dateCols int) Layout {
 	l := Layout{W: w, H: h, Inset: ix, Portrait: h > w, Line: body.H}
 	l.Root = image.Rect(ix, iy, w-ix, h-iy)
 	l.Status = image.Rect(l.Root.Min.X, l.Root.Min.Y, l.Root.Max.X, l.Root.Min.Y+statusH)
@@ -67,8 +67,8 @@ func NewLayout(w, h, ix, iy int, body *gfx.Font) Layout {
 	l.List.Max.X -= 4
 	l.Lines = l.List.Dy() / l.Line
 	l.Cols = l.List.Dx() / body.W
-	// columns: fav(1) title sp status(1) sp date(5)
-	l.TitleCol = l.Cols - 1 - 1 - 1 - 1 - 5
+	// columns: fav(1) title sp status(1) sp date(5 or 6)
+	l.TitleCol = l.Cols - 1 - 1 - 1 - 1 - dateCols
 	if l.TitleCol < 8 {
 		l.TitleCol = 8
 	}

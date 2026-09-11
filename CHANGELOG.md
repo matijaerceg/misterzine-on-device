@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased
+
+- List titles are drawn in a narrow font (scientifica, SIL Open Font License)
+  with proportional spacing, so a row fits about a third more of a title.
+  Options -> Title font switches back to the body font.
+- Patreon beta cores carry a yellow β after their title in the list, and the
+  pane's "beta" chip is yellow to match the details page.
+- Options -> Date format chooses how list dates read: MM-DD (default), DD-MM,
+  Mon D, D Mon or YYMMDD. Rows from earlier years still show the year alone,
+  except YYMMDD, which always carries the full date.
+- Options -> List shots chooses whether the pane thumbnail is a gameplay shot
+  (default) or the title screen.
+- A Details version name too long for its line scrolls back and forth by the
+  pixel, pausing briefly at each end, so alternatives that share a long prefix
+  can be told apart.
+- Filters: A on a section heading opens or closes it, like Left/Right; the
+  legend says so while a heading is selected. Headings no longer toggle every
+  value of their section (Y only/all still does).
+
 ## v1.0.12 — 2026-09-11
 
 - The screensaver letters are now traced from Figtree Black (SIL Open Font

@@ -34,6 +34,28 @@ func (a *App) resetFilterExpansion() {
 	}
 }
 
+// onFilterSectionHeader reports whether the cursor sits on a section
+// heading of the Filters page (not a decade, which has its own checkbox).
+func (a *App) onFilterSectionHeader() bool {
+	if a.screen != ScreenFilter || a.panel.cursor >= len(a.panel.entries) {
+		return false
+	}
+	e := a.panel.entries[a.panel.cursor]
+	return e.header && !e.info && e.kind != ""
+}
+
+// toggleFilterSection opens a closed section heading or closes an open one.
+func (a *App) toggleFilterSection() bool {
+	if !a.onFilterSectionHeader() {
+		return false
+	}
+	kind := a.panel.entries[a.panel.cursor].kind
+	if kind == "rot" && a.rotationFilter() != "" {
+		return false
+	}
+	return a.expandFilterSection(a.panel.sectionClosed[kind])
+}
+
 func (a *App) filterSectionActive(kind string) bool {
 	if kind == "rot" && a.rotationFilter() != "" {
 		return true
@@ -45,6 +67,10 @@ func (a *App) filterSectionActive(kind string) bool {
 
 func (a *App) filterHint() string {
 	arrows := gfx.ArrowLeft + " " + gfx.ArrowRight
+	if a.onFilterSectionHeader() {
+		// A and the arrows both open or close the heading under the cursor.
+		return "A " + arrows + " open/close  B back"
+	}
 	hint := "A toggle  " + arrows + " open/close  B back"
 	if a.canOnlyFilter() {
 		hint = "A toggle  Y only/all  " + arrows + " open/close  B back"

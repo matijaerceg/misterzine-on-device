@@ -299,6 +299,12 @@ func (a *App) optionsEntries() []panelEntry {
 			saverIdx = i
 		}
 	}
+	dateIdx := 0
+	for i, f := range dateFormats {
+		if f == a.DateFormat() {
+			dateIdx = i
+		}
+	}
 	rotationHelp := "Left/Right turn the image; the choice is saved. Labels describe the monitor's turn."
 	if a.FollowRotation() {
 		rotationHelp = "Set by the active MiSTer INI. Turn off Follow INI rotation above to rotate manually."
@@ -329,6 +335,12 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Wait before held navigation repeats: short 200 ms, normal 300 ms, long 500 ms. Scroll speed sets the pace after this delay."},
 		{text: "Remember sort order", kind: "remember-sort", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.RememberSort()],
 			help: "On: reopen with your last view, including Favorites (default). Off: start new visits with latest updates."},
+		{text: "Title font", kind: "title-font", vals: []string{"normal", "narrow"}, idx: map[bool]int{false: 0, true: 1}[a.NarrowTitles()],
+			help: "Narrow (default) fits about a third more of each title on a list row with a condensed font. Normal uses the body font."},
+		{text: "List shots", kind: "list-shot", vals: []string{"gameplay", "title"}, idx: map[string]int{"gameplay": 0, "title": 1}[a.ListShot()],
+			help: "Which screenshot the list pane shows: gameplay (default) or the title screen. Details and the artwork view still show every shot."},
+		{text: "Date format", kind: "date-format", vals: dateFormatLabels, idx: dateIdx,
+			help: a.dateFormatHelp()},
 		{text: "Screensaver", kind: "screensaver", vals: []string{"off", "1 min", "2 min", "5 min", "10 min"}, idx: saverIdx,
 			help: "Dim the screen and scroll black lettering after idle time. Left/Right sets the delay; A previews. A browsing button wakes without acting. Menu still exits."},
 		{text: "Edit safe zone", kind: "inset",
@@ -344,6 +356,16 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "Quit MisterZine", kind: "quit",
 			help: "Back to the MiSTer menu. The pad's menu button does the same."},
 	}
+}
+
+// dateFormatHelp shows today's date in the chosen list format.
+func (a *App) dateFormatHelp() string {
+	today := a.cfg.Now().Format("2006-01-02")
+	example := formatListDate(a.DateFormat(), today, a.cfg.Now().Year())
+	if a.DateFormat() == "yymmdd" {
+		return "How list dates read. Today is " + example + ": two-digit year, month, day, for every row."
+	}
+	return "How list dates read. Today is " + example + ". Rows from earlier years show the year instead."
 }
 
 func (a *App) scrollText() string {
@@ -632,6 +654,13 @@ func (a *App) stepValue(d int) bool {
 		a.Refilter()
 	case "screensaver":
 		a.cfg.Screensaver = saverValues[i]
+	case "title-font":
+		a.cfg.NarrowTitles = i == 1
+	case "list-shot":
+		a.cfg.ListShot = []string{"gameplay", "title"}[i]
+	case "date-format":
+		a.cfg.DateFormat = dateFormats[i]
+		a.setRotation(a.rot) // the date column width changes the row layout
 	case "prefetch":
 		a.panel.prefetch = i == 1
 		if a.cfg.Action != nil {
@@ -657,6 +686,9 @@ func (a *App) togglePanel() bool {
 		return false
 	}
 	e := p.entries[p.cursor]
+	if a.screen == ScreenFilter && e.header && !e.info && e.kind != "" {
+		return a.toggleFilterSection()
+	}
 	if e.kind == "rot" && a.rotationFilter() != "" {
 		return false
 	}
@@ -713,16 +745,8 @@ func (a *App) togglePanel() bool {
 		case "buttons":
 			m, facet = off(f.ButtonsOff), a.ds.Facets.Buttons
 		}
-		if e.header {
-			// a header toggles its whole section: all on, or all off when already all on
-			allOn := len(m) == 0
-			m = map[string]bool{}
-			if allOn {
-				for v := range facet {
-					m[v] = true
-				}
-			}
-		} else if m[e.value] {
+		_ = facet
+		if m[e.value] {
 			delete(m, e.value)
 		} else {
 			m[e.value] = true
@@ -760,7 +784,7 @@ func (a *App) togglePanel() bool {
 		if !e.header {
 			f.Since = !f.Since
 		}
-	case "rotation", "follow-rotation", "filter-rotation", "launcher", "scroll", "hold-delay", "remember-sort", "prefetch":
+	case "rotation", "follow-rotation", "filter-rotation", "launcher", "scroll", "hold-delay", "remember-sort", "prefetch", "title-font", "list-shot", "date-format":
 		return true // Left/Right pick these
 	case "inset":
 		a.screen = ScreenCalibrate

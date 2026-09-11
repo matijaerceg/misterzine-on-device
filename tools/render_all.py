@@ -24,9 +24,9 @@ scenarios = [
     ["-rot", "left", "-logical", "-out", "out/search-t",
      "-script", "type 1943; shot matches; type xyz; shot empty"],
     ["-out", "out/saver-h", "-script",
-     "back; down*10; shot option; enter; wait 12000; shot preview; back; up*10; up; shot wrap; down; shot top"],
+     "back; down*13; shot option; enter; wait 12000; shot preview; back; up*13; up; shot wrap; down; shot top"],
     ["-rot", "left", "-logical", "-out", "out/saver-t", "-script",
-     "back; down*10; shot option; enter; wait 12000; shot preview; back; up*10; up; shot wrap; down; shot top"],
+     "back; down*13; shot option; enter; wait 12000; shot preview; back; up*13; up; shot wrap; down; shot top"],
     ["-support-report", "testdata/support-controller.json", "-out", "out/support-h", "-script",
      "back; end; up; enter; shot menu; enter; shot ready; wait 3500; shot capture; wait 6000; shot result; right; shot evidence; back; down; enter; shot launch; enter; shot launch-result"],
     ["-support-report", "testdata/support-controller.json", "-rot", "left", "-logical", "-out", "out/support-t", "-script",
@@ -84,5 +84,21 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                       "home; shot top; tab; pagedown*4; right; shot section; left; shot closed; "
                       "right; down*2; right; shot years; left; left; shot nested-closed; "
                       "pagedown; shot next-section; pageup; shot previous-section"])
+for rotation in ([], ["-rot", "left", "-logical"]):
+    orientation = "t" if rotation else "h"
+    for inset in (15, 40):
+        # narrow titles with a beta sign, the normal font, list shots and
+        # date formats in Options, a scrolling alternative name, and A on
+        # a Filters heading
+        scenarios.append([*rotation, "-inset", str(inset),
+                          "-out", f"out/list-polish-{orientation}-{inset}", "-script",
+                          "type gradius; shot beta-narrow; back; back; down*10; shot title-font; left; back; "
+                          "type gradius; shot beta-normal; back; back; down*10; right; "
+                          "down; shot list-shots; right; back; shot title-shot; back; down*11; left; "
+                          "down; right; shot date-dd-mm; back; shot list-dd-mm; back; down*12; right; shot date-mon-d; back; shot list-mon-d; "
+                          "back; down*12; right; shot date-d-mon; back; shot list-d-mon; back; down*12; right; shot date-yymmdd; back; shot list-yymmdd; "
+                          "back; down*12; left*4; back; "
+                          "type galaga; down*2; enter; down*2; shot alt-start; wait 1200; shot alt-mid; wait 1200; shot alt-end; "
+                          "back; tab; shot heading; enter; shot heading-open; enter; shot heading-closed"])
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)

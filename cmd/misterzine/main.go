@@ -213,6 +213,9 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 		FollowRotation:       h.settings.FollowRotation,
 		FilterRotation:       h.settings.FilterRotation,
 		LastSort:             h.settings.LastSort,
+		NarrowTitles:         h.settings.NarrowTitles,
+		ListShot:             h.settings.ListShot,
+		DateFormat:           h.settings.DateFormat,
 		FavoritesUnavailable: h.favLoadFailed,
 		Progress:             func() (int, int) { return h.img.Progress() },
 		Launcher:             launcherEnabled,
@@ -327,6 +330,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 					"sysfs": mister.SysfsMode(), "uptime": time.Since(t0).String(), "frames": h.stats.String(),
 					"update":      h.a.UpdateState(),
 					"screensaver": h.a.Screensaver(), "screensaver_active": h.a.ScreensaverActive(),
+					"narrow_titles": h.a.NarrowTitles(), "list_shot": h.a.ListShot(), "date_format": h.a.DateFormat(),
 				}
 			},
 			Quit: h.stop,
@@ -683,6 +687,9 @@ func (h *host) saveAll(final bool) {
 		h.settings.FollowRotation = h.a.FollowRotation()
 		h.settings.FilterRotation = h.a.FilterRotation()
 		h.settings.LastSort = h.a.Sort()
+		h.settings.NarrowTitles = h.a.NarrowTitles()
+		h.settings.ListShot = h.a.ListShot()
+		h.settings.DateFormat = h.a.DateFormat()
 		if err := store.Save(filepath.Join(h.root, "settings.json"), h.settings); err != nil {
 			h.lg.Printf("settings: %v", err)
 			h.setDirty = true

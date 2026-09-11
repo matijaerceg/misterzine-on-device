@@ -27,13 +27,16 @@ type Settings struct {
 	Screensaver    string        `json:"screensaver_minutes"`
 	RememberSort   bool          `json:"remember_sort"`
 	LastSort       data.SortMode `json:"last_sort"`
+	NarrowTitles   bool          `json:"narrow_titles"` // list titles in the narrow font
+	ListShot       string        `json:"list_shot"`     // list thumbnail: gameplay (default) or title
+	DateFormat     string        `json:"date_format"`   // list dates: mm-dd (default), dd-mm, mon-d, d-mon, yymmdd
 	InsetX         int           `json:"inset_x"`
 	InsetY         int           `json:"inset_y"`
 }
 
 // DefaultSettings for a fresh install.
 func DefaultSettings() Settings {
-	return Settings{Schema: 1, Rotation: "auto", FollowRotation: true, Inset: 15, InsetX: 15, InsetY: 15, Scroll: "30", HoldDelay: 300, Screensaver: "1", RememberSort: true}
+	return Settings{Schema: 1, Rotation: "auto", FollowRotation: true, Inset: 15, InsetX: 15, InsetY: 15, Scroll: "30", HoldDelay: 300, Screensaver: "1", RememberSort: true, NarrowTitles: true}
 }
 
 // LoadSettings reads path over the defaults and migrates older files.
