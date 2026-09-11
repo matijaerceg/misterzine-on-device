@@ -38,7 +38,8 @@ type Filters struct {
 	GenreOff      map[string]bool `json:"genre_off,omitempty"` // raw genre, "" = no genre
 	DirectionsOff map[string]bool `json:"directions_off,omitempty"`
 	ButtonsOff    map[string]bool `json:"buttons_off,omitempty"`
-	Install       string          `json:"install,omitempty"` // InstallAll (default) or one of the Install* values
+	YearOff       map[string]bool `json:"year_off,omitempty"` // original arcade release year; "" = unknown
+	Install       string          `json:"install,omitempty"`  // InstallAll (default) or one of the Install* values
 	FavOnly       bool            `json:"fav_only,omitempty"`
 	Since         bool            `json:"since,omitempty"` // only rows changed since the last look
 }
@@ -48,7 +49,7 @@ func (f *Filters) Active() bool {
 	if f == nil {
 		return false
 	}
-	return f.MatchRotation != "" || len(f.BaseOff) > 0 || len(f.SrcOff) > 0 || len(f.RotOff) > 0 || len(f.PlrOff) > 0 ||
+	return f.MatchRotation != "" || len(f.YearOff) > 0 || len(f.BaseOff) > 0 || len(f.SrcOff) > 0 || len(f.RotOff) > 0 || len(f.PlrOff) > 0 ||
 		len(f.ResOff) > 0 || len(f.GenreOff) > 0 || len(f.DirectionsOff) > 0 || len(f.ButtonsOff) > 0 || (f.Install != "" && f.Install != InstallAll) || f.FavOnly || f.Since
 }
 
@@ -63,7 +64,7 @@ func (f *Filters) Pass(r *Row, d *Derived, st Status, fav, unseen bool) bool {
 	if f.BaseOff[r.Base] || f.SrcOff[r.Src] {
 		return false
 	}
-	if r.IsArcade() && (f.ResOff[r.Res] || f.RotOff[d.RotGroup] || f.PlrOff[r.Plr] || f.GenreOff[r.Genre] || f.DirectionsOff[d.Directions] || f.ButtonsOff[d.Buttons]) {
+	if r.IsArcade() && (f.YearOff[d.Year] || f.ResOff[r.Res] || f.RotOff[d.RotGroup] || f.PlrOff[r.Plr] || f.GenreOff[r.Genre] || f.DirectionsOff[d.Directions] || f.ButtonsOff[d.Buttons]) {
 		return false
 	}
 	switch f.Install {

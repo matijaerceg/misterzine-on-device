@@ -32,7 +32,7 @@ func (a *App) canOnlyFilter() bool {
 		return false
 	}
 	e := a.panel.entries[a.panel.cursor]
-	return !e.header && !e.info && (a.onlyFacet(e.kind) != nil || e.kind == "install" || e.kind == "fav" || e.kind == "since")
+	return !e.header && !e.info && (e.kind == "year" || e.kind == "decade" || a.onlyFacet(e.kind) != nil || e.kind == "install" || e.kind == "fav" || e.kind == "since")
 }
 
 func (a *App) onlyFilter() bool {
@@ -40,6 +40,9 @@ func (a *App) onlyFilter() bool {
 		return false
 	}
 	e := a.panel.entries[a.panel.cursor]
+	if e.kind == "year" || e.kind == "decade" {
+		return a.toggleYears(true)
+	}
 	f := a.filters
 	off := map[string]bool{}
 	for value := range a.onlyFacet(e.kind) {

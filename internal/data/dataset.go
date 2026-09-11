@@ -15,6 +15,7 @@ type Derived struct {
 	RotGroup   string // "h", "v" or ""
 	Directions string
 	Buttons    string // numeric count including zero; empty = unknown
+	Year       string // exact original release year; empty = unknown/ambiguous
 	BatchN     int    // rows sharing this core's updated stamp (0 = not a batch stamp)
 
 	titleKey   []elem
@@ -33,6 +34,7 @@ type Facets struct {
 	Genre      map[string]int // raw genre strings, "" = no genre
 	Directions map[string]int
 	Buttons    map[string]int
+	Year       map[string]int
 }
 
 // Dataset is one ingested data.json with every derived index.
@@ -61,7 +63,7 @@ func Ingest(rows []Row, hash string, updated time.Time) *Dataset {
 		Facets: Facets{
 			Base: map[string]int{}, Src: map[string]int{}, Rot: map[string]int{},
 			Plr: map[string]int{}, Genre: map[string]int{},
-			Directions: map[string]int{}, Buttons: map[string]int{}, Res: map[string]int{},
+			Directions: map[string]int{}, Buttons: map[string]int{}, Res: map[string]int{}, Year: map[string]int{},
 		},
 	}
 	for i := range rows {
@@ -90,7 +92,9 @@ func Ingest(rows []Row, hash string, updated time.Time) *Dataset {
 		d.Title = ASCII(r.Title)
 		d.Ctl = ASCII(r.Ctl)
 		d.Directions, d.Buttons = r.ControlFacets()
+		d.Year = ReleaseYear(r.Year)
 		if r.IsArcade() {
+			ds.Facets.Year[d.Year]++
 			ds.Facets.Directions[d.Directions]++
 			ds.Facets.Buttons[d.Buttons]++
 		}

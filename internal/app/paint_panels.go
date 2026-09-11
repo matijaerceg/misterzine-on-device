@@ -23,14 +23,16 @@ type panelEntry struct {
 	vals      []string // settings: the choices, Left/Right pick one
 	idx       int      // settings: the current choice
 	checked   bool
+	partial   bool // some, but not all, years in a decade are enabled
 	count     int
 	showCount bool
 }
 
 type panelState struct {
-	entries []panelEntry
-	cursor  int
-	top     int
+	entries  []panelEntry
+	cursor   int
+	top      int
+	yearOpen map[string]bool // expanded decades; browsing state only
 	// settings snapshot
 	prefetch bool
 	lines    int // entries that fit, from the last paint (paging)
@@ -117,6 +119,9 @@ func (a *App) facetCounts(kind string) map[string]int {
 	case "plr":
 		f.PlrOff = nil
 		value = func(r *data.Row, d *data.Derived) string { return r.Plr }
+	case "year":
+		f.YearOff = nil
+		value = func(r *data.Row, d *data.Derived) string { return d.Year }
 	}
 	counts := map[string]int{}
 	query := searchText(a.query)
@@ -205,6 +210,7 @@ func (a *App) filterEntries() []panelEntry {
 	}
 	E = append(E, panelEntry{text: "Arcade game filters", header: true, info: true},
 		panelEntry{text: coreNote, info: true})
+	E = append(E, a.yearEntries()...)
 	section("Rotation", "rot", a.ds.Facets.Rot, f.RotOff, func(s string) string {
 		switch s {
 		case "h":
@@ -403,10 +409,13 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, cols), gen.Eva.Muted)
 		case e.header:
 			c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, cols), gen.Eva.Accent)
-		case e.kind == "res" || e.kind == "base" || e.kind == "src" || e.kind == "rot" || e.kind == "plr" || e.kind == "genre" || e.kind == "directions" || e.kind == "buttons" || e.kind == "install" || e.kind == "fav" || e.kind == "since":
+		case e.kind == "year" || e.kind == "decade" || e.kind == "res" || e.kind == "base" || e.kind == "src" || e.kind == "rot" || e.kind == "plr" || e.kind == "genre" || e.kind == "directions" || e.kind == "buttons" || e.kind == "install" || e.kind == "fav" || e.kind == "since":
 			mark := "[ ] "
 			if e.checked {
 				mark = "[x] "
+			}
+			if e.partial {
+				mark = "[-] "
 			}
 			suffix := ""
 			if e.showCount {
@@ -499,6 +508,9 @@ func (a *App) actPanel(k platform.Key) bool {
 		if a.screen == ScreenOptions {
 			return a.stepValue(-1)
 		}
+		if a.expandYears(false) {
+			return true
+		}
 		// the last entry of the previous page, shown at the bottom
 		p.cursor = p.nearest(p.top-1, selectable)
 		p.top = p.cursor - max(p.lines, 1) + 1
@@ -508,6 +520,9 @@ func (a *App) actPanel(k platform.Key) bool {
 	case platform.KeyRight:
 		if a.screen == ScreenOptions {
 			return a.stepValue(1)
+		}
+		if a.expandYears(true) {
+			return true
 		}
 		// the first entry of the next page, shown at the top
 		p.cursor = p.nearest(p.top+max(p.lines, 1), selectable)
@@ -640,6 +655,8 @@ func (a *App) togglePanel() bool {
 		return out
 	}
 	switch e.kind {
+	case "year", "decade":
+		return a.toggleYears(false)
 	case "troubleshooting":
 		a.OpenTroubleshooting()
 		return true

@@ -69,5 +69,13 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "-out", f"out/ini-filter-{orientation}-{ini}", "-script",
                           "back; down*6; shot off; right; shot on; back; shot list; "
                           "tab; shot filters; back; back; down*6; left; back; shot restored"])
+for rotation in ([], ["-rot", "left", "-logical"]):
+    orientation = "t" if rotation else "h"
+    for inset in (15, 40):
+        scenarios.append([*rotation, "-inset", str(inset),
+                          "-out", f"out/year-filter-{orientation}-{inset}", "-script",
+                          "tab; down*24; shot decades; right; shot expanded; "
+                          "down*2; enter; shot mixed; space; shot only-year; "
+                          "space; shot all-years; left; shot collapsed"])
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)
