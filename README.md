@@ -1,4 +1,4 @@
-# MisterZine for MiSTer
+# MisterZine Frontend for MiSTer
 
 See what's new, check what's on your card, and launch a game from the
 MiSTer main menu. MisterZine brings the [release tracker](https://misterzine.fyi)
