@@ -19,3 +19,6 @@ https://github.com/matijaerceg/misterzine#the-image-pipeline-tools
 
 MisterZine uses the separately installed MiSTer Downloader and Update All.
 Those projects and the MiSTer cores retain their own licenses.
+
+Screensaver lettering traced from Figtree by Erik Kennedy: SIL Open Font License 1.1.
+https://github.com/erikdkennedy/figtree (the font file itself is not included)

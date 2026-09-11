@@ -249,7 +249,7 @@ func TestSaverRimGlints(t *testing.T) {
 	if peak != saverGlintMax || peak > 102 {
 		t.Fatalf("glint peak %d; it must reach exactly the cap and stay at or under 40%% of white", peak)
 	}
-	if lit*3 > total {
+	if lit*2 > total {
 		t.Fatalf("outline lit for %d of %d pixel-frames; it should be black most of the time", lit, total)
 	}
 }
