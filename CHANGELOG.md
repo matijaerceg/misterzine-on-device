@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.0.12 — 2026-09-11
+
+- The screensaver letters are now traced from Figtree Black (SIL Open Font
+  License; only the outlines ship) instead of hand-drawn block capitals, with
+  a generator script for re-tracing from any font.
+- Three more glints on the screensaver outline: a faded green one that the
+  left-facing edges meet twice and a gray one for the right-facing edges, both
+  dim and fast, running against their face's main glint for depth. The lime
+  glint stands more upright, so it travels faster, and is slightly dimmer.
+
 ## v1.0.11 — 2026-09-11
 
 - Follow INI rotation reads the MiSTer INI that is actually active: the main
