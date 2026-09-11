@@ -53,6 +53,11 @@ func (a *App) selectedDecade() string {
 	if e.kind == "year" && !e.header {
 		return data.Decade(e.value)
 	}
+	// Type > Arcade opens into Stable and Beta the same way a decade opens
+	// into years; its group is named after the type
+	if e.kind == "beta" || (e.kind == "base" && e.value == "Arcade" && !e.header) {
+		return "Arcade"
+	}
 	return ""
 }
 
@@ -77,7 +82,7 @@ func (a *App) expandYears(open bool) bool {
 	// selection pointing at an unrelated filter further down the panel.
 	if !open {
 		for i, parent := range a.panel.entries {
-			if parent.kind == "decade" && parent.value == decade {
+			if (parent.kind == "decade" || parent.kind == "base") && parent.value == decade && !parent.header {
 				a.panel.cursor = i
 				break
 			}

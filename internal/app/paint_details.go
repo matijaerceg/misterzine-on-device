@@ -73,11 +73,11 @@ func (a *App) tickMarquee(now time.Time) bool {
 	return true
 }
 
-// The information pages by the pixel: two pixels a frame at 60 frames a
-// second toward the wanted line, so a page turn reads as a slide.
+// The information pages by the pixel: six pixels a frame at 60 frames a
+// second toward the wanted line, so a page turn reads as a quick slide.
 const (
 	detailFrame = time.Second / 60
-	detailStep  = 2
+	detailStep  = 6
 )
 
 // detailLine is the height of one information line.

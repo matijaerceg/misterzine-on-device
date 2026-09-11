@@ -58,11 +58,11 @@ func TestManualScanDismissAndUpdateNotice(t *testing.T) {
 	}
 	a.SetAppUpdate("v1.0.6")
 	entries := a.optionsEntries()
-	if entries[1].kind != "update" || entries[1].text == "Run Update All" {
+	if entries[2].kind != "update" || entries[2].text == "Run Update All" {
 		t.Fatal("missing update action")
 	}
 	a.SetAppUpdate("")
-	if a.optionsEntries()[1].text != "Run Update All" {
+	if a.optionsEntries()[2].text != "Run Update All" {
 		t.Fatal("stale update notice")
 	}
 }

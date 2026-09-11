@@ -32,7 +32,7 @@ func (a *App) canOnlyFilter() bool {
 		return false
 	}
 	e := a.panel.entries[a.panel.cursor]
-	return !e.header && !e.info && (e.kind == "year" || e.kind == "decade" || a.onlyFacet(e.kind) != nil || e.kind == "install" || e.kind == "fav" || e.kind == "since")
+	return !e.header && !e.info && (e.kind == "year" || e.kind == "decade" || e.kind == "beta" || a.onlyFacet(e.kind) != nil || e.kind == "install" || e.kind == "fav" || e.kind == "since")
 }
 
 func (a *App) onlyFilter() bool {
@@ -42,6 +42,9 @@ func (a *App) onlyFilter() bool {
 	e := a.panel.entries[a.panel.cursor]
 	if e.kind == "year" || e.kind == "decade" {
 		return a.toggleYears(true)
+	}
+	if e.kind == "beta" || (e.kind == "base" && e.value == "Arcade") {
+		return a.toggleArcade(true)
 	}
 	f := a.filters
 	off := map[string]bool{}
@@ -88,7 +91,7 @@ func copySection(kind string, to *data.Filters, from data.Filters) {
 	case "year":
 		to.YearOff = from.YearOff
 	case "base":
-		to.BaseOff = from.BaseOff
+		to.BaseOff, to.BetaOff = from.BaseOff, from.BetaOff
 	case "src":
 		to.SrcOff = from.SrcOff
 	case "rot":

@@ -13,10 +13,11 @@ func TestOptionsHoldStopsAtEndsAndFreshPressWraps(t *testing.T) {
 			t.Run(key.String()+"/"+drive, func(t *testing.T) {
 				a, clock := saverApp()
 				a.openPanel(ScreenOptions)
+				first := a.panel.cursor // past the Data heading
 				last := len(a.panel.entries) - 1
-				end, other, start := 0, last, 1
+				end, other, start := first, last, first+1
 				if key == platform.KeyDown {
-					end, other, start = last, 0, last-1
+					end, other, start = last, first, last-1
 				}
 				a.panel.cursor = start
 				press := func() { a.Handle(platform.Event{Key: key, Pressed: true, At: *clock}) }

@@ -17,6 +17,9 @@ func (a *App) resetFilterExpansion() {
 	if a.rotationFilter() != "" {
 		a.panel.sectionClosed["rot"] = false
 	}
+	if len(a.filters.BetaOff) > 0 {
+		a.panel.yearOpen["Arcade"] = true // reveal the Stable/Beta choice
+	}
 	// Reveal individual years only for partially selected decades.
 	total, hidden := map[string]int{}, map[string]int{}
 	for year := range a.ds.Facets.Year {

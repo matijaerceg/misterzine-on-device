@@ -42,6 +42,7 @@ type Filters struct {
 	MatchRotation string          `json:"-"`                 // runtime INI rule; includes system/unknown rows
 	ResOff        map[string]bool `json:"res_off,omitempty"` // raw resolution, "" = unknown
 	BaseOff       map[string]bool `json:"base_off,omitempty"`
+	BetaOff       map[string]bool `json:"beta_off,omitempty"` // arcade sub-type: "stable", "beta"
 	SrcOff        map[string]bool `json:"src_off,omitempty"`
 	RotOff        map[string]bool `json:"rot_off,omitempty"`   // "h", "v", ""
 	PlrOff        map[string]bool `json:"plr_off,omitempty"`   // raw plr, "" = unknown
@@ -59,7 +60,7 @@ func (f *Filters) Active() bool {
 	if f == nil {
 		return false
 	}
-	return f.MatchRotation != "" || len(f.YearOff) > 0 || len(f.BaseOff) > 0 || len(f.SrcOff) > 0 || len(f.RotOff) > 0 || len(f.PlrOff) > 0 ||
+	return f.MatchRotation != "" || len(f.YearOff) > 0 || len(f.BaseOff) > 0 || len(f.BetaOff) > 0 || len(f.SrcOff) > 0 || len(f.RotOff) > 0 || len(f.PlrOff) > 0 ||
 		len(f.ResOff) > 0 || len(f.GenreOff) > 0 || len(f.DirectionsOff) > 0 || len(f.ButtonsOff) > 0 || (f.Install != "" && f.Install != InstallAll) || f.FavOnly || f.Since
 }
 
@@ -72,6 +73,9 @@ func (f *Filters) Pass(r *Row, d *Derived, st Status, fav, unseen bool) bool {
 		return false
 	}
 	if f.BaseOff[r.Base] || f.SrcOff[r.Src] {
+		return false
+	}
+	if r.IsArcade() && f.BetaOff[BetaKind(r)] {
 		return false
 	}
 	if r.IsArcade() && (f.YearOff[d.Year] || f.ResOff[r.Res] || f.RotOff[d.RotGroup] || f.PlrOff[r.Plr] || f.GenreOff[r.Genre] || f.DirectionsOff[d.Directions] || f.ButtonsOff[d.Buttons]) {
@@ -106,6 +110,15 @@ func (f *Filters) Pass(r *Row, d *Derived, st Status, fav, unseen bool) bool {
 		return false
 	}
 	return true
+}
+
+// BetaKind is an arcade row's sub-type for the Type filter: "beta" for a
+// Patreon beta core, "stable" otherwise.
+func BetaKind(r *Row) string {
+	if r.Beta {
+		return "beta"
+	}
+	return "stable"
 }
 
 // Apply narrows an order to the rows that pass. status, fav and unseen may be nil.

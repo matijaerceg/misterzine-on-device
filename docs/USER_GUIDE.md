@@ -119,9 +119,11 @@ Screenshots work without remote debugging.
 
 ## Options
 
-Options starts with Refresh data now, Run Update All, Rescan card and Last
-update result. Display and browsing preferences follow, with maintenance and
-Quit at the bottom. Values line up in one column; a small arrow at the right
+Options is in three groups under grey headings: Data (Refresh data now, Run
+Update All, Rescan card, Last update result, Prefetch shots, Clear image cache),
+Display (rotation, fonts, list shots, date format, screensaver, safe zone) and
+Operation (scrolling, sort memory, the launcher, Troubleshooting, Quit). The
+headings cannot be selected. Values line up in one column; a small arrow at the right
 edge of the top or bottom row shows when more options sit above or below the
 visible part of the list. The framed text under the list describes the selected
 option, and the build version and catalogue date sit below it in grey. Held
@@ -241,7 +243,10 @@ development builds do not advertise stable downgrades.
 The **Arcade game filters** section contains Rotation, Resolution, Genre,
 Controls, Buttons and Players. These choices affect arcade games only; Type
 controls whether console, computer and other cores appear. Excluding Arcade
-hides its filter section while retaining your choices for later.
+hides its filter section while retaining your choices for later. Under Type,
+Arcade opens (Right, or X) into Stable and Beta, the Patreon beta cores, like
+a decade opens into years: A toggles one, Y shows only one, and a mixed choice
+shows `[-]` on Arcade. Turning both off is the same as turning Arcade off.
 
 Counts reflect your search and the other filter sections. A choice's count
 ignores its own section, so unchecked choices still show how many entries they

@@ -114,8 +114,18 @@ func (a *App) facetCounts(kind string) map[string]int {
 	value := func(r *data.Row, d *data.Derived) string { return "" }
 	switch kind {
 	case "base":
-		f.BaseOff = nil
+		f.BaseOff, f.BetaOff = nil, nil
 		value = func(r *data.Row, d *data.Derived) string { return r.Base }
+	case "beta": // Arcade's Stable/Beta children count within the other types' choices
+		f.BetaOff = nil
+		base := map[string]bool{}
+		for v := range f.BaseOff {
+			if v != "Arcade" {
+				base[v] = true
+			}
+		}
+		f.BaseOff = base
+		value = func(r *data.Row, d *data.Derived) string { return data.BetaKind(r) }
 	case "src":
 		f.SrcOff = nil
 		value = func(r *data.Row, d *data.Derived) string { return r.Src }
@@ -226,6 +236,10 @@ func (a *App) rawFilterEntries() []panelEntry {
 			return
 		}
 		for _, v := range sortedFacet(facet) {
+			if kind == "base" && v == "Arcade" {
+				E = append(E, a.arcadeEntries(counts[v])...)
+				continue
+			}
 			E = append(E, panelEntry{text: label(v), kind: kind, value: v, checked: !off[v], count: counts[v], showCount: true})
 		}
 	}
@@ -326,7 +340,9 @@ func (a *App) optionsEntries() []panelEntry {
 		updateText = "Update MisterZine + all"
 		updateHelp = "MisterZine " + a.appUpdate + " is available. Run Update All, then quit and reopen MisterZine to use it."
 	}
-	return []panelEntry{
+	group := func(title string) panelEntry { return panelEntry{text: title, header: true, info: true} }
+	spacer := panelEntry{header: true, info: true}
+	E := []panelEntry{group("Data"),
 		{text: "Refresh data now", kind: "refresh",
 			help: "Check misterzine.fyi for new releases now. This also happens on launch and every 30 minutes."},
 		{text: updateText, kind: "update", help: updateHelp},
@@ -334,18 +350,17 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Refresh on-card status after an external update. The built-in Update All rescans automatically when it finishes."},
 		{text: "Last update result", kind: "update-result",
 			help: "Review the last Update All result and its saved output. This does not start another update."},
+		{text: "Prefetch shots" + a.progressText(), kind: "prefetch", vals: []string{"off", "on"}, idx: prefetchIdx,
+			help: "Download every screenshot in the background (about 55 MB) so browsing never waits; the tally counts up as they land. Off: only what you look at."},
+		{text: "Clear image cache", kind: "clearimg",
+			help: "Delete the downloaded screenshots and system photos; they come back as you browse."},
+		spacer, group("Display"),
 		{text: "Follow INI rotation", kind: "follow-rotation", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.FollowRotation()],
 			help: "On (default): match osd_rotate in the active MiSTer INI at every startup. Off: rotate manually below. Never edits the INI."},
 		{text: "Rotation", kind: "rotation", vals: []string{"monitor CW", "horizontal", "monitor CCW"}, idx: rotIdx, disabled: a.FollowRotation(),
 			help: rotationHelp},
 		{text: "Filter by rotation", kind: "filter-rotation", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.FilterRotation()],
 			help: "Show only games made for the current orientation (INI or manual); unknowns hidden. Off restores manual filters."},
-		{text: "Scroll speed", kind: "scroll", vals: []string{"20 Hz", "30 Hz", "60 Hz"}, idx: scrollIdx,
-			help: "How many rows (or pages, with Left/Right) a held direction moves per second. 60 Hz is one row every frame."},
-		{text: "Hold delay", kind: "hold-delay", vals: []string{"short", "normal", "long"}, idx: map[int]int{200: 0, 300: 1, 500: 2}[a.HoldDelay()],
-			help: "Wait before held navigation repeats: short 200 ms, normal 300 ms, long 500 ms. Scroll speed sets the pace after this delay."},
-		{text: "Remember sort order", kind: "remember-sort", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.RememberSort()],
-			help: "On: reopen with your last view, including Favorites (default). Off: start new visits with latest updates."},
 		{text: "Title font", kind: "title-font", vals: []string{"normal", "narrow", "narrow tall"}, idx: map[string]int{"normal": 0, "narrow": 1, "tall": 2}[a.TitleFont()],
 			help: "Narrow fonts fit a third more title; tall (default) matches the body font height. Normal: body font."},
 		{text: "List shots", kind: "list-shot", vals: []string{"gameplay", "title"}, idx: map[string]int{"gameplay": 0, "title": 1}[a.ListShot()],
@@ -356,17 +371,21 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Dim the screen and scroll black lettering after idle time. Left/Right sets the delay; A previews. A browsing button wakes without acting. Menu still exits."},
 		{text: "Edit safe zone", kind: "inset",
 			help: "Margin kept clear of the screen edge (overscan): now " + itoa(a.cfg.SafeInsetX) + " px at the sides, " + itoa(a.cfg.SafeInsetY) + " px top and bottom. A opens the frame; fit it just inside the picture."},
-		{text: "Prefetch shots" + a.progressText(), kind: "prefetch", vals: []string{"off", "on"}, idx: prefetchIdx,
-			help: "Download every screenshot in the background (about 55 MB) so browsing never waits; the tally counts up as they land. Off: only what you look at."},
+		spacer, group("Operation"),
+		{text: "Scroll speed", kind: "scroll", vals: []string{"20 Hz", "30 Hz", "60 Hz"}, idx: scrollIdx,
+			help: "How many rows (or pages, with Left/Right) a held direction moves per second. 60 Hz is one row every frame."},
+		{text: "Hold delay", kind: "hold-delay", vals: []string{"short", "normal", "long"}, idx: map[int]int{200: 0, 300: 1, 500: 2}[a.HoldDelay()],
+			help: "Wait before held navigation repeats: short 200 ms, normal 300 ms, long 500 ms. Scroll speed sets the pace after this delay."},
+		{text: "Remember sort order", kind: "remember-sort", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.RememberSort()],
+			help: "On: reopen with your last view, including Favorites (default). Off: start new visits with latest updates."},
 		{text: "Main menu launcher", kind: "launcher", vals: []string{"off", "on"}, idx: launcherIdx,
 			help: "Show MisterZine in the MiSTer main menu. Off removes the entry when you return to Menu. Run MisterZine-Setup in Scripts to restore it."},
-		{text: "Clear image cache", kind: "clearimg",
-			help: "Delete the downloaded screenshots and system photos; they come back as you browse."},
 		{text: "Troubleshooting", kind: "troubleshooting",
 			help: "Test your Start button or game launching. Results stay on screen for a photo; no keyboard or log files needed."},
 		{text: "Quit MisterZine", kind: "quit",
 			help: "Back to the MiSTer menu. The pad's menu button does the same."},
 	}
+	return E
 }
 
 // dateFormatHelp shows today's date in the chosen list format.
@@ -475,7 +494,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, cols), gen.Eva.Muted)
 		case e.header:
 			c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, cols), gen.Eva.Accent)
-		case e.kind == "year" || e.kind == "decade" || e.kind == "res" || e.kind == "base" || e.kind == "src" || e.kind == "rot" || e.kind == "plr" || e.kind == "genre" || e.kind == "directions" || e.kind == "buttons" || e.kind == "install" || e.kind == "fav" || e.kind == "since":
+		case e.kind == "year" || e.kind == "decade" || e.kind == "res" || e.kind == "base" || e.kind == "beta" || e.kind == "src" || e.kind == "rot" || e.kind == "plr" || e.kind == "genre" || e.kind == "directions" || e.kind == "buttons" || e.kind == "install" || e.kind == "fav" || e.kind == "since":
 			mark := "[ ] "
 			if e.checked {
 				mark = "[x] "
@@ -757,6 +776,9 @@ func (a *App) togglePanel() bool {
 			out[k] = v
 		}
 		return out
+	}
+	if e.kind == "beta" || (e.kind == "base" && e.value == "Arcade") {
+		return a.toggleArcade(false)
 	}
 	switch e.kind {
 	case "year", "decade":
