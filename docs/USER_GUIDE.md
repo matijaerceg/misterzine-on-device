@@ -80,8 +80,8 @@ filter choices are saved.
 | Pad | Keyboard | List | Details | Artwork | Filters | Options |
 |---|---|---|---|---|---|---|
 | Up/Down | arrows | move | choose version | | move | move |
-| Left/Right | arrows | page | | change shot | page | change value |
-| L/R | PageUp/PageDown | previous/next letter in A-Z; newer/older month in date sorts | scroll information | | first/last | first/last |
+| Left/Right | arrows | page | | change shot | collapse/expand section or years | change value |
+| L/R | PageUp/PageDown | previous/next letter in A-Z; newer/older month in date sorts | scroll information | | previous/next section | first/last |
 | A | Enter | details | artwork | | toggle | run action |
 | B | Esc | Options / clear search | back | back | back | back |
 | X | Tab | Filters | | | show/hide years | |
@@ -162,7 +162,15 @@ section headings. For Favorites/Since, Y toggles the choice.
 
 Filters -> Original release year groups arcade games into decades. A toggles
 the selected decade; X expands or collapses its individual years. On an individual
-year, X collapses the decade and returns to its row. Left/Right always pages.
+year, X collapses the decade and returns to its row. Left collapses years or
+their section, and Right expands them. Sections start expanded; collapsing
+changes only the display, not your filter choices. L/R jumps to the
+previous/next section heading. Keyboard Home/End still goes to the first/last row.
+
+In the main list and Filters, Up/Down keeps the selected row near the center.
+Scrolling stops at the beginning and end so the list stays filled. Main-list
+letter/month jumps still align the first row at the top; moving Up/Down resumes
+centered scrolling.
 Y shows only that decade or year; press Y again to enable all years. A mixed
 decade shows `[-]`. Choices are saved and combine with your other filters.
 Unknown or uncertain years have an Unknown choice. System cores are unaffected.

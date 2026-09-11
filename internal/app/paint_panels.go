@@ -29,10 +29,11 @@ type panelEntry struct {
 }
 
 type panelState struct {
-	entries  []panelEntry
-	cursor   int
-	top      int
-	yearOpen map[string]bool // expanded decades; browsing state only
+	entries       []panelEntry
+	cursor        int
+	top           int
+	yearOpen      map[string]bool // expanded decades; browsing state only
+	sectionClosed map[string]bool // section browsing state; filters stay unchanged
 	// settings snapshot
 	prefetch bool
 	lines    int // entries that fit, from the last paint (paging)
@@ -142,6 +143,26 @@ func (a *App) facetCounts(kind string) map[string]int {
 }
 
 func (a *App) filterEntries() []panelEntry {
+	var out []panelEntry
+	hidden := false
+	for _, e := range a.rawFilterEntries() {
+		if e.header {
+			hidden = false
+			if !e.info && e.kind != "" {
+				hidden = a.panel.sectionClosed[e.kind]
+				if hidden {
+					e.text = "[+] " + e.text
+				}
+			}
+			out = append(out, e)
+		} else if !hidden {
+			out = append(out, e)
+		}
+	}
+	return out
+}
+
+func (a *App) rawFilterEntries() []panelEntry {
 	f := &a.filters
 	var E []panelEntry
 	if f.Active() {
@@ -390,6 +411,9 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 	lines := inner.Dy() / lh
 	p := &a.panel
 	p.lines = lines
+	if a.screen == ScreenFilter {
+		p.top = centeredTop(p.cursor, len(p.entries), lines)
+	}
 	if p.cursor < p.top {
 		p.top = p.cursor
 	}
@@ -521,23 +545,16 @@ func (a *App) actPanel(k platform.Key) bool {
 		if a.screen == ScreenOptions {
 			return a.stepValue(-1)
 		}
-		// the last entry of the previous page, shown at the bottom
-		p.cursor = p.nearest(p.top-1, selectable)
-		p.top = p.cursor - max(p.lines, 1) + 1
-		if p.top < 0 {
-			p.top = 0
-		}
+		return a.expandFilterSection(false)
 	case platform.KeyRight:
 		if a.screen == ScreenOptions {
 			return a.stepValue(1)
 		}
-		// the first entry of the next page, shown at the top
-		p.cursor = p.nearest(p.top+max(p.lines, 1), selectable)
-		p.top = p.cursor
-		if p.top > n-max(p.lines, 1) {
-			p.top = max(n-max(p.lines, 1), 0)
-		}
+		return a.expandFilterSection(true)
 	case platform.KeyPageUp, platform.KeyHome:
+		if a.screen == ScreenFilter && k == platform.KeyPageUp {
+			return a.jumpFilterSection(-1)
+		}
 		for i := 0; i < n; i++ {
 			if selectable(i) {
 				p.cursor = i
@@ -545,6 +562,9 @@ func (a *App) actPanel(k platform.Key) bool {
 			}
 		}
 	case platform.KeyPageDown, platform.KeyEnd:
+		if a.screen == ScreenFilter && k == platform.KeyPageDown {
+			return a.jumpFilterSection(1)
+		}
 		for i := n - 1; i >= 0; i-- {
 			if selectable(i) {
 				p.cursor = i

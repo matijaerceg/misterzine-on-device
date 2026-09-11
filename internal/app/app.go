@@ -669,6 +669,10 @@ func (a *App) actList(k platform.Key) bool {
 	if a.cursor < 0 {
 		a.cursor = 0
 	}
+	if k == platform.KeyUp || k == platform.KeyDown {
+		a.shortPage = false
+		a.top = centeredTop(a.screenLine(a.cursor), a.totalLines(), a.lay.Lines)
+	}
 	a.ensureVisible()
 	a.all = true
 	return true

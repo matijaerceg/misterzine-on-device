@@ -89,12 +89,11 @@ func TestLetterJumpsPutGroupAtTopInBothDirections(t *testing.T) {
 			}
 			jump(platform.KeyPageDown, "B 00")
 			jump(platform.KeyPageDown, "Z 00")
-			// A short final group remains at the top when walking within it.
-			top := a.top
+			// Row movement resumes centered scrolling, bounded by the list end.
 			a.actList(platform.KeyDown)
 			a.Paint()
-			if a.top != top {
-				t.Fatal("walking within the last letter pulled earlier groups into view")
+			if a.top != centeredTop(a.screenLine(a.cursor), a.totalLines(), a.lay.Lines) {
+				t.Fatal("walking after a jump did not resume centered scrolling")
 			}
 			jump(platform.KeyPageUp, "B 00")
 			jump(platform.KeyPageUp, "A 00")

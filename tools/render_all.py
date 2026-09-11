@@ -77,5 +77,13 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "tab; down*24; shot decades; tab; shot expanded; "
                           "down*2; enter; shot mixed; space; shot only-year; "
                           "space; shot all-years; tab; shot collapsed"])
+for rotation in ([], ["-rot", "left", "-logical"]):
+    orientation = "t" if rotation else "h"
+    scenarios.append([*rotation, "-inset", "40",
+                      "-out", f"out/center-scroll-{orientation}", "-script",
+                      "space*2; home; down*12; shot middle; end; up*4; shot bottom; "
+                      "home; shot top; tab; pagedown*5; shot section; left; shot closed; "
+                      "right; down*2; right; shot years; left; left; shot nested-closed; "
+                      "pagedown; shot next-section; pageup; shot previous-section"])
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)

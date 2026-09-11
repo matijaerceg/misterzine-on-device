@@ -51,6 +51,10 @@ func (a *App) selectedDecade() string {
 
 // X toggles expansion; from a child year it closes the parent decade.
 func (a *App) toggleYearExpansion() bool {
+	return a.expandYears(!a.panel.yearOpen[a.selectedDecade()])
+}
+
+func (a *App) expandYears(open bool) bool {
 	if a.panel.cursor >= len(a.panel.entries) {
 		return false
 	}
@@ -58,7 +62,6 @@ func (a *App) toggleYearExpansion() bool {
 	if decade == "" {
 		return false
 	}
-	open := !a.panel.yearOpen[decade]
 	if a.panel.yearOpen == nil {
 		a.panel.yearOpen = map[string]bool{}
 	}
@@ -74,11 +77,6 @@ func (a *App) toggleYearExpansion() bool {
 		}
 	}
 	a.buildPanel()
-	if open && a.panel.lines > 3 {
-		// Show the first few child years immediately when the decade was
-		// selected near the bottom of the screen.
-		a.panel.top = max(a.panel.top, a.panel.cursor-a.panel.lines+4)
-	}
 	return true
 }
 

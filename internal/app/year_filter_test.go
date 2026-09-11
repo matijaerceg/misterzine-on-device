@@ -32,14 +32,15 @@ func TestYearDecadeFilteringAndPersistence(t *testing.T) {
 		t.Fatalf("missing %s/%s", kind, value)
 	}
 	choose("decade", "1980s", false)
-	for _, key := range []platform.Key{platform.KeyLeft, platform.KeyRight} {
-		choose("decade", "1980s", false)
-		before := a.panel.cursor
-		a.panel.lines, a.panel.top = 5, before-2
-		a.actPanel(key)
-		if a.panel.cursor == before || len(a.panel.yearOpen) != 0 {
-			t.Fatal("Left/Right must page without expanding decades")
-		}
+	before := a.panel.cursor
+	a.actPanel(platform.KeyRight)
+	a.actPanel(platform.KeyRight)
+	if a.panel.cursor != before || !a.panel.yearOpen["1980s"] {
+		t.Fatal("Right must expand, never page or toggle closed")
+	}
+	a.actPanel(platform.KeyLeft)
+	if a.panel.cursor != before || a.panel.yearOpen["1980s"] {
+		t.Fatal("Left must collapse, never page or toggle open")
 	}
 	choose("decade", "1980s", false)
 	a.actPanel(platform.KeySpace)
@@ -52,12 +53,11 @@ func TestYearDecadeFilteringAndPersistence(t *testing.T) {
 	}
 	a.actPanel(platform.KeyTab)
 	choose("year", "1989", false)
-	before := a.panel.cursor
-	a.panel.top = before - 2
 	a.actPanel(platform.KeyLeft)
-	if a.panel.cursor == before || !a.panel.yearOpen["1980s"] {
-		t.Fatal("Left must page without collapsing individual years")
+	if a.panel.entries[a.panel.cursor].kind != "decade" || a.panel.yearOpen["1980s"] {
+		t.Fatal("Left must collapse to parent decade")
 	}
+	a.actPanel(platform.KeyRight)
 	choose("year", "1989", false)
 	a.actPanel(platform.KeyEnter)
 	if len(a.view) != 4 {
