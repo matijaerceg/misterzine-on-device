@@ -367,14 +367,6 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 	}
 	box := l.Body
 	helpH := 0
-	yearHint := ""
-	if decade := a.selectedDecade(); decade != "" {
-		yearHint = "X show years"
-		if a.panel.yearOpen[decade] {
-			yearHint = "X hide years"
-		}
-		helpH = a.sm.H + 1
-	}
 	helpLines := 4
 	if a.screen == ScreenOptions {
 		if !l.Portrait {
@@ -472,15 +464,19 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 		}
 		a.paintHint(c, gfx.ArrowLeft+" "+gfx.ArrowRight+" change  A open  B back")
 	} else {
-		if yearHint != "" {
-			c.Text(l.Body.Min.X+2, box.Max.Y+1, a.sm, yearHint, gen.Eva.Muted)
-		}
-		hint := "A toggle  " + gfx.ArrowLeft + " " + gfx.ArrowRight + " page  B back"
+		hint := "A toggle  B back"
 		if a.canOnlyFilter() {
 			hint = "A toggle  Y only/all  B back"
 			if a.sm.Width(hint) > l.Hint.Dx()-4 {
 				hint = "A toggle  Y only  B back"
 			}
+		}
+		if decade := a.selectedDecade(); decade != "" {
+			action := "show"
+			if a.panel.yearOpen[decade] {
+				action = "hide"
+			}
+			hint = "A toggle Y only/all X " + action + " years B back"
 		}
 		a.paintHint(c, hint)
 	}
