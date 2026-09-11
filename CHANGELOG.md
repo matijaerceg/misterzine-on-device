@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v1.0.11 — 2026-09-11
 
 - Follow INI rotation reads the MiSTer INI that is actually active: the main
   MiSTer.ini or the alternative `MiSTer_*.ini` selected in the MiSTer OSD,
