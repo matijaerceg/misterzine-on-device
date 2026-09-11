@@ -166,7 +166,9 @@ the selected decade; X expands or collapses its individual years. On an individu
 year, X collapses the decade and returns to its row. Left collapses years or
 their section, and Right expands them. Each time you open Filters, only sections
 with active choices start expanded. Unchanged sections start collapsed.
-A right/down arrow marks collapsed/expanded sections. Collapsing
+A right/down arrow marks collapsed/expanded sections. An asterisk after the
+arrow marks active filters, including INI-controlled rotation. It disappears
+when that section returns to its defaults. Collapsing
 changes only the display, not your filter choices. L/R jumps to the
 previous/next section heading. Keyboard Home/End still goes to the first/last row.
 

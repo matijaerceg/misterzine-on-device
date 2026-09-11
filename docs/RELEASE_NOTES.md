@@ -1,24 +1,23 @@
-Automatic INI rotation, optional matching-game filtering, and faster filter selection.
+Browse by original year or decade, with a more compact Filters page and centered scrolling.
 
-- **Follow INI rotation:** enabled by default, including after upgrading.
-  Each startup reads MiSTer.ini orientation. You can still rotate the current
-  session manually; turn off Options -> Follow INI rotation to retain your
-  chosen orientation across launches. MisterZine never edits the INI.
-- **Strict orientation filter:** Options -> Filter by INI rotation is a separate,
-  default-off option. It shows only entries with a known orientation matching
-  the INI, hiding unknown and opposite orientations, including in Favorites.
-  It acts independently of interface rotation. Turning it off restores your
-  manual filters; search and other filter choices remain intact.
-- **Y only/all:** press Y on a filter value to isolate it within its section.
-  Press Y again on that value to enable all values in the section. Other
-  sections are unchanged. A still toggles individual values, and the legend
-  shows the Y shortcut.
-- **Clearer last-look feedback:** the marker says No changes in top 200 when
-  only that window was checked, or No changes in this view when the complete
-  view was checked. The Since last look filter still checks the full catalogue.
+- **Year and decade filters:** narrow arcade games by their original release
+  year. Open a decade to pick individual years. A toggles; Y selects only that
+  decade/year, and a second press restores all years. Choices are saved.
+- **Collapsible filter sections:** Left/Right closes or opens sections and
+  decades; L/R jumps between section headings. X also toggles a decade.
+  Each visit opens only sections with active filters. Right/down arrows show
+  what can expand, and an asterisk marks non-default choices even when collapsed.
+- **Centered row scrolling:** in the main list and Filters, Up/Down keeps the
+  selected row near the middle while stopping at the beginning and end.
+  Main-view letter/month jumps still place the first matching row at the top.
+- **Cleaner Filters page:** neutral selected-row text, clearer control hints,
+  spacing between general and arcade filters, and fewer redundant labels.
+  Favorites remains a main-view mode and works with other filters; its separate
+  filter section has been removed. Existing Favorites-only choices migrate to
+  that mode automatically.
 
-Existing installations can update through Update All/Downloader. Favorites,
-settings and filter choices are preserved.
+Existing installations can update through Update All/Downloader. Reopen
+MisterZine after updating. Favorites, settings and filter choices are preserved.
 
 For a new installation, follow the
 [installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once).

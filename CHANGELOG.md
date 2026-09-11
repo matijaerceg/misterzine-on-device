@@ -1,5 +1,20 @@
 # Changelog
 
+## v1.0.8 — 2026-09-11
+
+- Filter arcade games by original release year or decade. Expand decades into
+  individual years; A toggles and Y selects only/all. Choices are saved.
+- Filters opens with only active sections expanded. Disclosure arrows show
+  open/closed sections and decades; an asterisk marks non-default filters.
+- Left/Right collapses/expands filter sections and decades; L/R jumps between
+  sections. X also toggles decade expansion.
+- Main-list and Filters row scrolling follows the selection near the center,
+  stopping at the top and bottom. Letter/month jumps retain top alignment.
+- Clearer filter styling and control hints, with a neutral selected-row color.
+  Removed redundant navigation hints and the separate Favorites filter section;
+  Favorites mode still supports all other filters. Existing Favorites-only
+  filter settings migrate to the Favorites main-view mode.
+
 ## v1.0.7 — 2026-09-11
 
 - Optional strict INI rotation filter: show only known matching orientations,

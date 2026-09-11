@@ -12,9 +12,7 @@ func (a *App) resetFilterExpansion() {
 		if !e.header || e.info || e.kind == "" {
 			continue
 		}
-		var section data.Filters
-		copySection(e.kind, &section, a.filters)
-		a.panel.sectionClosed[e.kind] = !section.Active()
+		a.panel.sectionClosed[e.kind] = !a.filterSectionActive(e.kind)
 	}
 	if a.iniFilter() != "" {
 		a.panel.sectionClosed["rot"] = false
@@ -34,6 +32,15 @@ func (a *App) resetFilterExpansion() {
 	for decade, n := range hidden {
 		a.panel.yearOpen[decade] = n > 0 && n < total[decade]
 	}
+}
+
+func (a *App) filterSectionActive(kind string) bool {
+	if kind == "rot" && a.iniFilter() != "" {
+		return true
+	}
+	var section data.Filters
+	copySection(kind, &section, a.filters)
+	return section.Active()
 }
 
 func (a *App) filterHint() string {

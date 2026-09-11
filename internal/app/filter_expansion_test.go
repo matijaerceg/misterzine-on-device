@@ -17,6 +17,47 @@ func openExpandedFilters(a *App) {
 	a.buildPanel()
 }
 
+func TestActiveSectionMarkerFollowsCurrentChoices(t *testing.T) {
+	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest([]data.Row{
+		{K: "a", Base: "Arcade", Genre: "Shooter"}, {K: "b", Base: "Arcade", Genre: "Puzzle"},
+	}, "", time.Now()), nil)
+	heading := func(kind string) string {
+		for _, e := range a.filterEntries() {
+			if e.header && e.kind == kind {
+				return e.text
+			}
+		}
+		t.Fatal("missing heading", kind)
+		return ""
+	}
+	a.SetFilters(data.Filters{GenreOff: map[string]bool{"Puzzle": true}})
+	a.openPanel(ScreenFilter)
+	if heading("genre") != gfx.ArrowDown+" * Genre" {
+		t.Fatal("expanded active marker")
+	}
+	a.panel.sectionClosed["genre"] = true
+	if heading("genre") != gfx.ArrowRight+" * Genre" {
+		t.Fatal("collapsed active marker")
+	}
+	a.SetFilters(data.Filters{})
+	if heading("genre") != gfx.ArrowRight+" Genre" {
+		t.Fatal("default marker did not clear")
+	}
+	a.cfg.FilterRotation = true
+	a.cfg.IniOrientation = "v"
+	if !strings.Contains(heading("rot"), "* Rotation") {
+		t.Fatal("INI restriction not marked")
+	}
+	a.cfg.FilterRotation = false
+	if strings.Contains(heading("rot"), "*") {
+		t.Fatal("disabled INI restriction still marked")
+	}
+	a.SetFilters(data.Filters{Install: data.InstallAll})
+	if strings.Contains(heading("install"), "*") {
+		t.Fatal("default install choice marked")
+	}
+}
+
 func TestFilterOpenShowsOnlyEditsAndRemovesFavorites(t *testing.T) {
 	a := New(Config{PhysW: 320, PhysH: 240, Rotation: gfx.RotLeft, SafeInsetX: 40, SafeInsetY: 40}, data.Ingest([]data.Row{
 		{K: "a", Base: "Arcade", Year: "1980", Genre: "Shooter"},

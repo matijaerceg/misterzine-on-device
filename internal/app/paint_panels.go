@@ -157,7 +157,11 @@ func (a *App) filterEntries() []panelEntry {
 				if hidden {
 					arrow = gfx.ArrowRight
 				}
-				e.text = arrow + " " + e.text
+				mark := ""
+				if a.filterSectionActive(e.kind) {
+					mark = "* "
+				}
+				e.text = arrow + " " + mark + e.text
 			}
 			out = append(out, e)
 		} else if !hidden {
