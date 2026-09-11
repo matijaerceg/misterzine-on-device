@@ -103,7 +103,7 @@ filter choices are saved.
 | B | Esc | Options / clear search | back | back | back | back |
 | X | Tab | Filters | | | show/hide years | |
 | Y | Space | change view | favorite | | only/all | |
-| Start | gamepad Start | launch main version | launch selected version | launch selected version | | |
+| Start | gamepad Start | launch remembered version | launch selected version | launch selected version | | |
 | Menu | | return to MiSTer Menu from any screen; closes the app | | | | |
 
 The Details version selector uses one row. Its tally shows the selection and
@@ -111,6 +111,10 @@ total, such as 2/5. Left/Right chooses among installed alternatives; Start
 launches the chosen version. A dim entry with a leading minus is not on the
 card. A version name too long for the row scrolls back and forth, pausing at
 each end, so alternatives that share a long prefix can be told apart.
+The version chosen is remembered for that game, across restarts: Details
+opens on it next time and Start launches it from the list and from artwork.
+Choosing the main version again forgets the choice, and an alternative that
+has since left the card falls back to the main version.
 A green scrollbar thumb shows when more information is available. Long values
 wrap, and Up/Down pages with an overlapping line, sliding the text smoothly.
 Returning from artwork preserves the selected version and information position.

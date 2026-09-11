@@ -59,6 +59,12 @@ type Config struct {
 
 	// Alternatives lists installed alternative MRAs for a row (card-relative paths).
 	Alternatives func(r *data.Row) []string
+	// Versions remembers each row's last chosen version by row key (a
+	// card-relative launch path): Details opens on it and Start launches it
+	// from anywhere. The main version is not recorded.
+	Versions map[string]string
+	// VersionChanged fires when a remembered version changes so the host can persist.
+	VersionChanged func()
 	// FavChanged fires after a favorite toggle so the host can persist.
 	FavChanged func()
 	// FiltersChanged fires when filter choices change so the host can persist them.
@@ -166,6 +172,9 @@ func New(cfg Config, ds *data.Dataset, stored *data.SeenRecord) *App {
 	if cfg.Favorites == nil {
 		cfg.Favorites = map[string]bool{}
 	}
+	if cfg.Versions == nil {
+		cfg.Versions = map[string]string{}
+	}
 	a := &App{cfg: cfg, body: fonts.Body(), sm: fonts.Small(), narrow: fonts.Narrow(), tall: fonts.NarrowTall(), rot: cfg.Rotation, split: -1, down: map[platform.Key]bool{}}
 	if cfg.RememberSort && cfg.LastSort >= data.SortUpdated && cfg.LastSort <= data.SortYear {
 		a.mode = cfg.LastSort
@@ -259,6 +268,9 @@ func (a *App) Seen() *data.Seen { return a.seen }
 
 // FavoriteSet exposes the live favorites set.
 func (a *App) FavoriteSet() map[string]bool { return a.cfg.Favorites }
+
+// Versions is the remembered version per row key, for the host to persist.
+func (a *App) Versions() map[string]string { return a.cfg.Versions }
 
 // Data exposes the dataset.
 func (a *App) Data() *data.Dataset { return a.ds }
@@ -719,13 +731,13 @@ func (a *App) actList(k platform.Key) bool {
 	case platform.KeyEnter:
 		if n > 0 {
 			a.screen = ScreenDetails
-			a.detail = detailState{from: ScreenList}
+			a.detail = detailState{from: ScreenList, pick: a.rememberedPick()}
 			a.all = true
 		}
 		return true
-	case platform.KeyStart: // launch the main version straight from the list
+	case platform.KeyStart: // launch the remembered version straight from the list
 		if n > 0 {
-			a.launchPick(0)
+			a.launchPick(a.rememberedPick())
 		}
 		return true
 	case platform.KeyLeft: // a screen of rows up, the row centered like a step

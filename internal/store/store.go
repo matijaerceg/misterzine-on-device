@@ -98,6 +98,8 @@ type State struct {
 	DataHash string          `json:"data_hash"`
 	Seen     data.SeenRecord `json:"seen"`
 	Filters  data.Filters    `json:"filters"`
+	// Versions is the last chosen version per row key, a card-relative path.
+	Versions map[string]string `json:"versions,omitempty"`
 }
 
 // FavEntry is one favorite with its change time.

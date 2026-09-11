@@ -436,7 +436,7 @@ func (a *App) paintImageBox(c *gfx.Canvas, box image.Rectangle, key, slot string
 const FavoritesUnavailableNotice = "Favorites unreadable; file kept"
 
 func (a *App) actDetails(k platform.Key) bool {
-	row, _, _ := a.current()
+	row, _, i := a.current()
 	if row == nil {
 		a.screen = ScreenList
 		a.all = true
@@ -448,12 +448,17 @@ func (a *App) actDetails(k platform.Key) bool {
 	case platform.KeyEnter:
 		a.screen = ScreenShot
 		a.slot = 0
-	case platform.KeyLeft:
-		if a.detail.pick > 0 {
-			a.detail.pick--
+	case platform.KeyLeft, platform.KeyRight:
+		entries := a.launchEntries(row, i)
+		prev := a.detail.pick
+		if k == platform.KeyLeft {
+			a.detail.pick = max(0, a.detail.pick-1)
+		} else {
+			a.detail.pick = min(a.detail.pick+1, max(0, len(entries)-1))
 		}
-	case platform.KeyRight:
-		a.detail.pick++
+		if a.detail.pick != prev { // only a change of choice is recorded
+			a.rememberPick(row, entries, a.detail.pick)
+		}
 	case platform.KeyUp, platform.KeyDown:
 		// a page with one line of overlap; the slide starts at the next tick
 		page := max(1, a.detail.lines-1)
@@ -501,10 +506,17 @@ func (a *App) launchPick(pick int) bool {
 	}
 	entries := a.launchEntries(row, i)
 	if len(entries) > 0 && a.cfg.Launch != nil {
-		e := entries[min(pick, len(entries)-1)]
+		pick = max(0, min(pick, len(entries)-1))
+		e := entries[pick]
 		if !e.ok {
 			a.Notice("that file is not on the card", 3*time.Second)
 			return true
+		}
+		if pick > 0 {
+			// An alternative launched is the choice from now on. Launching
+			// the main version keeps any record: the alternatives may just
+			// not be scanned yet.
+			a.rememberPick(row, entries, pick)
 		}
 		a.cfg.Launch(e.path)
 	}

@@ -104,5 +104,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "down; shot info-page; wait 400; shot info-sliding; wait 2000; shot info-paged; "
                           "back; tab; shot heading; enter; shot heading-open; enter; shot heading-closed; "
                           "pagedown*2; right; down; right; shot arcade-open; down*2; enter; shot beta-off; up; space; shot stable-only"])
+scenarios.append(["-out", "out/list-polish-h-15", "-remember-alt", "2", "-script",
+                  "type galaga; down*2; shot alt-remembered-list; enter; shot alt-remembered"])
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)

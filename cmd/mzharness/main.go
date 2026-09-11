@@ -55,6 +55,7 @@ func main() {
 	titleFont := flag.String("title-font", "tall", "list title font: tall, narrow or normal")
 	listShot := flag.String("list-shot", "gameplay", "list thumbnail preference: gameplay or title")
 	dateFormat := flag.String("date-format", "mm-dd", "list date column: mm-dd, dd-mm, mon-d, d-mon or yymmdd")
+	rememberAlt := flag.Int("remember-alt", 0, "start with galagamw's alternative N (1 or 2) remembered as its version")
 	flag.Parse()
 
 	rows, meta := load(*dataPath, *metaPath)
@@ -100,6 +101,14 @@ func main() {
 	if *imgDir != "" {
 		if _, err := os.Stat(*imgDir); err == nil {
 			cfg.Images = images.NewLocal(*imgDir)
+		}
+	}
+	if *rememberAlt > 0 {
+		for i := range rows {
+			if rows[i].SN == "galagamw" {
+				alts := cfg.Alternatives(&rows[i])
+				cfg.Versions = map[string]string{rows[i].K: alts[min(*rememberAlt, len(alts))-1]}
+			}
 		}
 	}
 	if *supportPath != "" {

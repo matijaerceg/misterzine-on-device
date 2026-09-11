@@ -121,11 +121,12 @@ func TestShotReturnPreservesSelectedVersion(t *testing.T) {
 				if launched != alts[1] {
 					t.Fatalf("Start launched %q instead of selected version %q", launched, alts[1])
 				}
-				// A separate visit from the list should still start at the main version.
+				// A separate visit from the list reopens on the remembered version
+				// with the information back at the top.
 				tap(platform.KeyBack)
 				tap(platform.KeyEnter)
-				if a.detail.pick != 0 || a.detail.scroll != 0 {
-					t.Fatal("a fresh details visit retained the previous visit's selection")
+				if a.detail.pick != 2 || a.detail.scroll != 0 {
+					t.Fatalf("a fresh details visit: pick=%d scroll=%d, wanted the remembered version 2 at the top", a.detail.pick, a.detail.scroll)
 				}
 			})
 		}

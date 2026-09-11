@@ -15,6 +15,10 @@
   except YYMMDD, which always carries the full date.
 - Options -> List shots chooses whether the pane thumbnail is a gameplay shot
   (default) or the title screen.
+- The version chosen in Details is remembered per game, across restarts:
+  Details opens on it next time and Start launches it from the list and from
+  artwork. Choosing the main version again forgets the choice; an alternative
+  no longer on the card falls back to the main version.
 - A Details version name too long for its line scrolls back and forth by the
   pixel, pausing briefly at each end, so alternatives that share a long prefix
   can be told apart.
