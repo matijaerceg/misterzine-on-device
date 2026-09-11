@@ -352,7 +352,7 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: updateText, kind: "update", help: updateHelp},
 		{text: "Rescan card", kind: "rescan",
 			help: "Refresh on-card status after an external update. The built-in Update All rescans automatically when it finishes."},
-		{text: "Sources", kind: "sources", vals: []string{"all", "installed"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.InstalledOnly],
+		{text: "Sources", kind: "sources", vals: []string{"all", "installed only"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.InstalledOnly],
 			help: a.sourcesHelp()},
 		{text: "Last update result", kind: "update-result",
 			help: "Review the last Update All result and its saved output. This does not start another update."},

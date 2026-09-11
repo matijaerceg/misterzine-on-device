@@ -163,7 +163,7 @@ the bottom.
   filters remain active; saved manual rotation filters are temporarily
   superseded and restored when this option is turned off. Filters shows the
   active rule, and it follows the interface when the rotation changes.
-- **Sources:** all by default. Installed shows only games from the databases
+- **Sources:** all by default. Installed only shows games from the databases
   listed in the card's `downloader.ini`, the file Update All rewrites on every
   run, so a source you never enabled (Coin-Op, Meathax, or Jotego) stays out of
   the list, search, Favorites and the Filters panel, and the release count

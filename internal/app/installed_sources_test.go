@@ -9,7 +9,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 )
 
-// Options -> Sources: installed drops every source whose Downloader
+// Options -> Sources: installed only drops every source whose Downloader
 // database the card lacks from the list, search, Favorites, the card
 // counts and the Filters panel, without reading as an active filter.
 func TestInstalledSourcesLeaveEveryView(t *testing.T) {
@@ -75,8 +75,8 @@ func TestInstalledSourcesLeaveEveryView(t *testing.T) {
 			row = i
 		}
 	}
-	if row < 0 || a.panel.entries[row].idx != 1 || a.panel.entries[row].vals[1] != "installed" {
-		t.Fatal("Sources option missing or not on installed")
+	if row < 0 || a.panel.entries[row].idx != 1 || a.panel.entries[row].vals[1] != "installed only" {
+		t.Fatal("Sources option missing or not on installed only")
 	}
 	a.panel.cursor = row
 	a.stepValue(-1)

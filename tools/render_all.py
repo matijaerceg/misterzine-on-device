@@ -108,7 +108,7 @@ scenarios.append(["-out", "out/list-polish-h-15", "-remember-alt", "2", "-script
                   "type galaga; down*2; shot alt-remembered-list; enter; shot alt-remembered"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
-    # Options -> Sources: installed with only MiSTer and Jotego databases
+    # Options -> Sources: installed only, with the MiSTer and Jotego databases
     scenarios.append([*rotation, "-installed", "distribution_mister,jtcores",
                       "-out", f"out/installed-sources-{orientation}", "-script",
                       "shot list; tab; down*3; right; shot filters; back; back; down*3; shot option; left; shot option-all; back; shot list-all"])

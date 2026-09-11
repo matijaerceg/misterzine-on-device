@@ -89,7 +89,7 @@ type Config struct {
 	RememberSort   bool
 	FollowRotation bool
 	FilterRotation bool // strict filter on the current orientation
-	// InstalledOnly is Options -> Sources: installed. Sources whose Downloader
+	// InstalledOnly is Options -> Sources: installed only. Sources whose Downloader
 	// database the card lacks (SetHiddenSources) leave every view.
 	InstalledOnly bool
 	LastSort      data.SortMode
@@ -373,7 +373,7 @@ func (a *App) RememberSort() bool   { return a.cfg.RememberSort }
 func (a *App) FollowRotation() bool { return a.cfg.FollowRotation }
 func (a *App) FilterRotation() bool { return a.cfg.FilterRotation }
 
-// InstalledOnly reports Options -> Sources: installed.
+// InstalledOnly reports Options -> Sources: installed only.
 func (a *App) InstalledOnly() bool { return a.cfg.InstalledOnly }
 
 // SetInstalledOnly is the Sources option; the host calls Refilter after.

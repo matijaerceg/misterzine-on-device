@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Options -> Sources: all (default) or installed. Installed shows only games
+- Options -> Sources: all (default) or installed only, which shows games only
   from the databases in the card's downloader.ini, read at every card scan,
   so sources you never enabled (Coin-Op, Meathax, Jotego) leave the list,
   search, Favorites, the release count and the Filters panel. Without a
