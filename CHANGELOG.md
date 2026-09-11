@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v1.0.7 — 2026-09-11
 
 - Optional strict INI rotation filter: show only known matching orientations,
   excluding unknown and opposite orientations, including in Favorites. Defaults

@@ -1,20 +1,21 @@
-Favorites as a main-view mode, quieter startup and app-update notifications.
+Automatic INI rotation, optional matching-game filtering, and faster filter selection.
 
-- **Favorites view:** press Y to cycle Latest update, MiSTer debut,
-  Alphabetical and Favorites. Favorites uses alphabetical order and the same
-  held L/R letter jumps. Search and filters still apply, and Remember sort
-  order also remembers Favorites.
-- **Quieter startup:** automatic card scans no longer cover the title bar
-  with routine totals. Scan failures still show a prominent notice.
-- **Clear manual scan results:** Options -> Rescan card shows a readable
-  result screen in horizontal and tate layouts. B leaves the screen while the
-  scan continues. On-card filters also show counts across the catalogue.
-- **App-update notification:** when a newer stable MisterZine version is
-  available, the main bar shows App update. Options identifies the version and
-  offers Update All. Checks happen on launch and at most every 30 minutes;
-  offline checks stay quiet. Quit and reopen after updating to use the new app.
-- **Narrow-screen hints:** compact main-view button hints keep Options visible
-  even with a large safe-zone margin.
+- **Follow INI rotation:** enabled by default, including after upgrading.
+  Each startup reads MiSTer.ini orientation. You can still rotate the current
+  session manually; turn off Options -> Follow INI rotation to retain your
+  chosen orientation across launches. MisterZine never edits the INI.
+- **Strict orientation filter:** Options -> Filter by INI rotation is a separate,
+  default-off option. It shows only entries with a known orientation matching
+  the INI, hiding unknown and opposite orientations, including in Favorites.
+  It acts independently of interface rotation. Turning it off restores your
+  manual filters; search and other filter choices remain intact.
+- **Y only/all:** press Y on a filter value to isolate it within its section.
+  Press Y again on that value to enable all values in the section. Other
+  sections are unchanged. A still toggles individual values, and the legend
+  shows the Y shortcut.
+- **Clearer last-look feedback:** the marker says No changes in top 200 when
+  only that window was checked, or No changes in this view when the complete
+  view was checked. The Since last look filter still checks the full catalogue.
 
 Existing installations can update through Update All/Downloader. Favorites,
 settings and filter choices are preserved.
