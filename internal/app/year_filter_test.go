@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
+	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
 
@@ -120,9 +121,8 @@ func TestYearDecadeFilteringAndPersistence(t *testing.T) {
 		t.Fatal("counts must ignore year selection, respect other filters/search", got)
 	}
 	a.cfg.FilterRotation = true
-	a.cfg.IniOrientation = "v"
-	a.Refilter()
+	a.SetRotation(gfx.RotLeft) // refilters on the orientation change
 	if len(a.view) != 1 || a.CursorKey() != "c" {
-		t.Fatal("year filter must combine with strict INI rotation")
+		t.Fatal("year filter must combine with the strict rotation filter")
 	}
 }

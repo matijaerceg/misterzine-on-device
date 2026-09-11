@@ -2,16 +2,22 @@ package app
 
 import "github.com/matijaerceg/misterzine-on-device/internal/data"
 
-func (a *App) iniFilter() string {
-	if a.cfg.FilterRotation && (a.cfg.IniOrientation == "h" || a.cfg.IniOrientation == "v") {
-		return a.cfg.IniOrientation
+// rotationFilter is the orientation the strict filter enforces: the
+// interface's current rotation, whatever set it (INI or manual), or empty
+// when the filter is off.
+func (a *App) rotationFilter() string {
+	if !a.cfg.FilterRotation {
+		return ""
 	}
-	return ""
+	if a.rot.Rotated() {
+		return "v"
+	}
+	return "h"
 }
 
 func (a *App) effectiveFilters() data.Filters {
 	f := a.filters
-	if orientation := a.iniFilter(); orientation != "" {
+	if orientation := a.rotationFilter(); orientation != "" {
 		f.MatchRotation = orientation
 		f.RotOff = nil // keep saved manual rotation choices, temporarily superseded
 	}
@@ -23,9 +29,9 @@ func (a *App) filtersActive() bool {
 	return f.Active()
 }
 
-func (a *App) iniFilterLabel() string {
-	if a.iniFilter() == "v" {
-		return "INI: vertical only"
+func (a *App) rotationFilterLabel() string {
+	if a.rotationFilter() == "v" {
+		return "Rotation: vertical only"
 	}
-	return "INI: horizontal only"
+	return "Rotation: horizontal only"
 }

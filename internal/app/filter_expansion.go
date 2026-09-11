@@ -14,7 +14,7 @@ func (a *App) resetFilterExpansion() {
 		}
 		a.panel.sectionClosed[e.kind] = !a.filterSectionActive(e.kind)
 	}
-	if a.iniFilter() != "" {
+	if a.rotationFilter() != "" {
 		a.panel.sectionClosed["rot"] = false
 	}
 	// Reveal individual years only for partially selected decades.
@@ -35,7 +35,7 @@ func (a *App) resetFilterExpansion() {
 }
 
 func (a *App) filterSectionActive(kind string) bool {
-	if kind == "rot" && a.iniFilter() != "" {
+	if kind == "rot" && a.rotationFilter() != "" {
 		return true
 	}
 	var section data.Filters

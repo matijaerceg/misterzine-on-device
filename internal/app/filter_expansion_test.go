@@ -44,13 +44,13 @@ func TestActiveSectionMarkerFollowsCurrentChoices(t *testing.T) {
 		t.Fatal("default marker did not clear")
 	}
 	a.cfg.FilterRotation = true
-	a.cfg.IniOrientation = "v"
+	a.SetRotation(gfx.RotLeft)
 	if !strings.Contains(heading("rot"), "* Rotation") {
-		t.Fatal("INI restriction not marked")
+		t.Fatal("rotation restriction not marked")
 	}
 	a.cfg.FilterRotation = false
 	if strings.Contains(heading("rot"), "*") {
-		t.Fatal("disabled INI restriction still marked")
+		t.Fatal("disabled rotation restriction still marked")
 	}
 	a.SetFilters(data.Filters{Install: data.InstallAll})
 	if strings.Contains(heading("install"), "*") {

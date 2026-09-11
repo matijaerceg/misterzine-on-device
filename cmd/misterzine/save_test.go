@@ -187,8 +187,8 @@ func TestRotationIntentSurvivesSaves(t *testing.T) {
 			h.saveAll(false)
 			check("auto")
 			tap(platform.KeyHome)
-			for n := 0; n < 4; n++ {
-				tap(platform.KeyDown) // Rotation follows the four actions
+			for n := 0; n < 5; n++ {
+				tap(platform.KeyDown) // Rotation follows the four actions and Follow INI rotation
 			}
 			if rotation == gfx.RotLeft {
 				tap(platform.KeyLeft)

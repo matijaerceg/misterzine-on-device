@@ -51,7 +51,7 @@ func main() {
 	appUpdate := flag.String("app-update", "", "available app version fixture")
 	scanResult := flag.Bool("scan-result", false, "show completed card scan fixture")
 	unchanged := flag.Bool("unchanged", false, "previous visit saw every release")
-	iniOrientation := flag.String("ini-orientation", "h", "INI orientation fixture: h/v")
+	filterRotation := flag.Bool("filter-rotation", false, "start with the strict current-rotation filter on")
 	flag.Parse()
 
 	rows, meta := load(*dataPath, *metaPath)
@@ -82,7 +82,7 @@ func main() {
 		Version:        "harness",
 		RememberSort:   true,
 		FollowRotation: true,
-		IniOrientation: *iniOrientation,
+		FilterRotation: *filterRotation,
 		Alternatives: func(r *data.Row) []string {
 			if r.SN == "galagamw" {
 				return []string{"_Arcade/_alternatives/_Galaga/Galaga (Namco).mra"}

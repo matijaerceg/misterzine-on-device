@@ -118,24 +118,27 @@ Quit at the bottom. Held scrolling stops at either end. Release and press Up
 again from the first item to wrap to Quit, or Down from Quit to wrap to the first
 item. R also jumps to the bottom.
 
-- **Rotation:** Left/Right turns the image in that direction. The labels describe
-  the monitor's clockwise/counterclockwise turn.
 - **Follow INI rotation:** on by default, including after upgrading. Every
-  startup reads `osd_rotate` from MiSTer.ini (Menu overrides the global setting).
-  Manual rotation changes work for the current session. Turn this off to retain
-  your current orientation across launches. Enabling it applies on the next
-  startup; MisterZine never edits the INI. If the file cannot be read, the saved
-  manual rotation is used.
+  startup reads `osd_rotate` from the MiSTer INI that is currently active: the
+  main MiSTer.ini, or the alternative INI (`MiSTer_*.ini`) you selected in the
+  MiSTer OSD, the same one Main itself uses. A `[Menu]` section overrides the
+  global setting. Turn this off to choose a rotation yourself below and keep it
+  across launches; turning it back on applies at the next startup. MisterZine
+  never edits the INI. If the file cannot be read, the saved manual rotation is
+  used.
+- **Rotation:** available when Follow INI rotation is off. Left/Right turns the
+  image in that direction and the choice is saved. The labels describe the
+  monitor's clockwise/counterclockwise turn. While following the INI, the row
+  shows the current rotation in grey and cannot be changed here.
+- **Filter by current rotation:** off by default. On immediately shows only
+  entries explicitly marked Horizontal when the interface is horizontal, or
+  Vertical when it is rotated either way, whatever set that rotation (the INI or
+  a manual choice). Unknown orientations and system entries without matching
+  orientation metadata are hidden, including in Favorites. Search and other
+  filters remain active; saved manual rotation filters are temporarily
+  superseded and restored when this option is turned off. Filters shows the
+  active rule, and it follows the interface when the rotation changes.
 - **Scroll speed:** 20, 30 or 60 rows/pages per second once a hold repeats.
-- **Filter by INI rotation:** off by default. On immediately shows only entries
-  explicitly marked Horizontal for an unrotated INI, or Vertical for either
-  rotated INI setting. Unknown orientations and system entries without matching
-  orientation metadata are hidden, including in Favorites. It uses the INI read
-  at startup, independently of interface rotation. Search and other filters
-  remain active; saved manual rotation filters are temporarily superseded and
-  restored when this option is turned off. Filters shows the active INI rule.
-  If the INI orientation is unavailable, a notice explains that automatic
-  filtering could not be applied.
 - **Hold delay:** short 200 ms, normal 300 ms (default), or long 500 ms before
   navigation repeats. Artwork and calibration retain their own timing.
 - **Remember sort order:** on by default, including after upgrading. Reopens
@@ -174,7 +177,7 @@ year, X collapses the decade and returns to its row. Left collapses years or
 their section, and Right expands them. Each time you open Filters, only sections
 with active choices start expanded. Unchanged sections start collapsed.
 A right/down arrow marks collapsed/expanded sections. An asterisk after the
-arrow marks active filters, including INI-controlled rotation. It disappears
+arrow marks active filters, including the current-rotation rule. It disappears
 when that section returns to its defaults. Collapsing
 changes only the display, not your filter choices. L/R jumps to the
 previous/next section heading. Keyboard Home/End still goes to the first/last row.

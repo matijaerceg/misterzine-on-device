@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- Follow INI rotation reads the MiSTer INI that is actually active: the main
+  MiSTer.ini or the alternative `MiSTer_*.ini` selected in the MiSTer OSD,
+  resolved the same way Main resolves it. Previously only MiSTer.ini was read,
+  so an `osd_rotate` set in an alternative INI was ignored.
+- Options orders the rotation rows as Follow INI rotation, Rotation, then the
+  filter. Rotation is greyed out and locked while following is on, and becomes
+  the saved manual choice once following is off.
+- “Filter by INI rotation” is now “Filter by current rotation”: it follows the
+  interface's orientation whatever set it, INI or manual, and updates as soon as
+  the rotation changes. The saved setting carries over.
+
 ## v1.0.10 — 2026-09-11
 
 - The screensaver lettering carries a one-pixel chrome edge. Two still lights

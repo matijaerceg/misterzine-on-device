@@ -24,6 +24,7 @@ type panelEntry struct {
 	idx       int      // settings: the current choice
 	checked   bool
 	partial   bool // some, but not all, years in a decade are enabled
+	disabled  bool // settings: shown muted, Left/Right ignored
 	count     int
 	showCount bool
 }
@@ -176,13 +177,13 @@ func (a *App) rawFilterEntries() []panelEntry {
 	var E []panelEntry
 	if f.Active() {
 		text := "Clear all filters"
-		if a.iniFilter() != "" {
+		if a.rotationFilter() != "" {
 			text = "Clear other filters"
 		}
 		E = append(E, panelEntry{text: text, kind: "clear"})
 	}
-	if a.iniFilter() != "" {
-		E = append(E, panelEntry{text: a.iniFilterLabel(), info: true},
+	if a.rotationFilter() != "" {
+		E = append(E, panelEntry{text: a.rotationFilterLabel(), info: true},
 			panelEntry{text: "Change in Options", info: true})
 	}
 	E = append(E, panelEntry{text: "On the card", header: true, kind: "install"})
@@ -209,8 +210,8 @@ func (a *App) rawFilterEntries() []panelEntry {
 	section := func(title, kind string, facet map[string]int, off map[string]bool, label func(string) string) {
 		counts := a.facetCounts(kind)
 		E = append(E, panelEntry{text: title, header: true, kind: kind})
-		if kind == "rot" && a.iniFilter() != "" {
-			E = append(E, panelEntry{text: a.iniFilterLabel(), info: true})
+		if kind == "rot" && a.rotationFilter() != "" {
+			E = append(E, panelEntry{text: a.rotationFilterLabel(), info: true})
 			return
 		}
 		for _, v := range sortedFacet(facet) {
@@ -298,6 +299,10 @@ func (a *App) optionsEntries() []panelEntry {
 			saverIdx = i
 		}
 	}
+	rotationHelp := "Left/Right turn the image; the choice is saved. Labels describe the monitor's turn."
+	if a.FollowRotation() {
+		rotationHelp = "Set by the active MiSTer INI. Turn off Follow INI rotation above to rotate manually."
+	}
 	updateText := "Run Update All"
 	updateHelp := "Update with live output and a stage bar. Hold B for 2 seconds to cancel; system writes finish first. A restart may be required."
 	if a.appUpdate != "" {
@@ -312,12 +317,12 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Refresh on-card status after an external update. The built-in Update All rescans automatically when it finishes."},
 		{text: "Last update result", kind: "update-result",
 			help: "Review the last Update All result and its saved output. This does not start another update."},
-		{text: "Rotation", kind: "rotation", vals: []string{"monitor CW", "horizontal", "monitor CCW"}, idx: rotIdx,
-			help: "Left/Right turn the image now. With Follow INI rotation on, the next startup uses MiSTer.ini again."},
 		{text: "Follow INI rotation", kind: "follow-rotation", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.FollowRotation()],
-			help: "On (default): match MiSTer.ini osd_rotate on every startup. Off: keep your chosen rotation. Never edits the INI."},
-		{text: "Filter by INI rotation", kind: "filter-rotation", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.FilterRotation()],
-			help: "INI-matching games only; unknowns hidden. Off restores manual filters. Separate from UI rotation."},
+			help: "On (default): match osd_rotate in the active MiSTer INI at every startup. Off: rotate manually below. Never edits the INI."},
+		{text: "Rotation", kind: "rotation", vals: []string{"monitor CW", "horizontal", "monitor CCW"}, idx: rotIdx, disabled: a.FollowRotation(),
+			help: rotationHelp},
+		{text: "Filter by rotation", kind: "filter-rotation", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.FilterRotation()],
+			help: "Show only games made for the current orientation (INI or manual); unknowns hidden. Off restores manual filters."},
 		{text: "Scroll speed", kind: "scroll", vals: []string{"20 Hz", "30 Hz", "60 Hz"}, idx: scrollIdx,
 			help: "How many rows (or pages, with Left/Right) a held direction moves per second. 60 Hz is one row every frame."},
 		{text: "Hold delay", kind: "hold-delay", vals: []string{"short", "normal", "long"}, idx: map[int]int{200: 0, 300: 1, 500: 2}[a.HoldDelay()],
@@ -457,11 +462,15 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			}
 			// the value with an arrow on each side that can still move
 			left, right := " ", " "
-			if e.idx > 0 {
-				left = gfx.ArrowLeft
-			}
-			if e.idx < len(e.vals)-1 {
-				right = gfx.ArrowRight
+			if e.disabled {
+				col = gen.Eva.Muted // shown, not changeable here
+			} else {
+				if e.idx > 0 {
+					left = gfx.ArrowLeft
+				}
+				if e.idx < len(e.vals)-1 {
+					right = gfx.ArrowRight
+				}
 			}
 			val := left + " " + e.vals[e.idx] + " " + right
 			vw := font.Width(val)
@@ -594,7 +603,7 @@ func (a *App) stepValue(d int) bool {
 		return false
 	}
 	e := p.entries[p.cursor]
-	if len(e.vals) == 0 {
+	if len(e.vals) == 0 || e.disabled {
 		return false
 	}
 	i := e.idx + d
@@ -621,9 +630,6 @@ func (a *App) stepValue(d int) bool {
 	case "filter-rotation":
 		a.cfg.FilterRotation = i == 1
 		a.Refilter()
-		if i == 1 && a.iniFilter() == "" {
-			a.Notice("INI rotation unavailable; no auto-filter", 8*time.Second)
-		}
 	case "screensaver":
 		a.cfg.Screensaver = saverValues[i]
 	case "prefetch":
@@ -651,7 +657,7 @@ func (a *App) togglePanel() bool {
 		return false
 	}
 	e := p.entries[p.cursor]
-	if e.kind == "rot" && a.iniFilter() != "" {
+	if e.kind == "rot" && a.rotationFilter() != "" {
 		return false
 	}
 	f := a.filters

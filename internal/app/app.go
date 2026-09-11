@@ -82,8 +82,7 @@ type Config struct {
 	// RememberSort restores LastSort at startup; otherwise start with latest updates.
 	RememberSort   bool
 	FollowRotation bool
-	FilterRotation bool
-	IniOrientation string // h/v from INI; empty when unavailable
+	FilterRotation bool // strict filter on the current orientation
 	LastSort       data.SortMode
 }
 
@@ -166,6 +165,7 @@ func New(cfg Config, ds *data.Dataset, stored *data.SeenRecord) *App {
 }
 
 func (a *App) setRotation(rot gfx.Rotation) {
+	orientationChanged := a.rot.Rotated() != rot.Rotated()
 	a.rot = rot
 	w, h := a.cfg.PhysW, a.cfg.PhysH
 	if rot.Rotated() {
@@ -174,6 +174,9 @@ func (a *App) setRotation(rot gfx.Rotation) {
 	a.logical = gfx.New(w, h)
 	a.lay = NewLayout(w, h, a.cfg.SafeInsetX, a.cfg.SafeInsetY, a.body)
 	if a.ds != nil {
+		if orientationChanged && a.cfg.FilterRotation {
+			a.Refilter() // the strict filter follows the current orientation
+		}
 		a.ensureVisible()
 	}
 	a.all = true

@@ -34,3 +34,31 @@ func TestDisablingFollowKeepsCurrentOrientation(t *testing.T) {
 		t.Fatal("turning on must take effect next launch")
 	}
 }
+
+func TestRotationRowDisabledWhileFollowing(t *testing.T) {
+	a := New(Config{PhysW: 320, PhysH: 240, Rotation: gfx.RotNone, FollowRotation: true}, data.Ingest(nil, "", time.Now()), nil)
+	a.openPanel(ScreenOptions)
+	idx := map[string]int{}
+	for i, e := range a.panel.entries {
+		idx[e.kind] = i
+	}
+	if idx["follow-rotation"]+1 != idx["rotation"] || idx["rotation"]+1 != idx["filter-rotation"] {
+		t.Fatal("order must be follow, rotation, filter", idx)
+	}
+	if !a.panel.entries[idx["rotation"]].disabled {
+		t.Fatal("rotation must be disabled while following")
+	}
+	a.panel.cursor = idx["rotation"]
+	if a.stepValue(1) || a.rot != gfx.RotNone {
+		t.Fatal("disabled rotation row must ignore Left/Right")
+	}
+	a.panel.cursor = idx["follow-rotation"]
+	a.stepValue(-1)
+	if a.panel.entries[idx["rotation"]].disabled {
+		t.Fatal("rotation must be enabled once following is off")
+	}
+	a.panel.cursor = idx["rotation"]
+	if !a.stepValue(1) || a.rot != gfx.RotLeft {
+		t.Fatal("manual rotation must work when following is off")
+	}
+}

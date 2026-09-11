@@ -113,7 +113,7 @@ func main() {
 	}
 	root := flag.String("root", "/media/fat/misterzine", "config directory")
 	card := flag.String("card", "/media/fat", "card root")
-	ini := flag.String("ini", "/media/fat/MiSTer.ini", "MiSTer.ini path")
+	ini := flag.String("ini", "", "MiSTer INI path; empty follows Main's active (alternative) INI on the card")
 	debugAddr := flag.String("debug-http", "", "LAN debug server address, e.g. :8195")
 	version := flag.Bool("version", false, "print the version and exit")
 	flag.Parse()
@@ -145,9 +145,13 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 	}
 	h.loadFavorites()
 
+	iniAlt := 0
+	if iniPath == "" {
+		iniPath, iniAlt = mister.ActiveIni(card)
+	}
 	ini := mister.ReadIni(iniPath)
-	lg.Printf("ini: found=%v osd_rotate=%d direct_video=%d vga_scaler=%d fb_terminal=%d analog-visible=%v",
-		ini.Found, ini.OSDRotate, ini.DirectVideo, ini.VGAScaler, ini.FBTerminal, ini.AnalogVisible())
+	lg.Printf("ini: %s alt=%d found=%v osd_rotate=%d direct_video=%d vga_scaler=%d fb_terminal=%d analog-visible=%v",
+		filepath.Base(iniPath), iniAlt, ini.Found, ini.OSDRotate, ini.DirectVideo, ini.VGAScaler, ini.FBTerminal, ini.AnalogVisible())
 	if ini.Found && !ini.AnalogVisible() {
 		lg.Printf("WARNING: the framebuffer cannot reach the analog port with this MiSTer.ini; on a CRT-only setup add direct_video=1 (or vga_scaler=1 + a 15 kHz video_mode) under a [Menu] section")
 	}
@@ -208,7 +212,6 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 		RememberSort:         h.settings.RememberSort,
 		FollowRotation:       h.settings.FollowRotation,
 		FilterRotation:       h.settings.FilterRotation,
-		IniOrientation:       iniOrientation(ini),
 		LastSort:             h.settings.LastSort,
 		FavoritesUnavailable: h.favLoadFailed,
 		Progress:             func() (int, int) { return h.img.Progress() },
@@ -299,9 +302,6 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 		h.a.SetSort(data.SortFavorites)
 	}
 	h.a.SetFilters(h.state.Filters)
-	if h.settings.FilterRotation && iniOrientation(ini) == "" {
-		h.a.Notice("INI rotation unavailable; no auto-filter", 8*time.Second)
-	}
 	h.a.SetNet(h.netLabel(ds))
 	if ini.Found && !ini.AnalogVisible() && !hasState { // first run only: HDMI users need nothing
 		h.a.Notice("CRT only? add direct_video=1 under [Menu], see README", 20*time.Second)

@@ -60,15 +60,14 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     for inset in (15, 40):
         scenarios.append([*rotation, "-inset", str(inset), "-unchanged",
                           "-out", f"out/rotation-only-{orientation}-{inset}", "-script",
-                          "shot unchanged; back; down*5; shot follow-on; left; shot follow-off; "
+                          "shot unchanged; back; down*4; shot follow-on; left; shot follow-off; "
                           "right; back; tab; pagedown*2; right; down; shot only-legend; space; shot only-selected; space; shot only-restored; space; back; shot filtered-unchanged"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
-    for ini in ("h", "v"):
-        scenarios.append([*rotation, "-inset", "40", "-ini-orientation", ini,
-                          "-out", f"out/ini-filter-{orientation}-{ini}", "-script",
-                          "back; down*6; shot off; right; shot on; back; shot list; "
-                          "tab; shot filters; back; back; down*6; left; back; shot restored"])
+    scenarios.append([*rotation, "-inset", "40",
+                      "-out", f"out/rotation-filter-{orientation}", "-script",
+                      "back; down*6; shot off; right; shot on; back; shot list; "
+                      "tab; shot filters; back; back; down*6; left; back; shot restored"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):

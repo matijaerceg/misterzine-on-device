@@ -47,7 +47,9 @@ enable `vga_scaler=1` with a 720p/1080p mode on a 15 kHz CRT.
 Main's CRT message suggesting `fb_terminal=0` or `vga_scaler=1` is generic console
 help. Disabling the console prevents MisterZine's launcher from working; choose
 the output configuration above instead. For frequent switching, MiSTer supports
-[named alternate INI files](https://mister-devel.github.io/MkDocs_MiSTer/advanced/ini/#alternate-mister-ini-naming-option).
+[named alternate INI files](https://mister-devel.github.io/MkDocs_MiSTer/advanced/ini/#alternate-mister-ini-naming-option);
+MisterZine reads whichever one is active, and its log's `ini:` line names the file
+and the `osd_rotate` it found.
 
 Use Options -> Edit safe zone if text reaches outside the visible CRT picture.
 
