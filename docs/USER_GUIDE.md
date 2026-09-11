@@ -59,7 +59,9 @@ Dates highlighted in green and the last-look divider help find changes since
 your previous visit. Visits start at the top of your last selected sort order.
 Options -> Remember sort order is on by default; turn it off to start each visit
 with latest updates instead.
-Y cycles Updated, Debut, Year, Alphabetical, then Favorites. Year orders games
+Y cycles Updated, Debut, Year, Alphabetical, then Favorites; the top bar names
+the order as core updated, MiSTer debut, original year, A-Z or Favorites A-Z.
+Year orders games
 by their original release year, newest first, with titles alphabetical within
 a year and unknown or uncertain years last; the date column shows the year.
 Alphabetical sorting ignores case and accents and puts Game 2 before Game 10.

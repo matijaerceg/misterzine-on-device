@@ -24,6 +24,8 @@
 - Left/Right in the main list move a screen of rows at a time and keep the
   selected row centered, the same as stepping.
 - Options values start at the half mark of the list rather than two thirds.
+- The top bar names the order as core updated, MiSTer debut, original year,
+  A-Z or Favorites A-Z (favorites are alphabetical).
 - A Year sort order, after Debut in the Y cycle: newest original release year
   first, titles alphabetical within a year, unknown years last; L/R jump
   between years and the date column shows the year.

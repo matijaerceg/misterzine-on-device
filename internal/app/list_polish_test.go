@@ -469,6 +469,26 @@ func TestYearSortOrderAndJumps(t *testing.T) {
 	}
 }
 
+func TestStatusBarNamesTheOrder(t *testing.T) {
+	rows := []data.Row{{K: "a", Title: "A", Updated: "2026-09-07", Date: "2026-09-01", Year: "1985"}}
+	for _, rot := range []gfx.Rotation{gfx.RotNone, gfx.RotLeft} {
+		a := New(Config{PhysW: 320, PhysH: 240, Rotation: rot, SafeInsetX: 40, SafeInsetY: 40, Favorites: map[string]bool{"a": true}}, data.Ingest(rows, "", time.Now()), nil)
+		for mode, want := range map[data.SortMode]string{data.SortUpdated: "by: core updated", data.SortDebut: "by: MiSTer debut", data.SortYear: "by: original year", data.SortAlphabetical: "by: A-Z", data.SortFavorites: "Favorites A-Z"} {
+			a.SetSort(mode)
+			a.Paint()
+			c := gfx.New(a.lay.W, a.lay.H)
+			c.Text(a.lay.Status.Min.X+2, a.lay.Status.Min.Y+2, a.sm, want, gen.Eva.Accent)
+			for y := a.lay.Status.Min.Y + 2; y < a.lay.Status.Min.Y+2+a.sm.H; y++ {
+				for x := a.lay.Status.Min.X + 2; x < a.lay.Status.Min.X+2+a.sm.Width(want); x++ {
+					if a.logical.RGBA.RGBAAt(x, y) == gen.Eva.Accent && c.RGBA.RGBAAt(x, y) != gen.Eva.Accent || a.logical.RGBA.RGBAAt(x, y) != gen.Eva.Accent && c.RGBA.RGBAAt(x, y) == gen.Eva.Accent {
+						t.Fatalf("%v: status bar does not read %q", mode, want)
+					}
+				}
+			}
+		}
+	}
+}
+
 func TestFilterHeadingOpensAndCloses(t *testing.T) {
 	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest([]data.Row{
 		{K: "a", Base: "Arcade", Title: "A", Genre: "Shooter"}, {K: "b", Base: "Arcade", Title: "B", Genre: "Puzzle"},
