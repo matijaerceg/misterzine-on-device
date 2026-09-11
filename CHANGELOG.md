@@ -40,7 +40,8 @@
 - Filters: Type > Arcade opens into Stable and Beta children, like a decade
   into years, so the Patreon beta cores can be hidden or shown alone.
 - The Details information slide is three times faster (six pixels a frame),
-  and the legend mentions Up/Down only when the information scrolls.
+  and the legend mentions Left/Right only when a game has more than one
+  version and Up/Down only when the information scrolls.
 - Filters: A on a section heading opens or closes it, like Left/Right; the
   legend says so while a heading is selected. Headings no longer toggle every
   value of their section (Y only/all still does).

@@ -469,15 +469,22 @@ func TestYearSortOrderAndJumps(t *testing.T) {
 	}
 }
 
-// The Details legend mentions Up/Down only while the information scrolls.
-func TestDetailsHintNamesInfoOnlyWhenItScrolls(t *testing.T) {
+// The Details legend mentions Left/Right only when there is more than one
+// version and Up/Down only while the information scrolls.
+func TestDetailsHintNamesOnlyLiveControls(t *testing.T) {
 	now := time.Date(2026, 9, 12, 12, 0, 0, 0, time.UTC)
 	short := data.Row{K: "s", Title: "Short", Base: "Arcade", Core: "Short", MRA: "_Arcade/Short.mra", Updated: "2026-09-08", SN: "short"}
 	long := short
 	long.K, long.SN, long.Note = "l", "long", strings.Repeat("A long note that wraps over many lines. ", 30)
 	for _, rot := range []gfx.Rotation{gfx.RotNone, gfx.RotLeft} {
 		for _, inset := range []int{15, 40} {
-			a := New(Config{PhysW: 320, PhysH: 240, Rotation: rot, SafeInsetX: inset, SafeInsetY: inset, Now: func() time.Time { return now }, ClockTrusted: true},
+			a := New(Config{PhysW: 320, PhysH: 240, Rotation: rot, SafeInsetX: inset, SafeInsetY: inset, Now: func() time.Time { return now }, ClockTrusted: true,
+				Alternatives: func(r *data.Row) []string {
+					if r.K == "l" {
+						return []string{"_Arcade/_alternatives/Long.mra"}
+					}
+					return nil
+				}},
 				data.Ingest([]data.Row{short, long}, "test", now), nil)
 			for n, want := range []bool{false, true} {
 				a.cursor, a.screen, a.detail, a.all = n, ScreenDetails, detailState{from: ScreenList}, true
@@ -487,9 +494,13 @@ func TestDetailsHintNamesInfoOnlyWhenItScrolls(t *testing.T) {
 				if scrolls := len(lines) > a.detail.lines; scrolls != want {
 					t.Fatalf("rot=%v inset=%d row %q: fixture scrolls=%v, wanted %v", rot, inset, row.K, scrolls, want)
 				}
-				hint := a.detailsHint(want)
-				if strings.Contains(hint, gfx.ArrowUp) != want {
-					t.Fatalf("rot=%v inset=%d: hint %q names info while scrolls=%v", rot, inset, hint, want)
+				entries := a.launchEntries(row, i)
+				if (len(entries) > 1) != want {
+					t.Fatalf("row %q: fixture has %d versions", row.K, len(entries))
+				}
+				hint := a.detailsHint(want, len(entries))
+				if strings.Contains(hint, gfx.ArrowUp) != want || strings.Contains(hint, gfx.ArrowLeft) != want {
+					t.Fatalf("rot=%v inset=%d: hint %q names controls while scrolls=%v versions=%d", rot, inset, hint, want, len(entries))
 				}
 				c := gfx.New(a.lay.W, a.lay.H)
 				a.paintHint(c, hint)
