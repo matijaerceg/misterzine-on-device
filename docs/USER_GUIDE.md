@@ -130,11 +130,11 @@ Screenshots work without remote debugging.
 
 ## Options
 
-Options is in three groups under grey headings: Data (Refresh data now, Run
-Update All, Rescan card, Sources, Last update result, Prefetch shots, Clear
-image cache),
-Display (rotation, fonts, list shots, date format, screensaver, safe zone) and
-Operation (scrolling, sort memory, the launcher, Troubleshooting, Quit). The
+Options is in four groups under grey headings: Data (Refresh data now, Run
+Update All, Last update result, Rescan card, Prefetch shots, Clear image
+cache), List (Sources, Filter by rotation, Remember sort order, Title font,
+List shots, Date format), Display (rotation, screensaver, safe zone) and
+Operation (scrolling, the launcher, Troubleshooting, Quit). The
 headings cannot be selected. Values line up in one column; a small arrow at the right
 edge of the top or bottom row shows when more options sit above or below the
 visible part of the list. The framed text under the list describes the selected
@@ -143,26 +143,9 @@ scrolling stops at either end. Release and press Up again from the first item
 to wrap to Quit, or Down from Quit to wrap to the first item. R also jumps to
 the bottom.
 
-- **Follow INI rotation:** on by default, including after upgrading. Every
-  startup reads `osd_rotate` from the MiSTer INI that is currently active: the
-  main MiSTer.ini, or the alternative INI (`MiSTer_*.ini`) you selected in the
-  MiSTer OSD, the same one Main itself uses. A `[Menu]` section overrides the
-  global setting. Turn this off to choose a rotation yourself below and keep it
-  across launches; turning it back on applies at the next startup. MisterZine
-  never edits the INI. If the file cannot be read, the saved manual rotation is
-  used.
-- **Rotation:** available when Follow INI rotation is off. Left/Right turns the
-  image in that direction and the choice is saved. The labels describe the
-  monitor's clockwise/counterclockwise turn. While following the INI, the row
-  shows the current rotation in grey and cannot be changed here.
-- **Filter by current rotation:** off by default. On immediately shows only
-  entries explicitly marked Horizontal when the interface is horizontal, or
-  Vertical when it is rotated either way, whatever set that rotation (the INI or
-  a manual choice). Unknown orientations and system entries without matching
-  orientation metadata are hidden, including in Favorites. Search and other
-  filters remain active; saved manual rotation filters are temporarily
-  superseded and restored when this option is turned off. Filters shows the
-  active rule, and it follows the interface when the rotation changes.
+- **Prefetch shots:** downloads the full picture set in the background.
+  Off downloads pictures as you browse. The tally shows cached pictures.
+- **Clear image cache:** removes downloaded pictures, which return as needed.
 - **Sources:** all by default. Installed only shows games from the databases
   listed in the card's `downloader.ini`, the file Update All rewrites on every
   run, so a source you never enabled (Coin-Op, Meathax, or Jotego) stays out of
@@ -172,9 +155,14 @@ the bottom.
   fetches MiSTer Distribution alone, and the option follows that; without any
   `downloader.ini` nothing is hidden and the help text says so. Sources the
   app does not know stay visible.
-- **Scroll speed:** 20, 30 or 60 rows/pages per second once a hold repeats.
-- **Hold delay:** short 200 ms, normal 300 ms (default), or long 500 ms before
-  navigation repeats. Artwork and calibration retain their own timing.
+- **Filter by current rotation:** off by default. On immediately shows only
+  entries explicitly marked Horizontal when the interface is horizontal, or
+  Vertical when it is rotated either way, whatever set that rotation (the INI or
+  a manual choice). Unknown orientations and system entries without matching
+  orientation metadata are hidden, including in Favorites. Search and other
+  filters remain active; saved manual rotation filters are temporarily
+  superseded and restored when this option is turned off. Filters shows the
+  active rule, and it follows the interface when the rotation changes.
 - **Remember sort order:** on by default, including after upgrading. Reopens
   with your last sort choice; off starts new visits with latest updates. Changing
   this preference leaves the current sort order alone.
@@ -190,6 +178,18 @@ the bottom.
   D Mon (7 Sep) or YYMMDD (260907). The help line shows today's date in the
   chosen format. Rows from earlier years show the year alone, except with
   YYMMDD, which always carries the full date.
+- **Follow INI rotation:** on by default, including after upgrading. Every
+  startup reads `osd_rotate` from the MiSTer INI that is currently active: the
+  main MiSTer.ini, or the alternative INI (`MiSTer_*.ini`) you selected in the
+  MiSTer OSD, the same one Main itself uses. A `[Menu]` section overrides the
+  global setting. Turn this off to choose a rotation yourself below and keep it
+  across launches; turning it back on applies at the next startup. MisterZine
+  never edits the INI. If the file cannot be read, the saved manual rotation is
+  used.
+- **Rotation:** available when Follow INI rotation is off. Left/Right turns the
+  image in that direction and the choice is saved. The labels describe the
+  monitor's clockwise/counterclockwise turn. While following the INI, the row
+  shows the current rotation in grey and cannot be changed here.
 - **Screensaver:** after 1 minute idle by default, dim the picture and scroll
   full-height black MISTERZINE lettering, with glinting chrome edges, across it. Left/Right chooses Off, 1, 2,
   5 or 10 minutes. A previews it immediately, even when Off. The first browsing
@@ -199,12 +199,12 @@ the bottom.
   downloads and Update All continue while dimmed.
 - **Edit safe zone:** D-pad moves the top-right corner of the safe frame;
   Right/Up grows it and Left/Down shrinks it. B saves. Margins can reach 40 px.
-- **Prefetch shots:** downloads the full picture set in the background.
-  Off downloads pictures as you browse. The tally shows cached pictures.
+- **Scroll speed:** 20, 30 or 60 rows/pages per second once a hold repeats.
+- **Hold delay:** short 200 ms, normal 300 ms (default), or long 500 ms before
+  navigation repeats. Artwork and calibration retain their own timing.
 - **Main menu launcher:** off removes the menu entry and boot hook. If the
   launcher opened this session, it returns to Menu before stopping. Run Setup
   from Scripts to re-enable it later.
-- **Clear image cache:** removes downloaded pictures, which return as needed.
 - **Troubleshooting:** a guided Start-button test and an A/Enter game-launch
   test, with results you can photograph. The last result survives restarting.
   See [troubleshooting](TROUBLESHOOTING.md#start-does-not-launch-games).

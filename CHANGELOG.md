@@ -7,6 +7,11 @@
   so sources you never enabled (Coin-Op, Meathax, Jotego) leave the list,
   search, Favorites, the release count and the Filters panel. Without a
   downloader.ini nothing is hidden and the help text says so.
+- Options is regrouped as Data (Refresh data now, Run Update All, Last update
+  result, Rescan card, Prefetch shots, Clear image cache), List (Sources,
+  Filter by rotation, Remember sort order, Title font, List shots, Date
+  format), Display (rotation, screensaver, safe zone) and Operation (scroll
+  speed, hold delay, the launcher, Troubleshooting, Quit).
 
 ## v1.0.13 — 2026-09-11
 

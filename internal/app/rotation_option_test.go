@@ -42,8 +42,10 @@ func TestRotationRowDisabledWhileFollowing(t *testing.T) {
 	for i, e := range a.panel.entries {
 		idx[e.kind] = i
 	}
-	if idx["follow-rotation"]+1 != idx["rotation"] || idx["rotation"]+1 != idx["filter-rotation"] {
-		t.Fatal("order must be follow, rotation, filter", idx)
+	// Rotation sits right under Follow INI rotation in Display; Filter by
+	// rotation lives in the List group above them.
+	if idx["follow-rotation"]+1 != idx["rotation"] || idx["filter-rotation"] > idx["follow-rotation"] {
+		t.Fatal("order must be filter (List), then follow, rotation (Display)", idx)
 	}
 	if !a.panel.entries[idx["rotation"]].disabled {
 		t.Fatal("rotation must be disabled while following")

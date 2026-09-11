@@ -55,10 +55,10 @@ func TestSortAutosaveRestoreAndOption(t *testing.T) {
 		t.Fatal("alphabetical restart did not start at its first title")
 	}
 	tap(platform.KeyBack)
-	for i := 0; i < 17; i++ {
+	for i := 0; i < 8; i++ {
 		tap(platform.KeyDown)
 	}
-	tap(platform.KeyLeft) // Remember sort order: off
+	tap(platform.KeyLeft) // Remember sort order: off, in the List group
 	if h.a.RememberSort() || h.a.Sort() != data.SortAlphabetical {
 		t.Fatal("toggle changed current order or failed to turn off")
 	}
@@ -178,8 +178,8 @@ func TestRotationIntentSurvivesSaves(t *testing.T) {
 				h.a.Handle(platform.Event{Key: k, At: now.Add(time.Millisecond)})
 			}
 			tap(platform.KeyBack) // Options
-			for n := 0; n < 15; n++ {
-				tap(platform.KeyDown) // Scroll speed opens the Operation group (Sources sits in Data)
+			for n := 0; n < 16; n++ {
+				tap(platform.KeyDown) // Scroll speed opens the Operation group
 			}
 			tap(platform.KeyRight)
 			if !h.setDirty {
@@ -188,8 +188,8 @@ func TestRotationIntentSurvivesSaves(t *testing.T) {
 			h.saveAll(false)
 			check("auto")
 			tap(platform.KeyHome)
-			for n := 0; n < 8; n++ {
-				tap(platform.KeyDown) // Rotation follows the Data group and Follow INI rotation
+			for n := 0; n < 13; n++ {
+				tap(platform.KeyDown) // Rotation follows the Data and List groups and Follow INI rotation
 			}
 			if rotation == gfx.RotLeft {
 				tap(platform.KeyLeft)
