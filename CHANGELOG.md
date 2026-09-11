@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v1.0.9 — 2026-09-11
 
 - Card status compares against the shipped core build itself (the catalogue's
   new build date and checksum fields) instead of the catalogue's last-updated
@@ -9,6 +9,9 @@
 - Undated cores such as Jotego's are matched by checksum, using the Update All
   record on the card. A match shows as current; a mismatch shows as “older
   build likely” and counts with older builds in the card summary and filters.
+- Arcade games only match cores in `_Arcade/cores` and system entries only
+  their own folders, so a core name shared between the two (Astrocade) no
+  longer reports the wrong file.
 
 ## v1.0.8 — 2026-09-11
 

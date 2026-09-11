@@ -1,20 +1,22 @@
-Browse by original year or decade, with a more compact Filters page and centered scrolling.
+Accurate card status: compared against the shipped core build, with Jotego cores matched by checksum.
 
-- **Year and decade filters:** narrow arcade games by their original release
-  year. Open a decade to pick individual years. A toggles; Y selects only that
-  decade/year, and a second press restores all years. Choices are saved.
-- **Collapsible filter sections:** Left/Right closes or opens sections and
-  decades; L/R jumps between section headings. X also toggles a decade.
-  Each visit opens only sections with active filters. Right/down arrows show
-  what can expand, and an asterisk marks non-default choices even when collapsed.
-- **Centered row scrolling:** in the main list and Filters, Up/Down keeps the
-  selected row near the middle while stopping at the beginning and end.
-  Main-view letter/month jumps still place the first matching row at the top.
-- **Cleaner Filters page:** neutral selected-row text, clearer control hints,
-  spacing between general and arcade filters, and fewer redundant labels.
-  Favorites remains a main-view mode and works with other filters; its separate
-  filter section has been removed. Existing Favorites-only choices migrate to
-  that mode automatically.
+- **Shipped-build comparison:** the on-card status now compares each core file
+  with the build the catalogue actually ships, using its build date and
+  checksum, instead of the catalogue's last-updated date. A core that only
+  received an MRA fix, or whose release landed after midnight UTC, no longer
+  shows as an older build when Update All has nothing newer to install.
+- **Undated cores resolved:** cores whose filenames carry no date (Jotego's,
+  for example) are matched by checksum against the shipped build, using the
+  record Update All keeps on the card. A match shows as current. A mismatch
+  shows as “older build likely”, the same evidence Update All acts on, and
+  counts with older builds in the card summary and the install filter.
+  “Date unknown” now only appears when the catalogue has no comparison data.
+- **Folder-aware matching:** arcade games only match cores in `_Arcade/cores`,
+  and console/computer entries only match their own folders, so a shared core
+  name (Astrocade ships both) no longer reports the wrong file.
+
+The catalogue at misterzine.fyi already publishes the new build fields; no
+action is needed beyond updating.
 
 Existing installations can update through Update All/Downloader. Reopen
 MisterZine after updating. Favorites, settings and filter choices are preserved.
