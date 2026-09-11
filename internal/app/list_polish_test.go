@@ -469,6 +469,42 @@ func TestYearSortOrderAndJumps(t *testing.T) {
 	}
 }
 
+// The Details legend mentions Up/Down only while the information scrolls.
+func TestDetailsHintNamesInfoOnlyWhenItScrolls(t *testing.T) {
+	now := time.Date(2026, 9, 12, 12, 0, 0, 0, time.UTC)
+	short := data.Row{K: "s", Title: "Short", Base: "Arcade", Core: "Short", MRA: "_Arcade/Short.mra", Updated: "2026-09-08", SN: "short"}
+	long := short
+	long.K, long.SN, long.Note = "l", "long", strings.Repeat("A long note that wraps over many lines. ", 30)
+	for _, rot := range []gfx.Rotation{gfx.RotNone, gfx.RotLeft} {
+		for _, inset := range []int{15, 40} {
+			a := New(Config{PhysW: 320, PhysH: 240, Rotation: rot, SafeInsetX: inset, SafeInsetY: inset, Now: func() time.Time { return now }, ClockTrusted: true},
+				data.Ingest([]data.Row{short, long}, "test", now), nil)
+			for n, want := range []bool{false, true} {
+				a.cursor, a.screen, a.detail, a.all = n, ScreenDetails, detailState{from: ScreenList}, true
+				a.Paint()
+				row, d, i := a.current()
+				lines := wrapDetailLines(a.detailLines(row, d, i), a.sm.Cols(a.lay.Body.Dx()-4))
+				if scrolls := len(lines) > a.detail.lines; scrolls != want {
+					t.Fatalf("rot=%v inset=%d row %q: fixture scrolls=%v, wanted %v", rot, inset, row.K, scrolls, want)
+				}
+				hint := a.detailsHint(want)
+				if strings.Contains(hint, gfx.ArrowUp) != want {
+					t.Fatalf("rot=%v inset=%d: hint %q names info while scrolls=%v", rot, inset, hint, want)
+				}
+				c := gfx.New(a.lay.W, a.lay.H)
+				a.paintHint(c, hint)
+				for y := a.lay.Hint.Min.Y; y < a.lay.Hint.Max.Y; y++ {
+					for x := a.lay.Hint.Min.X; x < a.lay.Hint.Max.X; x++ {
+						if a.logical.RGBA.RGBAAt(x, y) != c.RGBA.RGBAAt(x, y) {
+							t.Fatalf("rot=%v inset=%d row %q: the painted legend is not %q", rot, inset, row.K, hint)
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 func TestStatusBarNamesTheOrder(t *testing.T) {
 	rows := []data.Row{{K: "a", Title: "A", Updated: "2026-09-07", Date: "2026-09-01", Year: "1985"}}
 	for _, rot := range []gfx.Rotation{gfx.RotNone, gfx.RotLeft} {

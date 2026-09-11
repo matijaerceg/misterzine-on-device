@@ -116,7 +116,8 @@ opens on it next time and Start launches it from the list and from artwork.
 Choosing the main version again forgets the choice, and an alternative that
 has since left the card falls back to the main version.
 A green scrollbar thumb shows when more information is available. Long values
-wrap, and Up/Down pages with an overlapping line, sliding the text smoothly.
+wrap, and Up/Down pages with an overlapping line, sliding the text smoothly;
+the legend mentions Up/Down only when there is more to read.
 Returning from artwork preserves the selected version and information position.
 
 Artwork starts at the first image each time it is opened. Left/Right chooses a

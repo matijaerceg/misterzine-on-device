@@ -372,11 +372,22 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 		c.Text(l.Hint.Min.X+2, l.Hint.Min.Y+2, a.sm, gfx.Fit(a.notice, a.sm.Cols(l.Hint.Dx()-4)), gen.Eva.Fg)
 		return
 	}
-	hint := "Start launch  A shots  Y fav  " + gfx.ArrowLeft + " " + gfx.ArrowRight + " version  " + gfx.ArrowUp + " " + gfx.ArrowDown + " info"
-	if a.sm.Width(hint) > l.Hint.Dx()-4 {
-		hint = "Start go  A art  Y fav  " + gfx.ArrowLeft + gfx.ArrowRight + " alt  " + gfx.ArrowUp + gfx.ArrowDown + " info"
+	a.paintHint(c, a.detailsHint(len(lines) > maxLines))
+}
+
+// detailsHint is the Details legend; the Up/Down information hint appears
+// only while the information actually scrolls.
+func (a *App) detailsHint(scrolls bool) string {
+	hint := "Start launch  A shots  Y fav  " + gfx.ArrowLeft + " " + gfx.ArrowRight + " version"
+	short := "Start go  A art  Y fav  " + gfx.ArrowLeft + gfx.ArrowRight + " alt"
+	if scrolls {
+		hint += "  " + gfx.ArrowUp + " " + gfx.ArrowDown + " info"
+		short += "  " + gfx.ArrowUp + gfx.ArrowDown + " info"
 	}
-	a.paintHint(c, hint)
+	if a.sm.Width(hint) > a.lay.Hint.Dx()-4 {
+		return short
+	}
+	return hint
 }
 
 // Preserve aligned labels on the first line and wrap continuations underneath.
