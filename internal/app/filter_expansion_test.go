@@ -37,6 +37,15 @@ func TestFilterOpenShowsOnlyEditsAndRemovesFavorites(t *testing.T) {
 		t.Fatal("edits not revealed")
 	}
 	for i, e := range a.panel.entries {
+		if e.kind == "decade" {
+			a.panel.cursor = i
+			hint := a.filterHint()
+			if !strings.Contains(hint, "A toggle") || !strings.Contains(hint, "open/close") || a.sm.Width(hint) > a.lay.Hint.Dx()-4 {
+				t.Fatal("decade hints must be explicit and fit", hint)
+			}
+		}
+	}
+	for i, e := range a.panel.entries {
 		if e.text == "Arcade game filters:" && (i == 0 || a.panel.entries[i-1].text != "") {
 			t.Fatal("missing spacer")
 		}

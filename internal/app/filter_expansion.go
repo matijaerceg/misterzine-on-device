@@ -43,13 +43,18 @@ func (a *App) filterHint() string {
 		hint = "A toggle  Y only/all  " + arrows + " open/close  B back"
 	}
 	if a.sm.Width(hint) > a.lay.Hint.Dx()-4 {
-		hint = "A toggle  " + arrows + " fold  B back"
+		hint = "A toggle  " + arrows + " open/close  B"
 		if a.canOnlyFilter() {
-			hint = "A  Y only  " + arrows + " fold  B back"
+			hint = "A toggle  Y only  " + arrows + " open/close  B back"
 		}
 	}
 	if a.sm.Width(hint) > a.lay.Hint.Dx()-4 {
-		hint = "A  Y only  " + arrows + " fold  B"
+		// At the largest tate inset, retain action descriptions and omit
+		// the conventional Back reminder rather than clipping a control.
+		hint = "A toggle  " + gfx.ArrowLeft + gfx.ArrowRight + " open/close"
+		if a.canOnlyFilter() {
+			hint = "A toggle  Y only  " + gfx.ArrowLeft + gfx.ArrowRight + " open/close"
+		}
 	}
 	return hint
 }
