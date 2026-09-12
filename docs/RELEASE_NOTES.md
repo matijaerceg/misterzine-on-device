@@ -1,26 +1,28 @@
-The card scan no longer reports itself incomplete over alternative MRAs it
-cannot read.
+MisterZine opens on a card whose main menu is Degauss.
 
-- **Unreadable alternatives:** an MRA under `_Arcade/_alternatives` that
-  holds no readable header (an empty file, one cut short, one without
-  `<rbf>`) is skipped: it is left out of the version picker, as MiSTer
-  could not load it either, named in the log the first time its folder is
-  read, and counted on every scan (`N unreadable MRAs skipped`). The scan
-  itself completes and the result screen shows its totals.
-- **Seibu SPI sets:** MRAs with `--` inside an XML comment (Raiden
-  Fighters, Senkyu, Viper Phase 1) are now read, so their alternatives
-  appear in the picker.
-- **Real read failures:** "Card scan incomplete" is kept for a folder or
-  file that could not be read at all; the result screen then keeps its
-  totals with the problem under them, and the log names the path.
-- `watch.log` rotates at 1 MiB, as `log.txt` already did.
+- **Degauss:** Degauss installs itself as MiSTer's `main=` frontend and takes
+  over every load of the menu core, and MisterZine's menu entry loads the
+  menu core. Choosing MisterZine therefore brought up Degauss, and the
+  launcher then waited for a console it could never get until the next
+  reboot. The launcher now closes Degauss for the MisterZine session and the
+  usual menu restore brings it back when MisterZine exits. Return after game
+  and Open at boot work the same way on such a card.
+- **MisterZine-Run:** a new Scripts entry that opens MisterZine from a
+  Scripts list, since Degauss lists Scripts but not MisterZine's menu entry;
+  the frontend returns when MisterZine quits. Opened that way, leave through
+  Options -> Quit MisterZine or the pad's Menu button, as keyboard F12 stays
+  with the Scripts session. From MiSTer's own menu, the MisterZine entry
+  works as before.
+- The launcher's console switch now gives up after two seconds with a line
+  in `watch.log` instead of waiting for the rest of the boot.
 
-Nothing changes on the card outside `misterzine/`. Existing settings,
+Nothing changes in MiSTer.ini, the menu core or Degauss's own files;
+MisterZine only closes Degauss for its own session. Existing settings,
 favorites, filter choices, remembered versions and the launch history are
 preserved.
 
-Existing installations can update through Update All/Downloader. Reopen
-MisterZine after updating.
+Existing installations can update through Update All/Downloader, which also
+adds the MisterZine-Run entry. Reopen MisterZine after updating.
 
 For a new installation, follow the
 [installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once).

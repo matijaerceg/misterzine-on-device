@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.0.20 — 2026-09-12
+
+- Degauss, installed as MiSTer's `main=` frontend, takes over every load of
+  the menu core, MisterZine's menu entry included: choosing MisterZine
+  brought up Degauss and left the launcher waiting for a console it could
+  never get until the next reboot. The launcher now closes Degauss for the
+  MisterZine session and the usual menu restore brings it back when
+  MisterZine exits; Return after game and Open at boot work the same way.
+- The launcher's console switch waits at most two seconds and reports the
+  failure instead of waiting for the rest of the boot.
+- Scripts gains MisterZine-Run, which opens MisterZine from a Scripts list
+  (Degauss lists Scripts, not MisterZine's menu entry); the frontend returns
+  when MisterZine quits. Opened that way, leave through Options -> Quit
+  MisterZine or the pad's Menu button, as keyboard F12 stays with the Scripts
+  session.
+
 ## v1.0.19 — 2026-09-12
 
 - An alternative MRA that holds no readable header (empty, cut short, no
