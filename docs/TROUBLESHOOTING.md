@@ -68,8 +68,8 @@ Update All again. Current copies of the installer INI include this line.
 If you configured MisterZine directly in `downloader.ini`, add the line to its
 existing `[misterzine]` section there instead.
 
-After installation, the card should contain `Scripts/MisterZine-Setup.sh` and
-`Scripts/MisterZine-Uninstall.sh`. If they exist on the card, leave and reopen
+After installation, the card should contain `Scripts/MisterZine-Open.sh`,
+`Scripts/MisterZine-Setup.sh` and `Scripts/MisterZine-Uninstall.sh`. If they exist on the card, leave and reopen
 the Scripts menu. If they do not, keep the log's MisterZine section and any
 download errors for troubleshooting. Avoid deleting Downloader's stored state.
 
@@ -95,6 +95,10 @@ console it could never get until the next reboot. The launcher now closes
 Degauss for the MisterZine session (`watch.log` says "Degauss has taken this
 menu load") and the usual menu restore brings Degauss back when MisterZine
 exits. Return after game and Open at boot work the same way on such a card.
+Degauss does not list MisterZine's menu entry, so its Scripts list carries
+**MisterZine-Open** instead: it opens MisterZine directly and Degauss returns
+when MisterZine quits (through Options -> Quit MisterZine or the pad's Menu
+button; keyboard F12 does not leave from a Scripts session).
 
 ## Favorites unreadable
 

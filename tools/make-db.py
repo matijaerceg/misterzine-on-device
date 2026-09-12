@@ -27,6 +27,7 @@ NAME = "misterzine.json"
 ASSETS = {
     "misterzine/launch.sh": ("deploy/launch.sh", "launch.sh"),
     "misterzine/maintenance.py": ("deploy/maintenance.py", "maintenance.py"),
+    "Scripts/MisterZine-Open.sh": ("deploy/Scripts/MisterZine-Open.sh", "MisterZine-Open.sh"),
     "Scripts/MisterZine-Setup.sh": ("deploy/Scripts/MisterZine-Setup.sh", "MisterZine-Setup.sh"),
     "Scripts/MisterZine-Uninstall.sh": ("deploy/Scripts/MisterZine-Uninstall.sh", "MisterZine-Uninstall.sh"),
     "MisterZine.mgl": ("deploy/MisterZine.mgl", "MisterZine.mgl"),
