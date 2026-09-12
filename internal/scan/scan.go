@@ -5,6 +5,7 @@
 package scan
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
@@ -227,30 +228,52 @@ type Alt struct {
 	Zips    []string `json:"zips"` // lowercase zip names the rom index 0 references
 }
 
-type altDir struct {
-	Version int   `json:"version"`
-	Mtime   int64 `json:"mtime"`
-	Alts    []Alt `json:"alts"`
+// Skipped is an MRA under _Arcade/_alternatives whose header could not be
+// read: no XML in it, cut short, or without an <rbf>. MiSTer could not load
+// it either, so it is left out of the picker; the scan itself still counts
+// as complete. Size and Mtime let a warm run notice an in-place rewrite of
+// the file, which leaves the directory's mtime alone.
+type Skipped struct {
+	Path   string `json:"path"` // card-relative
+	Reason string `json:"reason"`
+	Size   int64  `json:"size"`
+	Mtime  int64  `json:"mtime"`
+	Fresh  bool   `json:"-"` // parsed on this run rather than read back from the cache
 }
+
+type altDir struct {
+	Version int       `json:"version"`
+	Mtime   int64     `json:"mtime"`
+	Alts    []Alt     `json:"alts"`
+	Skipped []Skipped `json:"skipped,omitempty"`
+}
+
+// altCacheVersion is the format written now; version 2 entries (no skip
+// records, written only for directories where every MRA parsed) stay valid.
+const altCacheVersion = 3
 
 // ScanAlternatives walks _Arcade/_alternatives, parsing only the header of
 // each MRA. A per-directory cache keyed by mtime (cachePath, JSON) makes
 // warm runs cheap; pass "" to disable the cache.
 func ScanAlternatives(card, cachePath string) []Alt {
-	alts, _ := ScanAlternativesWithError(card, cachePath)
+	alts, _, _ := ScanAlternativesWithError(card, cachePath)
 	return alts
 }
 
 // ScanAlternativesWithError returns usable entries even if some reads or the
-// optional cache write fail. Incomplete directories are never cached as complete.
-func ScanAlternativesWithError(card, cachePath string) ([]Alt, error) {
+// optional cache write fail. MRAs that open but hold no usable header are
+// skipped, not failures: they are listed, cached with their directory, and
+// re-read only when the file itself changes. The error covers directory
+// reads, opens and reads that failed, and the cache; a directory with such a
+// failure is never cached as complete.
+func ScanAlternativesWithError(card, cachePath string) ([]Alt, []Skipped, error) {
 	root := filepath.Join(card, "_Arcade", "_alternatives")
 	dirs, err := os.ReadDir(root)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, nil
+			return nil, nil, nil
 		}
-		return nil, err
+		return nil, nil, err
 	}
 	var problems []error
 	var original []byte
@@ -268,6 +291,7 @@ func ScanAlternativesWithError(card, cachePath string) ([]Alt, error) {
 	}
 	fresh := map[string]altDir{}
 	var out []Alt
+	var skipped []Skipped
 	for _, d := range dirs {
 		if !d.IsDir() {
 			continue
@@ -278,12 +302,14 @@ func ScanAlternativesWithError(card, cachePath string) ([]Alt, error) {
 			continue
 		}
 		mt := info.ModTime().UnixNano()
-		if c, ok := cache[d.Name()]; ok && c.Version == 2 && c.Mtime == mt {
+		if c, ok := cache[d.Name()]; ok && (c.Version == 2 || c.Version == altCacheVersion) && c.Mtime == mt && skippedUnchanged(card, c.Skipped) {
 			fresh[d.Name()] = c
 			out = append(out, c.Alts...)
+			skipped = append(skipped, c.Skipped...)
 			continue
 		}
 		var alts []Alt
+		var skips []Skipped
 		complete := true
 		files, err := os.ReadDir(filepath.Join(root, d.Name()))
 		if err != nil {
@@ -295,21 +321,25 @@ func ScanAlternativesWithError(card, cachePath string) ([]Alt, error) {
 				continue
 			}
 			rel := path.Join("_Arcade", "_alternatives", d.Name(), f.Name())
-			a, ok, readErr := parseMRAHeader(filepath.Join(card, filepath.FromSlash(rel)))
+			a, s, readErr := parseMRAHeader(filepath.Join(card, filepath.FromSlash(rel)))
 			if readErr != nil {
 				complete = false
 				problems = append(problems, fmt.Errorf("%s: %w", rel, readErr))
+				continue
 			}
-			if !ok {
+			if s != nil {
+				s.Path = rel
+				skips = append(skips, *s)
 				continue
 			}
 			a.Path = rel
 			alts = append(alts, a)
 		}
 		if complete {
-			fresh[d.Name()] = altDir{Version: 2, Mtime: mt, Alts: alts}
+			fresh[d.Name()] = altDir{Version: altCacheVersion, Mtime: mt, Alts: alts, Skipped: skips}
 		}
 		out = append(out, alts...)
+		skipped = append(skipped, skips...)
 	}
 	if cachePath != "" {
 		b, err := json.Marshal(fresh)
@@ -321,23 +351,55 @@ func ScanAlternativesWithError(card, cachePath string) ([]Alt, error) {
 		}
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Path < out[j].Path })
-	return out, errors.Join(problems...)
+	return out, skipped, errors.Join(problems...)
+}
+
+// skippedUnchanged reports whether every skipped file still has the size and
+// mtime recorded with the cache entry, so a file rewritten in place (the
+// directory's mtime does not move) is read again.
+func skippedUnchanged(card string, skips []Skipped) bool {
+	for _, s := range skips {
+		st, err := os.Stat(filepath.Join(card, filepath.FromSlash(s.Path)))
+		if err != nil || st.Size() != s.Size || st.ModTime().UnixNano() != s.Mtime {
+			return false
+		}
+	}
+	return true
 }
 
 // ParseMRAHeader reads <rbf>, <setname> and the zip list of the first
 // <rom index="0"> from an MRA, stopping before the bulky <part> data.
 func ParseMRAHeader(p string) (Alt, bool) {
-	a, ok, _ := parseMRAHeader(p)
-	return a, ok
+	a, s, err := parseMRAHeader(p)
+	return a, s == nil && err == nil
 }
 
-func parseMRAHeader(p string) (Alt, bool, error) {
+// parseMRAHeader returns the header, or a Skipped (Fresh, without Path)
+// describing why the file holds none. The error is for opening or reading
+// the file, never for its content.
+func parseMRAHeader(p string) (Alt, *Skipped, error) {
 	f, err := os.Open(p)
 	if err != nil {
-		return Alt{}, false, err
+		return Alt{}, nil, err
 	}
 	defer f.Close()
-	return parseMRAResult(io.LimitReader(f, 64<<10))
+	st, err := f.Stat()
+	if err != nil {
+		return Alt{}, nil, err
+	}
+	a, ok, err := parseMRAResult(io.LimitReader(f, 64<<10))
+	if ok {
+		return a, nil, nil
+	}
+	var syntax *xml.SyntaxError
+	switch {
+	case err == nil:
+		err = errors.New("no <rbf> element")
+	case errors.Is(err, errNoXML), errors.As(err, &syntax):
+	default:
+		return Alt{}, nil, err // the read itself failed
+	}
+	return Alt{}, &Skipped{Reason: err.Error(), Size: st.Size(), Mtime: st.ModTime().UnixNano(), Fresh: true}, nil
 }
 
 func parseMRA(r io.Reader) (Alt, bool) {
@@ -345,9 +407,13 @@ func parseMRA(r io.Reader) (Alt, bool) {
 	return a, ok
 }
 
+// errNoXML is what an empty file, or one without a single XML element,
+// yields: the decoder reaches the end with nothing open.
+var errNoXML = errors.New("no XML content")
+
 func parseMRAResult(r io.Reader) (Alt, bool, error) {
 	var a Alt
-	dec := xml.NewDecoder(r)
+	dec := xml.NewDecoder(&commentStripper{br: bufio.NewReader(r)})
 	dec.Strict = false
 	dec.CharsetReader = func(charset string, input io.Reader) (io.Reader, error) { return input, nil }
 	depth := 0
@@ -356,7 +422,7 @@ func parseMRAResult(r io.Reader) (Alt, bool, error) {
 		tok, err := dec.Token()
 		if err != nil {
 			if err == io.EOF {
-				err = io.ErrUnexpectedEOF
+				err = errNoXML
 			}
 			return a, false, err
 		}
@@ -408,6 +474,48 @@ func parseMRAResult(r io.Reader) (Alt, bool, error) {
 			}
 		}
 	}
+}
+
+// commentStripper drops <!-- ... --> spans before the XML decoder sees them.
+// Go's decoder rejects "--" inside a comment whatever its Strict setting,
+// and some MRA sets (Seibu SPI) write comments that way; MiSTer loads them
+// fine. Newlines inside a comment pass through so line numbers in a later
+// syntax error still point at the file.
+type commentStripper struct {
+	br *bufio.Reader
+	in bool
+}
+
+func (c *commentStripper) Read(p []byte) (int, error) {
+	n := 0
+	for n < len(p) {
+		b, err := c.br.ReadByte()
+		if err != nil {
+			return n, err
+		}
+		if c.in {
+			if b == '\n' {
+				p[n] = b
+				n++
+			} else if b == '-' {
+				if peek, _ := c.br.Peek(2); string(peek) == "->" {
+					c.br.Discard(2)
+					c.in = false
+				}
+			}
+			continue
+		}
+		if b == '<' {
+			if peek, _ := c.br.Peek(3); string(peek) == "!--" {
+				c.br.Discard(3)
+				c.in = true
+				continue
+			}
+		}
+		p[n] = b
+		n++
+	}
+	return n, nil
 }
 
 // Alternatives lists the alternative MRAs for a row: same rbf, and a rom zip

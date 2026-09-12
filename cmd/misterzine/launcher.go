@@ -353,6 +353,7 @@ func launcherStart() int {
 		fmt.Println("start:", err)
 		return 1
 	}
+	rotateLog(watchLog)
 	lg, _ := os.OpenFile(watchLog, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	cmd := exec.Command(exe, "launcher", "watch")
 	cmd.Stdout, cmd.Stderr = lg, lg

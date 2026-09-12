@@ -29,8 +29,11 @@ func (a *App) OpenScan() {
 }
 
 // FinishScan never steals focus if the user has left the result screen.
-func (a *App) FinishScan(message string) {
-	a.scanReady, a.scanError = true, message
+// message is a problem to show, or "". counts says the statuses arrived, so
+// the result screen keeps its totals and shows the problem under them; a
+// scan that produced nothing shows the problem alone.
+func (a *App) FinishScan(message string, counts bool) {
+	a.scanReady, a.scanError, a.scanCounts = true, message, counts
 	a.all = true
 }
 
@@ -61,8 +64,10 @@ func (a *App) paintScan(c *gfx.Canvas) {
 			"Not found on card: " + itoa(counts[data.StatusNotFound]),
 			"Status unknown: " + itoa(counts[data.StatusUnknown]),
 			"", "Compared with the catalogue."}
-		if a.scanError != "" {
+		if a.scanError != "" && !a.scanCounts {
 			lines = []string{a.scanError, "", "Could not finish every scan step.", "See the device log for details."}
+		} else if a.scanError != "" {
+			lines = append(lines, "", a.scanError+".", "See the device log for details.")
 		}
 	}
 	for _, line := range lines {

@@ -52,7 +52,7 @@ func TestManualScanDismissAndUpdateNotice(t *testing.T) {
 		t.Fatal("scan start")
 	}
 	a.act(platform.KeyBack)
-	a.FinishScan("")
+	a.FinishScan("", true)
 	if a.screen != ScreenOptions {
 		t.Fatal("scan completion stole focus")
 	}

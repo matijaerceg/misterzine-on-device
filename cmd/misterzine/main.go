@@ -945,11 +945,22 @@ func (h *host) scan(rows []data.Row, hash string, feedAt time.Time) {
 		return
 	}
 	t1 := time.Now()
-	alts, err := scan.ScanAlternativesWithError(h.card, filepath.Join(h.root, "cache", "alts.json"))
+	alts, skipped, err := scan.ScanAlternativesWithError(h.card, filepath.Join(h.root, "cache", "alts.json"))
+	// A skipped MRA is logged the first time its folder is read; later scans
+	// reuse the cache and only repeat the count.
+	for _, s := range skipped {
+		if s.Fresh {
+			h.lg.Printf("scan: skipped %s: %s", s.Path, s.Reason)
+		}
+	}
 	if err != nil {
 		h.lg.Printf("scan: %v", err)
 	}
-	h.lg.Printf("scan: %d alternatives (%v)", len(alts), time.Since(t1).Round(time.Millisecond))
+	if len(skipped) > 0 {
+		h.lg.Printf("scan: %d alternatives; %d unreadable MRAs skipped (%v)", len(alts), len(skipped), time.Since(t1).Round(time.Millisecond))
+	} else {
+		h.lg.Printf("scan: %d alternatives (%v)", len(alts), time.Since(t1).Round(time.Millisecond))
+	}
 	notice := ""
 	if err != nil {
 		notice = "Card scan incomplete"
@@ -997,10 +1008,17 @@ func picsFor(ds *data.Dataset) []images.Pic {
 	return out
 }
 
-func openLog(path string) *log.Logger {
+// rotateLog keeps an append-only log under logMax: once it is larger, it
+// becomes the ".1" file (log.txt -> log.1.txt) and a fresh one starts.
+func rotateLog(path string) {
 	if st, err := os.Stat(path); err == nil && st.Size() > logMax {
-		os.Rename(path, strings.TrimSuffix(path, ".txt")+".1.txt")
+		ext := filepath.Ext(path)
+		os.Rename(path, strings.TrimSuffix(path, ext)+".1"+ext)
 	}
+}
+
+func openLog(path string) *log.Logger {
+	rotateLog(path)
 	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		return log.New(os.Stderr, "", log.Ltime|log.Lmicroseconds)

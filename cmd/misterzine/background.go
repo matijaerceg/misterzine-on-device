@@ -74,7 +74,9 @@ func (h *host) receiveScan(r scanResult) {
 		h.scanRunning = false
 		if h.manualScan && !h.scanPending && r.hash == h.a.Data().Hash {
 			h.manualScan = false
-			h.a.FinishScan(r.notice)
+			// A failed core index sends no index: nothing to count. An
+			// incomplete alternatives pass still delivers every status.
+			h.a.FinishScan(r.notice, r.index != nil)
 		}
 		if h.scanPending {
 			h.requestScan()

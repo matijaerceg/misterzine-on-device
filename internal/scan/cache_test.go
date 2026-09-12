@@ -4,37 +4,89 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
 
-func TestAlternativeCacheRetriesIncompleteMRA(t *testing.T) {
-	for _, content := range []string{"", "<misterromdescription><rbf>game</rbf>"} {
-		t.Run(content, func(t *testing.T) {
+// An MRA without a usable header is skipped and cached with its folder, not
+// a scan failure; a rewrite of that file in place (the folder's mtime does
+// not move) is still noticed.
+func TestAlternativeSkipsUnreadableMRAAndSeesRepair(t *testing.T) {
+	cases := []struct{ content, reason string }{
+		{"", "no XML content"},
+		{"\n\n", "no XML content"},
+		{"not an mra\n", "no XML content"},
+		{"<misterromdescription><rbf>game</rbf>", "unexpected EOF"},
+		{"<misterromdescription><name>x</name></misterromdescription>", "no <rbf> element"},
+	}
+	for _, c := range cases {
+		t.Run(c.content, func(t *testing.T) {
 			card := t.TempDir()
 			dir := filepath.Join(card, "_Arcade", "_alternatives", "_Game")
 			if err := os.MkdirAll(dir, 0755); err != nil {
 				t.Fatal(err)
 			}
 			p := filepath.Join(dir, "game.mra")
-			os.WriteFile(p, []byte(content), 0644)
+			os.WriteFile(p, []byte(c.content), 0644)
 			stamp, err := os.Stat(dir)
 			if err != nil {
 				t.Fatal(err)
 			}
 			cache := filepath.Join(card, "cache", "alts.json")
-			if got, err := ScanAlternativesWithError(card, cache); err == nil || len(got) != 0 {
-				t.Fatalf("incomplete MRA accepted: %v %v", got, err)
+			got, skipped, err := ScanAlternativesWithError(card, cache)
+			if err != nil || len(got) != 0 || len(skipped) != 1 || !skipped[0].Fresh ||
+				skipped[0].Path != "_Arcade/_alternatives/_Game/game.mra" || !strings.Contains(skipped[0].Reason, c.reason) {
+				t.Fatalf("unreadable MRA: alts=%v skipped=%+v err=%v", got, skipped, err)
+			}
+			// Warm run: the skip comes from the cache, so it is not fresh.
+			if got, skipped, err = ScanAlternativesWithError(card, cache); err != nil || len(got) != 0 || len(skipped) != 1 || skipped[0].Fresh {
+				t.Fatalf("cached skip: alts=%v skipped=%+v err=%v", got, skipped, err)
 			}
 			good := `<misterromdescription><rbf>game</rbf><setname>gamea</setname><rom index="0" zip="game.zip"><part name="x"/></rom></misterromdescription>`
 			if err := os.WriteFile(p, []byte(good), 0644); err != nil {
 				t.Fatal(err)
 			}
 			os.Chtimes(dir, stamp.ModTime(), stamp.ModTime())
-			if got, err := ScanAlternativesWithError(card, cache); err != nil || len(got) != 1 {
-				t.Fatalf("in-place repair stayed hidden: %v %v", got, err)
+			if got, skipped, err = ScanAlternativesWithError(card, cache); err != nil || len(got) != 1 || len(skipped) != 0 {
+				t.Fatalf("in-place repair stayed hidden: alts=%v skipped=%+v err=%v", got, skipped, err)
 			}
 		})
+	}
+}
+
+// A version 2 cache entry (written before skips were recorded) stays valid.
+func TestAlternativeCacheAcceptsVersion2(t *testing.T) {
+	card := fakeCard(t)
+	for _, name := range []string{"_1942", "_Colony 7"} {
+		dir := filepath.Join(card, "_Arcade", "_alternatives", name)
+		stamp := time.Date(2001, 1, 1, 0, 0, 0, 0, time.UTC)
+		if err := os.Chtimes(dir, stamp, stamp); err != nil {
+			t.Fatal(err)
+		}
+	}
+	cache := filepath.Join(card, "cache", "alts.json")
+	if _, _, err := ScanAlternativesWithError(card, cache); err != nil {
+		t.Fatal(err)
+	}
+	b, err := os.ReadFile(cache)
+	if err != nil {
+		t.Fatal(err)
+	}
+	old := bytes.ReplaceAll(b, []byte(`"version":3`), []byte(`"version":2`))
+	if bytes.Equal(old, b) {
+		t.Fatalf("cache holds no version 3 entries: %s", b)
+	}
+	if err := os.WriteFile(cache, old, 0644); err != nil {
+		t.Fatal(err)
+	}
+	stamp := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+	os.Chtimes(cache, stamp, stamp)
+	if got, _, err := ScanAlternativesWithError(card, cache); err != nil || len(got) != 2 {
+		t.Fatalf("version 2 cache: %v %v", got, err)
+	}
+	if info, err := os.Stat(cache); err != nil || !info.ModTime().Equal(stamp) {
+		t.Fatal("version 2 cache entries were rewritten without a change on the card")
 	}
 }
 
@@ -50,7 +102,7 @@ func TestAlternativeCacheSkipsUnchangedWritesAndPreservesOnFailure(t *testing.T)
 		}
 	}
 	cache := filepath.Join(card, "cache", "alts.json")
-	initial, err := ScanAlternativesWithError(card, cache)
+	initial, _, err := ScanAlternativesWithError(card, cache)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,7 +114,7 @@ func TestAlternativeCacheSkipsUnchangedWritesAndPreservesOnFailure(t *testing.T)
 	if err := os.Chtimes(cache, stamp, stamp); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := ScanAlternativesWithError(card, cache); err != nil {
+	if _, _, err := ScanAlternativesWithError(card, cache); err != nil {
 		t.Fatal(err)
 	}
 	info, err := os.Stat(cache)
@@ -76,7 +128,7 @@ func TestAlternativeCacheSkipsUnchangedWritesAndPreservesOnFailure(t *testing.T)
 	if err := os.Mkdir(cache+".tmp", 0755); err != nil {
 		t.Fatal(err)
 	}
-	got, err := ScanAlternativesWithError(card, cache)
+	got, _, err := ScanAlternativesWithError(card, cache)
 	if err == nil || len(got) != len(initial)+1 {
 		t.Fatal("cache write failure lost usable scan results or its error")
 	}

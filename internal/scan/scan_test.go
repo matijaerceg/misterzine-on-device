@@ -217,3 +217,35 @@ func TestParseMRAHeaderStopsEarly(t *testing.T) {
 		t.Fatalf("parse = %+v %v", a, ok)
 	}
 }
+
+// Seibu SPI MRAs carry "--" inside comments, which Go's decoder rejects even
+// outside strict mode; MiSTer loads them, so the header must still be read.
+func TestParseMRAHeaderTolerantOfDashesInComments(t *testing.T) {
+	src := `<misterromdescription>
+<!-- ------------------------------------------------------------------ -->
+<!--
+  Raiden Fighters -- Seibu SPI
+  <rbf>not-this</rbf>
+-->
+<rbf>seibuspi</rbf><setname>rdft</setname>
+<rom index="0" zip="rdft.zip"><part>00</part></rom></misterromdescription>`
+	a, ok := parseMRA(strings.NewReader(src))
+	if !ok || a.RBF != "seibuspi" || a.Setname != "rdft" || len(a.Zips) != 1 {
+		t.Fatalf("parse = %+v %v", a, ok)
+	}
+	// A comment split across reads and an ordinary one are both dropped.
+	var sb strings.Builder
+	sb.WriteString("<misterromdescription><!-- plain -->")
+	for i := 0; i < 2000; i++ {
+		sb.WriteString("<!-- pad -- pad -->\n")
+	}
+	sb.WriteString(`<rbf>x</rbf><setname>y</setname><rom index="0" zip="z.zip"/></misterromdescription>`)
+	if a, ok := parseMRA(strings.NewReader(sb.String())); !ok || a.RBF != "x" {
+		t.Fatalf("padded parse = %+v %v", a, ok)
+	}
+	// Line numbers survive comment removal.
+	_, _, err := parseMRAResult(strings.NewReader("<misterromdescription>\n<!--\n\n-->\n<rbf>x</rbf><bad"))
+	if err == nil || !strings.Contains(err.Error(), "line 5") {
+		t.Fatalf("line number after comment: %v", err)
+	}
+}

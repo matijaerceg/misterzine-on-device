@@ -194,7 +194,7 @@ func main() {
 	a.SetAppUpdate(*appUpdate)
 	if *scanResult {
 		a.OpenScan()
-		a.FinishScan("")
+		a.FinishScan("", true)
 	}
 	a.SetNet("data " + data.RelUpdated(now, upd))
 	if *updatePath != "" {

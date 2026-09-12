@@ -167,18 +167,19 @@ type App struct {
 	updateView updateView
 	support    supportView
 
-	wants     []ImageReq // pictures this frame asked for, in priority order
-	rep       repeater
-	down      map[platform.Key]bool // keys currently held, across all devices
-	notice    string
-	until     time.Time
-	net       string // status bar right text: "offline", "updating", "data 2h ago"
-	appUpdate string
-	scanReady bool
-	scanError string
-	all       bool // full repaint pending
-	saver     screensaver
-	marquee   marqueeState
+	wants      []ImageReq // pictures this frame asked for, in priority order
+	rep        repeater
+	down       map[platform.Key]bool // keys currently held, across all devices
+	notice     string
+	until      time.Time
+	net        string // status bar right text: "offline", "updating", "data 2h ago"
+	appUpdate  string
+	scanReady  bool
+	scanError  string
+	scanCounts bool // the finished scan delivered statuses worth showing
+	all        bool // full repaint pending
+	saver      screensaver
+	marquee    marqueeState
 }
 
 type detailState struct {

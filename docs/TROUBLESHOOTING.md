@@ -98,6 +98,14 @@ Use Rescan card after an external update. Alternatives must be installed:
 Downloader filters can intentionally exclude them. MisterZine leaves those
 preferences unchanged. A missing or invalid launch target reports an error.
 
+An alternative whose MRA file holds no readable header (an empty file, one
+cut short, or one without an `<rbf>` element) is left out of the picker, as
+MiSTer could not load it either. The scan still completes. The log names
+each such file the first time its folder is read (`scan: skipped ...`) and
+every scan repeats the count (`N unreadable MRAs skipped`). A "Card scan
+incomplete" result means a folder or file could not be read at all; the log
+line above it names the path.
+
 ## Start does not launch games
 
 MisterZine uses the Start button saved through MiSTer's main-menu **Define
