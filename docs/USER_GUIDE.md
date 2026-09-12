@@ -113,11 +113,15 @@ A, B, X and Y are MiSTer's names from its define buttons screen. Options ->
 Button labels can print them as Xbox letters, PlayStation symbols or numbers.
 
 A pad that has been defined in the MiSTer menu is read by MisterZine
-directly: the button you defined as A is A here, whichever buttons you
-chose for the MiSTer menu's own OK and back. Each pad follows its own
-definition, so two pads defined differently work side by side. A pad that
-has never been defined works through MiSTer's translation instead, and only
-while no defined pad is connected.
+directly, slot by slot: D-pad, A B X Y, L R, Start, and the stick you gave
+the MiSTer menu, if any. The button you defined as A is A here, whichever
+buttons you chose for the MiSTer menu's own OK and back. A trigger or stick
+direction used as a button counts once it passes a quarter of its travel,
+as in MiSTer. Each pad follows its own definition, so two pads defined
+differently work side by side. A pad that has never been defined works
+through MiSTer's translation instead, and only while no defined pad is
+connected. A button that is in no MiSTer slot does nothing here either;
+the pad tester under Troubleshooting shows it with its raw code.
 
 The Details version selector uses one row. Its tally shows the selection and
 total, such as 2/5. Left/Right chooses among installed alternatives; Start

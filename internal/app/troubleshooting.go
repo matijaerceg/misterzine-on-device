@@ -115,7 +115,10 @@ func (a *App) padPressLine(p padPress, prev *padPress) string {
 		if pad.Name != p.source {
 			continue
 		}
-		s := shortName(pad.Name, 14) + fmt.Sprintf(" btn %d", p.code)
+		s := shortName(pad.Name, 14) + " " + support.CodeText(p.code)
+		if p.code < 0x300 {
+			s = shortName(pad.Name, 14) + fmt.Sprintf(" btn %d", p.code)
+		}
 		if slot := pad.Slot(p.code); slot != "" {
 			s += " = " + a.btn(slot)
 		}
@@ -136,14 +139,17 @@ func (a *App) padLines(p support.Pad) []string {
 		head += fmt.Sprintf(" %04x:%04x", p.Vendor, p.Product)
 	}
 	slots := ""
-	for _, name := range []string{"A", "B", "X", "Y", "L", "R", "Select", "Start"} {
+	for _, name := range support.SlotOrder {
 		if code, ok := p.Slots[name]; ok {
 			label := name
 			if len(name) == 1 {
 				label = a.btn(name)
 			}
-			slots += fmt.Sprintf("%s %d  ", label, code)
+			slots += label + " " + support.CodeText(code) + "  "
 		}
+	}
+	if p.MenuStick != "" {
+		slots += "stick " + p.MenuStick
 	}
 	lines := []string{head}
 	switch {
@@ -152,7 +158,7 @@ func (a *App) padLines(p support.Pad) []string {
 	case p.Mapped:
 		lines = append(lines, "  no usable buttons in "+shortName(p.Map, 40))
 	default:
-		lines = append(lines, "  no MiSTer map: face buttons come through MiSTer's translation", "  "+strings.TrimSpace(slots))
+		lines = append(lines, "  no MiSTer map: buttons come through MiSTer's translation", "  "+strings.TrimSpace(slots))
 	}
 	if p.Note != "" {
 		lines = append(lines, "  "+p.Note)

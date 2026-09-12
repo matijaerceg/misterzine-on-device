@@ -15,7 +15,7 @@ func padTestApp() (*App, *time.Time) {
 	a.cfg.Support = &SupportHooks{Pads: func() []support.Pad {
 		return []support.Pad{
 			{Node: "event3", Name: "Microsoft X-Box 360 pad", Vendor: 0x045e, Product: 0x028e, Mapped: true, Map: "/media/fat/config/inputs/input_045e_028e_v3.map",
-				Slots: map[string]uint16{"A": 305, "B": 304, "X": 308, "Y": 307, "L": 310, "Start": 315}},
+				Slots: map[string]uint16{"A": 305, "B": 304, "X": 308, "Y": 307, "L": 310, "R": 773, "Start": 315, "Up": 802}},
 			{Node: "event0", Name: "Brook ZERO-Pi Fighting Board", Map: "Linux default", Slots: map[string]uint16{"Start": 315}},
 		}
 	}}
@@ -59,6 +59,11 @@ func TestPadTesterListsPressesAndLeavesOnHeldB(t *testing.T) {
 		}
 		lines[i] = a.padPressLine(p, prev)
 	}
+	press(platform.KeyPageDown, 773, "Microsoft X-Box 360 pad", 90*time.Millisecond)
+	if l := a.padPressLine(a.support.presses[0], nil); !strings.Contains(l, "ax2+ = R: page down (R)") {
+		t.Fatalf("axis press line %q", l)
+	}
+	a.support.presses = a.support.presses[1:]
 	for i, want := range []string{"script: details / confirm +100ms", "MiSTer translation: up +100ms", "btn 310 = L: no action +500ms", "btn 315 = Start: launch +8ms", "btn 305 = A: details / confirm"} {
 		if !strings.Contains(lines[i], want) {
 			t.Fatalf("line %d %q lacks %q", i, lines[i], want)

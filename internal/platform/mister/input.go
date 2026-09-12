@@ -71,7 +71,21 @@ type device struct {
 	pad             bool // a gamepad node: read by MiSTer define-slot, see padMapping
 	mapping         padMapping
 	vendor, product uint16
+	abs             map[uint16]absInfo // axis ranges, read on first use
+	axisEdge        map[uint16]uint8   // 0 centred, 1 at the minimum, 2 at the maximum
 }
+
+type absInfo struct {
+	min, max int32
+	ok       bool
+}
+
+type axisEvent struct {
+	code    uint16
+	pressed bool
+}
+
+const evAbs = 3
 
 // Input reads every keyboard-class evdev device, rescanning for hotplug.
 type Input struct {
@@ -81,11 +95,11 @@ type Input struct {
 	devs map[string]*device
 	stop chan struct{}
 	wg   sync.WaitGroup
-	// rawFace is set while a pad with a MiSTer map is connected: its face
-	// buttons are read from the pad itself, so the same presses arriving as
-	// Enter/Esc/Tab/Space through Main's virtual keyboard are dropped. A pad
-	// without a map still works through Main's translation, but only while
-	// no mapped pad is present, since the translated keys carry no pad name.
+	// rawFace is set while a pad with a MiSTer map is connected: it is read
+	// from the pad itself by define-slot, so everything Main types for pads
+	// through its virtual keyboard is dropped. A pad without a map still
+	// works through Main's translation, but only while no mapped pad is
+	// present, since the translated keys carry no pad name.
 	rawFace atomic.Bool
 }
 
@@ -154,19 +168,19 @@ func (in *Input) rescan() {
 		if !isKeyboard(f) {
 			// gamepad nodes are read for Start (Main never forwards it)
 			// and, with a MiSTer map, for the face buttons by define-slot
-			if m.Code == 0 && len(m.Face) == 0 {
+			if m.Code == 0 && len(m.Keys) == 0 {
 				f.Close()
 				continue
 			}
 			pad = true
 		}
-		d := &device{path: p, name: name, f: f, pad: pad, mapping: m, held: map[uint16]platform.Key{}}
+		d := &device{path: p, name: name, f: f, pad: pad, mapping: m, held: map[uint16]platform.Key{}, abs: map[uint16]absInfo{}, axisEdge: map[uint16]uint8{}}
 		d.vendor, d.product = devID(f)
 		in.mu.Lock()
 		in.devs[p] = d
 		in.mu.Unlock()
 		if pad {
-			in.log.Printf("input: reading %s (%s) Start button %d via %s; face buttons %s", p, d.name, m.Code, m.Source, m.slotText())
+			in.log.Printf("input: reading %s (%s) Start button %d via %s; slots %s", p, d.name, m.Code, m.Source, m.slotText())
 		} else {
 			in.log.Printf("input: reading %s (%s)", p, d.name)
 		}
@@ -188,16 +202,16 @@ func (in *Input) updateRawFace() {
 	in.mu.Lock()
 	raw := false
 	for _, d := range in.devs {
-		if d.pad && len(d.mapping.Face) > 0 {
+		if d.pad && d.mapping.Mapped && len(d.mapping.Keys) > 0 {
 			raw = true
 		}
 	}
 	in.mu.Unlock()
 	if in.rawFace.Swap(raw) != raw {
 		if raw {
-			in.log.Printf("input: face buttons read from the mapped pad(s); MiSTer's Enter/Esc/Tab/Space are ignored")
+			in.log.Printf("input: mapped pad(s) read by MiSTer define-slot; MiSTer's translated pad keys are ignored")
 		} else {
-			in.log.Printf("input: no mapped pad; face buttons come from MiSTer's translation")
+			in.log.Printf("input: no mapped pad; pad buttons come from MiSTer's translation")
 		}
 	}
 }
@@ -222,15 +236,77 @@ func (m padMapping) slotText() string {
 		return "via MiSTer (no map file)"
 	}
 	s := ""
-	for _, name := range slotNames[:4] {
+	for _, name := range support.SlotOrder {
 		if code, ok := m.Slots[name]; ok {
-			s += fmt.Sprintf("%s=%d ", name, code)
+			s += fmt.Sprintf("%s=%s ", name, support.CodeText(code))
 		}
+	}
+	if m.menu[0] || m.menu[1] {
+		s += fmt.Sprintf("menu stick axes %d/%d", m.menuX&0xFFFF, m.menuY&0xFFFF)
 	}
 	if s == "" {
 		return "none in the map"
 	}
 	return strings.TrimSpace(s)
+}
+
+// axisEvents turns an axis value into edge presses and releases the way
+// Main does: a hat is pressed at either end; an analogue axis past a
+// quarter of its range from centre is pressed, and only towards its
+// maximum unless it is a stick axis, so a trigger at rest is not held.
+func (d *device) axisEvents(axis uint16, value int32) []axisEvent {
+	info, ok := d.abs[axis]
+	if !ok {
+		info = d.absRange(axis)
+		d.abs[axis] = info
+	}
+	if !info.ok {
+		return nil
+	}
+	var edge uint8
+	if (info.max == 1 && info.min == -1) || (info.max == 2 && info.min == 0) {
+		if value == info.min {
+			edge = 1
+		}
+		if value == info.max {
+			edge = 2
+		}
+	} else {
+		span := info.max - info.min + 1
+		centre := info.min + span/2
+		threshold := span / 4
+		if value < centre-threshold && d.mapping.bothEdges(axis) {
+			edge = 1
+		}
+		if value > centre+threshold {
+			edge = 2
+		}
+	}
+	last := d.axisEdge[axis]
+	if last == edge {
+		return nil
+	}
+	d.axisEdge[axis] = edge
+	var out []axisEvent
+	if last != 0 {
+		out = append(out, axisEvent{AxisCode(axis, last == 2), false})
+	}
+	if edge != 0 {
+		out = append(out, axisEvent{AxisCode(axis, edge == 2), true})
+	}
+	return out
+}
+
+// absRange asks the kernel for an axis range (EVIOCGABS).
+func (d *device) absRange(axis uint16) absInfo {
+	var raw [6]int32 // value, minimum, maximum, fuzz, flat, resolution
+	if d.f == nil || ioctl(d.f.Fd(), 0x80184540+uintptr(axis), unsafe.Pointer(&raw[0])) != nil {
+		return absInfo{}
+	}
+	if raw[2] <= raw[1] {
+		return absInfo{}
+	}
+	return absInfo{min: raw[1], max: raw[2], ok: true}
 }
 
 func devID(f *os.File) (vendor, product uint16) {
@@ -239,12 +315,6 @@ func devID(f *os.File) (vendor, product uint16) {
 		return 0, 0
 	}
 	return id[1], id[2]
-}
-
-// faceKey reports whether a virtual-keyboard code is one Main uses for the
-// pad's face buttons.
-func faceKey(code uint16) bool {
-	return code == keyEnter || code == keyEsc || code == keyTab || code == keySpace
 }
 
 func devName(f *os.File) string {
@@ -314,37 +384,55 @@ func (in *Input) read(d *device) {
 				}
 				continue
 			}
+			val := int32(binary.LittleEndian.Uint32(buf[i+12:]))
+			sec := int64(int32(binary.LittleEndian.Uint32(buf[i:])))
+			usec := int64(int32(binary.LittleEndian.Uint32(buf[i+4:])))
+			at := time.Unix(sec, usec*1000)
+			if typ == evAbs {
+				if !d.pad || !d.mapping.Mapped {
+					continue
+				}
+				for _, e := range d.axisEvents(code, val) {
+					if !in.emit(d, e.code, e.pressed, 0, at) {
+						return
+					}
+				}
+				continue
+			}
 			if typ != evKey {
 				continue
 			}
-			val := int32(binary.LittleEndian.Uint32(buf[i+12:]))
 			text := d.keyboardText(code)
 			if val != 0 && val != 1 && !(val == 2 && text != 0) {
 				continue // navigation repeats in the app; typing uses keyboard repeat
 			}
-			sec := int64(int32(binary.LittleEndian.Uint32(buf[i:])))
-			usec := int64(int32(binary.LittleEndian.Uint32(buf[i+4:])))
-			k, accept := d.inputKey(code)
-			if !accept {
-				continue
-			}
-			if d.name == "MiSTer virtual input" && faceKey(code) && in.rawFace.Load() {
-				continue // the mapped pad delivered this press itself
-			}
-			if k == platform.KeyStart {
-				text = 0
-			}
-			ev := platform.Event{Key: k, Text: text, Code: code, Pressed: val != 0, At: time.Unix(sec, usec*1000), Source: d.name}
-			if ev.Pressed {
-				d.held[code] = k
-			} else {
-				delete(d.held, code)
-			}
-			if !in.deliver(ev) {
+			if !in.emit(d, code, val != 0, text, at) {
 				return
 			}
 		}
 	}
+}
+
+// emit delivers one press or release from a device; false once the reader
+// should stop.
+func (in *Input) emit(d *device, code uint16, pressed bool, text rune, at time.Time) bool {
+	k, accept := d.inputKey(code)
+	if !accept {
+		return true
+	}
+	if d.name == "MiSTer virtual input" && in.rawFace.Load() {
+		return true // the mapped pads deliver their own presses
+	}
+	if k == platform.KeyStart {
+		text = 0
+	}
+	ev := platform.Event{Key: k, Text: text, Code: code, Pressed: pressed, At: at, Source: d.name}
+	if pressed {
+		d.held[code] = k
+	} else {
+		delete(d.held, code)
+	}
+	return in.deliver(ev)
 }
 
 func (in *Input) Events() <-chan platform.Event { return in.ch }
@@ -354,7 +442,7 @@ func (d *device) inputKey(code uint16) (platform.Key, bool) {
 		return platform.KeyStart, true
 	}
 	if d.pad {
-		if k, ok := d.mapping.Face[code]; ok {
+		if k, ok := d.mapping.Keys[code]; ok {
 			return k, true
 		}
 		// other pad buttons have no action but are delivered so the pad
@@ -430,6 +518,9 @@ func (in *Input) deliver(ev platform.Event) bool {
 // Disconnect or kernel queue overflow releases held keys. After overflow the
 // user must press again; never invent a press from an asynchronous state query.
 func (in *Input) releaseHeld(d *device) {
+	for axis := range d.axisEdge {
+		delete(d.axisEdge, axis)
+	}
 	for code, key := range d.held {
 		delete(d.held, code)
 		if !in.deliver(platform.Event{Key: key, Code: code, At: time.Now(), Source: d.name}) {

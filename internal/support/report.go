@@ -51,19 +51,35 @@ func (d Device) Route() string {
 type Pad struct {
 	Node, Name      string
 	Vendor, Product uint16
-	Mapped          bool              // a MiSTer map file was read; face buttons come from the pad itself
-	Slots           map[string]uint16 // slot name -> code
+	Mapped          bool              // a MiSTer map file was read; the pad is read by define-slot
+	Slots           map[string]uint16 // slot name -> code (a button code, or an axis edge 0x300+axis*2+direction)
 	Map, Note       string
+	MenuStick       string // the stick that moves Main's menu, when defined ("axes 0/1")
 }
+
+// SlotOrder is how the tester lists the define-slots.
+var SlotOrder = []string{"Up", "Down", "Left", "Right", "A", "B", "X", "Y", "L", "R", "Select", "Start"}
 
 // Slot names the define-slot a code sits in, or "" when it is none of them.
 func (p Pad) Slot(code uint16) string {
-	for _, name := range []string{"A", "B", "X", "Y", "L", "R", "Select", "Start"} {
+	for _, name := range SlotOrder {
 		if c, ok := p.Slots[name]; ok && c == code {
 			return name
 		}
 	}
 	return ""
+}
+
+// CodeText prints a map code: a button number, or an axis edge as "ax2+".
+func CodeText(code uint16) string {
+	if code >= 0x300 {
+		dir := "-"
+		if code&1 == 1 {
+			dir = "+"
+		}
+		return fmt.Sprintf("ax%d%s", (code-0x300)>>1, dir)
+	}
+	return fmt.Sprint(code)
 }
 
 type Signal struct {

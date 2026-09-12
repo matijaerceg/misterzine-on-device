@@ -54,7 +54,7 @@ func TestMiSTerStartMapping(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			dir := t.TempDir()
 			p := writeStartMap(t, filepath.Join(dir, "inputs"), "input_0f0d_00aa_v3.map", tt.code)
-			m := loadPadMapping(dir, "0f0d_00aa", tt.bits)
+			m := loadPadMapping(dir, "0f0d_00aa", tt.bits, [8]byte{})
 			if m.Code != tt.want || m.Source != p || (m.Note != "") != tt.note {
 				t.Fatalf("mapping: %+v", m)
 			}
@@ -65,31 +65,31 @@ func TestMiSTerStartMapping(t *testing.T) {
 func TestMiSTerStartFileSelection(t *testing.T) {
 	dir := t.TempDir()
 	bits := buttonBits(299, 314, 315)
-	if m := loadPadMapping(dir, "0f0d_00aa", bits); m.Code != 315 || m.Source != "Linux default" {
+	if m := loadPadMapping(dir, "0f0d_00aa", bits, [8]byte{}); m.Code != 315 || m.Source != "Linux default" {
 		t.Fatal(m)
 	}
-	if m := loadPadMapping(dir, "0f0d_00aa", buttonBits(299)); m.Code != 0 {
+	if m := loadPadMapping(dir, "0f0d_00aa", buttonBits(299), [8]byte{}); m.Code != 0 {
 		t.Fatal(m)
 	}
 	writeStartMap(t, filepath.Join(dir, "inputs"), "input_1234_5678_v3.map", 299)
 	writeStartMap(t, filepath.Join(dir, "inputs"), "galaga_input_0f0d_00aa_v3.map", 299)
 	writeStartMap(t, filepath.Join(dir, "inputs"), "input_0f0d_00aa_deadbeef_v3.map", 299)
-	if m := loadPadMapping(dir, "0f0d_00aa", bits); m.Code != 315 {
+	if m := loadPadMapping(dir, "0f0d_00aa", bits, [8]byte{}); m.Code != 315 {
 		t.Fatal(m)
 	}
 	legacy := writeStartMap(t, dir, "input_0f0d_00aa_v3.map", 299)
-	if m := loadPadMapping(dir, "0f0d_00aa", bits); m.Code != 299 || m.Source != legacy {
+	if m := loadPadMapping(dir, "0f0d_00aa", bits, [8]byte{}); m.Code != 299 || m.Source != legacy {
 		t.Fatal(m)
 	}
 	primary := writeStartMap(t, filepath.Join(dir, "inputs"), "input_0f0d_00aa_v3.map", 314)
-	if m := loadPadMapping(dir, "0f0d_00aa", bits); m.Code != 314 || m.Source != primary {
+	if m := loadPadMapping(dir, "0f0d_00aa", bits, [8]byte{}); m.Code != 314 || m.Source != primary {
 		t.Fatal(m)
 	}
 	for _, size := range []int{0, 44, 127, 129, 4096} {
 		if err := os.WriteFile(primary, make([]byte, size), 0644); err != nil {
 			t.Fatal(err)
 		}
-		if m := loadPadMapping(dir, "0f0d_00aa", bits); m.Code != 0 || m.Note == "" || m.Source != primary {
+		if m := loadPadMapping(dir, "0f0d_00aa", bits, [8]byte{}); m.Code != 0 || m.Note == "" || m.Source != primary {
 			t.Fatal(m)
 		}
 	}
@@ -100,7 +100,7 @@ func TestMiSTerStartFileSelection(t *testing.T) {
 func TestMappedStartRawEvents(t *testing.T) {
 	dir := t.TempDir()
 	writeStartMap(t, filepath.Join(dir, "inputs"), "input_0f0d_00aa_v3.map", 314)
-	m := loadPadMapping(dir, "0f0d_00aa", buttonBits(305, 314, 315))
+	m := loadPadMapping(dir, "0f0d_00aa", buttonBits(305, 314, 315), [8]byte{})
 	r, w, err := os.Pipe()
 	if err != nil {
 		t.Fatal(err)
