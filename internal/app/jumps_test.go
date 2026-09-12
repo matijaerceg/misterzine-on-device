@@ -48,8 +48,12 @@ func TestHeldGroupJumpsMatchRowScrolling(t *testing.T) {
 							at := deadline.Add(time.Duration(frame) * frameDur)
 							a.Frame(at)
 							ref.Frame(at)
-							if a.CursorKey() != ref.CursorKey() || a.top != a.screenLine(a.cursor) {
-								t.Fatalf("frame %d: group %q / row %q, or lost top alignment", frame, a.CursorKey(), ref.CursorKey())
+							wantTop := a.screenLine(a.cursor)
+							if a.groupHeaders() {
+								wantTop = centeredTop(a.screenLine(a.cursor), a.totalLines(), a.lay.Lines)
+							}
+							if a.CursorKey() != ref.CursorKey() || a.top != wantTop {
+								t.Fatalf("frame %d: group %q / row %q, top %d want %d", frame, a.CursorKey(), ref.CursorKey(), a.top, wantTop)
 							}
 						}
 						last := a.CursorKey()
@@ -68,7 +72,7 @@ func TestHeldGroupJumpsMatchRowScrolling(t *testing.T) {
 	}
 }
 
-func TestLetterJumpsPutGroupAtTopInBothDirections(t *testing.T) {
+func TestLetterJumpsCenterTheGroupUnderItsHeader(t *testing.T) {
 	for _, rot := range []gfx.Rotation{gfx.RotNone, gfx.RotLeft} {
 		for _, groupSize := range []int{2, 30} {
 			rows := []data.Row{}
@@ -79,27 +83,33 @@ func TestLetterJumpsPutGroupAtTopInBothDirections(t *testing.T) {
 				}
 			}
 			a := New(Config{PhysW: 320, PhysH: 240, Rotation: rot, RememberSort: true, LastSort: data.SortAlphabetical}, data.Ingest(rows, "test", time.Now()), nil)
+			if len(a.marks) != 3 || a.markText(0) != "A" || a.markText(1) != "B" || a.markText(2) != "Z" {
+				t.Fatalf("rotation=%v size=%d: letter headers %v", rot, groupSize, a.marks)
+			}
 			jump := func(key platform.Key, want string) {
 				t.Helper()
 				a.actList(key)
 				a.Paint()
-				if a.CursorKey() != want || a.top != a.screenLine(a.cursor) {
-					t.Fatalf("rotation=%v size=%d: %v selected %q at line %d, top %d; want %q at top", rot, groupSize, key, a.CursorKey(), a.screenLine(a.cursor), a.top, want)
+				if a.CursorKey() != want || a.top != centeredTop(a.screenLine(a.cursor), a.totalLines(), a.lay.Lines) || a.shortPage || a.notice != "" {
+					t.Fatalf("rotation=%v size=%d: %v selected %q at line %d, top %d, notice %q; want %q centered", rot, groupSize, key, a.CursorKey(), a.screenLine(a.cursor), a.top, a.notice, want)
+				}
+				if a.markAt(a.cursor) && a.top > 0 && a.screenLine(a.cursor)-1 < a.top {
+					t.Fatalf("rotation=%v size=%d: the header of %q scrolled off above", rot, groupSize, want)
 				}
 			}
 			jump(platform.KeyPageDown, "B 00")
 			jump(platform.KeyPageDown, "Z 00")
-			// Row movement resumes centered scrolling, bounded by the list end.
+			// Row movement keeps the centered scrolling, bounded by the list end.
 			a.actList(platform.KeyDown)
 			a.Paint()
 			if a.top != centeredTop(a.screenLine(a.cursor), a.totalLines(), a.lay.Lines) {
-				t.Fatal("walking after a jump did not resume centered scrolling")
+				t.Fatal("walking after a jump did not keep centered scrolling")
 			}
 			jump(platform.KeyPageUp, "B 00")
 			jump(platform.KeyPageUp, "A 00")
 			jump(platform.KeyPageDown, "B 00")
 			a.actList(platform.KeyEnd)
-			if a.top != max(0, len(a.view)-a.lay.Lines) {
+			if a.top != max(0, a.totalLines()-a.lay.Lines) {
 				t.Fatal("End should still fill the final page")
 			}
 		}
@@ -131,6 +141,9 @@ func TestLetterJumpUsesVisibleCollationGroups(t *testing.T) {
 	step(platform.KeyPageDown, "Zoo")
 	step(platform.KeyPageDown, "Zoo")
 	step(platform.KeyHome, "!Game")
+	if len(a.marks) != 5 || a.markText(0) != "0-9 and symbols" || a.markText(1) != "A" || a.markText(2) != "B" || a.markText(3) != "E" || a.markText(4) != "Z" {
+		t.Fatalf("letter headers: %v", a.marks)
+	}
 
 	a.cfg.Favorites = map[string]bool{"Alpha": true, "Éclair": true, "Zoo": true}
 	a.SetFilters(data.Filters{FavOnly: true})

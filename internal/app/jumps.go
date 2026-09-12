@@ -6,8 +6,11 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 )
 
-// jumpGroup moves to the first visible title of the next/previous letter or month.
-// Only filtered/search results count; empty groups are skipped and ends stop.
+// jumpGroup moves to the first visible title of the next/previous group: a
+// letter, a maker, a release year or a month. Only filtered/search results
+// count; empty groups are skipped and ends stop. Under an order with group
+// headers the row lands centered like a step, its header right above it;
+// the date orders put the row on the top line and name the month.
 func (a *App) jumpGroup(direction int) {
 	if len(a.view) == 0 {
 		return
@@ -25,22 +28,17 @@ func (a *App) jumpGroup(direction int) {
 		i--
 	}
 	a.cursor = i
-	a.top = a.screenLine(i)
-	a.shortPage = true
-	if a.mode == data.SortMaker {
-		// the row stays centered like a step, since the next step would
-		// center it anyway; the header sits right above it
+	if a.groupHeaders() {
+		// centered like a step, since the next step would center it anyway
 		a.top = centeredTop(a.screenLine(i), a.totalLines(), a.lay.Lines)
 		a.shortPage = false
+		return
 	}
-	if a.mode != data.SortAlphabetical && a.mode != data.SortFavorites && a.mode != data.SortMaker {
+	a.top = a.screenLine(i)
+	a.shortPage = true
+	if a.mode != data.SortFavorites {
 		label := "Date unknown"
-		if a.mode == data.SortYear {
-			label = "Year unknown"
-			if group != "" {
-				label = group
-			}
-		} else if month, err := time.Parse("2006-01", group); err == nil {
+		if month, err := time.Parse("2006-01", group); err == nil {
 			label = month.Format("January 2006")
 		}
 		a.Notice(label, 2*time.Second)

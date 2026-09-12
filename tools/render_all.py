@@ -180,6 +180,12 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     scenarios.append([*rotation,
                       "-out", f"out/credits-{orientation}", "-script",
                       "back; end; shot options-credits; enter; shot credits; end; shot credits-end; back; shot options-back"])
+    # the letter and year headers: a jump under its header, a group name
+    # pinned on the top line while its rows run past it, the unknown years
+    scenarios.append([*rotation,
+                      "-out", f"out/headers-{orientation}", "-script",
+                      "space*3; home; down*30; shot letter-pinned; pagedown*2; shot letter-jump; "
+                      "space*5; home; down*30; shot year-pinned; end; up*2; shot year-unknown"])
     # over Details, the Menu button option row itself, closing Options back
     # onto Details and Filters, and the held-Menu hint
     scenarios.append([*rotation,

@@ -73,8 +73,12 @@ MisterZine, latest launch first, with the launch date in the date column
 and L/R jumping between launch months.
 Year orders games
 by their original release year, newest first, with titles alphabetical within
-a year and unknown or uncertain years last; the date column shows the year.
-Alphabetical sorting ignores case and accents and puts Game 2 before Game 10.
+a year and unknown or uncertain years last; a header line names each year,
+the last one Year unknown, and the date column shows the year as the
+catalogue has it.
+Alphabetical sorting ignores case and accents and puts Game 2 before Game 10;
+a header line names each letter, with numbers and symbols under 0-9 and
+symbols before A.
 Maker groups the games by manufacturer: a header line names each maker, makers
 run A-Z with titles A-Z under them, the date column shows the original year,
 and L/R jump from maker to maker. Joint credits and licences count under the
@@ -82,6 +86,9 @@ first company named and corporate or regional suffixes are ignored, so Taito
 Corporation Japan and Taito America Corporation sit under Taito and Data East
 USA under Data East; Details still shows the full credit. Games without a
 manufacturer come last under Unknown maker.
+In the three grouped orders (Year, A-Z, Maker) a group whose header has
+scrolled off the top keeps its name pinned on the top line until its last
+row has gone.
 Favorites shows only your starred entries in alphabetical order, with the same
 letter jumps as A-Z.
 Search and filters still apply. Remember sort order also remembers Favorites.
@@ -89,14 +96,13 @@ Changing sort keeps the selected title, search and filters. Dates in alphabetica
 order still show the latest update; the last-look divider appears only in the
 latest-update order.
 In alphabetical order, L/R jumps to the first title of the previous/next letter
-in your current search and filters, placing that title at the top of the list
-in either direction (even when the final group leaves blank space below).
-Empty letters are skipped; numbers and
-symbols share a group before A. In the date sorts, L/R jumps between months:
-L goes to a newer month, R to an older one. Empty months are skipped, each
-month's first result appears at the top, and its month/year briefly appears in
-the status bar. Unknown dates share a final group. In the Year order the same
-keys jump between release years. Jumps stop at either end.
+in your current search and filters; the title lands centred with its header
+line right above it, as in the Year and Maker orders. Empty letters are
+skipped; numbers and symbols share a group before A. In the date sorts, L/R
+jumps between months: L goes to a newer month, R to an older one. Empty months
+are skipped, each month's first result appears at the top, and its month/year
+briefly appears in the status bar. Unknown dates share a final group. In the
+Year order the same keys jump between release years. Jumps stop at either end.
 Keyboard Home/End still jumps to the first/last title.
 Hold L/R to keep jumping letters or months with the same Hold delay and Scroll
 speed as Up/Down row scrolling. Releasing the button stops the jumps.
@@ -115,7 +121,7 @@ filter choices are saved.
 |---|---|---|---|---|---|---|
 | Up/Down | arrows | move | page information | | move | move |
 | Left/Right | arrows | page, keeping the row centered | choose version | change shot | collapse/expand section or years | change value |
-| L/R | PageUp/PageDown | previous/next letter in A-Z; newer/older month in date sorts; previous/next maker | | | previous/next section | first/last |
+| L/R | PageUp/PageDown | previous/next letter in A-Z; newer/older month in date sorts; previous/next year or maker | | | previous/next section | first/last |
 | A | Enter | details | artwork | | toggle a value; open/close a heading | run action |
 | B | Esc | Options / clear search | back | back | back | back |
 | X | Tab | Filters | | | show/hide years | |

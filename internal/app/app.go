@@ -577,8 +577,8 @@ func (a *App) ensureVisible() {
 		return
 	}
 	line := a.screenLine(a.cursor)
-	if a.markAt(a.cursor) && a.mode == data.SortMaker {
-		line-- // a maker header comes into view with its first row
+	if a.markAt(a.cursor) && a.groupHeaders() {
+		line-- // a group header comes into view with its first row
 	}
 	if line < a.top {
 		a.top = line

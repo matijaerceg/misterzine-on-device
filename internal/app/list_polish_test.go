@@ -2,6 +2,7 @@ package app
 
 import (
 	"image"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -436,12 +437,16 @@ func TestYearSortOrderAndJumps(t *testing.T) {
 	if a.CursorKey() != "n" {
 		t.Fatalf("the newest year leads: %q", a.CursorKey())
 	}
-	a.actList(platform.KeyPageDown)
-	if a.CursorKey() != "a" || a.notice != "1985" {
-		t.Fatalf("R must jump to the next year's first title: %q notice %q", a.CursorKey(), a.notice)
+	// a header line before each year, the unknown years named, and no notice
+	if !reflect.DeepEqual(a.marks, []int{0, 1, 3}) || a.markText(0) != "1990" || a.markText(1) != "1985" || a.markText(2) != "Year unknown" {
+		t.Fatalf("year headers %v: %q %q %q", a.marks, a.markText(0), a.markText(1), a.markText(2))
 	}
 	a.actList(platform.KeyPageDown)
-	if a.CursorKey() != "q" || a.notice != "Year unknown" {
+	if a.CursorKey() != "a" || a.notice != "" || a.top != centeredTop(a.screenLine(a.cursor), a.totalLines(), a.lay.Lines) {
+		t.Fatalf("R must jump to the next year's first title, centered, no notice: %q notice %q top %d", a.CursorKey(), a.notice, a.top)
+	}
+	a.actList(platform.KeyPageDown)
+	if a.CursorKey() != "q" || a.notice != "" {
 		t.Fatalf("R must jump to the unknown years: %q notice %q", a.CursorKey(), a.notice)
 	}
 	a.actList(platform.KeyPageUp)
@@ -450,7 +455,7 @@ func TestYearSortOrderAndJumps(t *testing.T) {
 	}
 	a.Paint()
 	rf := a.rowFont()
-	r := a.lay.lineRect(0)
+	r := a.lay.lineRect(a.screenLine(a.cursor) - a.top) // the selected row, under its year header
 	col := image.Rect(r.Max.X-a.dateCols()*rf.W, r.Min.Y-1, r.Max.X, r.Max.Y)
 	lit := 0
 	for y := col.Min.Y; y < col.Max.Y; y++ {
