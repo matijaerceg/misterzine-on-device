@@ -220,6 +220,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 		TitleFont:            h.settings.TitleFont,
 		ListShot:             h.settings.ListShot,
 		DateFormat:           h.settings.DateFormat,
+		ListLayout:           h.settings.ListLayout,
 		FavoritesUnavailable: h.favLoadFailed,
 		Progress:             func() (int, int) { return h.img.Progress() },
 		Launcher:             launcherEnabled,
@@ -699,6 +700,7 @@ func (h *host) saveAll(final bool) {
 		h.settings.TitleFont = h.a.TitleFont()
 		h.settings.ListShot = h.a.ListShot()
 		h.settings.DateFormat = h.a.DateFormat()
+		h.settings.ListLayout = h.a.ListLayout()
 		if err := store.Save(filepath.Join(h.root, "settings.json"), h.settings); err != nil {
 			h.lg.Printf("settings: %v", err)
 			h.setDirty = true

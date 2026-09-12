@@ -32,6 +32,7 @@ type Settings struct {
 	TitleFont      string        `json:"title_font"`  // list titles: tall (default), narrow or normal
 	ListShot       string        `json:"list_shot"`   // list thumbnail: gameplay (default) or title
 	DateFormat     string        `json:"date_format"` // list dates: mm-dd (default), dd-mm, mon-d, d-mon, yymmdd
+	ListLayout     string        `json:"list_layout"` // main view: list (default), split or picture
 	InsetX         int           `json:"inset_x"`
 	InsetY         int           `json:"inset_y"`
 }

@@ -109,6 +109,9 @@ type Config struct {
 	// DateFormat is the list date column: "mm-dd" (default), "dd-mm",
 	// "mon-d", "d-mon" or "yymmdd".
 	DateFormat string
+	// ListLayout is the main view's arrangement: "list" (default), "split"
+	// or "picture" (see Layout.Style).
+	ListLayout string
 }
 
 // App is the state machine.
@@ -211,7 +214,7 @@ func (a *App) setRotation(rot gfx.Rotation) {
 		w, h = h, w
 	}
 	a.logical = gfx.New(w, h)
-	a.lay = NewLayout(w, h, a.cfg.SafeInsetX, a.cfg.SafeInsetY, a.body, a.rowFont().W, a.dateCols())
+	a.lay = NewLayout(w, h, a.cfg.SafeInsetX, a.cfg.SafeInsetY, a.body, a.rowFont().W, a.dateCols(), a.ListLayout())
 	if a.ds != nil {
 		if orientationChanged && a.cfg.FilterRotation {
 			a.Refilter() // the strict filter follows the current orientation
@@ -456,6 +459,16 @@ func (a *App) ListShot() string {
 		return "title"
 	}
 	return "gameplay"
+}
+
+// ListLayout is the main view arrangement, one of listLayouts.
+func (a *App) ListLayout() string {
+	for _, s := range listLayouts {
+		if s == a.cfg.ListLayout {
+			return s
+		}
+	}
+	return listLayouts[0]
 }
 
 // DateFormat is the list date column format, one of dateFormats.

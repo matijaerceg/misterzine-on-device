@@ -373,6 +373,8 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Which screenshot the list pane shows: gameplay (default) or the title screen. Details and the artwork view still show every shot."},
 		{text: "Date format", kind: "date-format", vals: dateFormatLabels, idx: dateIdx,
 			help: a.dateFormatHelp()},
+		{text: "List layout", kind: "list-layout", vals: listLayouts, idx: map[string]int{"list": 0, "split": 1, "picture": 2}[a.ListLayout()],
+			help: "List (default): the full list with a small pane. Split: a wider pane with a bigger picture. Picture: the picture across the screen with a few rows."},
 		spacer, group("Display:"),
 		{text: "Follow INI rotation", kind: "follow-rotation", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.FollowRotation()],
 			help: "On (default): match osd_rotate in the active MiSTer INI at every startup. Off: rotate manually below. Never edits the INI."},
@@ -779,6 +781,9 @@ func (a *App) stepValue(d int) bool {
 	case "date-format":
 		a.cfg.DateFormat = dateFormats[i]
 		a.setRotation(a.rot) // the date column width changes the row layout
+	case "list-layout":
+		a.cfg.ListLayout = listLayouts[i]
+		a.setRotation(a.rot)
 	case "prefetch":
 		a.panel.prefetch = i == 1
 		if a.cfg.Action != nil {
@@ -909,7 +914,7 @@ func (a *App) togglePanel() bool {
 		if !e.header {
 			f.Since = !f.Since
 		}
-	case "rotation", "follow-rotation", "filter-rotation", "sources", "recents", "launcher", "scroll", "hold-delay", "remember-sort", "prefetch", "title-font", "list-shot", "date-format":
+	case "rotation", "follow-rotation", "filter-rotation", "sources", "recents", "launcher", "scroll", "hold-delay", "remember-sort", "prefetch", "title-font", "list-shot", "date-format", "list-layout":
 		return true // Left/Right pick these
 	case "inset":
 		a.screen = ScreenCalibrate

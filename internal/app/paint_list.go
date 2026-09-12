@@ -300,19 +300,31 @@ func (a *App) paintTitle(c *gfx.Canvas, x, y, w int, title string, beta bool, co
 func (a *App) paintPane(c *gfx.Canvas) {
 	l := &a.lay
 	c.Fill(l.Pane, gen.Eva.Bg)
-	if l.Portrait {
+	switch {
+	case l.PaneTop:
+		c.HLine(l.Pane.Min.X, l.Pane.Max.X-1, l.Pane.Max.Y, gen.Eva.Line)
+	case l.Portrait:
 		c.HLine(l.Pane.Min.X, l.Pane.Max.X-1, l.Pane.Min.Y-1, gen.Eva.Line)
-	} else {
+	default:
 		c.VLine(l.Pane.Min.X-1, l.Pane.Min.Y, l.Pane.Max.Y-1, gen.Eva.Line)
 	}
 	row, d, i := a.current()
 	if row == nil {
 		return
 	}
-	a.paintThumb(c, l.Thumb, row)
+	drawn := a.paintThumb(c, l.Thumb, row)
+	text := l.PaneText
+	if l.TextBeside {
+		// beside the picture when at least 60 px remain there, else below
+		if beside := l.Pane.Max.X - (drawn.Max.X + 4); beside >= 60 {
+			text = image.Rect(drawn.Max.X+4, l.Pane.Min.Y+3, l.Pane.Max.X, l.Pane.Max.Y)
+		} else {
+			text = image.Rect(l.Thumb.Min.X, l.Thumb.Max.Y+3, l.Pane.Max.X, l.Pane.Max.Y)
+		}
+	}
 	var lines []paneLine
 	hue := typeHue(row.Base)
-	cols := a.sm.Cols(l.PaneText.Dx())
+	cols := a.sm.Cols(text.Dx())
 	for _, t := range gfx.Wrap(d.Title, cols, 2) {
 		lines = append(lines, paneLine{t, gen.Eva.Fg})
 	}
@@ -351,7 +363,7 @@ func (a *App) paintPane(c *gfx.Canvas) {
 		}
 		lines = append(lines, paneLine{strings.Join(ch, ", "), col})
 	}
-	a.paintPaneText(c, l.PaneText, lines)
+	a.paintPaneText(c, text, lines)
 }
 
 type paneLine struct {
@@ -372,12 +384,13 @@ func (a *App) paintPaneText(c *gfx.Canvas, r image.Rectangle, lines []paneLine) 
 	}
 }
 
-// paintThumb draws a row's list thumbnail or a placeholder into box.
-func (a *App) paintThumb(c *gfx.Canvas, box image.Rectangle, row *data.Row) {
+// paintThumb draws a row's list thumbnail or a placeholder into box and
+// returns the rectangle it covered.
+func (a *App) paintThumb(c *gfx.Canvas, box image.Rectangle, row *data.Row) image.Rectangle {
 	key, slot := thumbSlot(row, a.ListShot())
 	if key == "" {
 		a.placeholder(c, box, "no shot")
-		return
+		return box
 	}
 	// a horizontal game fills the 4:3 box like on the site; a vertical one
 	// keeps its shape and sits on the left edge with the text
@@ -393,12 +406,13 @@ func (a *App) paintThumb(c *gfx.Canvas, box image.Rectangle, row *data.Row) {
 		default:
 			a.placeholder(c, box, "no shot")
 		}
-		return
+		return box
 	}
-	// horizontal: on the left edge, in line with the text below; tate:
-	// centred in the box beside the text
+	// horizontal: on the left edge, in line with the text below; the
+	// classic tate pane centres it in the box beside the text; the wider
+	// layouts keep it left so the text can sit beside it
 	p := image.Pt(box.Min.X, box.Min.Y+(box.Dy()-img.Rect.Dy())/2)
-	if a.lay.Portrait {
+	if a.lay.Portrait && !a.lay.TextBeside {
 		p.X = box.Min.X + (box.Dx()-img.Rect.Dx())/2
 	}
 	if slot == "system" {
@@ -406,6 +420,7 @@ func (a *App) paintThumb(c *gfx.Canvas, box image.Rectangle, row *data.Row) {
 	} else {
 		c.Blit(p, img)
 	}
+	return image.Rectangle{Min: p, Max: p.Add(img.Rect.Size())}
 }
 
 // placeholder stands in for a picture: a solid black shape with a word on

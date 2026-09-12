@@ -136,7 +136,7 @@ Screenshots work without remote debugging.
 Options is in four groups under grey headings: Data (Refresh data now, Run
 Update All, Last update result, Rescan card, Prefetch shots, Clear image
 cache), List (Sources, Filter by rotation, Remember sort order, Recents view,
-Title font, List shots, Date format), Display (rotation, screensaver, safe zone) and
+Title font, List shots, Date format, List layout), Display (rotation, screensaver, safe zone) and
 Operation (scrolling, the launcher, Troubleshooting, Quit). The
 headings cannot be selected. Values line up in one column; a small arrow at the right
 edge of the top or bottom row shows when more options sit above or below the
@@ -187,6 +187,13 @@ the bottom.
   D Mon (7 Sep) or YYMMDD (260907). The help line shows today's date in the
   chosen format. Rows from earlier years show the year alone, except with
   YYMMDD, which always carries the full date.
+- **List layout:** list by default: the full list with the small pane beside
+  it (or below it in tate). Split widens the pane to under half the screen
+  with a picture to match, leaving shorter rows. Picture runs the picture
+  across the screen, in horizontal above a few full-width rows with the
+  details beside it, in tate below the rows; a vertical shot keeps its shape
+  and the details sit beside it when there is room, otherwise below in three
+  lines. Every layout keeps at least four rows, even with a wide safe zone.
 - **Follow INI rotation:** on by default, including after upgrading. Every
   startup reads `osd_rotate` from the MiSTer INI that is currently active: the
   main MiSTer.ini, or the alternative INI (`MiSTer_*.ini`) you selected in the

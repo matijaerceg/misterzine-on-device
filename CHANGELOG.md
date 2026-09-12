@@ -8,6 +8,11 @@
   between launch months. Every launch from the list, Details or the artwork
   view is recorded in state.json (up to 100) whether the view is on or off;
   MiSTer's own recent lists are untouched.
+- Options -> List layout: list (default), split (a pane under half the
+  screen wide with a bigger picture and shorter rows) or picture (the
+  picture across the screen with a few full-width rows: above them in
+  horizontal, with the details beside it; below them in tate). A vertical
+  shot keeps its shape with the details beside it when there is room.
 
 ## v1.0.14 — 2026-09-11
 
