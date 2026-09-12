@@ -90,6 +90,8 @@ func (a *App) handleUpdate(ev platform.Event) bool {
 	}
 	a.down[ev.Key] = true
 	switch ev.Key {
+	case platform.KeyMenu:
+		return a.menuButton()
 	case platform.KeyBack:
 		if !a.update.Active() {
 			a.rep = repeater{}

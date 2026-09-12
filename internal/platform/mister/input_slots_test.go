@@ -202,7 +202,7 @@ func TestRawFaceFollowsMappedPads(t *testing.T) {
 	if in.rawFace.Load() {
 		t.Fatal("a Start-only pad must keep Main's translation")
 	}
-	in.devs["event1"] = &device{pad: true, mapping: padMapping{Mapped: true, Keys: map[uint16]platform.Key{305: platform.KeyEnter}}}
+	in.devs["event1"] = &device{pad: true, mapping: padMapping{Mapped: true, direct: true, Keys: map[uint16]platform.Key{305: platform.KeyEnter}}}
 	in.updateRawFace()
 	if !in.rawFace.Load() {
 		t.Fatal("mapped pad should switch to raw reading")

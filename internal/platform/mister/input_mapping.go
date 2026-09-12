@@ -41,6 +41,8 @@ type padMapping struct {
 	stickAxesN   int
 	menuX, menuY uint16 // slots 28/29: the menu stick's axis numbers
 	menu         [2]bool
+	osd          [2]uint16 // slots 21/22: the MiSTer menu button, or the two buttons of its combo; 0 when unreadable here
+	direct       bool      // A and B are readable: the pad is held exclusively and read here entirely
 }
 
 const (
@@ -165,6 +167,17 @@ func loadPadMapping(configDir, id string, bits [96]byte, abs [8]byte) padMapping
 				m.Keys[code] = slotKeys[slot]
 			}
 		}
+		// The MiSTer menu (OSD) button: slot 21, and slot 22 for the second
+		// button of a combo (Main sets it equal to the first when there is
+		// none). While the pad is held it is the app's Menu button.
+		for i := 0; i < 2; i++ {
+			if v := binary.LittleEndian.Uint32(b[(21+i)*4:]); v != 0 && v < emuBase && usable(v, bits, abs) {
+				m.osd[i] = uint16(v)
+			}
+		}
+		if m.osd[1] == 0 {
+			m.osd[1] = m.osd[0]
+		}
 		for i := 0; i < 4; i++ { // SYS_AXIS1_X..SYS_AXIS2_Y: the sticks' axis numbers
 			if v := binary.LittleEndian.Uint32(b[(24+i)*4:]); v != 0 {
 				m.stickAxes[m.stickAxesN] = uint16(v)
@@ -189,6 +202,20 @@ func loadPadMapping(configDir, id string, bits [96]byte, abs [8]byte) padMapping
 			delete(m.Slots, "Start") // an axis edge as Start is not a launch button
 		} else {
 			m.Code = uint16(code)
+		}
+		// Only a pad whose A and B are both readable here is taken over
+		// (held exclusively, Main's translation dropped): with either left to
+		// Main the pad would lose its back button, so such a pad stays on
+		// Main's translation like one without a map, giving up Start only.
+		_, hasA := m.Slots["A"]
+		_, hasB := m.Slots["B"]
+		m.direct = hasA && hasB
+		if !m.direct {
+			m.Keys = map[uint16]platform.Key{}
+			if m.Code != 0 {
+				m.Keys[m.Code] = platform.KeyStart
+			}
+			m.osd = [2]uint16{}
 		}
 		// A saved assignment replaces the default, including unassigned or
 		// unsupported entries. Never launch from somebody's reassigned Select.
@@ -217,7 +244,7 @@ func (m padMapping) bothEdges(axis uint16) bool {
 
 // info describes the mapping for the pad tester.
 func (m padMapping) info(node, name string, vendor, product uint16) support.Pad {
-	p := support.Pad{Node: node, Name: name, Vendor: vendor, Product: product, Map: m.Source, Note: m.Note, Mapped: m.Mapped, Slots: map[string]uint16{}}
+	p := support.Pad{Node: node, Name: name, Vendor: vendor, Product: product, Map: m.Source, Note: m.Note, Mapped: m.Mapped, Direct: m.direct, Slots: map[string]uint16{}}
 	for k, v := range m.Slots {
 		p.Slots[k] = v
 	}
@@ -226,6 +253,12 @@ func (m padMapping) info(node, name string, vendor, product uint16) support.Pad 
 	}
 	if m.menu[0] {
 		p.MenuStick = fmt.Sprintf("axes %d/%d", m.menuX&0xFFFF, m.menuY&0xFFFF)
+	}
+	if m.osd[0] != 0 {
+		p.Menu = fmt.Sprint(m.osd[0])
+		if m.osd[1] != m.osd[0] {
+			p.Menu += "+" + fmt.Sprint(m.osd[1])
+		}
 	}
 	return p
 }

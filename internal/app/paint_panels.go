@@ -404,7 +404,9 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "Open at boot", kind: "open-at-boot", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.OpenAtBoot], disabled: launcherIdx == 0,
 			help: "On: once the MiSTer menu is up after power-on or reboot, MisterZine opens as if picked from it. Needs the Main menu launcher. A bootcore in the INI wins."},
 		{text: "Return after game", kind: "return-after-game", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ReturnAfterGame], disabled: launcherIdx == 0,
-			help: "On: when a game started here exits to the MiSTer menu, MisterZine reopens on that game. Needs the Main menu launcher. Menu on the pad still leaves for the MiSTer menu."},
+			help: "On: when a game started here exits to the MiSTer menu, MisterZine reopens on that game. Needs the Main menu launcher. Leaving through the Menu button does not bring it back."},
+		{text: "Menu button", kind: "menu-button", vals: []string{"Options", "leave MisterZine"}, idx: map[bool]int{false: 0, true: 1}[a.MenuButton() == "leave"],
+			help: "What the pad button defined as MiSTer's menu (OSD) button does here: open Options (default) or leave to the MiSTer menu. Keyboard F12 still leaves."},
 		{text: "Troubleshooting", kind: "troubleshooting",
 			help: "Test your Start button or game launching. Results stay on screen for a photo; no keyboard or log files needed."},
 		{text: "Quit MisterZine", kind: "quit",
@@ -810,6 +812,8 @@ func (a *App) stepValue(d int) bool {
 		a.cfg.ButtonLabels = buttonLabelSets[i]
 	case "canvas":
 		a.cfg.Canvas = []string{"fit", "320x240"}[i]
+	case "menu-button":
+		a.cfg.MenuButton = []string{"options", "leave"}[i]
 	case "prefetch":
 		a.panel.prefetch = i == 1
 		if a.cfg.Action != nil {

@@ -73,6 +73,8 @@ type device struct {
 	vendor, product uint16
 	abs             map[uint16]absInfo // axis ranges, read on first use
 	axisEdge        map[uint16]uint8   // 0 centred, 1 at the minimum, 2 at the maximum
+	grabbed         bool               // held exclusively (EVIOCGRAB): Main sees nothing from it
+	menuCode        uint16             // the combo button whose press became Menu, until it is released
 }
 
 type absInfo struct {
@@ -95,6 +97,10 @@ type Input struct {
 	devs map[string]*device
 	stop chan struct{}
 	wg   sync.WaitGroup
+	// probe is a keyboard of our own that never types: Main grabs it with
+	// the rest when it takes the screen, so ScreenLost has something to
+	// test even when every real pad is held by us.
+	probe *VKeyboard
 	// rawFace is set while a pad with a MiSTer map is connected: it is read
 	// from the pad itself by define-slot, so everything Main types for pads
 	// through its virtual keyboard is dropped. A pad without a map still
@@ -107,6 +113,11 @@ type Input struct {
 // delivers nothing until one appears.
 func OpenInput(lg *log.Logger) *Input {
 	in := &Input{ch: make(chan platform.Event, 256), log: lg, devs: map[string]*device{}, stop: make(chan struct{})}
+	if k, err := NewVKeyboard("misterzine probe"); err == nil {
+		in.probe = k
+	} else {
+		lg.Printf("input: probe keyboard: %v", err)
+	}
 	in.rescan()
 	in.wg.Add(1)
 	go func() {
@@ -156,7 +167,7 @@ func (in *Input) rescan() {
 			continue
 		}
 		name := devName(f)
-		if name == "misterzine launcher" { // our own console-opening keyboard
+		if name == "misterzine launcher" || name == "misterzine probe" { // our own keyboards: the console opener and the ScreenLost probe
 			f.Close()
 			continue
 		}
@@ -176,11 +187,24 @@ func (in *Input) rescan() {
 		}
 		d := &device{path: p, name: name, f: f, pad: pad, mapping: m, held: map[uint16]platform.Key{}, abs: map[uint16]absInfo{}, axisEdge: map[uint16]uint8{}}
 		d.vendor, d.product = devID(f)
+		if pad && m.direct {
+			// held exclusively: Main sees nothing from it, so its MiSTer menu
+			// button is the app's and cannot hand the screen to Main
+			if _, _, e := syscall.Syscall(syscall.SYS_IOCTL, f.Fd(), eviocgrab, 1); e == 0 {
+				d.grabbed = true
+			} else {
+				in.log.Printf("input: %s (%s): could not hold it exclusively: %v", p, name, e)
+			}
+		}
 		in.mu.Lock()
 		in.devs[p] = d
 		in.mu.Unlock()
 		if pad {
-			in.log.Printf("input: reading %s (%s) Start button %d via %s; slots %s", p, d.name, m.Code, m.Source, m.slotText())
+			held := ""
+			if d.grabbed {
+				held = "; held exclusively, Menu button " + m.info("", "", 0, 0).Menu
+			}
+			in.log.Printf("input: reading %s (%s) Start button %d via %s; slots %s%s", p, d.name, m.Code, m.Source, m.slotText(), held)
 		} else {
 			in.log.Printf("input: reading %s (%s)", p, d.name)
 		}
@@ -202,7 +226,7 @@ func (in *Input) updateRawFace() {
 	in.mu.Lock()
 	raw := false
 	for _, d := range in.devs {
-		if d.pad && d.mapping.Mapped && len(d.mapping.Keys) > 0 {
+		if d.pad && d.mapping.direct {
 			raw = true
 		}
 	}
@@ -234,6 +258,9 @@ func (in *Input) Pads() []support.Pad {
 func (m padMapping) slotText() string {
 	if !m.Mapped {
 		return "via MiSTer (no map file)"
+	}
+	if !m.direct {
+		return "via MiSTer (A or B is not readable here)"
 	}
 	s := ""
 	for _, name := range support.SlotOrder {
@@ -389,7 +416,7 @@ func (in *Input) read(d *device) {
 			usec := int64(int32(binary.LittleEndian.Uint32(buf[i+4:])))
 			at := time.Unix(sec, usec*1000)
 			if typ == evAbs {
-				if !d.pad || !d.mapping.Mapped {
+				if !d.pad || !d.mapping.direct {
 					continue
 				}
 				for _, e := range d.axisEvents(code, val) {
@@ -420,6 +447,9 @@ func (in *Input) emit(d *device, code uint16, pressed bool, text rune, at time.T
 	if !accept {
 		return true
 	}
+	if mk, ok := d.osdKey(code, pressed); ok {
+		k = mk
+	}
 	if d.name == "MiSTer virtual input" && in.rawFace.Load() {
 		return true // the mapped pads deliver their own presses
 	}
@@ -436,6 +466,37 @@ func (in *Input) emit(d *device, code uint16, pressed bool, text rune, at time.T
 }
 
 func (in *Input) Events() <-chan platform.Event { return in.ch }
+
+// osdKey turns the MiSTer menu button into Menu while the pad is held. A
+// dedicated button is Menu on every press; with a combo (Select+Start on
+// many arcade boards) the second button pressed while the first is down
+// becomes Menu instead of its own slot, and its release ends Menu, while
+// the first keeps its slot meaning, as it was already delivered.
+func (d *device) osdKey(code uint16, pressed bool) (platform.Key, bool) {
+	m := &d.mapping
+	if !d.pad || !m.direct || m.osd[0] == 0 || (code != m.osd[0] && code != m.osd[1]) {
+		return platform.KeyNone, false
+	}
+	if m.osd[0] == m.osd[1] {
+		return platform.KeyMenu, true
+	}
+	if pressed {
+		other := m.osd[0]
+		if code == other {
+			other = m.osd[1]
+		}
+		if _, down := d.held[other]; down && d.menuCode == 0 {
+			d.menuCode = code
+			return platform.KeyMenu, true
+		}
+		return platform.KeyNone, false
+	}
+	if d.menuCode == code {
+		d.menuCode = 0
+		return platform.KeyMenu, true
+	}
+	return platform.KeyNone, false
+}
 
 func (d *device) inputKey(code uint16) (platform.Key, bool) {
 	if d.mapping.Code != 0 && code == d.mapping.Code {
@@ -458,14 +519,26 @@ func (d *device) inputKey(code uint16) (platform.Key, bool) {
 const eviocgrab = 0x40044590 // _IOW('E', 0x90, int)
 
 // ScreenLost reports whether Main has taken the screen back. When it hides
-// the framebuffer it grabs every real input device exclusively (never its
-// own virtual keyboard), so a momentary grab attempt on any real device
-// fails with EBUSY. Our own grab is released at once; it exists only as a
-// probe. Devices are opened fresh each time because Main re-creates them
-// when it restarts itself.
+// the framebuffer it grabs every input device it has open exclusively
+// (never its own virtual keyboard, but our probe keyboard too), so a
+// momentary grab attempt on any of them fails with EBUSY. The pads we hold
+// ourselves are skipped: Main's grab fails on those. Our own grab is
+// released at once; it exists only as a probe. Devices are opened fresh
+// each time because Main re-creates them when it restarts itself.
 func (in *Input) ScreenLost() bool {
 	paths, _ := filepath.Glob("/dev/input/event*")
+	in.mu.Lock()
+	ours := map[string]bool{}
+	for p, d := range in.devs {
+		if d.grabbed {
+			ours[p] = true
+		}
+	}
+	in.mu.Unlock()
 	for _, p := range paths {
+		if ours[p] {
+			continue
+		}
 		f, err := os.OpenFile(p, os.O_RDONLY|syscall.O_NOCTTY|syscall.O_CLOEXEC|syscall.O_NONBLOCK, 0)
 		if err != nil {
 			continue
@@ -491,6 +564,9 @@ func (in *Input) ScreenLost() bool {
 // Close stops the readers, waiting at most half a second for them.
 func (in *Input) Close() error {
 	close(in.stop)
+	if in.probe != nil {
+		in.probe.Close()
+	}
 	in.mu.Lock()
 	for _, d := range in.devs {
 		d.f.Close()

@@ -51,10 +51,12 @@ func (d Device) Route() string {
 type Pad struct {
 	Node, Name      string
 	Vendor, Product uint16
-	Mapped          bool              // a MiSTer map file was read; the pad is read by define-slot
+	Mapped          bool              // a MiSTer map file was read
+	Direct          bool              // A and B are readable: the pad is held and read by define-slot; otherwise only Start is, the rest through Main
 	Slots           map[string]uint16 // slot name -> code (a button code, or an axis edge 0x300+axis*2+direction)
 	Map, Note       string
 	MenuStick       string // the stick that moves Main's menu, when defined ("axes 0/1")
+	Menu            string // the MiSTer menu button's code ("316"), or "a+b" for a combo, when the app reads it as its Menu button
 }
 
 // SlotOrder is how the tester lists the define-slots.

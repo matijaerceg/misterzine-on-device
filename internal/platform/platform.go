@@ -34,13 +34,14 @@ const (
 	KeyOther      // anything else; Event.Code says what
 	KeyBackspace
 	KeySelect // the pad's Select button: held on the list, a modifier for the quick toggles
+	KeyMenu   // the pad's MiSTer menu (OSD) button, from its define slot: the app holds a defined pad, so Main never sees it
 )
 
 var keyNames = map[Key]string{
 	KeyNone: "none", KeyUp: "up", KeyDown: "down", KeyLeft: "left", KeyRight: "right",
 	KeyEnter: "enter", KeyBack: "back", KeySpace: "space", KeyTab: "tab",
 	KeyPageUp: "pageup", KeyPageDown: "pagedown", KeyHome: "home", KeyEnd: "end",
-	KeyScreenshot: "screenshot", KeyStart: "start", KeyOther: "other", KeyBackspace: "backspace", KeySelect: "select",
+	KeyScreenshot: "screenshot", KeyStart: "start", KeyOther: "other", KeyBackspace: "backspace", KeySelect: "select", KeyMenu: "menu",
 }
 
 func (k Key) String() string {

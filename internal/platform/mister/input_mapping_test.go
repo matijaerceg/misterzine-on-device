@@ -121,8 +121,9 @@ func TestMappedStartRawEvents(t *testing.T) {
 	w.Close()
 	in.wg.Wait()
 	// 305 is not in the map, so it arrives as an actionless pad button (for
-	// the pad tester); 315 is the reassigned Select, the quick-toggle
-	// modifier, and must not be Start
+	// the pad tester); 315 is the reassigned Select and must not be Start.
+	// This map has no A or B, so the pad is not taken over and Select stays
+	// an actionless button (Main's translation is in use).
 	var starts, others []platform.Event
 	for len(in.ch) > 0 {
 		e := <-in.ch
@@ -141,11 +142,7 @@ func TestMappedStartRawEvents(t *testing.T) {
 		}
 	}
 	for _, e := range others {
-		want := platform.KeyOther
-		if e.Code == 315 {
-			want = platform.KeySelect
-		}
-		if e.Key != want || (e.Code != 305 && e.Code != 315) {
+		if e.Key != platform.KeyOther || (e.Code != 305 && e.Code != 315) {
 			t.Fatal(e)
 		}
 	}

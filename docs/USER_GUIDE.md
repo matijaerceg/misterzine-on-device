@@ -108,7 +108,7 @@ filter choices are saved.
 | Y | Space | change view | favorite | | only/all | |
 | Start | gamepad Start | launch remembered version | launch selected version | launch selected version | | |
 | Select (held) | | + Y: List layout, + X: List shots | | | | |
-| Menu | | return to MiSTer Menu from any screen; closes the app | | | | |
+| Menu | | Options (or leave MisterZine: Options -> Menu button) | Options | Options | Options | close |
 
 A, B, X and Y are MiSTer's names from its define buttons screen. Options ->
 Button labels can print them as Xbox letters, PlayStation symbols or numbers.
@@ -127,6 +127,13 @@ the pad tester under Troubleshooting shows it with its raw code.
 Hold Select on the list and the legend changes: Y cycles List layout and X
 switches List shots, saved exactly as from Options. Select alone does
 nothing. Only a pad defined in MiSTer has a Select; keyboards use Options.
+
+MisterZine holds a defined pad exclusively while it runs, so MiSTer sees
+nothing from it: the button you defined as MiSTer's menu (OSD) button is
+MisterZine's Menu button, opening Options by default (Options -> Menu button
+can make it leave instead). A pad whose A or B MisterZine cannot read is
+left to MiSTer's translation, as before. Keyboard F12 and the board's own
+button still hand the screen to MiSTer, which closes the app.
 
 The Details version selector uses one row. Its tally shows the selection and
 total, such as 2/5. Left/Right chooses among installed alternatives; Start
@@ -233,7 +240,8 @@ the bottom.
   full-height black MISTERZINE lettering, with glinting chrome edges, across it. Left/Right chooses Off, 1, 2,
   5 or 10 minutes. A previews it immediately, even when Off. The first browsing
   button or typing key wakes without acting; release it before pressing again.
-  MiSTer's Menu button still exits the app. The sweep covers the whole picture,
+  The pad's Menu button opens Options (or leaves, per Options -> Menu
+  button). The sweep covers the whole picture,
   including safe-zone margins, in horizontal and tate layouts. Background data
   downloads and Update All continue while dimmed.
 - **Button labels:** how the legends name the pad's face buttons, in MiSTer's
@@ -263,8 +271,13 @@ the bottom.
 - **Return after game:** off by default. On: when a game you started from
   MisterZine exits to the MiSTer menu (Reset or Exit in the OSD), the launcher
   picks the MisterZine entry again and the list opens on that game. Games
-  loaded some other way, and the pad's Menu button leaving MisterZine, do not
-  bring it back. Needs the Main menu launcher.
+  loaded some other way, and leaving through the Menu button, do not bring
+  it back. Needs the Main menu launcher.
+- **Menu button:** what the pad button you defined as MiSTer's menu (OSD)
+  button does in MisterZine, which holds a defined pad while it runs: Options
+  (default) from any screen, closing it when it is up, or leave MisterZine
+  for the MiSTer menu, as earlier versions did. Keyboard F12 and the board's
+  button still leave.
 - **Troubleshooting:** a guided Start-button test, a pad tester, and an
   A/Enter game-launch test, with results you can photograph. The last result
   survives restarting. The pad tester lists every connected pad with the raw

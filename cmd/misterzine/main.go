@@ -228,6 +228,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		ListLayout:           h.settings.ListLayout,
 		ButtonLabels:         h.settings.ButtonLabels,
 		Canvas:               h.settings.Canvas,
+		MenuButton:           h.settings.MenuButton,
 		FavoritesUnavailable: h.favLoadFailed,
 		Progress:             func() (int, int) { return h.img.Progress() },
 		Launcher:             launcherEnabled,
@@ -716,6 +717,7 @@ func (h *host) saveAll(final bool) {
 		h.settings.ListLayout = h.a.ListLayout()
 		h.settings.ButtonLabels = h.a.ButtonLabels()
 		h.settings.Canvas = h.a.Canvas()
+		h.settings.MenuButton = h.a.MenuButton()
 		if err := store.Save(filepath.Join(h.root, "settings.json"), h.settings); err != nil {
 			h.lg.Printf("settings: %v", err)
 			h.setDirty = true

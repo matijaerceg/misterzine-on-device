@@ -14,7 +14,7 @@ func padTestApp() (*App, *time.Time) {
 	a, clock := supportApp()
 	a.cfg.Support = &SupportHooks{Pads: func() []support.Pad {
 		return []support.Pad{
-			{Node: "event3", Name: "Microsoft X-Box 360 pad", Vendor: 0x045e, Product: 0x028e, Mapped: true, Map: "/media/fat/config/inputs/input_045e_028e_v3.map",
+			{Node: "event3", Name: "Microsoft X-Box 360 pad", Vendor: 0x045e, Product: 0x028e, Mapped: true, Direct: true, Menu: "316", Map: "/media/fat/config/inputs/input_045e_028e_v3.map",
 				Slots: map[string]uint16{"A": 305, "B": 304, "X": 308, "Y": 307, "L": 310, "R": 773, "Start": 315, "Up": 802}},
 			{Node: "event0", Name: "Brook ZERO-Pi Fighting Board", Map: "Linux default", Slots: map[string]uint16{"Start": 315}},
 		}

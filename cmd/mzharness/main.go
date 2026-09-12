@@ -57,6 +57,7 @@ func main() {
 	dateFormat := flag.String("date-format", "mm-dd", "list date column: mm-dd, dd-mm, mon-d, d-mon or yymmdd")
 	layout := flag.String("layout", "list", "main view arrangement: list, split or picture")
 	buttonLabels := flag.String("button-labels", "mister", "legend button names: mister, xbox, playstation or numbers")
+	menuButton := flag.String("menu-button", "options", "what the pad's Menu button does: options or leave")
 	canvas := flag.String("canvas", "320x240", "canvas size WxH: 320x240, or a fit-display size such as 360x270 (1080p) or 400x300")
 	rememberAlt := flag.Int("remember-alt", 0, "start with galagamw's alternative N (1 or 2) remembered as its version")
 	recents := flag.Int("recents", 0, "pretend the first N rows were launched, the last one most recently; turns the Recents view on")
@@ -103,6 +104,7 @@ func main() {
 		DateFormat:     *dateFormat,
 		ListLayout:     *layout,
 		ButtonLabels:   *buttonLabels,
+		MenuButton:     *menuButton,
 		Alternatives: func(r *data.Row) []string {
 			if r.SN == "galagamw" {
 				return []string{"_Arcade/_alternatives/_Galaga/Galaga (Namco).mra",
@@ -151,7 +153,7 @@ func main() {
 			Pads: func() []support.Pad {
 				return []support.Pad{
 					{Node: "event0", Name: "USB Arcade Controller", Vendor: 0x1234, Product: 0x5678, Map: "Linux default", Slots: map[string]uint16{"Start": 315}},
-					{Node: "event3", Name: "Microsoft X-Box 360 pad", Vendor: 0x045e, Product: 0x028e, Mapped: true, Map: "/media/fat/config/inputs/input_045e_028e_v3.map",
+					{Node: "event3", Name: "Microsoft X-Box 360 pad", Vendor: 0x045e, Product: 0x028e, Mapped: true, Direct: true, Menu: "316", Map: "/media/fat/config/inputs/input_045e_028e_v3.map",
 						Slots: map[string]uint16{"Up": 802, "Down": 803, "Left": 800, "Right": 801, "A": 305, "B": 304, "X": 308, "Y": 307, "L": 310, "R": 773, "Select": 314, "Start": 315}},
 				}
 			},

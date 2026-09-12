@@ -119,6 +119,9 @@ type Config struct {
 	// Canvas is Options -> Canvas, "fit" (default) or "320x240"; the host
 	// applies it at the next start, the app only shows and saves it.
 	Canvas string
+	// MenuButton is Options -> Menu button: what the pad's MiSTer menu (OSD)
+	// button does here, "options" (default) or "leave".
+	MenuButton string
 	// ButtonLabels names the pad buttons in the legends: "mister" (default:
 	// A B X Y), "xbox", "playstation" or "numbers" (see buttons.go).
 	ButtonLabels string
@@ -408,6 +411,14 @@ func (a *App) nextSort() data.SortMode {
 func (a *App) RememberSort() bool { return a.cfg.RememberSort }
 func (a *App) OpenAtBoot() bool   { return a.cfg.OpenAtBoot }
 
+// MenuButton is the Options -> Menu button choice: "options" or "leave".
+func (a *App) MenuButton() string {
+	if a.cfg.MenuButton == "leave" {
+		return "leave"
+	}
+	return "options"
+}
+
 // Canvas is the Options -> Canvas choice: "fit" or "320x240".
 func (a *App) Canvas() string {
 	if a.cfg.Canvas == "320x240" {
@@ -644,6 +655,9 @@ func (a *App) Handle(ev platform.Event) bool {
 	}
 	a.down[ev.Key] = true
 	a.rep.press(ev.Key, ev.At)
+	if ev.Key == platform.KeyMenu {
+		return a.menuButton()
+	}
 	if a.screen == ScreenList || a.screen == ScreenFilter || a.screen == ScreenOptions {
 		switch ev.Key {
 		case platform.KeyUp, platform.KeyDown, platform.KeyLeft, platform.KeyRight:

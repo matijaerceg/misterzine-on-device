@@ -108,6 +108,12 @@ func (a *App) padPressLine(p padPress, prev *padPress) string {
 	if action == "" {
 		action = p.key.String()
 	}
+	if p.key == platform.KeyMenu {
+		action = "Options (Menu button)"
+		if a.MenuButton() == "leave" {
+			action = "leave MisterZine (Menu button)"
+		}
+	}
 	if p.source == "MiSTer virtual input" {
 		return "MiSTer translation: " + action + gap
 	}
@@ -148,13 +154,18 @@ func (a *App) padLines(p support.Pad) []string {
 			slots += label + " " + support.CodeText(code) + "  "
 		}
 	}
+	if p.Menu != "" {
+		slots += "Menu " + p.Menu + "  "
+	}
 	if p.MenuStick != "" {
 		slots += "stick " + p.MenuStick
 	}
 	lines := []string{head}
 	switch {
-	case p.Mapped && len(slots) > 0:
+	case p.Mapped && p.Direct:
 		lines = append(lines, "  "+strings.TrimSpace(slots), "  read by MiSTer slot from "+shortName(p.Map, 40))
+	case p.Mapped && len(slots) > 0:
+		lines = append(lines, "  "+strings.TrimSpace(slots), "  A or B not readable here: buttons come through MiSTer's translation")
 	case p.Mapped:
 		lines = append(lines, "  no usable buttons in "+shortName(p.Map, 40))
 	default:
