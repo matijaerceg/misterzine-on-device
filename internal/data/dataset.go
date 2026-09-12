@@ -1,6 +1,7 @@
 package data
 
 import (
+	"sync"
 	"time"
 )
 
@@ -47,6 +48,9 @@ type Dataset struct {
 	Sole    map[string]string
 	cluster map[string]int
 	Facets  Facets
+
+	orderMu sync.Mutex
+	orders  map[SortMode][]int // Order's result per mode, sorted on first use
 }
 
 // Ingest mirrors the site's ingest(): it rebuilds (never merges) every

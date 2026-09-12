@@ -86,7 +86,18 @@ func (m SortMode) String() string {
 // arrival batch descending, then core ascending; title breaks the rest.
 // These tiebreaks are never direction-flipped.
 // The sort is stable over data.json order, like Array.prototype.sort.
+//
+// The rows never change after Ingest, so each mode is sorted once per
+// Dataset and the same slice is returned after that: callers read it and
+// never write to it (Apply copies). A full sort of the catalogue costs
+// 6-20 ms on the MiSTer's ARM core, and the list is rebuilt on every Y
+// press, search keystroke and status arrival.
 func (ds *Dataset) Order(mode SortMode) []int {
+	ds.orderMu.Lock()
+	defer ds.orderMu.Unlock()
+	if idx, ok := ds.orders[mode]; ok {
+		return idx
+	}
 	idx := make([]int, len(ds.Rows))
 	for i := range idx {
 		idx[i] = i
@@ -94,6 +105,10 @@ func (ds *Dataset) Order(mode SortMode) []int {
 	sort.SliceStable(idx, func(x, y int) bool {
 		return ds.less(mode, idx[x], idx[y])
 	})
+	if ds.orders == nil {
+		ds.orders = map[SortMode][]int{}
+	}
+	ds.orders[mode] = idx
 	return idx
 }
 
@@ -104,7 +119,7 @@ func (ds *Dataset) less(mode SortMode, a, b int) bool {
 		return CompareKeys(da.titleKey, db.titleKey) < 0
 	}
 	if mode == SortYear {
-		ay, by := ReleaseYear(ra.Year), ReleaseYear(rb.Year)
+		ay, by := da.Year, db.Year // ReleaseYear, derived once at Ingest
 		if (ay == "") != (by == "") {
 			return ay != "" // a known year comes first
 		}

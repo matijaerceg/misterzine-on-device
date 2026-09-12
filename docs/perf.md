@@ -17,5 +17,10 @@ MiSTer Pi (Cyclone V, Cortex-A9 at 800 MHz), 2026-09-08, build 9590340.
 Workstation (for reference): a 53x20 text screen paints in 73 us, a 240x320
 frame rotate takes 176 us, a 384x224 to 96x56 area-average resample 1.2 ms.
 
+Sort orders: a full stable sort of the 1206 rows costs 6-20 ms on the ARM core
+(Year was the slowest until its comparator read the derived year). Since
+v1.0.16 each mode is sorted once per loaded catalogue and reused, so Y
+presses, search keystrokes and status arrivals no longer re-sort.
+
 Follow-ups: cache the parsed rows in a binary form to cut the first frame by
 about 250 ms; the picture resampler uses float64 and could go fixed-point.
