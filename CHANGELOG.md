@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.0.21 — 2026-09-12
+
+- A `[MisterZine]` section in MiSTer.ini, placed below `[Menu]`, changes
+  `direct_video`, `vga_scaler` and `osd_rotate` only while MisterZine is open,
+  because Main applies sections named after the MGL's setname as well as the
+  core's own name. That lets an HDMI display keep the menu, terminal and
+  Update All while the CRT shows MisterZine alone. Follow INI rotation and
+  the CRT-only warning now read that section the way Main does, in file
+  order, instead of `[Menu]` alone; the first-run notice names both sections.
+  Troubleshooting documents the layout, the ordering rule and that the
+  Scripts entries keep the `[Menu]` output.
+
 ## v1.0.20 — 2026-09-12
 
 - Degauss, installed as MiSTer's `main=` frontend, takes over every load of
