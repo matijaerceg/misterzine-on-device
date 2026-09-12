@@ -178,7 +178,7 @@ func TestRotationIntentSurvivesSaves(t *testing.T) {
 				h.a.Handle(platform.Event{Key: k, At: now.Add(time.Millisecond)})
 			}
 			tap(platform.KeyBack) // Options
-			for n := 0; n < 16; n++ {
+			for n := 0; n < 18; n++ {
 				tap(platform.KeyDown) // Scroll speed opens the Operation group
 			}
 			tap(platform.KeyRight)
@@ -188,7 +188,7 @@ func TestRotationIntentSurvivesSaves(t *testing.T) {
 			h.saveAll(false)
 			check("auto")
 			tap(platform.KeyHome)
-			for n := 0; n < 13; n++ {
+			for n := 0; n < 15; n++ {
 				tap(platform.KeyDown) // Rotation follows the Data and List groups and Follow INI rotation
 			}
 			if rotation == gfx.RotLeft {

@@ -35,10 +35,10 @@ func TestListPreferencesPersist(t *testing.T) {
 		h.a.Handle(platform.Event{Key: key, At: now})
 	}
 	tap(platform.KeyBack)
-	for i := 0; i < 9; i++ {
+	for i := 0; i < 10; i++ {
 		tap(platform.KeyDown)
 	}
-	tap(platform.KeyLeft) // Title font: narrow, in the List group
+	tap(platform.KeyLeft) // Title font: narrow, in the List group after Recents view
 	tap(platform.KeyDown)
 	tap(platform.KeyRight) // List shots: title
 	tap(platform.KeyDown)
