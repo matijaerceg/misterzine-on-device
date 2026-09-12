@@ -38,6 +38,9 @@ type panelState struct {
 	// settings snapshot
 	prefetch bool
 	lines    int // entries that fit, from the last paint (paging)
+	// optionsRow is the Options row B left from, so Options reopens on it
+	// the way the main list keeps its row; nil before the first visit.
+	optionsRow *panelEntry
 }
 
 func (a *App) openPanel(s Screen) {
@@ -47,6 +50,9 @@ func (a *App) openPanel(s Screen) {
 	a.panel.top = 0
 	if s == ScreenFilter {
 		a.resetFilterExpansion()
+	} else if a.panel.optionsRow != nil {
+		// reopen on the row left last time; buildPanel finds it by identity
+		a.panel.entries = []panelEntry{*a.panel.optionsRow}
 	}
 	a.buildPanel()
 	a.skipDisabled() // Filters opens on its first heading while Clear all filters is greyed out
@@ -642,6 +648,10 @@ func (a *App) actPanel(k platform.Key) bool {
 	}
 	switch k {
 	case platform.KeyBack:
+		if a.screen == ScreenOptions && p.cursor < n {
+			row := p.entries[p.cursor]
+			p.optionsRow = &row
+		}
 		a.screen = ScreenList
 		a.all = true
 		return true

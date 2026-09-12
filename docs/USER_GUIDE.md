@@ -141,7 +141,9 @@ Operation (scrolling, the launcher, Troubleshooting, Quit). The
 headings cannot be selected. Values line up in one column; a small arrow at the right
 edge of the top or bottom row shows when more options sit above or below the
 visible part of the list. The framed text under the list describes the selected
-option, and the build version and catalogue date sit below it in grey. Held
+option, and the build version and catalogue date sit below it in grey. B
+returns to the list, and the next B reopens Options on the row you left, the
+way the list keeps its row; Filters always opens at its top. Held
 scrolling stops at either end. Release and press Up again from the first item
 to wrap to Quit, or Down from Quit to wrap to the first item. R also jumps to
 the bottom.

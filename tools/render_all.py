@@ -68,7 +68,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     scenarios.append([*rotation, "-inset", "40",
                       "-out", f"out/rotation-filter-{orientation}", "-script",
                       "back; down*7; shot off; right; shot on; back; shot list; "
-                      "tab; shot filters; back; back; down*7; left; back; shot restored"])
+                      "tab; shot filters; back; back; home; down*7; left; back; shot restored"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):
@@ -93,13 +93,13 @@ for rotation in ([], ["-rot", "left", "-logical"]):
         # a Filters heading
         scenarios.append([*rotation, "-inset", str(inset),
                           "-out", f"out/list-polish-{orientation}-{inset}", "-script",
-                          "type gradius; shot beta-tall; back; back; down*10; shot title-font; left; back; "
-                          "type gradius; shot beta-narrow; back; back; down*9; left; back; "
-                          "type gradius; shot beta-normal; back; back; down*9; right; right; "
-                          "down; shot list-shots; right; back; shot title-shot; back; down*11; left; "
-                          "down; right; shot date-dd-mm; back; shot list-dd-mm; back; down*12; right; shot date-mon-d; back; shot list-mon-d; "
-                          "back; down*12; right; shot date-d-mon; back; shot list-d-mon; back; down*12; right; shot date-yymmdd; back; shot list-yymmdd; "
-                          "back; down*12; left*4; back; "
+                          "type gradius; shot beta-tall; back; back; home; down*10; shot title-font; left; back; "
+                          "type gradius; shot beta-narrow; back; back; home; down*10; left; back; "
+                          "type gradius; shot beta-normal; back; back; home; down*10; right; right; "
+                          "down; shot list-shots; right; back; shot title-shot; back; home; down*11; left; "
+                          "down; right; shot date-dd-mm; back; shot list-dd-mm; back; home; down*12; right; shot date-mon-d; back; shot list-mon-d; "
+                          "back; home; down*12; right; shot date-d-mon; back; shot list-d-mon; back; home; down*12; right; shot date-yymmdd; back; shot list-yymmdd; "
+                          "back; home; down*12; left*4; back; "
                           "type galaga; down*2; enter; right*2; shot alt-start; wait 1200; shot alt-mid; wait 1200; shot alt-end; "
                           "down; shot info-page; wait 400; shot info-sliding; wait 2000; shot info-paged; "
                           "back; tab; shot heading; enter; shot heading-open; enter; shot heading-closed; "
@@ -111,7 +111,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     # Options -> Sources: installed only, with the MiSTer and Jotego databases
     scenarios.append([*rotation, "-installed", "distribution_mister,jtcores",
                       "-out", f"out/installed-sources-{orientation}", "-script",
-                      "shot list; tab; down*3; right; shot filters; back; back; down*6; shot option; left; shot option-all; back; shot list-all"])
+                      "shot list; tab; down*3; right; shot filters; back; back; home; down*6; shot option; left; shot option-all; back; shot list-all"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     # Options -> Recents view with nine launches: the view, a month jump,

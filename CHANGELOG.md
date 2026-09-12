@@ -13,6 +13,8 @@
   picture across the screen with a few full-width rows: above them in
   horizontal, with the details beside it; below them in tate). A vertical
   shot keeps its shape with the details beside it when there is room.
+- B reopens Options on the row it was closed from, the way the list keeps
+  its row between visits; the first visit still starts at the top.
 
 ## v1.0.14 — 2026-09-11
 
