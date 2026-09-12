@@ -1,5 +1,25 @@
 # Changelog
 
+## v1.0.18 — 2026-09-12
+
+- Options -> Canvas, fit display by default: where MiSTer's integer scaling
+  of a 320x240 picture leaves bars above and below, the picture is sized to
+  fill the screen height instead: 360x270 on 1080p, 340x256 on 1024x768,
+  400x300 on 1600x900. Text keeps its size and the list gains rows. CRT
+  modes, 720p and 1440p already fit and stay 320x240; 320x240 keeps the
+  classic size on every display. Applies when MisterZine next starts.
+- A pad defined in MiSTer whose A and B MisterZine can read is held while
+  MisterZine runs, so MiSTer sees nothing from it, and the button defined as
+  MiSTer's menu (OSD) button becomes MisterZine's Menu button: Options from
+  any screen by default, or leave to the MiSTer menu (Options -> Menu
+  button). A pad whose A or B cannot be read here stays on MiSTer's
+  translation, as before v1.0.17, so a partial definition can no longer
+  lose its back button. Keyboard F12 and the board's button still leave.
+- Hold Select on the list: Y cycles List layout, X switches List shots; the
+  legend names the chords while Select is held.
+- The main list legend reads A B X Y; the pad tester shows the Menu button
+  and whether a pad is held.
+
 ## v1.0.17 — 2026-09-12
 
 - A pad defined in the MiSTer menu is read by MisterZine directly, slot by

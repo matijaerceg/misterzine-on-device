@@ -1,29 +1,31 @@
-Your pad's A is A, whatever the MiSTer menu calls it, and you can see
-exactly what every button does.
+The picture fills a 1080p screen, the pad's Menu button is MisterZine's,
+and Select gives you quick toggles.
 
-- **Pads read as you defined them:** a pad defined in the MiSTer menu is now
-  read by MisterZine directly, slot by slot: D-pad, A B X Y, L R, Start and
-  the menu stick, including triggers or stick directions used as buttons.
-  Before, MisterZine took its A and B from the buttons you chose for the
-  MiSTer menu's own OK and back, so a pad with OK on the bottom button and
-  back on the right one had them swapped here. Now the button you defined as
-  A is A, and each pad follows its own definition, so two pads defined
-  differently work side by side. A pad never defined in MiSTer keeps working
-  through MiSTer's translation while no defined pad is connected.
-- **Button labels:** Options -> Button labels chooses how the legends name
-  the face buttons, in MiSTer's A B X Y order: A B X Y (default), B A Y X for
-  an Xbox-lettered pad mapped by position, PlayStation symbols by position,
-  or 1 2 3 4 in MiSTer's define order. Only the names change.
-- **Pad tester:** Troubleshooting -> Test pad buttons lists every pad being
-  read with the raw code in each MiSTer slot, then shows each press as it
-  happens: which pad, which button or axis, which slot, what MisterZine does
-  with it, and the gap since the previous press, which also makes a bouncing
-  arcade switch easy to spot. Hold B for two seconds to leave.
+- **Fit display:** Options -> Canvas, on by default. Where MiSTer's integer
+  scaling of a 320x240 picture left bars above and below, MisterZine now
+  draws at a size that fills the screen height: 360x270 on 1080p, 340x256
+  on 1024x768, 400x300 on 1600x900. Text keeps its size; the list gains
+  rows. CRT modes, 720p and 1440p already fit and stay 320x240, and the
+  320x240 choice keeps the classic size everywhere. Applies at the next
+  start.
+- **Menu button:** a pad defined in MiSTer whose A and B MisterZine can read
+  is held while MisterZine runs, so MiSTer sees nothing from it. The button
+  you defined as MiSTer's menu (OSD) button is now MisterZine's Menu
+  button: it opens Options from any screen, or closes it, and Options ->
+  Menu button can make it leave to the MiSTer menu instead, as before.
+  Keyboard F12 and the board's button still leave.
+- **Partial definitions:** a pad whose A or B MisterZine cannot read is left
+  to MiSTer's translation, as it was before v1.0.17, so an incomplete
+  definition can no longer lose the back button. The pad tester says which
+  pads are held and shows the Menu button.
+- **Quick toggles:** hold Select on the list and Y cycles List layout while
+  X switches List shots; the legend names the chords while Select is held.
+- The main list legend now reads A B X Y.
 
 Nothing changes in MiSTer.ini, the menu core or your MiSTer controller
-definitions; MisterZine only reads the map files MiSTer already saves.
-Existing settings, favorites, filter choices, remembered versions and the
-launch history are preserved.
+definitions; MisterZine only reads the map files MiSTer already saves and
+lets go of every pad when it closes. Existing settings, favorites, filter
+choices, remembered versions and the launch history are preserved.
 
 Existing installations can update through Update All/Downloader. Reopen
 MisterZine after updating.
