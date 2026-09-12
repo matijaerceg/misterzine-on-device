@@ -18,12 +18,12 @@ func (a *App) paintList(c *gfx.Canvas) {
 	a.paintRows(c)
 	a.paintScrollbar(c)
 	a.paintPane(c)
-	hint := "A details  Y view  X Filters  B Options"
+	hint := "A details  B Options  X Filters  Y view"
 	if a.sm.Width(hint) > a.lay.Hint.Dx()-4 {
-		hint = "A open  Y mode  X filt  B opts"
+		hint = "A open  B opts  X filt  Y mode"
 	}
 	if a.query != "" {
-		hint = "A details  X Filters  B clear find"
+		hint = "A details  B clear find  X Filters"
 	}
 	a.paintHint(c, hint)
 }
