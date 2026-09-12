@@ -75,7 +75,7 @@ func TestViewsPageTogglesAndKeepsTheLastOne(t *testing.T) {
 	}
 	a.panel.cursor = row
 	tap(platform.KeyEnter)
-	if a.screen != ScreenViews || len(a.panel.entries) != 1+len(data.ViewOrder) {
+	if a.screen != ScreenViews || len(a.panel.entries) != len(data.ViewOrder) {
 		t.Fatalf("Views page: screen %v entries %d", a.screen, len(a.panel.entries))
 	}
 	if e := a.panel.entries[a.panel.cursor]; e.kind != "view" || e.value != "updated" || !e.checked {
@@ -99,8 +99,8 @@ func TestViewsPageTogglesAndKeepsTheLastOne(t *testing.T) {
 		t.Fatalf("last view on: %+v", e)
 	}
 	tap(platform.KeyEnter)
-	if a.viewsOnCount() != 1 || !a.viewOn(data.SortFavorites) || a.mode != data.SortFavorites {
-		t.Fatalf("the last view must stay on: %d on, mode %v", a.viewsOnCount(), a.mode)
+	if a.viewsOnCount() != 1 || !a.viewOn(data.SortFavorites) || a.mode != data.SortFavorites || a.notice != "Keep at least one view on" {
+		t.Fatalf("the last view must stay on: %d on, mode %v, notice %q", a.viewsOnCount(), a.mode, a.notice)
 	}
 	tap(platform.KeySpace)
 	if a.mode != data.SortFavorites {

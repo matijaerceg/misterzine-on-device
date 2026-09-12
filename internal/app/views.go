@@ -110,9 +110,10 @@ var viewLabels = map[data.SortMode]string{
 	data.SortAlphabetical: "A-Z", data.SortMaker: "Maker", data.SortFavorites: "Favorites", data.SortRecents: "Recents",
 }
 
-// viewsEntries builds the Views page: one checkbox per view in cycle order.
+// viewsEntries builds the Views page: one checkbox per view in cycle order,
+// nothing else; the Options row already says what the page is for.
 func (a *App) viewsEntries() []panelEntry {
-	E := []panelEntry{{text: a.btn("Y") + " cycles the views that are on:", header: true, info: true}}
+	E := make([]panelEntry, 0, len(data.ViewOrder))
 	only := a.viewsOnCount() <= 1
 	for _, m := range data.ViewOrder {
 		on := a.viewOn(m)

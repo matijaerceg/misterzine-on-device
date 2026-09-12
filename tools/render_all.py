@@ -174,6 +174,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                       "-out", f"out/maker-{orientation}", "-script",
                       "space*4; shot maker; pagedown*3; shot maker-jump; down*2; shot maker-rows; home; down*48; shot maker-pinned; "
                       "back; down*9; shot options-views; enter; shot views; down*4; enter; shot views-off; "
+                      "up*4; enter; down; enter; down; enter; down; enter; down*2; enter; shot views-last; "
                       "enter; back; back"])
     # over Details, the Menu button option row itself, closing Options back
     # onto Details and Filters, and the held-Menu hint

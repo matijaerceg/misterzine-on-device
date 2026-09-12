@@ -220,8 +220,9 @@ the bottom.
 - **Views:** which list orders Y cycles through, as a checkbox page: core
   updated, MiSTer debut, original year, A-Z, Maker, Favorites and Recents.
   Everything is on except Recents by default. A toggles a view; the last one
-  on cannot be turned off, and turning off the view you are in moves the list
-  to the next one on. The Options row counts them, such as "Views (6 of 7)".
+  on cannot be turned off (it is greyed, and A there says so), and turning off
+  the view you are in moves the list to the next one on. The Options row
+  counts them, such as "Views (6 of 7)".
   Recents lists the games launched from MisterZine, latest first, each once
   with its last launch date, up to 100; search and filters apply. That history
   is MisterZine's own, kept in its state.json whether the view is on or off,

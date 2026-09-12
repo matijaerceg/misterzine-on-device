@@ -887,6 +887,10 @@ func (a *App) togglePanel() bool {
 		a.openViews()
 		return true
 	case "view":
+		if e.disabled {
+			a.Notice("Keep at least one view on", 3*time.Second)
+			return true
+		}
 		m, _ := data.ParseSort(e.value)
 		if !a.setViewOn(m, !e.checked) {
 			return false
