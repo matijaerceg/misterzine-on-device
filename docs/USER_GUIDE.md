@@ -8,7 +8,7 @@ then run **MisterZine-Setup** from Scripts once. Setup enables the **MisterZine*
 main-menu entry and its automatic startup helper.
 
 If another frontend is your main menu (Degauss), its Scripts list has
-**MisterZine-Open**, which opens MisterZine directly; the frontend returns when
+**MisterZine-Run**, which opens MisterZine directly; the frontend returns when
 MisterZine quits. Opened that way, leave through Options -> Quit MisterZine or
 the pad's Menu button (set to leave), as keyboard F12 stays with the frontend's
 script session. Choosing MisterZine from the MiSTer menu itself works too.

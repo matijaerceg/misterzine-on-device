@@ -45,7 +45,7 @@ class PackageTest(unittest.TestCase):
                 # Its final echo can mask a failed invocation with exit status 0.
                 command = f"cd $(dirname {target})\n{target}\necho 'Press any key to continue'\n"
                 result = subprocess.run(["bash", "-c", command], text=True, capture_output=True, timeout=5)
-                if "Open" in path:
+                if "Run" in path:
                     # No launch.sh on this card: the entry must say so, not hang or fail silently.
                     self.assertIn("MisterZine is missing", result.stdout, path + ": " + result.stderr)
                     continue
@@ -63,7 +63,7 @@ class PackageTest(unittest.TestCase):
             verify(directory, "v1.0.0-rc.1")
             with zipfile.ZipFile(database) as z:
                 paths = set(json.loads(z.read("misterzine.json"))["files"])
-            self.assertIn("Scripts/MisterZine-Open.sh", paths)
+            self.assertIn("Scripts/MisterZine-Run.sh", paths)
             self.assertIn("Scripts/MisterZine-Setup.sh", paths)
             self.assertIn("Scripts/MisterZine-Uninstall.sh", paths)
             self.assertIn("misterzine/SPLEEN-LICENSE", paths)

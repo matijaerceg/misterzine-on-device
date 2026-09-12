@@ -39,7 +39,7 @@ Updates arrive through your normal Update All/Downloader runs.
 
 If you already enabled the launcher in an earlier version, it stays enabled.
 
-If another frontend is your main menu (Degauss), choose **MisterZine-Open** in
+If another frontend is your main menu (Degauss), choose **MisterZine-Run** in
 its Scripts list, or exit to the MiSTer menu and choose MisterZine there.
 For configuration by hand, see [installation details](docs/USER_GUIDE.md#installation).
 

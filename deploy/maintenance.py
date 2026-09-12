@@ -143,7 +143,7 @@ def uninstall(card, keep, run=subprocess.run, proc_root=Path("/proc")):
     # Also remove pre-release/manual launcher entries, which might not be in
     # Downloader's store. These exact paths belong to MisterZine.
     for relative in ("MisterZine.mgl", "misterzine.mgl", "Scripts/misterzine.sh",
-                     "Scripts/MisterZine-Open.sh", "Scripts/MisterZine-Setup.sh", "Scripts/MisterZine-Uninstall.sh",
+                     "Scripts/MisterZine-Run.sh", "Scripts/MisterZine-Setup.sh", "Scripts/MisterZine-Uninstall.sh",
                      "Scripts/MisterZine Setup.sh", "Scripts/MisterZine Uninstall.sh"):
         path = card / relative
         if path.is_symlink() or path.is_file():
