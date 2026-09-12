@@ -220,7 +220,7 @@ func Statuses(card string, idx *Index, rows []data.Row) []data.Status {
 	return out
 }
 
-// Alt is one alternative MRA under _Arcade/_alternatives.
+// Alt is one alternative MRA under an _alternatives folder.
 type Alt struct {
 	Path    string   `json:"path"` // card-relative
 	RBF     string   `json:"rbf"`  // lowercase <rbf> text
@@ -252,9 +252,9 @@ type altDir struct {
 // records, written only for directories where every MRA parsed) stay valid.
 const altCacheVersion = 3
 
-// ScanAlternatives walks _Arcade/_alternatives, parsing only the header of
-// each MRA. A per-directory cache keyed by mtime (cachePath, JSON) makes
-// warm runs cheap; pass "" to disable the cache.
+// ScanAlternatives walks every _alternatives folder (altRoots), parsing
+// only the header of each MRA. A per-directory cache keyed by mtime
+// (cachePath, JSON) makes warm runs cheap; pass "" to disable the cache.
 func ScanAlternatives(card, cachePath string) []Alt {
 	alts, _, _ := ScanAlternativesWithError(card, cachePath)
 	return alts
@@ -267,16 +267,13 @@ func ScanAlternatives(card, cachePath string) []Alt {
 // reads, opens and reads that failed, and the cache; a directory with such a
 // failure is never cached as complete.
 func ScanAlternativesWithError(card, cachePath string) ([]Alt, []Skipped, error) {
-	root := filepath.Join(card, "_Arcade", "_alternatives")
-	dirs, err := os.ReadDir(root)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil, nil
-		}
-		return nil, nil, err
+	roots := altRoots(card)
+	if len(roots) == 0 {
+		return nil, nil, nil
 	}
 	var problems []error
 	var original []byte
+	var err error
 	cache := map[string]altDir{}
 	if cachePath != "" {
 		original, err = os.ReadFile(cachePath)
@@ -292,54 +289,62 @@ func ScanAlternativesWithError(card, cachePath string) ([]Alt, []Skipped, error)
 	fresh := map[string]altDir{}
 	var out []Alt
 	var skipped []Skipped
-	for _, d := range dirs {
-		if !d.IsDir() {
-			continue
-		}
-		info, err := d.Info()
+	for _, root := range roots {
+		dirs, err := os.ReadDir(filepath.Join(card, filepath.FromSlash(root.rel)))
 		if err != nil {
 			problems = append(problems, err)
 			continue
 		}
-		mt := info.ModTime().UnixNano()
-		if c, ok := cache[d.Name()]; ok && (c.Version == 2 || c.Version == altCacheVersion) && c.Mtime == mt && skippedUnchanged(card, c.Skipped) {
-			fresh[d.Name()] = c
-			out = append(out, c.Alts...)
-			skipped = append(skipped, c.Skipped...)
-			continue
-		}
-		var alts []Alt
-		var skips []Skipped
-		complete := true
-		files, err := os.ReadDir(filepath.Join(root, d.Name()))
-		if err != nil {
-			problems = append(problems, err)
-			continue
-		}
-		for _, f := range files {
-			if f.IsDir() || !strings.HasSuffix(strings.ToLower(f.Name()), ".mra") {
+		for _, d := range dirs {
+			if !d.IsDir() {
 				continue
 			}
-			rel := path.Join("_Arcade", "_alternatives", d.Name(), f.Name())
-			a, s, readErr := parseMRAHeader(filepath.Join(card, filepath.FromSlash(rel)))
-			if readErr != nil {
-				complete = false
-				problems = append(problems, fmt.Errorf("%s: %w", rel, readErr))
+			info, err := d.Info()
+			if err != nil {
+				problems = append(problems, err)
 				continue
 			}
-			if s != nil {
-				s.Path = rel
-				skips = append(skips, *s)
+			key := root.key + d.Name()
+			mt := info.ModTime().UnixNano()
+			if c, ok := cache[key]; ok && (c.Version == 2 || c.Version == altCacheVersion) && c.Mtime == mt && skippedUnchanged(card, c.Skipped) {
+				fresh[key] = c
+				out = append(out, c.Alts...)
+				skipped = append(skipped, c.Skipped...)
 				continue
 			}
-			a.Path = rel
-			alts = append(alts, a)
+			var alts []Alt
+			var skips []Skipped
+			complete := true
+			files, err := os.ReadDir(filepath.Join(card, filepath.FromSlash(root.rel), d.Name()))
+			if err != nil {
+				problems = append(problems, err)
+				continue
+			}
+			for _, f := range files {
+				if f.IsDir() || !strings.HasSuffix(strings.ToLower(f.Name()), ".mra") {
+					continue
+				}
+				rel := path.Join(root.rel, d.Name(), f.Name())
+				a, s, readErr := parseMRAHeader(filepath.Join(card, filepath.FromSlash(rel)))
+				if readErr != nil {
+					complete = false
+					problems = append(problems, fmt.Errorf("%s: %w", rel, readErr))
+					continue
+				}
+				if s != nil {
+					s.Path = rel
+					skips = append(skips, *s)
+					continue
+				}
+				a.Path = rel
+				alts = append(alts, a)
+			}
+			if complete {
+				fresh[key] = altDir{Version: altCacheVersion, Mtime: mt, Alts: alts, Skipped: skips}
+			}
+			out = append(out, alts...)
+			skipped = append(skipped, skips...)
 		}
-		if complete {
-			fresh[d.Name()] = altDir{Version: altCacheVersion, Mtime: mt, Alts: alts, Skipped: skips}
-		}
-		out = append(out, alts...)
-		skipped = append(skipped, skips...)
 	}
 	if cachePath != "" {
 		b, err := json.Marshal(fresh)
@@ -352,6 +357,40 @@ func ScanAlternativesWithError(card, cachePath string) ([]Alt, []Skipped, error)
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Path < out[j].Path })
 	return out, skipped, errors.Join(problems...)
+}
+
+// altRoot is one _alternatives folder: the top one, which the Distribution
+// and Jotego fill, or the one inside an opt-in database's own folder
+// (_Arcade/_MeatCores/_alternatives, _Arcade/_rmCores/_alternatives), so a
+// database that keeps to that layout is covered without a list of names.
+type altRoot struct {
+	rel string // card-relative, forward slashes
+	key string // prefix for its game folders' cache keys: "" for the top one
+}
+
+// altRoots lists the _alternatives folders present on the card: the top one
+// first, then one per _Arcade/_<database> folder that has its own.
+func altRoots(card string) []altRoot {
+	var roots []altRoot
+	top := "_Arcade/_alternatives"
+	if st, err := os.Stat(filepath.Join(card, filepath.FromSlash(top))); err == nil && st.IsDir() {
+		roots = append(roots, altRoot{rel: top})
+	}
+	entries, err := os.ReadDir(filepath.Join(card, "_Arcade"))
+	if err != nil {
+		return roots
+	}
+	for _, e := range entries {
+		n := e.Name()
+		if !e.IsDir() || !strings.HasPrefix(n, "_") || n == "_alternatives" {
+			continue
+		}
+		rel := path.Join("_Arcade", n, "_alternatives")
+		if st, err := os.Stat(filepath.Join(card, filepath.FromSlash(rel))); err == nil && st.IsDir() {
+			roots = append(roots, altRoot{rel: rel, key: n + "/"})
+		}
+	}
+	return roots
 }
 
 // skippedUnchanged reports whether every skipped file still has the size and

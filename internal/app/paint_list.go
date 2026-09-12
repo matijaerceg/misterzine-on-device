@@ -252,13 +252,21 @@ func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {
 	} else if st == data.StatusNotFound {
 		titleCol = gen.Eva.Muted
 	}
-	a.paintTitle(c, x, y, l.TitleW, d.Title, row.Beta, titleCol)
 	// the status glyph and the date use the narrow font at the titles'
 	// height, whose baseline sits one pixel below the body font's
 	rf := a.rowFont()
-	x += l.TitleW + rf.W
+	tw := l.TitleW
+	if a.mode == data.SortYear {
+		// the year is on the header line, so the title takes the date column
+		tw += a.dateCols() * rf.W
+	}
+	a.paintTitle(c, x, y, tw, d.Title, row.Beta, titleCol)
+	x += tw + rf.W
 	g, gc := statusGlyph(st)
 	c.Text(x, y-1, rf, g, gc)
+	if a.mode == data.SortYear {
+		return
+	}
 	// date, right-aligned in its column
 	date := row.Updated
 	if a.mode == data.SortDebut {
@@ -272,7 +280,7 @@ func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {
 		dateCol = gen.Eva.Accent
 	}
 	text := a.dateCol(date)
-	if a.mode == data.SortYear || a.mode == data.SortMaker {
+	if a.mode == data.SortMaker {
 		// the original release year as the catalogue has it, "198?" included
 		text = gfx.Fit(strings.TrimSpace(row.Year), a.dateCols())
 		for len(text) < a.dateCols() {

@@ -18,6 +18,7 @@ func TestInstalledSourcesLeaveEveryView(t *testing.T) {
 		{K: "j", Title: "Jotego game", Base: "Arcade", Src: "jtbindb"},
 		{K: "c", Title: "Coin-Op game", Base: "Arcade", Src: "coinop"},
 		{K: "x", Title: "Meathax game", Base: "Arcade", Src: "meathax"},
+		{K: "r", Title: "rmCores game", Base: "Arcade", Src: "rmcores"},
 		{K: "n", Title: "New source game", Base: "Arcade", Src: "newsource"},
 	}
 	changes := 0
@@ -32,7 +33,7 @@ func TestInstalledSourcesLeaveEveryView(t *testing.T) {
 		sort.Strings(ks)
 		return strings.Join(ks, " ")
 	}
-	if keys() != "c j m n x" || a.total != 5 {
+	if keys() != "c j m n r x" || a.total != 6 {
 		t.Fatalf("nothing is hidden before the card scan reports: %q total %d", keys(), a.total)
 	}
 	a.SetHiddenSources(data.HiddenSources([]data.DB{{ID: "distribution_mister"}, {ID: "jtcores"}}), true)
@@ -80,7 +81,7 @@ func TestInstalledSourcesLeaveEveryView(t *testing.T) {
 	}
 	a.panel.cursor = row
 	a.stepValue(-1)
-	if a.InstalledOnly() || changes != 3 || keys() != "c j m n x" || a.total != 5 {
+	if a.InstalledOnly() || changes != 3 || keys() != "c j m n r x" || a.total != 6 {
 		t.Fatalf("all: %q total %d changes %d", keys(), a.total, changes)
 	}
 	a.stepValue(1)
@@ -92,7 +93,7 @@ func TestInstalledSourcesLeaveEveryView(t *testing.T) {
 	}
 	a.SetHiddenSources(nil, false)
 	a.Refilter()
-	if keys() != "c j m n x" {
+	if keys() != "c j m n r x" {
 		t.Fatalf("no downloader.ini must hide nothing: %q", keys())
 	}
 	if help := a.panel.entries[row].help; !strings.Contains(help, "No downloader.ini was found") {

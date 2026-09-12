@@ -134,4 +134,5 @@ var SrcNames = map[string]string{
 	"distribution_mister": "MiSTer Distribution",
 	"jtbindb":             "Jotego (JTcores)",
 	"meathax":             "Meathax (MeatCores)",
+	"rmcores":             "rmCores (rmonic79)",
 }

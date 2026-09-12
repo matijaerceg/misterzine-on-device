@@ -455,18 +455,29 @@ func TestYearSortOrderAndJumps(t *testing.T) {
 	}
 	a.Paint()
 	rf := a.rowFont()
-	r := a.lay.lineRect(a.screenLine(a.cursor) - a.top) // the selected row, under its year header
-	col := image.Rect(r.Max.X-a.dateCols()*rf.W, r.Min.Y-1, r.Max.X, r.Max.Y)
-	lit := 0
-	for y := col.Min.Y; y < col.Max.Y; y++ {
-		for x := col.Min.X; x < col.Max.X; x++ {
-			if a.logical.RGBA.RGBAAt(x, y) == gen.Eva.Muted {
-				lit++
+	lit := func(col image.Rectangle) int {
+		n := 0
+		for y := col.Min.Y; y < col.Max.Y; y++ {
+			for x := col.Min.X; x < col.Max.X; x++ {
+				if a.logical.RGBA.RGBAAt(x, y) == gen.Eva.Muted {
+					n++
+				}
 			}
 		}
+		return n
 	}
-	if lit == 0 {
-		t.Fatal("the date column must show the year")
+	// the year is on the header line, so the Year view leaves the date
+	// column to the title (the status glyph keeps the last two cells)
+	r := a.lay.lineRect(a.screenLine(a.cursor) - a.top) // the selected row, under its year header
+	if n := lit(image.Rect(r.Max.X-a.dateCols()*rf.W, r.Min.Y-1, r.Max.X-2*rf.W, r.Max.Y)); n != 0 {
+		t.Fatalf("the Year view must not repeat the year in the date column: %d pixels", n)
+	}
+	// the Maker view still shows the year there
+	a.SetSort(data.SortMaker)
+	a.Paint()
+	r = a.lay.lineRect(a.screenLine(a.cursor) - a.top)
+	if lit(image.Rect(r.Max.X-a.dateCols()*rf.W, r.Min.Y-1, r.Max.X, r.Max.Y)) == 0 {
+		t.Fatal("the Maker view's date column must show the year")
 	}
 	b := New(Config{PhysW: 320, PhysH: 240, RememberSort: true, LastSort: data.SortYear}, ds, nil)
 	if b.Sort() != data.SortYear {

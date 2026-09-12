@@ -185,14 +185,31 @@ func TestStatusDownloaderStore(t *testing.T) {
 
 func TestAlternatives(t *testing.T) {
 	card := fakeCard(t)
+	// an opt-in database keeps its alternatives inside its own folder
+	rm := filepath.Join(card, "_Arcade", "_rmCores", "_alternatives", "_Night Slashers")
+	os.MkdirAll(rm, 0755)
+	os.WriteFile(filepath.Join(rm, "rm Night Slashers (Japan Rev 1.2).mra"), []byte(`<misterromdescription>
+ <setname>nslasherj</setname>
+ <rbf>rmnightslashers</rbf>
+ <rom index="0" zip="nslasherj.zip|nslasher.zip"><part name="x"/></rom>
+</misterromdescription>`), 0644)
+	os.MkdirAll(filepath.Join(card, "_Arcade", "_rmCores", "_alternatives", "empty"), 0755) // no MRA, fine
+	os.MkdirAll(filepath.Join(card, "_Arcade", "cores", "_alternatives"), 0755)             // cores is not a database folder
 	cache := filepath.Join(card, "cache", "alts.json")
 	alts := ScanAlternatives(card, cache)
-	if len(alts) != 2 {
+	if len(alts) != 3 || !strings.HasPrefix(alts[2].Path, "_Arcade/_rmCores/_alternatives/") {
 		t.Fatalf("alts = %+v", alts)
 	}
-	// cached second run gives the same answer
-	if again := ScanAlternatives(card, cache); len(again) != 2 || again[0].Path != alts[0].Path {
+	// cached second run gives the same answer; the nested folder is keyed by its database
+	if again := ScanAlternatives(card, cache); len(again) != 3 || again[0].Path != alts[0].Path {
 		t.Fatalf("cached alts = %+v", again)
+	}
+	if raw, err := os.ReadFile(cache); err != nil || !strings.Contains(string(raw), `"_rmCores/_Night Slashers"`) || !strings.Contains(string(raw), `"_Colony 7"`) {
+		t.Fatalf("cache keys: %s %v", raw, err)
+	}
+	rmRow := data.Row{Base: "Arcade", Core: "rmNightSlashers", SN: "nslasher"}
+	if got := Alternatives(alts, &rmRow); len(got) != 1 || !strings.HasSuffix(got[0], "rm Night Slashers (Japan Rev 1.2).mra") {
+		t.Fatalf("rm alts = %v", got)
 	}
 	row := data.Row{Base: "Arcade", Core: "defender", SN: "colony7"}
 	got := Alternatives(alts, &row)

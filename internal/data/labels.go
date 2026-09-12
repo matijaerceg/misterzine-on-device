@@ -88,6 +88,7 @@ var srcShort = map[string]string{
 	"jtbindb":             "Jotego",
 	"coinop":              "Coin-Op",
 	"meathax":             "Meathax",
+	"rmcores":             "rmCores",
 }
 
 // SrcShort is the short source chip, falling back to the full name.

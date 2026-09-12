@@ -15,7 +15,7 @@ func TestHiddenSourcesFollowDownloaderDatabases(t *testing.T) {
 		{ID: "jtcores"},
 		{ID: "other/db", URL: "https://example.com/db.json.zip"},
 	})
-	if want := map[string]bool{"coinop": true, "meathax": true}; !reflect.DeepEqual(got, want) {
+	if want := map[string]bool{"coinop": true, "meathax": true, "rmcores": true}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("hidden = %v, want %v", got, want)
 	}
 	// the db_url identifies a renamed section; the old Coin-Op name still counts
@@ -23,10 +23,10 @@ func TestHiddenSourcesFollowDownloaderDatabases(t *testing.T) {
 		{ID: "mine", URL: "https://raw.githubusercontent.com/meathax/meatcores/db/db.json.zip"},
 		{ID: "atrac17/coin-op_collection"},
 	})
-	if want := map[string]bool{"distribution_mister": true, "jtbindb": true}; !reflect.DeepEqual(got, want) {
+	if want := map[string]bool{"distribution_mister": true, "jtbindb": true, "rmcores": true}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("hidden = %v, want %v", got, want)
 	}
-	got = HiddenSources([]DB{{ID: "distribution_mister"}, {ID: "jtcores"}, {ID: "coin-opcollection/distribution-misterfpga"}, {ID: "meathax/meatcores"}})
+	got = HiddenSources([]DB{{ID: "distribution_mister"}, {ID: "jtcores"}, {ID: "coin-opcollection/distribution-misterfpga"}, {ID: "meathax/meatcores"}, {ID: "rmonic79/rmcores"}})
 	if got == nil || len(got) != 0 {
 		t.Fatalf("every database present must hide nothing: %v", got)
 	}

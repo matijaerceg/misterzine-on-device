@@ -74,8 +74,8 @@ and L/R jumping between launch months.
 Year orders games
 by their original release year, newest first, with titles alphabetical within
 a year and unknown or uncertain years last; a header line names each year,
-the last one Year unknown, and the date column shows the year as the
-catalogue has it.
+the last one Year unknown, and the title takes the date column's room, with
+only the card status glyph kept at the right.
 Alphabetical sorting ignores case and accents and puts Game 2 before Game 10;
 a header line names each letter, with numbers and symbols under 0-9 and
 symbols before A.
@@ -164,6 +164,9 @@ card. A version name too long for the row scrolls back and forth, pausing at
 each end, so alternatives that share a long prefix can be told apart.
 The version chosen is remembered for that game, across restarts: Details
 opens on it next time and Start launches it from the list and from artwork.
+Alternatives are read from `_Arcade/_alternatives` and from the
+`_alternatives` folder inside a database's own folder, such as
+`_Arcade/_MeatCores` and `_Arcade/_rmCores`.
 Choosing the main version again forgets the choice, and an alternative that
 has since left the card falls back to the main version.
 A green scrollbar thumb shows when more information is available. Long values
@@ -205,13 +208,15 @@ the bottom.
 - **Clear image cache:** removes downloaded pictures, which return as needed.
 - **Sources:** all by default. Installed only shows games from the databases
   listed in the card's `downloader.ini`, the file Update All rewrites on every
-  run, so a source you never enabled (Coin-Op, Meathax, or Jotego) stays out of
+  run, so a source you never enabled (Coin-Op, Meathax, rmCores or Jotego) stays out of
   the list, search, Favorites and the Filters panel, and the release count
   leaves it out too. The file is read at every card scan: launch, Rescan card
   and the rescan after Update All. Without database sections Downloader
   fetches MiSTer Distribution alone, and the option follows that; without any
   `downloader.ini` nothing is hidden and the help text says so. Sources the
-  app does not know stay visible.
+  app does not know stay visible. rmCores rows are rmonic79's own builds of
+  games the MiSTer Distribution also has, with CRT Adjust and V-Size on the
+  analog output and a pause overlay; Details says so under Source.
 - **Filter by current rotation:** off by default. On immediately shows only
   entries explicitly marked Horizontal when the interface is horizontal, or
   Vertical when it is rotated either way, whatever set that rotation (the INI or

@@ -10,7 +10,7 @@ import (
 type Derived struct {
 	CoreLabel  string // site coreLabel(core)
 	TypeLabel  string // "Arcade" or "<base> core"
-	SrcShort   string // MiSTer / Jotego / Coin-Op / Meathax
+	SrcShort   string // MiSTer / Jotego / Coin-Op / Meathax / rmCores
 	Title      string // ASCII-folded title for the bitmap font
 	Ctl        string // ASCII-folded controls
 	RotGroup   string // "h", "v" or ""

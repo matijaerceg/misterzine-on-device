@@ -21,6 +21,7 @@ var sourceDBs = map[string]struct {
 	"jtbindb":             {"https://raw.githubusercontent.com/jotego/jtcores_mister/main/jtbindb.json.zip", []string{"jtcores"}},
 	"coinop":              {"https://raw.githubusercontent.com/Coin-OpCollection/Distribution-MiSTerFPGA/db/db.json.zip", []string{"coin-opcollection/distribution-misterfpga", "atrac17/coin-op_collection"}},
 	"meathax":             {"https://raw.githubusercontent.com/meathax/meatcores/db/db.json.zip", []string{"meathax/meatcores"}},
+	"rmcores":             {"https://raw.githubusercontent.com/rmonic79/rmcores/db/db.json.zip", []string{"rmonic79/rmcores"}},
 }
 
 // HiddenSources lists the feed sources whose Downloader database is not

@@ -226,6 +226,9 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 	add("Flip", row.Flip, fg)
 	add("Commit", row.Act+rel(row.Act), mu)
 	add("Source", data.SrcFull(row.Src), fg)
+	if row.Src == "rmcores" {
+		L = append(L, paneLine{"rm build: CRT Adjust and V-Size on the analog output and a pause overlay; the same game ships in the MiSTer Distribution without them", mu})
+	}
 	if row.Deprecated {
 		add("Status", "deprecated", gen.Eva.Danger)
 	}
