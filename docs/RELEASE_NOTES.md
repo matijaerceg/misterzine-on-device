@@ -1,24 +1,29 @@
-MisterZine can come back by itself: after a game, and after a boot.
+Your pad's A is A, whatever the MiSTer menu calls it, and you can see
+exactly what every button does.
 
-- **Return after game:** Options -> Return after game, off by default. On,
-  when a game you started from MisterZine exits to the MiSTer menu (Reset or
-  Exit in the OSD), the menu launcher picks the MisterZine entry again, the
-  same way you would, and the list opens on that game. The MiSTer menu shows
-  for a moment in between. Games started from the MiSTer menu itself, and
-  leaving MisterZine with the pad's Menu button, do not bring it back. Needs
-  the Main menu launcher (Setup enables it).
-- **Open at boot:** Options -> Open at boot, off by default. On, once the
-  MiSTer menu is up after a power-on or reboot, the launcher picks the
-  MisterZine entry for you. A `bootcore` in your INI takes precedence and
-  nothing happens. Needs the Main menu launcher.
-- **Faster Y:** each list order is sorted once per loaded catalogue and
-  reused, and the Year order no longer re-parses years while sorting, so
-  cycling orders, typing a search and card-status updates skip the sort.
+- **Pads read as you defined them:** a pad defined in the MiSTer menu is now
+  read by MisterZine directly, slot by slot: D-pad, A B X Y, L R, Start and
+  the menu stick, including triggers or stick directions used as buttons.
+  Before, MisterZine took its A and B from the buttons you chose for the
+  MiSTer menu's own OK and back, so a pad with OK on the bottom button and
+  back on the right one had them swapped here. Now the button you defined as
+  A is A, and each pad follows its own definition, so two pads defined
+  differently work side by side. A pad never defined in MiSTer keeps working
+  through MiSTer's translation while no defined pad is connected.
+- **Button labels:** Options -> Button labels chooses how the legends name
+  the face buttons, in MiSTer's A B X Y order: A B X Y (default), B A Y X for
+  an Xbox-lettered pad mapped by position, PlayStation symbols by position,
+  or 1 2 3 4 in MiSTer's define order. Only the names change.
+- **Pad tester:** Troubleshooting -> Test pad buttons lists every pad being
+  read with the raw code in each MiSTer slot, then shows each press as it
+  happens: which pad, which button or axis, which slot, what MisterZine does
+  with it, and the gap since the previous press, which also makes a bouncing
+  arcade switch easy to spot. Hold B for two seconds to leave.
 
-Both new switches start off; existing settings, favorites, filter choices,
-remembered versions and the launch history are preserved. Neither switch
-changes MiSTer.ini, the menu core or any MiSTer file: both are carried out by
-the same background helper that already runs the main-menu entry.
+Nothing changes in MiSTer.ini, the menu core or your MiSTer controller
+definitions; MisterZine only reads the map files MiSTer already saves.
+Existing settings, favorites, filter choices, remembered versions and the
+launch history are preserved.
 
 Existing installations can update through Update All/Downloader. Reopen
 MisterZine after updating.

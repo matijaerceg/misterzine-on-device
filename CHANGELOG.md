@@ -1,5 +1,24 @@
 # Changelog
 
+## v1.0.17 — 2026-09-12
+
+- A pad defined in the MiSTer menu is read by MisterZine directly, slot by
+  slot: D-pad, A B X Y, L R, Start and the menu stick, with trigger and
+  stick edges counted as MiSTer counts them. The button you defined as A is
+  A here whichever buttons you gave the MiSTer menu's own OK and back, and
+  each pad follows its own definition, so two pads defined differently work
+  side by side. A pad never defined in MiSTer keeps working through MiSTer's
+  translation while no defined pad is connected.
+- Options -> Button labels: how the legends name the face buttons, in
+  MiSTer's A B X Y order: A B X Y (default), B A Y X for an Xbox-lettered
+  pad mapped by position, PlayStation symbols by position, or 1 2 3 4 in
+  MiSTer's define order. Only the names change.
+- Troubleshooting -> Test pad buttons: lists every pad being read with the
+  raw code in each MiSTer slot and where it came from, then shows each press
+  as it happens: which pad, which button or axis, which slot, what MisterZine
+  does with it, and the gap since the previous press. Hold B for two seconds
+  to leave.
+
 ## v1.0.16 — 2026-09-12
 
 - Options -> Return after game (off by default): when a game started from
