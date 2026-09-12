@@ -183,10 +183,16 @@ func (a *App) paintRows(c *gfx.Canvas) {
 			continue
 		}
 		if pos >= len(a.view) {
-			return
+			break
 		}
 		a.paintRow(c, r, pos)
 		pos++
+	}
+	// a maker whose header scrolled off keeps its name on the top line
+	if h := a.pinnedHeader(); h != "" {
+		r := l.lineRect(0)
+		c.Fill(r, gen.Eva.Bg)
+		a.paintMarker(c, r, h)
 	}
 }
 

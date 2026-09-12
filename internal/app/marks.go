@@ -49,6 +49,28 @@ func (a *App) markLine(k int) int {
 	return a.marks[k] + k
 }
 
+// pinnedHeader is the maker to keep on the top line while its group runs
+// on above the screen: the group's own header has scrolled off, so its
+// name covers the first line until the next header reaches it. Empty when
+// the top line is a header itself, the cursor sits on the top line, or
+// the order has no maker headers.
+func (a *App) pinnedHeader() string {
+	if a.mode != data.SortMaker || a.top == 0 || len(a.view) == 0 {
+		return ""
+	}
+	pos := 0
+	for pos < len(a.view) && a.screenLine(pos) < a.top {
+		pos++
+	}
+	if pos >= len(a.view) || a.screenLine(pos)-1 >= a.top || a.screenLine(a.cursor) == a.top {
+		return ""
+	}
+	if m := a.ds.Der[a.view[pos]].Maker; m != "" {
+		return m
+	}
+	return "Unknown maker"
+}
+
 // markText is what marker k says.
 func (a *App) markText(k int) string {
 	if a.mode == data.SortMaker {

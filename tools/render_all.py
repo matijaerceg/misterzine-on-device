@@ -172,7 +172,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     # the Maker order with its header lines, a maker jump, and the Views page
     scenarios.append([*rotation,
                       "-out", f"out/maker-{orientation}", "-script",
-                      "space*4; shot maker; pagedown*3; shot maker-jump; down*2; shot maker-rows; "
+                      "space*4; shot maker; pagedown*3; shot maker-jump; down*2; shot maker-rows; home; down*48; shot maker-pinned; "
                       "back; down*9; shot options-views; enter; shot views; down*4; enter; shot views-off; "
                       "enter; back; back"])
     # over Details, the Menu button option row itself, closing Options back

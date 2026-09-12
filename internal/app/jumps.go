@@ -26,10 +26,13 @@ func (a *App) jumpGroup(direction int) {
 	}
 	a.cursor = i
 	a.top = a.screenLine(i)
-	if a.mode == data.SortMaker && a.markAt(i) {
-		a.top-- // the maker's header line comes with it
-	}
 	a.shortPage = true
+	if a.mode == data.SortMaker {
+		// the row stays centered like a step, since the next step would
+		// center it anyway; the header sits right above it
+		a.top = centeredTop(a.screenLine(i), a.totalLines(), a.lay.Lines)
+		a.shortPage = false
+	}
 	if a.mode != data.SortAlphabetical && a.mode != data.SortFavorites && a.mode != data.SortMaker {
 		label := "Date unknown"
 		if a.mode == data.SortYear {

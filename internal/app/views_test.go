@@ -152,18 +152,19 @@ func TestMakerHeadersInTheList(t *testing.T) {
 	if a.markText(0) != "Capcom" || a.markText(1) != "Sega" || a.markText(2) != "Unknown maker" {
 		t.Fatalf("headers %q %q %q", a.markText(0), a.markText(1), a.markText(2))
 	}
-	// L/R jump makers, landing with the header on the top line and no notice
+	// L/R jump makers, the row centered like a step (no top alignment), no notice
+	centered := func(pos int) int { return centeredTop(a.screenLine(pos), a.totalLines(), a.lay.Lines) }
 	a.cursor, a.top = 0, 0
 	tap(platform.KeyPageDown)
-	if a.cursor != 1 || a.top != 2 || a.notice != "" {
+	if a.cursor != 1 || a.top != centered(1) || a.shortPage || a.notice != "" {
 		t.Fatalf("jump to Sega: cursor %d top %d notice %q", a.cursor, a.top, a.notice)
 	}
 	tap(platform.KeyPageDown)
-	if a.cursor != 3 || a.top != 5 {
+	if a.cursor != 3 || a.top != centered(3) {
 		t.Fatalf("jump to the unknown maker: cursor %d top %d", a.cursor, a.top)
 	}
 	tap(platform.KeyPageUp)
-	if a.cursor != 1 || a.top != 2 {
+	if a.cursor != 1 || a.top != centered(1) {
 		t.Fatalf("jump back: cursor %d top %d", a.cursor, a.top)
 	}
 	// the date column shows the year, the top bar names the order
@@ -180,6 +181,38 @@ func TestMakerHeadersInTheList(t *testing.T) {
 	a.ensureVisible()
 	if a.top > 5 {
 		t.Fatalf("header hidden above the cursor: top %d", a.top)
+	}
+	a.Paint()
+	// a long list: the landing row sits mid-screen with its header above it
+	var many []data.Row
+	for i := 0; i < 60; i++ {
+		many = append(many, data.Row{K: "m" + itoa(i), Title: "Game " + itoa(i), Base: "Arcade", Manufacturer: []string{"Atari", "Konami", "Sega"}[i/20]})
+	}
+	a.SetData(data.Ingest(many, "", a.cfg.Now()), nil)
+	a.cursor, a.top = 0, 0
+	tap(platform.KeyPageDown)
+	line := a.screenLine(a.cursor)
+	if a.cursor != 20 || a.top != line-a.lay.Lines/2 || !a.markAt(a.cursor) {
+		t.Fatalf("long jump: cursor %d line %d top %d lines %d", a.cursor, line, a.top, a.lay.Lines)
+	}
+	// the top line shows Atari's rows, so Atari is pinned there; Konami's
+	// header is on screen below the top, so Konami is not pinned yet
+	if a.pinnedHeader() != "Atari" {
+		t.Fatalf("pinned %q at top %d", a.pinnedHeader(), a.top)
+	}
+	for a.top < a.screenLine(20)-1 {
+		tap(platform.KeyDown)
+	}
+	if a.pinnedHeader() != "" { // Konami's own header is the top line
+		t.Fatalf("pinned %q with the header on the top line (top %d)", a.pinnedHeader(), a.top)
+	}
+	tap(platform.KeyDown)
+	if a.pinnedHeader() != "Konami" {
+		t.Fatalf("pinned %q past Konami's header", a.pinnedHeader())
+	}
+	a.cursor, a.top = 0, 0
+	if a.pinnedHeader() != "" { // the list's own first header is showing
+		t.Fatal("pinned at the top of the list")
 	}
 	a.Paint()
 }
