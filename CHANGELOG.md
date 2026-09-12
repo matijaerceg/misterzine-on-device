@@ -1,5 +1,30 @@
 # Changelog
 
+## v1.0.22 — 2026-09-12
+
+- A Maker view joins the Y cycle after A-Z: the games grouped by
+  manufacturer under header lines, makers A-Z with titles A-Z under each,
+  the original year in the date column and Unknown maker last. L/R jump from
+  maker to maker with the row centred, and a maker whose header has scrolled
+  off keeps its name pinned on the top line until its last row is gone.
+  Spellings are merged: a credit counts under the first company named and
+  corporate or regional suffixes are ignored, so Taito Corporation Japan
+  sits under Taito and Data East USA under Data East; Details still shows
+  the full credit.
+- Options -> Views replaces the Recents view switch: a checkbox page that
+  chooses which of the seven views Y cycles through. Everything is on except
+  Recents by default, the last view on cannot be turned off, and turning off
+  the view you are in moves the list to the next one. The choice is saved as
+  `views_off` in settings.json; an existing Recents view setting carries
+  over.
+- With Options -> Menu button set to Options, holding the pad's Menu button
+  for two seconds leaves MisterZine, so the way out is always there without
+  changing the setting. A hint appears after half a second and releasing
+  earlier stays; the short press still opens or closes Options at once.
+- Closing Options with B or the Menu button returns to the screen it was
+  opened over: the list, Details, the artwork, or Filters with its browsing
+  state kept, also after a trip through Troubleshooting or a scan.
+
 ## v1.0.21 — 2026-09-12
 
 - A `[MisterZine]` section in MiSTer.ini, placed below `[Menu]`, changes

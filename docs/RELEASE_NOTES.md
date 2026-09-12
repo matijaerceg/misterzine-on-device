@@ -1,26 +1,32 @@
-A `[MisterZine]` section in MiSTer.ini can give MisterZine its own display
-settings.
+MisterZine gains a Maker view, a Views page to choose the Y cycle, and a
+held Menu button that always leads out.
 
-- **HDMI for the menu, CRT for MisterZine:** MisterZine's menu entry loads
-  the menu core under the name `misterzine`, and Main applies INI sections
-  named after either that name or `Menu`, in file order. A `[MisterZine]`
-  section placed below `[Menu]` therefore changes `direct_video`,
-  `vga_scaler` and `osd_rotate` only while MisterZine is open, and quitting
-  restores the `[Menu]` output. An HDMI display can keep the menu, the
-  terminal and Update All while the CRT shows MisterZine alone. The
-  [troubleshooting guide](https://github.com/matijaerceg/misterzine-on-device/blob/main/docs/TROUBLESHOOTING.md#hdmi-for-the-menu-crt-for-misterzine)
-  has the exact lines.
-- **Follow INI rotation** now reads `[MisterZine]` the way Main does, so an
-  `osd_rotate` placed there is honoured, and the CRT-only warning in the log
-  and on the first run no longer fires for that layout. The first-run notice
-  names both sections.
-- The section must come after `[Menu]`, or `[Menu]` wins, and it applies to
-  launches through the menu entry: the Scripts entries run under the plain
-  menu core and keep the `[Menu]` output.
+- **Maker view:** Y now cycles core updated, MiSTer debut, original year,
+  A-Z, Maker, then Favorites. Maker groups the games by manufacturer under
+  header lines, makers A-Z with titles A-Z under each and the original year
+  in the date column; games without a manufacturer come last under Unknown
+  maker. L/R jump from maker to maker, and while a long maker such as Capcom
+  runs past the top of the screen its name stays pinned on the top line.
+  Spellings are merged, so Taito Corporation Japan sits under Taito, Data
+  East USA under Data East and licensed or joint credits under the first
+  company named; Details still shows the full credit.
+- **Options -> Views:** a checkbox page choosing which of the seven views Y
+  cycles through: core updated, MiSTer debut, original year, A-Z, Maker,
+  Favorites and Recents. Everything is on except Recents by default. The
+  last view on cannot be turned off, and turning off the view you are in
+  moves the list to the next one. It replaces the Recents view switch, and
+  an existing Recents view setting carries over.
+- **Menu button held:** with Options -> Menu button set to Options, holding
+  the pad's Menu button for two seconds leaves MisterZine for the MiSTer
+  menu. A hint appears after half a second; release earlier to stay. The
+  short press still opens or closes Options at once.
+- **Options returns where it came from:** closing Options with B or the Menu
+  button goes back to the screen it was opened over, the list, Details, the
+  artwork or Filters with its browsing state kept, also after a visit to
+  Troubleshooting or a card scan.
 
-MisterZine still never edits MiSTer.ini. Existing settings, favorites, filter
-choices, remembered versions and the launch history are preserved, and a card
-without a `[MisterZine]` section behaves exactly as before.
+Existing settings, favorites, filter choices, remembered versions and the
+launch history are preserved.
 
 Existing installations can update through Update All/Downloader. Reopen
 MisterZine after updating.
