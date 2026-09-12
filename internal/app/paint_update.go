@@ -95,7 +95,7 @@ func (a *App) handleUpdate(ev platform.Event) bool {
 	case platform.KeyBack:
 		if !a.update.Active() {
 			a.rep = repeater{}
-			a.openPanel(ScreenOptions)
+			a.openOptions()
 			if a.update.ResultNotice() && a.cfg.Action != nil {
 				a.cfg.Action("update-dismiss", a.update.ID)
 			}

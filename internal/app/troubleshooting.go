@@ -254,7 +254,7 @@ func (a *App) actSupport(k platform.Key) bool {
 	}
 	if k == platform.KeyBack {
 		if v.mode == "menu" {
-			a.openPanel(ScreenOptions)
+			a.openOptions()
 			for i, e := range a.panel.entries {
 				if e.kind == "troubleshooting" {
 					a.panel.cursor = i

@@ -168,10 +168,13 @@ for rotation in ([], ["-rot", "left", "-logical"]):
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     # the pad's Menu button: Options from the list, closed again, Options
-    # over Details, and the Menu button option row itself
+    # over Details, the Menu button option row itself, closing Options back
+    # onto Details and Filters, and the held-Menu hint
     scenarios.append([*rotation,
                       "-out", f"out/menu-{orientation}", "-script",
                       "menu; shot options; menu; shot list; enter; menu; shot options-from-details; "
-                      "end; up*2; shot option-row; right; shot option-leave; left; back"])
+                      "end; up*2; shot option-row; right; shot option-leave; left; back; shot details-back; "
+                      "back; tab; down*2; menu; shot options-over-filters; back; shot filters-back; "
+                      "press menu; wait 700; shot menu-hint; release menu; shot menu-released; back; back"])
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)

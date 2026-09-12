@@ -39,8 +39,12 @@ func TestMenuButtonOpensOptionsOrLeaves(t *testing.T) {
 		t.Fatalf("Menu over Filters should open Options: screen %v", a.screen)
 	}
 	tap(platform.KeyBack)
-	if quits != 0 {
-		t.Fatal("Options mode must never quit")
+	if a.screen != ScreenFilter {
+		t.Fatalf("closing Options should return to Filters: screen %v", a.screen)
+	}
+	tap(platform.KeyBack)
+	if quits != 0 || a.screen != ScreenList {
+		t.Fatalf("Options mode must never quit: quits %d, screen %v", quits, a.screen)
 	}
 	a.cfg.MenuButton = "leave"
 	if tap(platform.KeyMenu) || quits != 1 || a.screen != ScreenList {

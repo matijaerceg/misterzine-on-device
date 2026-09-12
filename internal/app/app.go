@@ -170,16 +170,24 @@ type App struct {
 	wants      []ImageReq // pictures this frame asked for, in priority order
 	rep        repeater
 	down       map[platform.Key]bool // keys currently held, across all devices
-	notice     string
-	until      time.Time
-	net        string // status bar right text: "offline", "updating", "data 2h ago"
-	appUpdate  string
-	scanReady  bool
-	scanError  string
-	scanCounts bool // the finished scan delivered statuses worth showing
-	all        bool // full repaint pending
-	saver      screensaver
-	marquee    marqueeState
+	menuAt     time.Time             // when the Menu button went down in Options mode; zero while up
+	menuHinted bool                  // the hold hint is showing
+	// where closing Options returns to (menu.go): the screen it was opened
+	// over, the row key Details or the artwork showed, and the Filters
+	// browsing state kept aside while Options uses the panel.
+	optionsFrom Screen
+	optionsKey  string
+	filterHeld  *panelState
+	notice      string
+	until       time.Time
+	net         string // status bar right text: "offline", "updating", "data 2h ago"
+	appUpdate   string
+	scanReady   bool
+	scanError   string
+	scanCounts  bool // the finished scan delivered statuses worth showing
+	all         bool // full repaint pending
+	saver       screensaver
+	marquee     marqueeState
 }
 
 type detailState struct {
@@ -624,6 +632,14 @@ func (a *App) Handle(ev platform.Event) bool {
 		}
 		return false
 	}
+	if ev.Key == platform.KeyMenu && !(a.screen == ScreenTroubleshooting && a.support.mode == "pad") {
+		// a held Menu leaves the app (menu.go); the tester only logs it
+		if ev.Pressed {
+			a.menuPress(ev.At)
+		} else {
+			a.menuRelease()
+		}
+	}
 	if a.screen == ScreenUpdate {
 		return a.handleUpdate(ev)
 	}
@@ -718,7 +734,7 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 
 // Tick runs due repeats and expires notices; returns true to repaint.
 func (a *App) Tick(now time.Time) bool {
-	changed := false
+	changed := a.tickMenu(now)
 	// Expire notices on every screen so NextTick cannot keep returning a past
 	// deadline while Update All handles its own animation and cancel input.
 	if a.notice != "" && !now.Before(a.until) {
@@ -752,7 +768,7 @@ func (a *App) Tick(now time.Time) bool {
 // held: called once per frame, it moves at most one step.
 func (a *App) Frame(now time.Time) bool {
 	a.saver.lastInput = now // a held direction is still activity
-	changed := false
+	changed := a.tickMenu(now)
 	if k := a.rep.frameDue(now, a.repeatStep); k != platform.KeyNone {
 		if a.act(k) {
 			changed = true
@@ -785,6 +801,9 @@ func (a *App) NextTick() time.Time {
 	if next := a.nextDetailTick(); !next.IsZero() && (t.IsZero() || next.Before(t)) {
 		t = next
 	}
+	if next := a.nextMenuTick(); !next.IsZero() && (t.IsZero() || next.Before(t)) {
+		t = next
+	}
 	return t
 }
 
@@ -793,7 +812,7 @@ func (a *App) act(k platform.Key) bool {
 	switch a.screen {
 	case ScreenScan:
 		if k == platform.KeyBack || (k == platform.KeyEnter && a.scanReady) {
-			a.openPanel(ScreenOptions)
+			a.openOptions()
 			return true
 		}
 		return false
@@ -876,7 +895,7 @@ func (a *App) actList(k platform.Key) bool {
 			a.setSearch("")
 			return true
 		}
-		a.openPanel(ScreenOptions)
+		a.openOptions()
 		return true
 	default:
 		return false

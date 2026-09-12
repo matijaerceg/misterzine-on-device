@@ -406,7 +406,7 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "Return after game", kind: "return-after-game", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ReturnAfterGame], disabled: launcherIdx == 0,
 			help: "On: when a game started here exits to the MiSTer menu, MisterZine reopens on that game. Needs the Main menu launcher. Leaving through the Menu button does not bring it back."},
 		{text: "Menu button", kind: "menu-button", vals: []string{"Options", "leave MisterZine"}, idx: map[bool]int{false: 0, true: 1}[a.MenuButton() == "leave"],
-			help: "What the pad button defined as MiSTer's menu (OSD) button does here: open Options (default) or leave to the MiSTer menu. Keyboard F12 still leaves."},
+			help: "What the pad button defined as MiSTer's menu (OSD) button does here: Options (default; held 2 s it leaves) or leave at once. Keyboard F12 still leaves."},
 		{text: "Troubleshooting", kind: "troubleshooting",
 			help: "Test your Start button or game launching. Results stay on screen for a photo; no keyboard or log files needed."},
 		{text: "Quit MisterZine", kind: "quit",
@@ -658,9 +658,13 @@ func (a *App) actPanel(k platform.Key) bool {
 	}
 	switch k {
 	case platform.KeyBack:
-		if a.screen == ScreenOptions && p.cursor < n {
-			row := p.entries[p.cursor]
-			p.optionsRow = &row
+		if a.screen == ScreenOptions {
+			if p.cursor < n {
+				row := p.entries[p.cursor]
+				p.optionsRow = &row
+			}
+			a.closeOptions() // back to the screen it was opened over
+			return true
 		}
 		a.screen = ScreenList
 		a.all = true
@@ -1026,7 +1030,7 @@ func (a *App) actCalibrate(k platform.Key) bool {
 		if a.cfg.SettingsChanged != nil {
 			a.cfg.SettingsChanged()
 		}
-		a.openPanel(ScreenOptions)
+		a.openOptions()
 	default:
 		return false
 	}
