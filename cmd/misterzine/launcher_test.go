@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -220,6 +221,49 @@ func scriptedCores(names ...string) func() string {
 			return names[i-1]
 		}
 		return names[len(names)-1]
+	}
+}
+
+func TestFrontendScriptRunsRecognisesDegaussOnly(t *testing.T) {
+	degauss := "#!/bin/bash\nexport LC_ALL=en_US.UTF-8\nexport HOME=/root\ncd $(dirname /media/fat/Scripts/degauss.sh)\n/media/fat/Scripts/degauss.sh\n"
+	ours := "#!/bin/bash\nexport LC_ALL=en_US.UTF-8\nexport HOME=/root\ncd /media/fat/misterzine\n/media/fat/misterzine/launch.sh --resume\n"
+	other := "#!/bin/bash\ncd $(dirname /media/fat/Scripts/update_all.sh)\n/media/fat/Scripts/update_all.sh\necho \"Press any key to continue\"\n"
+	for _, c := range []struct {
+		name   string
+		script string
+		want   bool
+	}{{"degauss", degauss, true}, {"ours", ours, false}, {"update_all", other, false}, {"empty", "", false}} {
+		if got := frontendScriptRuns(c.script); got != c.want {
+			t.Fatalf("%s: got %v, want %v", c.name, got, c.want)
+		}
+	}
+}
+
+func TestFrontendTakingMenuIgnoresStaleOrForeignScripts(t *testing.T) {
+	// No process named degauss runs on the test host, so the answer is
+	// driven by /tmp/script alone: a stale one (older than the selection)
+	// and one running something else both mean nothing to close, without
+	// waiting. Skipped where /tmp/script cannot be written.
+	if runtime.GOOS != "linux" {
+		t.Skip("uses Main's /tmp/script path")
+	}
+	if _, err := os.Stat("/tmp/script"); err == nil {
+		t.Skip("a real /tmp/script exists on this host")
+	}
+	pauses := 0
+	pause := func(time.Duration) { pauses++ }
+	if got := frontendTakingMenu(time.Now(), pause); got != nil || pauses != 0 {
+		t.Fatalf("without /tmp/script: pids %v after %d pauses", got, pauses)
+	}
+	if err := os.WriteFile("/tmp/script", []byte("#!/bin/bash\n/media/fat/Scripts/degauss.sh\n"), 0700); err != nil {
+		t.Skip("cannot write /tmp/script:", err)
+	}
+	defer os.Remove("/tmp/script")
+	if got := frontendTakingMenu(time.Now().Add(time.Minute), pause); got != nil || pauses != 0 {
+		t.Fatalf("stale script: pids %v after %d pauses", got, pauses)
+	}
+	if got := frontendTakingMenu(time.Now().Add(-time.Minute), pause); got != nil || pauses != 12 {
+		t.Fatalf("fresh script without the process: pids %v after %d pauses, want 12 (3 s of waiting)", got, pauses)
 	}
 }
 

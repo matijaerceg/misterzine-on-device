@@ -125,7 +125,10 @@ editing generated values by hand.
 The UI owns dataset and navigation state. Background workers deliver results to
 it; image decoding and network work stay off the drawing loop. Held navigation
 advances at framebuffer pace. The launcher watches an MGL selection, opens the
-script console and restores Menu afterward.
+script console and restores Menu afterward. Its console switch waits at most
+two seconds, because the kernel drops the request while the front console is
+in graphics mode. A `main=` frontend (Degauss) that took the menu load is
+closed first; the menu restore brings it back.
 
 Update All runs under a detached supervisor so it can survive the UI closing or
 its executable being replaced. Live state is in RAM, with recovery checkpoints

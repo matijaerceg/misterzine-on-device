@@ -24,7 +24,6 @@ const (
 	uiDevCreate  = 0x5501
 	uiDevDestroy = 0x5502
 	vtActivate   = 0x5606
-	vtWaitActive = 0x5607
 	evSyn        = 0
 	evKeyType    = 1
 
@@ -125,7 +124,12 @@ func ActiveTTY() string {
 	return strings.TrimSpace(string(b))
 }
 
-// Chvt switches to console n and waits for it.
+// Chvt switches to console n and waits up to two seconds for the switch.
+// The kernel drops the request while the front console is in graphics mode
+// with nobody owning VT switching, which is how a frontend such as Degauss
+// leaves tty2 while it draws; VT_WAITACTIVE would then never return, so
+// the wait is a bounded poll of the active console and the failure is
+// reported instead.
 func Chvt(n int) error {
 	f, err := os.OpenFile("/dev/tty0", os.O_RDWR|syscall.O_NOCTTY|syscall.O_CLOEXEC, 0)
 	if err != nil {
@@ -135,8 +139,9 @@ func Chvt(n int) error {
 	if _, _, e := syscall.Syscall(syscall.SYS_IOCTL, f.Fd(), vtActivate, uintptr(n)); e != 0 {
 		return fmt.Errorf("VT_ACTIVATE %d: %v", n, e)
 	}
-	if _, _, e := syscall.Syscall(syscall.SYS_IOCTL, f.Fd(), vtWaitActive, uintptr(n)); e != 0 {
-		return fmt.Errorf("VT_WAITACTIVE %d: %v", n, e)
+	want := fmt.Sprintf("tty%d", n)
+	if !awaitConsole(want, ActiveTTY, time.Sleep, 2*time.Second) {
+		return fmt.Errorf("console did not switch to %s in 2s (still %s: another program holds the screen?)", want, ActiveTTY())
 	}
 	return nil
 }

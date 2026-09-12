@@ -113,6 +113,22 @@ func (c *Console) Restore() {
 	c.log.Printf("console: restored")
 }
 
+// ConsoleGraphics reports whether console p (such as /dev/tty2) is in
+// graphics mode: what a program drawing on it sets, and keeps set until it
+// exits and restores text mode. False when the console cannot be read.
+func ConsoleGraphics(p string) bool {
+	f, err := os.OpenFile(p, os.O_RDWR|syscall.O_NOCTTY|syscall.O_CLOEXEC, 0)
+	if err != nil {
+		return false
+	}
+	defer f.Close()
+	var mode uint32
+	if err := ioctl(f.Fd(), kdgetmode, unsafe.Pointer(&mode)); err != nil {
+		return false
+	}
+	return mode == kdGraphics
+}
+
 // RestoreAll is the `console-restore` subcommand: text mode and a visible
 // cursor on the consoles a script can touch, for the wrapper's exit trap and
 // the SSH recovery recipe. Errors are ignored on purpose.

@@ -492,7 +492,7 @@ func watch() int {
 			time.Sleep(500 * time.Millisecond) // let Main open the new device
 		}
 		os.Remove(launchedFile)
-		if err := runFromMenu(lg, kbd, resume); err != nil {
+		if err := runFromMenu(lg, kbd, resume, handled); err != nil {
 			lg.Printf("watch: %v", err)
 		}
 		resume = false
@@ -539,14 +539,99 @@ func watch() int {
 	}
 }
 
+// Degauss (MiSTer.ini main=degauss/MiSTer_Degauss, a fork of Main) runs
+// Scripts/degauss.sh on tty2 whenever the menu core comes up, and our MGL
+// loads the menu core, so it takes a MisterZine selection too; the
+// graphics mode it puts the console in then makes the kernel drop every
+// console switch. Choosing MisterZine is a request to open MisterZine, so
+// the frontend is closed the way its own Exit closes it (SIGTERM: it puts
+// the console and terminal back and exits, and Main returns to its menu)
+// before the console is opened. The menu restore after the app brings the
+// frontend back.
+const (
+	frontendName   = "Degauss"
+	frontendScript = "degauss.sh" // what Main's /tmp/script runs for it
+	frontendProc   = "degauss"    // its process name
+)
+
+// frontendScriptRuns reports whether a /tmp/script body runs the frontend:
+// a command line whose program is its script.
+func frontendScriptRuns(script string) bool {
+	for _, line := range strings.Split(script, "\n") {
+		fields := strings.Fields(line)
+		if len(fields) > 0 && filepath.Base(fields[0]) == frontendScript {
+			return true
+		}
+	}
+	return false
+}
+
+func pidsOf(name string) []int {
+	out, _ := exec.Command("pidof", name).Output()
+	var pids []int
+	for _, f := range strings.Fields(string(out)) {
+		if p, err := strconv.Atoi(f); err == nil && p > 0 {
+			pids = append(pids, p)
+		}
+	}
+	return pids
+}
+
+// frontendTakingMenu gives the frontend Main starts for this menu load a
+// moment to appear: /tmp/script written since the selection and naming its
+// script means it is on its way. Without that, or once it is running, the
+// answer is immediate.
+func frontendTakingMenu(selected time.Time, pause func(time.Duration)) []int {
+	for waited := time.Duration(0); waited < 3*time.Second; waited += 250 * time.Millisecond {
+		if pids := pidsOf(frontendProc); len(pids) > 0 {
+			return pids
+		}
+		st, err := os.Stat("/tmp/script")
+		if err != nil || st.ModTime().Before(selected) {
+			return nil
+		}
+		if b, _ := os.ReadFile("/tmp/script"); !frontendScriptRuns(string(b)) {
+			return nil
+		}
+		pause(250 * time.Millisecond)
+	}
+	return nil
+}
+
+// closeFrontend ends the frontend and waits for the console it drew on to
+// be back in text mode, so the console switch that follows is not dropped.
+func closeFrontend(lg *log.Logger, selected time.Time, pause func(time.Duration)) {
+	pids := frontendTakingMenu(selected, pause)
+	if len(pids) == 0 {
+		return
+	}
+	lg.Printf("watch: %s has taken this menu load (pid %v); closing it to open MisterZine", frontendName, pids)
+	for _, p := range pids {
+		syscall.Kill(p, syscall.SIGTERM)
+	}
+	for waited := time.Duration(0); waited < 5*time.Second; waited += 100 * time.Millisecond {
+		if len(pidsOf(frontendProc)) == 0 && !mister.ConsoleGraphics("/dev/tty2") {
+			pause(500 * time.Millisecond) // Main notices the script's end and shows its menu
+			lg.Printf("watch: %s closed; the console is free", frontendName)
+			return
+		}
+		pause(100 * time.Millisecond)
+	}
+	lg.Printf("watch: %s did not close; opening the console anyway", frontendName)
+}
+
 // runFromMenu opens the console and runs the app wrapper on tty2, like
 // Main does for its own Scripts menu, and returns when the app exits.
-// resume tells the app it is reopening after a game.
-func runFromMenu(lg *log.Logger, kbd *mister.VKeyboard, resume bool) error {
+// resume tells the app it is reopening after a game; selected is when the
+// menu selection was written.
+func runFromMenu(lg *log.Logger, kbd *mister.VKeyboard, resume bool, selected time.Time) error {
 	time.Sleep(1200 * time.Millisecond) // Main has just re-executed itself
 	// Remote's trick: park on tty3, press F9 until Main switches to tty1
 	lg.Printf("watch: console: active %s, fb mode %q before", mister.ActiveTTY(), mister.SysfsMode())
-	mister.Chvt(3)
+	closeFrontend(lg, selected, time.Sleep)
+	if err := mister.Chvt(3); err != nil {
+		lg.Printf("watch: %v", err)
+	}
 	opened := false
 	presses := 0
 	for i := 0; i < 20; i++ {

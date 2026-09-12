@@ -86,6 +86,16 @@ An external updater can temporarily prevent the launcher from opening. Let it
 finish before trying again. Errors from the app wrapper show recent log lines
 before returning; the logs are `misterzine/log.txt` and `misterzine/watch.log`.
 
+### Degauss opens instead
+
+Degauss installs itself as MiSTer's `main=` frontend and takes over every load
+of the menu core, and MisterZine's menu entry loads the menu core. Choosing
+MisterZine therefore brought up Degauss, and the launcher then waited for a
+console it could never get until the next reboot. The launcher now closes
+Degauss for the MisterZine session (`watch.log` says "Degauss has taken this
+menu load") and the usual menu restore brings Degauss back when MisterZine
+exits. Return after game and Open at boot work the same way on such a card.
+
 ## Favorites unreadable
 
 The app keeps the original favorites file on read errors and disables favorite
