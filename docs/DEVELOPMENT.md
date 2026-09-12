@@ -59,6 +59,7 @@ For a separate picture-enabled review:
 ```sh
 go run ./cmd/mzharness -images /path/to/misterzine/docs/images -out preview
 go run ./cmd/mzharness -rot left -logical -images /path/to/misterzine/docs/images -out preview-tate
+go run ./cmd/mzharness -canvas 360x270 -out preview-1080p   # the fit-display size for 1080p
 ```
 
 README screenshots are individual PNGs enlarged to 2x with nearest-neighbor

@@ -67,11 +67,11 @@ var slotNames = []string{"Right", "Left", "Down", "Up", "A", "B", "X", "Y", "L",
 var slotKeys = map[string]platform.Key{
 	"Right": platform.KeyRight, "Left": platform.KeyLeft, "Down": platform.KeyDown, "Up": platform.KeyUp,
 	"A": platform.KeyEnter, "B": platform.KeyBack, "X": platform.KeyTab, "Y": platform.KeySpace,
-	"L": platform.KeyPageUp, "R": platform.KeyPageDown, "Start": platform.KeyStart,
+	"L": platform.KeyPageUp, "R": platform.KeyPageDown, "Select": platform.KeySelect, "Start": platform.KeyStart,
 }
 
 // priority is the slot order that wins when two slots share a code.
-var priority = []string{"Start", "A", "B", "X", "Y", "L", "R", "Right", "Left", "Down", "Up"}
+var priority = []string{"Start", "A", "B", "X", "Y", "L", "R", "Select", "Right", "Left", "Down", "Up"}
 
 // AxisCode is the synthetic code for an axis edge, as Main forms it.
 func AxisCode(axis uint16, positive bool) uint16 {

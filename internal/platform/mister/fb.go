@@ -89,21 +89,24 @@ type FB struct {
 	MeasureTiming    bool          // opt-in performance diagnostics
 }
 
-// OpenFB opens /dev/fb0, asks Main for a canvasW x canvasH framebuffer and
-// maps it. An unconfirmed sent request aborts startup after a restore attempt;
+// OpenFB opens /dev/fb0, asks Main for the framebuffer choose picks for the
+// native geometry (FitCanvas, or a fixed 320x240) and maps it. An unconfirmed sent request aborts startup after a restore attempt;
 // an asynchronous mode change must never race a newly mapped framebuffer.
-func OpenFB(cmd *Cmd, canvasW, canvasH int, lg *log.Logger) (*FB, error) {
+func OpenFB(cmd *Cmd, choose func(nativeW, nativeH int) (int, int), lg *log.Logger) (*FB, error) {
 	f, err := os.OpenFile(fbPath, os.O_RDWR|syscall.O_CLOEXEC, 0)
 	if err != nil {
 		return nil, fmt.Errorf("open %s: %w", fbPath, err)
 	}
-	b := &FB{f: f, CanvasW: canvasW, CanvasH: canvasH, log: lg}
+	b := &FB{f: f, log: lg}
 	if err := b.refresh(); err != nil {
 		f.Close()
 		return nil, err
 	}
 	b.orig = b.geom
 	lg.Printf("fb: native %s", b.geom)
+	canvasW, canvasH := choose(b.geom.W, b.geom.H)
+	b.CanvasW, b.CanvasH = canvasW, canvasH
+	lg.Printf("fb: canvas %dx%d for a %dx%d display", canvasW, canvasH, b.geom.W, b.geom.H)
 	if b.geom.W != canvasW || b.geom.H != canvasH {
 		if err := b.request(cmd, canvasW, canvasH, 2*time.Second); err != nil {
 			lg.Printf("fb: request %dx%d: %v; restoring native mode before mapping", canvasW, canvasH, err)

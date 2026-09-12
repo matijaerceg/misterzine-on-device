@@ -39,7 +39,7 @@ func (s Screen) String() string {
 
 // Config is what the app needs from its host.
 type Config struct {
-	PhysW, PhysH int // physical frame, 320x240
+	PhysW, PhysH int // physical frame: 320x240, or the fit-display size the host chose
 	Rotation     gfx.Rotation
 	SafeInsetX   int              // safe-zone margin at the left and right edges, as viewed
 	SafeInsetY   int              // and at the top and bottom
@@ -116,6 +116,9 @@ type Config struct {
 	// ListLayout is the main view's arrangement: "list" (default), "split"
 	// or "picture" (see Layout.Style).
 	ListLayout string
+	// Canvas is Options -> Canvas, "fit" (default) or "320x240"; the host
+	// applies it at the next start, the app only shows and saves it.
+	Canvas string
 	// ButtonLabels names the pad buttons in the legends: "mister" (default:
 	// A B X Y), "xbox", "playstation" or "numbers" (see buttons.go).
 	ButtonLabels string
@@ -402,8 +405,16 @@ func (a *App) nextSort() data.SortMode {
 	return data.NextSort(a.mode)
 }
 
-func (a *App) RememberSort() bool    { return a.cfg.RememberSort }
-func (a *App) OpenAtBoot() bool      { return a.cfg.OpenAtBoot }
+func (a *App) RememberSort() bool { return a.cfg.RememberSort }
+func (a *App) OpenAtBoot() bool   { return a.cfg.OpenAtBoot }
+
+// Canvas is the Options -> Canvas choice: "fit" or "320x240".
+func (a *App) Canvas() string {
+	if a.cfg.Canvas == "320x240" {
+		return "320x240"
+	}
+	return "fit"
+}
 func (a *App) ReturnAfterGame() bool { return a.cfg.ReturnAfterGame }
 func (a *App) FollowRotation() bool  { return a.cfg.FollowRotation }
 func (a *App) FilterRotation() bool  { return a.cfg.FilterRotation }
@@ -621,6 +632,11 @@ func (a *App) Handle(ev platform.Event) bool {
 			delete(a.down, ev.Key)
 			a.rep.release(ev.Key)
 		}
+		// letting go of Select puts the ordinary legend back
+		if ev.Key == platform.KeySelect && a.screen == ScreenList {
+			a.all = true
+			return true
+		}
 		return false
 	}
 	if a.down[ev.Key] {
@@ -809,10 +825,19 @@ func (a *App) actList(k platform.Key) bool {
 	case platform.KeyEnd:
 		a.shortPage = false
 		a.cursor = n - 1
+	case platform.KeySelect: // held, Y and X become the quick toggles (quick.go)
+		a.all = true // the legend names them
+		return true
 	case platform.KeySpace:
+		if a.quickHeld() {
+			return a.cycleListLayout()
+		}
 		a.SetSort(a.nextSort())
 		return true
 	case platform.KeyTab:
+		if a.quickHeld() {
+			return a.cycleListShot()
+		}
 		a.openPanel(ScreenFilter)
 		return true
 	case platform.KeyEnter:

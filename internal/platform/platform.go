@@ -33,13 +33,14 @@ const (
 	KeyStart      // the pad's Start button (read from the pad itself: Main does not forward it)
 	KeyOther      // anything else; Event.Code says what
 	KeyBackspace
+	KeySelect // the pad's Select button: held on the list, a modifier for the quick toggles
 )
 
 var keyNames = map[Key]string{
 	KeyNone: "none", KeyUp: "up", KeyDown: "down", KeyLeft: "left", KeyRight: "right",
 	KeyEnter: "enter", KeyBack: "back", KeySpace: "space", KeyTab: "tab",
 	KeyPageUp: "pageup", KeyPageDown: "pagedown", KeyHome: "home", KeyEnd: "end",
-	KeyScreenshot: "screenshot", KeyStart: "start", KeyOther: "other", KeyBackspace: "backspace",
+	KeyScreenshot: "screenshot", KeyStart: "start", KeyOther: "other", KeyBackspace: "backspace", KeySelect: "select",
 }
 
 func (k Key) String() string {

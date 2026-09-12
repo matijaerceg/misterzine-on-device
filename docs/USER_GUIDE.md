@@ -107,6 +107,7 @@ filter choices are saved.
 | X | Tab | Filters | | | show/hide years | |
 | Y | Space | change view | favorite | | only/all | |
 | Start | gamepad Start | launch remembered version | launch selected version | launch selected version | | |
+| Select (held) | | + Y: List layout, + X: List shots | | | | |
 | Menu | | return to MiSTer Menu from any screen; closes the app | | | | |
 
 A, B, X and Y are MiSTer's names from its define buttons screen. Options ->
@@ -122,6 +123,10 @@ differently work side by side. A pad that has never been defined works
 through MiSTer's translation instead, and only while no defined pad is
 connected. A button that is in no MiSTer slot does nothing here either;
 the pad tester under Troubleshooting shows it with its raw code.
+
+Hold Select on the list and the legend changes: Y cycles List layout and X
+switches List shots, saved exactly as from Options. Select alone does
+nothing. Only a pad defined in MiSTer has a Select; keyboards use Options.
 
 The Details version selector uses one row. Its tally shows the selection and
 total, such as 2/5. Left/Right chooses among installed alternatives; Start
@@ -150,7 +155,7 @@ Screenshots work without remote debugging.
 Options is in four groups under grey headings: Data (Refresh data now, Run
 Update All, Last update result, Rescan card, Prefetch shots, Clear image
 cache), List (Sources, Filter by rotation, Remember sort order, Recents view,
-Title font, List shots, Date format, List layout), Display (rotation, screensaver, safe zone) and
+Title font, List shots, Date format, List layout), Display (rotation, screensaver, button labels, safe zone, canvas) and
 Operation (scrolling, the launcher, Open at boot, Return after game,
 Troubleshooting, Quit). The
 headings cannot be selected. Values line up in one column; a small arrow at the right
@@ -199,7 +204,7 @@ the bottom.
   and date columns always use the narrow font at the titles' height.
 - **List shots:** which screenshot the list pane shows for the selected row:
   gameplay (default) or the title screen. Details and the artwork view still
-  show every shot.
+  show every shot. Hold Select and press X on the list to switch it there.
 - **Date format:** how list dates read: MM-DD (default), DD-MM, Mon D (Sep 7),
   D Mon (7 Sep) or YYMMDD (260907). The help line shows today's date in the
   chosen format. Rows from earlier years show the year alone, except with
@@ -211,6 +216,7 @@ the bottom.
   details beside it, in tate below the rows; a vertical shot keeps its shape
   and the details sit beside it when there is room, otherwise below in three
   lines. Every layout keeps at least four rows, even with a wide safe zone.
+  Hold Select and press Y on the list to cycle the layout there.
 - **Follow INI rotation:** on by default, including after upgrading. Every
   startup reads `osd_rotate` from the MiSTer INI that is currently active: the
   main MiSTer.ini, or the alternative INI (`MiSTer_*.ini`) you selected in the
@@ -238,6 +244,12 @@ the bottom.
   guide uses those names.
 - **Edit safe zone:** D-pad moves the top-right corner of the safe frame;
   Right/Up grows it and Left/Down shrinks it. B saves. Margins can reach 40 px.
+- **Canvas:** fit display by default: the picture is sized so that MiSTer's
+  integer scaling fills the screen height: 360x270 on 1080p, 340x256 on
+  1024x768, 400x300 on 1600x900, instead of 320x240 with bars above and
+  below. Text keeps its size; the list gains rows. CRT modes, 720p and 1440p
+  already fit and stay 320x240. Choose 320x240 to keep the classic size on
+  every display. Applies when MisterZine next starts.
 - **Scroll speed:** 20, 30 or 60 rows/pages per second once a hold repeats.
 - **Hold delay:** short 200 ms, normal 300 ms (default), or long 500 ms before
   navigation repeats. Artwork and calibration retain their own timing.

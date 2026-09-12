@@ -392,6 +392,8 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "How the legends name the pad buttons, in MiSTer's A B X Y order. Only the names change: which button is A, B, X or Y is set in MiSTer's define buttons screen. Xbox and PlayStation sets go by position."},
 		{text: "Edit safe zone", kind: "inset",
 			help: "Margin kept clear of the screen edge (overscan): now " + itoa(a.cfg.SafeInsetX) + " px at the sides, " + itoa(a.cfg.SafeInsetY) + " px top and bottom. A opens the frame; fit it just inside the picture."},
+		{text: "Canvas", kind: "canvas", vals: []string{"fit display", "320x240"}, idx: map[bool]int{false: 0, true: 1}[a.Canvas() == "320x240"],
+			help: "Fit display (default): sized so MiSTer's integer scaling fills the screen height, 360x270 on 1080p instead of 320x240 with bars; same text size, more rows. 320x240: the classic size. Applies when MisterZine next starts."},
 		spacer, group("Operation:"),
 		{text: "Scroll speed", kind: "scroll", vals: []string{"20 Hz", "30 Hz", "60 Hz"}, idx: scrollIdx,
 			help: "How many rows (or pages, with Left/Right) a held direction moves per second. 60 Hz is one row every frame."},
@@ -806,6 +808,8 @@ func (a *App) stepValue(d int) bool {
 		a.setRotation(a.rot)
 	case "button-labels":
 		a.cfg.ButtonLabels = buttonLabelSets[i]
+	case "canvas":
+		a.cfg.Canvas = []string{"fit", "320x240"}[i]
 	case "prefetch":
 		a.panel.prefetch = i == 1
 		if a.cfg.Action != nil {

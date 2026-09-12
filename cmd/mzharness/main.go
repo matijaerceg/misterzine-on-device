@@ -57,6 +57,7 @@ func main() {
 	dateFormat := flag.String("date-format", "mm-dd", "list date column: mm-dd, dd-mm, mon-d, d-mon or yymmdd")
 	layout := flag.String("layout", "list", "main view arrangement: list, split or picture")
 	buttonLabels := flag.String("button-labels", "mister", "legend button names: mister, xbox, playstation or numbers")
+	canvas := flag.String("canvas", "320x240", "canvas size WxH: 320x240, or a fit-display size such as 360x270 (1080p) or 400x300")
 	rememberAlt := flag.Int("remember-alt", 0, "start with galagamw's alternative N (1 or 2) remembered as its version")
 	recents := flag.Int("recents", 0, "pretend the first N rows were launched, the last one most recently; turns the Recents view on")
 	installed := flag.String("installed", "", "Downloader database ids the card has, comma separated (e.g. distribution_mister,jtcores): Sources starts on installed only and the other sources are hidden")
@@ -78,10 +79,14 @@ func main() {
 	case "right":
 		rotation = gfx.RotRight
 	}
-	disp := headless.NewDisplay(320, 240)
+	var cw, ch int
+	if _, err := fmt.Sscanf(*canvas, "%dx%d", &cw, &ch); err != nil || cw < 120 || ch < 120 {
+		die(fmt.Errorf("-canvas %q: want WxH, at least 120x120", *canvas))
+	}
+	disp := headless.NewDisplay(cw, ch)
 	cmd := &headless.Cmd{}
 	cfg := app.Config{
-		PhysW: 320, PhysH: 240, Rotation: rotation, SafeInsetX: *inset, SafeInsetY: *inset,
+		PhysW: cw, PhysH: ch, Rotation: rotation, SafeInsetX: *inset, SafeInsetY: *inset,
 		Now:            func() time.Time { return clock },
 		ClockTrusted:   true,
 		Favorites:      map[string]bool{},
@@ -222,7 +227,7 @@ func main() {
 			continue
 		}
 		f := strings.Fields(tok)
-		need := map[string]int{"shot": 2, "wait": 2, "hold": 3}[f[0]]
+		need := map[string]int{"shot": 2, "wait": 2, "hold": 3, "press": 2, "release": 2}[f[0]]
 		if len(f) < need {
 			die(fmt.Errorf("script: %q needs %d words", tok, need))
 		}
@@ -249,6 +254,14 @@ func main() {
 		case "wait":
 			ms, _ := strconv.Atoi(f[1])
 			clock = advance(a, clock, time.Duration(ms)*time.Millisecond, present)
+		case "press", "release": // one edge, for chords such as Select held
+			k := platform.ParseKey(f[1])
+			if k == platform.KeyNone {
+				die(fmt.Errorf("unknown key %q", f[1]))
+			}
+			a.Handle(platform.Event{Key: k, Pressed: f[0] == "press", At: clock})
+			clock = clock.Add(30 * time.Millisecond)
+			present()
 		case "hold":
 			k := platform.ParseKey(f[1])
 			ms, _ := strconv.Atoi(f[2])

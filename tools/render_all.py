@@ -148,5 +148,22 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                       "-out", f"out/pad-test-{orientation}", "-script",
                       "back; end; up; enter; down; shot menu; enter; shot empty; enter; space; tab; start; shot presses; "
                       "hold back 2200; shot left"])
+for canvas in ("360x270", "400x300"):
+    for rotation in ([], ["-rot", "left", "-logical"]):
+        orientation = "t" if rotation else "h"
+        # Options -> Canvas: the fit-display sizes for 1080p and 1600x900 or
+        # 800x600 on every main screen and in the split and picture layouts
+        scenarios.append([*rotation, "-canvas", canvas,
+                          "-out", f"out/fit-{canvas}-{orientation}", "-script",
+                          "shot list; enter; shot details; back; tab; shot filter; back; back; shot options; "
+                          "down*13; right; back; shot split; back; right; back; shot picture"])
+for rotation in ([], ["-rot", "left", "-logical"]):
+    orientation = "t" if rotation else "h"
+    # Select held on the list: the chord legend, Y cycling the layout, X the
+    # list shot, then the ordinary legend and the sort once it is released
+    scenarios.append([*rotation,
+                      "-out", f"out/quick-{orientation}", "-script",
+                      "press select; shot chord-legend; space; shot layout-split; space; shot layout-picture; "
+                      "tab; shot shots-title; release select; shot released; space; shot sorted"])
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)

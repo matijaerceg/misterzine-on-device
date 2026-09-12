@@ -93,7 +93,7 @@ var padActions = map[platform.Key]string{
 	platform.KeyEnter: "details / confirm", platform.KeyBack: "back / Options", platform.KeyTab: "Filters", platform.KeySpace: "view / favorite",
 	platform.KeyStart: "launch", platform.KeyUp: "up", platform.KeyDown: "down", platform.KeyLeft: "left", platform.KeyRight: "right",
 	platform.KeyPageUp: "page up (L)", platform.KeyPageDown: "page down (R)", platform.KeyHome: "top", platform.KeyEnd: "bottom",
-	platform.KeyBackspace: "erase", platform.KeyOther: "no action",
+	platform.KeyBackspace: "erase", platform.KeySelect: "hold for quick toggles", platform.KeyOther: "no action",
 }
 
 // padPressLine describes one press: which pad, which raw button, which

@@ -57,7 +57,7 @@ func TestPadSlotsFollowTheDefine(t *testing.T) {
 	}
 	want := map[uint16]platform.Key{
 		305: platform.KeyEnter, 304: platform.KeyBack, 308: platform.KeyTab, 307: platform.KeySpace,
-		310: platform.KeyPageUp, 773: platform.KeyPageDown, 315: platform.KeyStart,
+		310: platform.KeyPageUp, 773: platform.KeyPageDown, 314: platform.KeySelect, 315: platform.KeyStart,
 		801: platform.KeyRight, 800: platform.KeyLeft, 803: platform.KeyDown, 802: platform.KeyUp,
 		AxisCode(0, true): platform.KeyRight, AxisCode(0, false): platform.KeyLeft, AxisCode(1, true): platform.KeyDown, AxisCode(1, false): platform.KeyUp,
 	}
@@ -77,12 +77,12 @@ func TestPadSlotsFollowTheDefine(t *testing.T) {
 		t.Fatalf("pad info %+v", p)
 	}
 	d := &device{pad: true, mapping: m, name: "pad", abs: map[uint16]absInfo{}, axisEdge: map[uint16]uint8{}}
-	if k, ok := d.inputKey(314); !ok || k != platform.KeyOther {
-		t.Fatal("Select should arrive as an actionless button:", k, ok)
+	if k, ok := d.inputKey(314); !ok || k != platform.KeySelect {
+		t.Fatal("Select should arrive as the quick-toggle modifier:", k, ok)
 	}
 	// a slot whose code this node cannot report is left to Main
 	writeSlotMap(t, filepath.Join(dir, "inputs"), [12]uint32{801, 800, 803, 802, 305, 304, 308, 307, 310, 773, 314, 315}, 0, 0, 0, 0)
-	if m := loadPadMapping(dir, "045e_028e", bits, axisBits(16, 17)); m.Keys[773] != platform.KeyNone || len(m.Keys) != 10 {
+	if m := loadPadMapping(dir, "045e_028e", bits, axisBits(16, 17)); m.Keys[773] != platform.KeyNone || len(m.Keys) != 11 {
 		t.Fatalf("trigger without the axis: %v", m.Keys)
 	}
 	// keyboard-coded slots (an encoder) are not raw pad buttons

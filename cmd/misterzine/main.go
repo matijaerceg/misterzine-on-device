@@ -38,10 +38,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/updater"
 )
 
-const (
-	canvasW, canvasH = 320, 240
-	logMax           = 1 << 20
-)
+const logMax = 1 << 20
 
 type host struct {
 	root, card      string
@@ -187,7 +184,12 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	if h.cmd, err = mister.NewCmd(lg); err != nil {
 		lg.Printf("cmd: %v", err)
 	}
-	if h.fb, err = mister.OpenFB(h.cmd, canvasW, canvasH, lg); err != nil {
+	// Options -> Canvas: fit the display's integer scale (default) or the classic size
+	choose := mister.FitCanvas
+	if h.settings.Canvas == "320x240" {
+		choose = func(int, int) (int, int) { return 320, 240 }
+	}
+	if h.fb, err = mister.OpenFB(h.cmd, choose, lg); err != nil {
 		lg.Printf("fb: %v", err)
 		return 3
 	}
@@ -208,7 +210,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	// app
 	favSet := h.favs.Set()
 	cfg := app.Config{
-		PhysW: canvasW, PhysH: canvasH, Rotation: rotation, SafeInsetX: h.settings.InsetX, SafeInsetY: h.settings.InsetY,
+		PhysW: h.fb.CanvasW, PhysH: h.fb.CanvasH, Rotation: rotation, SafeInsetX: h.settings.InsetX, SafeInsetY: h.settings.InsetY,
 		Now: h.now, TimerNow: time.Now, ClockTrusted: trusted, Favorites: favSet, Images: h.img, Scroll: h.settings.Scroll, HoldDelay: h.settings.HoldDelay,
 		Screensaver:          h.settings.Screensaver,
 		RememberSort:         h.settings.RememberSort,
@@ -225,6 +227,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		DateFormat:           h.settings.DateFormat,
 		ListLayout:           h.settings.ListLayout,
 		ButtonLabels:         h.settings.ButtonLabels,
+		Canvas:               h.settings.Canvas,
 		FavoritesUnavailable: h.favLoadFailed,
 		Progress:             func() (int, int) { return h.img.Progress() },
 		Launcher:             launcherEnabled,
@@ -712,6 +715,7 @@ func (h *host) saveAll(final bool) {
 		h.settings.DateFormat = h.a.DateFormat()
 		h.settings.ListLayout = h.a.ListLayout()
 		h.settings.ButtonLabels = h.a.ButtonLabels()
+		h.settings.Canvas = h.a.Canvas()
 		if err := store.Save(filepath.Join(h.root, "settings.json"), h.settings); err != nil {
 			h.lg.Printf("settings: %v", err)
 			h.setDirty = true
