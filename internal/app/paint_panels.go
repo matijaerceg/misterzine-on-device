@@ -83,6 +83,8 @@ func (a *App) buildPanel() {
 		a.panel.entries = a.optionsEntries()
 	case ScreenViews:
 		a.panel.entries = a.viewsEntries()
+	case ScreenCredits:
+		a.panel.entries = a.creditsEntries()
 	default:
 		a.panel.entries = a.filterEntries()
 	}
@@ -414,6 +416,8 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Test your Start button or game launching. Results stay on screen for a photo; no keyboard or log files needed."},
 		{text: "Quit MisterZine", kind: "quit",
 			help: "Back to the MiSTer menu. The pad's menu button does the same."},
+		{text: "Credits", kind: "credits",
+			help: "Who made MisterZine, whose work it builds on, and thanks to the early adopters. " + a.btn("A") + " opens the page."},
 	}
 	return E
 }
@@ -471,6 +475,8 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			title = "Options"
 		} else if a.screen == ScreenViews {
 			title = "Views"
+		} else if a.screen == ScreenCredits {
+			title = "Credits"
 		}
 		c.Text(l.Status.Min.X+2, l.Status.Min.Y+2, a.sm, title, gen.Eva.Accent)
 	}
@@ -627,6 +633,8 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 		a.paintHint(c, gfx.ArrowLeft+" "+gfx.ArrowRight+" change  A open  B back")
 	} else if a.screen == ScreenViews {
 		a.paintHint(c, "A on/off  B back")
+	} else if a.screen == ScreenCredits {
+		a.paintHint(c, "B back")
 	} else {
 		a.paintHint(c, a.filterHint())
 	}
@@ -677,6 +685,10 @@ func (a *App) actPanel(k platform.Key) bool {
 		}
 		if a.screen == ScreenViews {
 			a.closeViews()
+			return true
+		}
+		if a.screen == ScreenCredits {
+			a.closeCredits()
 			return true
 		}
 		a.screen = ScreenList
@@ -885,6 +897,9 @@ func (a *App) togglePanel() bool {
 		return true
 	case "views":
 		a.openViews()
+		return true
+	case "credits":
+		a.openCredits()
 		return true
 	case "view":
 		if e.disabled {

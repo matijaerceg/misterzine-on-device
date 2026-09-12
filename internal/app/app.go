@@ -31,11 +31,12 @@ const (
 	ScreenUpdate
 	ScreenTroubleshooting
 	ScreenScan
-	ScreenViews // Options -> Views: the checkbox page of the Y cycle
+	ScreenViews   // Options -> Views: the checkbox page of the Y cycle
+	ScreenCredits // Options -> Credits: who made it, what it builds on, the early adopters
 )
 
 func (s Screen) String() string {
-	return [...]string{"list", "details", "screen", "filter", "options", "calibrate", "update", "troubleshooting", "scan", "views"}[s]
+	return [...]string{"list", "details", "screen", "filter", "options", "calibrate", "update", "troubleshooting", "scan", "views", "credits"}[s]
 }
 
 // Config is what the app needs from its host.
@@ -662,7 +663,7 @@ func (a *App) Handle(ev platform.Event) bool {
 	if ev.Key == platform.KeyMenu {
 		return a.menuButton()
 	}
-	if a.screen == ScreenList || a.screen == ScreenFilter || a.screen == ScreenOptions || a.screen == ScreenViews {
+	if a.screen == ScreenList || a.screen == ScreenFilter || a.screen == ScreenOptions || a.screen == ScreenViews || a.screen == ScreenCredits {
 		switch ev.Key {
 		case platform.KeyUp, platform.KeyDown, platform.KeyLeft, platform.KeyRight:
 			a.rep.next = ev.At.Add(time.Duration(a.HoldDelay()) * time.Millisecond)
@@ -698,7 +699,7 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 		case platform.KeyUp, platform.KeyDown:
 			return repeatPage
 		}
-	case ScreenFilter, ScreenOptions, ScreenViews:
+	case ScreenFilter, ScreenOptions, ScreenViews, ScreenCredits:
 		switch k {
 		case platform.KeyUp, platform.KeyDown:
 			return scrollPace(a.cfg.Scroll)
@@ -811,7 +812,7 @@ func (a *App) act(k platform.Key) bool {
 		return a.actSupport(k)
 	case ScreenShot:
 		return a.actShot(k)
-	case ScreenFilter, ScreenOptions, ScreenViews:
+	case ScreenFilter, ScreenOptions, ScreenViews, ScreenCredits:
 		return a.actPanel(k)
 	case ScreenCalibrate:
 		return a.actCalibrate(k)
@@ -1017,7 +1018,7 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 		a.paintDetails(c)
 	case ScreenShot:
 		a.paintShot(c)
-	case ScreenFilter, ScreenOptions, ScreenViews:
+	case ScreenFilter, ScreenOptions, ScreenViews, ScreenCredits:
 		a.paintPanel(c)
 	case ScreenCalibrate:
 		a.paintCalibrate(c)

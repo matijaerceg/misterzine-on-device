@@ -180,7 +180,7 @@ Update All, Last update result, Rescan card, Prefetch shots, Clear image
 cache), List (Sources, Filter by rotation, Remember sort order, Views,
 Title font, List shots, Date format, List layout), Display (rotation, screensaver, button labels, safe zone, canvas) and
 Operation (scrolling, the launcher, Open at boot, Return after game,
-Troubleshooting, Quit). The
+Troubleshooting, Quit, Credits). The
 headings cannot be selected. Values line up in one column; a small arrow at the right
 edge of the top or bottom row shows when more options sit above or below the
 visible part of the list. The framed text under the list describes the selected
@@ -310,6 +310,10 @@ the bottom.
   pad, which button, which slot and what MisterZine does with it, plus the
   gap since the previous press. Hold B for two seconds to leave it.
   See [troubleshooting](TROUBLESHOOTING.md#start-does-not-launch-games).
+- **Credits:** a page naming the developer, the people whose work MisterZine
+  builds on (MiSTer, Downloader and Update All, the fonts) and, under Special
+  thanks, the early adopters who tested it and sent feedback. Up/Down move
+  through the names; B returns to Options.
 
 Filters start with Clear all filters, greyed out until a filter is active,
 then On the card, Since last look, Type and Source. Pressing Clear all filters

@@ -7,9 +7,9 @@ os.chdir(Path(__file__).resolve().parents[1])
 go = os.environ.get("GO", "go")
 scenarios = [
     ["-support-report", "testdata/support-mapped-start.json", "-out", "out/support-mapped-h", "-script",
-     "back; end; up; enter; down*3; enter; shot result; right; shot mapping"],
+     "back; end; up*2; enter; down*3; enter; shot result; right; shot mapping"],
     ["-support-report", "testdata/support-mapped-start.json", "-inset", "40", "-rot", "left", "-logical", "-out", "out/support-mapped-t", "-script",
-     "back; end; up; enter; down*3; enter; shot result; right; shot mapping"],
+     "back; end; up*2; enter; down*3; enter; shot result; right; shot mapping"],
     ["-rot", "none", "-out", "out/h"],
     ["-rot", "left", "-out", "out/t", "-logical"],
     ["-out", "out/filters-h", "-script",
@@ -28,13 +28,13 @@ scenarios = [
     ["-rot", "left", "-logical", "-out", "out/saver-t", "-script",
      "back; down*16; shot option; enter; wait 12000; shot preview; back; up*16; up; shot wrap; down; shot top"],
     ["-support-report", "testdata/support-controller.json", "-out", "out/support-h", "-script",
-     "back; end; up; enter; shot menu; enter; shot ready; wait 3500; shot capture; wait 6000; shot result; right; shot evidence; back; down*2; enter; shot launch; enter; shot launch-result"],
+     "back; end; up*2; enter; shot menu; enter; shot ready; wait 3500; shot capture; wait 6000; shot result; right; shot evidence; back; down*2; enter; shot launch; enter; shot launch-result"],
     ["-support-report", "testdata/support-controller.json", "-rot", "left", "-logical", "-out", "out/support-t", "-script",
-     "back; end; up; enter; shot menu; enter; shot ready; wait 3500; shot capture; wait 6000; shot result; right; shot evidence; back; down*2; enter; shot launch; enter; shot launch-result"],
+     "back; end; up*2; enter; shot menu; enter; shot ready; wait 3500; shot capture; wait 6000; shot result; right; shot evidence; back; down*2; enter; shot launch; enter; shot launch-result"],
     ["-support-report", "testdata/support-no-input.json", "-inset", "40", "-out", "out/support-small-h", "-script",
-     "back; end; up; enter; down*3; enter; shot result; right; shot evidence"],
+     "back; end; up*2; enter; down*3; enter; shot result; right; shot evidence"],
     ["-support-report", "testdata/support-no-input.json", "-inset", "40", "-rot", "left", "-logical", "-out", "out/support-small-t", "-script",
-     "back; end; up; enter; down*3; enter; shot result; right; shot evidence"],
+     "back; end; up*2; enter; down*3; enter; shot result; right; shot evidence"],
 ]
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
@@ -147,7 +147,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     # presses (no pad name, so they show as script input), then hold B out
     scenarios.append([*rotation, "-support-report", "testdata/support-controller.json",
                       "-out", f"out/pad-test-{orientation}", "-script",
-                      "back; end; up; enter; down; shot menu; enter; shot empty; enter; space; tab; start; shot presses; "
+                      "back; end; up*2; enter; down; shot menu; enter; shot empty; enter; space; tab; start; shot presses; "
                       "hold back 2200; shot left"])
 for canvas in ("360x270", "400x300"):
     for rotation in ([], ["-rot", "left", "-logical"]):
@@ -176,12 +176,16 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                       "back; down*9; shot options-views; enter; shot views; down*4; enter; shot views-off; "
                       "up*4; enter; down; enter; down; enter; down; enter; down*2; enter; shot views-last; "
                       "enter; back; back"])
+    # Options -> Credits: the row, the page from its top, its end and the way back
+    scenarios.append([*rotation,
+                      "-out", f"out/credits-{orientation}", "-script",
+                      "back; end; shot options-credits; enter; shot credits; end; shot credits-end; back; shot options-back"])
     # over Details, the Menu button option row itself, closing Options back
     # onto Details and Filters, and the held-Menu hint
     scenarios.append([*rotation,
                       "-out", f"out/menu-{orientation}", "-script",
                       "menu; shot options; menu; shot list; enter; menu; shot options-from-details; "
-                      "end; up*2; shot option-row; right; shot option-leave; left; back; shot details-back; "
+                      "end; up*3; shot option-row; right; shot option-leave; left; back; shot details-back; "
                       "back; tab; down*2; menu; shot options-over-filters; back; shot filters-back; "
                       "press menu; wait 700; shot menu-hint; release menu; shot menu-released; back; back"])
 for args in scenarios:
