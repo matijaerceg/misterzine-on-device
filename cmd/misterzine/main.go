@@ -152,7 +152,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	lg.Printf("ini: %s alt=%d found=%v osd_rotate=%d direct_video=%d vga_scaler=%d fb_terminal=%d analog-visible=%v",
 		filepath.Base(iniPath), iniAlt, ini.Found, ini.OSDRotate, ini.DirectVideo, ini.VGAScaler, ini.FBTerminal, ini.AnalogVisible())
 	if ini.Found && !ini.AnalogVisible() {
-		lg.Printf("WARNING: the framebuffer cannot reach the analog port with this MiSTer.ini; on a CRT-only setup add direct_video=1 (or vga_scaler=1 + a 15 kHz video_mode) under a [Menu] section")
+		lg.Printf("WARNING: the framebuffer cannot reach the analog port with this MiSTer.ini; on a CRT-only setup add direct_video=1 (or vga_scaler=1 + a 15 kHz video_mode) under a [Menu] section, or under [MisterZine] to affect MisterZine alone")
 	}
 	rotation := startupRotation(h.settings, ini)
 
@@ -327,7 +327,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	}
 	h.a.SetNet(h.netLabel(ds))
 	if ini.Found && !ini.AnalogVisible() && !hasState { // first run only: HDMI users need nothing
-		h.a.Notice("CRT only? add direct_video=1 under [Menu], see README", 20*time.Second)
+		h.a.Notice("CRT only? add direct_video=1 under [Menu] or [MisterZine], see README", 20*time.Second)
 	}
 	if h.favLoadFailed {
 		h.a.Notice(app.FavoritesUnavailableNotice, 12*time.Second)

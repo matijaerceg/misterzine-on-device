@@ -233,8 +233,9 @@ the bottom.
 - **Follow INI rotation:** on by default, including after upgrading. Every
   startup reads `osd_rotate` from the MiSTer INI that is currently active: the
   main MiSTer.ini, or the alternative INI (`MiSTer_*.ini`) you selected in the
-  MiSTer OSD, the same one Main itself uses. A `[Menu]` section overrides the
-  global setting. Turn this off to choose a rotation yourself below and keep it
+  MiSTer OSD, the same one Main itself uses. `[Menu]` and `[MisterZine]`
+  sections override the global setting in file order, as Main applies them to
+  MisterZine's menu entry. Turn this off to choose a rotation yourself below and keep it
   across launches; turning it back on applies at the next startup. MisterZine
   never edits the INI. If the file cannot be read, the saved manual rotation is
   used.

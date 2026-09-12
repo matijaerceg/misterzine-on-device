@@ -32,6 +32,30 @@ A CRT connected through a supported HDMI-to-VGA direct-video adapter already
 receives the direct-video output. Power off before changing between that adapter
 and a normal HDMI display. Keep the sync and RGB/YPbPr settings your CRT needs.
 
+### HDMI for the menu, CRT for MisterZine
+
+If an HDMI display serves the MiSTer menu, the terminal and Update All, and
+only MisterZine should go to the CRT, leave `[Menu]` on the HDMI settings and
+add a `[MisterZine]` section **below it** with the CRT settings:
+
+```ini
+[Menu]
+direct_video=0
+vga_scaler=0
+
+[MisterZine]
+direct_video=1
+vga_scaler=0
+```
+
+MisterZine.mgl loads the menu core under the name `misterzine`, and Main applies
+every section matching either name in file order, so `[MisterZine]` overrides
+`[Menu]` only while MisterZine is open; quitting restores the menu on HDMI. Put
+`osd_rotate` there as well if only MisterZine runs on a rotated CRT: Follow INI
+rotation reads the same sections Main does. The section must come after
+`[Menu]`, or `[Menu]` wins. It only applies to launches through the menu entry:
+the Scripts entry runs under the plain menu core and keeps the `[Menu]` output.
+
 ### Can HDMI and CRT show MisterZine together?
 
 The current interface cannot provide normal HDMI resolution and native 240p CRT

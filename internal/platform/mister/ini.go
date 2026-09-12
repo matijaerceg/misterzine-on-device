@@ -6,15 +6,38 @@ import (
 	"strings"
 )
 
-// IniSettings are the MiSTer.ini values the app cares about, with the
-// [Menu] section overriding the global one the way Main applies it to the
-// menu core.
+// IniSettings are the MiSTer.ini values the app cares about, read the way
+// Main reads them for the menu core loaded through MisterZine.mgl: the
+// global [MiSTer] section, [Menu] (the core's own name) and [MisterZine]
+// (the MGL's setname) all apply, later sections in the file overriding
+// earlier ones.
 type IniSettings struct {
 	OSDRotate   int  // 0 none, 1 right (+90), 2 left (-90)
 	DirectVideo int  // 0/1/2
 	VGAScaler   int  // 0/1
 	FBTerminal  int  // 1 default
 	Found       bool // the file was read
+}
+
+// iniSectionApplies reports whether Main applies a section of that name
+// while MisterZine.mgl is loaded. Main matches [MiSTer], the original core
+// name (Menu) and the setname override (misterzine), case-insensitively; a
+// trailing * matches a prefix of either name. Values above the first section
+// header are accepted as global.
+func iniSectionApplies(name string) bool {
+	name = strings.ToLower(name)
+	if name == "" || name == "mister" {
+		return true
+	}
+	for _, core := range []string{"menu", "misterzine"} {
+		if name == core {
+			return true
+		}
+		if p, ok := strings.CutSuffix(name, "*"); ok && strings.HasPrefix(core, p) {
+			return true
+		}
+	}
+	return false
 }
 
 // ReadIni parses the few keys we need from a MiSTer.ini file.
@@ -26,9 +49,8 @@ func ReadIni(path string) IniSettings {
 	}
 	defer f.Close()
 	s.Found = true
-	section := ""
-	global := map[string]string{}
-	menu := map[string]string{}
+	applies := true
+	values := map[string]string{}
 	sc := bufio.NewScanner(f)
 	for sc.Scan() {
 		line := strings.TrimSpace(sc.Text())
@@ -39,26 +61,17 @@ func ReadIni(path string) IniSettings {
 			continue
 		}
 		if strings.HasPrefix(line, "[") && strings.HasSuffix(line, "]") {
-			section = strings.ToLower(strings.Trim(line, "[]"))
+			applies = iniSectionApplies(strings.TrimSpace(strings.Trim(line, "[]")))
 			continue
 		}
 		k, v, ok := strings.Cut(line, "=")
-		if !ok {
+		if !ok || !applies {
 			continue
 		}
-		k, v = strings.ToLower(strings.TrimSpace(k)), strings.TrimSpace(v)
-		switch section {
-		case "mister", "":
-			global[k] = v
-		case "menu":
-			menu[k] = v
-		}
+		values[strings.ToLower(strings.TrimSpace(k))] = strings.TrimSpace(v)
 	}
 	get := func(key string, def int) int {
-		v, ok := menu[key]
-		if !ok {
-			v, ok = global[key]
-		}
+		v, ok := values[key]
 		if !ok {
 			return def
 		}
