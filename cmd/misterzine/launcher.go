@@ -4,6 +4,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -50,14 +51,24 @@ func coreName() string {
 	return strings.TrimSpace(string(b))
 }
 
-// sendMainCmd writes one line to Main's command FIFO.
+// sendMainCmd writes one line to Main's command FIFO. Main recreates the
+// FIFO each time it restarts (every core load) and opens it a moment after
+// it has written CORENAME, so right after a core change the write can find
+// no FIFO yet (ENOENT) or no reader (ENXIO); those are retried for 10 s.
 func sendMainCmd(line string) error {
-	f, err := os.OpenFile("/dev/MiSTer_cmd", os.O_WRONLY|syscall.O_NONBLOCK, 0)
-	if err != nil {
-		return err
+	var err error
+	for i := 0; i < 40; i++ {
+		var f *os.File
+		if f, err = os.OpenFile("/dev/MiSTer_cmd", os.O_WRONLY|syscall.O_NONBLOCK, 0); err == nil {
+			_, err = f.WriteString(line + "\n")
+			f.Close()
+			return err
+		}
+		if !errors.Is(err, syscall.ENXIO) && !errors.Is(err, os.ErrNotExist) {
+			return err
+		}
+		time.Sleep(250 * time.Millisecond)
 	}
-	defer f.Close()
-	_, err = f.WriteString(line + "\n")
 	return err
 }
 
