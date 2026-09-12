@@ -112,6 +112,13 @@ filter choices are saved.
 A, B, X and Y are MiSTer's names from its define buttons screen. Options ->
 Button labels can print them as Xbox letters, PlayStation symbols or numbers.
 
+A pad that has been defined in the MiSTer menu is read by MisterZine
+directly: the button you defined as A is A here, whichever buttons you
+chose for the MiSTer menu's own OK and back. Each pad follows its own
+definition, so two pads defined differently work side by side. A pad that
+has never been defined works through MiSTer's translation instead, and only
+while no defined pad is connected.
+
 The Details version selector uses one row. Its tally shows the selection and
 total, such as 2/5. Left/Right chooses among installed alternatives; Start
 launches the chosen version. A dim entry with a leading minus is not on the
@@ -242,8 +249,12 @@ the bottom.
   picks the MisterZine entry again and the list opens on that game. Games
   loaded some other way, and the pad's Menu button leaving MisterZine, do not
   bring it back. Needs the Main menu launcher.
-- **Troubleshooting:** a guided Start-button test and an A/Enter game-launch
-  test, with results you can photograph. The last result survives restarting.
+- **Troubleshooting:** a guided Start-button test, a pad tester, and an
+  A/Enter game-launch test, with results you can photograph. The last result
+  survives restarting. The pad tester lists every connected pad with the raw
+  button code in each MiSTer slot, then shows each press as it happens: which
+  pad, which button, which slot and what MisterZine does with it, plus the
+  gap since the previous press. Hold B for two seconds to leave it.
   See [troubleshooting](TROUBLESHOOTING.md#start-does-not-launch-games).
 
 Filters start with Clear all filters, greyed out until a filter is active,

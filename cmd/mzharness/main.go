@@ -141,6 +141,15 @@ func main() {
 				r.Launch = support.Launch{Game: game, Target: target, Result: "Cannot launch: target missing or invalid", Detail: "Example failure for visual review"}
 				return r
 			},
+			// two pads for the pad tester: one defined in MiSTer by position
+			// (A right, B bottom), one only readable for Start
+			Pads: func() []support.Pad {
+				return []support.Pad{
+					{Node: "event0", Name: "USB Arcade Controller", Vendor: 0x1234, Product: 0x5678, Map: "Linux default", Slots: map[string]uint16{"Start": 315}},
+					{Node: "event3", Name: "Microsoft X-Box 360 pad", Vendor: 0x045e, Product: 0x028e, Mapped: true, Map: "/media/fat/config/inputs/input_045e_028e_v3.map",
+						Slots: map[string]uint16{"A": 305, "B": 304, "X": 308, "Y": 307, "L": 310, "Select": 314, "Start": 315}},
+				}
+			},
 		}
 	}
 	if *status == "fake" {

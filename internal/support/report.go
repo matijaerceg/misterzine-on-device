@@ -45,6 +45,27 @@ func (d Device) Route() string {
 	return "Skipped by normal input reader"
 }
 
+// Pad is a gamepad as the normal input reader sees it, for the pad tester:
+// which raw button code sits in each MiSTer define-slot (A, B, X, Y, L, R,
+// Select, Start) and where that came from.
+type Pad struct {
+	Node, Name      string
+	Vendor, Product uint16
+	Mapped          bool              // a MiSTer map file was read; face buttons come from the pad itself
+	Slots           map[string]uint16 // slot name -> code
+	Map, Note       string
+}
+
+// Slot names the define-slot a code sits in, or "" when it is none of them.
+func (p Pad) Slot(code uint16) string {
+	for _, name := range []string{"A", "B", "X", "Y", "L", "R", "Select", "Start"} {
+		if c, ok := p.Slots[name]; ok && c == code {
+			return name
+		}
+	}
+	return ""
+}
+
 type Signal struct {
 	Node                      string
 	Type, Code                uint16

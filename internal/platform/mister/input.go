@@ -5,16 +5,20 @@ package mister
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 	"unsafe"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
+	"github.com/matijaerceg/misterzine-on-device/internal/support"
 )
 
 // Main holds an exclusive grab on every input device and lets go only while
@@ -60,12 +64,13 @@ func eviocgbitKey(n int) uintptr {
 }
 
 type device struct {
-	path  string
-	name  string
-	f     *os.File
-	held  map[uint16]platform.Key
-	pad   bool // a gamepad node: only its Start button is read
-	start startMapping
+	path            string
+	name            string
+	f               *os.File
+	held            map[uint16]platform.Key
+	pad             bool // a gamepad node: read by MiSTer define-slot, see padMapping
+	mapping         padMapping
+	vendor, product uint16
 }
 
 // Input reads every keyboard-class evdev device, rescanning for hotplug.
@@ -76,6 +81,12 @@ type Input struct {
 	devs map[string]*device
 	stop chan struct{}
 	wg   sync.WaitGroup
+	// rawFace is set while a pad with a MiSTer map is connected: its face
+	// buttons are read from the pad itself, so the same presses arriving as
+	// Enter/Esc/Tab/Space through Main's virtual keyboard are dropped. A pad
+	// without a map still works through Main's translation, but only while
+	// no mapped pad is present, since the translated keys carry no pad name.
+	rawFace atomic.Bool
 }
 
 // OpenInput starts reading. It never fails hard: with no devices it just
@@ -135,26 +146,27 @@ func (in *Input) rescan() {
 			f.Close()
 			continue
 		}
-		start := startMapping{}
+		m := padMapping{}
 		if name != "MiSTer virtual input" {
-			start = deviceStart(f)
+			m = devicePad(f)
 		}
 		pad := false
 		if !isKeyboard(f) {
-			// Main turns the pad's face buttons into keys for us but not
-			// Start, so gamepad nodes are read for that one button
-			if start.Code == 0 {
+			// gamepad nodes are read for Start (Main never forwards it)
+			// and, with a MiSTer map, for the face buttons by define-slot
+			if m.Code == 0 && len(m.Face) == 0 {
 				f.Close()
 				continue
 			}
 			pad = true
 		}
-		d := &device{path: p, name: name, f: f, pad: pad, start: start, held: map[uint16]platform.Key{}}
+		d := &device{path: p, name: name, f: f, pad: pad, mapping: m, held: map[uint16]platform.Key{}}
+		d.vendor, d.product = devID(f)
 		in.mu.Lock()
 		in.devs[p] = d
 		in.mu.Unlock()
 		if pad {
-			in.log.Printf("input: reading %s (%s) Start button %d via %s", p, d.name, start.Code, start.Source)
+			in.log.Printf("input: reading %s (%s) Start button %d via %s; face buttons %s", p, d.name, m.Code, m.Source, m.slotText())
 		} else {
 			in.log.Printf("input: reading %s (%s)", p, d.name)
 		}
@@ -168,6 +180,71 @@ func (in *Input) rescan() {
 		}
 	}
 	in.mu.Unlock()
+	in.updateRawFace()
+}
+
+// updateRawFace decides whether Main's translated face keys are in use.
+func (in *Input) updateRawFace() {
+	in.mu.Lock()
+	raw := false
+	for _, d := range in.devs {
+		if d.pad && len(d.mapping.Face) > 0 {
+			raw = true
+		}
+	}
+	in.mu.Unlock()
+	if in.rawFace.Swap(raw) != raw {
+		if raw {
+			in.log.Printf("input: face buttons read from the mapped pad(s); MiSTer's Enter/Esc/Tab/Space are ignored")
+		} else {
+			in.log.Printf("input: no mapped pad; face buttons come from MiSTer's translation")
+		}
+	}
+}
+
+// Pads describes the gamepad nodes being read, for the pad tester.
+func (in *Input) Pads() []support.Pad {
+	in.mu.Lock()
+	defer in.mu.Unlock()
+	var out []support.Pad
+	for _, d := range in.devs {
+		if d.pad {
+			out = append(out, d.mapping.info(filepath.Base(d.path), d.name, d.vendor, d.product))
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Node < out[j].Node })
+	return out
+}
+
+// slotText is the mapping in one line for the log.
+func (m padMapping) slotText() string {
+	if !m.Mapped {
+		return "via MiSTer (no map file)"
+	}
+	s := ""
+	for _, name := range slotNames[:4] {
+		if code, ok := m.Slots[name]; ok {
+			s += fmt.Sprintf("%s=%d ", name, code)
+		}
+	}
+	if s == "" {
+		return "none in the map"
+	}
+	return strings.TrimSpace(s)
+}
+
+func devID(f *os.File) (vendor, product uint16) {
+	var id [4]uint16
+	if ioctl(f.Fd(), 0x80084502, unsafe.Pointer(&id[0])) != nil { // EVIOCGID
+		return 0, 0
+	}
+	return id[1], id[2]
+}
+
+// faceKey reports whether a virtual-keyboard code is one Main uses for the
+// pad's face buttons.
+func faceKey(code uint16) bool {
+	return code == keyEnter || code == keyEsc || code == keyTab || code == keySpace
 }
 
 func devName(f *os.File) string {
@@ -251,6 +328,9 @@ func (in *Input) read(d *device) {
 			if !accept {
 				continue
 			}
+			if d.name == "MiSTer virtual input" && faceKey(code) && in.rawFace.Load() {
+				continue // the mapped pad delivered this press itself
+			}
 			if k == platform.KeyStart {
 				text = 0
 			}
@@ -270,11 +350,16 @@ func (in *Input) read(d *device) {
 func (in *Input) Events() <-chan platform.Event { return in.ch }
 
 func (d *device) inputKey(code uint16) (platform.Key, bool) {
-	if d.start.Code != 0 && code == d.start.Code {
+	if d.mapping.Code != 0 && code == d.mapping.Code {
 		return platform.KeyStart, true
 	}
 	if d.pad {
-		return platform.KeyOther, false // Main already turned the rest into keys
+		if k, ok := d.mapping.Face[code]; ok {
+			return k, true
+		}
+		// other pad buttons have no action but are delivered so the pad
+		// tester can name them and the screensaver wakes
+		return platform.KeyOther, true
 	}
 	if k, ok := keyMap[code]; ok {
 		return k, true

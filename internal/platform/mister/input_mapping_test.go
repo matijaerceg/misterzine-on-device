@@ -54,7 +54,7 @@ func TestMiSTerStartMapping(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			dir := t.TempDir()
 			p := writeStartMap(t, filepath.Join(dir, "inputs"), "input_0f0d_00aa_v3.map", tt.code)
-			m := loadStartMapping(dir, "0f0d_00aa", tt.bits)
+			m := loadPadMapping(dir, "0f0d_00aa", tt.bits)
 			if m.Code != tt.want || m.Source != p || (m.Note != "") != tt.note {
 				t.Fatalf("mapping: %+v", m)
 			}
@@ -65,31 +65,31 @@ func TestMiSTerStartMapping(t *testing.T) {
 func TestMiSTerStartFileSelection(t *testing.T) {
 	dir := t.TempDir()
 	bits := buttonBits(299, 314, 315)
-	if m := loadStartMapping(dir, "0f0d_00aa", bits); m.Code != 315 || m.Source != "Linux default" {
+	if m := loadPadMapping(dir, "0f0d_00aa", bits); m.Code != 315 || m.Source != "Linux default" {
 		t.Fatal(m)
 	}
-	if m := loadStartMapping(dir, "0f0d_00aa", buttonBits(299)); m.Code != 0 {
+	if m := loadPadMapping(dir, "0f0d_00aa", buttonBits(299)); m.Code != 0 {
 		t.Fatal(m)
 	}
 	writeStartMap(t, filepath.Join(dir, "inputs"), "input_1234_5678_v3.map", 299)
 	writeStartMap(t, filepath.Join(dir, "inputs"), "galaga_input_0f0d_00aa_v3.map", 299)
 	writeStartMap(t, filepath.Join(dir, "inputs"), "input_0f0d_00aa_deadbeef_v3.map", 299)
-	if m := loadStartMapping(dir, "0f0d_00aa", bits); m.Code != 315 {
+	if m := loadPadMapping(dir, "0f0d_00aa", bits); m.Code != 315 {
 		t.Fatal(m)
 	}
 	legacy := writeStartMap(t, dir, "input_0f0d_00aa_v3.map", 299)
-	if m := loadStartMapping(dir, "0f0d_00aa", bits); m.Code != 299 || m.Source != legacy {
+	if m := loadPadMapping(dir, "0f0d_00aa", bits); m.Code != 299 || m.Source != legacy {
 		t.Fatal(m)
 	}
 	primary := writeStartMap(t, filepath.Join(dir, "inputs"), "input_0f0d_00aa_v3.map", 314)
-	if m := loadStartMapping(dir, "0f0d_00aa", bits); m.Code != 314 || m.Source != primary {
+	if m := loadPadMapping(dir, "0f0d_00aa", bits); m.Code != 314 || m.Source != primary {
 		t.Fatal(m)
 	}
 	for _, size := range []int{0, 44, 127, 129, 4096} {
 		if err := os.WriteFile(primary, make([]byte, size), 0644); err != nil {
 			t.Fatal(err)
 		}
-		if m := loadStartMapping(dir, "0f0d_00aa", bits); m.Code != 0 || m.Note == "" || m.Source != primary {
+		if m := loadPadMapping(dir, "0f0d_00aa", bits); m.Code != 0 || m.Note == "" || m.Source != primary {
 			t.Fatal(m)
 		}
 	}
@@ -100,13 +100,13 @@ func TestMiSTerStartFileSelection(t *testing.T) {
 func TestMappedStartRawEvents(t *testing.T) {
 	dir := t.TempDir()
 	writeStartMap(t, filepath.Join(dir, "inputs"), "input_0f0d_00aa_v3.map", 314)
-	m := loadStartMapping(dir, "0f0d_00aa", buttonBits(305, 314, 315))
+	m := loadPadMapping(dir, "0f0d_00aa", buttonBits(305, 314, 315))
 	r, w, err := os.Pipe()
 	if err != nil {
 		t.Fatal(err)
 	}
 	in := &Input{ch: make(chan platform.Event, 16), log: log.New(io.Discard, "", 0), stop: make(chan struct{}), devs: map[string]*device{}}
-	d := &device{f: r, pad: true, start: m, held: map[uint16]platform.Key{}, name: "Brook fixture"}
+	d := &device{f: r, pad: true, mapping: m, held: map[uint16]platform.Key{}, name: "Brook fixture"}
 	in.wg.Add(1)
 	go in.read(d)
 	for _, pair := range [][2]uint16{{315, 1}, {315, 0}, {305, 1}, {305, 0}, {314, 1}, {314, 2}, {314, 0}, {314, 1}} {
@@ -120,12 +120,27 @@ func TestMappedStartRawEvents(t *testing.T) {
 	}
 	w.Close()
 	in.wg.Wait()
-	if len(in.ch) != 4 {
-		t.Fatalf("got %d events, want two Start presses/releases including disconnect release", len(in.ch))
-	}
-	for i := 0; i < 4; i++ {
+	// 305 is not in the map, so it arrives as an actionless pad button (for
+	// the pad tester); 315 is the reassigned Select and must not be Start
+	var starts, others []platform.Event
+	for len(in.ch) > 0 {
 		e := <-in.ch
-		if e.Key != platform.KeyStart || e.Code != 314 || e.Pressed != (i%2 == 0) {
+		if e.Key == platform.KeyStart {
+			starts = append(starts, e)
+		} else {
+			others = append(others, e)
+		}
+	}
+	if len(starts) != 4 {
+		t.Fatalf("got %d Start events, want two presses/releases including disconnect release", len(starts))
+	}
+	for i, e := range starts {
+		if e.Code != 314 || e.Pressed != (i%2 == 0) {
+			t.Fatal(e)
+		}
+	}
+	for _, e := range others {
+		if e.Key != platform.KeyOther || (e.Code != 305 && e.Code != 315) {
 			t.Fatal(e)
 		}
 	}
@@ -133,11 +148,11 @@ func TestMappedStartRawEvents(t *testing.T) {
 	if key, ok := virtual.inputKey(keyEnter); !ok || key != platform.KeyEnter {
 		t.Fatal(key, ok)
 	}
-	standard := device{pad: true, start: defaultStart(buttonBits(314, 315))}
+	standard := device{pad: true, mapping: defaultStart(buttonBits(314, 315))}
 	if key, ok := standard.inputKey(315); !ok || key != platform.KeyStart {
 		t.Fatal(key, ok)
 	}
-	if _, ok := standard.inputKey(314); ok {
+	if key, _ := standard.inputKey(314); key == platform.KeyStart {
 		t.Fatal("unmapped314 must not launch")
 	}
 }

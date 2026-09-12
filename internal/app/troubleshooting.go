@@ -20,14 +20,154 @@ type SupportHooks struct {
 	Finish func() support.Report
 	Load   func() support.Report
 	Launch func(game, target string) support.Report
+	Pads   func() []support.Pad // the gamepads the input reader has open, for the pad tester
 }
 
 type supportView struct {
-	mode                   string // menu, capture, result, launch
+	mode                   string // menu, capture, result, launch, pad
 	cursor, page           int
 	from, until, next, now time.Time
 	report                 support.Report
 	game, target           string
+	// the pad tester: the pads as read, the latest presses, and when B
+	// went down (held two seconds it leaves the tester)
+	pads    []support.Pad
+	presses []padPress
+	backAt  time.Time
+}
+
+// padPress is one button press seen by the pad tester.
+type padPress struct {
+	at     time.Time
+	source string
+	code   uint16
+	key    platform.Key
+}
+
+const (
+	padPressKeep = 12
+	padTestLeave = 2 * time.Second
+)
+
+// startPadTest opens the pad tester: every press is listed with its pad,
+// raw code, MiSTer define-slot and what the app does with it, and nothing
+// else acts until B has been held for two seconds.
+func (a *App) startPadTest() {
+	v := &a.support
+	v.mode, v.presses, v.backAt, v.next = "pad", nil, time.Time{}, time.Time{}
+	v.pads = nil
+	if h := a.cfg.Support; h != nil && h.Pads != nil {
+		v.pads = h.Pads()
+	}
+	a.rep = repeater{}
+	a.all = true
+}
+
+func (a *App) handlePadTest(ev platform.Event) bool {
+	v := &a.support
+	if ev.Key == platform.KeyNone && ev.Code == 0 {
+		return false
+	}
+	if !ev.Pressed {
+		delete(a.down, ev.Key)
+		if ev.Key == platform.KeyBack {
+			v.backAt, v.next = time.Time{}, time.Time{}
+			a.all = true
+		}
+		return true
+	}
+	v.presses = append([]padPress{{at: ev.At, source: ev.Source, code: ev.Code, key: ev.Key}}, v.presses...)
+	if len(v.presses) > padPressKeep {
+		v.presses = v.presses[:padPressKeep]
+	}
+	if ev.Key == platform.KeyBack && v.backAt.IsZero() {
+		v.backAt = ev.At
+		v.next = ev.At.Add(padTestLeave)
+	}
+	a.all = true
+	return true
+}
+
+// padActions is what the app does with each key, in the tester's words.
+var padActions = map[platform.Key]string{
+	platform.KeyEnter: "details / confirm", platform.KeyBack: "back / Options", platform.KeyTab: "Filters", platform.KeySpace: "view / favorite",
+	platform.KeyStart: "launch", platform.KeyUp: "up", platform.KeyDown: "down", platform.KeyLeft: "left", platform.KeyRight: "right",
+	platform.KeyPageUp: "page up (L)", platform.KeyPageDown: "page down (R)", platform.KeyHome: "top", platform.KeyEnd: "bottom",
+	platform.KeyBackspace: "erase", platform.KeyOther: "no action",
+}
+
+// padPressLine describes one press: which pad, which raw button, which
+// MiSTer slot that is, and the app's action. Presses translated by Main
+// say so, since they carry no pad name.
+func (a *App) padPressLine(p padPress, prev *padPress) string {
+	gap := ""
+	if prev != nil && !prev.at.IsZero() && !p.at.IsZero() {
+		gap = fmt.Sprintf(" +%dms", p.at.Sub(prev.at).Milliseconds())
+	}
+	action := padActions[p.key]
+	if action == "" {
+		action = p.key.String()
+	}
+	if p.source == "MiSTer virtual input" {
+		return "MiSTer translation: " + action + gap
+	}
+	for _, pad := range a.support.pads {
+		if pad.Name != p.source {
+			continue
+		}
+		s := shortName(pad.Name, 14) + fmt.Sprintf(" btn %d", p.code)
+		if slot := pad.Slot(p.code); slot != "" {
+			s += " = " + a.btn(slot)
+		}
+		return s + ": " + action + gap
+	}
+	source := p.source
+	if source == "" {
+		source = "other input"
+	}
+	return shortName(source, 14) + ": " + action + gap
+}
+
+// padLines describes one pad for the tester: its define-slots and where
+// they came from.
+func (a *App) padLines(p support.Pad) []string {
+	head := p.Name
+	if p.Vendor != 0 || p.Product != 0 {
+		head += fmt.Sprintf(" %04x:%04x", p.Vendor, p.Product)
+	}
+	slots := ""
+	for _, name := range []string{"A", "B", "X", "Y", "L", "R", "Select", "Start"} {
+		if code, ok := p.Slots[name]; ok {
+			label := name
+			if len(name) == 1 {
+				label = a.btn(name)
+			}
+			slots += fmt.Sprintf("%s %d  ", label, code)
+		}
+	}
+	lines := []string{head}
+	switch {
+	case p.Mapped && len(slots) > 0:
+		lines = append(lines, "  "+strings.TrimSpace(slots), "  read by MiSTer slot from "+shortName(p.Map, 40))
+	case p.Mapped:
+		lines = append(lines, "  no usable buttons in "+shortName(p.Map, 40))
+	default:
+		lines = append(lines, "  no MiSTer map: face buttons come through MiSTer's translation", "  "+strings.TrimSpace(slots))
+	}
+	if p.Note != "" {
+		lines = append(lines, "  "+p.Note)
+	}
+	return lines
+}
+
+func shortName(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	if i := strings.LastIndexByte(s, '/'); i >= 0 && len(s)-i-1 <= n {
+		return s[i+1:]
+	}
+	return s[:n-1] + gfx.Ellipsis
 }
 
 func (a *App) OpenTroubleshooting() {
@@ -63,6 +203,15 @@ func (a *App) startSupportTest() {
 }
 
 func (a *App) tickSupport(now time.Time) bool {
+	if a.screen == ScreenTroubleshooting && a.support.mode == "pad" {
+		v := &a.support
+		if v.next.IsZero() || now.Before(v.next) {
+			return false
+		}
+		v.mode, v.next, v.backAt = "menu", time.Time{}, time.Time{}
+		a.all = true
+		return true
+	}
 	if !a.supportCapturing() || now.Before(a.support.next) {
 		return false
 	}
@@ -107,12 +256,14 @@ func (a *App) actSupport(k platform.Key) bool {
 		case platform.KeyUp:
 			v.cursor = max(0, v.cursor-1)
 		case platform.KeyDown:
-			v.cursor = min(2, v.cursor+1)
+			v.cursor = min(3, v.cursor+1)
 		case platform.KeyEnter:
 			switch v.cursor {
 			case 0:
 				a.startSupportTest()
 			case 1:
+				a.startPadTest()
+			case 2:
 				row, d, i := a.current()
 				v.game, v.target = "", ""
 				if row != nil {
@@ -123,7 +274,7 @@ func (a *App) actSupport(k platform.Key) bool {
 					}
 				}
 				v.mode = "launch"
-			case 2:
+			case 3:
 				if v.report.HasResult() {
 					v.mode, v.page = "result", 0
 				} else {
@@ -295,7 +446,7 @@ func (a *App) paintSupport(c *gfx.Canvas) {
 	v := &a.support
 	switch v.mode {
 	case "menu":
-		for i, label := range []string{"Test Start button", "Test game launch", "Last troubleshooting result"} {
+		for i, label := range []string{"Test Start button", "Test pad buttons", "Test game launch", "Last troubleshooting result"} {
 			col := gen.Eva.Fg
 			if i == v.cursor {
 				c.Fill(image.Rect(box.Min.X-1, y, box.Max.X+1, y+a.sm.H+2), gen.Eva.Surface)
@@ -309,12 +460,52 @@ func (a *App) paintSupport(c *gfx.Canvas) {
 			write("Press your Start button when asked. The result stays on screen for a photo.", gen.Eva.Muted)
 		}
 		if v.cursor == 1 {
-			write("Try the highlighted game's main version using "+a.btn("A")+" / Enter.", gen.Eva.Muted)
+			write("See which pad sent each press, its raw button, the MiSTer slot it is defined in and what MisterZine does. Hold "+a.btn("B")+" two seconds to leave.", gen.Eva.Muted)
 		}
 		if v.cursor == 2 {
+			write("Try the highlighted game's main version using "+a.btn("A")+" / Enter.", gen.Eva.Muted)
+		}
+		if v.cursor == 3 {
 			write("Review the saved result, including after restarting MisterZine.", gen.Eva.Muted)
 		}
 		a.paintHint(c, "Up/Down choose  A open  B back")
+	case "pad":
+		write("PAD TEST", gen.Eva.Accent)
+		y += 2
+		if len(v.pads) == 0 {
+			write("No gamepad is being read. A pad needs a Start button or a MiSTer map (define it in the MiSTer menu).", gen.Eva.Muted)
+		}
+		for _, p := range v.pads {
+			for i, line := range a.padLines(p) {
+				col := gen.Eva.Muted
+				if i == 0 {
+					col = gen.Eva.Fg
+				}
+				write(line, col)
+			}
+		}
+		write("", gen.Eva.Fg)
+		write("PRESSES, newest first", gen.Eva.Accent)
+		y += 2
+		if len(v.presses) == 0 {
+			write("Press any button.", gen.Eva.Muted)
+		}
+		for i, p := range v.presses {
+			var prev *padPress
+			if i+1 < len(v.presses) {
+				prev = &v.presses[i+1]
+			}
+			col := gen.Eva.Fg
+			if i > 0 {
+				col = gen.Eva.Muted
+			}
+			write(a.padPressLine(p, prev), col)
+		}
+		if !v.backAt.IsZero() {
+			a.paintHint(c, "Keep holding "+a.btn("B")+" to leave")
+		} else {
+			a.paintHint(c, "Hold B 2 s to leave")
+		}
 	case "capture":
 		now := v.now
 		if now.Before(v.from) {

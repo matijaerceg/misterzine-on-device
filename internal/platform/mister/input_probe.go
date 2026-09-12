@@ -45,7 +45,7 @@ func OpenInputProbe(c *support.Capture, until time.Time) *InputProbe {
 		d.Keyboard, d.StandardStart = isKeyboard(f), isPad(f)
 		d.Virtual = d.Name == "MiSTer virtual input"
 		if !d.Virtual {
-			m := deviceStart(f)
+			m := devicePad(f)
 			d.StartCode, d.StartMapping, d.StartNote = m.Code, m.Source, m.Note
 		}
 		var id [4]uint16

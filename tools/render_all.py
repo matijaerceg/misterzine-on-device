@@ -7,9 +7,9 @@ os.chdir(Path(__file__).resolve().parents[1])
 go = os.environ.get("GO", "go")
 scenarios = [
     ["-support-report", "testdata/support-mapped-start.json", "-out", "out/support-mapped-h", "-script",
-     "back; end; up; enter; down*2; enter; shot result; right; shot mapping"],
+     "back; end; up; enter; down*3; enter; shot result; right; shot mapping"],
     ["-support-report", "testdata/support-mapped-start.json", "-inset", "40", "-rot", "left", "-logical", "-out", "out/support-mapped-t", "-script",
-     "back; end; up; enter; down*2; enter; shot result; right; shot mapping"],
+     "back; end; up; enter; down*3; enter; shot result; right; shot mapping"],
     ["-rot", "none", "-out", "out/h"],
     ["-rot", "left", "-out", "out/t", "-logical"],
     ["-out", "out/filters-h", "-script",
@@ -28,13 +28,13 @@ scenarios = [
     ["-rot", "left", "-logical", "-out", "out/saver-t", "-script",
      "back; down*16; shot option; enter; wait 12000; shot preview; back; up*16; up; shot wrap; down; shot top"],
     ["-support-report", "testdata/support-controller.json", "-out", "out/support-h", "-script",
-     "back; end; up; enter; shot menu; enter; shot ready; wait 3500; shot capture; wait 6000; shot result; right; shot evidence; back; down; enter; shot launch; enter; shot launch-result"],
+     "back; end; up; enter; shot menu; enter; shot ready; wait 3500; shot capture; wait 6000; shot result; right; shot evidence; back; down*2; enter; shot launch; enter; shot launch-result"],
     ["-support-report", "testdata/support-controller.json", "-rot", "left", "-logical", "-out", "out/support-t", "-script",
-     "back; end; up; enter; shot menu; enter; shot ready; wait 3500; shot capture; wait 6000; shot result; right; shot evidence; back; down; enter; shot launch; enter; shot launch-result"],
+     "back; end; up; enter; shot menu; enter; shot ready; wait 3500; shot capture; wait 6000; shot result; right; shot evidence; back; down*2; enter; shot launch; enter; shot launch-result"],
     ["-support-report", "testdata/support-no-input.json", "-inset", "40", "-out", "out/support-small-h", "-script",
-     "back; end; up; enter; down*2; enter; shot result; right; shot evidence"],
+     "back; end; up; enter; down*3; enter; shot result; right; shot evidence"],
     ["-support-report", "testdata/support-no-input.json", "-inset", "40", "-rot", "left", "-logical", "-out", "out/support-small-t", "-script",
-     "back; end; up; enter; down*2; enter; shot result; right; shot evidence"],
+     "back; end; up; enter; down*3; enter; shot result; right; shot evidence"],
 ]
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
@@ -140,5 +140,13 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                       "type xyz; shot empty-numbers; back; back; down*17; left*3; shot option-mister; left; back; shot list-mister"])
     scenarios.append([*rotation, "-button-labels", "xbox",
                       "-out", f"out/button-labels-xbox-{orientation}", "-script", "shot list; enter; shot details"])
+for rotation in ([], ["-rot", "left", "-logical"]):
+    orientation = "t" if rotation else "h"
+    # Troubleshooting -> Test pad buttons: the pads as read, then scripted
+    # presses (no pad name, so they show as script input), then hold B out
+    scenarios.append([*rotation, "-support-report", "testdata/support-controller.json",
+                      "-out", f"out/pad-test-{orientation}", "-script",
+                      "back; end; up; enter; down; shot menu; enter; shot empty; enter; space; tab; start; shot presses; "
+                      "hold back 2200; shot left"])
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)

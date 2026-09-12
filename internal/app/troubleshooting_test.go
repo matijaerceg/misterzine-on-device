@@ -71,6 +71,7 @@ func TestSupportLaunchRequiresFreshConfirmAndCapturesTarget(t *testing.T) {
 	}}
 	a.OpenTroubleshooting()
 	a.actSupport(platform.KeyDown)
+	a.actSupport(platform.KeyDown) // past the pad tester
 	press := platform.Event{Key: platform.KeyEnter, Pressed: true, At: *clock}
 	a.Handle(press)
 	a.Handle(press) // held/duplicate confirm must not launch

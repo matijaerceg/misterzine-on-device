@@ -604,6 +604,9 @@ func (a *App) Handle(ev platform.Event) bool {
 	if a.screen == ScreenUpdate {
 		return a.handleUpdate(ev)
 	}
+	if a.screen == ScreenTroubleshooting && a.support.mode == "pad" {
+		return a.handlePadTest(ev)
+	}
 	if ev.Pressed && ev.Text != 0 && a.screen == ScreenList {
 		// Space still sorts before a search begins; while searching it is text.
 		if ev.Text != ' ' || a.query != "" {
