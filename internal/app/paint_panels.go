@@ -397,6 +397,10 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Wait before held navigation repeats: short 200 ms, normal 300 ms, long 500 ms. Scroll speed sets the pace after this delay."},
 		{text: "Main menu launcher", kind: "launcher", vals: []string{"off", "on"}, idx: launcherIdx,
 			help: "Show MisterZine in the MiSTer main menu. Off removes the entry when you return to Menu. Run MisterZine-Setup in Scripts to restore it."},
+		{text: "Open at boot", kind: "open-at-boot", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.OpenAtBoot], disabled: launcherIdx == 0,
+			help: "On: once the MiSTer menu is up after power-on or reboot, MisterZine opens as if picked from it. Needs the Main menu launcher. A bootcore in the INI wins."},
+		{text: "Return after game", kind: "return-after-game", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ReturnAfterGame], disabled: launcherIdx == 0,
+			help: "On: when a game started here exits to the MiSTer menu, MisterZine reopens on that game. Needs the Main menu launcher. Menu on the pad still leaves for the MiSTer menu."},
 		{text: "Troubleshooting", kind: "troubleshooting",
 			help: "Test your Start button or game launching. Results stay on screen for a photo; no keyboard or log files needed."},
 		{text: "Quit MisterZine", kind: "quit",
@@ -766,6 +770,10 @@ func (a *App) stepValue(d int) bool {
 		a.cfg.HoldDelay = []int{200, 300, 500}[i]
 	case "remember-sort":
 		a.cfg.RememberSort = i == 1
+	case "open-at-boot":
+		a.cfg.OpenAtBoot = i == 1
+	case "return-after-game":
+		a.cfg.ReturnAfterGame = i == 1
 	case "follow-rotation":
 		a.cfg.FollowRotation = i == 1
 		if i == 0 && a.cfg.Action != nil {

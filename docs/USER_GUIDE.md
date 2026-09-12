@@ -137,7 +137,8 @@ Options is in four groups under grey headings: Data (Refresh data now, Run
 Update All, Last update result, Rescan card, Prefetch shots, Clear image
 cache), List (Sources, Filter by rotation, Remember sort order, Recents view,
 Title font, List shots, Date format, List layout), Display (rotation, screensaver, safe zone) and
-Operation (scrolling, the launcher, Troubleshooting, Quit). The
+Operation (scrolling, the launcher, Open at boot, Return after game,
+Troubleshooting, Quit). The
 headings cannot be selected. Values line up in one column; a small arrow at the right
 edge of the top or bottom row shows when more options sit above or below the
 visible part of the list. The framed text under the list describes the selected
@@ -223,6 +224,15 @@ the bottom.
 - **Main menu launcher:** off removes the menu entry and boot hook. If the
   launcher opened this session, it returns to Menu before stopping. Run Setup
   from Scripts to re-enable it later.
+- **Open at boot:** off by default. On: once the MiSTer menu is up after a
+  power-on or reboot, the launcher picks the MisterZine entry for you, the same
+  way you would. A `bootcore` in the INI takes precedence and nothing happens.
+  Needs the Main menu launcher.
+- **Return after game:** off by default. On: when a game you started from
+  MisterZine exits to the MiSTer menu (Reset or Exit in the OSD), the launcher
+  picks the MisterZine entry again and the list opens on that game. Games
+  loaded some other way, and the pad's Menu button leaving MisterZine, do not
+  bring it back. Needs the Main menu launcher.
 - **Troubleshooting:** a guided Start-button test and an A/Enter game-launch
   test, with results you can photograph. The last result survives restarting.
   See [troubleshooting](TROUBLESHOOTING.md#start-does-not-launch-games).

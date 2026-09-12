@@ -117,15 +117,16 @@ func main() {
 	ini := flag.String("ini", "", "MiSTer INI path; empty follows Main's active (alternative) INI on the card")
 	debugAddr := flag.String("debug-http", "", "LAN debug server address, e.g. :8195")
 	version := flag.Bool("version", false, "print the version and exit")
+	resume := flag.Bool("resume", false, "reopened by the launcher after a game: start on that game")
 	flag.Parse()
 	if *version {
 		fmt.Println("misterzine " + buildinfo.String())
 		return
 	}
-	os.Exit(run(*root, *card, *ini, *debugAddr))
+	os.Exit(run(*root, *card, *ini, *debugAddr, *resume))
 }
 
-func run(root, card, iniPath, debugAddr string) (code int) {
+func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	os.MkdirAll(filepath.Join(root, "cache"), 0755)
 	lg := openLog(filepath.Join(root, "log.txt"))
 	lg.Printf("==== misterzine %s pid %d args %v", buildinfo.String(), os.Getpid(), os.Args[1:])
@@ -217,6 +218,8 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 		Recents:              h.settings.Recents,
 		RecentLaunches:       h.state.Recents,
 		LastSort:             h.settings.LastSort,
+		OpenAtBoot:           h.settings.OpenAtBoot,
+		ReturnAfterGame:      h.settings.ReturnAfterGame,
 		TitleFont:            h.settings.TitleFont,
 		ListShot:             h.settings.ListShot,
 		DateFormat:           h.settings.DateFormat,
@@ -313,6 +316,10 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 		h.a.SetSort(data.SortFavorites)
 	}
 	h.a.SetFilters(h.state.Filters)
+	if resume && len(h.state.Recents) > 0 {
+		// Return after game: the launcher reopened us; land on the game.
+		h.a.MoveToKey(h.state.Recents[0].K)
+	}
 	h.a.SetNet(h.netLabel(ds))
 	if ini.Found && !ini.AnalogVisible() && !hasState { // first run only: HDMI users need nothing
 		h.a.Notice("CRT only? add direct_video=1 under [Menu], see README", 20*time.Second)
@@ -697,6 +704,8 @@ func (h *host) saveAll(final bool) {
 		h.settings.InstalledOnly = h.a.InstalledOnly()
 		h.settings.Recents = h.a.RecentsView()
 		h.settings.LastSort = h.a.Sort()
+		h.settings.OpenAtBoot = h.a.OpenAtBoot()
+		h.settings.ReturnAfterGame = h.a.ReturnAfterGame()
 		h.settings.TitleFont = h.a.TitleFont()
 		h.settings.ListShot = h.a.ListShot()
 		h.settings.DateFormat = h.a.DateFormat()

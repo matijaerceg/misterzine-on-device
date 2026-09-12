@@ -101,6 +101,10 @@ type Config struct {
 	// cycle after Favorites.
 	Recents  bool
 	LastSort data.SortMode
+	// OpenAtBoot and ReturnAfterGame are Options -> Operation switches the
+	// host's resident launcher acts on; both need the launcher enabled.
+	OpenAtBoot      bool
+	ReturnAfterGame bool
 	// TitleFont draws list titles in "tall" (default: the narrow font at the
 	// body font's height), "narrow" or "normal" (the body font).
 	TitleFont string
@@ -395,9 +399,11 @@ func (a *App) nextSort() data.SortMode {
 	return data.NextSort(a.mode)
 }
 
-func (a *App) RememberSort() bool   { return a.cfg.RememberSort }
-func (a *App) FollowRotation() bool { return a.cfg.FollowRotation }
-func (a *App) FilterRotation() bool { return a.cfg.FilterRotation }
+func (a *App) RememberSort() bool    { return a.cfg.RememberSort }
+func (a *App) OpenAtBoot() bool      { return a.cfg.OpenAtBoot }
+func (a *App) ReturnAfterGame() bool { return a.cfg.ReturnAfterGame }
+func (a *App) FollowRotation() bool  { return a.cfg.FollowRotation }
+func (a *App) FilterRotation() bool  { return a.cfg.FilterRotation }
 
 // InstalledOnly reports Options -> Sources: installed only.
 func (a *App) InstalledOnly() bool { return a.cfg.InstalledOnly }

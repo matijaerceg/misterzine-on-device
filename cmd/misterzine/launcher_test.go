@@ -211,6 +211,59 @@ func TestWatcherDetectsAtomicBinaryReplacement(t *testing.T) {
 	}
 }
 
+// scriptedCores hands out CORENAME readings in order, repeating the last.
+func scriptedCores(names ...string) func() string {
+	i := 0
+	return func() string {
+		if i < len(names)-1 {
+			i++
+			return names[i-1]
+		}
+		return names[len(names)-1]
+	}
+}
+
+func TestAwaitGameExitFollowsOnlyOurGame(t *testing.T) {
+	cases := []struct {
+		name  string
+		cores []string
+		want  bool
+	}{
+		{"game then menu", []string{"misterzine", "misterzine", "Galaga", "Galaga", "", "Galaga", "MENU"}, true},
+		{"launch straight from menu", []string{"MENU", "SNES", "MENU"}, true},
+		{"game never loads", []string{"misterzine", "misterzine", "MENU", "MENU"}, false},
+		{"another core took over", []string{"Galaga", "Galaga", "NES", "MENU"}, false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			pauses := 0
+			got := awaitGameExit(scriptedCores(c.cores...), func(time.Duration) {
+				if pauses++; pauses > 100 {
+					t.Fatal("never settled")
+				}
+			}, 1*time.Second)
+			if got != c.want {
+				t.Fatalf("returned %v after %d pauses, want %v", got, pauses, c.want)
+			}
+		})
+	}
+}
+
+func TestAwaitMenuAtBootLeavesBootcoreAlone(t *testing.T) {
+	for _, c := range []struct {
+		cores []string
+		want  bool
+	}{
+		{[]string{"", "", "MENU"}, true},
+		{[]string{"", "SNES"}, false},
+		{[]string{""}, false}, // Main never wrote a name before the deadline
+	} {
+		if got := awaitMenuAtBoot(scriptedCores(c.cores...), func(time.Duration) {}, 2*time.Second); got != c.want {
+			t.Fatalf("%v: got %v", c.cores, got)
+		}
+	}
+}
+
 func TestMenuRestoreWaitsForUpdateAndRespectsCoreChanges(t *testing.T) {
 	for _, nextCore := range []string{"misterzine", "SNES", "MENU", ""} {
 		t.Run(nextCore, func(t *testing.T) {

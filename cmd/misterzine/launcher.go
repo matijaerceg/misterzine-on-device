@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/platform/mister"
+	"github.com/matijaerceg/misterzine-on-device/internal/store"
 	"github.com/matijaerceg/misterzine-on-device/internal/updater"
 )
 
@@ -33,7 +34,94 @@ const (
 	corenameFile  = "/tmp/CORENAME"
 	launchedFile  = "/media/fat/misterzine/launched" // written by the app right before it loads a core
 	scriptEntry   = "/media/fat/misterzine/launch.sh"
+	bootMark      = "/tmp/misterzine-boot" // /tmp empties at boot: the first watcher of a boot creates it
+	menuCore      = "MENU"                 // what Main writes to CORENAME for its own menu
 )
+
+// watchSettings reads the Options the watcher carries out (Open at boot,
+// Return after game); the app saves settings.json on every change.
+func watchSettings() store.Settings {
+	s, _ := store.LoadSettings(filepath.Join(filepath.Dir(pidFile), "settings.json"))
+	return s
+}
+
+func coreName() string {
+	b, _ := os.ReadFile(corenameFile)
+	return strings.TrimSpace(string(b))
+}
+
+// sendMainCmd writes one line to Main's command FIFO.
+func sendMainCmd(line string) error {
+	f, err := os.OpenFile("/dev/MiSTer_cmd", os.O_WRONLY|syscall.O_NONBLOCK, 0)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	_, err = f.WriteString(line + "\n")
+	return err
+}
+
+// firstWatcherSinceBoot is true once per boot: the mark lives in /tmp, which
+// is empty after power-on, and the watcher a Downloader update restarts or a
+// Setup run hours later finds it (or fails the uptime bound).
+func firstWatcherSinceBoot() bool {
+	if fileExists(bootMark) {
+		return false
+	}
+	os.WriteFile(bootMark, nil, 0644)
+	b, _ := os.ReadFile("/proc/uptime")
+	if f := strings.Fields(string(b)); len(f) > 0 {
+		if up, err := strconv.ParseFloat(f[0], 64); err == nil {
+			return up < 300
+		}
+	}
+	return false
+}
+
+// awaitMenuAtBoot polls until Main has written a core name after boot and
+// reports whether it is the menu: a bootcore from the INI comes up instead
+// and is left alone, as is a Main that never appears before the deadline.
+func awaitMenuAtBoot(probe func() string, pause func(time.Duration), deadline time.Duration) bool {
+	for waited := time.Duration(0); waited < deadline; waited += 250 * time.Millisecond {
+		switch probe() {
+		case menuCore:
+			return true
+		case "":
+			pause(250 * time.Millisecond)
+		default:
+			return false
+		}
+	}
+	return false
+}
+
+// awaitGameExit follows the core the app just launched: true once the game
+// has come up and later given way to Main's menu (the user left it through
+// the OSD). False when the game never appeared before loadDeadline, or when
+// another core replaced it without passing through the menu (something else
+// took over). An empty name is Main between two writes; it is waited out.
+func awaitGameExit(probe func() string, pause func(time.Duration), loadDeadline time.Duration) bool {
+	game := ""
+	for waited := time.Duration(0); game == ""; waited += 250 * time.Millisecond {
+		if waited >= loadDeadline {
+			return false
+		}
+		pause(250 * time.Millisecond)
+		if core := probe(); core != "" && core != menuCore && core != "misterzine" {
+			game = core
+		}
+	}
+	for {
+		pause(250 * time.Millisecond)
+		switch probe() {
+		case game, "":
+		case menuCore:
+			return true
+		default:
+			return false
+		}
+	}
+}
 
 // launcherCmd handles: launcher start | stop | status | enable | disable
 func launcherCmd(args []string) int {
@@ -322,6 +410,18 @@ func watch() int {
 	runningBinary, _ := os.Stat("/proc/self/exe")
 	nextBinaryCheck := time.Now()
 	warmCache()
+	if first := firstWatcherSinceBoot(); first && launcherEnabled() && watchSettings().OpenAtBoot {
+		lg.Printf("watch: open at boot: waiting for the menu")
+		if awaitMenuAtBoot(coreName, time.Sleep, 2*time.Minute) {
+			ensureMGL()
+			if err := sendMainCmd("load_core " + mglPath); err != nil {
+				lg.Printf("watch: open at boot: %v", err)
+			}
+		} else {
+			lg.Printf("watch: open at boot: the menu did not come up (bootcore?); leaving it")
+		}
+	}
+	resume := false // the next app run was a return after a game
 	var kbd *mister.VKeyboard
 	defer func() {
 		if kbd != nil {
@@ -380,9 +480,10 @@ func watch() int {
 			time.Sleep(500 * time.Millisecond) // let Main open the new device
 		}
 		os.Remove(launchedFile)
-		if err := runFromMenu(lg, kbd); err != nil {
+		if err := runFromMenu(lg, kbd, resume); err != nil {
 			lg.Printf("watch: %v", err)
 		}
+		resume = false
 		enabled := launcherEnabled()
 		if enabled {
 			ensureMGL()
@@ -391,15 +492,25 @@ func watch() int {
 			// the app itself loaded a core: leave it alone
 			os.Remove(launchedFile)
 			lg.Printf("watch: the app launched %s; not touching the menu", strings.TrimSpace(string(b)))
+			if enabled && watchSettings().ReturnAfterGame {
+				lg.Printf("watch: return after game: waiting for the game to exit to the menu")
+				if awaitGameExit(coreName, time.Sleep, 20*time.Second) && !launcherUpdateActive() {
+					lg.Printf("watch: game exited; reopening MisterZine")
+					resume = true
+					if err := sendMainCmd("load_core " + mglPath); err != nil {
+						lg.Printf("watch: return after game: %v", err)
+						resume = false
+					}
+					continue // the selection arrives as a fresh CORENAME write
+				}
+				lg.Printf("watch: not returning: the game did not load, or another core took over")
+			}
 		} else if waitForMenuRestore(lg, func() (string, bool) {
 			b, _ := os.ReadFile(corenameFile)
 			return strings.TrimSpace(string(b)), launcherUpdateActive()
 		}, time.Sleep) {
-			if f, err := os.OpenFile("/dev/MiSTer_cmd", os.O_WRONLY|syscall.O_NONBLOCK, 0); err == nil {
-				// back to a plain menu: resets CORENAME so this does not retrigger
-				f.WriteString("load_core /media/fat/menu.rbf\n")
-				f.Close()
-			}
+			// back to a plain menu: resets CORENAME so this does not retrigger
+			sendMainCmd("load_core /media/fat/menu.rbf")
 		}
 		// wait for CORENAME to change before watching again
 		for i := 0; i < 40; i++ {
@@ -418,7 +529,8 @@ func watch() int {
 
 // runFromMenu opens the console and runs the app wrapper on tty2, like
 // Main does for its own Scripts menu, and returns when the app exits.
-func runFromMenu(lg *log.Logger, kbd *mister.VKeyboard) error {
+// resume tells the app it is reopening after a game.
+func runFromMenu(lg *log.Logger, kbd *mister.VKeyboard, resume bool) error {
 	time.Sleep(1200 * time.Millisecond) // Main has just re-executed itself
 	// Remote's trick: park on tty3, press F9 until Main switches to tty1
 	lg.Printf("watch: console: active %s, fb mode %q before", mister.ActiveTTY(), mister.SysfsMode())
@@ -447,7 +559,11 @@ func runFromMenu(lg *log.Logger, kbd *mister.VKeyboard) error {
 		// wrapper arrives. Downloader removes this old Scripts entry.
 		entry = "/media/fat/Scripts/misterzine.sh"
 	}
-	launcher := "#!/bin/bash\nexport LC_ALL=en_US.UTF-8\nexport HOME=/root\ncd " + filepath.Dir(entry) + "\n" + entry + "\n"
+	args := ""
+	if resume {
+		args = " --resume"
+	}
+	launcher := "#!/bin/bash\nexport LC_ALL=en_US.UTF-8\nexport HOME=/root\ncd " + filepath.Dir(entry) + "\n" + entry + args + "\n"
 	if err := os.WriteFile("/tmp/script", []byte(launcher), 0700); err != nil {
 		return err
 	}

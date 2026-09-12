@@ -29,12 +29,16 @@ type Settings struct {
 	RememberSort   bool          `json:"remember_sort"`
 	LastSort       data.SortMode `json:"last_sort"`
 	Recents        bool          `json:"recents_view"` // Options -> Recents view: the launch history joins the Y cycle
-	TitleFont      string        `json:"title_font"`  // list titles: tall (default), narrow or normal
-	ListShot       string        `json:"list_shot"`   // list thumbnail: gameplay (default) or title
-	DateFormat     string        `json:"date_format"` // list dates: mm-dd (default), dd-mm, mon-d, d-mon, yymmdd
-	ListLayout     string        `json:"list_layout"` // main view: list (default), split or picture
-	InsetX         int           `json:"inset_x"`
-	InsetY         int           `json:"inset_y"`
+	// OpenAtBoot and ReturnAfterGame are carried out by the resident menu
+	// launcher (misterzine launcher watch), which reads this file itself.
+	OpenAtBoot      bool   `json:"open_at_boot"`      // Options -> Open at boot: pick the menu entry once Main's menu is up
+	ReturnAfterGame bool   `json:"return_after_game"` // Options -> Return after game: pick it again when a launched game exits to Menu
+	TitleFont       string `json:"title_font"`        // list titles: tall (default), narrow or normal
+	ListShot        string `json:"list_shot"`         // list thumbnail: gameplay (default) or title
+	DateFormat      string `json:"date_format"`       // list dates: mm-dd (default), dd-mm, mon-d, d-mon, yymmdd
+	ListLayout      string `json:"list_layout"`       // main view: list (default), split or picture
+	InsetX          int    `json:"inset_x"`
+	InsetY          int    `json:"inset_y"`
 }
 
 // DefaultSettings for a fresh install.
