@@ -78,9 +78,12 @@ func (a *App) buildPanel() {
 		w := a.panel.entries[a.panel.cursor]
 		was = &w
 	}
-	if a.screen == ScreenOptions {
+	switch a.screen {
+	case ScreenOptions:
 		a.panel.entries = a.optionsEntries()
-	} else {
+	case ScreenViews:
+		a.panel.entries = a.viewsEntries()
+	default:
 		a.panel.entries = a.filterEntries()
 	}
 	if was != nil {
@@ -371,8 +374,8 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Show only games made for the current orientation (INI or manual); unknowns hidden. Off restores manual filters."},
 		{text: "Remember sort order", kind: "remember-sort", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.RememberSort()],
 			help: "On: reopen with your last view, including Favorites (default). Off: start new visits with latest updates."},
-		{text: "Recents view", kind: "recents", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.Recents],
-			help: "On adds Recents to the " + a.btn("Y") + " cycle after Favorites: games launched from MisterZine, latest first, dated by launch. Launches are kept either way."},
+		{text: "Views (" + a.viewsSummary() + ")", kind: "views",
+			help: "Which views " + a.btn("Y") + " cycles through: core updated, MiSTer debut, original year, A-Z, maker, Favorites, Recents (launches from here). " + a.btn("A") + " opens the list."},
 		{text: "Title font", kind: "title-font", vals: []string{"normal", "narrow", "narrow tall"}, idx: map[string]int{"normal": 0, "narrow": 1, "tall": 2}[a.TitleFont()],
 			help: "Narrow fonts fit a third more title; tall (default) matches the body font height. Normal: body font."},
 		{text: "List shots", kind: "list-shot", vals: []string{"gameplay", "title"}, idx: map[string]int{"gameplay": 0, "title": 1}[a.ListShot()],
@@ -466,6 +469,8 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 		title := "Filters"
 		if a.screen == ScreenOptions {
 			title = "Options"
+		} else if a.screen == ScreenViews {
+			title = "Views"
 		}
 		c.Text(l.Status.Min.X+2, l.Status.Min.Y+2, a.sm, title, gen.Eva.Accent)
 	}
@@ -545,7 +550,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, cols), gen.Eva.Muted)
 		case e.header:
 			c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, cols), gen.Eva.Accent)
-		case e.kind == "year" || e.kind == "decade" || e.kind == "res" || e.kind == "base" || e.kind == "beta" || e.kind == "src" || e.kind == "rot" || e.kind == "plr" || e.kind == "genre" || e.kind == "directions" || e.kind == "buttons" || e.kind == "install" || e.kind == "fav" || e.kind == "since":
+		case e.kind == "year" || e.kind == "decade" || e.kind == "res" || e.kind == "base" || e.kind == "beta" || e.kind == "src" || e.kind == "rot" || e.kind == "plr" || e.kind == "genre" || e.kind == "directions" || e.kind == "buttons" || e.kind == "install" || e.kind == "fav" || e.kind == "since" || e.kind == "view":
 			mark := "[ ] "
 			if e.checked {
 				mark = "[x] "
@@ -559,7 +564,9 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			}
 			text := mark + gfx.Fit(e.text, cols-len(mark)-len(suffix)) + suffix
 			col := gen.Eva.Fg
-			if n == p.cursor && a.screen != ScreenFilter {
+			if e.disabled && a.screen == ScreenViews {
+				col = gen.Eva.Muted // the last view on stays on
+			} else if n == p.cursor && a.screen == ScreenOptions {
 				col = gen.Eva.Accent
 			}
 			c.Text(inner.Min.X+2, y, font, gfx.Fit(text, cols), col)
@@ -618,6 +625,8 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			}
 		}
 		a.paintHint(c, gfx.ArrowLeft+" "+gfx.ArrowRight+" change  A open  B back")
+	} else if a.screen == ScreenViews {
+		a.paintHint(c, "A on/off  B back")
 	} else {
 		a.paintHint(c, a.filterHint())
 	}
@@ -666,6 +675,10 @@ func (a *App) actPanel(k platform.Key) bool {
 			a.closeOptions() // back to the screen it was opened over
 			return true
 		}
+		if a.screen == ScreenViews {
+			a.closeViews()
+			return true
+		}
 		a.screen = ScreenList
 		a.all = true
 		return true
@@ -691,10 +704,16 @@ func (a *App) actPanel(k platform.Key) bool {
 		if a.screen == ScreenOptions {
 			return a.stepValue(-1)
 		}
+		if a.screen != ScreenFilter {
+			return false
+		}
 		return a.expandFilterSection(false)
 	case platform.KeyRight:
 		if a.screen == ScreenOptions {
 			return a.stepValue(1)
+		}
+		if a.screen != ScreenFilter {
+			return false
 		}
 		return a.expandFilterSection(true)
 	case platform.KeyPageUp, platform.KeyHome:
@@ -718,6 +737,9 @@ func (a *App) actPanel(k platform.Key) bool {
 			}
 		}
 	case platform.KeyTab:
+		if a.screen != ScreenFilter {
+			return false
+		}
 		return a.toggleYearExpansion()
 	case platform.KeySpace:
 		if a.screen == ScreenFilter {
@@ -795,11 +817,6 @@ func (a *App) stepValue(d int) bool {
 	case "sources":
 		a.cfg.InstalledOnly = i == 1
 		a.Refilter()
-	case "recents":
-		a.cfg.Recents = i == 1
-		if !a.cfg.Recents && a.mode == data.SortRecents {
-			a.SetSort(data.SortUpdated)
-		}
 	case "screensaver":
 		a.cfg.Screensaver = saverValues[i]
 	case "title-font":
@@ -865,6 +882,16 @@ func (a *App) togglePanel() bool {
 		return a.toggleYears(false)
 	case "troubleshooting":
 		a.OpenTroubleshooting()
+		return true
+	case "views":
+		a.openViews()
+		return true
+	case "view":
+		m, _ := data.ParseSort(e.value)
+		if !a.setViewOn(m, !e.checked) {
+			return false
+		}
+		a.buildPanel()
 		return true
 	case "screensaver":
 		a.startSaver(a.cfg.TimerNow())
@@ -948,7 +975,7 @@ func (a *App) togglePanel() bool {
 		if !e.header {
 			f.Since = !f.Since
 		}
-	case "rotation", "follow-rotation", "filter-rotation", "sources", "recents", "launcher", "scroll", "hold-delay", "remember-sort", "prefetch", "title-font", "list-shot", "date-format", "list-layout", "button-labels":
+	case "rotation", "follow-rotation", "filter-rotation", "sources", "launcher", "scroll", "hold-delay", "remember-sort", "prefetch", "title-font", "list-shot", "date-format", "list-layout", "button-labels":
 		return true // Left/Right pick these
 	case "inset":
 		a.screen = ScreenCalibrate

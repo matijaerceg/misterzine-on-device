@@ -33,7 +33,7 @@ func TestSortCycleTiming(t *testing.T) {
 		recents = append(recents, data.Recent{K: rows[i].K, At: now.Add(-time.Duration(i) * time.Hour).Format(time.RFC3339)})
 	}
 	a := New(Config{PhysW: 320, PhysH: 240, SafeInsetX: 15, SafeInsetY: 15, Now: func() time.Time { return now }, ClockTrusted: true,
-		Recents: true, RecentLaunches: recents, Favorites: map[string]bool{rows[3].K: true, rows[10].K: true},
+		RecentLaunches: recents, Favorites: map[string]bool{rows[3].K: true, rows[10].K: true},
 		Status: func(i int) data.Status { return data.Status(1 + i%4) }}, ds, nil)
 	a.Paint()
 	t.Logf("%d rows", len(rows))

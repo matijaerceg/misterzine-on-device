@@ -71,10 +71,10 @@ func TestFacetCountsRespectOtherFiltersAndSearch(t *testing.T) {
 
 func TestAlphabeticalSortCyclePreservesSelectionAndFilters(t *testing.T) {
 	rows := []data.Row{{K: "z", Title: "Zulu", Updated: "2026-09-09", Date: "2026-09-07"}, {K: "a", Title: "alpha", Updated: "2026-09-08", Date: "2026-09-09"}, {K: "n", Title: "Game 10"}, {K: "m", Title: "Game 2"}}
-	a := New(Config{PhysW: 320, PhysH: 240, Favorites: map[string]bool{"z": true, "a": true, "n": true, "m": true}}, data.Ingest(rows, "", time.Now()), &data.SeenRecord{Cur: map[string]string{}})
+	a := New(Config{PhysW: 320, PhysH: 240, ViewsOff: []string{"recents"}, Favorites: map[string]bool{"z": true, "a": true, "n": true, "m": true}}, data.Ingest(rows, "", time.Now()), &data.SeenRecord{Cur: map[string]string{}})
 	a.SetFilters(data.Filters{FavOnly: true})
 	a.MoveToKey("z")
-	for _, mode := range []data.SortMode{data.SortDebut, data.SortYear, data.SortAlphabetical, data.SortFavorites, data.SortUpdated} {
+	for _, mode := range []data.SortMode{data.SortDebut, data.SortYear, data.SortAlphabetical, data.SortMaker, data.SortFavorites, data.SortUpdated} {
 		a.actList(platform.KeySpace)
 		if a.Sort() != mode || a.CursorKey() != "z" || !a.filters.FavOnly {
 			t.Fatal("sort cycle changed selection or filters")

@@ -34,6 +34,7 @@ func TestMainRowsFollowCenterAndStopAtEnds(t *testing.T) {
 	}
 	// A last-look divider occupies a real display line.
 	a.split = 4
+	a.rebuildMarks()
 	a.cursor = 4
 	a.actList(platform.KeyDown)
 	if a.top != 4 {

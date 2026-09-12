@@ -26,8 +26,11 @@ func (a *App) jumpGroup(direction int) {
 	}
 	a.cursor = i
 	a.top = a.screenLine(i)
+	if a.mode == data.SortMaker && a.markAt(i) {
+		a.top-- // the maker's header line comes with it
+	}
 	a.shortPage = true
-	if a.mode != data.SortAlphabetical && a.mode != data.SortFavorites {
+	if a.mode != data.SortAlphabetical && a.mode != data.SortFavorites && a.mode != data.SortMaker {
 		label := "Date unknown"
 		if a.mode == data.SortYear {
 			label = "Year unknown"
@@ -45,6 +48,9 @@ func (a *App) jumpGroupKey(pos int) string {
 	i := a.view[pos]
 	if a.mode == data.SortAlphabetical || a.mode == data.SortFavorites {
 		return string(a.ds.Der[i].TitleInitial())
+	}
+	if a.mode == data.SortMaker {
+		return a.ds.Der[i].Maker // "" gathers the unknown maker at the end
 	}
 	if a.mode == data.SortYear {
 		return data.ReleaseYear(a.ds.Rows[i].Year) // "" gathers the unknown years at the end

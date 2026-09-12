@@ -3,6 +3,7 @@ package store
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
@@ -39,7 +40,7 @@ func TestRememberSortMigration(t *testing.T) {
 			t.Fatal(err)
 		}
 		got, err := LoadSettings(path)
-		if err != nil || got != s {
+		if err != nil || !reflect.DeepEqual(got, s) {
 			t.Fatalf("restart lost preferences: %+v, %v", got, err)
 		}
 	}
@@ -64,7 +65,7 @@ func TestFollowRotationMigration(t *testing.T) {
 			t.Fatal(err)
 		}
 		again, err := LoadSettings(p)
-		if err != nil || again != s {
+		if err != nil || !reflect.DeepEqual(again, s) {
 			t.Fatal("rotation setting did not persist", err)
 		}
 	}
@@ -148,7 +149,7 @@ func TestScreensaverMigrationAndSave(t *testing.T) {
 			t.Fatal(err)
 		}
 		got, err := LoadSettings(path)
-		if err != nil || got != s {
+		if err != nil || !reflect.DeepEqual(got, s) {
 			t.Fatalf("settings changed after save: %+v, %v", got, err)
 		}
 	}
@@ -187,7 +188,7 @@ func TestLoadSettingsMissingIsDefaults(t *testing.T) {
 	if !os.IsNotExist(err) {
 		t.Fatalf("err = %v", err)
 	}
-	if s != DefaultSettings() {
+	if !reflect.DeepEqual(s, DefaultSettings()) {
 		t.Errorf("got %+v", s)
 	}
 }
@@ -202,4 +203,38 @@ func itoa(n int) string {
 		n /= 10
 	}
 	return string(b)
+}
+
+func TestViewsOffMigrationAndSave(t *testing.T) {
+	for _, tc := range []struct {
+		body string
+		off  []string
+	}{
+		{`{"rotation":"left"}`, []string{"recents"}},    // before Options -> Views: Recents view off
+		{`{"recents_view":true}`, nil},                  // Recents view on
+		{`{"recents_view":false}`, []string{"recents"}}, // Recents view off
+		{`{"views_off":[]}`, nil},                       // every view on
+		{`{"views_off":["year","maker"]}`, []string{"year", "maker"}},
+		{`{"views_off":["year","bogus"]}`, []string{"year"}},                                           // unknown names dropped
+		{`{"views_off":["updated","debut","year","alphabetical","maker","favorites","recents"]}`, nil}, // nothing on: back to all
+		{`{"views_off":[],"recents_view":false}`, nil},                                                 // views_off wins over the old flag
+	} {
+		s, err := LoadSettings(writeSettings(t, tc.body))
+		if err != nil || !reflect.DeepEqual(s.ViewsOff, tc.off) {
+			t.Fatalf("load %s: views off %v, want %v (%v)", tc.body, s.ViewsOff, tc.off, err)
+		}
+	}
+	if !reflect.DeepEqual(DefaultSettings().ViewsOff, []string{"recents"}) {
+		t.Fatal("a fresh install leaves only Recents out")
+	}
+	path := writeSettings(t, `{}`)
+	s := DefaultSettings()
+	s.ViewsOff = []string{"favorites"}
+	if err := Save(path, s); err != nil {
+		t.Fatal(err)
+	}
+	got, err := LoadSettings(path)
+	if err != nil || !reflect.DeepEqual(got.ViewsOff, []string{"favorites"}) {
+		t.Fatalf("restart lost the views: %v, %v", got.ViewsOff, err)
+	}
 }

@@ -17,12 +17,14 @@ type Derived struct {
 	Directions string
 	Buttons    string // numeric count including zero; empty = unknown
 	Year       string // exact original release year; empty = unknown/ambiguous
+	Maker      string // the manufacturer group's name (maker.go), ASCII-folded; empty = unknown
 	BatchN     int    // rows sharing this core's updated stamp (0 = not a batch stamp)
 
 	titleKey   []elem
 	coreKey    []elem
 	updatedKey []elem
 	dateKey    []elem
+	makerKey   []elem
 }
 
 // Facets are the distinct filterable values with row counts.
@@ -87,10 +89,13 @@ func Ingest(rows []Row, hash string, updated time.Time) *Dataset {
 			ds.Facets.Res[r.Res]++
 		}
 	}
+	makers := makerLabels(rows)
 	for i := range rows {
 		r := &rows[i]
 		d := &ds.Der[i]
 		d.CoreLabel = CoreLabel(r.Core, ds.Sole)
+		d.Maker = makers[MakerKey(r.Manufacturer)]
+		d.makerKey = Key(d.Maker)
 		d.TypeLabel = TypeLabel(r)
 		d.SrcShort = SrcShort(r.Src)
 		d.Title = ASCII(r.Title)

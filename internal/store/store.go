@@ -28,7 +28,7 @@ type Settings struct {
 	Screensaver    string        `json:"screensaver_minutes"`
 	RememberSort   bool          `json:"remember_sort"`
 	LastSort       data.SortMode `json:"last_sort"`
-	Recents        bool          `json:"recents_view"` // Options -> Recents view: the launch history joins the Y cycle
+	ViewsOff       []string      `json:"views_off"` // Options -> Views: the list orders left out of the Y cycle, by name (updated, debut, year, alphabetical, maker, favorites, recents)
 	// OpenAtBoot and ReturnAfterGame are carried out by the resident menu
 	// launcher (misterzine launcher watch), which reads this file itself.
 	OpenAtBoot      bool   `json:"open_at_boot"`      // Options -> Open at boot: pick the menu entry once Main's menu is up
@@ -46,7 +46,7 @@ type Settings struct {
 
 // DefaultSettings for a fresh install.
 func DefaultSettings() Settings {
-	return Settings{Schema: 1, Rotation: "auto", FollowRotation: true, Inset: 15, InsetX: 15, InsetY: 15, Scroll: "30", HoldDelay: 300, Screensaver: "1", RememberSort: true}
+	return Settings{Schema: 1, Rotation: "auto", FollowRotation: true, Inset: 15, InsetX: 15, InsetY: 15, Scroll: "30", HoldDelay: 300, Screensaver: "1", RememberSort: true, ViewsOff: []string{"recents"}}
 }
 
 // LoadSettings reads path over the defaults and migrates older files.
@@ -63,10 +63,19 @@ func LoadSettings(path string) (Settings, error) {
 	}
 	// a file from before the two-axis inset carries only "inset"
 	var probe struct {
-		X *int `json:"inset_x"`
-		Y *int `json:"inset_y"`
+		X       *int             `json:"inset_x"`
+		Y       *int             `json:"inset_y"`
+		Views   *json.RawMessage `json:"views_off"`
+		Recents bool             `json:"recents_view"` // before views_off: Options -> Recents view
 	}
 	json.Unmarshal(b, &probe)
+	if probe.Views == nil {
+		// a file from before Options -> Views: Recents was the one optional view
+		s.ViewsOff = nil
+		if !probe.Recents {
+			s.ViewsOff = []string{"recents"}
+		}
+	}
 	s.Migrate(probe.X == nil && probe.Y == nil)
 	return s, nil
 }
@@ -75,9 +84,19 @@ func LoadSettings(path string) (Settings, error) {
 // becomes two (when legacy says the file predates the split), and the
 // speed adjectives become rows per second.
 func (s *Settings) Migrate(legacy bool) {
-	if s.LastSort < data.SortUpdated || s.LastSort > data.SortRecents {
+	if !s.LastSort.Valid() {
 		s.LastSort = data.SortUpdated
 	}
+	var views []string
+	for _, n := range s.ViewsOff {
+		if _, ok := data.ParseSort(n); ok {
+			views = append(views, n)
+		}
+	}
+	if len(views) >= len(data.ViewOrder) {
+		views = nil // nothing left on: back to every view
+	}
+	s.ViewsOff = views
 	switch s.Screensaver {
 	case "off", "1", "2", "5", "10":
 	default:

@@ -31,10 +31,11 @@ const (
 	ScreenUpdate
 	ScreenTroubleshooting
 	ScreenScan
+	ScreenViews // Options -> Views: the checkbox page of the Y cycle
 )
 
 func (s Screen) String() string {
-	return [...]string{"list", "details", "screen", "filter", "options", "calibrate", "update", "troubleshooting", "scan"}[s]
+	return [...]string{"list", "details", "screen", "filter", "options", "calibrate", "update", "troubleshooting", "scan", "views"}[s]
 }
 
 // Config is what the app needs from its host.
@@ -97,9 +98,9 @@ type Config struct {
 	// InstalledOnly is Options -> Sources: installed only. Sources whose Downloader
 	// database the card lacks (SetHiddenSources) leave every view.
 	InstalledOnly bool
-	// Recents is Options -> Recents view: the launch history joins the Y
-	// cycle after Favorites.
-	Recents  bool
+	// ViewsOff names the views Options -> Views left out of the Y cycle
+	// (data.SortMode.Name); a fresh install lists only "recents".
+	ViewsOff []string
 	LastSort data.SortMode
 	// OpenAtBoot and ReturnAfterGame are Options -> Operation switches the
 	// host's resident launcher acts on; both need the launcher enabled.
@@ -153,8 +154,10 @@ type App struct {
 	hiddenSrc          map[string]bool
 	iniKnown, iniFound bool
 	seen               *data.Seen
-	split              int  // marker after view[split]; -1 none
-	topMark            bool // "nothing new" marker on top
+	split              int                    // last-look marker after view[split]; -1 none
+	topMark            bool                   // "nothing new" marker on top
+	marks              []int                  // every marker line, by the view position it precedes (marks.go)
+	viewsOff           map[data.SortMode]bool // views left out of the Y cycle (views.go)
 
 	screen     Screen
 	cursor     int  // index into view
@@ -218,7 +221,9 @@ func New(cfg Config, ds *data.Dataset, stored *data.SeenRecord) *App {
 		cfg.Versions = map[string]string{}
 	}
 	a := &App{cfg: cfg, body: fonts.Body(), sm: fonts.Small(), narrow: fonts.Narrow(), tall: fonts.NarrowTall(), rot: cfg.Rotation, split: -1, down: map[platform.Key]bool{}}
-	if cfg.RememberSort && cfg.LastSort >= data.SortUpdated && cfg.LastSort <= data.SortRecents && (cfg.LastSort != data.SortRecents || cfg.Recents) {
+	a.viewsOff = parseViewsOff(cfg.ViewsOff)
+	a.mode = a.firstView()
+	if cfg.RememberSort && a.viewOn(cfg.LastSort) {
 		a.mode = cfg.LastSort
 	}
 	a.physical = image.NewRGBA(image.Rect(0, 0, cfg.PhysW, cfg.PhysH))
@@ -355,6 +360,7 @@ func (a *App) rebuild() {
 		a.split = a.seen.SplitAt(a.ds, a.view, a.mode)
 		a.topMark = a.split < 0
 	}
+	a.rebuildMarks()
 	if a.cursor >= len(a.view) {
 		a.cursor = len(a.view) - 1
 	}
@@ -386,9 +392,10 @@ func (a *App) CursorKey() string {
 // MoveToKey puts the cursor on a key if it is in view.
 func (a *App) MoveToKey(k string) { a.moveToKey(k); a.all = true }
 
-// SetSort switches the sort mode.
+// SetSort switches the sort mode; a view turned off in Options -> Views
+// is refused.
 func (a *App) SetSort(m data.SortMode) {
-	if m < data.SortUpdated || m > data.SortRecents || m == a.mode || (m == data.SortRecents && !a.cfg.Recents) {
+	if !a.viewOn(m) || m == a.mode {
 		return
 	}
 	k := a.CursorKey()
@@ -404,18 +411,6 @@ func (a *App) SetSort(m data.SortMode) {
 
 // Sort reports the mode.
 func (a *App) Sort() data.SortMode { return a.mode }
-
-// nextSort is the mode Y moves to: the cycle, with Recents after Favorites
-// while the Recents view is on.
-func (a *App) nextSort() data.SortMode {
-	switch {
-	case a.mode == data.SortRecents:
-		return data.SortUpdated
-	case a.mode == data.SortFavorites && a.cfg.Recents:
-		return data.SortRecents
-	}
-	return data.NextSort(a.mode)
-}
 
 func (a *App) RememberSort() bool { return a.cfg.RememberSort }
 func (a *App) OpenAtBoot() bool   { return a.cfg.OpenAtBoot }
@@ -567,23 +562,12 @@ func (a *App) Screen() Screen { return a.screen }
 
 // screenLine maps a view position to its list line, counting marker lines.
 func (a *App) screenLine(pos int) int {
-	n := pos
-	if a.topMark {
-		n++
-	}
-	if a.split >= 0 && pos > a.split {
-		n++
-	}
-	return n
+	return pos + a.marksBefore(pos)
 }
 
 // totalLines is how many list lines the view occupies, markers included.
 func (a *App) totalLines() int {
-	n := len(a.view)
-	if a.topMark || a.split >= 0 {
-		n++
-	}
-	return n
+	return len(a.view) + len(a.marks)
 }
 
 func (a *App) ensureVisible() {
@@ -592,12 +576,15 @@ func (a *App) ensureVisible() {
 		return
 	}
 	line := a.screenLine(a.cursor)
+	if a.markAt(a.cursor) && a.mode == data.SortMaker {
+		line-- // a maker header comes into view with its first row
+	}
 	if line < a.top {
 		a.top = line
 	}
-	last := line
-	if a.split == a.cursor {
-		last++ // keep the marker after the last unseen row reachable
+	last := a.screenLine(a.cursor)
+	if a.markAt(a.cursor + 1) {
+		last++ // keep the marker after the row reachable
 	}
 	if last >= a.top+a.lay.Lines {
 		a.top = last - a.lay.Lines + 1
@@ -675,7 +662,7 @@ func (a *App) Handle(ev platform.Event) bool {
 	if ev.Key == platform.KeyMenu {
 		return a.menuButton()
 	}
-	if a.screen == ScreenList || a.screen == ScreenFilter || a.screen == ScreenOptions {
+	if a.screen == ScreenList || a.screen == ScreenFilter || a.screen == ScreenOptions || a.screen == ScreenViews {
 		switch ev.Key {
 		case platform.KeyUp, platform.KeyDown, platform.KeyLeft, platform.KeyRight:
 			a.rep.next = ev.At.Add(time.Duration(a.HoldDelay()) * time.Millisecond)
@@ -711,7 +698,7 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 		case platform.KeyUp, platform.KeyDown:
 			return repeatPage
 		}
-	case ScreenFilter, ScreenOptions:
+	case ScreenFilter, ScreenOptions, ScreenViews:
 		switch k {
 		case platform.KeyUp, platform.KeyDown:
 			return scrollPace(a.cfg.Scroll)
@@ -824,7 +811,7 @@ func (a *App) act(k platform.Key) bool {
 		return a.actSupport(k)
 	case ScreenShot:
 		return a.actShot(k)
-	case ScreenFilter, ScreenOptions:
+	case ScreenFilter, ScreenOptions, ScreenViews:
 		return a.actPanel(k)
 	case ScreenCalibrate:
 		return a.actCalibrate(k)
@@ -1030,7 +1017,7 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 		a.paintDetails(c)
 	case ScreenShot:
 		a.paintShot(c)
-	case ScreenFilter, ScreenOptions:
+	case ScreenFilter, ScreenOptions, ScreenViews:
 		a.paintPanel(c)
 	case ScreenCalibrate:
 		a.paintCalibrate(c)

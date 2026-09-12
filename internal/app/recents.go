@@ -9,9 +9,6 @@ import (
 // maxRecents is how many launches the history keeps.
 const maxRecents = 100
 
-// RecentsView reports Options -> Recents view.
-func (a *App) RecentsView() bool { return a.cfg.Recents }
-
 // Recents is the launch history, newest first, for the host to persist.
 func (a *App) Recents() []data.Recent { return a.cfg.RecentLaunches }
 

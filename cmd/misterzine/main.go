@@ -217,7 +217,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		FollowRotation:       h.settings.FollowRotation,
 		FilterRotation:       h.settings.FilterRotation,
 		InstalledOnly:        h.settings.InstalledOnly,
-		Recents:              h.settings.Recents,
+		ViewsOff:             h.settings.ViewsOff,
 		RecentLaunches:       h.state.Recents,
 		LastSort:             h.settings.LastSort,
 		OpenAtBoot:           h.settings.OpenAtBoot,
@@ -707,7 +707,7 @@ func (h *host) saveAll(final bool) {
 		h.settings.FollowRotation = h.a.FollowRotation()
 		h.settings.FilterRotation = h.a.FilterRotation()
 		h.settings.InstalledOnly = h.a.InstalledOnly()
-		h.settings.Recents = h.a.RecentsView()
+		h.settings.ViewsOff = h.a.ViewsOff()
 		h.settings.LastSort = h.a.Sort()
 		h.settings.OpenAtBoot = h.a.OpenAtBoot()
 		h.settings.ReturnAfterGame = h.a.ReturnAfterGame()

@@ -25,7 +25,7 @@ func TestOrderCachedPerMode(t *testing.T) {
 	ds := Ingest(rows, "", time.Time{})
 	rows2, _ := DecodeRows(strings.NewReader(src))
 	fresh := Ingest(rows2, "", time.Time{})
-	for _, mode := range append(append([]SortMode{}, SortCycle...), SortRecents) {
+	for _, mode := range ViewOrder {
 		first := ds.Order(mode)
 		again := ds.Order(mode)
 		if len(first) > 0 && &first[0] != &again[0] {

@@ -12,12 +12,12 @@ func TestRecentsViewLifecycle(t *testing.T) {
 	rows := []data.Row{{K: "z", Title: "Zulu", MRA: "_Arcade/z.mra"}, {K: "a", Title: "Alpha", MRA: "_Arcade/a.mra"}, {K: "b", Title: "Beta", MRA: "_Arcade/b.mra"}}
 	clock := time.Date(2026, 9, 11, 12, 0, 0, 0, time.UTC)
 	launched, changed := 0, 0
-	a := New(Config{PhysW: 320, PhysH: 240, Now: func() time.Time { return clock },
+	a := New(Config{PhysW: 320, PhysH: 240, Now: func() time.Time { return clock }, ViewsOff: []string{"recents"},
 		Launch: func(string) { launched++ }, RecentsChanged: func() { changed++ },
 		Exists: func(string) bool { return true }},
 		data.Ingest(rows, "", clock), nil)
 
-	// off by default: Y skips Recents and SetSort refuses it
+	// off (a fresh install's Views): Y skips Recents and SetSort refuses it
 	a.SetSort(data.SortFavorites)
 	a.actList(platform.KeySpace)
 	if a.mode != data.SortUpdated {
@@ -45,7 +45,7 @@ func TestRecentsViewLifecycle(t *testing.T) {
 	}
 
 	// on: Favorites -> Recents -> Updated, launch order, launch date, count
-	a.cfg.Recents = true
+	a.setViewOn(data.SortRecents, true)
 	a.SetSort(data.SortFavorites)
 	a.actList(platform.KeySpace)
 	if a.mode != data.SortRecents || len(a.view) != 2 || a.CursorKey() != "a" || a.ds.Rows[a.view[1]].K != "z" {
@@ -59,23 +59,21 @@ func TestRecentsViewLifecycle(t *testing.T) {
 		t.Fatal("recents did not wrap to updated")
 	}
 
-	// turning the option off while in the view falls back to updated
+	// taking the view out on the Views page while in it moves on to the next view on
 	a.SetSort(data.SortRecents)
-	a.screen = ScreenOptions
-	a.buildPanel()
+	a.openViews()
 	for i, e := range a.panel.entries {
-		if e.kind == "recents" {
+		if e.kind == "view" && e.value == "recents" {
 			a.panel.cursor = i
 		}
 	}
-	a.stepValue(-1)
-	if a.cfg.Recents || a.mode != data.SortUpdated {
-		t.Fatal("option off left the recents view")
+	a.togglePanel()
+	if a.viewOn(data.SortRecents) || a.mode != data.SortUpdated {
+		t.Fatalf("view off left the recents view: on %v mode %v", a.viewOn(data.SortRecents), a.mode)
 	}
 
 	// empty history message and the cap
-	a.cfg.Recents = true
-	b := New(Config{PhysW: 320, PhysH: 240, Recents: true, RememberSort: true, LastSort: data.SortRecents, Now: func() time.Time { return clock }}, data.Ingest(rows, "", clock), nil)
+	b := New(Config{PhysW: 320, PhysH: 240, RememberSort: true, LastSort: data.SortRecents, Now: func() time.Time { return clock }}, data.Ingest(rows, "", clock), nil)
 	if b.mode != data.SortRecents || b.emptyListMessage() != "No launches yet" {
 		t.Fatal("empty recents view")
 	}
@@ -87,7 +85,7 @@ func TestRecentsViewLifecycle(t *testing.T) {
 		t.Fatal("history cap")
 	}
 	// a remembered Recents sort is ignored while the view is off
-	c := New(Config{PhysW: 320, PhysH: 240, RememberSort: true, LastSort: data.SortRecents}, data.Ingest(rows, "", clock), nil)
+	c := New(Config{PhysW: 320, PhysH: 240, RememberSort: true, LastSort: data.SortRecents, ViewsOff: []string{"recents"}}, data.Ingest(rows, "", clock), nil)
 	if c.mode != data.SortUpdated {
 		t.Fatal("remembered recents restored while off")
 	}

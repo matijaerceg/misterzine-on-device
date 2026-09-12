@@ -60,6 +60,8 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 		left = "by: original year"
 	} else if a.mode == data.SortAlphabetical {
 		left = "by: A-Z"
+	} else if a.mode == data.SortMaker {
+		left = "by: maker"
 	} else if a.mode == data.SortFavorites {
 		left = "Favorites A-Z"
 	} else if a.mode == data.SortRecents {
@@ -67,7 +69,7 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 	}
 	if a.appUpdate != "" {
 		// Reserve space for a persistent app notice even on narrow tate screens.
-		left = map[data.SortMode]string{data.SortUpdated: "Core updated", data.SortDebut: "MiSTer debut", data.SortYear: "Original year", data.SortAlphabetical: "A-Z", data.SortFavorites: "Favorites A-Z", data.SortRecents: "Recents"}[a.mode]
+		left = map[data.SortMode]string{data.SortUpdated: "Core updated", data.SortDebut: "MiSTer debut", data.SortYear: "Original year", data.SortAlphabetical: "A-Z", data.SortMaker: "Maker A-Z", data.SortFavorites: "Favorites A-Z", data.SortRecents: "Recents"}[a.mode]
 		c.Text(l.Status.Min.X+2, y, a.sm, left, gen.Eva.Accent)
 		c.TextRight(l.Status.Max.X-2, y, a.sm, "App update", gen.Eva.Accent)
 		return
@@ -156,7 +158,8 @@ func (a *App) emptyListMessage() string {
 	return "no rows match, " + a.btn("X") + ": filters"
 }
 
-// paintRows draws the visible list lines: rows, and the last-look marker.
+// paintRows draws the visible list lines: rows and the marker lines
+// between them (the last-look divider, the maker headers).
 func (a *App) paintRows(c *gfx.Canvas) {
 	l := &a.lay
 	c.Fill(l.List, gen.Eva.Bg)
@@ -164,27 +167,26 @@ func (a *App) paintRows(c *gfx.Canvas) {
 		c.Text(l.List.Min.X+a.body.W, l.List.Min.Y+l.Line, a.body, gfx.Fit(a.emptyListMessage(), l.Cols-1), gen.Eva.Muted)
 		return
 	}
-	// which view position sits on each visible line
-	pos := 0
-	// advance pos to the first visible line
+	// the first row and the first marker at or below the top line
+	pos, mk := 0, 0
 	for pos < len(a.view) && a.screenLine(pos) < a.top {
 		pos++
 	}
+	for mk < len(a.marks) && (a.marks[mk] < pos || a.markLine(mk) < a.top) {
+		mk++
+	}
 	for n := 0; n < l.Lines; n++ {
-		line := a.top + n
 		r := l.lineRect(n)
-		switch {
-		case a.topMark && line == 0:
-			a.paintMarker(c, r, a.noChangesLabel())
-		case a.split >= 0 && line == a.screenLine(a.split)+1:
-			a.paintMarker(c, r, a.seen.Label(a.cfg.Now(), a.cfg.ClockTrusted))
-		default:
-			if pos >= len(a.view) {
-				return
-			}
-			a.paintRow(c, r, pos)
-			pos++
+		if mk < len(a.marks) && a.marks[mk] == pos {
+			a.paintMarker(c, r, a.markText(mk))
+			mk++
+			continue
 		}
+		if pos >= len(a.view) {
+			return
+		}
+		a.paintRow(c, r, pos)
+		pos++
 	}
 }
 
@@ -264,7 +266,7 @@ func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {
 		dateCol = gen.Eva.Accent
 	}
 	text := a.dateCol(date)
-	if a.mode == data.SortYear {
+	if a.mode == data.SortYear || a.mode == data.SortMaker {
 		// the original release year as the catalogue has it, "198?" included
 		text = gfx.Fit(strings.TrimSpace(row.Year), a.dateCols())
 		for len(text) < a.dateCols() {

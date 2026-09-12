@@ -44,7 +44,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "back; down*8; shot remember-on; left; shot remember-off; back; "
                           "space*3; home; pagedown; shot letter-jump; enter; enter; start; shot launch-failure; "
                           "back; back; wait 3200; end; pageup; pagedown; shot last-letter; "
-                          "space*2; home; pagedown; shot updated-month; wait 2200; shot updated-month-settled; "
+                          "space*3; home; pagedown; shot updated-month; wait 2200; shot updated-month-settled; "
                           "space; home; pagedown; shot debut-month; wait 2200; shot debut-month-settled; "
                           "space; home; shot year-top; pagedown; shot year-jump; wait 2200; shot year-settled"])
 for rotation in ([], ["-rot", "left", "-logical"]):
@@ -53,7 +53,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
         scenarios.append([*rotation, "-inset", str(inset), "-app-update", "v1.0.6",
                           "-out", f"out/new-modes-{orientation}-{inset}", "-script",
                           "shot update-notice; back; down; shot update-option; back; "
-                          "enter; space; back; space*4; wait 2200; shot favorites; tab; shot counts"])
+                          "enter; space; back; space*5; wait 2200; shot favorites; tab; shot counts"])
         scenarios.append([*rotation, "-inset", str(inset), "-scan-result",
                           "-out", f"out/card-scan-{orientation}-{inset}", "-script", "shot result"])
 for rotation in ([], ["-rot", "left", "-logical"]):
@@ -114,12 +114,13 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                       "shot list; tab; down*3; right; shot filters; back; back; home; down*6; shot option; left; shot option-all; back; shot list-all"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
-    # Options -> Recents view with nine launches: the view, a month jump,
-    # the option row, and the fallback when the option goes off in the view
+    # the Recents view with nine launches: the view, a month jump, the
+    # Views row and page with it on, and the fallback when it goes off
+    # from the Views page while the list is in it
     scenarios.append([*rotation, "-recents", "9",
                       "-out", f"out/recents-{orientation}", "-script",
-                      "space*5; shot recents; home; pagedown; shot month-jump; wait 2200; "
-                      "back; down*9; shot option; left; back; shot off"])
+                      "space*6; shot recents; home; pagedown; shot month-jump; wait 2200; "
+                      "back; down*9; shot option; enter; end; shot views-on; enter; back; back; shot off"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):
@@ -168,6 +169,12 @@ for rotation in ([], ["-rot", "left", "-logical"]):
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     # the pad's Menu button: Options from the list, closed again, Options
+    # the Maker order with its header lines, a maker jump, and the Views page
+    scenarios.append([*rotation,
+                      "-out", f"out/maker-{orientation}", "-script",
+                      "space*4; shot maker; pagedown*3; shot maker-jump; down*2; shot maker-rows; "
+                      "back; down*9; shot options-views; enter; shot views; down*4; enter; shot views-off; "
+                      "enter; back; back"])
     # over Details, the Menu button option row itself, closing Options back
     # onto Details and Filters, and the held-Menu hint
     scenarios.append([*rotation,

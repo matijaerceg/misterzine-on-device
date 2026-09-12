@@ -65,15 +65,23 @@ Dates highlighted in green and the last-look divider help find changes since
 your previous visit. Visits start at the top of your last selected sort order.
 Options -> Remember sort order is on by default; turn it off to start each visit
 with latest updates instead.
-Y cycles Updated, Debut, Year, Alphabetical, then Favorites; the top bar names
-the order as core updated, MiSTer debut, original year, A-Z or Favorites A-Z.
-With Options -> Recents view on, Recents follows Favorites: the games launched
-from MisterZine, latest launch first, with the launch date in the date column
+Y cycles Updated, Debut, Year, Alphabetical, Maker, then Favorites; the top
+bar names the order as core updated, MiSTer debut, original year, A-Z, maker
+or Favorites A-Z. Options -> Views can leave any of them out of the cycle.
+With Recents on there, Recents follows Favorites: the games launched from
+MisterZine, latest launch first, with the launch date in the date column
 and L/R jumping between launch months.
 Year orders games
 by their original release year, newest first, with titles alphabetical within
 a year and unknown or uncertain years last; the date column shows the year.
 Alphabetical sorting ignores case and accents and puts Game 2 before Game 10.
+Maker groups the games by manufacturer: a header line names each maker, makers
+run A-Z with titles A-Z under them, the date column shows the original year,
+and L/R jump from maker to maker. Joint credits and licences count under the
+first company named and corporate or regional suffixes are ignored, so Taito
+Corporation Japan and Taito America Corporation sit under Taito and Data East
+USA under Data East; Details still shows the full credit. Games without a
+manufacturer come last under Unknown maker.
 Favorites shows only your starred entries in alphabetical order, with the same
 letter jumps as A-Z.
 Search and filters still apply. Remember sort order also remembers Favorites.
@@ -107,7 +115,7 @@ filter choices are saved.
 |---|---|---|---|---|---|---|
 | Up/Down | arrows | move | page information | | move | move |
 | Left/Right | arrows | page, keeping the row centered | choose version | change shot | collapse/expand section or years | change value |
-| L/R | PageUp/PageDown | previous/next letter in A-Z; newer/older month in date sorts | | | previous/next section | first/last |
+| L/R | PageUp/PageDown | previous/next letter in A-Z; newer/older month in date sorts; previous/next maker | | | previous/next section | first/last |
 | A | Enter | details | artwork | | toggle a value; open/close a heading | run action |
 | B | Esc | Options / clear search | back | back | back | back |
 | X | Tab | Filters | | | show/hide years | |
@@ -169,7 +177,7 @@ Screenshots work without remote debugging.
 
 Options is in four groups under grey headings: Data (Refresh data now, Run
 Update All, Last update result, Rescan card, Prefetch shots, Clear image
-cache), List (Sources, Filter by rotation, Remember sort order, Recents view,
+cache), List (Sources, Filter by rotation, Remember sort order, Views,
 Title font, List shots, Date format, List layout), Display (rotation, screensaver, button labels, safe zone, canvas) and
 Operation (scrolling, the launcher, Open at boot, Return after game,
 Troubleshooting, Quit). The
@@ -209,12 +217,15 @@ the bottom.
 - **Remember sort order:** on by default, including after upgrading. Reopens
   with your last sort choice; off starts new visits with latest updates. Changing
   this preference leaves the current sort order alone.
-- **Recents view:** off by default. On adds Recents to the Y cycle after
-  Favorites: the games launched from MisterZine, latest first, each listed
-  once with its last launch date, up to 100. Search and filters apply. The
-  history is MisterZine's own, kept in its state.json whether the view is on
-  or off, and separate from MiSTer's recent lists. Turning the option off
-  while in Recents returns to the latest-update order.
+- **Views:** which list orders Y cycles through, as a checkbox page: core
+  updated, MiSTer debut, original year, A-Z, Maker, Favorites and Recents.
+  Everything is on except Recents by default. A toggles a view; the last one
+  on cannot be turned off, and turning off the view you are in moves the list
+  to the next one on. The Options row counts them, such as "Views (6 of 7)".
+  Recents lists the games launched from MisterZine, latest first, each once
+  with its last launch date, up to 100; search and filters apply. That history
+  is MisterZine's own, kept in its state.json whether the view is on or off,
+  and separate from MiSTer's recent lists.
 - **Title font:** narrow tall by default, a condensed proportional font that
   fits about a third more of each title on a row, made one pixel taller so
   its capitals and lowercase match the body font's height. Narrow is the

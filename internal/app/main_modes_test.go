@@ -9,7 +9,7 @@ import (
 
 func TestFavoritesModeLifecycle(t *testing.T) {
 	rows := []data.Row{{K: "z", Title: "Zulu"}, {K: "a", Title: "Alpha"}, {K: "b", Title: "Beta"}}
-	a := New(Config{PhysW: 320, PhysH: 240, RememberSort: true, LastSort: data.SortFavorites,
+	a := New(Config{PhysW: 320, PhysH: 240, RememberSort: true, LastSort: data.SortFavorites, ViewsOff: []string{"recents"},
 		Favorites: map[string]bool{"z": true, "a": true}}, data.Ingest(rows, "", time.Now()), nil)
 	if len(a.view) != 2 || a.CursorKey() != "a" || a.filters.FavOnly {
 		t.Fatal("favorites mode not independent/alphabetical")

@@ -24,7 +24,34 @@ const (
 	// It joins the browsing cycle after Favorites only when Options ->
 	// Recents view is on; the app orders it from its launch history.
 	SortRecents
+	// SortMaker groups the games by manufacturer (Derived.Maker: the first
+	// company of the credit, corporate suffixes dropped), makers A-Z with
+	// titles A-Z inside and the unknown maker last. Last in value because
+	// the value is saved; it sits after A-Z in the browsing cycle.
+	SortMaker
 )
+
+// Valid reports whether m is a sort mode the app knows.
+func (m SortMode) Valid() bool { return m >= SortUpdated && m <= SortMaker }
+
+// ViewOrder is every view in the order Y walks them, Recents included.
+var ViewOrder = []SortMode{SortUpdated, SortDebut, SortYear, SortAlphabetical, SortMaker, SortFavorites, SortRecents}
+
+var sortNames = map[SortMode]string{SortUpdated: "updated", SortDebut: "debut", SortYear: "year", SortAlphabetical: "alphabetical", SortMaker: "maker", SortFavorites: "favorites", SortRecents: "recents"}
+
+// Name is the mode's settings name (Options -> Views keeps the ones left
+// out of the cycle by name).
+func (m SortMode) Name() string { return sortNames[m] }
+
+// ParseSort is the inverse of Name.
+func ParseSort(name string) (SortMode, bool) {
+	for m, n := range sortNames {
+		if n == name {
+			return m, true
+		}
+	}
+	return SortUpdated, false
+}
 
 // Recent is one launch from the app: the row key and the UTC time (RFC 3339).
 type Recent struct {
@@ -51,8 +78,9 @@ func (ds *Dataset) OrderRecents(recents []Recent) []int {
 	return out
 }
 
-// SortCycle is the order Y walks the modes in.
-var SortCycle = []SortMode{SortUpdated, SortDebut, SortYear, SortAlphabetical, SortFavorites}
+// SortCycle is the order Y walks the modes in (Recents joins after
+// Favorites when it is on; the app skips the views turned off).
+var SortCycle = []SortMode{SortUpdated, SortDebut, SortYear, SortAlphabetical, SortMaker, SortFavorites}
 
 // NextSort is the mode after m in the cycle.
 func NextSort(m SortMode) SortMode {
@@ -76,6 +104,8 @@ func (m SortMode) String() string {
 		return "Year"
 	case SortRecents:
 		return "Recents"
+	case SortMaker:
+		return "Maker"
 	}
 	return "Updated"
 }
@@ -116,6 +146,18 @@ func (ds *Dataset) less(mode SortMode, a, b int) bool {
 	ra, rb := &ds.Rows[a], &ds.Rows[b]
 	da, db := &ds.Der[a], &ds.Der[b]
 	if mode == SortAlphabetical || mode == SortFavorites || mode == SortRecents {
+		return CompareKeys(da.titleKey, db.titleKey) < 0
+	}
+	if mode == SortMaker {
+		if (da.Maker == "") != (db.Maker == "") {
+			return da.Maker != "" // the unknown maker comes last
+		}
+		if c := CompareKeys(da.makerKey, db.makerKey); c != 0 {
+			return c < 0
+		}
+		if da.Maker != db.Maker {
+			return da.Maker < db.Maker // labels that collate alike stay separate groups
+		}
 		return CompareKeys(da.titleKey, db.titleKey) < 0
 	}
 	if mode == SortYear {
