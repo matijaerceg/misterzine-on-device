@@ -1,5 +1,15 @@
 # Changelog
 
+## v1.0.19 — 2026-09-12
+
+- An alternative MRA that holds no readable header (empty, cut short, no
+  `<rbf>`) no longer marks the card scan incomplete: it is skipped, named in
+  the log once, and counted on every scan. MRAs with `--` inside a comment
+  (Seibu SPI sets) are now read. "Card scan incomplete" is kept for a folder
+  or file that could not be read, and the result screen then keeps its
+  totals with the problem under them. watch.log rotates at 1 MiB like
+  log.txt.
+
 ## v1.0.18 — 2026-09-12
 
 - Options -> Canvas, fit display by default: where MiSTer's integer scaling

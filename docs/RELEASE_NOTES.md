@@ -1,31 +1,23 @@
-The picture fills a 1080p screen, the pad's Menu button is MisterZine's,
-and Select gives you quick toggles.
+The card scan no longer reports itself incomplete over alternative MRAs it
+cannot read.
 
-- **Fit display:** Options -> Canvas, on by default. Where MiSTer's integer
-  scaling of a 320x240 picture left bars above and below, MisterZine now
-  draws at a size that fills the screen height: 360x270 on 1080p, 340x256
-  on 1024x768, 400x300 on 1600x900. Text keeps its size; the list gains
-  rows. CRT modes, 720p and 1440p already fit and stay 320x240, and the
-  320x240 choice keeps the classic size everywhere. Applies at the next
-  start.
-- **Menu button:** a pad defined in MiSTer whose A and B MisterZine can read
-  is held while MisterZine runs, so MiSTer sees nothing from it. The button
-  you defined as MiSTer's menu (OSD) button is now MisterZine's Menu
-  button: it opens Options from any screen, or closes it, and Options ->
-  Menu button can make it leave to the MiSTer menu instead, as before.
-  Keyboard F12 and the board's button still leave.
-- **Partial definitions:** a pad whose A or B MisterZine cannot read is left
-  to MiSTer's translation, as it was before v1.0.17, so an incomplete
-  definition can no longer lose the back button. The pad tester says which
-  pads are held and shows the Menu button.
-- **Quick toggles:** hold Select on the list and Y cycles List layout while
-  X switches List shots; the legend names the chords while Select is held.
-- The main list legend now reads A B X Y.
+- **Unreadable alternatives:** an MRA under `_Arcade/_alternatives` that
+  holds no readable header (an empty file, one cut short, one without
+  `<rbf>`) is skipped: it is left out of the version picker, as MiSTer
+  could not load it either, named in the log the first time its folder is
+  read, and counted on every scan (`N unreadable MRAs skipped`). The scan
+  itself completes and the result screen shows its totals.
+- **Seibu SPI sets:** MRAs with `--` inside an XML comment (Raiden
+  Fighters, Senkyu, Viper Phase 1) are now read, so their alternatives
+  appear in the picker.
+- **Real read failures:** "Card scan incomplete" is kept for a folder or
+  file that could not be read at all; the result screen then keeps its
+  totals with the problem under them, and the log names the path.
+- `watch.log` rotates at 1 MiB, as `log.txt` already did.
 
-Nothing changes in MiSTer.ini, the menu core or your MiSTer controller
-definitions; MisterZine only reads the map files MiSTer already saves and
-lets go of every pad when it closes. Existing settings, favorites, filter
-choices, remembered versions and the launch history are preserved.
+Nothing changes on the card outside `misterzine/`. Existing settings,
+favorites, filter choices, remembered versions and the launch history are
+preserved.
 
 Existing installations can update through Update All/Downloader. Reopen
 MisterZine after updating.
