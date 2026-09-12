@@ -1,24 +1,28 @@
-A Sources option that hides databases your card does not have, and a
-regrouped Options page.
+A Recents view of the games you launched, three main-view layouts, and
+Options that remembers its row.
 
-- **Sources:** Options -> Sources chooses all (default) or installed only.
-  Installed only shows games from the databases listed in the card's
-  downloader.ini, the file Update All rewrites on every run, so a source you
-  never enabled (Coin-Op, Meathax, or Jotego) stays out of the list, search,
-  Favorites, the release count and the Filters panel. The file is read at
-  every card scan: launch, Rescan card and the rescan after Update All, so
-  enabling a database and updating brings its games in without a restart.
-  Without any downloader.ini nothing is hidden and the help text says so.
-- **Options regrouped:** the page now has four groups. Data holds Refresh
-  data now, Run Update All, Last update result, Rescan card, Prefetch shots
-  and Clear image cache. List holds what the list shows and how it reads:
-  Sources, Filter by rotation, Remember sort order, Title font, List shots and
-  Date format. Display holds Follow INI rotation, Rotation, Screensaver and
-  Edit safe zone. Operation holds Scroll speed, Hold delay, Main menu
-  launcher, Troubleshooting and Quit.
+- **Recents view:** Options -> Recents view, off by default. On adds Recents
+  to the Y cycle after Favorites: the games launched from MisterZine, latest
+  launch first, each listed once with its launch date in the date column, and
+  L/R jumping between launch months. Search and filters still apply. Every
+  launch from the list, Details or the artwork view is recorded, up to 100,
+  whether the view is on or off, so turning it on later shows your history.
+  The history is MisterZine's own, kept in its state.json; MiSTer's recent
+  lists are untouched.
+- **List layout:** Options -> List layout chooses list (default, the full
+  list with the small pane), split (a pane under half the screen wide with a
+  bigger picture and shorter rows) or picture (the picture across the screen
+  with a few full-width rows: above them in horizontal with the details
+  beside it, below them in tate). A vertical shot keeps its shape and the
+  details sit beside it when there is room. Every layout keeps at least four
+  rows, even with a wide safe zone.
+- **Options remembers its row:** B returns to the list and the next B
+  reopens Options on the row you left, the way the list keeps its row. The
+  first visit of a session still starts at the top; Filters opens at its top.
 
-The new Sources setting starts on all; existing settings, favorites and
-filter choices are preserved.
+The new settings start on their defaults (Recents view off, list layout);
+existing settings, favorites, filter choices and remembered versions are
+preserved.
 
 Existing installations can update through Update All/Downloader. Reopen
 MisterZine after updating.

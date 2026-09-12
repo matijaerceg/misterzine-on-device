@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v1.0.15 — 2026-09-12
 
 - Options -> Recents view (off by default): on adds Recents to the Y cycle
   after Favorites, listing the games launched from MisterZine, latest launch
