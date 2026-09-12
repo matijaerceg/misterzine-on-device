@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.0.16 — 2026-09-12
+
+- Options -> Return after game (off by default): when a game started from
+  MisterZine exits to the MiSTer menu (Reset or Exit in the OSD), the menu
+  launcher picks the MisterZine entry again and the list opens on that game.
+  Games started from the MiSTer menu itself, and leaving MisterZine with the
+  pad's Menu button, do not bring it back. Needs the Main menu launcher.
+- Options -> Open at boot (off by default): once the MiSTer menu is up after
+  a power-on or reboot, the launcher picks the MisterZine entry for you. A
+  bootcore in the INI takes precedence. Needs the Main menu launcher.
+- Each list order is sorted once per loaded catalogue and reused, and the
+  Year order no longer re-parses years while sorting, so Y presses, search
+  keystrokes and card-status updates skip the 6-20 ms sort on the ARM core.
+
 ## v1.0.15 — 2026-09-12
 
 - Options -> Recents view (off by default): on adds Recents to the Y cycle

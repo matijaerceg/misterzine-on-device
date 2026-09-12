@@ -1,28 +1,24 @@
-A Recents view of the games you launched, three main-view layouts, and
-Options that remembers its row.
+MisterZine can come back by itself: after a game, and after a boot.
 
-- **Recents view:** Options -> Recents view, off by default. On adds Recents
-  to the Y cycle after Favorites: the games launched from MisterZine, latest
-  launch first, each listed once with its launch date in the date column, and
-  L/R jumping between launch months. Search and filters still apply. Every
-  launch from the list, Details or the artwork view is recorded, up to 100,
-  whether the view is on or off, so turning it on later shows your history.
-  The history is MisterZine's own, kept in its state.json; MiSTer's recent
-  lists are untouched.
-- **List layout:** Options -> List layout chooses list (default, the full
-  list with the small pane), split (a pane under half the screen wide with a
-  bigger picture and shorter rows) or picture (the picture across the screen
-  with a few full-width rows: above them in horizontal with the details
-  beside it, below them in tate). A vertical shot keeps its shape and the
-  details sit beside it when there is room. Every layout keeps at least four
-  rows, even with a wide safe zone.
-- **Options remembers its row:** B returns to the list and the next B
-  reopens Options on the row you left, the way the list keeps its row. The
-  first visit of a session still starts at the top; Filters opens at its top.
+- **Return after game:** Options -> Return after game, off by default. On,
+  when a game you started from MisterZine exits to the MiSTer menu (Reset or
+  Exit in the OSD), the menu launcher picks the MisterZine entry again, the
+  same way you would, and the list opens on that game. The MiSTer menu shows
+  for a moment in between. Games started from the MiSTer menu itself, and
+  leaving MisterZine with the pad's Menu button, do not bring it back. Needs
+  the Main menu launcher (Setup enables it).
+- **Open at boot:** Options -> Open at boot, off by default. On, once the
+  MiSTer menu is up after a power-on or reboot, the launcher picks the
+  MisterZine entry for you. A `bootcore` in your INI takes precedence and
+  nothing happens. Needs the Main menu launcher.
+- **Faster Y:** each list order is sorted once per loaded catalogue and
+  reused, and the Year order no longer re-parses years while sorting, so
+  cycling orders, typing a search and card-status updates skip the sort.
 
-The new settings start on their defaults (Recents view off, list layout);
-existing settings, favorites, filter choices and remembered versions are
-preserved.
+Both new switches start off; existing settings, favorites, filter choices,
+remembered versions and the launch history are preserved. Neither switch
+changes MiSTer.ini, the menu core or any MiSTer file: both are carried out by
+the same background helper that already runs the main-menu entry.
 
 Existing installations can update through Update All/Downloader. Reopen
 MisterZine after updating.
