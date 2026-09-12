@@ -5,20 +5,20 @@ package app
 // The page is a panel like Views: Up/Down move through the rows, B goes
 // back to Options on the Credits row, and nothing on it can be changed.
 
-// earlyAdopters lists, in the order they are shown, the people thanked
-// under "Special thanks to the early adopters". Add a name here to add a
-// row.
+// earlyAdopters lists the people thanked under "Special thanks to the
+// early adopters", A to Z regardless of case. Add a name in its place to
+// add a row.
 var earlyAdopters = []string{
-	"Virtualplayer",
-	"dh3lix-pooch",
-	"Malento",
-	"Fender",
+	"akeley",
 	"CobolGuy007",
+	"ctrain_1985",
+	"dh3lix-pooch",
+	"Fender",
+	"gamecat666",
 	"hammercompation",
 	"LamerDeluxe",
-	"akeley",
-	"ctrain_1985",
-	"gamecat666",
+	"Malento",
+	"Virtualplayer",
 }
 
 // builtOn credits the people whose technology MisterZine runs on, one
