@@ -24,7 +24,9 @@ MisterZine uses MiSTer's framebuffer console, enabled by default. Only change
 
 **Choose HDMI or CRT for MisterZine's interface.** It does not currently mirror
 to a normal HDMI display and a 15 kHz CRT at their separate resolutions.
-Game cores keep their own display settings. For CRT setup or switching outputs,
+Game cores keep their own display settings. The choice can cover the whole
+MiSTer menu or MisterZine alone, so an HDMI display can keep the menu and the
+terminal while the CRT shows MisterZine. For CRT setup or switching outputs,
 see [display setup](docs/TROUBLESHOOTING.md#display-setup).
 
 1. Download [downloader_misterzine.ini](https://github.com/matijaerceg/misterzine-on-device/releases/latest/download/downloader_misterzine.ini).
