@@ -121,7 +121,7 @@ func (a *App) hintLine(c *gfx.Canvas, x, y, w int, s string) {
 		if x+a.sm.Width(btn+" "+rest) > maxX {
 			break
 		}
-		x += c.Text(x, y, a.sm, btn, gen.Eva.Accent)
+		x += c.Text(x, y, a.sm, a.btn(btn), gen.Eva.Accent)
 		x += c.Text(x, y, a.sm, " "+rest+"  ", gen.Eva.Muted)
 	}
 }
@@ -138,7 +138,7 @@ func (a *App) emptyListMessage() string {
 		return "No launches yet"
 	}
 	if a.query != "" {
-		return "no matches, B: clear find"
+		return "no matches, " + a.btn("B") + ": clear find"
 	}
 	if a.filters.Since {
 		if a.seen == nil || a.seen.BaseRows == nil {
@@ -150,7 +150,7 @@ func (a *App) emptyListMessage() string {
 			return "No changed matches"
 		}
 	}
-	return "no rows match, X: filters"
+	return "no rows match, " + a.btn("X") + ": filters"
 }
 
 // paintRows draws the visible list lines: rows, and the last-look marker.

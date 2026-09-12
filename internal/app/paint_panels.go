@@ -345,7 +345,7 @@ func (a *App) optionsEntries() []panelEntry {
 		rotationHelp = "Set by the active MiSTer INI. Turn off Follow INI rotation above to rotate manually."
 	}
 	updateText := "Run Update All"
-	updateHelp := "Update with live output and a stage bar. Hold B for 2 seconds to cancel; system writes finish first. A restart may be required."
+	updateHelp := "Update with live output and a stage bar. Hold " + a.btn("B") + " for 2 seconds to cancel; system writes finish first. A restart may be required."
 	if a.appUpdate != "" {
 		updateText = "Update MisterZine + all"
 		updateHelp = "MisterZine " + a.appUpdate + " is available. Run Update All, then quit and reopen MisterZine to use it."
@@ -372,7 +372,7 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "Remember sort order", kind: "remember-sort", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.RememberSort()],
 			help: "On: reopen with your last view, including Favorites (default). Off: start new visits with latest updates."},
 		{text: "Recents view", kind: "recents", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.Recents],
-			help: "On adds Recents to the Y cycle after Favorites: games launched from MisterZine, latest first, dated by launch. Launches are kept either way."},
+			help: "On adds Recents to the " + a.btn("Y") + " cycle after Favorites: games launched from MisterZine, latest first, dated by launch. Launches are kept either way."},
 		{text: "Title font", kind: "title-font", vals: []string{"normal", "narrow", "narrow tall"}, idx: map[string]int{"normal": 0, "narrow": 1, "tall": 2}[a.TitleFont()],
 			help: "Narrow fonts fit a third more title; tall (default) matches the body font height. Normal: body font."},
 		{text: "List shots", kind: "list-shot", vals: []string{"gameplay", "title"}, idx: map[string]int{"gameplay": 0, "title": 1}[a.ListShot()],
@@ -387,7 +387,9 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "Rotation", kind: "rotation", vals: []string{"monitor CW", "horizontal", "monitor CCW"}, idx: rotIdx, disabled: a.FollowRotation(),
 			help: rotationHelp},
 		{text: "Screensaver", kind: "screensaver", vals: []string{"off", "1 min", "2 min", "5 min", "10 min"}, idx: saverIdx,
-			help: "Dim the screen and scroll black lettering after idle time. Left/Right sets the delay; A previews. A browsing button wakes without acting. Menu still exits."},
+			help: "Dim the screen and scroll black lettering after idle time. Left/Right sets the delay; " + a.btn("A") + " previews. A browsing button wakes without acting. Menu still exits."},
+		{text: "Button labels", kind: "button-labels", vals: buttonLabelValues(), idx: map[string]int{"mister": 0, "xbox": 1, "playstation": 2, "numbers": 3}[a.ButtonLabels()],
+			help: "How the legends name the pad buttons, in MiSTer's A B X Y order. Only the names change: which button is A, B, X or Y is set in MiSTer's define buttons screen. Xbox and PlayStation sets go by position."},
 		{text: "Edit safe zone", kind: "inset",
 			help: "Margin kept clear of the screen edge (overscan): now " + itoa(a.cfg.SafeInsetX) + " px at the sides, " + itoa(a.cfg.SafeInsetY) + " px top and bottom. A opens the frame; fit it just inside the picture."},
 		spacer, group("Operation:"),
@@ -802,6 +804,8 @@ func (a *App) stepValue(d int) bool {
 	case "list-layout":
 		a.cfg.ListLayout = listLayouts[i]
 		a.setRotation(a.rot)
+	case "button-labels":
+		a.cfg.ButtonLabels = buttonLabelSets[i]
 	case "prefetch":
 		a.panel.prefetch = i == 1
 		if a.cfg.Action != nil {
@@ -932,7 +936,7 @@ func (a *App) togglePanel() bool {
 		if !e.header {
 			f.Since = !f.Since
 		}
-	case "rotation", "follow-rotation", "filter-rotation", "sources", "recents", "launcher", "scroll", "hold-delay", "remember-sort", "prefetch", "title-font", "list-shot", "date-format", "list-layout":
+	case "rotation", "follow-rotation", "filter-rotation", "sources", "recents", "launcher", "scroll", "hold-delay", "remember-sort", "prefetch", "title-font", "list-shot", "date-format", "list-layout", "button-labels":
 		return true // Left/Right pick these
 	case "inset":
 		a.screen = ScreenCalibrate
@@ -987,7 +991,7 @@ func (a *App) paintCalibrate(c *gfx.Canvas) {
 		"Sides: " + itoa(a.cfg.SafeInsetX) + " px",
 		"Top/bottom: " + itoa(a.cfg.SafeInsetY) + " px",
 		gfx.ArrowLeft + " " + gfx.ArrowRight + " " + gfx.ArrowUp + " " + gfx.ArrowDown + " nudge the corner",
-		"B save and go back",
+		a.btn("B") + " save and go back",
 		"the green frame should sit just",
 		"inside the edge of your screen",
 	}

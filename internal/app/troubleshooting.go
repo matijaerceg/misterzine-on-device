@@ -309,7 +309,7 @@ func (a *App) paintSupport(c *gfx.Canvas) {
 			write("Press your Start button when asked. The result stays on screen for a photo.", gen.Eva.Muted)
 		}
 		if v.cursor == 1 {
-			write("Try the highlighted game's main version using A / Enter.", gen.Eva.Muted)
+			write("Try the highlighted game's main version using "+a.btn("A")+" / Enter.", gen.Eva.Muted)
 		}
 		if v.cursor == 2 {
 			write("Review the saved result, including after restarting MisterZine.", gen.Eva.Muted)
@@ -339,7 +339,7 @@ func (a *App) paintSupport(c *gfx.Canvas) {
 		} else {
 			write(v.game, gen.Eva.Fg)
 			write("", gen.Eva.Fg)
-			write("A / Enter will launch this game's main version now.", gen.Eva.Fg)
+			write(a.btn("A")+" / Enter will launch this game's main version now.", gen.Eva.Fg)
 			write("", gen.Eva.Fg)
 			write("If it works, tell the person helping you. The last result is kept when you reopen MisterZine.", gen.Eva.Muted)
 			a.paintHint(c, "A launch now  B cancel")

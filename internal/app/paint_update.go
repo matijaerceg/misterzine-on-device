@@ -71,7 +71,7 @@ func (a *App) SetUpdate(s updater.State, open bool) {
 func (a *App) UpdateCancelError(message string) {
 	a.updateView.cancelSent = false
 	a.updateView.backAt = time.Time{}
-	a.updateView.error = "Cancel failed: " + message + ". Hold B to retry."
+	a.updateView.error = "Cancel failed: " + message + ". Hold " + a.btn("B") + " to retry."
 	a.all = true
 }
 
@@ -221,7 +221,7 @@ func (a *App) paintUpdate(c *gfx.Canvas) {
 	}
 	if s.Active() && !v.backAt.IsZero() && !v.cancelSent {
 		left := max(0, 2-int(v.now.Sub(v.backAt).Seconds()))
-		message = fmt.Sprintf("Keep holding B to cancel (%ds)", left)
+		message = fmt.Sprintf("Keep holding %s to cancel (%ds)", a.btn("B"), left)
 	}
 	for _, line := range gfx.Wrap(message, a.sm.Cols(l.Body.Dx()-4), 2) {
 		c.Text(l.Body.Min.X+2, y, a.sm, line, gen.Eva.Fg)

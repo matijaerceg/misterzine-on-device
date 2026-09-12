@@ -109,6 +109,9 @@ filter choices are saved.
 | Start | gamepad Start | launch remembered version | launch selected version | launch selected version | | |
 | Menu | | return to MiSTer Menu from any screen; closes the app | | | | |
 
+A, B, X and Y are MiSTer's names from its define buttons screen. Options ->
+Button labels can print them as Xbox letters, PlayStation symbols or numbers.
+
 The Details version selector uses one row. Its tally shows the selection and
 total, such as 2/5. Left/Right chooses among installed alternatives; Start
 launches the chosen version. A dim entry with a leading minus is not on the
@@ -216,6 +219,12 @@ the bottom.
   MiSTer's Menu button still exits the app. The sweep covers the whole picture,
   including safe-zone margins, in horizontal and tate layouts. Background data
   downloads and Update All continue while dimmed.
+- **Button labels:** how the legends name the pad's face buttons, in MiSTer's
+  A B X Y order: A B X Y (default), B A Y X for an Xbox-lettered pad mapped by
+  position, the PlayStation circle, cross, triangle and square by position, or
+  1 2 3 4 in MiSTer's define order. Only the names change. Which physical
+  button MiSTer calls A, B, X or Y comes from its define buttons screen; this
+  guide uses those names.
 - **Edit safe zone:** D-pad moves the top-right corner of the safe frame;
   Right/Up grows it and Left/Down shrinks it. B saves. Margins can reach 40 px.
 - **Scroll speed:** 20, 30 or 60 rows/pages per second once a hold repeats.

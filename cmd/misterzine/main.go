@@ -224,6 +224,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		ListShot:             h.settings.ListShot,
 		DateFormat:           h.settings.DateFormat,
 		ListLayout:           h.settings.ListLayout,
+		ButtonLabels:         h.settings.ButtonLabels,
 		FavoritesUnavailable: h.favLoadFailed,
 		Progress:             func() (int, int) { return h.img.Progress() },
 		Launcher:             launcherEnabled,
@@ -345,7 +346,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 					"sysfs": mister.SysfsMode(), "uptime": time.Since(t0).String(), "frames": h.stats.String(),
 					"update":      h.a.UpdateState(),
 					"screensaver": h.a.Screensaver(), "screensaver_active": h.a.ScreensaverActive(),
-					"title_font": h.a.TitleFont(), "list_shot": h.a.ListShot(), "date_format": h.a.DateFormat(),
+					"title_font": h.a.TitleFont(), "list_shot": h.a.ListShot(), "date_format": h.a.DateFormat(), "button_labels": h.a.ButtonLabels(),
 				}
 			},
 			Quit: h.stop,
@@ -710,6 +711,7 @@ func (h *host) saveAll(final bool) {
 		h.settings.ListShot = h.a.ListShot()
 		h.settings.DateFormat = h.a.DateFormat()
 		h.settings.ListLayout = h.a.ListLayout()
+		h.settings.ButtonLabels = h.a.ButtonLabels()
 		if err := store.Save(filepath.Join(h.root, "settings.json"), h.settings); err != nil {
 			h.lg.Printf("settings: %v", err)
 			h.setDirty = true

@@ -128,5 +128,17 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "-out", f"out/list-layout-{orientation}-{inset}", "-script",
                           "down*2; shot split; type 1942; shot split-vertical; back; back; down*13; shot option; right; back; "
                           "shot picture; type 1942; shot picture-vertical"])
+for rotation in ([], ["-rot", "left", "-logical"]):
+    orientation = "t" if rotation else "h"
+    # Options -> Button labels: PlayStation symbols on the list, Details and
+    # Filters legends, the option row, then numbers on the list and a search
+    # miss, and the Xbox set's swapped letters
+    scenarios.append([*rotation, "-button-labels", "playstation",
+                      "-out", f"out/button-labels-{orientation}", "-script",
+                      "shot list; enter; shot details; back; tab; shot filters; back; "
+                      "back; down*17; shot option; right; shot option-numbers; back; shot list-numbers; "
+                      "type xyz; shot empty-numbers; back; back; down*17; left*3; shot option-mister; left; back; shot list-mister"])
+    scenarios.append([*rotation, "-button-labels", "xbox",
+                      "-out", f"out/button-labels-xbox-{orientation}", "-script", "shot list; enter; shot details"])
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)

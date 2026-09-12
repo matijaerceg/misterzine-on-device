@@ -52,7 +52,7 @@ func (a *App) paintScan(c *gfx.Canvas) {
 	c.Box(box, gen.Eva.Line)
 	x, y := box.Min.X+4, box.Min.Y+4
 	cols := a.sm.Cols(box.Dx() - 8)
-	lines := []string{"Checking card...", "", "B returns while the scan continues."}
+	lines := []string{"Checking card...", "", a.btn("B") + " returns while the scan continues."}
 	if a.scanReady {
 		counts := a.cardCounts()
 		lines = []string{"Card scan complete", "", "Up to date: " + itoa(counts[data.StatusCurrent]),

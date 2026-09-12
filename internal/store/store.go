@@ -37,6 +37,7 @@ type Settings struct {
 	ListShot        string `json:"list_shot"`         // list thumbnail: gameplay (default) or title
 	DateFormat      string `json:"date_format"`       // list dates: mm-dd (default), dd-mm, mon-d, d-mon, yymmdd
 	ListLayout      string `json:"list_layout"`       // main view: list (default), split or picture
+	ButtonLabels    string `json:"button_labels"`     // legend button names: mister (default), xbox, playstation or numbers
 	InsetX          int    `json:"inset_x"`
 	InsetY          int    `json:"inset_y"`
 }

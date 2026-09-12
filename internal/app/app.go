@@ -116,6 +116,9 @@ type Config struct {
 	// ListLayout is the main view's arrangement: "list" (default), "split"
 	// or "picture" (see Layout.Style).
 	ListLayout string
+	// ButtonLabels names the pad buttons in the legends: "mister" (default:
+	// A B X Y), "xbox", "playstation" or "numbers" (see buttons.go).
+	ButtonLabels string
 }
 
 // App is the state machine.

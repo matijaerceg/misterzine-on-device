@@ -233,6 +233,11 @@ const (
 	ArrowRight = "\x14"
 	Ellipsis   = "\x15" // three dots in one cell
 	Beta       = "\x16" // a beta sign for Patreon beta cores
+	// PlayStation face-button symbols for the button label option
+	Cross    = "\x17"
+	Circle   = "\x18"
+	Square   = "\x19"
+	Triangle = "\x1a"
 )
 
 // SetGlyph installs a glyph (rows top to bottom, MSB = leftmost pixel).
@@ -285,6 +290,32 @@ func (f *Font) AddArrows() {
 		copy(beta[max(0, f.H-8):], []byte{0x60, 0x90, 0xA0, 0x90, 0x90, 0xA0, 0x80, 0x80})
 	}
 	f.SetGlyph(Beta[0], beta)
+	f.addButtonSymbols()
+}
+
+// addButtonSymbols installs the PlayStation cross, circle, square and
+// triangle as one-cell glyphs about a capital's height, on the baseline.
+func (f *Font) addButtonSymbols() {
+	cross := []byte{0x88, 0x50, 0x20, 0x50, 0x88}
+	circle := []byte{0x70, 0x88, 0x88, 0x88, 0x70}
+	square := []byte{0xF8, 0x88, 0x88, 0x88, 0xF8}
+	triangle := []byte{0x20, 0x50, 0x50, 0x88, 0xF8}
+	if f.W >= 6 {
+		cross = []byte{0x84, 0x48, 0x30, 0x30, 0x48, 0x84}
+		circle = []byte{0x78, 0x84, 0x84, 0x84, 0x84, 0x78}
+		square = []byte{0xFC, 0x84, 0x84, 0x84, 0x84, 0xFC}
+		triangle = []byte{0x30, 0x30, 0x48, 0x48, 0x84, 0xFC}
+	}
+	place := func(shape []byte) []byte {
+		rows := make([]byte, f.H)
+		bottom := max(len(shape), min(f.H, f.H-f.descent)) // the row below the baseline
+		copy(rows[bottom-len(shape):], shape)
+		return rows
+	}
+	f.SetGlyph(Cross[0], place(cross))
+	f.SetGlyph(Circle[0], place(circle))
+	f.SetGlyph(Square[0], place(square))
+	f.SetGlyph(Triangle[0], place(triangle))
 }
 
 // Cols is how many cells fit in w pixels.
