@@ -52,6 +52,8 @@ func (a *App) jumpGroupKey(pos int) string {
 	date := a.ds.Rows[i].Updated
 	if a.mode == data.SortDebut {
 		date = a.ds.Rows[i].Date
+	} else if a.mode == data.SortRecents {
+		date = a.launchedAt(a.ds.Rows[i].K)
 	}
 	if len(date) >= 7 {
 		return date[:7] // year and month: different years remain separate groups

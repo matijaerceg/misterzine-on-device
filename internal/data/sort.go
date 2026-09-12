@@ -20,7 +20,36 @@ const (
 	// follows SortFavorites in value because the value is saved, but sits
 	// after Debut in the browsing cycle.
 	SortYear
+	// SortRecents lists the games launched from the app, latest launch first.
+	// It joins the browsing cycle after Favorites only when Options ->
+	// Recents view is on; the app orders it from its launch history.
+	SortRecents
 )
+
+// Recent is one launch from the app: the row key and the UTC time (RFC 3339).
+type Recent struct {
+	K  string `json:"k"`
+	At string `json:"at"`
+}
+
+// OrderRecents returns the row indexes of the launched games in history
+// order (the history is newest first); keys no longer in the catalogue
+// are skipped and a key counts once.
+func (ds *Dataset) OrderRecents(recents []Recent) []int {
+	byKey := make(map[string]int, len(ds.Rows))
+	for i := range ds.Rows {
+		byKey[ds.Rows[i].K] = i
+	}
+	out := make([]int, 0, len(recents))
+	seen := map[string]bool{}
+	for _, r := range recents {
+		if i, ok := byKey[r.K]; ok && !seen[r.K] {
+			seen[r.K] = true
+			out = append(out, i)
+		}
+	}
+	return out
+}
 
 // SortCycle is the order Y walks the modes in.
 var SortCycle = []SortMode{SortUpdated, SortDebut, SortYear, SortAlphabetical, SortFavorites}
@@ -45,6 +74,8 @@ func (m SortMode) String() string {
 		return "Favorites"
 	case SortYear:
 		return "Year"
+	case SortRecents:
+		return "Recents"
 	}
 	return "Updated"
 }
@@ -69,7 +100,7 @@ func (ds *Dataset) Order(mode SortMode) []int {
 func (ds *Dataset) less(mode SortMode, a, b int) bool {
 	ra, rb := &ds.Rows[a], &ds.Rows[b]
 	da, db := &ds.Der[a], &ds.Der[b]
-	if mode == SortAlphabetical || mode == SortFavorites {
+	if mode == SortAlphabetical || mode == SortFavorites || mode == SortRecents {
 		return CompareKeys(da.titleKey, db.titleKey) < 0
 	}
 	if mode == SortYear {

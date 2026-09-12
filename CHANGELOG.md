@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Options -> Recents view (off by default): on adds Recents to the Y cycle
+  after Favorites, listing the games launched from MisterZine, latest launch
+  first, each once, with the launch date in the date column and L/R jumping
+  between launch months. Every launch from the list, Details or the artwork
+  view is recorded in state.json (up to 100) whether the view is on or off;
+  MiSTer's own recent lists are untouched.
+
 ## v1.0.14 — 2026-09-11
 
 - Options -> Sources: all (default) or installed only, which shows games only

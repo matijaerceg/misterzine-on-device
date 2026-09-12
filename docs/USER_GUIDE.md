@@ -61,6 +61,9 @@ Options -> Remember sort order is on by default; turn it off to start each visit
 with latest updates instead.
 Y cycles Updated, Debut, Year, Alphabetical, then Favorites; the top bar names
 the order as core updated, MiSTer debut, original year, A-Z or Favorites A-Z.
+With Options -> Recents view on, Recents follows Favorites: the games launched
+from MisterZine, latest launch first, with the launch date in the date column
+and L/R jumping between launch months.
 Year orders games
 by their original release year, newest first, with titles alphabetical within
 a year and unknown or uncertain years last; the date column shows the year.
@@ -132,8 +135,8 @@ Screenshots work without remote debugging.
 
 Options is in four groups under grey headings: Data (Refresh data now, Run
 Update All, Last update result, Rescan card, Prefetch shots, Clear image
-cache), List (Sources, Filter by rotation, Remember sort order, Title font,
-List shots, Date format), Display (rotation, screensaver, safe zone) and
+cache), List (Sources, Filter by rotation, Remember sort order, Recents view,
+Title font, List shots, Date format), Display (rotation, screensaver, safe zone) and
 Operation (scrolling, the launcher, Troubleshooting, Quit). The
 headings cannot be selected. Values line up in one column; a small arrow at the right
 edge of the top or bottom row shows when more options sit above or below the
@@ -166,6 +169,12 @@ the bottom.
 - **Remember sort order:** on by default, including after upgrading. Reopens
   with your last sort choice; off starts new visits with latest updates. Changing
   this preference leaves the current sort order alone.
+- **Recents view:** off by default. On adds Recents to the Y cycle after
+  Favorites: the games launched from MisterZine, latest first, each listed
+  once with its last launch date, up to 100. Search and filters apply. The
+  history is MisterZine's own, kept in its state.json whether the view is on
+  or off, and separate from MiSTer's recent lists. Turning the option off
+  while in Recents returns to the latest-update order.
 - **Title font:** narrow tall by default, a condensed proportional font that
   fits about a third more of each title on a row, made one pixel taller so
   its capitals and lowercase match the body font's height. Narrow is the

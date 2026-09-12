@@ -28,6 +28,7 @@ type Settings struct {
 	Screensaver    string        `json:"screensaver_minutes"`
 	RememberSort   bool          `json:"remember_sort"`
 	LastSort       data.SortMode `json:"last_sort"`
+	Recents        bool          `json:"recents_view"` // Options -> Recents view: the launch history joins the Y cycle
 	TitleFont      string        `json:"title_font"`  // list titles: tall (default), narrow or normal
 	ListShot       string        `json:"list_shot"`   // list thumbnail: gameplay (default) or title
 	DateFormat     string        `json:"date_format"` // list dates: mm-dd (default), dd-mm, mon-d, d-mon, yymmdd
@@ -66,7 +67,7 @@ func LoadSettings(path string) (Settings, error) {
 // becomes two (when legacy says the file predates the split), and the
 // speed adjectives become rows per second.
 func (s *Settings) Migrate(legacy bool) {
-	if s.LastSort < data.SortUpdated || s.LastSort > data.SortFavorites {
+	if s.LastSort < data.SortUpdated || s.LastSort > data.SortRecents {
 		s.LastSort = data.SortUpdated
 	}
 	switch s.Screensaver {
@@ -101,6 +102,9 @@ type State struct {
 	Filters  data.Filters    `json:"filters"`
 	// Versions is the last chosen version per row key, a card-relative path.
 	Versions map[string]string `json:"versions,omitempty"`
+	// Recents is the launch history, newest first, kept whether or not the
+	// Recents view is on.
+	Recents []data.Recent `json:"recents,omitempty"`
 }
 
 // FavEntry is one favorite with its change time.

@@ -534,6 +534,7 @@ func (a *App) launchPick(pick int) bool {
 			// not be scanned yet.
 			a.rememberPick(row, entries, pick)
 		}
+		a.recordLaunch(row)
 		a.cfg.Launch(e.path)
 	}
 	return false

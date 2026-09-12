@@ -24,9 +24,9 @@ scenarios = [
     ["-rot", "left", "-logical", "-out", "out/search-t",
      "-script", "type 1943; shot matches; type xyz; shot empty"],
     ["-out", "out/saver-h", "-script",
-     "back; down*14; shot option; enter; wait 12000; shot preview; back; up*14; up; shot wrap; down; shot top"],
+     "back; down*15; shot option; enter; wait 12000; shot preview; back; up*15; up; shot wrap; down; shot top"],
     ["-rot", "left", "-logical", "-out", "out/saver-t", "-script",
-     "back; down*14; shot option; enter; wait 12000; shot preview; back; up*14; up; shot wrap; down; shot top"],
+     "back; down*15; shot option; enter; wait 12000; shot preview; back; up*15; up; shot wrap; down; shot top"],
     ["-support-report", "testdata/support-controller.json", "-out", "out/support-h", "-script",
      "back; end; up; enter; shot menu; enter; shot ready; wait 3500; shot capture; wait 6000; shot result; right; shot evidence; back; down; enter; shot launch; enter; shot launch-result"],
     ["-support-report", "testdata/support-controller.json", "-rot", "left", "-logical", "-out", "out/support-t", "-script",
@@ -61,7 +61,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     for inset in (15, 40):
         scenarios.append([*rotation, "-inset", str(inset), "-unchanged",
                           "-out", f"out/rotation-only-{orientation}-{inset}", "-script",
-                          "shot unchanged; back; down*12; shot follow-on; left; shot follow-off; "
+                          "shot unchanged; back; down*13; shot follow-on; left; shot follow-off; "
                           "right; back; tab; pagedown*2; right; down; shot only-legend; space; shot only-selected; space; shot only-restored; space; back; shot filtered-unchanged"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
@@ -93,13 +93,13 @@ for rotation in ([], ["-rot", "left", "-logical"]):
         # a Filters heading
         scenarios.append([*rotation, "-inset", str(inset),
                           "-out", f"out/list-polish-{orientation}-{inset}", "-script",
-                          "type gradius; shot beta-tall; back; back; down*9; shot title-font; left; back; "
+                          "type gradius; shot beta-tall; back; back; down*10; shot title-font; left; back; "
                           "type gradius; shot beta-narrow; back; back; down*9; left; back; "
                           "type gradius; shot beta-normal; back; back; down*9; right; right; "
-                          "down; shot list-shots; right; back; shot title-shot; back; down*10; left; "
-                          "down; right; shot date-dd-mm; back; shot list-dd-mm; back; down*11; right; shot date-mon-d; back; shot list-mon-d; "
-                          "back; down*11; right; shot date-d-mon; back; shot list-d-mon; back; down*11; right; shot date-yymmdd; back; shot list-yymmdd; "
-                          "back; down*11; left*4; back; "
+                          "down; shot list-shots; right; back; shot title-shot; back; down*11; left; "
+                          "down; right; shot date-dd-mm; back; shot list-dd-mm; back; down*12; right; shot date-mon-d; back; shot list-mon-d; "
+                          "back; down*12; right; shot date-d-mon; back; shot list-d-mon; back; down*12; right; shot date-yymmdd; back; shot list-yymmdd; "
+                          "back; down*12; left*4; back; "
                           "type galaga; down*2; enter; right*2; shot alt-start; wait 1200; shot alt-mid; wait 1200; shot alt-end; "
                           "down; shot info-page; wait 400; shot info-sliding; wait 2000; shot info-paged; "
                           "back; tab; shot heading; enter; shot heading-open; enter; shot heading-closed; "
@@ -112,5 +112,13 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     scenarios.append([*rotation, "-installed", "distribution_mister,jtcores",
                       "-out", f"out/installed-sources-{orientation}", "-script",
                       "shot list; tab; down*3; right; shot filters; back; back; down*6; shot option; left; shot option-all; back; shot list-all"])
+for rotation in ([], ["-rot", "left", "-logical"]):
+    orientation = "t" if rotation else "h"
+    # Options -> Recents view with nine launches: the view, a month jump,
+    # the option row, and the fallback when the option goes off in the view
+    scenarios.append([*rotation, "-recents", "9",
+                      "-out", f"out/recents-{orientation}", "-script",
+                      "space*5; shot recents; home; pagedown; shot month-jump; wait 2200; "
+                      "back; down*9; shot option; left; back; shot off"])
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)

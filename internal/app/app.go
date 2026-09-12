@@ -65,6 +65,11 @@ type Config struct {
 	Versions map[string]string
 	// VersionChanged fires when a remembered version changes so the host can persist.
 	VersionChanged func()
+	// RecentLaunches is the launch history, newest first: every launch from the
+	// app adds to it (see Recents), whether or not the Recents view is on.
+	RecentLaunches []data.Recent
+	// RecentsChanged fires when the launch history changes so the host can persist.
+	RecentsChanged func()
 	// FavChanged fires after a favorite toggle so the host can persist.
 	FavChanged func()
 	// FiltersChanged fires when filter choices change so the host can persist them.
@@ -92,7 +97,10 @@ type Config struct {
 	// InstalledOnly is Options -> Sources: installed only. Sources whose Downloader
 	// database the card lacks (SetHiddenSources) leave every view.
 	InstalledOnly bool
-	LastSort      data.SortMode
+	// Recents is Options -> Recents view: the launch history joins the Y
+	// cycle after Favorites.
+	Recents  bool
+	LastSort data.SortMode
 	// TitleFont draws list titles in "tall" (default: the narrow font at the
 	// body font's height), "narrow" or "normal" (the body font).
 	TitleFont string
@@ -185,7 +193,7 @@ func New(cfg Config, ds *data.Dataset, stored *data.SeenRecord) *App {
 		cfg.Versions = map[string]string{}
 	}
 	a := &App{cfg: cfg, body: fonts.Body(), sm: fonts.Small(), narrow: fonts.Narrow(), tall: fonts.NarrowTall(), rot: cfg.Rotation, split: -1, down: map[platform.Key]bool{}}
-	if cfg.RememberSort && cfg.LastSort >= data.SortUpdated && cfg.LastSort <= data.SortYear {
+	if cfg.RememberSort && cfg.LastSort >= data.SortUpdated && cfg.LastSort <= data.SortRecents && (cfg.LastSort != data.SortRecents || cfg.Recents) {
 		a.mode = cfg.LastSort
 	}
 	a.physical = image.NewRGBA(image.Rect(0, 0, cfg.PhysW, cfg.PhysH))
@@ -288,6 +296,9 @@ func (a *App) Data() *data.Dataset { return a.ds }
 func (a *App) rebuild() {
 	a.shortPage = false
 	a.order = a.ds.Order(a.mode)
+	if a.mode == data.SortRecents {
+		a.order = a.ds.OrderRecents(a.cfg.RecentLaunches)
+	}
 	fav := func(k string) bool { return a.cfg.Favorites[k] }
 	unseen := func(i int) bool { return a.seen != nil && a.seen.Unseen(&a.ds.Rows[i]) }
 	filters := a.effectiveFilters()
@@ -352,7 +363,7 @@ func (a *App) MoveToKey(k string) { a.moveToKey(k); a.all = true }
 
 // SetSort switches the sort mode.
 func (a *App) SetSort(m data.SortMode) {
-	if m < data.SortUpdated || m > data.SortYear || m == a.mode {
+	if m < data.SortUpdated || m > data.SortRecents || m == a.mode || (m == data.SortRecents && !a.cfg.Recents) {
 		return
 	}
 	k := a.CursorKey()
@@ -368,6 +379,18 @@ func (a *App) SetSort(m data.SortMode) {
 
 // Sort reports the mode.
 func (a *App) Sort() data.SortMode { return a.mode }
+
+// nextSort is the mode Y moves to: the cycle, with Recents after Favorites
+// while the Recents view is on.
+func (a *App) nextSort() data.SortMode {
+	switch {
+	case a.mode == data.SortRecents:
+		return data.SortUpdated
+	case a.mode == data.SortFavorites && a.cfg.Recents:
+		return data.SortRecents
+	}
+	return data.NextSort(a.mode)
+}
 
 func (a *App) RememberSort() bool   { return a.cfg.RememberSort }
 func (a *App) FollowRotation() bool { return a.cfg.FollowRotation }
@@ -762,7 +785,7 @@ func (a *App) actList(k platform.Key) bool {
 		a.shortPage = false
 		a.cursor = n - 1
 	case platform.KeySpace:
-		a.SetSort(data.NextSort(a.mode))
+		a.SetSort(a.nextSort())
 		return true
 	case platform.KeyTab:
 		a.openPanel(ScreenFilter)

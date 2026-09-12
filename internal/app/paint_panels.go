@@ -365,6 +365,8 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Show only games made for the current orientation (INI or manual); unknowns hidden. Off restores manual filters."},
 		{text: "Remember sort order", kind: "remember-sort", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.RememberSort()],
 			help: "On: reopen with your last view, including Favorites (default). Off: start new visits with latest updates."},
+		{text: "Recents view", kind: "recents", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.Recents],
+			help: "On adds Recents to the Y cycle after Favorites: games launched from MisterZine, latest first, dated by launch. Launches are kept either way."},
 		{text: "Title font", kind: "title-font", vals: []string{"normal", "narrow", "narrow tall"}, idx: map[string]int{"normal": 0, "narrow": 1, "tall": 2}[a.TitleFont()],
 			help: "Narrow fonts fit a third more title; tall (default) matches the body font height. Normal: body font."},
 		{text: "List shots", kind: "list-shot", vals: []string{"gameplay", "title"}, idx: map[string]int{"gameplay": 0, "title": 1}[a.ListShot()],
@@ -763,6 +765,11 @@ func (a *App) stepValue(d int) bool {
 	case "sources":
 		a.cfg.InstalledOnly = i == 1
 		a.Refilter()
+	case "recents":
+		a.cfg.Recents = i == 1
+		if !a.cfg.Recents && a.mode == data.SortRecents {
+			a.SetSort(data.SortUpdated)
+		}
 	case "screensaver":
 		a.cfg.Screensaver = saverValues[i]
 	case "title-font":
@@ -902,7 +909,7 @@ func (a *App) togglePanel() bool {
 		if !e.header {
 			f.Since = !f.Since
 		}
-	case "rotation", "follow-rotation", "filter-rotation", "sources", "launcher", "scroll", "hold-delay", "remember-sort", "prefetch", "title-font", "list-shot", "date-format":
+	case "rotation", "follow-rotation", "filter-rotation", "sources", "recents", "launcher", "scroll", "hold-delay", "remember-sort", "prefetch", "title-font", "list-shot", "date-format":
 		return true // Left/Right pick these
 	case "inset":
 		a.screen = ScreenCalibrate

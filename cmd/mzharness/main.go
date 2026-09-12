@@ -32,7 +32,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/updater"
 )
 
-const allViews = "shot list; enter; shot details; wait 600; enter; shot screen; back; back; tab; shot filter; back; back; shot options; down*15; enter; shot calibrate; back; end; shot options-bottom; back"
+const allViews = "shot list; enter; shot details; wait 600; enter; shot screen; back; back; tab; shot filter; back; back; shot options; down*16; enter; shot calibrate; back; end; shot options-bottom; back"
 
 func main() {
 	dataPath := flag.String("data", "testdata/data.json", "data.json")
@@ -56,6 +56,7 @@ func main() {
 	listShot := flag.String("list-shot", "gameplay", "list thumbnail preference: gameplay or title")
 	dateFormat := flag.String("date-format", "mm-dd", "list date column: mm-dd, dd-mm, mon-d, d-mon or yymmdd")
 	rememberAlt := flag.Int("remember-alt", 0, "start with galagamw's alternative N (1 or 2) remembered as its version")
+	recents := flag.Int("recents", 0, "pretend the first N rows were launched, the last one most recently; turns the Recents view on")
 	installed := flag.String("installed", "", "Downloader database ids the card has, comma separated (e.g. distribution_mister,jtcores): Sources starts on installed only and the other sources are hidden")
 	flag.Parse()
 
@@ -89,6 +90,7 @@ func main() {
 		FollowRotation: true,
 		FilterRotation: *filterRotation,
 		InstalledOnly:  *installed != "",
+		Recents:        *recents > 0,
 		TitleFont:      *titleFont,
 		ListShot:       *listShot,
 		DateFormat:     *dateFormat,
@@ -104,6 +106,10 @@ func main() {
 		if _, err := os.Stat(*imgDir); err == nil {
 			cfg.Images = images.NewLocal(*imgDir)
 		}
+	}
+	for i := min(*recents, len(rows)) - 1; i >= 0; i-- {
+		// launches a day apart, the newest one yesterday
+		cfg.RecentLaunches = append(cfg.RecentLaunches, data.Recent{K: rows[i].K, At: now.Add(-time.Duration(len(cfg.RecentLaunches)+1) * 24 * time.Hour).UTC().Format(time.RFC3339)})
 	}
 	if *rememberAlt > 0 {
 		for i := range rows {

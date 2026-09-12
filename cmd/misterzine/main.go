@@ -214,6 +214,8 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 		FollowRotation:       h.settings.FollowRotation,
 		FilterRotation:       h.settings.FilterRotation,
 		InstalledOnly:        h.settings.InstalledOnly,
+		Recents:              h.settings.Recents,
+		RecentLaunches:       h.state.Recents,
 		LastSort:             h.settings.LastSort,
 		TitleFont:            h.settings.TitleFont,
 		ListShot:             h.settings.ListShot,
@@ -240,6 +242,7 @@ func run(root, card, iniPath, debugAddr string) (code int) {
 		FavChanged:      func() { h.favDirty = true },
 		FiltersChanged:  func() { h.dirty = true },
 		VersionChanged:  func() { h.dirty = true },
+		RecentsChanged:  func() { h.dirty = true },
 		SettingsChanged: func() { h.setDirty = true },
 		Action: func(kind, arg string) {
 			lg.Printf("action: %s %s", kind, arg)
@@ -661,7 +664,7 @@ func (h *host) pendingSave() bool {
 func (h *host) saveAll(final bool) {
 	if h.dirty || final {
 		st := store.State{Schema: 1,
-			LastOpen: h.now().UTC().Format(time.RFC3339), DataHash: h.a.Data().Hash, Filters: h.a.Filters(), Versions: h.a.Versions()}
+			LastOpen: h.now().UTC().Format(time.RFC3339), DataHash: h.a.Data().Hash, Filters: h.a.Filters(), Versions: h.a.Versions(), Recents: h.a.Recents()}
 		if s := h.a.Seen(); s != nil {
 			st.Seen = s.State
 		}
@@ -691,6 +694,7 @@ func (h *host) saveAll(final bool) {
 		h.settings.FollowRotation = h.a.FollowRotation()
 		h.settings.FilterRotation = h.a.FilterRotation()
 		h.settings.InstalledOnly = h.a.InstalledOnly()
+		h.settings.Recents = h.a.RecentsView()
 		h.settings.LastSort = h.a.Sort()
 		h.settings.TitleFont = h.a.TitleFont()
 		h.settings.ListShot = h.a.ListShot()
