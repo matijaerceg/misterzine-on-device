@@ -253,3 +253,38 @@ func TestSaverRimGlints(t *testing.T) {
 		t.Fatalf("outline lit for %d of %d pixel-frames; it should be black most of the time", lit, total)
 	}
 }
+
+// The saver fades the screen to its quarter brightness over saverFade and
+// only then starts the lettering across; a paint mid-fade is between the
+// two levels.
+func TestSaverFadesBeforeTheWordEnters(t *testing.T) {
+	a, clock := saverApp()
+	t0 := *clock
+	a.startSaver(t0)
+	if a.saver.shade != 256 || a.saver.travel != 0 {
+		t.Fatalf("start: shade %d travel %d", a.saver.shade, a.saver.travel)
+	}
+	a.Tick(t0.Add(saverFade / 2))
+	if a.saver.shade <= saverShade || a.saver.shade >= 256 || a.saver.travel != 0 {
+		t.Fatalf("mid-fade: shade %d travel %d", a.saver.shade, a.saver.travel)
+	}
+	c := a.logical
+	c.Fill(c.Rect, color.RGBA{R: 200, G: 160, B: 120, A: 255})
+	a.paintSaver(c)
+	if p := c.RGBAAt(0, 0); p.R <= 50 || p.R >= 200 {
+		t.Fatalf("mid-fade pixel %v is not between full and a quarter", p)
+	}
+	a.Tick(t0.Add(saverFade))
+	if a.saver.shade != saverShade || a.saver.travel != 0 {
+		t.Fatalf("fade end: shade %d travel %d", a.saver.shade, a.saver.travel)
+	}
+	c.Fill(c.Rect, color.RGBA{R: 200, G: 160, B: 120, A: 255})
+	a.paintSaver(c)
+	if p := c.RGBAAt(0, 0); p != (color.RGBA{R: 50, G: 40, B: 30, A: 255}) {
+		t.Fatalf("dark pixel %v is not a quarter", p)
+	}
+	a.Tick(t0.Add(saverFade + 10*saverFrame))
+	if a.saver.travel != 10 {
+		t.Fatalf("ten frames after the fade: travel %d", a.saver.travel)
+	}
+}

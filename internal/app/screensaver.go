@@ -12,6 +12,13 @@ import (
 
 const saverFrame = time.Second / 30
 
+// saverFade is how long the screen takes to dim from full brightness to the
+// saver's quarter; the lettering enters once it is dark.
+const saverFade = time.Second
+
+// saverShade is the dimmed screen's brightness in 256ths: a quarter.
+const saverShade = 64
+
 var saverValues = []string{"off", "1", "2", "5", "10"}
 
 type saverKey struct {
@@ -25,6 +32,7 @@ type screensaver struct {
 	started   time.Time
 	next      time.Time
 	travel    int
+	shade     int // brightness of the screen under the lettering, in 256ths
 	mask      *image.Alpha
 	waking    map[saverKey]bool
 }
@@ -102,6 +110,7 @@ func (a *App) startSaver(now time.Time) {
 	a.saver.started = now
 	a.saver.next = now.Add(saverFrame)
 	a.saver.travel = 0
+	a.saver.shade = 256
 	a.rep = repeater{}
 	a.all = true
 }
@@ -127,11 +136,24 @@ func (a *App) tickSaver(now time.Time) bool {
 	if !a.saver.active {
 		a.startSaver(now)
 	} else {
-		a.saver.travel = int(now.Sub(a.saver.started) / saverFrame)
+		a.saverAdvance(now)
 		a.saver.next = now.Add(saverFrame)
 		a.all = true
 	}
 	return true
+}
+
+// saverAdvance sets the shade and the lettering's travel for now: the
+// screen fades over saverFade, then the word slides one pixel a frame.
+func (a *App) saverAdvance(now time.Time) {
+	since := now.Sub(a.saver.started)
+	if since < saverFade {
+		a.saver.shade = 256 - int((256-saverShade)*since/saverFade)
+		a.saver.travel = 0
+		return
+	}
+	a.saver.shade = saverShade
+	a.saver.travel = int((since - saverFade) / saverFrame)
 }
 
 func (a *App) saverMask(h int) *image.Alpha {
@@ -304,6 +326,10 @@ func (a *App) paintSaver(c *gfx.Canvas) {
 	// One logical pixel per frame; the whole word enters at the right and
 	// leaves at the left. Safe-zone insets don't clip this overlay.
 	x0 := c.W() - a.saver.travel%(c.W()+m.Rect.Dx())
+	shade := a.saver.shade
+	if shade <= 0 || shade > 256 {
+		shade = saverShade // a saver frame set up outside tickSaver (tests, previews)
+	}
 	centres := make([]int, len(saverLights))
 	for i, l := range saverLights {
 		centres[i] = int(l.at*float64(c.W())) + int(l.tilt*float64(c.H())/2)
@@ -333,9 +359,9 @@ func (a *App) paintSaver(c *gfx.Canvas) {
 					continue
 				}
 			}
-			c.Pix[i] /= 4
-			c.Pix[i+1] /= 4
-			c.Pix[i+2] /= 4
+			c.Pix[i] = uint8(int(c.Pix[i]) * shade >> 8)
+			c.Pix[i+1] = uint8(int(c.Pix[i+1]) * shade >> 8)
+			c.Pix[i+2] = uint8(int(c.Pix[i+2]) * shade >> 8)
 		}
 	}
 	c.DirtyAll()
