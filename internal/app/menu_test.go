@@ -15,8 +15,7 @@ func TestMenuButtonOpensOptionsOrLeaves(t *testing.T) {
 		*clock = clock.Add(30 * time.Millisecond)
 		r := a.Handle(platform.Event{Key: k, Pressed: true, At: *clock})
 		*clock = clock.Add(30 * time.Millisecond)
-		a.Handle(platform.Event{Key: k, Pressed: false, At: *clock})
-		return r
+		return a.Handle(platform.Event{Key: k, Pressed: false, At: *clock}) || r
 	}
 	if !tap(platform.KeyMenu) || a.screen != ScreenOptions {
 		t.Fatalf("Menu on the list: screen %v", a.screen)

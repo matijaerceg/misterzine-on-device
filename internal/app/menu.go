@@ -6,12 +6,13 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
 
-// menuHold is how long the pad's Menu button must stay down to leave
-// MisterZine while Options -> Menu button is "Options": the short press
-// still opens or closes Options at once, so the "leave" route is always
-// there without changing the setting. menuHint is when the hint appears:
-// past any tap (well under 200 ms) but early enough to read before the
-// quit.
+// menuHold is how long the pad's Menu button must stay down to quit
+// MisterZine while Options -> Menu button is "Options", so the way out is
+// always there without changing the setting. A tap opens or closes Options
+// when the button is released. menuHint is when the hold engages: past any
+// tap (well under 200 ms) but early enough to read the hint before the
+// quit. From then on the release does nothing, so the screen never changes
+// under a hold.
 const (
 	menuHold = 2 * time.Second
 	menuHint = 300 * time.Millisecond
@@ -41,10 +42,12 @@ func (a *App) menuButton() bool {
 	return true
 }
 
-// menuPress starts timing a Menu press in Options mode (a "leave" press
-// has already quit); menuRelease ends it, taking the hint with it.
+// menuPress starts timing a Menu press in Options mode; menuRelease ends
+// it: a tap (released before menuHint) opens or closes Options, a release
+// after the hold engaged only takes the hint away. True when the screen
+// changed.
 func (a *App) menuPress(at time.Time) {
-	if a.MenuButton() == "leave" || !a.menuAt.IsZero() {
+	if !a.menuAt.IsZero() {
 		return
 	}
 	if at.IsZero() {
@@ -53,16 +56,23 @@ func (a *App) menuPress(at time.Time) {
 	a.menuAt, a.menuHinted = at, false
 }
 
-func (a *App) menuRelease() {
+func (a *App) menuRelease(at time.Time) bool {
 	if a.menuAt.IsZero() {
-		return
+		return false // the hold already quit, or the press was never timed
 	}
-	a.menuAt = time.Time{}
-	if a.menuHinted && a.notice == menuHoldNotice {
+	if at.IsZero() {
+		at = a.cfg.TimerNow()
+	}
+	engaged := a.menuHinted || at.Sub(a.menuAt) >= menuHint
+	a.menuAt, a.menuHinted = time.Time{}, false
+	if !engaged {
+		return a.menuButton()
+	}
+	if a.notice == menuHoldNotice {
 		a.notice = ""
 		a.all = true
 	}
-	a.menuHinted = false
+	return true
 }
 
 // tickMenu shows the hint once a Menu press outlasts a tap and leaves the

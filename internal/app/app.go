@@ -620,13 +620,19 @@ func (a *App) Handle(ev platform.Event) bool {
 		}
 		return false
 	}
-	if ev.Key == platform.KeyMenu && !(a.screen == ScreenTroubleshooting && a.support.mode == "pad") {
-		// a held Menu leaves the app (menu.go); the tester only logs it
+	if ev.Key == platform.KeyMenu && a.MenuButton() != "leave" && !(a.screen == ScreenTroubleshooting && a.support.mode == "pad") {
+		// Options mode: the tap acts on the release, a hold quits (menu.go);
+		// the pad tester only logs the button
 		if ev.Pressed {
+			if a.down[ev.Key] {
+				return false
+			}
+			a.down[ev.Key] = true
 			a.menuPress(ev.At)
-		} else {
-			a.menuRelease()
+			return false
 		}
+		delete(a.down, ev.Key)
+		return a.menuRelease(ev.At)
 	}
 	if a.screen == ScreenUpdate {
 		return a.handleUpdate(ev)

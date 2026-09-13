@@ -24,17 +24,24 @@ func menuApp() (*App, *time.Time, *int, func(platform.Key) bool) {
 		*clock = clock.Add(30 * time.Millisecond)
 		r := a.Handle(platform.Event{Key: k, Pressed: true, At: *clock})
 		*clock = clock.Add(30 * time.Millisecond)
-		a.Handle(platform.Event{Key: k, Pressed: false, At: *clock})
-		return r
+		return a.Handle(platform.Event{Key: k, Pressed: false, At: *clock}) || r
 	}
 	return a, clock, &quits, tap
 }
 
+// A tap opens Options on the release; a press that turns into a hold
+// leaves the screen alone, shows the hint and quits at the hold length.
 func TestMenuHeldLeavesInOptionsMode(t *testing.T) {
-	a, clock, quits, _ := menuApp()
-	t0 := *clock
-	if !a.Handle(platform.Event{Key: platform.KeyMenu, Pressed: true, At: t0}) || a.screen != ScreenOptions {
-		t.Fatalf("the press should open Options at once: screen %v", a.screen)
+	a, clock, quits, tap := menuApp()
+	if !tap(platform.KeyMenu) || a.screen != ScreenOptions {
+		t.Fatalf("a tap should open Options: screen %v", a.screen)
+	}
+	if !tap(platform.KeyMenu) || a.screen != ScreenList {
+		t.Fatalf("a second tap should close it: screen %v", a.screen)
+	}
+	t0 := clock.Add(time.Second)
+	if a.Handle(platform.Event{Key: platform.KeyMenu, Pressed: true, At: t0}) || a.screen != ScreenList {
+		t.Fatalf("the press alone must not change the screen: %v", a.screen)
 	}
 	if next := a.NextTick(); !next.Equal(t0.Add(menuHint)) {
 		t.Fatalf("NextTick %v, want the hint at %v", next, t0.Add(menuHint))
@@ -42,8 +49,8 @@ func TestMenuHeldLeavesInOptionsMode(t *testing.T) {
 	if a.Tick(t0.Add(200 * time.Millisecond)); a.notice != "" {
 		t.Fatalf("a tap must not hint: %q", a.notice)
 	}
-	if !a.Tick(t0.Add(350*time.Millisecond)) || a.notice != menuHoldNotice {
-		t.Fatalf("no hint after %v: %q", 350*time.Millisecond, a.notice)
+	if !a.Tick(t0.Add(350*time.Millisecond)) || a.notice != menuHoldNotice || a.screen != ScreenList {
+		t.Fatalf("after %v: notice %q, screen %v", 350*time.Millisecond, a.notice, a.screen)
 	}
 	if next := a.NextTick(); !next.Equal(t0.Add(menuHold)) {
 		t.Fatalf("NextTick %v, want the leave at %v", next, t0.Add(menuHold))
@@ -63,6 +70,8 @@ func TestMenuHeldLeavesInOptionsMode(t *testing.T) {
 	}
 }
 
+// Letting go after the hold engaged does nothing: no quit, no Options,
+// even when no tick ran between the hint time and the release.
 func TestMenuReleasedBeforeHoldStays(t *testing.T) {
 	a, clock, quits, _ := menuApp()
 	t0 := *clock
@@ -71,13 +80,22 @@ func TestMenuReleasedBeforeHoldStays(t *testing.T) {
 	if a.notice != menuHoldNotice {
 		t.Fatalf("notice %q", a.notice)
 	}
-	a.Handle(platform.Event{Key: platform.KeyMenu, Pressed: false, At: t0.Add(time.Second)})
-	if a.notice != "" {
+	if !a.Handle(platform.Event{Key: platform.KeyMenu, Pressed: false, At: t0.Add(time.Second)}) || a.notice != "" {
 		t.Fatalf("the release should take the hint away: %q", a.notice)
 	}
 	a.Tick(t0.Add(3 * time.Second))
-	if *quits != 0 || a.screen != ScreenOptions {
+	if *quits != 0 || a.screen != ScreenList {
 		t.Fatalf("quits %d, screen %v", *quits, a.screen)
+	}
+	// no tick between the hint time and the release: the release time decides
+	t2 := t0.Add(5 * time.Second)
+	a.Handle(platform.Event{Key: platform.KeyMenu, Pressed: true, At: t2})
+	a.Handle(platform.Event{Key: platform.KeyMenu, Pressed: false, At: t2.Add(menuHint)})
+	if a.screen != ScreenList || *quits != 0 {
+		t.Fatalf("a release at the hint time is a hold: screen %v, quits %d", a.screen, *quits)
+	}
+	if !a.menuAt.IsZero() {
+		t.Fatal("timing left running")
 	}
 	// the vsync loop's Frame counts too
 	t1 := t0.Add(10 * time.Second)

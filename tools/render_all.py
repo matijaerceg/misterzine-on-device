@@ -187,7 +187,8 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                       "space*3; home; down*30; shot letter-pinned; pagedown*2; shot letter-jump; "
                       "space*5; home; down*30; shot year-pinned; end; up*2; shot year-unknown"])
     # over Details, the Menu button option row itself, closing Options back
-    # onto Details and Filters, and the held-Menu hint
+    # onto Details and Filters, and the held-Menu hint over Filters (the
+    # screen stays put once the hold engages)
     scenarios.append([*rotation,
                       "-out", f"out/menu-{orientation}", "-script",
                       "menu; shot options; menu; shot list; enter; menu; shot options-from-details; "

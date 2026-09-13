@@ -151,8 +151,10 @@ nothing. Only a pad defined in MiSTer has a Select; keyboards use Options.
 MisterZine holds a defined pad exclusively while it runs, so MiSTer sees
 nothing from it: the button you defined as MiSTer's menu (OSD) button is
 MisterZine's Menu button, opening Options by default (Options -> Menu button
-can make it quit instead). Held for two seconds it quits MisterZine for
-the MiSTer menu whatever the setting; a hint appears after 300 ms.
+can make it quit instead). A tap opens or closes Options as you let go.
+Held for two seconds it quits MisterZine for the MiSTer menu whatever the
+setting; a hint appears after 300 ms, and from then on the screen stays as
+it was: letting go early neither opens nor closes Options.
 A pad whose A or B MisterZine cannot read is left to MiSTer's translation,
 as before. Keyboard F12 and the board's own button still hand the screen to
 MiSTer, which closes the app.
