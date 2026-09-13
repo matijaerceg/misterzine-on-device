@@ -1,17 +1,20 @@
-Select + A stars a game from the list, and the Menu hold shows its
-progress on the way to quitting.
+The screensaver blurs the picture into a soft glow, and the legends gain
+a Select + reminder.
 
-- Select + A on the list stars or unstars the game under the cursor.
-- The Menu button hold shows a "keep holding to quit" hint and a green
-  progress line under the top bar. A tap still opens or closes Options.
+- The screensaver blurs and dims the picture into a glow over a second,
+  and a key brings it back sharp in a quarter second. Its lettering now
+  repeats edge to edge.
+- Legends are in Title Case, and the list bar ends with Select + as a
+  reminder of the Select chords.
+- Manufacturer replaces Maker in the views, the headers and Details.
 
 Fixes and adjustments:
 
-- The last view turned back on in Options -> Views no longer switches
-  itself off at the next start.
-- X on the Filters screen returns to the list, as B does.
-- Options labels and hints tidied.
+- The screensaver's scroll no longer hitches: its frames follow the
+  picture's vertical blank.
+- Double presses from a bouncing arcade button are dropped.
+- A held Backspace erases a search quickly after the Hold delay.
 
-Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1024--2026-09-13).
+Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1025--2026-09-13).
 Existing installations update through Update All. New installation:
 [installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once).

@@ -1,5 +1,56 @@
 # Changelog
 
+## v1.0.25 — 2026-09-13
+
+- The screensaver blurs and dims the picture into a soft glow instead of
+  cutting to a dark copy of it. The fade takes a second and climbs through
+  four blur levels that a background worker computes from the picture
+  frozen at the first saver frame, each level with a larger radius and
+  more bloom, so the picture softens progressively rather than crossing
+  from sharp to blurred; a slow board waits for a level rather than
+  jumping. A key runs the fade back in a quarter of a second, lettering
+  gone at once, and only then repaints the screen. The light parts bloom:
+  channels above a knee of 171 are raised six times their excess in
+  16-bit channels, so nothing clamps before the blur spreads them, and the
+  blurred picture shows at 57%. The levels keep eight bits of fraction
+  and a static 8x8 ordered dither at the final write stops the dark
+  gradients banding on a CRT. The look was chosen on a CRT through a
+  debug endpoint (POST /api/saver, docs/DEVELOPMENT.md). One level costs
+  the boards a couple of hundred milliseconds, so the picture under the
+  saver stays frozen until a wake; Update All and downloads carry on
+  behind it.
+- The saver's word repeats edge to edge once it is in, the seam an
+  ordinary letter gap (the letters carry their own side bearings), instead
+  of leaving the screen before entering again.
+- Fix: the saver's scroll hitched every couple of seconds. Measured on
+  both boards over a minute, the lettering never skipped a column, but
+  the 30 fps timer that paced the frames was not locked to the 60 Hz
+  picture, and 46 frames a minute missed their vertical blank: one shown
+  for three refreshes, the next for one. The saver is now paced by the
+  blank itself, a frame every second blank and copied at the blank, with
+  the lettering moving one pixel per frame by count; after the change 2
+  frames a minute miss, at the start of the fade while the worker runs.
+  Keys, the debug API, downloads and scans are served between frames.
+  The debug state reports the cadence between presents and the saver's
+  frame counts.
+- Legends in Title Case ("A Details  B Options  X Filters  Y View") with
+  "Select +" at the end of the list bar as a reminder of the Select
+  chords (Select in the button colour, the plus muted). In tate the bar
+  reads "A Open  B Opt.  X Filt.  Y View  Select +". Chunks close up to
+  one space before any is dropped when the safe zone leaves no room.
+- Manufacturer replaces Maker everywhere on screen: the view name, the
+  top bar, the group headers ("Unknown manufacturer"), the Views page and
+  the guide; Details labels the credit "Mfr" to keep its column. The
+  saved view name in settings is unchanged.
+- Contact bounce: a press that follows the same key's release by under
+  25 ms is dropped. Worn arcade microswitches deliver a second press 2 to
+  8 ms after the release, and the quickest deliberate double tap is
+  several times longer. Only the press side is guarded, so nothing waits;
+  a bounce during a hold ends the hold, which costs one repeat delay.
+- A held Backspace erases a search at 60 ms a step after the Hold delay,
+  instead of 200 ms a step after a fixed half second.
+- The Options -> Screensaver help mentions the blur.
+
 ## v1.0.24 — 2026-09-13
 
 - Fix: turning the last view back on in Options -> Views (Recents,
