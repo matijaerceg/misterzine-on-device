@@ -64,8 +64,11 @@ const (
 // slotNames is MiSTer's define order (map file indices 0..11).
 var slotNames = []string{"Right", "Left", "Down", "Up", "A", "B", "X", "Y", "L", "R", "Select", "Start"}
 
-// slotKeys is what each define-slot does in the app: the same keys Main
-// would send for them when OK and back sit on A and B.
+// slotKeys is what each define-slot does in the app. A and B match the
+// Enter and back keys Main sends for them; X and Y are the app's own
+// assignment. Main's script translation (input.cpp joy_digital) sends
+// Backspace for X and Tab for Y, so a pad with no map file, which reaches
+// the app only through that translation, gets Filters on Y and erase on X.
 var slotKeys = map[string]platform.Key{
 	"Right": platform.KeyRight, "Left": platform.KeyLeft, "Down": platform.KeyDown, "Up": platform.KeyUp,
 	"A": platform.KeyEnter, "B": platform.KeyBack, "X": platform.KeyTab, "Y": platform.KeySpace,
