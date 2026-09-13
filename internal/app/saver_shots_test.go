@@ -49,7 +49,7 @@ var (
 func shotsApp() (*App, *shotImages, *time.Time, *[]string) {
 	now := time.Date(2026, 9, 13, 12, 0, 0, 0, time.UTC)
 	imgs := &shotImages{have: map[string]*image.RGBA{
-		"red/snap": flat(320, 240, shotRed), "blue/title": flat(320, 240, shotBlue),
+		"red/snap": flat(320, 240, shotRed), "blue/snap": flat(320, 240, shotBlue),
 	}, state: map[string]ImageState{}}
 	var launches []string
 	a := New(Config{PhysW: 320, PhysH: 240, SafeInsetX: 15, SafeInsetY: 15, SaverStyle: "shots",
@@ -60,7 +60,8 @@ func shotsApp() (*App, *shotImages, *time.Time, *[]string) {
 		Status: func(int) data.Status { return data.StatusCurrent },
 	}, data.Ingest([]data.Row{
 		{K: "red", Title: "Red Game", Base: "Arcade", MRA: "_Arcade/Red.mra", Img: "red", ImgSlots: []string{"snap"}},
-		{K: "blue", Title: "Blue Game", Base: "Arcade", MRA: "_Arcade/Blue.mra", Img: "blue", ImgSlots: []string{"title"}},
+		{K: "blue", Title: "Blue Game", Base: "Arcade", MRA: "_Arcade/Blue.mra", Img: "blue", ImgSlots: []string{"title", "snap", "ingame"}},
+		{K: "titled", Title: "Title Only", Base: "Arcade", MRA: "_Arcade/Titled.mra", Img: "titled", ImgSlots: []string{"title", "ingame"}},
 		{K: "nes", Title: "NES", Base: "Console", Core: "NES"},
 	}, "test", now), nil)
 	return a, imgs, &now, &launches
@@ -81,8 +82,13 @@ func TestSaverShotsWipesEachShotInAndNamesIt(t *testing.T) {
 	a, _, clock, _ := shotsApp()
 	a.startSaver(*clock)
 	s := a.saver.shots
-	if s == nil || len(s.pool) != 2 || s.in.row < 0 {
+	if s == nil || len(s.pool) != 2 || s.in.row < 0 { // the gameplay shots only: no title, no third slot, no console
 		t.Fatalf("pool %+v", s)
+	}
+	for _, p := range s.pool {
+		if p.slot != "snap" || a.ds.Rows[p.row].K == "titled" {
+			t.Fatalf("pool holds %+v", p)
+		}
 	}
 	first := s.in
 	a.Paint()
@@ -304,19 +310,19 @@ func TestSaverShotsFullBrightnessOption(t *testing.T) {
 func TestSaverShotsSkipsMissingWaitsForLoadingAndFallsBack(t *testing.T) {
 	a, imgs, clock, _ := shotsApp()
 	delete(imgs.have, "red/snap")
-	delete(imgs.have, "blue/title")
-	imgs.state["blue/title"] = ImageLoading
+	delete(imgs.have, "blue/snap")
+	imgs.state["blue/snap"] = ImageLoading
 	a.startSaver(*clock)
 	s := a.saver.shots
 	frames(a, clock, 1)
-	if s.in.slot != "title" || len(imgs.wants) != 1 || imgs.wants[0].Key != "blue" || imgs.wants[0].W != 320 {
+	if s.in.slot != "snap" || len(imgs.wants) != 1 || imgs.wants[0].Key != "blue" || imgs.wants[0].W != 320 {
 		t.Fatalf("in %+v wants %+v", s.in, imgs.wants)
 	}
 	if a.saver.shots == nil {
 		t.Fatal("fell back while a picture is on its way")
 	}
 	// the picture is here: the wipe starts
-	imgs.have["blue/title"] = flat(320, 240, shotBlue)
+	imgs.have["blue/snap"] = flat(320, 240, shotBlue)
 	frames(a, clock, 2)
 	if s.wipe == 0 {
 		t.Fatal("the picture's arrival did not start the wipe")
@@ -338,7 +344,7 @@ func TestSaverShotsSkipsMissingWaitsForLoadingAndFallsBack(t *testing.T) {
 	// other one missing that exhausts the pool
 	a3, imgs3, clock3, _ := shotsApp()
 	imgs3.have = nil
-	imgs3.state["blue/title"], imgs3.state["red/snap"] = ImageLoading, ImageLoading
+	imgs3.state["blue/snap"], imgs3.state["red/snap"] = ImageLoading, ImageLoading
 	a3.startSaver(*clock3)
 	frames(a3, clock3, 1)
 	*clock3 = clock3.Add(saverShotPatience + time.Second)

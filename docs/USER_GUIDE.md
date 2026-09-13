@@ -297,8 +297,8 @@ the bottom.
   including safe-zone margins, in horizontal and tate layouts. Background data
   downloads and Update All continue while dimmed.
 - **Saver style:** what the screensaver shows. Lettering (default) is the
-  MISTERZINE sweep above. Screenshots shows one arcade game's shot after
-  another, every shot of every arcade game in the catalogue in a shuffled
+  MISTERZINE sweep above. Screenshots shows one arcade game's gameplay
+  shot after another, every arcade game in the catalogue in a shuffled
   cycle, each new one wiping in from the side behind a soft, wandering
   edge about every twelve seconds, with the game's title on a small tab
   that moves from corner to corner. Online, a shot the card lacks is

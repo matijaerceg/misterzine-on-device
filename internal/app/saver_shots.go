@@ -19,11 +19,12 @@ import (
 // line under the tab; letting go fades it back down and the saver goes
 // on with the shot it was about to show. Every other button wakes.
 //
-// The pool is every shot of every arcade game in the catalogue, all
-// slots, shuffled and cycled without repeats; a shot the card lacks is
-// downloaded when it is next, so online the cycle covers the site, and
-// offline whatever is on the card. With nothing to show at all the run
-// falls back to the lettering.
+// The pool is the gameplay shot (the "snap" slot) of every arcade game in
+// the catalogue, shuffled and cycled without repeats: not the title
+// screens, and not the third slot, which is often a game-over screen. A
+// shot the card lacks is downloaded when it is next, so online the cycle
+// covers the site, and offline whatever is on the card. With nothing to
+// show at all the run falls back to the lettering.
 
 // saverStyles are Options -> Saver style: the lettering (the default) or
 // the screenshots.
@@ -115,7 +116,7 @@ func (a *App) saverShotsStart(now time.Time) {
 			continue
 		}
 		for _, slot := range r.ImgSlots {
-			if slot == "title" || slot == "snap" || slot == "ingame" {
+			if slot == "snap" {
 				s.pool = append(s.pool, saverPick{i, slot})
 			}
 		}
