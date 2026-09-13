@@ -1,11 +1,13 @@
 package app
 
 import (
+	"image"
 	"testing"
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/fonts"
+	"github.com/matijaerceg/misterzine-on-device/internal/gen"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 )
 
@@ -85,18 +87,57 @@ func TestOptionsGroups(t *testing.T) {
 	if seen != len(children) {
 		t.Errorf("%d child rows, want %d", seen, len(children))
 	}
-	// a child row that does not fit falls back to its short name behind
-	// the mark rather than losing its tail; a row without one is cut
+	// a child row that does not fit falls back to its short name rather
+	// than losing its tail; a row without one is cut
 	bright := panelEntry{text: "Screensaver brightness", child: true, short: "Brightness"}
-	if got := bright.fitLabel(30); got != gfx.ChildMark+" Screensaver brightness" {
+	if got := bright.fitText(22); got != "Screensaver brightness" {
 		t.Errorf("wide: %q", got)
 	}
-	if got := bright.fitLabel(20); got != gfx.ChildMark+" Brightness" {
+	if got := bright.fitText(20); got != "Brightness" {
 		t.Errorf("narrow: %q", got)
 	}
 	boot := panelEntry{text: "Return after game", child: true}
-	if got := boot.fitLabel(10); got != gfx.Fit(gfx.ChildMark+" Return after game", 10) {
+	if got := boot.fitText(10); got != gfx.Fit("Return after game", 10) {
 		t.Errorf("no short name: %q", got)
+	}
+	// the mark is drawn in the headings' grey and the name in the row's
+	// colour two cells in, so the selected child row reads its mark grey
+	a.openPanel(ScreenOptions)
+	for i, e := range a.panel.entries {
+		if e.kind == "rotation" {
+			a.panel.cursor = i
+		}
+	}
+	a.Paint()
+	l := &a.lay
+	font := a.sm
+	row := l.Body.Min.Y + 2
+	for i := a.panel.top; i < a.panel.cursor; i++ {
+		if e := a.panel.entries[i]; e.header && e.info && e.text == "" {
+			row += font.H / 2
+		} else {
+			row += font.H
+		}
+	}
+	count := func(r image.Rectangle, want rgb) int {
+		n := 0
+		for py := r.Min.Y; py < r.Max.Y; py++ {
+			for px := r.Min.X; px < r.Max.X; px++ {
+				if a.logical.RGBA.RGBAAt(px, py) == want {
+					n++
+				}
+			}
+		}
+		return n
+	}
+	x := l.Body.Min.X + 4
+	mark := image.Rect(x, row, x+font.W, row+font.H)
+	name := image.Rect(x+2*font.W, row, x+10*font.W, row+font.H)
+	if count(mark, gen.Eva.Muted) == 0 || count(mark, gen.Eva.Accent) != 0 {
+		t.Errorf("the selected child row's mark is not drawn in the headings' grey")
+	}
+	if count(name, gen.Eva.Accent) == 0 || count(name, gen.Eva.Muted) != 0 {
+		t.Errorf("the selected child row's name is not drawn in the accent")
 	}
 	// the marks exist in every font, one cell wide, with enough ink to read
 	for name, f := range map[string]*gfx.Font{"body": fonts.Body(), "small": fonts.Small(), "narrow": fonts.Narrow(), "tall": fonts.NarrowTall()} {

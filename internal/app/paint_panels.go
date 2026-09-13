@@ -2,6 +2,7 @@ package app
 
 import (
 	"image"
+	"image/color"
 	"sort"
 	"strings"
 	"time"
@@ -44,16 +45,29 @@ func (e panelEntry) label() string {
 	return e.text
 }
 
-// fitLabel is the label cut to cols columns. A child row whose full name
-// does not fit falls back to its short name behind the mark, so at the
-// widest tate safe zone "Screensaver brightness" reads "Brightness" under
-// its parent instead of losing its tail.
-func (e panelEntry) fitLabel(cols int) string {
-	l := e.label()
-	if e.child && e.short != "" && len(l) > cols {
-		l = gfx.ChildMark + " " + e.short
+// fitText is the row's name cut to cols columns, the mark's two cells
+// already taken off for a child. A child whose full name does not fit
+// falls back to its short name, so at the widest tate safe zone
+// "Screensaver brightness" reads "Brightness" under its parent instead of
+// losing its tail.
+func (e panelEntry) fitText(cols int) string {
+	if e.child && e.short != "" && len(e.text) > cols {
+		return gfx.Fit(e.short, cols)
 	}
-	return gfx.Fit(l, cols)
+	return gfx.Fit(e.text, cols)
+}
+
+// paintLabel draws the row's name from x with cols columns of room. A
+// child's branch mark goes first in the section headings' grey, so it
+// reads as structure rather than as part of the name, and the name
+// follows two cells in, in the row's own colour.
+func (a *App) paintLabel(c *gfx.Canvas, x, y, cols int, e panelEntry, col color.RGBA) {
+	if e.child {
+		c.Text(x, y, a.sm, gfx.ChildMark, gen.Eva.Muted)
+		x += 2 * a.sm.W
+		cols -= 2
+	}
+	c.Text(x, y, a.sm, e.fitText(cols), col)
 }
 
 type panelState struct {
@@ -643,10 +657,10 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			val := la + " " + e.vals[e.idx] + " " + ra
 			vw := font.Width(val)
 			if vx > 0 {
-				c.Text(inner.Min.X+2, y, font, e.fitLabel(font.Cols(vx-inner.Min.X-2-font.W)), col)
+				a.paintLabel(c, inner.Min.X+2, y, font.Cols(vx-inner.Min.X-2-font.W), e, col)
 				c.Text(vx, y, font, val, col)
 			} else {
-				c.Text(inner.Min.X+2, y, font, e.fitLabel(font.Cols(edge-inner.Min.X-2-font.W-vw)), col)
+				a.paintLabel(c, inner.Min.X+2, y, font.Cols(edge-inner.Min.X-2-font.W-vw), e, col)
 				c.Text(edge-vw, y, font, val, col)
 			}
 		default:
@@ -656,7 +670,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			} else if n == p.cursor && a.screen != ScreenFilter {
 				col = gen.Eva.Accent
 			}
-			c.Text(inner.Min.X+2, y, font, e.fitLabel(cols), col)
+			a.paintLabel(c, inner.Min.X+2, y, cols, e, col)
 		}
 		y += rowH(n)
 	}
