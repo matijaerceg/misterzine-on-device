@@ -173,9 +173,10 @@ type screensaver struct {
 	ticked    time.Time     // when the fade last advanced
 	fadeT     time.Duration // how far into saverFade the fade is
 	darkAt    time.Time     // when the fade completed: the lettering's clock
-	travel    int
-	shade     int // brightness of the screen under the lettering, in 256ths
-	fade      int // how far the fade has come, in 256ths; 256 once dark
+	travel    int           // the lettering's position: one pixel per frame once dark
+	ticks     int           // saver frames this run
+	shade     int           // brightness of the screen under the lettering, in 256ths
+	fade      int           // how far the fade has come, in 256ths; 256 once dark
 	// the picture under the lettering, frozen at the first saver frame:
 	// as painted, its blur levels, and the last level at the shade once
 	// the fade is done
@@ -263,9 +264,32 @@ func (a *App) startSaver(now time.Time) {
 	s.started, s.ticked, s.next = now, now, now.Add(saverFrame)
 	s.fadeT, s.darkAt = 0, time.Time{}
 	s.travel, s.shade, s.fade = 0, 256, 0
+	s.ticks = 0
 	s.sharp, s.ground, s.dark = nil, nil, nil
 	a.rep = repeater{}
 	a.all = true
+}
+
+// SaverStats reports the run's frame count and the lettering's position
+// (the debug API).
+func (a *App) SaverStats() map[string]int {
+	s := &a.saver
+	return map[string]int{"ticks": s.ticks, "travel": s.travel}
+}
+
+// SaverRunning reports the saver painting: fading in, showing the
+// lettering, or fading back out. The host then paces frames by the
+// vertical blank (SaverFrame) instead of the timer.
+func (a *App) SaverRunning() bool { return a.saver.active }
+
+// SaverFrame is Tick for the host's vertical-blank loop: the saver moves
+// one frame whatever the clock says, and everything else that is due runs
+// as usual.
+func (a *App) SaverFrame(now time.Time) bool {
+	if a.saver.active {
+		a.saver.next = now
+	}
+	return a.Tick(now)
 }
 
 // saverLeave starts a wake: the fade runs backwards over saverWake without
@@ -311,6 +335,7 @@ func (a *App) tickSaver(now time.Time) bool {
 	if !a.saver.active {
 		a.startSaver(now)
 	} else {
+		a.saver.ticks++
 		a.saverAdvance(now)
 		if a.saver.leaving && a.saver.fadeT <= 0 {
 			a.saverEnd() // the picture is back
@@ -329,10 +354,10 @@ func (a *App) tickSaver(now time.Time) bool {
 	return true
 }
 
-// saverAdvance moves the fade for now and sets the shade and the
-// lettering's travel from it. The fade climbs over saverFade, held back by
-// a level the worker has not finished, then the word slides one pixel a
-// frame; a wake runs it back down over saverWake.
+// saverAdvance moves the fade for now and sets the shade from it, and
+// moves the lettering one pixel a frame once the fade is done. The fade
+// climbs over saverFade, held back by a level the worker has not
+// finished; a wake runs it back down over saverWake.
 func (a *App) saverAdvance(now time.Time) {
 	s := &a.saver
 	dt := now.Sub(s.ticked)
@@ -355,19 +380,22 @@ func (a *App) saverAdvance(now time.Time) {
 			}
 		}
 		if s.fadeT >= saverFade {
-			// the moment the fade completed, not this tick, keeps the
-			// lettering on the same clock as before the levels
-			s.darkAt = now.Add(saverFade - s.fadeT)
 			s.fadeT = saverFade
+			s.darkAt = now
+			s.travel = 0
+			s.fade, s.shade = 256, a.look.Shade
+			return
 		}
+	default:
+		// dark: a frame is a pixel. Frames, not the clock: the host paces
+		// them by the vertical blank, so counting keeps the motion even
+		// however the clock jitters.
+		s.travel++
+		return
 	}
 	s.fade = int(256 * s.fadeT / saverFade)
 	s.shade = 256 - (256-a.look.Shade)*s.fade/256
-	if s.darkAt.IsZero() {
-		s.travel = 0
-		return
-	}
-	s.travel = int(now.Sub(s.darkAt) / saverFrame)
+	s.travel = 0
 }
 
 // saverCached reports whether the picture under the lettering has been
@@ -693,8 +721,16 @@ func (a *App) paintSaver(c *gfx.Canvas) {
 	}
 	word := m.Rect.Dx()
 	for y := 0; y < c.H(); y++ {
+		row := m.Pix[y*m.Stride : y*m.Stride+word]
+		sx := 0
+		if x0 < 0 {
+			sx = -x0 % word
+		}
 		for x := max(x0, 0); x < c.W(); x++ {
-			v := m.Pix[y*m.Stride+(x-x0)%word]
+			v := row[sx]
+			if sx++; sx == word {
+				sx = 0
+			}
 			if v == 0 {
 				continue
 			}

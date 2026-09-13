@@ -43,56 +43,57 @@ import (
 const logMax = 1 << 20
 
 type host struct {
-	root, card      string
-	lg              *log.Logger
-	console         *mister.Console
-	cmd             *mister.Cmd
-	fb              *mister.FB
-	input           *mister.Input
-	a               *app.App
-	settings        store.Settings
-	state           store.State
-	favs            store.Favorites
-	events          chan platform.Event
-	uiRun           chan func()
-	quit            chan struct{}
-	launch          string
-	dirty           bool // state needs saving
-	stopRequested   atomic.Bool
-	lostCh          chan struct{} // the screen-lost probe fired
-	debugEnabled    bool          // input logging and frame performance measurements
-	lastEv          time.Time
-	checkFailed     atomic.Bool
-	dataUpdated     time.Time // the data's build time, for the clock check
-	slowLog         time.Time
-	stats           frameStats
-	favDirty        bool
-	favLoadFailed   bool // preserve a favorites file we could not read
-	saveAt          time.Time
-	saveRetry       bool
-	setDirty        bool
-	clock           platform.Clock
-	client          *fetch.Client
-	img             *images.Service
-	index           *scan.Index
-	status          []data.Status
-	alts            []scan.Alt
-	scanCh          chan scanResult
-	timeSample      atomic.Pointer[serverClockSample]
-	checkRunning    bool // UI-owned; held until the result is installed
-	checkPending    bool
-	nextCheck       time.Time
-	nextAppCheck    time.Time
-	appCheckRunning bool
-	scanRunning     bool
-	scanPending     bool
-	manualScan      bool
-	netCh           chan string
-	updates         chan updateResult
-	updatePending   bool
-	updateReadError string // UI-owned; suppress repeated status-read diagnostics
-	updateRunning   bool
-	troubleshooting supportHost
+	root, card                    string
+	lg                            *log.Logger
+	console                       *mister.Console
+	cmd                           *mister.Cmd
+	fb                            *mister.FB
+	input                         *mister.Input
+	a                             *app.App
+	settings                      store.Settings
+	state                         store.State
+	favs                          store.Favorites
+	events                        chan platform.Event
+	uiRun                         chan func()
+	quit                          chan struct{}
+	launch                        string
+	dirty                         bool // state needs saving
+	stopRequested                 atomic.Bool
+	lostCh                        chan struct{} // the screen-lost probe fired
+	debugEnabled                  bool          // input logging and frame performance measurements
+	lastEv                        time.Time
+	checkFailed                   atomic.Bool
+	dataUpdated                   time.Time // the data's build time, for the clock check
+	slowLog                       time.Time
+	stats                         frameStats
+	saverMisses, saverBlankFrames int // the saver loop's frames and the ones that missed their blank (debug)
+	favDirty                      bool
+	favLoadFailed                 bool // preserve a favorites file we could not read
+	saveAt                        time.Time
+	saveRetry                     bool
+	setDirty                      bool
+	clock                         platform.Clock
+	client                        *fetch.Client
+	img                           *images.Service
+	index                         *scan.Index
+	status                        []data.Status
+	alts                          []scan.Alt
+	scanCh                        chan scanResult
+	timeSample                    atomic.Pointer[serverClockSample]
+	checkRunning                  bool // UI-owned; held until the result is installed
+	checkPending                  bool
+	nextCheck                     time.Time
+	nextAppCheck                  time.Time
+	appCheckRunning               bool
+	scanRunning                   bool
+	scanPending                   bool
+	manualScan                    bool
+	netCh                         chan string
+	updates                       chan updateResult
+	updatePending                 bool
+	updateReadError               string // UI-owned; suppress repeated status-read diagnostics
+	updateRunning                 bool
+	troubleshooting               supportHost
 }
 
 func main() {
@@ -349,7 +350,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 					"version": buildinfo.String(), "screen": h.a.Screen().String(), "cursor": h.a.CursorKey(),
 					"sort": h.a.Sort().String(), "rows": len(h.a.Data().Rows), "fb": h.fb.Geometry().String(),
 					"search": h.a.Search(), "filters": h.a.Filters(), "rotation": h.a.Rotation().String(), "inset": fmt.Sprint(h.a.Inset()), "devices": h.input.Devices(),
-					"sysfs": mister.SysfsMode(), "uptime": time.Since(t0).String(), "frames": h.stats.String(),
+					"sysfs": mister.SysfsMode(), "uptime": time.Since(t0).String(), "frames": h.stats.String(), "cadence": h.stats.Cadence(), "saver": h.a.SaverStats(), "saver_blank_frames": h.saverBlankFrames, "saver_misses": h.saverMisses,
 					"update":      h.a.UpdateState(),
 					"screensaver": h.a.Screensaver(), "screensaver_active": h.a.ScreensaverActive(),
 					"title_font": h.a.TitleFont(), "list_shot": h.a.ListShot(), "date_format": h.a.DateFormat(), "button_labels": h.a.ButtonLabels(),
@@ -477,6 +478,8 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			// a held key: run at the framebuffer's pace until it is released,
 			// nothing else (saves, checks) gets between two frames
 			h.frameLoop()
+		} else if h.a.SaverRunning() {
+			h.saverLoop()
 		}
 		h.autosave(time.Now(), false)
 		if h.launch != "" {
@@ -578,7 +581,7 @@ func (h *host) frameLoop() {
 			h.fb.PresentWait(frame, dirty, false)
 			if h.debugEnabled {
 				cp := time.Since(t)
-				h.stats.add(paint, 0, cp)
+				h.stats.add(paint, 0, cp, t)
 				if paint+cp > 16*time.Millisecond {
 					late++
 				}
@@ -592,6 +595,97 @@ func (h *host) frameLoop() {
 		default:
 		}
 	}
+}
+
+// saverLoop runs while the screensaver paints: a frame every second
+// vertical blank, copied at the blank so the picture never tears and
+// the lettering moves exactly one pixel per two refreshes. A 30 fps timer
+// cannot promise that: its ticks drift against the blanks, and a paint
+// that ends just after one waits for the next, a frame shown for three
+// refreshes and then one for a single refresh, which reads as a hitch.
+// Everything else the main loop serves (keys, the debug API, downloads,
+// scans) is served between frames without blocking.
+func (h *host) saverLoop() {
+	frames, misses := 0, 0
+	var lastCopy time.Time
+	h.saverMisses, h.saverBlankFrames = 0, 0
+	if h.debugEnabled {
+		h.stats.buckets = nil // the cadence now describes this saver run
+	}
+	for h.a.SaverRunning() {
+		if !h.pump() {
+			return
+		}
+		if !h.a.SaverRunning() {
+			return
+		}
+		t := time.Now()
+		h.a.SaverFrame(t)
+		frame, dirty := h.a.Paint()
+		var paint time.Duration
+		if h.debugEnabled {
+			paint = time.Since(t)
+			t = time.Now()
+		}
+		// the copy goes two refreshes after the last one: a paint that
+		// finished inside one refresh waits out the next blank, so the
+		// pace never doubles. Time decides, not a count of waits: a paint
+		// that ran through a blank has no wait to count. At 60 Hz the
+		// blanks after a copy fall at 17 and 33 ms (50 Hz: 20 and 40), so
+		// 25 ms tells the first from the second either way.
+		h.fb.WaitVSync()
+		if !lastCopy.IsZero() && time.Since(lastCopy) < 25*time.Millisecond {
+			h.fb.WaitVSync()
+		}
+		at := time.Now()
+		if !lastCopy.IsZero() && at.Sub(lastCopy) > 45*time.Millisecond {
+			misses++ // three refreshes or more: a hitch
+		}
+		lastCopy = at
+		frames++
+		if dirty != nil {
+			h.fb.PresentWait(frame, dirty, false)
+		}
+		if h.debugEnabled {
+			h.stats.add(paint, at.Sub(t), time.Since(at), at)
+			h.saverMisses, h.saverBlankFrames = misses, frames
+		}
+	}
+}
+
+// pump serves what the main loop would between two saver frames, without
+// blocking; false means the app is stopping.
+func (h *host) pump() bool {
+	for i := 0; i < 16; i++ {
+		select {
+		case <-h.quit:
+			return false
+		case ev := <-h.events:
+			h.handleEvent(ev)
+		case f := <-h.uiRun:
+			f()
+		case u := <-h.updates:
+			h.receiveUpdate(u)
+		case s := <-h.netCh:
+			h.a.SetNet(s)
+			h.img.SetOffline(s == "no connection")
+		case <-h.img.Ready():
+			h.a.Invalidate()
+		case <-h.img.ProgressReady():
+			if h.a.Screen() == app.ScreenOptions {
+				h.a.Invalidate()
+			}
+		case r := <-h.scanCh:
+			h.receiveScan(r)
+		case <-h.lostCh:
+			h.lg.Printf("Main took the screen back (menu button): leaving")
+			h.stop()
+			return false
+		default:
+			return true
+		}
+	}
+	return true
 }
 
 // closeQuit elects one shutdown caller without racing concurrent API/input exits.
@@ -641,7 +735,7 @@ func (h *host) present() {
 	if dirty != nil {
 		t1 := time.Now()
 		h.fb.Present(frame, dirty)
-		h.stats.add(t1.Sub(t0), h.fb.LastWait, time.Since(t1)-h.fb.LastWait)
+		h.stats.add(t1.Sub(t0), h.fb.LastWait, time.Since(t1)-h.fb.LastWait, t1.Add(h.fb.LastWait))
 		if d := time.Since(t0); d > 40*time.Millisecond && time.Since(h.slowLog) > 5*time.Second {
 			h.slowLog = time.Now()
 			h.lg.Printf("slow frame: paint %s, present %s", t1.Sub(t0).Round(time.Millisecond), time.Since(t1).Round(time.Millisecond))
@@ -1042,16 +1136,47 @@ func openLog(path string) *log.Logger {
 	return log.New(f, "", log.Ltime|log.Lmicroseconds)
 }
 
-// frameStats keeps the last frames' paint, vsync wait and copy times.
+// frameStats keeps the last frames' paint, vsync wait and copy times, and
+// when each landed, for the cadence between presents.
 type frameStats struct {
 	n               int
 	paint, wait, cp [256]time.Duration
+	last            time.Time   // when the last frame's copy began: the vertical blank it landed on
+	buckets         map[int]int // intervals between copies, to the millisecond, since the start
 }
 
-func (f *frameStats) add(p, w, c time.Duration) {
+// add records a frame; at is when its copy began (after the vsync wait).
+func (f *frameStats) add(p, w, c time.Duration, at time.Time) {
 	i := f.n % len(f.paint)
 	f.paint[i], f.wait[i], f.cp[i] = p, w, c
 	f.n++
+	if !f.last.IsZero() {
+		if f.buckets == nil {
+			f.buckets = map[int]int{}
+		}
+		f.buckets[min(int(at.Sub(f.last).Round(time.Millisecond)/time.Millisecond), 999)]++
+	}
+	f.last = at
+}
+
+// Cadence tallies the intervals between copies since the start to the
+// millisecond, longest first: a steady 30 fps on a 60 Hz picture reads as
+// one 33 ms bucket, a frame that missed its vertical blank as a 50 ms one.
+func (f *frameStats) Cadence() string {
+	buckets := f.buckets
+	if len(buckets) == 0 {
+		return "none"
+	}
+	keys := make([]int, 0, len(buckets))
+	for ms := range buckets {
+		keys = append(keys, ms)
+	}
+	sort.Sort(sort.Reverse(sort.IntSlice(keys)))
+	parts := make([]string, 0, len(keys))
+	for _, ms := range keys {
+		parts = append(parts, fmt.Sprintf("%dms x%d", ms, buckets[ms]))
+	}
+	return strings.Join(parts, ", ")
 }
 
 func (f *frameStats) String() string {

@@ -308,9 +308,16 @@ func TestSaverFadesBeforeTheWordEnters(t *testing.T) {
 	if p := c.RGBAAt(0, 0); p != dark {
 		t.Fatalf("dark pixel %v is not the bloomed fill at the shade, %v", p, dark)
 	}
-	a.Tick(t0.Add(saverFade + 10*saverFrame))
+	for i := 1; i <= 10; i++ {
+		a.Tick(t0.Add(saverFade + time.Duration(i)*saverFrame))
+	}
 	if a.saver.travel != 10 {
 		t.Fatalf("ten frames after the fade: travel %d", a.saver.travel)
+	}
+	// the host's vertical-blank loop moves a frame whatever the clock says
+	a.SaverFrame(t0.Add(saverFade + 10*saverFrame + time.Millisecond))
+	if a.saver.travel != 11 {
+		t.Fatalf("a SaverFrame did not move a pixel: travel %d", a.saver.travel)
 	}
 }
 
@@ -444,6 +451,9 @@ func TestSaverFadeWaitsForLevelsAndWakeFadesBack(t *testing.T) {
 	a.Tick(t0.Add(2 * saverFade))
 	if a.saver.fade != 256 || a.saver.darkAt.IsZero() {
 		t.Fatalf("fade %d not complete", a.saver.fade)
+	}
+	if a.Tick(t0.Add(2*saverFade + saverFrame)); a.saver.travel != 1 {
+		t.Fatalf("the first dark frame moved %d pixels", a.saver.travel)
 	}
 	// wake with a key: the saver reports awake at once, the picture fades back
 	wake := t0.Add(2*saverFade + time.Second)
