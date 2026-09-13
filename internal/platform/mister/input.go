@@ -269,12 +269,25 @@ func (m padMapping) slotText() string {
 		}
 	}
 	if m.menu[0] || m.menu[1] {
-		s += fmt.Sprintf("menu stick axes %d/%d", m.menuX&0xFFFF, m.menuY&0xFFFF)
+		s += fmt.Sprintf("menu stick axes %d/%d ", m.menuX&0xFFFF, m.menuY&0xFFFF)
 	}
 	if s == "" {
 		return "none in the map"
 	}
+	p := m.info("", "", 0, 0)
+	if p.OK == "" && p.Back == "" {
+		s += "MENU OK/BACK not defined"
+	} else {
+		s += fmt.Sprintf("MENU OK=%s BACK=%s", orNone(p.OK), orNone(p.Back))
+	}
 	return strings.TrimSpace(s)
+}
+
+func orNone(s string) string {
+	if s == "" {
+		return "none"
+	}
+	return s
 }
 
 // axisEvents turns an axis value into edge presses and releases the way

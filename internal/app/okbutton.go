@@ -116,14 +116,17 @@ func (a *App) currentPad() (support.Pad, bool) {
 			return p, true
 		}
 	}
+	// one pad can be several event nodes (the DE10's Xbox 360 pad is two
+	// with one name), so count identities, not nodes
 	var only support.Pad
-	n := 0
+	ids := map[string]bool{}
 	for _, p := range a.oks.pads {
 		if p.Direct {
-			only, n = p, n+1
+			only = p
+			ids[padID(p)] = true
 		}
 	}
-	return only, n == 1
+	return only, len(ids) == 1
 }
 
 // legendSwapped reports whether the legends name A and B the other way

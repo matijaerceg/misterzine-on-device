@@ -136,6 +136,20 @@ func TestOKButtonRowStates(t *testing.T) {
 		t.Fatal("an unknown source should pass through")
 	}
 	pad := okTestPads()[1]
+	// one pad as two event nodes with one name (the DE10's Xbox 360 pad)
+	// is still the only pad; two different pads are not
+	twin := pad
+	twin.Node = "event8"
+	a = okTestApp(func() []support.Pad { return []support.Pad{pad, twin} })
+	if row := okRow(a); row.disabled || row.vals[row.idx] != "Auto from MiSTer (B)" {
+		t.Fatalf("row with the pad's two nodes: %+v", row)
+	}
+	other := pad
+	other.Name, other.Product = "8BitDo M30", 0x0b12
+	a = okTestApp(func() []support.Pad { return []support.Pad{pad, other} })
+	if row := okRow(a); !row.disabled || row.vals[0] != "no pad used yet" {
+		t.Fatalf("row with two different pads: %+v", row)
+	}
 	for _, c := range []struct {
 		ok, val, note string
 	}{
