@@ -1,20 +1,11 @@
-The screensaver blurs the picture into a soft glow, and the legends gain
-a Select + reminder.
-
-- The screensaver blurs and dims the picture into a glow over a second,
-  and a key brings it back sharp in a quarter second. Its lettering now
-  repeats edge to edge.
-- Legends are in Title Case, and the list bar ends with Select + as a
-  reminder of the Select chords.
-- Manufacturer replaces Maker in the views, the headers and Details.
+Stopping the app while its screensaver is up works again.
 
 Fixes and adjustments:
 
-- The screensaver's scroll no longer hitches: its frames follow the
-  picture's vertical blank.
-- Double presses from a bouncing arcade button are dropped.
-- A held Backspace erases a search quickly after the Hold delay.
+- A stop signal that arrived while the screensaver was up (an updater, a
+  reboot or a shutdown) waited for a key in v1.0.25; it stops the app at
+  once again.
 
-Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1025--2026-09-13).
+Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1026--2026-09-13).
 Existing installations update through Update All. New installation:
 [installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once).

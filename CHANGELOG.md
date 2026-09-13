@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.0.26 — 2026-09-13
+
+- Fix: a stop signal that arrived while the screensaver was up was not
+  acted on until a key woke it (v1.0.25). The screensaver's frame loop,
+  new in v1.0.25, served keys, downloads, scans and the debug API between
+  frames but not the process signals, so a SIGTERM from an updater, a
+  reboot or a shutdown sat in its channel. The loop now hands a signal
+  back to the main loop, which stops the app as before.
+
 ## v1.0.25 — 2026-09-13
 
 - The screensaver blurs and dims the picture into a soft glow instead of
