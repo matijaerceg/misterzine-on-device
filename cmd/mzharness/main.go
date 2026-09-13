@@ -304,6 +304,7 @@ func advance(a *app.App, clock time.Time, d time.Duration, present func()) time.
 		if clock.After(end) {
 			clock = end
 		}
+		a.SaverSettle() // the saver's blur levels come from a worker; the scripted clock waits for them
 		if a.Tick(clock) {
 			present()
 		}

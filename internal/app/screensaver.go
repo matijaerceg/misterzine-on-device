@@ -4,6 +4,8 @@ import (
 	"image"
 	"math"
 	"sort"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
@@ -12,9 +14,28 @@ import (
 
 const saverFrame = time.Second / 30
 
-// saverFade is how long the screen takes to dim from full brightness to the
-// saver's quarter; the lettering enters once it is dark.
+// saverFade is how long the screen takes to dim and blur into the saver's
+// ground; the lettering enters once it is dark.
 const saverFade = time.Second
+
+// saverWake is how long a wake takes to bring the picture back sharp and
+// bright: the fade run backwards, four times as fast.
+const saverWake = saverFade / 4
+
+// saverLevels is how many blur steps the fade climbs through, each with a
+// larger radius and more bloom. A worker computes them from the frozen
+// picture while the fade runs; the fade waits for a level that is not
+// ready yet, so a slow board fades a little longer, never in jumps.
+const saverLevels = 4
+
+// saverGround is the picture under the lettering at each level: pix[0] as
+// painted, pix[k] bloomed and blurred at k/saverLevels of the look. The
+// worker fills the levels in order and publishes each through ready.
+type saverGround struct {
+	pix   [saverLevels + 1][]uint8
+	ready atomic.Int32
+	done  sync.WaitGroup
+}
 
 // SaverLook tunes the picture under the lettering. It blooms: every
 // channel above Knee is raised by Gain times the excess (256ths), without
@@ -55,11 +76,13 @@ func (l SaverLook) boost(v int) int {
 func (a *App) SaverLook() SaverLook { return a.look }
 
 // SetSaverLook applies a look; with the saver up the ground is taken
-// again with it, so the change shows on the next frame.
+// again with it and the fade runs again from the sharp picture.
 func (a *App) SetSaverLook(l SaverLook) {
 	a.look = l.clamped()
-	if a.saver.active {
-		a.saver.sharp = nil
+	if a.ScreensaverActive() {
+		s := &a.saver
+		s.sharp, s.ground, s.dark = nil, nil, nil
+		s.fadeT, s.darkAt = 0, time.Time{}
 		a.all = true
 	}
 }
@@ -68,12 +91,18 @@ func (a *App) SetSaverLook(l SaverLook) {
 // API; the wake acts like a key's wake without a key to swallow.
 func (a *App) SaverDemo(on bool) {
 	switch {
-	case on && !a.saver.active:
+	case on && !a.ScreensaverActive():
 		a.startSaver(a.cfg.TimerNow())
-	case !on && a.saver.active:
-		a.saver.active = false
-		a.saver.sharp, a.saver.blurred, a.saver.dark = nil, nil, nil
-		a.all = true
+	case !on && a.ScreensaverActive():
+		a.saverLeave(a.cfg.TimerNow())
+	}
+}
+
+// SaverSettle waits for the ground's levels: the harness and the tests
+// drive a scripted clock, which must not outrun the worker.
+func (a *App) SaverSettle() {
+	if g := a.saver.ground; g != nil {
+		g.done.Wait()
 	}
 }
 
@@ -85,20 +114,26 @@ type saverKey struct {
 }
 
 type screensaver struct {
-	active    bool
+	active    bool // painting the saver: the fade in, the lettering, or the fade back out
+	leaving   bool // a wake is running the fade backwards
 	lastInput time.Time
 	started   time.Time
 	next      time.Time
+	ticked    time.Time     // when the fade last advanced
+	fadeT     time.Duration // how far into saverFade the fade is
+	darkAt    time.Time     // when the fade completed: the lettering's clock
 	travel    int
 	shade     int // brightness of the screen under the lettering, in 256ths
 	fade      int // how far the fade has come, in 256ths; 256 once dark
 	// the picture under the lettering, frozen at the first saver frame:
-	// as painted, blurred, and blurred and dimmed once the fade is done
-	sharp, blurred, dark []uint8
-	cacheW               int      // width the cache was taken at (a rotation swaps it)
-	blur                 []uint16 // scratch for the blur passes: two 16-bit RGB canvases
-	mask                 *image.Alpha
-	waking               map[saverKey]bool
+	// as painted, its blur levels, and the last level at the shade once
+	// the fade is done
+	sharp  []uint8
+	ground *saverGround
+	dark   []uint8
+	cacheW int // width the picture was taken at (a rotation swaps it)
+	mask   *image.Alpha
+	waking map[saverKey]bool
 }
 
 func (a *App) Screensaver() string {
@@ -110,7 +145,9 @@ func (a *App) Screensaver() string {
 	}
 }
 
-func (a *App) ScreensaverActive() bool { return a.saver.active }
+// ScreensaverActive reports the saver up: fading in or showing the
+// lettering. The fade back out after a wake counts as awake, so keys act.
+func (a *App) ScreensaverActive() bool { return a.saver.active && !a.saver.leaving }
 
 func (a *App) saverDelay() time.Duration {
 	switch a.Screensaver() {
@@ -151,15 +188,14 @@ func (a *App) handleSaverInput(ev platform.Event) bool {
 		}
 		return true
 	}
-	if !a.saver.active {
+	if !a.ScreensaverActive() {
 		return false
 	}
 	if !ev.Pressed {
 		delete(a.down, ev.Key)
 		return true // releasing the preview button doesn't dismiss the preview
 	}
-	a.saver.active = false
-	a.saver.sharp, a.saver.blurred, a.saver.dark = nil, nil, nil
+	a.saverLeave(at)
 	a.rep = repeater{}
 	a.down = map[platform.Key]bool{}
 	a.updateView.backAt = time.Time{}
@@ -171,14 +207,35 @@ func (a *App) handleSaverInput(ev platform.Event) bool {
 }
 
 func (a *App) startSaver(now time.Time) {
-	a.saver.active = true
-	a.saver.started = now
-	a.saver.next = now.Add(saverFrame)
-	a.saver.travel = 0
-	a.saver.shade = 256
-	a.saver.fade = 0
-	a.saver.sharp, a.saver.blurred, a.saver.dark = nil, nil, nil
+	s := &a.saver
+	s.active, s.leaving = true, false
+	s.started, s.ticked, s.next = now, now, now.Add(saverFrame)
+	s.fadeT, s.darkAt = 0, time.Time{}
+	s.travel, s.shade, s.fade = 0, 256, 0
+	s.sharp, s.ground, s.dark = nil, nil, nil
 	a.rep = repeater{}
+	a.all = true
+}
+
+// saverLeave starts a wake: the fade runs backwards over saverWake without
+// the lettering, and the screen under it is painted again once the picture
+// is back. With nothing frozen yet there is nothing to fade back from.
+func (a *App) saverLeave(now time.Time) {
+	s := &a.saver
+	if s.ground == nil {
+		a.saverEnd()
+		return
+	}
+	s.leaving = true
+	s.ticked, s.next = now, now
+	a.all = true
+}
+
+// saverEnd takes the saver down and lets go of the frozen picture.
+func (a *App) saverEnd() {
+	s := &a.saver
+	s.active, s.leaving = false, false
+	s.sharp, s.ground, s.dark = nil, nil, nil
 	a.all = true
 }
 
@@ -204,26 +261,55 @@ func (a *App) tickSaver(now time.Time) bool {
 		a.startSaver(now)
 	} else {
 		a.saverAdvance(now)
-		a.saver.next = now.Add(saverFrame)
-		a.all = true
+		if a.saver.leaving && a.saver.fadeT <= 0 {
+			a.saverEnd() // the picture is back
+		} else {
+			a.saver.next = now.Add(saverFrame)
+			a.all = true
+		}
 	}
 	return true
 }
 
-// saverAdvance sets the fade, the shade and the lettering's travel for
-// now: the screen dims and blurs over saverFade, then the word slides one
-// pixel a frame.
+// saverAdvance moves the fade for now and sets the shade and the
+// lettering's travel from it. The fade climbs over saverFade, held back by
+// a level the worker has not finished, then the word slides one pixel a
+// frame; a wake runs it back down over saverWake.
 func (a *App) saverAdvance(now time.Time) {
-	since := now.Sub(a.saver.started)
-	if since < saverFade {
-		a.saver.fade = int(256 * since / saverFade)
-		a.saver.shade = 256 - (256-a.look.Shade)*a.saver.fade/256
-		a.saver.travel = 0
+	s := &a.saver
+	dt := now.Sub(s.ticked)
+	if dt < 0 {
+		dt = 0
+	}
+	s.ticked = now
+	switch {
+	case s.leaving:
+		s.fadeT -= dt * (saverFade / saverWake)
+		if s.fadeT < 0 {
+			s.fadeT = 0
+		}
+		s.darkAt = time.Time{}
+	case s.fadeT < saverFade:
+		s.fadeT += dt
+		if g := s.ground; g != nil {
+			if ready := saverFade * time.Duration(g.ready.Load()) / saverLevels; s.fadeT > ready {
+				s.fadeT = ready
+			}
+		}
+		if s.fadeT >= saverFade {
+			// the moment the fade completed, not this tick, keeps the
+			// lettering on the same clock as before the levels
+			s.darkAt = now.Add(saverFade - s.fadeT)
+			s.fadeT = saverFade
+		}
+	}
+	s.fade = int(256 * s.fadeT / saverFade)
+	s.shade = 256 - (256-a.look.Shade)*s.fade/256
+	if s.darkAt.IsZero() {
+		s.travel = 0
 		return
 	}
-	a.saver.fade = 256
-	a.saver.shade = a.look.Shade
-	a.saver.travel = int((since - saverFade) / saverFrame)
+	s.travel = int(now.Sub(s.darkAt) / saverFrame)
 }
 
 // saverCached reports whether the picture under the lettering has been
@@ -233,52 +319,66 @@ func (a *App) saverCached(c *gfx.Canvas) bool {
 }
 
 // saverCapture freezes the picture under the lettering as the canvas
-// holds it now, and blurs a bloomed copy: the boost (SaverLook.boost) goes
-// into 16-bit channels so nothing clamps before the blur, a box blur of
-// radius width/BlurDiv run Passes times along the rows and down the
-// columns, edges repeated; running sums make the cost independent of the
-// radius.
-// The passes cost the boards a couple of hundred milliseconds, so this
-// happens once per saver run, not per frame; the saver shows this frozen
-// picture until a key wakes the app.
+// holds it now and starts the worker that blurs it, level by level, in
+// the background: one level costs the boards a couple of hundred
+// milliseconds, far more than a frame, and the UI thread only ever mixes
+// finished levels. The saver shows this frozen picture until a key wakes
+// the app.
 func (a *App) saverCapture(c *gfx.Canvas) {
 	s := &a.saver
-	s.sharp = append(s.sharp[:0], c.Pix...)
-	s.blurred = append(s.blurred[:0], c.Pix...)
+	s.sharp = append([]uint8(nil), c.Pix...) // a fresh copy: a worker from an earlier run may still read the old one
 	s.dark = nil
 	s.cacheW = c.W()
-	look := a.look
-	w, h, r := c.W(), c.H(), c.W()/look.BlurDiv
+	g := &saverGround{}
+	g.pix[0] = s.sharp
+	s.ground = g
+	g.done.Add(1)
+	go saverBlurLevels(g, s.sharp, c.W(), c.H(), c.Stride, a.look)
+}
+
+// saverBlurLevels is the worker: level k is the sharp picture bloomed at
+// k/saverLevels of the look's gain (SaverLook.boost, into 16-bit channels
+// so nothing clamps before the blur) and box-blurred at k/saverLevels of
+// its radius, the passes run along the rows and down the columns with the
+// edges repeated; running sums make the cost independent of the radius.
+// Each level is published as it finishes.
+func saverBlurLevels(g *saverGround, sharp []uint8, w, h, stride int, look SaverLook) {
+	defer g.done.Done()
 	n := w * h * 3
-	if len(s.blur) != 2*n {
-		s.blur = make([]uint16, 2*n)
-	}
-	wide, tmp := s.blur[:n], s.blur[n:]
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
-			i, o := c.PixOffset(x, y), (y*w+x)*3
-			wide[o] = uint16(look.boost(int(c.Pix[i])))
-			wide[o+1] = uint16(look.boost(int(c.Pix[i+1])))
-			wide[o+2] = uint16(look.boost(int(c.Pix[i+2])))
-		}
-	}
-	if r >= 1 {
-		for pass := 0; pass < look.Passes; pass++ {
-			for y := 0; y < h; y++ {
-				blurLine(wide[y*w*3:], tmp[y*w*3:], w, 3, r)
-			}
+	wide, tmp := make([]uint16, n), make([]uint16, n)
+	for k := 1; k <= saverLevels; k++ {
+		lk := look
+		lk.Gain = look.Gain * k / saverLevels
+		r := w / look.BlurDiv * k / saverLevels
+		for y := 0; y < h; y++ {
 			for x := 0; x < w; x++ {
-				blurLine(tmp[x*3:], wide[x*3:], h, w*3, r)
+				i, o := y*stride+x*4, (y*w+x)*3
+				wide[o] = uint16(lk.boost(int(sharp[i])))
+				wide[o+1] = uint16(lk.boost(int(sharp[i+1])))
+				wide[o+2] = uint16(lk.boost(int(sharp[i+2])))
 			}
 		}
-	}
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
-			i, o := c.PixOffset(x, y), (y*w+x)*3
-			s.blurred[i] = uint8(min(int(wide[o]), 255))
-			s.blurred[i+1] = uint8(min(int(wide[o+1]), 255))
-			s.blurred[i+2] = uint8(min(int(wide[o+2]), 255))
+		if r >= 1 {
+			for pass := 0; pass < look.Passes; pass++ {
+				for y := 0; y < h; y++ {
+					blurLine(wide[y*w*3:], tmp[y*w*3:], w, 3, r)
+				}
+				for x := 0; x < w; x++ {
+					blurLine(tmp[x*3:], wide[x*3:], h, w*3, r)
+				}
+			}
 		}
+		out := append([]uint8(nil), sharp...) // the alpha bytes
+		for y := 0; y < h; y++ {
+			for x := 0; x < w; x++ {
+				i, o := y*stride+x*4, (y*w+x)*3
+				out[i] = uint8(min(int(wide[o]), 255))
+				out[i+1] = uint8(min(int(wide[o+1]), 255))
+				out[i+2] = uint8(min(int(wide[o+2]), 255))
+			}
+		}
+		g.pix[k] = out
+		g.ready.Store(int32(k))
 	}
 }
 
@@ -487,10 +587,18 @@ func (a *App) paintSaver(c *gfx.Canvas) {
 	if !a.saverCached(c) {
 		a.saverCapture(c)
 	}
-	if fade >= 256 {
-		// dark: the blurred picture at the saver's shade, made once
+	// the ground: the two levels either side of the fade, mixed, at the
+	// shade; a level the worker has not finished yet is not shown
+	g := s.ground
+	n := int(g.ready.Load())
+	lo, frac := fade*saverLevels>>8, fade*saverLevels&255
+	if lo >= n {
+		lo, frac = n, 0
+	}
+	if lo == saverLevels {
+		// dark: the last level at the shade, made once
 		if s.dark == nil {
-			s.dark = append(s.dark[:0], s.blurred...)
+			s.dark = append([]uint8(nil), g.pix[saverLevels]...)
 			for i := 0; i+3 < len(s.dark); i += 4 {
 				s.dark[i] = uint8(int(s.dark[i]) * shade >> 8)
 				s.dark[i+1] = uint8(int(s.dark[i+1]) * shade >> 8)
@@ -499,13 +607,23 @@ func (a *App) paintSaver(c *gfx.Canvas) {
 		}
 		copy(c.Pix, s.dark)
 	} else {
-		// mid-fade: the sharp picture crossing into the blurred one, dimmed
+		from, to := g.pix[lo], g.pix[lo]
+		if frac != 0 {
+			to = g.pix[lo+1]
+		}
 		for i := 0; i+3 < len(c.Pix); i += 4 {
 			for ch := i; ch < i+3; ch++ {
-				v := (int(s.sharp[ch])*(256-fade) + int(s.blurred[ch])*fade) >> 8
+				v := int(from[ch])
+				if frac != 0 {
+					v = (v*(256-frac) + int(to[ch])*frac) >> 8
+				}
 				c.Pix[ch] = uint8(v * shade >> 8)
 			}
 		}
+	}
+	if s.leaving {
+		c.DirtyAll() // no lettering on the way back
+		return
 	}
 	// the lettering, over the columns it covers this frame
 	centres := make([]int, len(saverLights))

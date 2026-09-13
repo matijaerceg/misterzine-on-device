@@ -281,9 +281,10 @@ the bottom.
   image in that direction and the choice is saved. The labels describe the
   monitor's clockwise/counterclockwise turn. While following the INI, the row
   shows the current rotation in grey and cannot be changed here.
-- **Screensaver:** after 1 minute idle by default, fade the picture into a
-  dim blurred glow over a second and scroll full-height black MISTERZINE
-  lettering, with glinting chrome edges, across it. Left/Right chooses Off, 1, 2,
+- **Screensaver:** after 1 minute idle by default, blur and dim the picture
+  into a soft glow over a second and scroll full-height black MISTERZINE
+  lettering, with glinting chrome edges, across it; a key brings the picture
+  back sharp in a quarter of a second. Left/Right chooses Off, 1, 2,
   5 or 10 minutes. A previews it immediately, even when Off. The first browsing
   button or typing key wakes without acting; release it before pressing again.
   The pad's Menu button opens Options (or quits, per Options -> Menu

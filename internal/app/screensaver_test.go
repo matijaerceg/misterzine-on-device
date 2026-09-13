@@ -167,6 +167,9 @@ func TestSaverSweepsEveryPixel(t *testing.T) {
 		covered := make([]bool, c.W()*c.H())
 		remaining := len(covered)
 		mask := a.saverMask(c.H())
+		c.Fill(c.Rect, color.RGBA{R: 200, G: 160, B: 120, A: 255})
+		a.paintSaver(c) // takes the picture and starts the levels
+		a.SaverSettle()
 		for travel := 0; travel < c.W()+mask.Rect.Dx() && remaining > 0; travel++ {
 			c.Fill(c.Rect, color.RGBA{R: 200, G: 160, B: 120, A: 255})
 			a.saver.travel = travel
@@ -234,6 +237,9 @@ func TestSaverRimGlints(t *testing.T) {
 	// Sample frames across a full pass of the word: the glint must reach its
 	// cap somewhere, while any given edge pixel is black most of the time.
 	lit, total, peak := 0, 0, uint8(0)
+	c.Fill(c.Rect, color.RGBA{R: 200, G: 160, B: 120, A: 255})
+	a.paintSaver(c) // takes the picture and starts the levels
+	a.SaverSettle()
 	for travel := 0; travel < c.W()+w; travel += 7 {
 		c.Fill(c.Rect, color.RGBA{R: 200, G: 160, B: 120, A: 255})
 		a.saver.travel = travel
@@ -283,7 +289,9 @@ func TestSaverFadesBeforeTheWordEnters(t *testing.T) {
 	dark.B = uint8(min(a.look.boost(int(fill.B)), 255) * a.look.Shade >> 8)
 	c.Fill(c.Rect, fill)
 	a.paintSaver(c)
-	if p := c.RGBAAt(0, 0); p.R <= dark.R || p.R >= fill.R {
+	a.SaverSettle()
+	a.paintSaver(c)
+	if p := c.RGBAAt(0, 0); p.G <= dark.G || p.G >= fill.G { // green sits under the bloom knee, so it only dims
 		t.Fatalf("mid-fade pixel %v is not between the picture %v and the dark frame %v", p, fill, dark)
 	}
 	a.Tick(t0.Add(saverFade))
@@ -320,6 +328,7 @@ func TestSaverBlursThePictureUnderTheLettering(t *testing.T) {
 	if p := c.RGBAAt(edge-1, 10); p.R != 255 {
 		t.Fatalf("before the fade the edge pixel is %v, not sharp", p)
 	}
+	a.SaverSettle()
 	a.Tick(t0.Add(saverFade))
 	paintHalves()
 	a.paintSaver(c)
@@ -358,10 +367,12 @@ func TestSetSaverLookRetakesTheGround(t *testing.T) {
 	if !a.ScreensaverActive() {
 		t.Fatal("SaverDemo did not start the saver")
 	}
+	a.Paint()
+	a.SaverSettle()
 	a.Tick(t0.Add(saverFade))
 	a.Paint()
-	if !a.saverCached(a.logical) {
-		t.Fatal("no ground after a paint")
+	if !a.saverCached(a.logical) || a.saver.fade != 256 {
+		t.Fatalf("no ground after a paint, or fade %d not done", a.saver.fade)
 	}
 	look := a.SaverLook()
 	look.Shade = 64
@@ -370,19 +381,85 @@ func TestSetSaverLookRetakesTheGround(t *testing.T) {
 	if a.saverCached(a.logical) || !a.all {
 		t.Fatal("the new look kept the old ground")
 	}
-	a.Tick(t0.Add(saverFade + saverFrame))
+	a.Paint() // takes the picture again, with the new look
+	a.SaverSettle()
+	a.Tick(t0.Add(2 * saverFade))
 	a.Paint()
 	// the list's background at a quarter, with no bloom
 	bg := a.logical.RGBAAt(1, a.logical.H()/2)
-	if bg.R > 64 || bg.G > 64 || bg.B > 64 || a.SaverLook().Shade != 64 {
-		t.Fatalf("ground %v is not at the new quarter shade", bg)
+	if bg.R > 64 || bg.G > 64 || bg.B > 64 || a.SaverLook().Shade != 64 || a.saver.fade != 256 {
+		t.Fatalf("ground %v is not at the new quarter shade (fade %d)", bg, a.saver.fade)
 	}
 	a.SaverDemo(false)
-	if a.ScreensaverActive() || !a.all || a.saver.sharp != nil {
-		t.Fatal("SaverDemo(false) did not wake the saver")
+	if a.ScreensaverActive() || !a.saver.leaving || !a.all || a.saver.sharp == nil {
+		t.Fatal("SaverDemo(false) did not start the wake")
+	}
+	a.Tick(t0.Add(2*saverFade + saverWake))
+	if a.saver.active || a.saver.sharp != nil || !a.all {
+		t.Fatal("the wake did not end the saver")
 	}
 	a.SetSaverLook(SaverLook{Passes: 9, Shade: 1})
 	if l := a.SaverLook(); l.Passes != 4 || l.Shade != 16 {
 		t.Fatalf("look not clamped: %+v", l)
+	}
+}
+
+// The fade climbs through the ground's levels as the worker finishes them
+// and never past the last one ready: with the worker held back, a second
+// of clock leaves the fade at the levels that exist. A wake runs the fade
+// back down over saverWake without the lettering, keys act meanwhile, and
+// the picture is let go at the end.
+func TestSaverFadeWaitsForLevelsAndWakeFadesBack(t *testing.T) {
+	a, clock := saverApp()
+	t0 := *clock
+	a.startSaver(t0)
+	c := a.logical
+	c.Fill(c.Rect, color.RGBA{R: 200, G: 160, B: 120, A: 255})
+	a.paintSaver(c)
+	g := a.saver.ground
+	if g == nil {
+		t.Fatal("no worker after the first paint")
+	}
+	// a ground with only one level published, whatever the worker did
+	held := &saverGround{}
+	a.SaverSettle()
+	held.pix = g.pix
+	held.ready.Store(1)
+	a.saver.ground = held
+	a.Tick(t0.Add(saverFade))
+	if a.saver.fade != 256/saverLevels || a.saver.travel != 0 {
+		t.Fatalf("fade %d ran past the one level ready", a.saver.fade)
+	}
+	a.paintSaver(c) // paints level 1 at its shade without touching level 2
+	held.ready.Store(saverLevels)
+	a.Tick(t0.Add(saverFade + saverFrame))
+	if a.saver.fade <= 256/saverLevels || a.saver.fade == 256 {
+		t.Fatalf("fade %d did not resume smoothly once the levels landed", a.saver.fade)
+	}
+	a.Tick(t0.Add(2 * saverFade))
+	if a.saver.fade != 256 || a.saver.darkAt.IsZero() {
+		t.Fatalf("fade %d not complete", a.saver.fade)
+	}
+	// wake with a key: the saver reports awake at once, the picture fades back
+	wake := t0.Add(2*saverFade + time.Second)
+	a.Tick(wake)
+	a.Handle(platform.Event{Key: platform.KeyDown, Pressed: true, At: wake})
+	if a.ScreensaverActive() || !a.saver.leaving || !a.saver.active {
+		t.Fatal("the wake did not start the fade back")
+	}
+	a.Tick(wake.Add(saverWake / 2))
+	if f := a.saver.fade; f <= 0 || f >= 256 {
+		t.Fatalf("fade %d is not on its way back", f)
+	}
+	a.Paint()
+	if a.saver.travel != 0 {
+		t.Fatal("the lettering kept its travel on the way back")
+	}
+	if !a.NextTick().Equal(wake.Add(saverWake/2 + saverFrame)) {
+		t.Fatalf("no saver frame scheduled during the wake: %v", a.NextTick().Sub(wake))
+	}
+	a.Tick(wake.Add(saverWake))
+	if a.saver.active || a.saver.leaving || a.saver.ground != nil || !a.all {
+		t.Fatal("the wake did not end the saver")
 	}
 }
