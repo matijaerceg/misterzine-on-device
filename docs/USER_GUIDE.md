@@ -90,7 +90,7 @@ In the three grouped orders (Year, A-Z, Maker) a group whose header has
 scrolled off the top keeps its name pinned on the top line until its last
 row has gone.
 Favorites shows only your starred entries in alphabetical order, with the same
-letter jumps as A-Z.
+letter jumps as A-Z. Star a game with Y in Details or Select + A on the list.
 Search and filters still apply. Remember last view also remembers Favorites.
 Changing sort keeps the selected title, search and filters. Dates in alphabetical
 order still show the latest update; the last-look divider appears only in the
@@ -127,7 +127,7 @@ filter choices are saved.
 | X | Tab | Filters | | | show/hide years | |
 | Y | Space | change view | favorite | | only/all | |
 | Start | gamepad Start | launch remembered version | launch selected version | launch selected version | | |
-| Select (held) | | + Y: List layout, + X: List shots | | | | |
+| Select (held) | | + Y: List layout, + X: List shots, + A: favorite | | | | |
 | Menu | | Options; held 2 s: quit MisterZine (or quit at once: Options -> Menu button) | Options | Options | Options | back to the screen it was opened over |
 
 A, B, X and Y are MiSTer's names from its define buttons screen. Options ->
@@ -144,9 +144,13 @@ through MiSTer's translation instead, and only while no defined pad is
 connected. A button that is in no MiSTer slot does nothing here either;
 the pad tester under Troubleshooting shows it with its raw code.
 
-Hold Select on the list and the legend changes: Y cycles List layout and X
-switches List shots, saved exactly as from Options. Select alone does
-nothing. Only a pad defined in MiSTer has a Select; keyboards use Options.
+Hold Select on the list and the legend changes: Y cycles List layout, X
+switches List shots, saved exactly as from Options, and A stars or unstars
+the game under the cursor (in the Favorites view an unstarred row drops
+out and the cursor moves to its neighbour). Select alone does nothing, and
+while it is down every other button waits, so nothing moves or launches by
+accident. Only a pad defined in MiSTer has a Select; keyboards use Options
+and Details.
 
 MisterZine holds a defined pad exclusively while it runs, so MiSTer sees
 nothing from it: the button you defined as MiSTer's menu (OSD) button is

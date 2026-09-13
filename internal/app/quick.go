@@ -6,11 +6,13 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
 
-// Quick toggles: with Select held on the main list, Y cycles List layout
-// and X switches List shots, the two Options rows people flip while
-// browsing. Select alone does nothing, and the legend names the chords
-// while it is down. Only a pad defined in MiSTer has a Select (its slot is
-// read by input_mapping.go); keyboards use Options.
+// Quick toggles: with Select held on the main list, Y cycles List layout,
+// X switches List shots (the two Options rows people flip while browsing)
+// and A stars or unstars the row (favorite.go). Select alone does nothing,
+// the legend names the chords while it is down, and every other button
+// waits until Select is released (actList), so nothing moves or launches
+// by accident. Only a pad defined in MiSTer has a Select (its slot is read
+// by input_mapping.go); keyboards use Options and Details.
 
 // quickHeld reports whether Select is down, so Y and X are chords.
 func (a *App) quickHeld() bool { return a.down[platform.KeySelect] }

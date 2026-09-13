@@ -835,6 +835,9 @@ func (a *App) act(k platform.Key) bool {
 
 func (a *App) actList(k platform.Key) bool {
 	n := len(a.view)
+	if a.quickHeld() && k != platform.KeySelect && k != platform.KeySpace && k != platform.KeyTab && k != platform.KeyEnter {
+		return false // Select held: only the chords act (quick.go), nothing moves or launches
+	}
 	switch k {
 	case platform.KeyBackspace:
 		if a.query == "" {
@@ -876,6 +879,10 @@ func (a *App) actList(k platform.Key) bool {
 		a.openPanel(ScreenFilter)
 		return true
 	case platform.KeyEnter:
+		if a.quickHeld() {
+			a.toggleFavorite()
+			return true
+		}
 		if n > 0 {
 			a.screen = ScreenDetails
 			a.detail = detailState{from: ScreenList, pick: a.rememberedPick()}

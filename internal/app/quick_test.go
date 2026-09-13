@@ -10,7 +10,7 @@ import (
 // Select held turns Y and X into the layout and shot toggles; released,
 // they sort and open Filters again.
 func TestSelectChordsToggleLayoutAndShots(t *testing.T) {
-	a, clock := saverApp()
+	a, clock, _, _ := menuApp() // three rows, so Select + A has something to star
 	changed := 0
 	a.cfg.SettingsChanged = func() { changed++ }
 	key := func(k platform.Key, down bool) bool {
@@ -38,9 +38,35 @@ func TestSelectChordsToggleLayoutAndShots(t *testing.T) {
 	if changed != 4 {
 		t.Fatalf("settings changed %d times, want 4", changed)
 	}
+	// Select + A stars the row; the other buttons wait while Select is down
+	if a.cursor != 0 {
+		t.Fatalf("cursor %d", a.cursor)
+	}
+	k0 := a.CursorKey()
+	tap(platform.KeyEnter)
+	if !a.cfg.Favorites[k0] || a.screen != ScreenList || a.notice != "favorite added" {
+		t.Fatalf("Select+A: favorite %v, screen %v, notice %q", a.cfg.Favorites[k0], a.screen, a.notice)
+	}
+	tap(platform.KeyEnter)
+	if a.cfg.Favorites[k0] || a.notice != "favorite removed" {
+		t.Fatalf("Select+A again: favorite %v, notice %q", a.cfg.Favorites[k0], a.notice)
+	}
+	tap(platform.KeyDown)
+	tap(platform.KeyRight)
+	tap(platform.KeyPageDown)
+	tap(platform.KeyEnd)
+	tap(platform.KeyBack)
+	if a.cursor != 0 || a.screen != ScreenList {
+		t.Fatalf("with Select held nothing should move or open: cursor %d, screen %v", a.cursor, a.screen)
+	}
 	if !key(platform.KeySelect, false) {
 		t.Fatal("releasing Select should repaint for the ordinary legend")
 	}
+	tap(platform.KeyDown)
+	if a.cursor != 1 {
+		t.Fatalf("Down after the release: cursor %d", a.cursor)
+	}
+	tap(platform.KeyUp)
 	tap(platform.KeySpace)
 	if a.Sort() == sort || a.ListLayout() != "list" {
 		t.Fatalf("Y without Select: sort %v -> %v, layout %q", sort, a.Sort(), a.ListLayout())

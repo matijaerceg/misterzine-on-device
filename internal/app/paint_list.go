@@ -26,7 +26,7 @@ func (a *App) paintList(c *gfx.Canvas) {
 		hint = "A details  B clear find  X Filters"
 	}
 	if a.quickHeld() {
-		hint = "Y layout  X shots"
+		hint = "Y layout  X shots  A favorite"
 	}
 	a.paintHint(c, hint)
 }

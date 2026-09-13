@@ -487,24 +487,7 @@ func (a *App) actDetails(k platform.Key) bool {
 		a.detail.scroll = max(0, a.detail.scroll+page)
 		a.detail.next = a.cfg.TimerNow()
 	case platform.KeySpace:
-		if a.cfg.FavoritesUnavailable {
-			a.Notice(FavoritesUnavailableNotice, 8*time.Second)
-			return true
-		}
-		a.cfg.Favorites[row.K] = !a.cfg.Favorites[row.K]
-		if !a.cfg.Favorites[row.K] {
-			delete(a.cfg.Favorites, row.K)
-			a.Notice("favorite removed", 2*time.Second)
-		} else {
-			a.Notice("favorite added", 2*time.Second)
-		}
-		if a.cfg.FavChanged != nil {
-			a.cfg.FavChanged()
-		}
-		k := row.K
-		a.rebuild()
-		a.moveToKey(k)
-		if a.cursor >= len(a.view) || a.ds.Rows[a.view[a.cursor]].K != k {
+		if a.toggleFavorite() {
 			a.screen = ScreenList // the row left the filtered view
 		}
 	case platform.KeyStart:

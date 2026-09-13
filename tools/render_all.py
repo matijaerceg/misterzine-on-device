@@ -165,7 +165,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     scenarios.append([*rotation,
                       "-out", f"out/quick-{orientation}", "-script",
                       "press select; shot chord-legend; space; shot layout-split; space; shot layout-picture; "
-                      "tab; shot shots-title; release select; shot released; space; shot sorted"])
+                      "tab; shot shots-title; enter; shot favorite-added; release select; shot released; space; shot sorted"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     # the pad's Menu button: Options from the list, closed again, Options
