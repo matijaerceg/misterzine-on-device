@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
@@ -211,13 +212,15 @@ func TestViewsOffMigrationAndSave(t *testing.T) {
 		off  []string
 	}{
 		{`{"rotation":"left"}`, []string{"recents"}},    // before Options -> Views: Recents view off
-		{`{"recents_view":true}`, nil},                  // Recents view on
+		{`{"recents_view":true}`, []string{}},           // Recents view on
 		{`{"recents_view":false}`, []string{"recents"}}, // Recents view off
-		{`{"views_off":[]}`, nil},                       // every view on
+		{`{"views_off":[]}`, []string{}},                // every view on
+		{`{"views_off":null}`, []string{}},              // every view on, as older builds saved it; not a pre-Views file
+		{`{"views_off":null,"recents_view":false}`, []string{}},
 		{`{"views_off":["year","maker"]}`, []string{"year", "maker"}},
-		{`{"views_off":["year","bogus"]}`, []string{"year"}},                                           // unknown names dropped
-		{`{"views_off":["updated","debut","year","alphabetical","maker","favorites","recents"]}`, nil}, // nothing on: back to all
-		{`{"views_off":[],"recents_view":false}`, nil},                                                 // views_off wins over the old flag
+		{`{"views_off":["year","bogus"]}`, []string{"year"}},                                                    // unknown names dropped
+		{`{"views_off":["updated","debut","year","alphabetical","maker","favorites","recents"]}`, []string{}}, // nothing on: back to all
+		{`{"views_off":[],"recents_view":false}`, []string{}},                                                  // views_off wins over the old flag
 	} {
 		s, err := LoadSettings(writeSettings(t, tc.body))
 		if err != nil || !reflect.DeepEqual(s.ViewsOff, tc.off) {
@@ -229,6 +232,17 @@ func TestViewsOffMigrationAndSave(t *testing.T) {
 	}
 	path := writeSettings(t, `{}`)
 	s := DefaultSettings()
+	// every view on survives a restart: saved as [], not null
+	s.ViewsOff = []string{}
+	if err := Save(path, s); err != nil {
+		t.Fatal(err)
+	}
+	if b, _ := os.ReadFile(path); !strings.Contains(string(b), `"views_off": []`) {
+		t.Fatalf("every view on saved as %s", b)
+	}
+	if got, err := LoadSettings(path); err != nil || len(got.ViewsOff) != 0 {
+		t.Fatalf("restart switched a view off: %v, %v", got.ViewsOff, err)
+	}
 	s.ViewsOff = []string{"favorites"}
 	if err := Save(path, s); err != nil {
 		t.Fatal(err)

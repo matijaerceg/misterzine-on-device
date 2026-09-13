@@ -15,7 +15,7 @@ func (a *App) viewOn(m data.SortMode) bool { return m.Valid() && !a.viewsOff[m] 
 // ViewsOff lists the views left out of the cycle, by settings name, for
 // the host to persist.
 func (a *App) ViewsOff() []string {
-	var out []string
+	out := []string{} // never nil, so every view on saves as [] rather than null
 	for _, m := range data.ViewOrder {
 		if a.viewsOff[m] {
 			out = append(out, m.Name())

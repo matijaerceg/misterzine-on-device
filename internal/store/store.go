@@ -63,15 +63,19 @@ func LoadSettings(path string) (Settings, error) {
 	}
 	// a file from before the two-axis inset carries only "inset"
 	var probe struct {
-		X       *int             `json:"inset_x"`
-		Y       *int             `json:"inset_y"`
-		Views   *json.RawMessage `json:"views_off"`
-		Recents bool             `json:"recents_view"` // before views_off: Options -> Recents view
+		X       *int `json:"inset_x"`
+		Y       *int `json:"inset_y"`
+		Recents bool `json:"recents_view"` // before views_off: Options -> Recents view
 	}
 	json.Unmarshal(b, &probe)
-	if probe.Views == nil {
+	// Only a file with no views_off key at all predates Options -> Views;
+	// a null there (an older build saved an empty set that way) means every
+	// view is on, and must not switch Recents back off.
+	var keys map[string]json.RawMessage
+	json.Unmarshal(b, &keys)
+	if _, has := keys["views_off"]; !has {
 		// a file from before Options -> Views: Recents was the one optional view
-		s.ViewsOff = nil
+		s.ViewsOff = []string{}
 		if !probe.Recents {
 			s.ViewsOff = []string{"recents"}
 		}
@@ -87,14 +91,14 @@ func (s *Settings) Migrate(legacy bool) {
 	if !s.LastSort.Valid() {
 		s.LastSort = data.SortUpdated
 	}
-	var views []string
+	views := []string{} // never nil: an empty set saves as [] and reloads as every view on
 	for _, n := range s.ViewsOff {
 		if _, ok := data.ParseSort(n); ok {
 			views = append(views, n)
 		}
 	}
 	if len(views) >= len(data.ViewOrder) {
-		views = nil // nothing left on: back to every view
+		views = []string{} // nothing left on: back to every view
 	}
 	s.ViewsOff = views
 	switch s.Screensaver {
