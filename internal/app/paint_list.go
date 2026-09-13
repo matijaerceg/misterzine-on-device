@@ -20,12 +20,12 @@ func (a *App) paintList(c *gfx.Canvas) {
 	a.paintPane(c)
 	// the last chunk reminds of the Select chords (quick.go); the bar drops
 	// it first when the safe zone leaves no room
-	hint := "A Details  B Options  X Filters  Y View  Hold Select"
+	hint := "A Details  B Options  X Filters  Y View  Select +"
 	if !a.hintFits(hint) {
-		hint = "A Open  B Opt.  X Filt.  Y View  Hold Select"
+		hint = "A Open  B Opt.  X Filt.  Y View  Select +"
 	}
 	if a.query != "" {
-		hint = "A Details  B Clear find  X Filters  Hold Select"
+		hint = "A Details  B Clear find  X Filters  Select +"
 	}
 	if a.quickHeld() {
 		hint = "Y Layout  X Shots  A Favorite"

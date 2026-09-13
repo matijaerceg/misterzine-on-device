@@ -144,7 +144,7 @@ through MiSTer's translation instead, and only while no defined pad is
 connected. A button that is in no MiSTer slot does nothing here either;
 the pad tester under Troubleshooting shows it with its raw code.
 
-Hold Select on the list (the legend's last entry, Hold Select, is the
+Hold Select on the list (the legend's last entry, Select +, is the
 reminder) and the legend changes: Y cycles List layout, X switches List shots, saved exactly as from Options, and A stars or unstars
 the game under the cursor (in the Favorites view an unstarred row drops
 out and the cursor moves to its neighbour). Select alone does nothing, and
