@@ -29,10 +29,12 @@ const saverWake = saverFade / 4
 const saverLevels = 4
 
 // saverGround is the picture under the lettering at each level: pix[0] as
-// painted, pix[k] bloomed and blurred at k/saverLevels of the look. The
-// worker fills the levels in order and publishes each through ready.
+// painted, pix[k] bloomed and blurred at k/saverLevels of the look, three
+// channels a pixel with eight bits of fraction (8.8) so the dither has
+// something to spread. The worker fills the levels in order and publishes
+// each through ready.
 type saverGround struct {
-	pix   [saverLevels + 1][]uint8
+	pix   [saverLevels + 1][]uint16
 	ready atomic.Int32
 	done  sync.WaitGroup
 }
@@ -43,16 +45,19 @@ type saverGround struct {
 // out into their surroundings while the dark ground stays dark. The blur
 // is a box blur of radius width/BlurDiv run Passes times along the rows
 // and down the columns (two passes are close to a Gaussian). The blurred
-// picture is clamped and shown at Shade (256ths). The debug API sets a
-// look live (SetSaverLook) so it can be tuned on a CRT.
+// picture is clamped and shown at Shade (256ths). The levels keep eight
+// bits of fraction and Dither (1) spreads the last bit as an ordered
+// pattern at the final write, since the dark ground's gradients band on
+// a CRT otherwise. The debug API sets a look live (SetSaverLook) so it
+// can be tuned on a CRT.
 type SaverLook struct {
-	Knee, Gain, Shade, BlurDiv, Passes int
+	Knee, Gain, Shade, BlurDiv, Passes, Dither int
 }
 
 // DefaultSaverLook was chosen on a CRT with the debug tuner (2026-09-13):
 // only the brightest parts bloom, six times their excess, the ground shows
 // at 57%, and the blur radius is a 15th of the width (21 px on 320).
-var DefaultSaverLook = SaverLook{Knee: 171, Gain: 1538, Shade: 145, BlurDiv: 15, Passes: 2}
+var DefaultSaverLook = SaverLook{Knee: 171, Gain: 1538, Shade: 145, BlurDiv: 15, Passes: 2, Dither: 1}
 
 // clamped keeps a look inside what the capture can do.
 func (l SaverLook) clamped() SaverLook {
@@ -61,7 +66,53 @@ func (l SaverLook) clamped() SaverLook {
 	l.Shade = min(max(l.Shade, 16), 256)
 	l.BlurDiv = min(max(l.BlurDiv, 4), 256)
 	l.Passes = min(max(l.Passes, 1), 4)
+	l.Dither = min(max(l.Dither, 0), 1)
 	return l
+}
+
+// saverBayer is the 8x8 ordered dither: a threshold per pixel in 256ths
+// of one 8-bit step. It is the same every frame on purpose; a pattern
+// that changes crawls on a phosphor.
+var saverBayer = func() (t [8][8]uint16) {
+	m := [8][8]uint8{
+		{0, 32, 8, 40, 2, 34, 10, 42}, {48, 16, 56, 24, 50, 18, 58, 26},
+		{12, 44, 4, 36, 14, 46, 6, 38}, {60, 28, 52, 20, 62, 30, 54, 22},
+		{3, 35, 11, 43, 1, 33, 9, 41}, {51, 19, 59, 27, 49, 17, 57, 25},
+		{15, 47, 7, 39, 13, 45, 5, 37}, {63, 31, 55, 23, 61, 29, 53, 21},
+	}
+	for y := range m {
+		for x := range m[y] {
+			t[y][x] = uint16(m[y][x])*4 + 2
+		}
+	}
+	return
+}()
+
+// saverQuantize turns a ground channel with eight bits of fraction into
+// the byte the canvas takes: rounded, or dithered by the pixel's threshold.
+func saverQuantize(v, x, y int, dither bool) uint8 {
+	t := 128
+	if dither {
+		t = int(saverBayer[y&7][x&7])
+	}
+	return uint8(min((v+t)>>8, 255))
+}
+
+// saverPaintGround writes the ground into an RGBA frame: the level from,
+// or its mix with to by frac (256ths), at the shade (256ths).
+func saverPaintGround(dst []uint8, w, h, stride int, from, to []uint16, frac, shade int, dither bool) {
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			i, o := y*stride+x*4, (y*w+x)*3
+			for ch := 0; ch < 3; ch++ {
+				v := int(from[o+ch])
+				if to != nil {
+					v = (v*(256-frac) + int(to[o+ch])*frac) >> 8
+				}
+				dst[i+ch] = saverQuantize(v*shade>>8, x, y, dither)
+			}
+		}
+	}
 }
 
 // boost is the bloom curve for one channel value.
@@ -329,11 +380,18 @@ func (a *App) saverCapture(c *gfx.Canvas) {
 	s.sharp = append([]uint8(nil), c.Pix...) // a fresh copy: a worker from an earlier run may still read the old one
 	s.dark = nil
 	s.cacheW = c.W()
+	w, h := c.W(), c.H()
 	g := &saverGround{}
-	g.pix[0] = s.sharp
+	g.pix[0] = make([]uint16, w*h*3)
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			i, o := c.PixOffset(x, y), (y*w+x)*3
+			g.pix[0][o], g.pix[0][o+1], g.pix[0][o+2] = uint16(c.Pix[i])<<8, uint16(c.Pix[i+1])<<8, uint16(c.Pix[i+2])<<8
+		}
+	}
 	s.ground = g
 	g.done.Add(1)
-	go saverBlurLevels(g, s.sharp, c.W(), c.H(), c.Stride, a.look)
+	go saverBlurLevels(g, s.sharp, w, h, c.Stride, a.look)
 }
 
 // saverBlurLevels is the worker: level k is the sharp picture bloomed at
@@ -345,7 +403,7 @@ func (a *App) saverCapture(c *gfx.Canvas) {
 func saverBlurLevels(g *saverGround, sharp []uint8, w, h, stride int, look SaverLook) {
 	defer g.done.Done()
 	n := w * h * 3
-	wide, tmp := make([]uint16, n), make([]uint16, n)
+	wide, tmp := make([]uint32, n), make([]uint32, n)
 	for k := 1; k <= saverLevels; k++ {
 		lk := look
 		lk.Gain = look.Gain * k / saverLevels
@@ -353,9 +411,9 @@ func saverBlurLevels(g *saverGround, sharp []uint8, w, h, stride int, look Saver
 		for y := 0; y < h; y++ {
 			for x := 0; x < w; x++ {
 				i, o := y*stride+x*4, (y*w+x)*3
-				wide[o] = uint16(lk.boost(int(sharp[i])))
-				wide[o+1] = uint16(lk.boost(int(sharp[i+1])))
-				wide[o+2] = uint16(lk.boost(int(sharp[i+2])))
+				wide[o] = uint32(lk.boost(int(sharp[i]))) << 8
+				wide[o+1] = uint32(lk.boost(int(sharp[i+1]))) << 8
+				wide[o+2] = uint32(lk.boost(int(sharp[i+2]))) << 8
 			}
 		}
 		if r >= 1 {
@@ -368,14 +426,9 @@ func saverBlurLevels(g *saverGround, sharp []uint8, w, h, stride int, look Saver
 				}
 			}
 		}
-		out := append([]uint8(nil), sharp...) // the alpha bytes
-		for y := 0; y < h; y++ {
-			for x := 0; x < w; x++ {
-				i, o := y*stride+x*4, (y*w+x)*3
-				out[i] = uint8(min(int(wide[o]), 255))
-				out[i+1] = uint8(min(int(wide[o+1]), 255))
-				out[i+2] = uint8(min(int(wide[o+2]), 255))
-			}
+		out := make([]uint16, n)
+		for o, v := range wide {
+			out[o] = uint16(min(v, 255<<8)) // white and beyond clamp; the fraction stays
 		}
 		g.pix[k] = out
 		g.ready.Store(int32(k))
@@ -385,7 +438,7 @@ func saverBlurLevels(g *saverGround, sharp []uint8, w, h, stride int, look Saver
 // blurLine box-blurs the three channels of one line of n pixels, step
 // values apart, from src into dst; the window for a pixel covers r on
 // each side with the line's ends repeated.
-func blurLine(src, dst []uint16, n, step, r int) {
+func blurLine(src, dst []uint32, n, step, r int) {
 	if r > n-1 {
 		r = n - 1
 	}
@@ -396,7 +449,7 @@ func blurLine(src, dst []uint16, n, step, r int) {
 			sum += int(src[i*step+ch])
 		}
 		for i := 0; i < n; i++ {
-			dst[i*step+ch] = uint16(sum / span)
+			dst[i*step+ch] = uint32(sum / span)
 			out, in := i-r, i+r+1
 			if out < 0 {
 				out = 0
@@ -595,31 +648,21 @@ func (a *App) paintSaver(c *gfx.Canvas) {
 	if lo >= n {
 		lo, frac = n, 0
 	}
+	dither := a.look.Dither != 0
 	if lo == saverLevels {
 		// dark: the last level at the shade, made once
 		if s.dark == nil {
-			s.dark = append([]uint8(nil), g.pix[saverLevels]...)
-			for i := 0; i+3 < len(s.dark); i += 4 {
-				s.dark[i] = uint8(int(s.dark[i]) * shade >> 8)
-				s.dark[i+1] = uint8(int(s.dark[i+1]) * shade >> 8)
-				s.dark[i+2] = uint8(int(s.dark[i+2]) * shade >> 8)
-			}
+			s.dark = append([]uint8(nil), s.sharp...) // the alpha bytes
+			saverPaintGround(s.dark, c.W(), c.H(), c.Stride, g.pix[saverLevels], nil, 0, shade, dither)
 		}
 		copy(c.Pix, s.dark)
 	} else {
-		from, to := g.pix[lo], g.pix[lo]
+		var to []uint16
 		if frac != 0 {
 			to = g.pix[lo+1]
 		}
-		for i := 0; i+3 < len(c.Pix); i += 4 {
-			for ch := i; ch < i+3; ch++ {
-				v := int(from[ch])
-				if frac != 0 {
-					v = (v*(256-frac) + int(to[ch])*frac) >> 8
-				}
-				c.Pix[ch] = uint8(v * shade >> 8)
-			}
-		}
+		// the sharp picture is plain graphics: it only rounds
+		saverPaintGround(c.Pix, c.W(), c.H(), c.Stride, g.pix[lo], to, frac, shade, dither && (lo > 0 || frac > 0))
 	}
 	if s.leaving {
 		c.DirtyAll() // no lettering on the way back

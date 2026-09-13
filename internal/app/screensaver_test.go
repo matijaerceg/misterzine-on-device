@@ -159,11 +159,16 @@ func TestSaverSweepsEveryPixel(t *testing.T) {
 		a, _ := saverApp()
 		a.SetRotation(rot)
 		c := a.logical
-		// the flat fill blurs to itself: bloomed and shaded, it is the ground
+		// the flat fill blurs to itself: bloomed and shaded, it is the
+		// ground, dithered by at most one step per channel
 		ground := color.RGBA{A: 255}
 		ground.R = uint8(min(a.look.boost(200), 255) * a.look.Shade >> 8)
 		ground.G = uint8(min(a.look.boost(160), 255) * a.look.Shade >> 8)
 		ground.B = uint8(min(a.look.boost(120), 255) * a.look.Shade >> 8)
+		isGround := func(p color.RGBA) bool {
+			near := func(v, want uint8) bool { return v == want || v == want+1 }
+			return near(p.R, ground.R) && near(p.G, ground.G) && near(p.B, ground.B)
+		}
 		covered := make([]bool, c.W()*c.H())
 		remaining := len(covered)
 		mask := a.saverMask(c.H())
@@ -183,7 +188,7 @@ func TestSaverSweepsEveryPixel(t *testing.T) {
 							covered[i] = true
 							remaining--
 						}
-					} else if p == ground {
+					} else if isGround(p) {
 						continue
 					} else if sx := x - (c.W() - travel%(c.W()+mask.Rect.Dx())); sx < 0 || sx >= mask.Rect.Dx() || mask.Pix[y*mask.Stride+sx] == 0 || mask.Pix[y*mask.Stride+sx] == saverInk {
 						t.Fatalf("pixel not black, dimmed or a lit outline: %v", p)
@@ -282,11 +287,11 @@ func TestSaverFadesBeforeTheWordEnters(t *testing.T) {
 	c := a.logical
 	fill := color.RGBA{R: 200, G: 160, B: 120, A: 255}
 	// a flat picture blurs to itself, so the dark frame is the bloomed
-	// fill at the saver's shade
+	// fill at the saver's shade, dithered at the pixel's threshold
 	dark := color.RGBA{A: 255}
-	dark.R = uint8(min(a.look.boost(int(fill.R)), 255) * a.look.Shade >> 8)
-	dark.G = uint8(min(a.look.boost(int(fill.G)), 255) * a.look.Shade >> 8)
-	dark.B = uint8(min(a.look.boost(int(fill.B)), 255) * a.look.Shade >> 8)
+	dark.R = saverQuantize(min(a.look.boost(int(fill.R)), 255)<<8*a.look.Shade>>8, 0, 0, true)
+	dark.G = saverQuantize(min(a.look.boost(int(fill.G)), 255)<<8*a.look.Shade>>8, 0, 0, true)
+	dark.B = saverQuantize(min(a.look.boost(int(fill.B)), 255)<<8*a.look.Shade>>8, 0, 0, true)
 	c.Fill(c.Rect, fill)
 	a.paintSaver(c)
 	a.SaverSettle()
@@ -336,7 +341,7 @@ func TestSaverBlursThePictureUnderTheLettering(t *testing.T) {
 	if r < 4 {
 		t.Fatalf("radius %d too small to test", r)
 	}
-	white := uint8(255 * a.look.Shade >> 8)
+	white := saverQuantize(255<<8*a.look.Shade>>8, edge-4*r, 10, true)
 	if p := c.RGBAAt(edge+r, 10); p.R == 0 || p.R >= white {
 		t.Fatalf("pixel %v a radius into the black is not a ramp (white shows as %d)", p, white)
 	}
@@ -346,11 +351,11 @@ func TestSaverBlursThePictureUnderTheLettering(t *testing.T) {
 	if p := c.RGBAAt(edge+4*r, 10); p != (color.RGBA{A: 255}) {
 		t.Fatalf("flat black pixel %v changed", p)
 	}
-	// the ramp is monotonic across the edge
+	// the ramp is monotonic across the edge, give or take the dither's step
 	last := 256
 	for x := edge - 2*r; x <= edge+2*r; x++ {
 		v := int(c.RGBAAt(x, 10).R)
-		if v > last {
+		if v > last+1 {
 			t.Fatalf("ramp rises again at x=%d: %d after %d", x, v, last)
 		}
 		last = v
@@ -461,5 +466,65 @@ func TestSaverFadeWaitsForLevelsAndWakeFadesBack(t *testing.T) {
 	a.Tick(wake.Add(saverWake))
 	if a.saver.active || a.saver.leaving || a.saver.ground != nil || !a.all {
 		t.Fatal("the wake did not end the saver")
+	}
+}
+
+// Dithering breaks a gradient that spans a few 8-bit steps into the
+// ordered pattern: across a soft edge the dithered frame takes more
+// distinct values along a row than the rounded one, and a pixel never
+// moves by more than one step. Dither off rounds.
+func TestSaverDitherSpreadsTheGradient(t *testing.T) {
+	a, clock := saverApp()
+	t0 := *clock
+	a.startSaver(t0)
+	c := a.logical
+	edge := c.W() / 2
+	c.Fill(c.Rect, color.RGBA{A: 255})
+	c.Fill(image.Rect(0, 0, edge, c.H()), color.RGBA{R: 40, G: 40, B: 40, A: 255}) // dark grey: under the knee
+	a.paintSaver(c)
+	a.SaverSettle()
+	a.Tick(t0.Add(saverFade))
+	row := func() []uint8 {
+		a.saver.dark = nil
+		a.paintSaver(c)
+		out := make([]uint8, c.W())
+		for x := range out {
+			out[x] = c.RGBAAt(x, 10).R
+		}
+		return out
+	}
+	dithered := row()
+	look := a.SaverLook()
+	look.Dither = 0
+	a.look = look // straight in: SetSaverLook would take the ground again
+	rounded := row()
+	distinct := func(r []uint8) int {
+		seen := map[uint8]bool{}
+		for _, v := range r {
+			seen[v] = true
+		}
+		return len(seen)
+	}
+	if distinct(rounded) < 3 {
+		t.Fatalf("the test edge is too sharp to band: %d values", distinct(rounded))
+	}
+	changes := func(r []uint8) (n int) {
+		for x := 1; x < len(r); x++ {
+			if r[x] != r[x-1] {
+				n++
+			}
+		}
+		return
+	}
+	if changes(dithered) <= changes(rounded) {
+		t.Fatalf("dither did not break the bands: %d changes against %d", changes(dithered), changes(rounded))
+	}
+	for x := range dithered {
+		if d := int(dithered[x]) - int(rounded[x]); d < -1 || d > 1 {
+			t.Fatalf("pixel %d moved by %d", x, d)
+		}
+	}
+	if saverQuantize(255<<8, 3, 5, true) != 255 || saverQuantize(0, 7, 7, true) != 0 {
+		t.Fatal("dither pushed white or black off the scale")
 	}
 }
