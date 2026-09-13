@@ -67,6 +67,7 @@ type host struct {
 	slowLog                       time.Time
 	stats                         frameStats
 	saverMisses, saverBlankFrames int // the saver loop's frames and the ones that missed their blank (debug)
+	sig                           chan os.Signal
 	favDirty                      bool
 	favLoadFailed                 bool // preserve a favorites file we could not read
 	saveAt                        time.Time
@@ -202,8 +203,8 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			h.events <- ev
 		}
 	}()
-	sig := make(chan os.Signal, 2)
-	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	h.sig = make(chan os.Signal, 2)
+	signal.Notify(h.sig, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
 	// pictures
 	h.client = fetch.NewClient(buildinfo.Version)
@@ -443,7 +444,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		case <-h.quit:
 			h.saveAll(true)
 			return 0
-		case s := <-sig:
+		case s := <-h.sig:
 			lg.Printf("signal %v", s)
 			h.stop()
 			h.saveAll(true)
@@ -659,6 +660,15 @@ func (h *host) pump() bool {
 	for i := 0; i < 16; i++ {
 		select {
 		case <-h.quit:
+			return false
+		case s := <-h.sig:
+			// the main loop's case handles it (log, stop, save, exit code):
+			// put it back and hand over. Left unread here, a SIGTERM during
+			// the saver waited for a key (v1.0.25).
+			select {
+			case h.sig <- s:
+			default:
+			}
 			return false
 		case ev := <-h.events:
 			h.handleEvent(ev)
