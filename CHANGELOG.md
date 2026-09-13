@@ -1,5 +1,38 @@
 # Changelog
 
+## v1.0.24 — 2026-09-13
+
+- Fix: turning the last view back on in Options -> Views (Recents,
+  typically) did not survive a restart. An empty "views off" set was
+  saved as null, which the next start read as a settings file from
+  before the Views page and switched Recents off again. Every view on now
+  stays on.
+- Select + A on the list stars or unstars the game under the cursor, with
+  the same notices as Y in Details; in the Favorites view an unstarred
+  row drops out and the cursor moves to its neighbour. While Select is
+  held only the three chords act (Y layout, X shots, A favorite): nothing
+  moves, opens or launches until it is released.
+- The pad's Menu button: a tap opens or closes Options as you let go. A
+  hold shows "keep holding to quit MisterZine" after 300 ms and leaves
+  the screen alone from then on; letting go early does nothing. While the
+  hint is up, the line under the top bar fills green from left to right,
+  reaching the far edge at the two-second quit. The B holds that cancel
+  Update All and leave the pad tester fill the same line from the press,
+  and the Update All message drops its whole-second countdown.
+- Pressing X on the Filters screen returns to the list, as B does.
+  Expanding and collapsing a decade's years stays on Right and Left.
+- Options copy: "Remember sort order" is "Remember last view", "Canvas" is
+  "HDMI picture" (it changes nothing on CRT modes, 720p or 1440p), the
+  Menu button choice reads "quit MisterZine" and the hold notice and pad
+  tester say quit too. Credits sits above Quit MisterZine, the last row,
+  and neither carries a hint. The Main menu launcher hint no longer
+  claims Setup is needed to restore the entry: turning the option back on
+  does that, and Scripts -> MisterZine-Run opens MisterZine while it is
+  off. The Return after game, HDMI picture, Button labels and Screensaver
+  hints were too long for the help box on a 320x240 tate screen with a
+  15 px safe zone and now fit; a test keeps every hint inside the box.
+- Credits: Porieux joins the early adopters.
+
 ## v1.0.23 — 2026-09-13
 
 - The A-Z and Year views gain header lines like Maker: a line before every

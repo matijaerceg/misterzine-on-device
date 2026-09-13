@@ -1,28 +1,29 @@
-MisterZine gives the A-Z and Year views the Maker view's header lines,
-learns the rmCores database, finds alternatives inside each database's
-folder and adds a Credits page.
+MisterZine fixes the Views page forgetting an enabled view, adds
+Select + A to star a game from the list, gives the Menu hold a progress
+line, and tidies the Options copy.
 
-- **Header lines in A-Z and Year:** a line before every letter and every
-  release year, numbers and symbols first under "0-9 and symbols" and the
-  unknown years last under "Year unknown". L/R jump from group to group with
-  the row centred under its header, and a group whose header has scrolled
-  off keeps its name pinned on the top line until its last row is gone. The
-  Year view drops its date column, since the header names the year: the
-  title takes the room and the card status glyph stays at the right.
-- **rmCores (rmonic79):** the list, Details and Filters name the source
-  rmCores, Options -> Sources: installed only can hide it when the card's
-  downloader.ini has no `[rmonic79/rmcores]` section, and Details explains
-  under Source that the rm build adds CRT Adjust and V-Size on the analog
-  output and a pause overlay to a game the MiSTer Distribution also ships.
-- **Alternatives inside database folders:** the version selector in Details
-  now also lists alternatives kept under `_Arcade/_MeatCores/_alternatives`
-  and `_Arcade/_rmCores/_alternatives`, not only `_Arcade/_alternatives`.
-- **Options -> Credits:** the developer, the projects MisterZine is built on
-  and, under Special thanks, the early adopters who tested it and sent
-  feedback.
-- **Views page:** the explanatory top line is gone, and pressing A on the
-  greyed last view says "Keep at least one view on".
-- The embedded first-run catalogue is refreshed to the 2026-09-12 feed.
+- **Fix: an enabled view stays enabled.** Turning the last view back on in
+  Options -> Views (Recents, typically) was undone at the next start.
+  Every view on now survives a restart.
+- **Select + A stars a game from the list.** Hold Select and press A on
+  the list to star or unstar the game under the cursor, with the same
+  notices as Y in Details; in the Favorites view an unstarred row drops
+  out and the cursor moves to its neighbour. While Select is held only
+  the chords act: Y layout, X shots, A favorite.
+- **Menu button hold:** a tap opens or closes Options as you let go. Held,
+  a "keep holding to quit MisterZine" hint appears after 300 ms and the
+  screen stays put; the line under the top bar fills green until the
+  two-second quit. The B holds that cancel Update All and leave the pad
+  tester fill the same line.
+- **X on Filters returns to the list**, as B does. Right and Left still
+  expand and collapse a decade's years.
+- **Options copy:** Remember last view (was Remember sort order), HDMI
+  picture (was Canvas), "quit" wording throughout, Credits above Quit
+  MisterZine with no hints on either, a corrected Main menu launcher hint
+  (turning it back on restores the entry; Scripts -> MisterZine-Run opens
+  MisterZine while it is off), and hints that fit the help box on every
+  screen.
+- **Credits:** Porieux joins the early adopters.
 
 Existing settings, favorites, filter choices, remembered versions and the
 launch history are preserved.
