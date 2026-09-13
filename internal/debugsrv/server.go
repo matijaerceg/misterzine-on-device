@@ -14,6 +14,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -33,8 +34,9 @@ type Hooks struct {
 	Shot   func() *image.RGBA // called via Run
 	State  func() any         // called via Run
 	Quit   func()
-	Goto   func(k string) // called via Run: put the cursor on a row key
-	Log    string         // log file path
+	Goto   func(k string)         // called via Run: put the cursor on a row key
+	Saver  func(q url.Values) any // called via Run: tune the saver ground; nil = unsupported
+	Log    string                 // log file path
 }
 
 // captureShot copies on the UI thread; PNG encoding may then run while the
@@ -161,6 +163,19 @@ func Serve(addr string, h Hooks, lg *log.Logger) bool {
 		h.Run(func() { h.Goto(k) })
 		w.Write([]byte("ok\n"))
 	})
+	mux.HandleFunc("/api/saver", func(w http.ResponseWriter, r *http.Request) {
+		// ?knee=&gain=&shade=&div=&passes= set the look (any subset),
+		// ?saver=on|off starts or wakes it; the reply is the look in force
+		if h.Saver == nil {
+			http.Error(w, "unsupported", 404)
+			return
+		}
+		var out any
+		q := r.URL.Query()
+		h.Run(func() { out = h.Saver(q) })
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(out)
+	})
 	mux.HandleFunc("/api/stack", func(w http.ResponseWriter, r *http.Request) {
 		buf := make([]byte, 1<<20)
 		n := runtime.Stack(buf, true)
@@ -206,7 +221,7 @@ func guard(next http.Handler, lg *log.Logger, token string) http.Handler {
 			http.Error(w, "authentication required", 401)
 			return
 		}
-		mutating := strings.HasPrefix(r.URL.Path, "/api/key/") || r.URL.Path == "/api/keys" || r.URL.Path == "/api/goto" || r.URL.Path == "/api/quit"
+		mutating := strings.HasPrefix(r.URL.Path, "/api/key/") || r.URL.Path == "/api/keys" || r.URL.Path == "/api/goto" || r.URL.Path == "/api/quit" || r.URL.Path == "/api/saver"
 		method := "GET"
 		if mutating {
 			method = "POST"

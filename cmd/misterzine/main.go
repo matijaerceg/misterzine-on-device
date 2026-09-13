@@ -13,11 +13,13 @@ import (
 	"image"
 	"image/png"
 	"log"
+	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"runtime/debug"
 	"sort"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"syscall"
@@ -355,7 +357,21 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			},
 			Quit: h.stop,
 			Goto: func(k string) { h.a.MoveToKey(k); h.present() },
-			Log:  filepath.Join(root, "log.txt"),
+			Saver: func(q url.Values) any {
+				l := h.a.SaverLook()
+				for name, p := range map[string]*int{"knee": &l.Knee, "gain": &l.Gain, "shade": &l.Shade, "div": &l.BlurDiv, "passes": &l.Passes} {
+					if n, err := strconv.Atoi(q.Get(name)); err == nil {
+						*p = n
+					}
+				}
+				h.a.SetSaverLook(l)
+				if v := q.Get("saver"); v == "on" || v == "off" {
+					h.a.SaverDemo(v == "on")
+				}
+				h.present()
+				return map[string]any{"look": h.a.SaverLook(), "active": h.a.ScreensaverActive()}
+			},
+			Log: filepath.Join(root, "log.txt"),
 		}, lg) {
 			h.a.Notice("Remote debug enabled", 8*time.Second)
 		}

@@ -173,6 +173,7 @@ type App struct {
 
 	wants      []ImageReq // pictures this frame asked for, in priority order
 	rep        repeater
+	look       SaverLook                  // the saver ground's tuning (screensaver.go)
 	released   map[platform.Key]time.Time // when each key last came up, for the bounce guard
 	down       map[platform.Key]bool      // keys currently held, across all devices
 	menuAt     time.Time                  // when the Menu button went down in Options mode; zero while up
@@ -223,7 +224,7 @@ func New(cfg Config, ds *data.Dataset, stored *data.SeenRecord) *App {
 	if cfg.Versions == nil {
 		cfg.Versions = map[string]string{}
 	}
-	a := &App{cfg: cfg, body: fonts.Body(), sm: fonts.Small(), narrow: fonts.Narrow(), tall: fonts.NarrowTall(), rot: cfg.Rotation, split: -1, down: map[platform.Key]bool{}, released: map[platform.Key]time.Time{}}
+	a := &App{cfg: cfg, body: fonts.Body(), sm: fonts.Small(), narrow: fonts.Narrow(), tall: fonts.NarrowTall(), rot: cfg.Rotation, split: -1, down: map[platform.Key]bool{}, released: map[platform.Key]time.Time{}, look: DefaultSaverLook}
 	a.viewsOff = parseViewsOff(cfg.ViewsOff)
 	a.mode = a.firstView()
 	if cfg.RememberSort && a.viewOn(cfg.LastSort) {

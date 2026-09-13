@@ -265,7 +265,7 @@ func TestSaverFadesBeforeTheWordEnters(t *testing.T) {
 		t.Fatalf("start: shade %d travel %d", a.saver.shade, a.saver.travel)
 	}
 	a.Tick(t0.Add(saverFade / 2))
-	if a.saver.shade <= saverShade || a.saver.shade >= 256 || a.saver.travel != 0 {
+	if a.saver.shade <= a.look.Shade || a.saver.shade >= 256 || a.saver.travel != 0 {
 		t.Fatalf("mid-fade: shade %d travel %d", a.saver.shade, a.saver.travel)
 	}
 	c := a.logical
@@ -273,16 +273,16 @@ func TestSaverFadesBeforeTheWordEnters(t *testing.T) {
 	// a flat picture blurs to itself, so the dark frame is the bloomed
 	// fill at the saver's shade
 	dark := color.RGBA{A: 255}
-	dark.R = uint8(min(saverBoost(int(fill.R)), 255) * saverShade >> 8)
-	dark.G = uint8(min(saverBoost(int(fill.G)), 255) * saverShade >> 8)
-	dark.B = uint8(min(saverBoost(int(fill.B)), 255) * saverShade >> 8)
+	dark.R = uint8(min(a.look.boost(int(fill.R)), 255) * a.look.Shade >> 8)
+	dark.G = uint8(min(a.look.boost(int(fill.G)), 255) * a.look.Shade >> 8)
+	dark.B = uint8(min(a.look.boost(int(fill.B)), 255) * a.look.Shade >> 8)
 	c.Fill(c.Rect, fill)
 	a.paintSaver(c)
 	if p := c.RGBAAt(0, 0); p.R <= dark.R || p.R >= fill.R {
 		t.Fatalf("mid-fade pixel %v is not between the picture %v and the dark frame %v", p, fill, dark)
 	}
 	a.Tick(t0.Add(saverFade))
-	if a.saver.shade != saverShade || a.saver.travel != 0 {
+	if a.saver.shade != a.look.Shade || a.saver.travel != 0 {
 		t.Fatalf("fade end: shade %d travel %d", a.saver.shade, a.saver.travel)
 	}
 	c.Fill(c.Rect, fill)
@@ -318,11 +318,11 @@ func TestSaverBlursThePictureUnderTheLettering(t *testing.T) {
 	a.Tick(t0.Add(saverFade))
 	paintHalves()
 	a.paintSaver(c)
-	r := c.W() / saverBlurDiv
+	r := c.W() / a.look.BlurDiv
 	if r < 4 {
 		t.Fatalf("radius %d too small to test", r)
 	}
-	white := uint8(255 * saverShade >> 8)
+	white := uint8(255 * a.look.Shade >> 8)
 	if p := c.RGBAAt(edge+r, 10); p.R == 0 || p.R >= white {
 		t.Fatalf("pixel %v a radius into the black is not a ramp (white shows as %d)", p, white)
 	}
@@ -340,5 +340,44 @@ func TestSaverBlursThePictureUnderTheLettering(t *testing.T) {
 			t.Fatalf("ramp rises again at x=%d: %d after %d", x, v, last)
 		}
 		last = v
+	}
+}
+
+// A look set over the debug API while the saver is up takes the ground
+// again: the next full paint shows the new shade. SaverDemo starts and
+// wakes the saver without a key.
+func TestSetSaverLookRetakesTheGround(t *testing.T) {
+	a, clock := saverApp()
+	t0 := *clock
+	a.SaverDemo(true)
+	if !a.ScreensaverActive() {
+		t.Fatal("SaverDemo did not start the saver")
+	}
+	a.Tick(t0.Add(saverFade))
+	a.Paint()
+	if !a.saverCached(a.logical) {
+		t.Fatal("no ground after a paint")
+	}
+	look := a.SaverLook()
+	look.Shade = 64
+	look.Gain = 0
+	a.SetSaverLook(look)
+	if a.saverCached(a.logical) || !a.all {
+		t.Fatal("the new look kept the old ground")
+	}
+	a.Tick(t0.Add(saverFade + saverFrame))
+	a.Paint()
+	// the list's background at a quarter, with no bloom
+	bg := a.logical.RGBAAt(1, a.logical.H()/2)
+	if bg.R > 64 || bg.G > 64 || bg.B > 64 || a.SaverLook().Shade != 64 {
+		t.Fatalf("ground %v is not at the new quarter shade", bg)
+	}
+	a.SaverDemo(false)
+	if a.ScreensaverActive() || !a.all || a.saver.sharp != nil {
+		t.Fatal("SaverDemo(false) did not wake the saver")
+	}
+	a.SetSaverLook(SaverLook{Passes: 9, Shade: 1})
+	if l := a.SaverLook(); l.Passes != 4 || l.Shade != 16 {
+		t.Fatalf("look not clamped: %+v", l)
 	}
 }

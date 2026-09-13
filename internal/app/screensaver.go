@@ -16,30 +16,65 @@ const saverFrame = time.Second / 30
 // saver's quarter; the lettering enters once it is dark.
 const saverFade = time.Second
 
-// The picture under the lettering blooms: every channel above
-// saverBloomKnee is raised by saverBloomGain times the excess (256ths),
-// without clamping, before the blur spreads it, so light text and pictures
-// glow out into their surroundings while the dark ground stays dark. The
-// blurred picture is clamped and shown at saverShade (256ths): the dark
-// ground ends near a quarter of itself, a bloom near half of white.
-const (
-	saverBloomKnee = 96
-	saverBloomGain = 1536
-	saverShade     = 128
-)
+// SaverLook tunes the picture under the lettering. It blooms: every
+// channel above Knee is raised by Gain times the excess (256ths), without
+// clamping, before the blur spreads it, so light text and pictures glow
+// out into their surroundings while the dark ground stays dark. The blur
+// is a box blur of radius width/BlurDiv run Passes times along the rows
+// and down the columns (two passes are close to a Gaussian). The blurred
+// picture is clamped and shown at Shade (256ths). The debug API sets a
+// look live (SetSaverLook) so it can be tuned on a CRT.
+type SaverLook struct {
+	Knee, Gain, Shade, BlurDiv, Passes int
+}
 
-// saverBoost is the bloom curve for one channel value.
-func saverBoost(v int) int {
-	if v > saverBloomKnee {
-		v += (v - saverBloomKnee) * saverBloomGain / 256
+// DefaultSaverLook: the dark ground ends near a quarter of itself, a bloom
+// near half of white, an 11 px radius on a 320 px screen.
+var DefaultSaverLook = SaverLook{Knee: 96, Gain: 1536, Shade: 128, BlurDiv: 28, Passes: 2}
+
+// clamped keeps a look inside what the capture can do.
+func (l SaverLook) clamped() SaverLook {
+	l.Knee = min(max(l.Knee, 0), 255)
+	l.Gain = min(max(l.Gain, 0), 8192)
+	l.Shade = min(max(l.Shade, 16), 256)
+	l.BlurDiv = min(max(l.BlurDiv, 4), 256)
+	l.Passes = min(max(l.Passes, 1), 4)
+	return l
+}
+
+// boost is the bloom curve for one channel value.
+func (l SaverLook) boost(v int) int {
+	if v > l.Knee {
+		v += (v - l.Knee) * l.Gain / 256
 	}
 	return v
 }
 
-// saverBlurDiv sets the blur under the lettering from the screen width:
-// the box radius at full strength is width/saverBlurDiv, applied twice
-// each way (close to a Gaussian), so an 11 px radius on a 320 px screen.
-const saverBlurDiv = 28
+// SaverLook is the saver ground's tuning.
+func (a *App) SaverLook() SaverLook { return a.look }
+
+// SetSaverLook applies a look; with the saver up the ground is taken
+// again with it, so the change shows on the next frame.
+func (a *App) SetSaverLook(l SaverLook) {
+	a.look = l.clamped()
+	if a.saver.active {
+		a.saver.sharp = nil
+		a.all = true
+	}
+}
+
+// SaverDemo starts the saver now, or wakes it, for tuning over the debug
+// API; the wake acts like a key's wake without a key to swallow.
+func (a *App) SaverDemo(on bool) {
+	switch {
+	case on && !a.saver.active:
+		a.startSaver(a.cfg.TimerNow())
+	case !on && a.saver.active:
+		a.saver.active = false
+		a.saver.sharp, a.saver.blurred, a.saver.dark = nil, nil, nil
+		a.all = true
+	}
+}
 
 var saverValues = []string{"off", "1", "2", "5", "10"}
 
@@ -181,12 +216,12 @@ func (a *App) saverAdvance(now time.Time) {
 	since := now.Sub(a.saver.started)
 	if since < saverFade {
 		a.saver.fade = int(256 * since / saverFade)
-		a.saver.shade = 256 - (256-saverShade)*a.saver.fade/256
+		a.saver.shade = 256 - (256-a.look.Shade)*a.saver.fade/256
 		a.saver.travel = 0
 		return
 	}
 	a.saver.fade = 256
-	a.saver.shade = saverShade
+	a.saver.shade = a.look.Shade
 	a.saver.travel = int((since - saverFade) / saverFrame)
 }
 
@@ -197,10 +232,11 @@ func (a *App) saverCached(c *gfx.Canvas) bool {
 }
 
 // saverCapture freezes the picture under the lettering as the canvas
-// holds it now, and blurs a bloomed copy: the boost (saverBoost) goes into
-// 16-bit channels so nothing clamps before the blur, a box blur of radius
-// width/saverBlurDiv run twice along the rows and twice down the columns,
-// edges repeated; running sums make the cost independent of the radius.
+// holds it now, and blurs a bloomed copy: the boost (SaverLook.boost) goes
+// into 16-bit channels so nothing clamps before the blur, a box blur of
+// radius width/BlurDiv run Passes times along the rows and down the
+// columns, edges repeated; running sums make the cost independent of the
+// radius.
 // The passes cost the boards a couple of hundred milliseconds, so this
 // happens once per saver run, not per frame; the saver shows this frozen
 // picture until a key wakes the app.
@@ -210,7 +246,8 @@ func (a *App) saverCapture(c *gfx.Canvas) {
 	s.blurred = append(s.blurred[:0], c.Pix...)
 	s.dark = nil
 	s.cacheW = c.W()
-	w, h, r := c.W(), c.H(), c.W()/saverBlurDiv
+	look := a.look
+	w, h, r := c.W(), c.H(), c.W()/look.BlurDiv
 	n := w * h * 3
 	if len(s.blur) != 2*n {
 		s.blur = make([]uint16, 2*n)
@@ -219,13 +256,13 @@ func (a *App) saverCapture(c *gfx.Canvas) {
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
 			i, o := c.PixOffset(x, y), (y*w+x)*3
-			wide[o] = uint16(saverBoost(int(c.Pix[i])))
-			wide[o+1] = uint16(saverBoost(int(c.Pix[i+1])))
-			wide[o+2] = uint16(saverBoost(int(c.Pix[i+2])))
+			wide[o] = uint16(look.boost(int(c.Pix[i])))
+			wide[o+1] = uint16(look.boost(int(c.Pix[i+1])))
+			wide[o+2] = uint16(look.boost(int(c.Pix[i+2])))
 		}
 	}
 	if r >= 1 {
-		for pass := 0; pass < 2; pass++ {
+		for pass := 0; pass < look.Passes; pass++ {
 			for y := 0; y < h; y++ {
 				blurLine(wide[y*w*3:], tmp[y*w*3:], w, 3, r)
 			}
@@ -443,7 +480,7 @@ func (a *App) paintSaver(c *gfx.Canvas) {
 	x0 := c.W() - a.saver.travel%(c.W()+m.Rect.Dx())
 	shade, fade := a.saver.shade, a.saver.fade
 	if shade <= 0 || shade > 256 {
-		shade, fade = saverShade, 256 // a saver frame set up outside tickSaver (tests, previews)
+		shade, fade = a.look.Shade, 256 // a saver frame set up outside tickSaver (tests, previews)
 	}
 	s := &a.saver
 	if !a.saverCached(c) {
