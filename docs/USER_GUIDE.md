@@ -222,7 +222,11 @@ rotation, the screensaver's style and brightness, Open at boot and Return
 after game under the shortcut) sits a step in behind a small branch mark.
 Values line up in one column; a small arrow at the right
 edge of the top or bottom row shows when more options sit above or below the
-visible part of the list. The framed text under the list describes the selected
+visible part of the list. The legend in the bottom bar follows the selected
+row: Change with the arrow that can still move on a choice row, A with what
+it does where A acts (Preview on the screensaver rows, Open, Edit, Run,
+Refresh, Rescan, Clear, Quit), and only Back on a greyed row.
+The framed text under the list describes the selected
 option, and the build version and catalogue date sit below it in grey. B
 (or the Menu button) returns to the screen Options was opened over: the
 list, or Details, the artwork or Filters when the Menu button opened it

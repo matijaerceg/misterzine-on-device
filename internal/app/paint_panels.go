@@ -691,7 +691,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 				hy += font.H + 1
 			}
 		}
-		a.paintHint(c, gfx.ArrowLeft+" "+gfx.ArrowRight+" Change  A Open  B Back")
+		a.paintHint(c, a.optionsHint())
 	} else if a.screen == ScreenViews {
 		a.paintHint(c, "A On/off  B Back")
 	} else if a.screen == ScreenCredits {
@@ -699,6 +699,41 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 	} else {
 		a.paintHint(c, a.filterHint())
 	}
+}
+
+// optionsHint is the Options legend for the row under the cursor: only the
+// controls that do something there. A choice row names the arrow that can
+// still move (both in the middle, one at either end); a row A acts on says
+// what A does; a greyed row, or a header, leaves only Back.
+func (a *App) optionsHint() string {
+	p := &a.panel
+	var parts []string
+	if p.cursor < len(p.entries) {
+		e := p.entries[p.cursor]
+		if len(e.vals) > 1 && !e.disabled {
+			arrows := gfx.ArrowLeft + " " + gfx.ArrowRight
+			if e.idx <= 0 {
+				arrows = gfx.ArrowRight
+			} else if e.idx >= len(e.vals)-1 {
+				arrows = gfx.ArrowLeft
+			}
+			parts = append(parts, arrows+" Change")
+		}
+		if act := optionsActs[e.kind]; act != "" {
+			parts = append(parts, "A "+act)
+		}
+	}
+	parts = append(parts, "B Back")
+	return strings.Join(parts, "  ")
+}
+
+// optionsActs is what A does on the Options rows it acts on, as the
+// legend words it; a row missing here ignores A (Left/Right pick its
+// value, or it is greyed).
+var optionsActs = map[string]string{
+	"refresh": "Refresh", "update": "Run", "update-result": "Open", "rescan": "Rescan", "clearimg": "Clear",
+	"views": "Open", "screensaver": "Preview", "saver-style": "Preview", "saver-bright": "Preview",
+	"inset": "Edit", "troubleshooting": "Open", "credits": "Open", "quit": "Quit",
 }
 
 // valueColumn is where Options values start: a fixed column at the
