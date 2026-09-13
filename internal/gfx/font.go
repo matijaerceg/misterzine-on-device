@@ -238,6 +238,13 @@ const (
 	Circle   = "\x18"
 	Square   = "\x19"
 	Triangle = "\x1a"
+	// Options section marks, one cell each: a diskette, stacked lines, a
+	// monitor on a stand, an arcade stick and a pair of sliders
+	SectionData      = "\x1b"
+	SectionList      = "\x1c"
+	SectionDisplay   = "\x1d"
+	SectionControls  = "\x1e"
+	SectionOperation = "\x1f"
 )
 
 // SetGlyph installs a glyph (rows top to bottom, MSB = leftmost pixel).
@@ -291,6 +298,27 @@ func (f *Font) AddArrows() {
 	}
 	f.SetGlyph(Beta[0], beta)
 	f.addButtonSymbols()
+	f.addSectionMarks()
+}
+
+// addSectionMarks installs the Options section marks as one-cell glyphs,
+// five pixels wide and seven tall, on the baseline: a diskette (shutter
+// at the top, label below), three stacked lines, a monitor on a stand, an
+// arcade stick on its base, and two sliders.
+func (f *Font) addSectionMarks() {
+	shapes := map[byte][]byte{
+		SectionData[0]:      {0xF0, 0xA8, 0xA8, 0x88, 0xF8, 0x88, 0xF8},
+		SectionList[0]:      {0x00, 0xF8, 0x00, 0xF8, 0x00, 0xF8, 0x00},
+		SectionDisplay[0]:   {0xF8, 0x88, 0x88, 0x88, 0xF8, 0x20, 0x70},
+		SectionControls[0]:  {0x70, 0x70, 0x20, 0x20, 0x20, 0xF8, 0xF8},
+		SectionOperation[0]: {0x40, 0xF8, 0x40, 0x00, 0x10, 0xF8, 0x10},
+	}
+	for ch, shape := range shapes {
+		rows := make([]byte, f.H)
+		bottom := max(len(shape), min(f.H, f.H-f.descent)) // the row below the baseline
+		copy(rows[bottom-len(shape):], shape)
+		f.SetGlyph(ch, rows)
+	}
 }
 
 // addButtonSymbols installs the PlayStation cross, circle, square and

@@ -179,8 +179,8 @@ func TestRotationIntentSurvivesSaves(t *testing.T) {
 				h.a.Handle(platform.Event{Key: k, At: now.Add(time.Millisecond)})
 			}
 			tap(platform.KeyBack) // Options
-			for n := 0; n < 20; n++ {
-				tap(platform.KeyDown) // Scroll speed opens the Operation group
+			for n := 0; n < 19; n++ {
+				tap(platform.KeyDown) // HDMI picture, the last Display row: a value row with no rotation in it
 			}
 			tap(platform.KeyRight)
 			if !h.setDirty {

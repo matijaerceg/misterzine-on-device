@@ -199,13 +199,15 @@ Screenshots work without remote debugging.
 
 ## Options
 
-Options is in four groups under grey headings: Data (Refresh data now, Run
-Update All, Last update result, Rescan card, Prefetch shots, Clear image
-cache), List (Sources, Filter by rotation, Remember last view, Views,
-Title font, List shots, Date format, List layout), Display (rotation, screensaver and its style, button labels, safe zone, HDMI picture) and
-Operation (scrolling, the launcher, Open at boot, Return after game,
-Troubleshooting, Credits, Quit). The
-headings cannot be selected. Values line up in one column; a small arrow at the right
+Options is in five groups, each under a grey heading with a small mark and
+a rule: Data (a diskette: Refresh data now, Run Update All, Last update
+result, Rescan card, Prefetch shots, Clear image cache), List (stacked
+lines: Sources, Filter by rotation, Remember last view, Views, Title font,
+List shots, Date format, List layout), Display (a monitor: rotation,
+screensaver and its style, safe zone, HDMI picture), Controls (an arcade
+stick: Button labels, OK button, Menu button, Scroll speed, Hold delay) and
+Operation (sliders: the launcher, Open at boot, Return after game,
+Troubleshooting, Credits, Quit). The headings cannot be selected. Values line up in one column; a small arrow at the right
 edge of the top or bottom row shows when more options sit above or below the
 visible part of the list. The framed text under the list describes the selected
 option, and the build version and catalogue date sit below it in grey. B
@@ -314,6 +316,15 @@ the bottom.
 - **Saver brightness:** with the screenshots only. Half (default) shows the
   shots at half brightness, kinder to a CRT, and holding Start brings one
   up to full; full shows them at full brightness throughout.
+- **Edit safe zone:** D-pad moves the top-right corner of the safe frame;
+  Right/Up grows it and Left/Down shrinks it. B saves. Margins can reach 40 px.
+- **HDMI picture:** fit display by default: the picture is sized so that
+  MiSTer's integer scaling fills the screen height: 360x270 on 1080p, 340x256
+  on 1024x768, 400x300 on 1600x900, instead of 320x240 with bars above and
+  below. Text keeps its size; the list gains rows. CRT modes, 720p and 1440p
+  already fit and stay 320x240, so the setting changes nothing there. Choose
+  320x240 to keep the classic size on every display. Applies when MisterZine
+  next starts.
 - **Button labels:** how the legends name the pad's face buttons, in MiSTer's
   A B X Y order: A B X Y (default), B A Y X for an Xbox-lettered pad mapped by
   position, the PlayStation circle, cross, triangle and square by position, or
@@ -328,15 +339,12 @@ the bottom.
   hand; the hint names it. It is muted, with the reason, before any pad has
   pressed, for a pad that comes through MiSTer's translation, and for one
   whose A and B are the same button.
-- **Edit safe zone:** D-pad moves the top-right corner of the safe frame;
-  Right/Up grows it and Left/Down shrinks it. B saves. Margins can reach 40 px.
-- **HDMI picture:** fit display by default: the picture is sized so that
-  MiSTer's integer scaling fills the screen height: 360x270 on 1080p, 340x256
-  on 1024x768, 400x300 on 1600x900, instead of 320x240 with bars above and
-  below. Text keeps its size; the list gains rows. CRT modes, 720p and 1440p
-  already fit and stay 320x240, so the setting changes nothing there. Choose
-  320x240 to keep the classic size on every display. Applies when MisterZine
-  next starts.
+- **Menu button:** what the pad button you defined as MiSTer's menu (OSD)
+  button does in MisterZine, which holds a defined pad while it runs: Options
+  (default) from any screen, closing it when it is up, or quit MisterZine
+  for the MiSTer menu, as earlier versions did. With Options chosen, holding
+  the button for two seconds quits as well, so the way out is always there.
+  Keyboard F12 and the board's button still quit.
 - **Scroll speed:** 20, 30 or 60 rows/pages per second once a hold repeats.
 - **Hold delay:** short 200 ms, normal 300 ms (default), or long 500 ms before
   navigation repeats. Artwork and calibration retain their own timing.
@@ -353,12 +361,6 @@ the bottom.
   picks the MisterZine entry again and the list opens on that game. Games
   loaded some other way, and quitting through the Menu button, do not bring
   it back. Needs the Main menu launcher.
-- **Menu button:** what the pad button you defined as MiSTer's menu (OSD)
-  button does in MisterZine, which holds a defined pad while it runs: Options
-  (default) from any screen, closing it when it is up, or quit MisterZine
-  for the MiSTer menu, as earlier versions did. With Options chosen, holding
-  the button for two seconds quits as well, so the way out is always there.
-  Keyboard F12 and the board's button still quit.
 - **Troubleshooting:** a guided Start-button test, a pad tester, and an
   A/Enter game-launch test, with results you can photograph. The last result
   survives restarting. The pad tester lists every connected pad with the raw

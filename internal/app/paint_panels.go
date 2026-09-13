@@ -16,6 +16,7 @@ import (
 type panelEntry struct {
 	text      string
 	header    bool
+	glyph     string   // Options section headers: the mark before the title, with a rule after it
 	info      bool     // plain text, never selectable
 	help      string   // shown in the help area while selected
 	kind      string   // filter section: "base","src","rot","plr","genre","install","fav"; settings: "rotation","inset","prefetch","rescan","refresh","clear","about","settings","back"
@@ -355,9 +356,12 @@ func (a *App) optionsEntries() []panelEntry {
 		updateText = "Update MisterZine + all"
 		updateHelp = "MisterZine " + a.appUpdate + " is available. Run Update All, then quit and reopen MisterZine to use it."
 	}
-	group := func(title string) panelEntry { return panelEntry{text: title, header: true, info: true} }
+	// the section headers: a mark, the title and a rule to the right, as
+	// the list's group markers; Controls sits before Operation so the rows
+	// changed with the pad in hand come before the rarely touched ones
+	group := func(glyph, title string) panelEntry { return panelEntry{text: title, glyph: glyph, header: true, info: true} }
 	spacer := panelEntry{header: true, info: true}
-	E := []panelEntry{group("Data:"),
+	E := []panelEntry{group(gfx.SectionData, "Data"),
 		{text: "Refresh data now", kind: "refresh",
 			help: "Check misterzine.fyi for new releases now. This also happens on launch and every 30 minutes."},
 		{text: updateText, kind: "update", help: updateHelp},
@@ -369,7 +373,7 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Download every screenshot in the background (about 55 MB) so browsing never waits; the tally counts up as they land. Off: only what you look at."},
 		{text: "Clear image cache", kind: "clearimg",
 			help: "Delete the downloaded screenshots and system photos; they come back as you browse."},
-		spacer, group("List:"),
+		spacer, group(gfx.SectionList, "List"),
 		{text: "Sources", kind: "sources", vals: []string{"all", "installed only"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.InstalledOnly],
 			help: a.sourcesHelp()},
 		{text: "Filter by rotation", kind: "filter-rotation", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.FilterRotation()],
@@ -386,7 +390,7 @@ func (a *App) optionsEntries() []panelEntry {
 			help: a.dateFormatHelp()},
 		{text: "List layout", kind: "list-layout", vals: listLayouts, idx: map[string]int{"list": 0, "split": 1, "picture": 2}[a.ListLayout()],
 			help: "List (default): the full list with a small pane. Split: a wider pane with a bigger picture. Picture: the picture across the screen with a few rows."},
-		spacer, group("Display:"),
+		spacer, group(gfx.SectionDisplay, "Display"),
 		{text: "Follow INI rotation", kind: "follow-rotation", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.FollowRotation()],
 			help: "On (default): match osd_rotate in the active MiSTer INI at every startup. Off: rotate manually below. Never edits the INI."},
 		{text: "Rotation", kind: "rotation", vals: []string{"monitor CW", "horizontal", "monitor CCW"}, idx: rotIdx, disabled: a.FollowRotation(),
@@ -401,26 +405,27 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Half (default): the shots at half brightness, kind to a CRT; holding Start brings one up to full. Full: full brightness throughout."})
 	}
 	E = append(E, []panelEntry{
-		{text: "Button labels", kind: "button-labels", vals: buttonLabelValues(), idx: map[string]int{"mister": 0, "xbox": 1, "playstation": 2, "numbers": 3}[a.ButtonLabels()],
-			help: "How the legends name the pad buttons, in MiSTer's A B X Y order as set in its define buttons screen. Xbox and PlayStation names go by position."},
-		a.okButtonRow(),
 		{text: "Edit safe zone", kind: "inset",
 			help: "Margin kept clear of the screen edge (overscan): now " + itoa(a.cfg.SafeInsetX) + " px at the sides, " + itoa(a.cfg.SafeInsetY) + " px top and bottom. A opens the frame; fit it just inside the picture."},
 		{text: "HDMI picture", kind: "canvas", vals: []string{"fit display", "320x240"}, idx: map[bool]int{false: 0, true: 1}[a.Canvas() == "320x240"],
 			help: "Fit display (default): fills the HDMI screen height, 360x270 on 1080p, for more rows. 320x240: the classic size with bars. Applies at the next start."},
-		spacer, group("Operation:"),
+		spacer, group(gfx.SectionControls, "Controls"),
+		{text: "Button labels", kind: "button-labels", vals: buttonLabelValues(), idx: map[string]int{"mister": 0, "xbox": 1, "playstation": 2, "numbers": 3}[a.ButtonLabels()],
+			help: "How the legends name the pad buttons, in MiSTer's A B X Y order as set in its define buttons screen. Xbox and PlayStation names go by position."},
+		a.okButtonRow(),
+		{text: "Menu button", kind: "menu-button", vals: []string{"Options", "quit MisterZine"}, idx: map[bool]int{false: 0, true: 1}[a.MenuButton() == "leave"],
+			help: "What the pad button defined as MiSTer's menu (OSD) button does here: Options (default; held 2 s it quits) or quit at once. Keyboard F12 still quits."},
 		{text: "Scroll speed", kind: "scroll", vals: []string{"20 Hz", "30 Hz", "60 Hz"}, idx: scrollIdx,
 			help: "How many rows (or pages, with Left/Right) a held direction moves per second. 60 Hz is one row every frame."},
 		{text: "Hold delay", kind: "hold-delay", vals: []string{"short", "normal", "long"}, idx: map[int]int{200: 0, 300: 1, 500: 2}[a.HoldDelay()],
 			help: "Wait before held navigation repeats: short 200 ms, normal 300 ms, long 500 ms. Scroll speed sets the pace after this delay."},
+		spacer, group(gfx.SectionOperation, "Operation"),
 		{text: "Main menu launcher", kind: "launcher", vals: []string{"off", "on"}, idx: launcherIdx,
 			help: "Show MisterZine in the MiSTer main menu. Off removes the entry when you leave; on puts it back. With it off, Scripts -> MisterZine-Run opens MisterZine."},
 		{text: "Open at boot", kind: "open-at-boot", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.OpenAtBoot], disabled: launcherIdx == 0,
 			help: "On: once the MiSTer menu is up after power-on or reboot, MisterZine opens as if picked from it. A bootcore in the INI wins. Needs the launcher."},
 		{text: "Return after game", kind: "return-after-game", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ReturnAfterGame], disabled: launcherIdx == 0,
 			help: "On: when a game started here exits to the MiSTer menu, MisterZine reopens on that game. Not after quitting with the Menu button. Needs the launcher."},
-		{text: "Menu button", kind: "menu-button", vals: []string{"Options", "quit MisterZine"}, idx: map[bool]int{false: 0, true: 1}[a.MenuButton() == "leave"],
-			help: "What the pad button defined as MiSTer's menu (OSD) button does here: Options (default; held 2 s it quits) or quit at once. Keyboard F12 still quits."},
 		{text: "Troubleshooting", kind: "troubleshooting",
 			help: "Test your Start button or game launching. Results stay on screen for a photo; no keyboard or log files needed."},
 		{text: "Credits", kind: "credits"},
@@ -560,6 +565,14 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			c.Fill(r, gen.Eva.Surface)
 		}
 		switch {
+		case e.header && e.info && e.glyph != "":
+			// an Options section: the mark, the title, and a rule to the
+			// gutter after a space, as the list's group markers
+			title := gfx.Fit(e.glyph+" "+e.text, cols)
+			w := c.Text(inner.Min.X+2, y, font, title, gen.Eva.Muted)
+			if x := inner.Min.X + 2 + w + font.W; x < edge {
+				c.HLine(x, edge-1, y+font.H/2, gen.Eva.Line)
+			}
 		case e.header && e.info:
 			c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, cols), gen.Eva.Muted)
 		case e.header:

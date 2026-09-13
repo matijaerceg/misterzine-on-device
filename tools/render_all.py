@@ -143,8 +143,8 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     scenarios.append([*rotation, "-button-labels", "playstation",
                       "-out", f"out/button-labels-{orientation}", "-script",
                       "shot list; enter; shot details; back; tab; shot filters; back; "
-                      "back; down*18; shot option; right; shot option-numbers; back; shot list-numbers; "
-                      "type xyz; shot empty-numbers; back; back; down*18; left*3; shot option-mister; left; back; shot list-mister"])
+                      "back; down*20; shot option; right; shot option-numbers; back; shot list-numbers; "
+                      "type xyz; shot empty-numbers; back; back; down*20; left*3; shot option-mister; left; back; shot list-mister"])
     scenarios.append([*rotation, "-button-labels", "xbox",
                       "-out", f"out/button-labels-xbox-{orientation}", "-script", "shot list; enter; shot details"])
 for rotation in ([], ["-rot", "left", "-logical"]):
@@ -159,7 +159,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     # pad: auto, the A override, the B override, and back to auto
     scenarios.append([*rotation, "-support-report", "testdata/support-controller.json",
                       "-out", f"out/ok-button-{orientation}", "-script",
-                      "back; down*19; shot option; right; shot option-a; right; shot option-b; left*2; shot option-auto"])
+                      "back; down*21; shot option; right; shot option-a; right; shot option-b; left*2; shot option-auto"])
 for canvas in ("360x270", "400x300"):
     for rotation in ([], ["-rot", "left", "-logical"]):
         orientation = "t" if rotation else "h"
@@ -203,7 +203,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     scenarios.append([*rotation,
                       "-out", f"out/menu-{orientation}", "-script",
                       "menu; shot options; menu; shot list; enter; menu; shot options-from-details; "
-                      "end; up*3; shot option-row; right; shot option-leave; left; back; shot details-back; "
+                      "end; up*8; shot option-row; right; shot option-leave; left; back; shot details-back; "
                       "back; tab; down*2; menu; shot options-over-filters; back; shot filters-back; "
                       "press menu; wait 700; shot menu-hint; wait 900; shot menu-hold; release menu; shot menu-released; back; back"])
 for args in scenarios:
