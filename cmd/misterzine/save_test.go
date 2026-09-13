@@ -58,7 +58,7 @@ func TestSortAutosaveRestoreAndOption(t *testing.T) {
 	for i := 0; i < 8; i++ {
 		tap(platform.KeyDown)
 	}
-	tap(platform.KeyLeft) // Remember sort order: off, in the List group
+	tap(platform.KeyLeft) // Remember last view: off, in the List group
 	if h.a.RememberSort() || h.a.Sort() != data.SortAlphabetical {
 		t.Fatal("toggle changed current order or failed to turn off")
 	}

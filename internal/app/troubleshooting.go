@@ -111,7 +111,7 @@ func (a *App) padPressLine(p padPress, prev *padPress) string {
 	if p.key == platform.KeyMenu {
 		action = "Options (Menu button)"
 		if a.MenuButton() == "leave" {
-			action = "leave MisterZine (Menu button)"
+			action = "quit MisterZine (Menu button)"
 		}
 	}
 	if p.source == "MiSTer virtual input" {

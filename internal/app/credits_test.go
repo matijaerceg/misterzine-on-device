@@ -9,7 +9,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
 
-// Credits is the last Options row; A opens a page naming the developer,
+// Credits sits above Quit at the end of Options; A opens a page naming the developer,
 // the projects MisterZine builds on and every early adopter, with only the
 // credited rows under the cursor, and B returns to Options on Credits.
 func TestCreditsPage(t *testing.T) {
@@ -17,8 +17,9 @@ func TestCreditsPage(t *testing.T) {
 	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest(rows, "", time.Now()), nil)
 	a.actList(platform.KeyBack)
 	a.actPanel(platform.KeyEnd)
-	if e := a.panel.entries[a.panel.cursor]; e.kind != "credits" || a.panel.cursor != len(a.panel.entries)-1 {
-		t.Fatalf("End lands on %q at %d of %d", e.text, a.panel.cursor, len(a.panel.entries))
+	a.actPanel(platform.KeyUp)
+	if e := a.panel.entries[a.panel.cursor]; e.kind != "credits" || a.panel.cursor != len(a.panel.entries)-2 {
+		t.Fatalf("End, Up lands on %q at %d of %d", e.text, a.panel.cursor, len(a.panel.entries))
 	}
 	a.actPanel(platform.KeyEnter)
 	if a.screen != ScreenCredits {

@@ -62,9 +62,9 @@ modification times are not used as build dates, since copying or installing a
 file can change them.
 
 Dates highlighted in green and the last-look divider help find changes since
-your previous visit. Visits start at the top of your last selected sort order.
-Options -> Remember sort order is on by default; turn it off to start each visit
-with latest updates instead.
+your previous visit. Visits start at the top of the view you left.
+Options -> Remember last view is on by default; turn it off to start each visit
+in Core updated instead.
 Y cycles Updated, Debut, Year, Alphabetical, Maker, then Favorites; the top
 bar names the order as core updated, MiSTer debut, original year, A-Z, maker
 or Favorites A-Z. Options -> Views can leave any of them out of the cycle.
@@ -91,7 +91,7 @@ scrolled off the top keeps its name pinned on the top line until its last
 row has gone.
 Favorites shows only your starred entries in alphabetical order, with the same
 letter jumps as A-Z.
-Search and filters still apply. Remember sort order also remembers Favorites.
+Search and filters still apply. Remember last view also remembers Favorites.
 Changing sort keeps the selected title, search and filters. Dates in alphabetical
 order still show the latest update; the last-look divider appears only in the
 latest-update order.
@@ -128,7 +128,7 @@ filter choices are saved.
 | Y | Space | change view | favorite | | only/all | |
 | Start | gamepad Start | launch remembered version | launch selected version | launch selected version | | |
 | Select (held) | | + Y: List layout, + X: List shots | | | | |
-| Menu | | Options; held 2 s: leave MisterZine (or leave at once: Options -> Menu button) | Options | Options | Options | back to the screen it was opened over |
+| Menu | | Options; held 2 s: quit MisterZine (or quit at once: Options -> Menu button) | Options | Options | Options | back to the screen it was opened over |
 
 A, B, X and Y are MiSTer's names from its define buttons screen. Options ->
 Button labels can print them as Xbox letters, PlayStation symbols or numbers.
@@ -151,7 +151,7 @@ nothing. Only a pad defined in MiSTer has a Select; keyboards use Options.
 MisterZine holds a defined pad exclusively while it runs, so MiSTer sees
 nothing from it: the button you defined as MiSTer's menu (OSD) button is
 MisterZine's Menu button, opening Options by default (Options -> Menu button
-can make it leave instead). Held for two seconds it leaves MisterZine for
+can make it quit instead). Held for two seconds it quits MisterZine for
 the MiSTer menu whatever the setting; a hint appears after half a second.
 A pad whose A or B MisterZine cannot read is left to MiSTer's translation,
 as before. Keyboard F12 and the board's own button still hand the screen to
@@ -186,10 +186,10 @@ Screenshots work without remote debugging.
 
 Options is in four groups under grey headings: Data (Refresh data now, Run
 Update All, Last update result, Rescan card, Prefetch shots, Clear image
-cache), List (Sources, Filter by rotation, Remember sort order, Views,
-Title font, List shots, Date format, List layout), Display (rotation, screensaver, button labels, safe zone, canvas) and
+cache), List (Sources, Filter by rotation, Remember last view, Views,
+Title font, List shots, Date format, List layout), Display (rotation, screensaver, button labels, safe zone, HDMI picture) and
 Operation (scrolling, the launcher, Open at boot, Return after game,
-Troubleshooting, Quit, Credits). The
+Troubleshooting, Credits, Quit). The
 headings cannot be selected. Values line up in one column; a small arrow at the right
 edge of the top or bottom row shows when more options sit above or below the
 visible part of the list. The framed text under the list describes the selected
@@ -225,9 +225,9 @@ the bottom.
   filters remain active; saved manual rotation filters are temporarily
   superseded and restored when this option is turned off. Filters shows the
   active rule, and it follows the interface when the rotation changes.
-- **Remember sort order:** on by default, including after upgrading. Reopens
-  with your last sort choice; off starts new visits with latest updates. Changing
-  this preference leaves the current sort order alone.
+- **Remember last view:** on by default, including after upgrading. Reopens
+  in the view you left; off starts every visit in Core updated. Changing
+  this preference leaves the current view alone.
 - **Views:** which list orders Y cycles through, as a checkbox page: core
   updated, MiSTer debut, original year, A-Z, Maker, Favorites and Recents.
   Everything is on except Recents by default. A toggles a view; the last one
@@ -275,8 +275,8 @@ the bottom.
   full-height black MISTERZINE lettering, with glinting chrome edges, across it. Left/Right chooses Off, 1, 2,
   5 or 10 minutes. A previews it immediately, even when Off. The first browsing
   button or typing key wakes without acting; release it before pressing again.
-  The pad's Menu button opens Options (or leaves, per Options -> Menu
-  button; held 2 s it leaves either way). The sweep covers the whole picture,
+  The pad's Menu button opens Options (or quits, per Options -> Menu
+  button; held 2 s it quits either way). The sweep covers the whole picture,
   including safe-zone margins, in horizontal and tate layouts. Background data
   downloads and Update All continue while dimmed.
 - **Button labels:** how the legends name the pad's face buttons, in MiSTer's
@@ -287,18 +287,20 @@ the bottom.
   guide uses those names.
 - **Edit safe zone:** D-pad moves the top-right corner of the safe frame;
   Right/Up grows it and Left/Down shrinks it. B saves. Margins can reach 40 px.
-- **Canvas:** fit display by default: the picture is sized so that MiSTer's
-  integer scaling fills the screen height: 360x270 on 1080p, 340x256 on
-  1024x768, 400x300 on 1600x900, instead of 320x240 with bars above and
+- **HDMI picture:** fit display by default: the picture is sized so that
+  MiSTer's integer scaling fills the screen height: 360x270 on 1080p, 340x256
+  on 1024x768, 400x300 on 1600x900, instead of 320x240 with bars above and
   below. Text keeps its size; the list gains rows. CRT modes, 720p and 1440p
-  already fit and stay 320x240. Choose 320x240 to keep the classic size on
-  every display. Applies when MisterZine next starts.
+  already fit and stay 320x240, so the setting changes nothing there. Choose
+  320x240 to keep the classic size on every display. Applies when MisterZine
+  next starts.
 - **Scroll speed:** 20, 30 or 60 rows/pages per second once a hold repeats.
 - **Hold delay:** short 200 ms, normal 300 ms (default), or long 500 ms before
   navigation repeats. Artwork and calibration retain their own timing.
 - **Main menu launcher:** off removes the menu entry and boot hook. If the
-  launcher opened this session, it returns to Menu before stopping. Run Setup
-  from Scripts to re-enable it later.
+  launcher opened this session, it returns to Menu before stopping. Turning
+  the option back on puts both back. With it off, open MisterZine through
+  Scripts -> MisterZine-Run (or run Setup again).
 - **Open at boot:** off by default. On: once the MiSTer menu is up after a
   power-on or reboot, the launcher picks the MisterZine entry for you, the same
   way you would. A `bootcore` in the INI takes precedence and nothing happens.
@@ -306,14 +308,14 @@ the bottom.
 - **Return after game:** off by default. On: when a game you started from
   MisterZine exits to the MiSTer menu (Reset or Exit in the OSD), the launcher
   picks the MisterZine entry again and the list opens on that game. Games
-  loaded some other way, and leaving through the Menu button, do not bring
+  loaded some other way, and quitting through the Menu button, do not bring
   it back. Needs the Main menu launcher.
 - **Menu button:** what the pad button you defined as MiSTer's menu (OSD)
   button does in MisterZine, which holds a defined pad while it runs: Options
-  (default) from any screen, closing it when it is up, or leave MisterZine
+  (default) from any screen, closing it when it is up, or quit MisterZine
   for the MiSTer menu, as earlier versions did. With Options chosen, holding
-  the button for two seconds leaves as well, so the way out is always there.
-  Keyboard F12 and the board's button still leave.
+  the button for two seconds quits as well, so the way out is always there.
+  Keyboard F12 and the board's button still quit.
 - **Troubleshooting:** a guided Start-button test, a pad tester, and an
   A/Enter game-launch test, with results you can photograph. The last result
   survives restarting. The pad tester lists every connected pad with the raw
@@ -325,6 +327,9 @@ the bottom.
   builds on (MiSTer, Downloader and Update All, the fonts) and, under Special
   thanks, the early adopters who tested it and sent feedback. Up/Down move
   through the names; B returns to Options.
+- **Quit MisterZine:** the last row: back to the MiSTer menu (or to the
+  frontend that opened MisterZine). The pad's Menu button held for two
+  seconds does the same.
 
 Filters start with Clear all filters, greyed out until a filter is active,
 then On the card, Since last look, Type and Source. Pressing Clear all filters

@@ -16,7 +16,7 @@ const (
 	menuHint = 500 * time.Millisecond
 )
 
-const menuHoldNotice = "keep holding to leave MisterZine"
+const menuHoldNotice = "keep holding to quit MisterZine"
 
 // menuButton carries out the pad's MiSTer menu (OSD) button, which reaches
 // the app instead of Main while the pad is held (input.go grabs a defined

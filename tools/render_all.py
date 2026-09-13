@@ -152,7 +152,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
 for canvas in ("360x270", "400x300"):
     for rotation in ([], ["-rot", "left", "-logical"]):
         orientation = "t" if rotation else "h"
-        # Options -> Canvas: the fit-display sizes for 1080p and 1600x900 or
+        # Options -> HDMI picture: the fit-display sizes for 1080p and 1600x900 or
         # 800x600 on every main screen and in the split and picture layouts
         scenarios.append([*rotation, "-canvas", canvas,
                           "-out", f"out/fit-{canvas}-{orientation}", "-script",
@@ -179,7 +179,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     # Options -> Credits: the row, the page from its top, its end and the way back
     scenarios.append([*rotation,
                       "-out", f"out/credits-{orientation}", "-script",
-                      "back; end; shot options-credits; enter; shot credits; end; shot credits-end; back; shot options-back"])
+                      "back; end; up; shot options-credits; enter; shot credits; end; shot credits-end; back; shot options-back"])
     # the letter and year headers: a jump under its header, a group name
     # pinned on the top line while its rows run past it, the unknown years
     scenarios.append([*rotation,
