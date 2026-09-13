@@ -19,6 +19,7 @@ var earlyAdopters = []string{
 	"LamerDeluxe",
 	"Malento",
 	"Porieux",
+	"shad00m",
 	"Virtualplayer",
 }
 
