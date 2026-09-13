@@ -162,11 +162,10 @@ func TestSaverSweepsEveryPixel(t *testing.T) {
 		// the flat fill blurs to itself: bloomed and shaded, it is the
 		// ground, dithered to one of the look's two steps either side of
 		// it per channel
-		d := a.look.dither()
+		d := a.look.dither().shaded(a.look.Shade)
 		var ground [3][2]uint8
 		for ch, v := range []int{200, 160, 120} {
-			g := min(a.look.boost(v), 255) << 8 * a.look.Shade >> 8
-			q := g * d.top / 255 >> 8
+			q := d.level(min(a.look.boost(v), 255)<<8) >> 8
 			ground[ch] = [2]uint8{d.out[q], d.out[min(q+1, d.top)]}
 		}
 		isGround := func(p color.RGBA) bool {
@@ -300,11 +299,11 @@ func TestSaverFadesBeforeTheWordEnters(t *testing.T) {
 	fill := color.RGBA{R: 200, G: 160, B: 120, A: 255}
 	// a flat picture blurs to itself, so the dark frame is the bloomed
 	// fill at the saver's shade, at the look's depth by the pixel's threshold
-	d := a.look.dither()
+	d := a.look.dither().shaded(a.look.Shade)
 	dark := color.RGBA{A: 255}
-	dark.R = d.byte(min(a.look.boost(int(fill.R)), 255)<<8*a.look.Shade>>8, 0, 0)
-	dark.G = d.byte(min(a.look.boost(int(fill.G)), 255)<<8*a.look.Shade>>8, 0, 0)
-	dark.B = d.byte(min(a.look.boost(int(fill.B)), 255)<<8*a.look.Shade>>8, 0, 0)
+	dark.R = d.byte(min(a.look.boost(int(fill.R)), 255)<<8, 0, 0)
+	dark.G = d.byte(min(a.look.boost(int(fill.G)), 255)<<8, 0, 0)
+	dark.B = d.byte(min(a.look.boost(int(fill.B)), 255)<<8, 0, 0)
 	c.Fill(c.Rect, fill)
 	a.paintSaver(c)
 	a.SaverSettle()
@@ -361,7 +360,7 @@ func TestSaverBlursThePictureUnderTheLettering(t *testing.T) {
 	if r < 4 {
 		t.Fatalf("radius %d too small to test", r)
 	}
-	white := a.look.dither().byte(255<<8*a.look.Shade>>8, edge-4*r, 10)
+	white := a.look.dither().shaded(a.look.Shade).byte(255<<8, edge-4*r, 10)
 	if p := c.RGBAAt(edge+r, 10); p.R == 0 || p.R >= white {
 		t.Fatalf("pixel %v a radius into the black is not a ramp (white shows as %d)", p, white)
 	}
@@ -575,7 +574,7 @@ func TestSaverDitherPosterisesTheWholeFrame(t *testing.T) {
 					}
 				}
 			}
-			if r := newSaverDither(bits, cell, false); r.byte(127<<8, 3, 3) != d.out[(127<<8*d.top/255+128)>>8] {
+			if r := newSaverDither(bits, cell, false); r.byte(127<<8, 3, 3) != d.out[(d.level(127<<8)+128)>>8] || d.level(255<<8) != d.top<<8 || d.level(0) != 0 {
 				t.Fatalf("%d bits: dither off does not round", bits)
 			}
 		}
@@ -588,7 +587,7 @@ func TestSaverDitherPosterisesTheWholeFrame(t *testing.T) {
 	}
 	a, clock := saverApp()
 	steps := map[uint8]bool{}
-	for _, v := range a.look.dither().out {
+	for _, v := range a.look.dither().out[:1<<a.look.Bits] {
 		steps[v] = true
 	}
 	if len(steps) != 1<<a.look.Bits {
@@ -648,6 +647,39 @@ func TestSaverDitherPosterisesTheWholeFrame(t *testing.T) {
 	if l := a.SaverLook(); l.Cell != 8 {
 		t.Fatalf("look not clamped: cell %d", l.Cell)
 	}
+}
+
+// A fade frame's ground write at the saver's size, through the look's
+// quantiser (Depth) and, for comparison, the plain 8-bit one the
+// screenshots saver keeps (Plain): the cost the depth adds per frame on a
+// board (go test -c for GOOS=linux GOARCH=arm and run on it).
+func BenchmarkSaverPaintGround(b *testing.B) {
+	w, h := 320, 240
+	from, to := make([]uint16, w*h*3), make([]uint16, w*h*3)
+	for i := range from {
+		from[i], to[i] = uint16(i*37%65281), uint16(i*91%65281)
+	}
+	dst := make([]uint8, w*h*4)
+	frac, shade := 128+len(dst)%2, 145+len(dst)%2 // not constants the compiler can fold
+	b.Run("Depth", func(b *testing.B) {
+		d := DefaultSaverLook.dither().shaded(shade)
+		for range b.N {
+			saverPaintGround(dst, w, h, w*4, from, to, frac, d)
+		}
+	})
+	b.Run("Plain", func(b *testing.B) {
+		for range b.N {
+			for y := 0; y < h; y++ {
+				for x := 0; x < w; x++ {
+					i, o := y*w*4+x*4, (y*w+x)*3
+					for ch := 0; ch < 3; ch++ {
+						v := (int(from[o+ch])*(256-frac) + int(to[o+ch])*frac) >> 8
+						dst[i+ch] = saverQuantize(v*shade>>8, x, y, true)
+					}
+				}
+			}
+		}
+	})
 }
 
 // The word enters from the right edge, then repeats edge to edge for as

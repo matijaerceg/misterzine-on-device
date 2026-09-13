@@ -131,15 +131,16 @@ var saverBayer = func() (t [8][8]uint16) {
 // brightness. With the dither off every threshold is half a step, which
 // rounds.
 type saverDither struct {
-	top    int       // the top step: 2^bits - 1
-	thresh [8][8]int // the pattern tiled over 8x8, in 256ths of a step
-	out    []uint8   // each step as a byte
+	top    int        // the top step: 2^bits - 1
+	mul    uint32     // top * 257: a channel times it, over 65536, is its level in 8.8 (a divide by 255 costs a board 15 ms a frame)
+	thresh [8][8]int  // the pattern tiled over 8x8, in 256ths of a step
+	out    [256]uint8 // each step as a byte, up to top; sized so a masked index needs no check
 }
 
 // newSaverDither builds the quantiser for bits a channel and a cell of
 // n by n, or a rounding one with on false.
 func newSaverDither(bits, cell int, on bool) *saverDither {
-	d := &saverDither{top: 1<<bits - 1}
+	d := &saverDither{top: 1<<bits - 1, mul: uint32(1<<bits-1) * 257}
 	m := saverBayerCell(cell)
 	for y := range d.thresh {
 		for x := range d.thresh[y] {
@@ -150,8 +151,7 @@ func newSaverDither(bits, cell int, on bool) *saverDither {
 			}
 		}
 	}
-	d.out = make([]uint8, d.top+1)
-	for q := range d.out {
+	for q := 0; q <= d.top; q++ {
 		d.out[q] = uint8((q*255 + d.top/2) / d.top)
 	}
 	return d
@@ -160,9 +160,24 @@ func newSaverDither(bits, cell int, on bool) *saverDither {
 // dither is the look's quantiser.
 func (l SaverLook) dither() *saverDither { return newSaverDither(l.Bits, l.Cell, l.Dither != 0) }
 
+// level scales one channel v, over 0..255<<8, to its step in 8.8: white
+// is exactly top<<8 (257/65536 falls short of 1/255 by a 65536th, which
+// the constant makes up before the floor).
+func (d *saverDither) level(v int) int { return int((uint32(v)*d.mul + 1<<16 - 1) >> 16) }
+
 // byte quantises one channel v, over 0..255<<8, for the pixel at x, y.
 func (d *saverDither) byte(v, x, y int) uint8 {
-	return d.out[(v*d.top/255+d.thresh[y&7][x&7])>>8]
+	return d.out[(d.level(v)+d.thresh[y&7][x&7])>>8]
+}
+
+// shaded folds a shade (256ths) into the quantiser: the copy takes a
+// channel as if it had been dimmed by the shade first. The ground is
+// painted through it, one multiply a channel: dimming first and scaling
+// after cost the boards ten milliseconds more a fade frame.
+func (d *saverDither) shaded(shade int) *saverDither {
+	s := *d
+	s.mul = (uint32(shade)*d.mul + 128) >> 8
+	return &s
 }
 
 // saverQuantize is the plain 8-bit quantiser: rounded, or dithered by the
@@ -176,17 +191,29 @@ func saverQuantize(v, x, y int, dither bool) uint8 {
 }
 
 // saverPaintGround writes the ground into an RGBA frame: the level from,
-// or its mix with to by frac (256ths), at the shade (256ths), through d.
-func saverPaintGround(dst []uint8, w, h, stride int, from, to []uint16, frac, shade int, d *saverDither) {
+// or its mix with to by frac (256ths), through d (shaded already).
+func saverPaintGround(dst []uint8, w, h, stride int, from, to []uint16, frac int, d *saverDither) {
+	// the quantiser spelled out (saverDither.byte) with its parts hoisted:
+	// a fade frame writes every channel of the screen inside its 33 ms
+	mul, out := d.mul, &d.out
 	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
-			i, o := y*stride+x*4, (y*w+x)*3
-			for ch := 0; ch < 3; ch++ {
-				v := int(from[o+ch])
-				if to != nil {
-					v = (v*(256-frac) + int(to[o+ch])*frac) >> 8
+		row, line, src := &d.thresh[y&7], dst[y*stride:y*stride+w*4], from[y*w*3:y*w*3+w*3]
+		if to == nil {
+			for x := 0; x < w; x++ {
+				t, i, o := row[x&7], x*4, x*3
+				for ch := 0; ch < 3; ch++ {
+					line[i+ch] = out[((int((uint32(src[o+ch])*mul+1<<16-1)>>16)+t)>>8)&255]
 				}
-				dst[i+ch] = d.byte(v*shade>>8, x, y)
+			}
+			continue
+		}
+		mix := to[y*w*3 : y*w*3+w*3]
+		for x := 0; x < w; x++ {
+			t, i, o := row[x&7], x*4, x*3
+			for ch := 0; ch < 3; ch++ {
+				s := int(src[o+ch])
+				v := s + (int(mix[o+ch])-s)*frac>>8 // one multiply: the mix is on the same chain as the quantiser
+				line[i+ch] = out[((int((uint32(v)*mul+1<<16-1)>>16)+t)>>8)&255]
 			}
 		}
 	}
@@ -803,7 +830,7 @@ func (a *App) paintSaver(c *gfx.Canvas) {
 		// dark: the last level at the shade, made once
 		if s.dark == nil {
 			s.dark = append([]uint8(nil), s.sharp...) // the alpha bytes
-			saverPaintGround(s.dark, c.W(), c.H(), c.Stride, g.pix[saverLevels], nil, 0, shade, d)
+			saverPaintGround(s.dark, c.W(), c.H(), c.Stride, g.pix[saverLevels], nil, 0, d.shaded(shade))
 		}
 		copy(c.Pix, s.dark)
 	} else {
@@ -811,7 +838,7 @@ func (a *App) paintSaver(c *gfx.Canvas) {
 		if frac != 0 {
 			to = g.pix[lo+1]
 		}
-		saverPaintGround(c.Pix, c.W(), c.H(), c.Stride, g.pix[lo], to, frac, shade, d)
+		saverPaintGround(c.Pix, c.W(), c.H(), c.Stride, g.pix[lo], to, frac, d.shaded(shade))
 	}
 	if s.leaving {
 		c.DirtyAll() // no lettering on the way back
