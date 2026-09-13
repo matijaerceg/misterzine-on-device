@@ -175,7 +175,7 @@ func TestSaverSweepsEveryPixel(t *testing.T) {
 							covered[i] = true
 							remaining--
 						}
-					} else if p == (color.RGBA{R: 50, G: 40, B: 30, A: 255}) {
+					} else if p == (color.RGBA{R: 127, G: 127, B: 127, A: 255}) { // the bloomed fill at the shade
 						continue
 					} else if sx := x - (c.W() - travel%(c.W()+mask.Rect.Dx())); sx < 0 || sx >= mask.Rect.Dx() || mask.Pix[y*mask.Stride+sx] == 0 || mask.Pix[y*mask.Stride+sx] == saverInk {
 						t.Fatalf("pixel not black, dimmed or a lit outline: %v", p)
@@ -269,19 +269,26 @@ func TestSaverFadesBeforeTheWordEnters(t *testing.T) {
 		t.Fatalf("mid-fade: shade %d travel %d", a.saver.shade, a.saver.travel)
 	}
 	c := a.logical
-	c.Fill(c.Rect, color.RGBA{R: 200, G: 160, B: 120, A: 255})
+	fill := color.RGBA{R: 200, G: 160, B: 120, A: 255}
+	// a flat picture blurs to itself, so the dark frame is the bloomed
+	// fill at the saver's shade
+	dark := color.RGBA{A: 255}
+	dark.R = uint8(min(saverBoost(int(fill.R)), 255) * saverShade >> 8)
+	dark.G = uint8(min(saverBoost(int(fill.G)), 255) * saverShade >> 8)
+	dark.B = uint8(min(saverBoost(int(fill.B)), 255) * saverShade >> 8)
+	c.Fill(c.Rect, fill)
 	a.paintSaver(c)
-	if p := c.RGBAAt(0, 0); p.R <= 50 || p.R >= 200 {
-		t.Fatalf("mid-fade pixel %v is not between full and a quarter", p)
+	if p := c.RGBAAt(0, 0); p.R <= dark.R || p.R >= fill.R {
+		t.Fatalf("mid-fade pixel %v is not between the picture %v and the dark frame %v", p, fill, dark)
 	}
 	a.Tick(t0.Add(saverFade))
 	if a.saver.shade != saverShade || a.saver.travel != 0 {
 		t.Fatalf("fade end: shade %d travel %d", a.saver.shade, a.saver.travel)
 	}
-	c.Fill(c.Rect, color.RGBA{R: 200, G: 160, B: 120, A: 255})
+	c.Fill(c.Rect, fill)
 	a.paintSaver(c)
-	if p := c.RGBAAt(0, 0); p != (color.RGBA{R: 50, G: 40, B: 30, A: 255}) {
-		t.Fatalf("dark pixel %v is not a quarter", p)
+	if p := c.RGBAAt(0, 0); p != dark {
+		t.Fatalf("dark pixel %v is not the bloomed fill at the shade, %v", p, dark)
 	}
 	a.Tick(t0.Add(saverFade + 10*saverFrame))
 	if a.saver.travel != 10 {
@@ -289,9 +296,10 @@ func TestSaverFadesBeforeTheWordEnters(t *testing.T) {
 	}
 }
 
-// The picture under the lettering is blurred: once the fade is done a
-// hard edge has spread into a ramp, while a flat area is untouched and
-// only dimmed; before the fade starts nothing is blurred.
+// The picture under the lettering is bloomed and blurred: once the fade
+// is done a white patch has spread into the black beside it (the bloom
+// clamps at white, so the ramp shows on the dark side), a flat area is
+// only dimmed, and before the fade starts nothing is blurred.
 func TestSaverBlursThePictureUnderTheLettering(t *testing.T) {
 	a, clock := saverApp()
 	t0 := *clock
@@ -314,11 +322,12 @@ func TestSaverBlursThePictureUnderTheLettering(t *testing.T) {
 	if r < 4 {
 		t.Fatalf("radius %d too small to test", r)
 	}
-	if p := c.RGBAAt(edge-1, 10); p.R <= 8 || p.R >= 60 {
-		t.Fatalf("edge pixel %v is not a ramp", p)
+	white := uint8(255 * saverShade >> 8)
+	if p := c.RGBAAt(edge+r, 10); p.R == 0 || p.R >= white {
+		t.Fatalf("pixel %v a radius into the black is not a ramp (white shows as %d)", p, white)
 	}
-	if p := c.RGBAAt(edge-4*r, 10); p != (color.RGBA{R: 63, G: 63, B: 63, A: 255}) {
-		t.Fatalf("flat pixel %v is not just dimmed", p)
+	if p := c.RGBAAt(edge-4*r, 10); p != (color.RGBA{R: white, G: white, B: white, A: 255}) {
+		t.Fatalf("flat white pixel %v is not just dimmed to %d", p, white)
 	}
 	if p := c.RGBAAt(edge+4*r, 10); p != (color.RGBA{A: 255}) {
 		t.Fatalf("flat black pixel %v changed", p)

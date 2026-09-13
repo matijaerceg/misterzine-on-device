@@ -16,8 +16,25 @@ const saverFrame = time.Second / 30
 // saver's quarter; the lettering enters once it is dark.
 const saverFade = time.Second
 
-// saverShade is the dimmed screen's brightness in 256ths: a quarter.
-const saverShade = 64
+// The picture under the lettering blooms: every channel above
+// saverBloomKnee is raised by saverBloomGain times the excess (256ths),
+// without clamping, before the blur spreads it, so light text and pictures
+// glow out into their surroundings while the dark ground stays dark. The
+// blurred picture is clamped and shown at saverShade (256ths): the dark
+// ground ends near a quarter of itself, a bloom near half of white.
+const (
+	saverBloomKnee = 96
+	saverBloomGain = 1536
+	saverShade     = 128
+)
+
+// saverBoost is the bloom curve for one channel value.
+func saverBoost(v int) int {
+	if v > saverBloomKnee {
+		v += (v - saverBloomKnee) * saverBloomGain / 256
+	}
+	return v
+}
 
 // saverBlurDiv sets the blur under the lettering from the screen width:
 // the box radius at full strength is width/saverBlurDiv, applied twice
@@ -42,8 +59,8 @@ type screensaver struct {
 	// the picture under the lettering, frozen at the first saver frame:
 	// as painted, blurred, and blurred and dimmed once the fade is done
 	sharp, blurred, dark []uint8
-	cacheW               int     // width the cache was taken at (a rotation swaps it)
-	blur                 []uint8 // scratch for the blur passes, one canvas
+	cacheW               int      // width the cache was taken at (a rotation swaps it)
+	blur                 []uint16 // scratch for the blur passes: two 16-bit RGB canvases
 	mask                 *image.Alpha
 	waking               map[saverKey]bool
 }
@@ -180,51 +197,68 @@ func (a *App) saverCached(c *gfx.Canvas) bool {
 }
 
 // saverCapture freezes the picture under the lettering as the canvas
-// holds it now, and blurs a copy: a box blur of radius width/saverBlurDiv
-// run twice along the rows and twice down the columns, edges repeated.
-// Running sums make the cost independent of the radius. One pass over the
-// frame costs the boards tens of milliseconds, so it happens once per
-// saver run, not per frame; the saver shows this frozen picture until a
-// key wakes the app.
+// holds it now, and blurs a bloomed copy: the boost (saverBoost) goes into
+// 16-bit channels so nothing clamps before the blur, a box blur of radius
+// width/saverBlurDiv run twice along the rows and twice down the columns,
+// edges repeated; running sums make the cost independent of the radius.
+// The passes cost the boards a couple of hundred milliseconds, so this
+// happens once per saver run, not per frame; the saver shows this frozen
+// picture until a key wakes the app.
 func (a *App) saverCapture(c *gfx.Canvas) {
 	s := &a.saver
 	s.sharp = append(s.sharp[:0], c.Pix...)
 	s.blurred = append(s.blurred[:0], c.Pix...)
 	s.dark = nil
 	s.cacheW = c.W()
-	if len(s.blur) != len(c.Pix) {
-		s.blur = make([]uint8, len(c.Pix))
-	}
 	w, h, r := c.W(), c.H(), c.W()/saverBlurDiv
-	if r < 1 {
-		return
+	n := w * h * 3
+	if len(s.blur) != 2*n {
+		s.blur = make([]uint16, 2*n)
 	}
-	for pass := 0; pass < 2; pass++ {
-		for y := 0; y < h; y++ {
-			blurLine(s.blurred[y*c.Stride:], s.blur[y*c.Stride:], w, 4, r)
-		}
+	wide, tmp := s.blur[:n], s.blur[n:]
+	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
-			blurLine(s.blur[x*4:], s.blurred[x*4:], h, c.Stride, r)
+			i, o := c.PixOffset(x, y), (y*w+x)*3
+			wide[o] = uint16(saverBoost(int(c.Pix[i])))
+			wide[o+1] = uint16(saverBoost(int(c.Pix[i+1])))
+			wide[o+2] = uint16(saverBoost(int(c.Pix[i+2])))
+		}
+	}
+	if r >= 1 {
+		for pass := 0; pass < 2; pass++ {
+			for y := 0; y < h; y++ {
+				blurLine(wide[y*w*3:], tmp[y*w*3:], w, 3, r)
+			}
+			for x := 0; x < w; x++ {
+				blurLine(tmp[x*3:], wide[x*3:], h, w*3, r)
+			}
+		}
+	}
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			i, o := c.PixOffset(x, y), (y*w+x)*3
+			s.blurred[i] = uint8(min(int(wide[o]), 255))
+			s.blurred[i+1] = uint8(min(int(wide[o+1]), 255))
+			s.blurred[i+2] = uint8(min(int(wide[o+2]), 255))
 		}
 	}
 }
 
-// blurLine box-blurs the three colour channels of one line of n pixels,
-// step bytes apart, from src into dst; the alpha byte is copied.
-func blurLine(src, dst []uint8, n, step, r int) {
+// blurLine box-blurs the three channels of one line of n pixels, step
+// values apart, from src into dst; the window for a pixel covers r on
+// each side with the line's ends repeated.
+func blurLine(src, dst []uint16, n, step, r int) {
 	if r > n-1 {
 		r = n - 1
 	}
 	span := 2*r + 1
 	for ch := 0; ch < 3; ch++ {
-		// the window for pixel 0 covers -r..r with the left edge repeated
 		sum := int(src[ch]) * (r + 1)
 		for i := 1; i <= r; i++ {
 			sum += int(src[i*step+ch])
 		}
 		for i := 0; i < n; i++ {
-			dst[i*step+ch] = uint8(sum / span)
-			// slide: drop i-r, take i+r+1, both clamped to the line
+			dst[i*step+ch] = uint16(sum / span)
 			out, in := i-r, i+r+1
 			if out < 0 {
 				out = 0
@@ -234,9 +268,6 @@ func blurLine(src, dst []uint8, n, step, r int) {
 			}
 			sum += int(src[in*step+ch]) - int(src[out*step+ch])
 		}
-	}
-	for i := 0; i < n; i++ {
-		dst[i*step+3] = src[i*step+3]
 	}
 }
 
