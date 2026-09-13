@@ -34,6 +34,7 @@ type supportView struct {
 	pads    []support.Pad
 	presses []padPress
 	backAt  time.Time
+	holdBar int // the leave hold's progress along the status bar's bottom line, in pixels
 }
 
 // padPress is one button press seen by the pad tester.
@@ -71,7 +72,7 @@ func (a *App) handlePadTest(ev platform.Event) bool {
 	if !ev.Pressed {
 		delete(a.down, ev.Key)
 		if ev.Key == platform.KeyBack {
-			v.backAt, v.next = time.Time{}, time.Time{}
+			v.backAt, v.next, v.holdBar = time.Time{}, time.Time{}, 0
 			a.all = true
 		}
 		return true
@@ -222,10 +223,19 @@ func (a *App) startSupportTest() {
 func (a *App) tickSupport(now time.Time) bool {
 	if a.screen == ScreenTroubleshooting && a.support.mode == "pad" {
 		v := &a.support
-		if v.next.IsZero() || now.Before(v.next) {
+		if v.next.IsZero() {
 			return false
 		}
-		v.mode, v.next, v.backAt = "menu", time.Time{}, time.Time{}
+		if now.Before(v.next) {
+			// the leave hold's line grows a pixel at a time
+			if bar := a.holdBarWidth(v.backAt, padTestLeave, now); bar != v.holdBar {
+				v.holdBar = bar
+				a.all = true
+				return true
+			}
+			return false
+		}
+		v.mode, v.next, v.backAt, v.holdBar = "menu", time.Time{}, time.Time{}, 0
 		a.all = true
 		return true
 	}
@@ -442,6 +452,7 @@ func (a *App) paintSupport(c *gfx.Canvas) {
 	if a.notice == "" {
 		c.Fill(a.lay.Status, gen.Eva.Surface)
 		c.Text(a.lay.Status.Min.X+2, a.lay.Status.Min.Y+2, a.sm, "Troubleshooting", gen.Eva.Accent)
+		a.paintHoldBar(c) // the pad tester's leave hold
 	}
 	c.Box(a.lay.Body, gen.Eva.Line)
 	box := a.lay.Body.Inset(4)

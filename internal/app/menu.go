@@ -77,15 +77,22 @@ func (a *App) menuRelease(at time.Time) bool {
 	return true
 }
 
-// menuBarWidth is how much of the status bar's bottom line the hold has
-// filled at now: nothing when the hint appears, the whole line at the
+// menuBarWidth is how much of the status bar's bottom line the Menu hold
+// has filled at now: nothing when the hint appears, the whole line at the
 // quit. Zero while no hold is engaged.
 func (a *App) menuBarWidth(now time.Time) int {
 	if a.menuAt.IsZero() || !a.menuHinted {
 		return 0
 	}
+	return a.holdBarWidth(a.menuAt.Add(menuHint), menuHold-menuHint, now)
+}
+
+// holdBarWidth is how much of the status bar's bottom line a hold that
+// started filling at start and acts at start+span has filled at now, in
+// pixels: nothing at start, the whole line at the end.
+func (a *App) holdBarWidth(start time.Time, span time.Duration, now time.Time) int {
 	w := a.lay.Status.Dx()
-	p, span := now.Sub(a.menuAt.Add(menuHint)), menuHold-menuHint
+	p := now.Sub(start)
 	switch {
 	case p <= 0:
 		return 0
@@ -93,6 +100,20 @@ func (a *App) menuBarWidth(now time.Time) int {
 		return w
 	}
 	return int(int64(w) * int64(p) / int64(span))
+}
+
+// nextHoldPixel is when a hold line at bar pixels lands its next pixel,
+// rounded up so the tick lands after it; the end of the span at the
+// latest.
+func (a *App) nextHoldPixel(start time.Time, span time.Duration, bar int) time.Time {
+	end := start.Add(span)
+	if w := a.lay.Status.Dx(); w > 0 {
+		next := start.Add(time.Duration((int64(bar+1)*int64(span) + int64(w) - 1) / int64(w)))
+		if next.Before(end) {
+			return next
+		}
+	}
+	return end
 }
 
 // tickMenu shows the hint once a Menu press outlasts a tap, grows the
@@ -139,26 +160,32 @@ func (a *App) nextMenuTick() time.Time {
 	if !a.menuHinted {
 		return a.menuAt.Add(menuHint)
 	}
-	quit := a.menuAt.Add(menuHold)
-	if w := a.lay.Status.Dx(); w > 0 {
-		// the moment the next pixel lands, rounded up to the tick after it
-		span := int64(menuHold - menuHint)
-		next := a.menuAt.Add(menuHint).Add(time.Duration((int64(a.menuBar+1)*span + int64(w) - 1) / int64(w)))
-		if next.Before(quit) {
-			return next
-		}
-	}
-	return quit
+	return a.nextHoldPixel(a.menuAt.Add(menuHint), menuHold-menuHint, a.menuBar)
 }
 
-// paintMenuBar draws the hold progress along the status bar's bottom
-// line, over the usual muted line, while a Menu hold is engaged.
-func (a *App) paintMenuBar(c *gfx.Canvas) {
-	if a.menuBar <= 0 {
+// holdBar is the hold line to paint on the current screen, in pixels: the
+// Menu hold, the B hold that cancels Update All, or the B hold that
+// leaves the pad tester, whichever is running (the longest if two are).
+func (a *App) holdBar() int {
+	bar := a.menuBar
+	if a.screen == ScreenUpdate {
+		bar = max(bar, a.updateView.holdBar)
+	}
+	if a.screen == ScreenTroubleshooting && a.support.mode == "pad" {
+		bar = max(bar, a.support.holdBar)
+	}
+	return bar
+}
+
+// paintHoldBar draws the hold progress along the status bar's bottom
+// line, over the usual muted line, while a hold is running.
+func (a *App) paintHoldBar(c *gfx.Canvas) {
+	bar := a.holdBar()
+	if bar <= 0 {
 		return
 	}
 	l := &a.lay
-	c.HLine(l.Status.Min.X, l.Status.Min.X+a.menuBar-1, l.Status.Max.Y-1, gen.Eva.Ok)
+	c.HLine(l.Status.Min.X, l.Status.Min.X+bar-1, l.Status.Max.Y-1, gen.Eva.Ok)
 }
 
 // openOptions opens Options over the current screen and remembers where

@@ -100,13 +100,20 @@ func TestPadTesterListsPressesAndLeavesOnHeldB(t *testing.T) {
 	}
 	at = at.Add(4 * time.Second)
 	a.Handle(platform.Event{Key: platform.KeyBack, Code: 304, Source: "Microsoft X-Box 360 pad", Pressed: true, At: at})
-	a.Tick(at.Add(time.Second))
-	if a.support.mode != "pad" {
-		t.Fatal("left too early")
+	// the hold fills the line under the top bar a pixel at a time
+	w := a.lay.Status.Dx()
+	if next := a.NextTick(); !next.After(at) || !next.Before(at.Add(100*time.Millisecond)) {
+		t.Fatalf("NextTick %v, want the first pixel shortly after %v", next, at)
+	}
+	if !a.Tick(at.Add(time.Second)) || a.support.mode != "pad" {
+		t.Fatal("left too early, or no repaint for the line")
+	}
+	if bar := a.support.holdBar; bar < w/2-1 || bar > w/2+1 || a.holdBar() != bar {
+		t.Fatalf("one second in, the line is %d px of %d (painted %d)", bar, w, a.holdBar())
 	}
 	a.Tick(at.Add(padTestLeave))
-	if a.support.mode != "menu" || a.Screen() != ScreenTroubleshooting {
-		t.Fatalf("hold did not leave: %q", a.support.mode)
+	if a.support.mode != "menu" || a.Screen() != ScreenTroubleshooting || a.support.holdBar != 0 {
+		t.Fatalf("hold did not leave cleanly: %q, line %d px", a.support.mode, a.support.holdBar)
 	}
 	a.Handle(platform.Event{Key: platform.KeyBack, Code: 304, Source: "Microsoft X-Box 360 pad", At: at.Add(padTestLeave + 50*time.Millisecond)})
 	if a.Screen() != ScreenTroubleshooting || a.support.mode != "menu" {

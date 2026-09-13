@@ -17,9 +17,9 @@ scenarios = [
     ["-rot", "left", "-logical", "-out", "out/filters-t", "-script",
      "space*3; home; shot alphabetical; tab; pagedown*4; right; shot arcade; end; right; shot controls-players"],
     ["-update-state", "testdata/update-running.json", "-out", "out/update-h",
-     "-script", "shot running; hold back 2200; shot cancel"],
+     "-script", "shot running; press back; wait 1000; shot cancel-hold; release back; hold back 2200; shot cancel"],
     ["-update-state", "testdata/update-running.json", "-rot", "left", "-logical",
-     "-out", "out/update-t", "-script", "shot running; hold back 2200; shot cancel"],
+     "-out", "out/update-t", "-script", "shot running; press back; wait 1000; shot cancel-hold; release back; hold back 2200; shot cancel"],
     ["-out", "out/search-h", "-script", "type 1943; shot matches; type xyz; shot empty"],
     ["-rot", "left", "-logical", "-out", "out/search-t",
      "-script", "type 1943; shot matches; type xyz; shot empty"],
@@ -148,7 +148,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     scenarios.append([*rotation, "-support-report", "testdata/support-controller.json",
                       "-out", f"out/pad-test-{orientation}", "-script",
                       "back; end; up*2; enter; down; shot menu; enter; shot empty; enter; space; tab; start; shot presses; "
-                      "hold back 2200; shot left"])
+                      "press back; wait 1000; shot leave-hold; release back; hold back 2200; shot left"])
 for canvas in ("360x270", "400x300"):
     for rotation in ([], ["-rot", "left", "-logical"]):
         orientation = "t" if rotation else "h"

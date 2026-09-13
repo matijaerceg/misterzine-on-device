@@ -35,7 +35,7 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 	l := &a.lay
 	c.Fill(l.Status, gen.Eva.Surface)
 	c.HLine(l.Status.Min.X, l.Status.Max.X-1, l.Status.Max.Y-1, gen.Eva.Muted)
-	a.paintMenuBar(c)
+	a.paintHoldBar(c)
 	y := l.Status.Min.Y + 2
 	if a.notice != "" {
 		// Notices (including the month/year after a jump) remain visible while

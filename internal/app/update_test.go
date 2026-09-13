@@ -108,10 +108,23 @@ func TestUpdateModalAndLongCancel(t *testing.T) {
 	}
 	now = now.Add(4 * time.Second)
 	a.Handle(platform.Event{Key: platform.KeyBack, Pressed: true, At: now})
+	// the hold fills the line under the top bar: a pixel at a time, half
+	// way at one second, gone once the cancel is sent
+	w := a.lay.Status.Dx()
+	if next := a.NextTick(); !next.After(now) || !next.Before(now.Add(100*time.Millisecond)) {
+		t.Fatalf("NextTick %v, want the first pixel shortly after %v", next, now)
+	}
+	a.Tick(now.Add(time.Second))
+	if bar := a.updateView.holdBar; bar < w/2-1 || bar > w/2+1 || a.holdBar() != bar {
+		t.Fatalf("one second in, the line is %d px of %d (painted %d)", bar, w, a.holdBar())
+	}
 	a.Tick(now.Add(2 * time.Second))
 	a.Tick(now.Add(4 * time.Second))
 	if calls != 1 {
 		t.Fatalf("cancel calls=%d", calls)
+	}
+	if a.updateView.holdBar != 0 || a.holdBar() != 0 {
+		t.Fatalf("the line should go with the cancel: %d px", a.updateView.holdBar)
 	}
 	a.Handle(platform.Event{Key: platform.KeyBack, At: now.Add(4 * time.Second)})
 	a.SetUpdate(updater.State{ID: "run", Status: "cancelled"}, false)

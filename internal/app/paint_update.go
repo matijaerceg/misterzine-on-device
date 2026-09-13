@@ -17,6 +17,7 @@ const cancelHold = 2 * time.Second
 
 type updateView struct {
 	backAt     time.Time
+	holdBar    int // the cancel hold's progress along the status bar's bottom line, in pixels
 	now        time.Time
 	cancelSent bool
 	scroll     int
@@ -80,7 +81,7 @@ func (a *App) handleUpdate(ev platform.Event) bool {
 		delete(a.down, ev.Key)
 		a.rep.release(ev.Key)
 		if ev.Key == platform.KeyBack {
-			a.updateView.backAt = time.Time{}
+			a.updateView.backAt, a.updateView.holdBar = time.Time{}, 0
 			a.all = true
 		}
 		return true
@@ -143,9 +144,23 @@ func (a *App) tickUpdate(now time.Time) bool {
 			a.cfg.Action("update-cancel", a.update.ID)
 		}
 	}
+	v.holdBar = 0
+	if !v.backAt.IsZero() && !v.cancelSent {
+		v.holdBar = a.holdBarWidth(v.backAt, cancelHold, now)
+	}
 	v.now = now
 	a.all = true
 	return true
+}
+
+// nextUpdateTick is when the cancel hold's line lands its next pixel;
+// zero when no hold is running (the host's own pace turns the spinner).
+func (a *App) nextUpdateTick() time.Time {
+	v := &a.updateView
+	if a.screen != ScreenUpdate || !a.update.Active() || v.backAt.IsZero() || v.cancelSent {
+		return time.Time{}
+	}
+	return a.nextHoldPixel(v.backAt, cancelHold, v.holdBar)
 }
 
 func (a *App) paintUpdate(c *gfx.Canvas) {
@@ -154,7 +169,7 @@ func (a *App) paintUpdate(c *gfx.Canvas) {
 	v := &a.updateView
 	c.Fill(l.Root, gen.Eva.Bg)
 	c.Fill(l.Status, gen.Eva.Surface)
-	a.paintMenuBar(c)
+	a.paintHoldBar(c)
 	c.Text(l.Status.Min.X+2, l.Status.Min.Y+2, a.sm, "Update All", gen.Eva.Accent)
 	status := s.Status
 	if s.Active() {
@@ -223,8 +238,7 @@ func (a *App) paintUpdate(c *gfx.Canvas) {
 		message = v.error
 	}
 	if s.Active() && !v.backAt.IsZero() && !v.cancelSent {
-		left := max(0, 2-int(v.now.Sub(v.backAt).Seconds()))
-		message = fmt.Sprintf("Keep holding %s to cancel (%ds)", a.btn("B"), left)
+		message = "Keep holding " + a.btn("B") + " to cancel" // the line under the top bar shows how far
 	}
 	for _, line := range gfx.Wrap(message, a.sm.Cols(l.Body.Dx()-4), 2) {
 		c.Text(l.Body.Min.X+2, y, a.sm, line, gen.Eva.Fg)

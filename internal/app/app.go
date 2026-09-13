@@ -783,6 +783,12 @@ func (a *App) NextTick() time.Time {
 	t := a.rep.nextAt()
 	if a.screen == ScreenTroubleshooting {
 		t = a.support.next
+		if v := &a.support; v.mode == "pad" && !v.backAt.IsZero() {
+			t = a.nextHoldPixel(v.backAt, padTestLeave, v.holdBar)
+		}
+	}
+	if next := a.nextUpdateTick(); !next.IsZero() && (t.IsZero() || next.Before(t)) {
+		t = next
 	}
 	if a.notice != "" && (t.IsZero() || a.until.Before(t)) {
 		t = a.until

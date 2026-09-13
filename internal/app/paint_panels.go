@@ -477,6 +477,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			title = "Credits"
 		}
 		c.Text(l.Status.Min.X+2, l.Status.Min.Y+2, a.sm, title, gen.Eva.Accent)
+		a.paintHoldBar(c)
 	}
 	c.Fill(l.Body, gen.Eva.Bg)
 	// Filters frames its entries. Options frames the help text instead and
