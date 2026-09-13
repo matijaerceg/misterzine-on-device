@@ -13,10 +13,14 @@ import (
 
 // The screenshots saver (Options -> Screensaver style: screenshots) shows one
 // arcade shot after another on the whole canvas, each wiped in from the
-// side behind a soft, wandering edge, with the game's title on a small
-// tab that moves from corner to corner. Start held on a shot plays that
+// side behind a soft, wandering edge. Once a shot is in, what the list's
+// pane says about the game (the title, the card answer, the kind, the
+// core, the year and maker, the rotation, players and controls, the
+// badges) is typed out on a black box that moves from corner to corner,
+// a character a frame with a beat at each line end, behind a cursor that
+// blinks once the block is complete. Start held on a shot plays that
 // game: the hold brings the picture up to full brightness and fills a
-// line under the tab; letting go fades it back down and the saver goes
+// line under the box; letting go fades it back down and the saver goes
 // on with the shot it was about to show. Every other button wakes.
 //
 // The pool is the gameplay shot (the "snap" slot) of every arcade game in
@@ -54,8 +58,10 @@ const (
 	saverShotRamp     = 12               // frames the hold's brightness ramp takes each way
 	saverShotHold     = 2 * time.Second  // Start held this long plays the shot's game
 	saverShotHalf     = 128              // half brightness, in 256ths
-	saverShotOffset   = 12               // how far the title tab wanders from its corner, in pixels
+	saverShotOffset   = 12               // how far the caption box wanders from its corner, in pixels
 	saverShotBandDiv  = 20               // the wipe's soft edge is this share of the width wide
+	saverShotBeat     = 6                // frames the typing rests at a line's end before the next: a fifth of a second
+	saverShotBlink    = 15               // frames the cursor stays on, then off, once the caption is typed: a blink a second
 )
 
 // saverPick is one shot of the pool: a row and one of its slots.
@@ -80,9 +86,9 @@ type saverShots struct {
 	cur, in  saverPick // on screen, and arriving next
 	curFrame []uint8   // the canvas with the shot on it, as painted (black around)
 	inFrame  []uint8
-	curCol   rgb    // the tab's ink: the shot's dominant hue
-	wanted   bool   // in's picture is registered with the provider
-	version  int    // bumped at every swap
+	curCol   rgb       // the caption's ink: the shot's dominant hue
+	wanted   bool      // in's picture is registered with the provider
+	version  int       // bumped at every swap
 	shownAt  time.Time // when cur arrived: the dwell clock
 	dueSince time.Time // when the dwell ran out with in not ready; zero while not waiting
 	skips    int       // picks skipped in a row (missing or offline)
@@ -96,8 +102,10 @@ type saverShots struct {
 	holdOK bool      // the shot's game is on the card, so the hold plays it
 	bright int       // the picture's brightness now, in 256ths
 
-	corner     int // the tab's corner: 0 top left, 1 bottom right, 2 top right, 3 bottom left
-	offX, offY int // the tab's wander from that corner
+	corner     int        // the caption's corner: 0 top left, 1 bottom right, 2 top right, 3 bottom left
+	offX, offY int        // the caption's wander from that corner
+	lines      []paneLine // the caption: the pane's lines for cur, the title in the shot's hue
+	typed      int        // frames the caption has been typing, since cur arrived
 
 	// the last frame composed, at these settings, so a frame that did not
 	// change is a copy
@@ -169,7 +177,7 @@ func (a *App) saverShotsHolding() bool {
 
 // saverShotsPress starts the Start hold: the dwell clock restarts, a wipe
 // under way turns back, the picture comes up to full brightness, and the
-// tab says whether the game is on the card.
+// caption says whether the game is on the card.
 func (a *App) saverShotsPress(at time.Time) {
 	s := a.saver.shots
 	if s == nil || !s.holdAt.IsZero() {
@@ -225,6 +233,15 @@ func (a *App) tickSaverShots(now time.Time) bool {
 	case s.bright > target:
 		s.bright = max(target, s.bright-step)
 		changed = true
+	}
+	// the caption types on while its shot is on screen alone; a wipe
+	// takes it away, a wipe turned back brings it back where it was
+	if s.cur.row >= 0 && s.wipe == 0 {
+		before := saverShotTypingAt(s.lines, s.typed)
+		s.typed++
+		if saverShotTypingAt(s.lines, s.typed) != before {
+			changed = true
+		}
 	}
 	// the wipe
 	switch {
@@ -305,19 +322,71 @@ func (a *App) saverShotsSkip() {
 	s.in, s.inFrame, s.wanted, s.dueSince = s.next(), nil, false, time.Time{}
 }
 
-// saverShotsSwap ends a wipe: the arriving shot is the one on screen, the
-// tab moves to the next corner with a fresh wander, and the pick after
-// it is on its way. The next wipe comes from the other side.
+// saverShotsSwap ends a wipe: the arriving shot is the one on screen, its
+// caption starts typing in the next corner with a fresh wander, and the
+// pick after it is on its way. The next wipe comes from the other side.
 func (a *App) saverShotsSwap(now time.Time) {
 	s := a.saver.shots
 	s.cur, s.curFrame = s.in, s.inFrame
 	s.curCol = saverShotHue(s.inFrame, a.logical.W(), a.logical.H(), a.logical.Stride)
+	s.lines, s.typed = a.saverShotLines(s.cur.row, s.curCol), 0
 	s.in, s.inFrame, s.wanted = s.next(), nil, false
 	s.wipe, s.dir = 0, -s.dir
 	s.shownAt, s.dueSince = now, time.Time{}
 	s.version++
 	s.corner = (s.corner + 1) % 4
 	s.offX, s.offY = int(s.rng.IntN(saverShotOffset+1)), int(s.rng.IntN(saverShotOffset+1))
+}
+
+// saverShotCols is the width of a caption line in characters: the safe
+// zone less the wander, the box's padding and the cursor's cell.
+func (a *App) saverShotCols() int {
+	return a.sm.Cols(a.lay.Root.Dx() - saverShotOffset - 6 - a.sm.W)
+}
+
+// saverShotLines is a shot's caption: what the pane says about its game,
+// each line cut to the width, the title in the shot's hue.
+func (a *App) saverShotLines(i int, hue rgb) []paneLine {
+	row, d := &a.ds.Rows[i], &a.ds.Der[i]
+	cols := a.saverShotCols()
+	lines := a.paneLines(row, d, i, cols)
+	titled := len(gfx.Wrap(d.Title, cols, 2))
+	for j := range lines {
+		lines[j].text = gfx.Fit(lines[j].text, cols)
+		if j < titled {
+			lines[j].col = hue
+		}
+	}
+	return lines
+}
+
+// saverShotTyping is where a caption's typing has got to: the line under
+// the cursor, how many of its characters are on screen, whether the
+// whole block is there, and whether the cursor shows this frame.
+type saverShotTyping struct {
+	line, chars  int
+	done, cursor bool
+}
+
+// saverShotTypingAt is the typing f frames after the shot arrived: a
+// character a frame, a beat at each line's end, then the cursor blinking
+// at the end of the last line. The cursor is solid while it types.
+func saverShotTypingAt(lines []paneLine, f int) saverShotTyping {
+	for i, ln := range lines {
+		n := len(ln.text)
+		if f < n {
+			return saverShotTyping{line: i, chars: f, cursor: true}
+		}
+		f -= n
+		if i == len(lines)-1 {
+			return saverShotTyping{line: i, chars: n, done: true, cursor: f/saverShotBlink%2 == 0}
+		}
+		if f < saverShotBeat {
+			return saverShotTyping{line: i, chars: n, cursor: true}
+		}
+		f -= saverShotBeat
+	}
+	return saverShotTyping{done: true, cursor: f/saverShotBlink%2 == 0}
 }
 
 // saverShotsLaunch plays the shot's game at the end of the hold: the
@@ -447,7 +516,7 @@ func saverShotHue(frame []uint8, w, h, stride int) rgb {
 }
 
 // paintSaverShots paints the screenshots saver: the shot on screen, the
-// next one wiping over it, at the brightness, then the title tab.
+// next one wiping over it, at the brightness, then the caption.
 func (a *App) paintSaverShots(c *gfx.Canvas) {
 	s := a.saver.shots
 	w, h := c.W(), c.H()
@@ -466,7 +535,7 @@ func (a *App) paintSaverShots(c *gfx.Canvas) {
 		s.litVersion, s.litWipe, s.litBright = s.version, s.wipe, s.bright
 	}
 	copy(c.Pix, s.lit)
-	a.paintSaverTab(c)
+	a.paintSaverCaption(c)
 	c.DirtyAll()
 }
 
@@ -557,18 +626,24 @@ func saverShotDim(col rgb, bright int) rgb {
 	return rgb{R: uint8(int(col.R) * bright >> 8), G: uint8(int(col.G) * bright >> 8), B: uint8(int(col.B) * bright >> 8), A: col.A}
 }
 
-// paintSaverTab draws the title of the shot on screen on a black tab in
-// its corner of the safe zone, and under it, while Start is held, the
-// line that fills up to the launch, or the word that the game is not on
-// the card.
-func (a *App) paintSaverTab(c *gfx.Canvas) {
+// paintSaverCaption draws the caption of the shot on screen as far as it
+// has been typed, on a black box in its corner of the safe zone sized for
+// the whole block, the cursor after the last character, and under the
+// box, while Start is held, the line that fills up to the launch, or the
+// word that the game is not on the card. A wipe under way hides it.
+func (a *App) paintSaverCaption(c *gfx.Canvas) {
 	s := a.saver.shots
-	if s.cur.row < 0 {
+	if s.cur.row < 0 || s.wipe > 0 {
 		return
 	}
 	root := a.lay.Root
-	title := gfx.Fit(a.ds.Rows[s.cur.row].Title, a.sm.Cols(root.Dx()-saverShotOffset-6))
-	tw, th := a.sm.Width(title)+6, a.sm.H+4
+	lh := a.sm.H + 1
+	tw := 0
+	for _, ln := range s.lines {
+		tw = max(tw, a.sm.Width(ln.text))
+	}
+	tw += a.sm.W + 6 // the cursor's cell after the longest line
+	th := len(s.lines)*lh + 3
 	strip := a.sm.H + 2
 	right, bottom := s.corner == 1 || s.corner == 2, s.corner == 1 || s.corner == 3
 	x, y := root.Min.X+s.offX, root.Min.Y+s.offY
@@ -580,7 +655,21 @@ func (a *App) paintSaverTab(c *gfx.Canvas) {
 	}
 	ink := saverShotDim(s.curCol, s.bright)
 	c.Fill(image.Rect(x, y, x+tw, y+th), rgb{A: 255})
-	c.Text(x+3, y+2, a.sm, title, ink)
+	t := saverShotTypingAt(s.lines, s.typed)
+	for i, ln := range s.lines {
+		if i > t.line {
+			break
+		}
+		text := ln.text
+		if i == t.line {
+			text = text[:t.chars]
+		}
+		c.Text(x+3, y+2+i*lh, a.sm, text, saverShotDim(ln.col, s.bright))
+	}
+	if t.cursor && len(s.lines) > 0 {
+		cx, cy := x+3+t.chars*a.sm.W, y+2+t.line*lh
+		c.Fill(image.Rect(cx, cy, cx+a.sm.W, cy+a.sm.H), ink)
+	}
 	if s.holdAt.IsZero() {
 		return
 	}

@@ -391,9 +391,16 @@ func (a *App) paintPane(c *gfx.Canvas) {
 			text = image.Rect(l.Thumb.Min.X, l.Thumb.Max.Y+3, l.Pane.Max.X, l.Pane.Max.Y)
 		}
 	}
+	a.paintPaneText(c, text, a.paneLines(row, d, i, a.sm.Cols(text.Dx())))
+}
+
+// paneLines is what the pane says about a row, in lines of at most cols
+// characters: the title over up to two lines, the card answer, the kind,
+// the core, the year and maker, the arcade rotation, players and
+// controls, and the badges.
+func (a *App) paneLines(row *data.Row, d *data.Derived, i, cols int) []paneLine {
 	var lines []paneLine
 	hue := typeHue(row.Base)
-	cols := a.sm.Cols(text.Dx())
 	for _, t := range gfx.Wrap(d.Title, cols, 2) {
 		lines = append(lines, paneLine{t, gen.Eva.Fg})
 	}
@@ -432,7 +439,7 @@ func (a *App) paintPane(c *gfx.Canvas) {
 		}
 		lines = append(lines, paneLine{strings.Join(ch, ", "), col})
 	}
-	a.paintPaneText(c, text, lines)
+	return lines
 }
 
 type paneLine struct {

@@ -319,8 +319,11 @@ the bottom.
   MISTERZINE sweep above. Screenshots shows one arcade game's gameplay
   shot after another, every arcade game in the catalogue in a shuffled
   cycle, each new one wiping in from the side behind a soft, wandering
-  edge about every twelve seconds, with the game's title on a small tab
-  that moves from corner to corner. Online, a shot the card lacks is
+  edge about every twelve seconds. Once a shot is in, what the main view's
+  pane says about the game (title, card answer, kind, core, year and
+  maker, rotation, players, controls, badges) is typed out on a black box
+  that moves from corner to corner, a character a frame behind a cursor
+  that blinks once the block is complete. Online, a shot the card lacks is
   downloaded when its turn comes; offline, only the shots on the card show
   (Prefetch shots fills the card). Hold Start for 2 seconds on a shot to
   play that game: the picture comes up to full brightness and a line

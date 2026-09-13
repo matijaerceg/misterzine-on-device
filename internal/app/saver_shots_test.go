@@ -29,7 +29,7 @@ func (f *shotImages) Get(req ImageReq) (*image.RGBA, ImageState) {
 	return nil, ImageMissing
 }
 func (f *shotImages) Want(reqs []ImageReq) { f.wants = append(f.wants, reqs...) }
-func (f *shotImages) SetPaused(bool)      {}
+func (f *shotImages) SetPaused(bool)       {}
 
 func flat(w, h int, col color.RGBA) *image.RGBA {
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
@@ -155,6 +155,113 @@ func TestSaverShotsWipesEachShotInAndNamesIt(t *testing.T) {
 	frames(a, clock, saverShotWipe)
 	if s.cur == first || s.wipe != 0 {
 		t.Fatalf("the second shot did not arrive: cur %+v", s.cur)
+	}
+}
+
+func TestSaverShotTypingSchedule(t *testing.T) {
+	lines := []paneLine{{"ab", muted()}, {"c", muted()}}
+	want := map[int]saverShotTyping{
+		0:                                      {line: 0, chars: 0, cursor: true},
+		1:                                      {line: 0, chars: 1, cursor: true},
+		2:                                      {line: 0, chars: 2, cursor: true}, // the beat at the line's end
+		1 + saverShotBeat:                      {line: 0, chars: 2, cursor: true},
+		2 + saverShotBeat:                      {line: 1, chars: 0, cursor: true},
+		3 + saverShotBeat:                      {line: 1, chars: 1, done: true, cursor: true},
+		3 + saverShotBeat + saverShotBlink - 1: {line: 1, chars: 1, done: true, cursor: true},
+		3 + saverShotBeat + saverShotBlink:     {line: 1, chars: 1, done: true, cursor: false},
+		3 + saverShotBeat + 2*saverShotBlink:   {line: 1, chars: 1, done: true, cursor: true},
+	}
+	for f, w := range want {
+		if got := saverShotTypingAt(lines, f); got != w {
+			t.Errorf("frame %d: %+v, want %+v", f, got, w)
+		}
+	}
+	if got := saverShotTypingAt(nil, 3); !got.done || !got.cursor {
+		t.Errorf("no lines: %+v", got)
+	}
+}
+
+func TestSaverShotsTypesThePaneLinesAndBlinksAfter(t *testing.T) {
+	a, _, clock, _ := shotsApp()
+	a.startSaver(*clock)
+	s := a.saver.shots
+	frames(a, clock, saverShotWipe) // the swap: the caption starts
+	if s.wipe != 0 || s.cur.row < 0 || s.typed != 0 {
+		t.Fatalf("wipe %d cur %+v typed %d", s.wipe, s.cur, s.typed)
+	}
+	// the pane's lines: the title in the shot's hue, then the card answer
+	// and the kind, cut to the width
+	row := &a.ds.Rows[s.cur.row]
+	if len(s.lines) < 3 || s.lines[0].text != row.Title || s.lines[0].col != s.curCol || s.lines[1].text != "current build" || s.lines[2].text != "Arcade / "+a.ds.Der[s.cur.row].SrcShort {
+		t.Fatalf("caption %+v", s.lines)
+	}
+	ink := saverShotDim(s.curCol, saverShotHalf)
+	inked := func() int {
+		n := 0
+		for y := 0; y < 240; y++ {
+			for x := 0; x < 320; x++ {
+				if a.logical.RGBAAt(x, y) == ink {
+					n++
+				}
+			}
+		}
+		return n
+	}
+	cell := a.sm.W * a.sm.H
+	if n := inked(); n != cell {
+		t.Fatalf("at the swap only the cursor is inked: %d pixels, a cell is %d", n, cell)
+	}
+	// a character a frame
+	frames(a, clock, 3)
+	if got := saverShotTypingAt(s.lines, s.typed); got != (saverShotTyping{line: 0, chars: 3, cursor: true}) {
+		t.Fatalf("after three frames: %+v", got)
+	}
+	if n := inked(); n <= cell {
+		t.Fatalf("three characters typed but only %d pixels inked", n)
+	}
+	total := saverShotBeat * (len(s.lines) - 1)
+	for _, ln := range s.lines {
+		total += len(ln.text)
+	}
+	frames(a, clock, total-3)
+	if got := saverShotTypingAt(s.lines, s.typed); !got.done || !got.cursor {
+		t.Fatalf("after %d frames: %+v", total, got)
+	}
+	// the cursor blinks once the block is complete: off for a blink, then
+	// on again, and nothing else on the box changes
+	on := inked()
+	frames(a, clock, saverShotBlink)
+	if off := inked(); off != on-cell {
+		t.Fatalf("the cursor did not go off: %d inked, %d with it on", off, on)
+	}
+	frames(a, clock, saverShotBlink)
+	if n := inked(); n != on {
+		t.Fatalf("the cursor did not come back: %d inked, want %d", n, on)
+	}
+	// a hold draws its line under the whole box, inside the safe zone
+	a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})
+	frames(a, clock, saverShotRamp+2)
+	for y := 0; y < 240; y++ {
+		for x := 0; x < 320; x++ {
+			if p := a.logical.RGBAAt(x, y); p == (color.RGBA{A: 255}) && (x < 15 || x >= 305 || y < 15 || y >= 225) {
+				t.Fatalf("the box or its strip reaches outside the safe zone at %d,%d", x, y)
+			}
+		}
+	}
+	a.Handle(platform.Event{Key: platform.KeyStart, At: *clock})
+	// the next wipe takes the caption away, and the shot it brings starts
+	// a fresh one
+	first := s.cur
+	*clock = clock.Add(saverShotDwell)
+	a.SaverFrame(*clock) // the wipe starts
+	typedAt := s.typed
+	frames(a, clock, 5)
+	if s.wipe != 6 || s.typed != typedAt {
+		t.Fatalf("during the wipe: wipe %d typed %d (was %d)", s.wipe, s.typed, typedAt)
+	}
+	frames(a, clock, saverShotWipe-6)
+	if s.cur == first || s.typed != 0 || s.lines[0].text != a.ds.Rows[s.cur.row].Title {
+		t.Fatalf("after the wipe: cur %+v typed %d caption %+v", s.cur, s.typed, s.lines)
 	}
 }
 
