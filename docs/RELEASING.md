@@ -53,11 +53,21 @@ releases page shows every body in full, one after another. Write it for that
 feed: a reader scanning the page decides from the headline and a few lines
 whether the release matters to them. The target is under about 120 words.
 
-- **Headline:** one sentence naming the one or two features a user would
-  update for. Never a fix. A fixes-only release names its most visible fix and
-  has no first list.
-- **First list, no heading:** features and improvements only, one sentence each,
-  no bold sub-heads. What the user will notice, not how it works.
+- **What counts as a feature:** something a user could not do or see before:
+  a new view, screen, control, chord, option, source, or a new visual such as
+  the screensaver's blur. The test is whether a user would update for it on
+  its own. Everything else is an adjustment, however visible: wording and
+  labels, legends and capitalisation, hint and help text, spacing, colours,
+  timings, defaults, and any tuning or reshaping of something that already
+  existed (a progress line on an existing hold, a lettering that now repeats,
+  a term replaced by a better one). When in doubt it is an adjustment.
+- **Headline:** one sentence naming the feature, or the one or two features.
+  Never a fix or an adjustment. A release without a feature names its most
+  visible fix and has no first list.
+- **First list, no heading:** features only, one sentence each, no bold
+  sub-heads. What the user will notice, not how it works. There is no
+  minimum: one item is the normal case, and a card that is mostly its second
+  list is the correct shape. Never promote an adjustment to fill it.
 - **Second list under `Fixes and adjustments:`** bugfixes, behaviour tweaks,
   label and copy changes, each one line. Copy changes collapse to a single
   line unless one changes what a setting does. Omit the list when empty.
@@ -69,20 +79,21 @@ whether the release matters to them. The target is under about 120 words.
   dots and the dash removed), the Update All line, and the installation guide
   link. Add a sentence about stored data only when the release migrates it.
 
-The v1.0.24 body is the reference shape:
+The v1.0.24 body is the reference shape. Its first version put the Menu
+hold's progress line in the first list; it is a change to an existing hold,
+so it belongs below:
 
 ```markdown
-Select + A stars a game from the list, and the Menu hold shows its
-progress on the way to quitting.
+Select + A stars a game from the list.
 
 - Select + A on the list stars or unstars the game under the cursor.
-- The Menu button hold shows a "keep holding to quit" hint and a green
-  progress line under the top bar. A tap still opens or closes Options.
 
 Fixes and adjustments:
 
 - The last view turned back on in Options -> Views no longer switches
   itself off at the next start.
+- The Menu button hold shows a "keep holding to quit" hint and a green
+  progress line under the top bar. A tap still opens or closes Options.
 - X on the Filters screen returns to the list, as B does.
 - Options labels and hints tidied.
 
