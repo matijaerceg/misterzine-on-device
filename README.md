@@ -8,9 +8,10 @@ It follows new releases and updated builds across the catalogue. The interface
 uses a 320x240 framebuffer, with horizontal and rotated CRT layouts.
 
 <p>
-  <img src="docs/screenshots/list.png" alt="Horizontal release list" width="320" height="240">
-  <img src="docs/screenshots/details-tate.png" alt="Details in tate" width="240" height="320">
-  <img src="docs/screenshots/artwork.png" alt="Full-screen game artwork" width="320" height="240">
+  <img src="docs/screenshots/list.png" alt="The release list on a horizontal screen, Line of Fire selected, with its picture and specs beside the titles" width="320" height="240">
+  <img src="docs/screenshots/list-tate.png" alt="The same list on a rotated (tate) screen, Strikers 1945 selected, the picture under the titles" width="240" height="320">
+  <img src="docs/screenshots/details-tate.png" alt="Raiden II's details in tate, showing 41 versions to pick from" width="240" height="320">
+  <img src="docs/screenshots/artwork.png" alt="Robotron: 2084 artwork filling the screen" width="320" height="240">
   <img src="docs/screenshots/safe-zone.png" alt="Safe-zone adjustment" width="320" height="240">
   <img src="docs/screenshots/options.png" alt="Options with the screensaver setting selected" width="320" height="240">
   <img src="docs/screenshots/filters-tate.png" alt="Filters in tate" width="240" height="320">
