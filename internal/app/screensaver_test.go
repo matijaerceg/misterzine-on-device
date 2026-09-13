@@ -190,7 +190,7 @@ func TestSaverSweepsEveryPixel(t *testing.T) {
 						}
 					} else if isGround(p) {
 						continue
-					} else if sx := x - (c.W() - travel%(c.W()+mask.Rect.Dx())); sx < 0 || sx >= mask.Rect.Dx() || mask.Pix[y*mask.Stride+sx] == 0 || mask.Pix[y*mask.Stride+sx] == saverInk {
+					} else if x0 := saverOrigin(travel, c.W(), mask.Rect.Dx()); x < x0 || mask.Pix[y*mask.Stride+(x-x0)%mask.Rect.Dx()] == 0 || mask.Pix[y*mask.Stride+(x-x0)%mask.Rect.Dx()] == saverInk {
 						t.Fatalf("pixel not black, dimmed or a lit outline: %v", p)
 					}
 				}
@@ -526,5 +526,72 @@ func TestSaverDitherSpreadsTheGradient(t *testing.T) {
 	}
 	if saverQuantize(255<<8, 3, 5, true) != 255 || saverQuantize(0, 7, 7, true) != 0 {
 		t.Fatal("dither pushed white or black off the scale")
+	}
+}
+
+// The word enters from the right edge, then repeats edge to edge for as
+// long as the saver runs: the origin never falls more than a word left of
+// the screen, and the columns right of it always hold lettering.
+func TestSaverWordRepeatsEdgeToEdge(t *testing.T) {
+	a, _ := saverApp()
+	c := a.logical
+	m := a.saverMask(c.H())
+	w, word := c.W(), m.Rect.Dx()
+	for _, tc := range []struct{ travel, want int }{
+		{0, w}, {1, w - 1}, {w - 1, 1}, {w, 0}, {w + 1, -1}, {w + word - 1, 1 - word}, {w + word, 0}, {w + word + 10, -10}, {w + 5*word + 3, -3},
+	} {
+		if got := saverOrigin(tc.travel, w, word); got != tc.want {
+			t.Fatalf("origin at travel %d: %d, want %d", tc.travel, got, tc.want)
+		}
+	}
+	c.Fill(c.Rect, color.RGBA{R: 200, G: 160, B: 120, A: 255})
+	a.paintSaver(c)
+	a.SaverSettle()
+	// deep into the run the frame is the mask tiled from the origin: a row
+	// through the capitals is black exactly where the tiled mask has ink,
+	// so the second copy follows the first without a gap
+	a.saver.travel = w + word + word/2
+	c.Fill(c.Rect, color.RGBA{R: 200, G: 160, B: 120, A: 255})
+	a.paintSaver(c)
+	x0, y := saverOrigin(a.saver.travel, w, word), c.H()/2
+	seams := 0
+	for x := 0; x < w; x++ {
+		v, black := m.Pix[y*m.Stride+(x-x0)%word], c.RGBAAt(x, y) == (color.RGBA{A: 255})
+		// ink paints black, the ground never does; an outline pixel is
+		// black or lit, so it says nothing either way
+		if (v == saverInk && !black) || (v == 0 && black) {
+			t.Fatalf("column %d: black %v, tiled mask value %d", x, black, v)
+		}
+		if (x-x0)%word == 0 {
+			seams++
+		}
+	}
+	if seams == 0 {
+		t.Fatal("no seam on screen; the test does not cover the repeat")
+	}
+}
+
+// A saver tick that runs late keeps the next one on the grid, so a run of
+// late ticks cannot drift the frame clock; a tick a whole frame late
+// starts the grid over from its own time.
+func TestSaverTicksKeepTheirGrid(t *testing.T) {
+	a, clock := saverApp()
+	t0 := *clock
+	a.startSaver(t0)
+	next := t0.Add(saverFrame)
+	for i := 0; i < 20; i++ {
+		late := next.Add(5 * time.Millisecond) // every tick 5 ms behind
+		if !a.Tick(late) {
+			t.Fatalf("tick %d at %v did nothing", i, late.Sub(t0))
+		}
+		next = next.Add(saverFrame)
+		if !a.NextTick().Equal(next) {
+			t.Fatalf("tick %d: next %v, want %v on the grid", i, a.NextTick().Sub(t0), next.Sub(t0))
+		}
+	}
+	lost := next.Add(2 * saverFrame)
+	a.Tick(lost)
+	if !a.NextTick().Equal(lost.Add(saverFrame)) {
+		t.Fatalf("after a lost frame next is %v, want a fresh grid from %v", a.NextTick().Sub(t0), lost.Add(saverFrame).Sub(t0))
 	}
 }

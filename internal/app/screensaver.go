@@ -315,7 +315,14 @@ func (a *App) tickSaver(now time.Time) bool {
 		if a.saver.leaving && a.saver.fadeT <= 0 {
 			a.saverEnd() // the picture is back
 		} else {
-			a.saver.next = now.Add(saverFrame)
+			// the next frame keeps the grid the last one was on: a tick
+			// that ran late does not push every later one back, which
+			// used to add up until the lettering skipped a column. A
+			// whole frame lost starts a fresh grid from now.
+			a.saver.next = a.saver.next.Add(saverFrame)
+			if a.saver.next.Before(now) {
+				a.saver.next = now.Add(saverFrame)
+			}
 			a.all = true
 		}
 	}
@@ -627,11 +634,22 @@ func fillSaverPolygon(m *image.Alpha, offset int, points []image.Point, ink uint
 	}
 }
 
+// saverOrigin is the left edge of the first word for a travel: the word
+// enters at the right edge one pixel a frame and, once it is in, the next
+// copy follows it edge to edge (the letters carry their own side bearings,
+// so the seam is an ordinary letter gap). The value stays within one word
+// of the left edge however long the saver runs.
+func saverOrigin(travel, w, word int) int {
+	if travel < w {
+		return w - travel
+	}
+	return -((travel - w) % word)
+}
+
 func (a *App) paintSaver(c *gfx.Canvas) {
 	m := a.saverMask(c.H())
-	// One logical pixel per frame; the whole word enters at the right and
-	// leaves at the left. Safe-zone insets don't clip this overlay.
-	x0 := c.W() - a.saver.travel%(c.W()+m.Rect.Dx())
+	// Safe-zone insets don't clip this overlay.
+	x0 := saverOrigin(a.saver.travel, c.W(), m.Rect.Dx())
 	shade, fade := a.saver.shade, a.saver.fade
 	if shade <= 0 || shade > 256 {
 		shade, fade = a.look.Shade, 256 // a saver frame set up outside tickSaver (tests, previews)
@@ -668,15 +686,15 @@ func (a *App) paintSaver(c *gfx.Canvas) {
 		c.DirtyAll() // no lettering on the way back
 		return
 	}
-	// the lettering, over the columns it covers this frame
+	// the lettering, from the first word's edge to the right of the screen
 	centres := make([]int, len(saverLights))
 	for i, l := range saverLights {
 		centres[i] = int(l.at*float64(c.W())) + int(l.tilt*float64(c.H())/2)
 	}
-	from, to := max(x0, 0), min(x0+m.Rect.Dx(), c.W())
+	word := m.Rect.Dx()
 	for y := 0; y < c.H(); y++ {
-		for x := from; x < to; x++ {
-			v := m.Pix[y*m.Stride+x-x0]
+		for x := max(x0, 0); x < c.W(); x++ {
+			v := m.Pix[y*m.Stride+(x-x0)%word]
 			if v == 0 {
 				continue
 			}
