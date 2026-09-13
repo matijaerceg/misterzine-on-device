@@ -3,6 +3,7 @@ package app
 import (
 	"bytes"
 	"image/color"
+	"strings"
 	"testing"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
@@ -18,21 +19,37 @@ func TestSaverShotsInfoTitleOnly(t *testing.T) {
 	s := a.saver.shots
 	frames(a, clock, saverShotWipe)
 	row := &a.ds.Rows[s.cur.row]
-	titled := len(gfx.Wrap(a.ds.Der[s.cur.row].Title, a.saverShotCols(), 2))
-	if len(s.lines) != titled || s.lines[0].text != row.Title || s.lines[0].col != s.curCol || len(s.title) != titled {
-		t.Fatalf("title only: %+v (title %+v, %d lines)", s.lines, s.title, titled)
+	if len(s.lines) != 1 || s.lines[0].text != row.Title || s.lines[0].col != s.curCol || len(s.title) != 1 {
+		t.Fatalf("title only: %+v (title %+v)", s.lines, s.title)
 	}
 	frames(a, clock, 3)
 	if got := saverShotTypingAt(s.lines, s.typed); got != (saverShotTyping{chars: 3, cursor: true}) {
 		t.Fatalf("after three frames: %+v", got)
 	}
-	total := saverShotBeat * (titled - 1)
-	for _, ln := range s.lines {
-		total += len(ln.text)
-	}
-	frames(a, clock, total-3)
+	frames(a, clock, len(row.Title)-3)
 	if got := saverShotTypingAt(s.lines, s.typed); !got.done {
-		t.Fatalf("after %d frames: %+v", total, got)
+		t.Fatalf("after %d frames: %+v", len(row.Title), got)
+	}
+}
+
+// A long title takes one caption line, cut with the ellipsis, where the
+// pane wraps it over two; the lines after it are the pane's.
+func TestSaverShotsTitleOnOneLine(t *testing.T) {
+	a, _, clock, _ := shotsApp()
+	a.startSaver(*clock)
+	s := a.saver.shots
+	long := strings.Repeat("Long Title ", 8) + "End"
+	a.ds.Der[s.in.row].Title = long
+	frames(a, clock, saverShotWipe)
+	cols := a.saverShotCols()
+	if len(gfx.Wrap(long, cols, 2)) != 2 {
+		t.Fatalf("the pane would not wrap %q at %d columns", long, cols)
+	}
+	if want := gfx.Fit(long, cols); s.lines[0].text != want || !strings.HasSuffix(s.lines[0].text, gfx.Ellipsis) || s.lines[0].col != s.curCol {
+		t.Fatalf("title line %+v, want %q", s.lines[0], want)
+	}
+	if s.lines[1].text != "current build" || len(s.title) != 1 || s.title[0].text != s.lines[0].text {
+		t.Fatalf("after the title: %+v (title %+v)", s.lines[1], s.title)
 	}
 }
 

@@ -14,9 +14,9 @@ import (
 // The screenshots saver (Options -> Screensaver style: screenshots) shows one
 // arcade shot after another on the whole canvas, each wiped in from the
 // side behind a soft, wandering edge. Once a shot is in, what the list's
-// pane says about the game (the title, the card answer, the kind, the
-// core, the year and maker, the rotation, players and controls, the
-// badges) is typed out in a bottom corner, the other one each time, a
+// pane says about the game (the title on one line, the card answer, the
+// kind, the core, the year and maker, the rotation, players and controls,
+// the badges) is typed out in a bottom corner, the other one each time, a
 // character a frame with a beat at each line end, each line on a black
 // strip that grows with its letters, behind an underline cursor that
 // blinks once the block is complete; Options -> Screensaver info cuts
@@ -364,21 +364,19 @@ func (a *App) saverShotCols() int {
 }
 
 // saverShotLines is a shot's caption: what the pane says about its game,
-// each line cut to the width, the title in the shot's hue, as Options ->
-// Screensaver info has it (the pane's lines, the title alone, or none),
-// and the title's lines alone for the hold.
+// each line cut to the width, the title on one line in the shot's hue
+// (cut with the ellipsis rather than wrapped as the pane has it), as
+// Options -> Screensaver info has it (the pane's lines, the title alone,
+// or none), and the title's line alone for the hold.
 func (a *App) saverShotLines(i int, hue rgb) (lines, title []paneLine) {
 	row, d := &a.ds.Rows[i], &a.ds.Der[i]
 	cols := a.saverShotCols()
-	lines = a.paneLines(row, d, i, cols)
-	titled := len(gfx.Wrap(d.Title, cols, 2))
+	wrapped := a.paneLines(row, d, i, cols)
+	lines = append([]paneLine{{gfx.Fit(d.Title, cols), hue}}, wrapped[len(gfx.Wrap(d.Title, cols, 2)):]...)
 	for j := range lines {
 		lines[j].text = gfx.Fit(lines[j].text, cols)
-		if j < titled {
-			lines[j].col = hue
-		}
 	}
-	title = lines[:titled]
+	title = lines[:1]
 	switch a.SaverInfo() {
 	case "title":
 		lines = title

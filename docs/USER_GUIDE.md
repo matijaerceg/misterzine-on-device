@@ -322,8 +322,9 @@ and last row.
   shot after another, every arcade game in the catalogue in a shuffled
   cycle, each new one wiping in from the side behind a soft, wandering
   edge about every twelve seconds. Once a shot is in, what the main view's
-  pane says about the game (title, card answer, kind, core, year and
-  maker, rotation, players, controls, badges) is typed out in a bottom
+  pane says about the game (title on one line, cut short with an ellipsis
+  when long, card answer, kind, core, year and maker, rotation, players,
+  controls, badges) is typed out in a bottom
   corner, the other one each time, a character a frame on black strips
   that grow with the letters, behind an underline cursor that blinks
   once the block is complete. Online, a shot the card lacks is
