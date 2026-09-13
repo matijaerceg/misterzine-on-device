@@ -21,6 +21,7 @@ var earlyAdopters = []string{
 	"Porieux",
 	"shad00m",
 	"Virtualplayer",
+	"washaa",
 }
 
 // builtOn credits the people whose technology MisterZine runs on, one
