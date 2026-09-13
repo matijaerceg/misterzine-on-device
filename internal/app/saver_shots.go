@@ -11,7 +11,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
 
-// The screenshots saver (Options -> Saver style: screenshots) shows one
+// The screenshots saver (Options -> Screensaver style: screenshots) shows one
 // arcade shot after another on the whole canvas, each wiped in from the
 // side behind a soft, wandering edge, with the game's title on a small
 // tab that moves from corner to corner. Start held on a shot plays that
@@ -26,11 +26,11 @@ import (
 // covers the site, and offline whatever is on the card. With nothing to
 // show at all the run falls back to the lettering.
 
-// saverStyles are Options -> Saver style: the lettering (the default) or
+// saverStyles are Options -> Screensaver style: the lettering (the default) or
 // the screenshots.
 var saverStyles = []string{"word", "shots"}
 
-// SaverStyle is Options -> Saver style: "word" (default) or "shots".
+// SaverStyle is Options -> Screensaver style: "word" (default) or "shots".
 func (a *App) SaverStyle() string {
 	if a.cfg.SaverStyle == "shots" {
 		return "shots"
@@ -38,7 +38,7 @@ func (a *App) SaverStyle() string {
 	return "word"
 }
 
-// SaverBright is Options -> Saver brightness for the screenshots: "half"
+// SaverBright is Options -> Screensaver brightness for the screenshots: "half"
 // (default) or "full".
 func (a *App) SaverBright() string {
 	if a.cfg.SaverBright == "full" {

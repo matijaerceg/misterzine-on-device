@@ -245,6 +245,9 @@ const (
 	SectionDisplay   = "\x1d"
 	SectionControls  = "\x1e"
 	SectionOperation = "\x1f"
+	// ChildMark heads an Options row that only applies given the row above
+	// it: a stem from the top of the cell turning into a short rule
+	ChildMark = "\x10"
 )
 
 // SetGlyph installs a glyph (rows top to bottom, MSB = leftmost pixel).
@@ -299,6 +302,21 @@ func (f *Font) AddArrows() {
 	f.SetGlyph(Beta[0], beta)
 	f.addButtonSymbols()
 	f.addSectionMarks()
+	f.addChildMark()
+}
+
+// addChildMark installs the Options child-row mark as a one-cell glyph:
+// a stem down the cell's second column from the top, turning into a
+// short rule to the right at the middle of a capital, like the last
+// branch of a tree.
+func (f *Font) addChildMark() {
+	rows := make([]byte, f.H)
+	mid := max(1, (f.H-f.descent)/2)
+	for y := 0; y < mid; y++ {
+		rows[y] = 0x40
+	}
+	rows[mid] = 0x70
+	f.SetGlyph(ChildMark[0], rows)
 }
 
 // addSectionMarks installs the Options section marks as one-cell glyphs,

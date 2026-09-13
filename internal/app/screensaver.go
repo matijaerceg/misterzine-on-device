@@ -186,7 +186,7 @@ type screensaver struct {
 	cacheW int // width the picture was taken at (a rotation swaps it)
 	mask   *image.Alpha
 	waking map[saverKey]bool
-	// the run's style (Options -> Saver style, taken at the start) and the
+	// the run's style (Options -> Screensaver style, taken at the start) and the
 	// screenshots saver's state while that is the style (saver_shots.go)
 	style string
 	shots *saverShots

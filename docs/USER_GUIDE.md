@@ -213,10 +213,14 @@ a rule: Data (a diskette: Refresh data now, Run Update All, Last update
 result, Rescan card, Prefetch shots, Clear image cache), List (stacked
 lines: Sources, Filter by rotation, Remember last view, Views, Title font,
 List shots, Date format, List layout), Display (a monitor: rotation,
-screensaver and its style, safe zone, HDMI picture), Controls (an arcade
-stick: Button labels, OK button, Menu button, Scroll speed, Hold delay) and
-Operation (sliders: the launcher, Open at boot, Return after game,
-Troubleshooting, Credits, Quit). The headings cannot be selected. Values line up in one column; a small arrow at the right
+screensaver delay, style and brightness, safe zone, HDMI picture), Controls
+(an arcade stick: Button labels, OK button, Menu button, Scroll speed, Hold
+delay) and Operation (sliders: the main menu shortcut, Open at boot, Return
+after game, Troubleshooting, Credits, Quit). The headings cannot be selected.
+A row that only applies given the row above it (Rotation under Follow INI
+rotation, the screensaver's style and brightness, Open at boot and Return
+after game under the shortcut) sits a step in behind a small branch mark.
+Values line up in one column; a small arrow at the right
 edge of the top or bottom row shows when more options sit above or below the
 visible part of the list. The framed text under the list describes the selected
 option, and the build version and catalogue date sit below it in grey. B
@@ -297,7 +301,7 @@ the bottom.
   image in that direction and the choice is saved. The labels describe the
   monitor's clockwise/counterclockwise turn. While following the INI, the row
   shows the current rotation in grey and cannot be changed here.
-- **Screensaver:** after 1 minute idle by default, blur and dim the picture
+- **Screensaver delay:** after 1 minute idle by default, blur and dim the picture
   into a soft glow over a second and scroll full-height black MISTERZINE
   lettering, with glinting chrome edges, across it; a key brings the picture
   back sharp in a quarter of a second. Left/Right chooses Off, 1, 2,
@@ -307,7 +311,7 @@ the bottom.
   button; held 2 s it quits either way). The sweep covers the whole picture,
   including safe-zone margins, in horizontal and tate layouts. Background data
   downloads and Update All continue while dimmed.
-- **Saver style:** what the screensaver shows. Lettering (default) is the
+- **Screensaver style:** what the screensaver shows. Lettering (default) is the
   MISTERZINE sweep above. Screenshots shows one arcade game's gameplay
   shot after another, every arcade game in the catalogue in a shuffled
   cycle, each new one wiping in from the side behind a soft, wandering
@@ -322,7 +326,7 @@ the bottom.
   way comes next once you let go. For a game that is not on the card the
   hold only says so. Every other button wakes. With no shots to show at
   all, the lettering runs instead.
-- **Saver brightness:** with the screenshots only. Half (default) shows the
+- **Screensaver brightness:** with the screenshots only. Half (default) shows the
   shots at half brightness, kinder to a CRT, and holding Start brings one
   up to full; full shows them at full brightness throughout.
 - **Edit safe zone:** D-pad moves the top-right corner of the safe frame;
@@ -358,19 +362,19 @@ the bottom.
 - **Scroll speed:** 20, 30 or 60 rows/pages per second once a hold repeats.
 - **Hold delay:** short 200 ms, normal 300 ms (default), or long 500 ms before
   navigation repeats. Artwork and calibration retain their own timing.
-- **Main menu launcher:** off removes the menu entry and boot hook. If the
+- **Main menu shortcut:** off removes the menu entry and boot hook. If the
   launcher opened this session, it returns to Menu before stopping. Turning
   the option back on puts both back. With it off, open MisterZine through
   Scripts -> MisterZine-Run (or run Setup again).
 - **Open at boot:** off by default. On: once the MiSTer menu is up after a
   power-on or reboot, the launcher picks the MisterZine entry for you, the same
   way you would. A `bootcore` in the INI takes precedence and nothing happens.
-  Needs the Main menu launcher.
+  Needs the Main menu shortcut.
 - **Return after game:** off by default. On: when a game you started from
   MisterZine exits to the MiSTer menu (Reset or Exit in the OSD), the launcher
   picks the MisterZine entry again and the list opens on that game. Games
   loaded some other way, and quitting through the Menu button, do not bring
-  it back. Needs the Main menu launcher.
+  it back. Needs the Main menu shortcut.
 - **Troubleshooting:** a guided Start-button test, a pad tester, and an
   A/Enter game-launch test, with results you can photograph. The last result
   survives restarting. The pad tester lists every connected pad with the raw

@@ -59,9 +59,48 @@ func TestOptionsGroups(t *testing.T) {
 			}
 		}
 	}
+	// the rows that only apply given the row above them are children, drawn
+	// a step in behind the branch mark; every other row sits flush
+	children := map[string]bool{"rotation": true, "saver-style": true, "saver-bright": true, "open-at-boot": true, "return-after-game": true}
+	a.cfg.SaverStyle = "shots"
+	seen := 0
+	for _, e := range a.optionsEntries() {
+		if e.header {
+			continue
+		}
+		if e.child != children[e.kind] {
+			t.Errorf("row %q child=%v, want %v", e.kind, e.child, children[e.kind])
+		}
+		if children[e.kind] {
+			seen++
+		}
+		want := e.text
+		if children[e.kind] {
+			want = gfx.ChildMark + " " + e.text
+		}
+		if e.label() != want {
+			t.Errorf("row %q draws %q, want %q", e.kind, e.label(), want)
+		}
+	}
+	if seen != len(children) {
+		t.Errorf("%d child rows, want %d", seen, len(children))
+	}
+	// a child row that does not fit falls back to its short name behind
+	// the mark rather than losing its tail; a row without one is cut
+	bright := panelEntry{text: "Screensaver brightness", child: true, short: "Brightness"}
+	if got := bright.fitLabel(30); got != gfx.ChildMark+" Screensaver brightness" {
+		t.Errorf("wide: %q", got)
+	}
+	if got := bright.fitLabel(20); got != gfx.ChildMark+" Brightness" {
+		t.Errorf("narrow: %q", got)
+	}
+	boot := panelEntry{text: "Return after game", child: true}
+	if got := boot.fitLabel(10); got != gfx.Fit(gfx.ChildMark+" Return after game", 10) {
+		t.Errorf("no short name: %q", got)
+	}
 	// the marks exist in every font, one cell wide, with enough ink to read
 	for name, f := range map[string]*gfx.Font{"body": fonts.Body(), "small": fonts.Small(), "narrow": fonts.Narrow(), "tall": fonts.NarrowTall()} {
-		for _, g := range []string{gfx.SectionData, gfx.SectionList, gfx.SectionDisplay, gfx.SectionControls, gfx.SectionOperation} {
+		for _, g := range []string{gfx.SectionData, gfx.SectionList, gfx.SectionDisplay, gfx.SectionControls, gfx.SectionOperation, gfx.ChildMark} {
 			ink := 0
 			for _, row := range f.Glyph(g[0]) {
 				if row != 0 {

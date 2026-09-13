@@ -17,6 +17,8 @@ type panelEntry struct {
 	text      string
 	header    bool
 	glyph     string   // Options section headers: the mark before the title, with a rule after it
+	child     bool     // Options: only applies given the row above; drawn indented behind a branch mark
+	short     string   // Options: a child row's name without the parent's word, for when the full one does not fit
 	info      bool     // plain text, never selectable
 	help      string   // shown in the help area while selected
 	kind      string   // filter section: "base","src","rot","plr","genre","install","fav"; settings: "rotation","inset","prefetch","rescan","refresh","clear","about","settings","back"
@@ -28,6 +30,30 @@ type panelEntry struct {
 	disabled  bool // settings: shown muted, Left/Right ignored
 	count     int
 	showCount bool
+}
+
+// label is the row's text as drawn: a child row sits two cells in behind
+// the branch mark, so a setting that only applies given the row above it
+// (Rotation under Follow INI rotation, the screensaver's style and
+// brightness, Open at boot and Return after game under the shortcut)
+// reads as that row's dependent.
+func (e panelEntry) label() string {
+	if e.child {
+		return gfx.ChildMark + " " + e.text
+	}
+	return e.text
+}
+
+// fitLabel is the label cut to cols columns. A child row whose full name
+// does not fit falls back to its short name behind the mark, so at the
+// widest tate safe zone "Screensaver brightness" reads "Brightness" under
+// its parent instead of losing its tail.
+func (e panelEntry) fitLabel(cols int) string {
+	l := e.label()
+	if e.child && e.short != "" && len(l) > cols {
+		l = gfx.ChildMark + " " + e.short
+	}
+	return gfx.Fit(l, cols)
 }
 
 type panelState struct {
@@ -393,15 +419,15 @@ func (a *App) optionsEntries() []panelEntry {
 		spacer, group(gfx.SectionDisplay, "Display"),
 		{text: "Follow INI rotation", kind: "follow-rotation", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.FollowRotation()],
 			help: "On (default): match osd_rotate in the active MiSTer INI at every startup. Off: rotate manually below. Never edits the INI."},
-		{text: "Rotation", kind: "rotation", vals: []string{"monitor CW", "horizontal", "monitor CCW"}, idx: rotIdx, disabled: a.FollowRotation(),
+		{text: "Rotation", kind: "rotation", child: true, vals: []string{"monitor CW", "horizontal", "monitor CCW"}, idx: rotIdx, disabled: a.FollowRotation(),
 			help: rotationHelp},
-		{text: "Screensaver", kind: "screensaver", vals: []string{"off", "1 min", "2 min", "5 min", "10 min"}, idx: saverIdx,
+		{text: "Screensaver delay", kind: "screensaver", vals: []string{"off", "1 min", "2 min", "5 min", "10 min"}, idx: saverIdx,
 			help: "Blur, dim and scroll black lettering after idle time. Left/Right sets the delay; " + a.btn("A") + " previews. Other buttons wake without acting; Menu works as usual."},
-		{text: "Saver style", kind: "saver-style", vals: []string{"lettering", "screenshots"}, idx: map[string]int{"word": 0, "shots": 1}[a.SaverStyle()],
+		{text: "Screensaver style", kind: "saver-style", child: true, short: "Style", vals: []string{"lettering", "screenshots"}, idx: map[string]int{"word": 0, "shots": 1}[a.SaverStyle()],
 			help: "Lettering (default): the MISTERZINE sweep. Screenshots: random arcade shots wiping in; hold Start 2 s on one to play it. Other buttons wake."},
 	}
 	if a.SaverStyle() == "shots" {
-		E = append(E, panelEntry{text: "Saver brightness", kind: "saver-bright", vals: []string{"half", "full"}, idx: map[string]int{"half": 0, "full": 1}[a.SaverBright()],
+		E = append(E, panelEntry{text: "Screensaver brightness", kind: "saver-bright", child: true, short: "Brightness", vals: []string{"half", "full"}, idx: map[string]int{"half": 0, "full": 1}[a.SaverBright()],
 			help: "Half (default): the shots at half brightness, kind to a CRT; holding Start brings one up to full. Full: full brightness throughout."})
 	}
 	E = append(E, []panelEntry{
@@ -420,12 +446,12 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "Hold delay", kind: "hold-delay", vals: []string{"short", "normal", "long"}, idx: map[int]int{200: 0, 300: 1, 500: 2}[a.HoldDelay()],
 			help: "Wait before held navigation repeats: short 200 ms, normal 300 ms, long 500 ms. Scroll speed sets the pace after this delay."},
 		spacer, group(gfx.SectionOperation, "Operation"),
-		{text: "Main menu launcher", kind: "launcher", vals: []string{"off", "on"}, idx: launcherIdx,
+		{text: "Main menu shortcut", kind: "launcher", vals: []string{"off", "on"}, idx: launcherIdx,
 			help: "Show MisterZine in the MiSTer main menu. Off removes the entry when you leave; on puts it back. With it off, Scripts -> MisterZine-Run opens MisterZine."},
-		{text: "Open at boot", kind: "open-at-boot", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.OpenAtBoot], disabled: launcherIdx == 0,
-			help: "On: once the MiSTer menu is up after power-on or reboot, MisterZine opens as if picked from it. A bootcore in the INI wins. Needs the launcher."},
-		{text: "Return after game", kind: "return-after-game", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ReturnAfterGame], disabled: launcherIdx == 0,
-			help: "On: when a game started here exits to the MiSTer menu, MisterZine reopens on that game. Not after quitting with the Menu button. Needs the launcher."},
+		{text: "Open at boot", kind: "open-at-boot", child: true, vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.OpenAtBoot], disabled: launcherIdx == 0,
+			help: "On: once the MiSTer menu is up after power-on or reboot, MisterZine opens as if picked from it. A bootcore in the INI wins. Needs the shortcut."},
+		{text: "Return after game", kind: "return-after-game", child: true, vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ReturnAfterGame], disabled: launcherIdx == 0,
+			help: "On: when a game started here exits to the MiSTer menu, MisterZine reopens on that game. Not after quitting with the Menu button. Needs the shortcut."},
 		{text: "Troubleshooting", kind: "troubleshooting",
 			help: "Test your Start button or game launching. Results stay on screen for a photo; no keyboard or log files needed."},
 		{text: "Credits", kind: "credits"},
@@ -617,10 +643,10 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			val := la + " " + e.vals[e.idx] + " " + ra
 			vw := font.Width(val)
 			if vx > 0 {
-				c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, font.Cols(vx-inner.Min.X-2-font.W)), col)
+				c.Text(inner.Min.X+2, y, font, e.fitLabel(font.Cols(vx-inner.Min.X-2-font.W)), col)
 				c.Text(vx, y, font, val, col)
 			} else {
-				c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, font.Cols(edge-inner.Min.X-2-font.W-vw)), col)
+				c.Text(inner.Min.X+2, y, font, e.fitLabel(font.Cols(edge-inner.Min.X-2-font.W-vw)), col)
 				c.Text(edge-vw, y, font, val, col)
 			}
 		default:
@@ -630,7 +656,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			} else if n == p.cursor && a.screen != ScreenFilter {
 				col = gen.Eva.Accent
 			}
-			c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, cols), col)
+			c.Text(inner.Min.X+2, y, font, e.fitLabel(cols), col)
 		}
 		y += rowH(n)
 	}
@@ -673,7 +699,7 @@ func (a *App) valueColumn(inner image.Rectangle, edge int) int {
 	font := a.sm
 	widest, maxVal := 0, 0
 	for _, e := range a.panel.entries {
-		widest = max(widest, font.Width(e.text))
+		widest = max(widest, font.Width(e.label()))
 		for _, v := range e.vals {
 			maxVal = max(maxVal, font.Width(gfx.ArrowLeft+" "+v+" "+gfx.ArrowRight))
 		}

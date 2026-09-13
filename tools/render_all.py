@@ -27,7 +27,7 @@ scenarios = [
      "back; down*16; shot option; enter; wait 12000; shot preview; back; wait 300; up*16; up; shot wrap; down; shot top"],
     ["-rot", "left", "-logical", "-out", "out/saver-t", "-script",
      "back; down*16; shot option; enter; wait 12000; shot preview; back; wait 300; up*16; up; shot wrap; down; shot top"],
-    # Options -> Saver style and the brightness row it brings; the preview
+    # Options -> Screensaver style and the brightness row it brings; the preview
     # with no pictures at all falls back to the lettering
     ["-out", "out/saver-shots-h", "-script",
      "back; down*17; shot style; right; shot style-shots; down; shot bright; right; shot bright-full; enter; wait 1500; shot preview; back; wait 300; left; up; left; shot style-word"],
