@@ -28,6 +28,7 @@ const (
 	repeatDelay = 500 * time.Millisecond // a tap held a little long is still one step
 	repeatPage  = 150 * time.Millisecond
 	repeatStep  = 200 * time.Millisecond // flat pace for row/slot walking
+	repeatErase = 60 * time.Millisecond  // a held Backspace clears a search quickly
 	repeatCalib = 60 * time.Millisecond
 )
 

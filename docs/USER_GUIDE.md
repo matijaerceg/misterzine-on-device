@@ -111,8 +111,8 @@ immediately. An unset system clock hides relative dates until trusted time is
 available.
 
 Type a title in the list to search. Matching ignores case and spaces and works
-together with Filters. Backspace edits; Esc/B clears the query before B opens
-Options. Keyboard find currently uses a US layout. Search clears on restart;
+together with Filters. Backspace edits, and held it erases quickly after the
+Hold delay; Esc/B clears the query before B opens Options. Keyboard find currently uses a US layout. Search clears on restart;
 filter choices are saved.
 
 ## Controls
