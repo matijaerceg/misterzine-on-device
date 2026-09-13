@@ -446,7 +446,7 @@ func (a *App) optionsEntries() []panelEntry {
 		E = append(E, panelEntry{text: "Screensaver brightness", kind: "saver-bright", child: true, short: "Brightness", vals: []string{"half", "full"}, idx: map[string]int{"half": 0, "full": 1}[a.SaverBright()],
 			help: "Half (default): the shots at half brightness, kind to a CRT; holding Start brings one up to full. Full: full brightness throughout."},
 			panelEntry{text: "Screensaver info", kind: "saver-info", child: true, short: "Info", vals: []string{"full", "title only", "none"}, idx: map[string]int{"full": 0, "title": 1, "none": 2}[a.SaverInfo()],
-				help: "Full (default): what the pane says about the shot's game, typed out in a corner. Title only: just the title. None: the picture alone; holding Start still shows the title over its line."})
+				help: "Full (default): the pane's lines, typed in a corner. Title only: the title alone. None: nothing; holding Start still shows the title."})
 	}
 	E = append(E, []panelEntry{
 		{text: "Edit safe zone", kind: "inset",
