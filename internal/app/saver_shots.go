@@ -16,12 +16,13 @@ import (
 // side behind a soft, wandering edge. Once a shot is in, what the list's
 // pane says about the game (the title, the card answer, the kind, the
 // core, the year and maker, the rotation, players and controls, the
-// badges) is typed out on a black box that moves from corner to corner,
-// a character a frame with a beat at each line end, behind a cursor that
-// blinks once the block is complete. Start held on a shot plays that
-// game: the hold brings the picture up to full brightness and fills a
-// line under the box; letting go fades it back down and the saver goes
-// on with the shot it was about to show. Every other button wakes.
+// badges) is typed out in a corner, moving from corner to corner, a
+// character a frame with a beat at each line end, each line on a strip
+// of half-dark that grows with its letters, behind an underline cursor
+// that blinks once the block is complete. Start held on a shot plays
+// that game: the hold brings the picture up to full brightness and fills
+// a line under the block; letting go fades it back down and the saver
+// goes on with the shot it was about to show. Every other button wakes.
 //
 // The pool is the gameplay shot (the "snap" slot) of every arcade game in
 // the catalogue, shuffled and cycled without repeats: not the title
@@ -627,10 +628,12 @@ func saverShotDim(col rgb, bright int) rgb {
 }
 
 // paintSaverCaption draws the caption of the shot on screen as far as it
-// has been typed, on a black box in its corner of the safe zone sized for
-// the whole block, the cursor after the last character, and under the
-// box, while Start is held, the line that fills up to the launch, or the
-// word that the game is not on the card. A wipe under way hides it.
+// has been typed, in its corner of the safe zone: each line on a strip
+// of half-dark that reaches as far as its letters have got, the block
+// placed for its longest line, an underline cursor after the last
+// character, and under the block, while Start is held, the line that
+// fills up to the launch, or the word that the game is not on the card.
+// A wipe under way hides it.
 func (a *App) paintSaverCaption(c *gfx.Canvas) {
 	s := a.saver.shots
 	if s.cur.row < 0 || s.wipe > 0 {
@@ -643,7 +646,7 @@ func (a *App) paintSaverCaption(c *gfx.Canvas) {
 		tw = max(tw, a.sm.Width(ln.text))
 	}
 	tw += a.sm.W + 6 // the cursor's cell after the longest line
-	th := len(s.lines)*lh + 3
+	th := len(s.lines)*lh + 1
 	strip := a.sm.H + 2
 	right, bottom := s.corner == 1 || s.corner == 2, s.corner == 1 || s.corner == 3
 	x, y := root.Min.X+s.offX, root.Min.Y+s.offY
@@ -654,7 +657,6 @@ func (a *App) paintSaverCaption(c *gfx.Canvas) {
 		y = root.Max.Y - th - strip - s.offY
 	}
 	ink := saverShotDim(s.curCol, s.bright)
-	c.Fill(image.Rect(x, y, x+tw, y+th), rgb{A: 255})
 	t := saverShotTypingAt(s.lines, s.typed)
 	for i, ln := range s.lines {
 		if i > t.line {
@@ -664,11 +666,24 @@ func (a *App) paintSaverCaption(c *gfx.Canvas) {
 		if i == t.line {
 			text = text[:t.chars]
 		}
-		c.Text(x+3, y+2+i*lh, a.sm, text, saverShotDim(ln.col, s.bright))
+		// the strip follows the letters, and the cursor's cell on the
+		// line being typed; the strips meet without overlapping, so no
+		// seam is darkened twice, and the last one closes the block
+		cells := len(text)
+		if i == t.line {
+			cells++
+		}
+		ty := y + 1 + i*lh
+		low := ty + a.sm.H
+		if i == len(s.lines)-1 {
+			low++
+		}
+		c.Shade(image.Rect(x, ty-1, x+6+cells*a.sm.W, low))
+		c.Text(x+3, ty, a.sm, text, saverShotDim(ln.col, s.bright))
 	}
 	if t.cursor && len(s.lines) > 0 {
-		cx, cy := x+3+t.chars*a.sm.W, y+2+t.line*lh
-		c.Fill(image.Rect(cx, cy, cx+a.sm.W, cy+a.sm.H), ink)
+		cx, cy := x+3+t.chars*a.sm.W, y+1+t.line*lh+a.sm.H-1
+		c.Fill(image.Rect(cx, cy, cx+a.sm.W, cy+1), ink)
 	}
 	if s.holdAt.IsZero() {
 		return
@@ -681,7 +696,7 @@ func (a *App) paintSaverCaption(c *gfx.Canvas) {
 	if right {
 		sx = x + tw - sw
 	}
-	c.Fill(image.Rect(sx, y+th, sx+sw, y+th+strip), rgb{A: 255})
+	c.Shade(image.Rect(sx, y+th, sx+sw, y+th+strip))
 	if !s.holdOK {
 		c.Text(sx+3, y+th+1, a.sm, saverShotNoCard, saverShotDim(gen.Eva.Muted, s.bright))
 		return

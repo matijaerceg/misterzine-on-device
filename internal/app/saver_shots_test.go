@@ -207,9 +207,9 @@ func TestSaverShotsTypesThePaneLinesAndBlinksAfter(t *testing.T) {
 		}
 		return n
 	}
-	cell := a.sm.W * a.sm.H
+	cell := a.sm.W // the underline cursor: a cell wide, a pixel tall
 	if n := inked(); n != cell {
-		t.Fatalf("at the swap only the cursor is inked: %d pixels, a cell is %d", n, cell)
+		t.Fatalf("at the swap only the cursor is inked: %d pixels, an underline is %d", n, cell)
 	}
 	// a character a frame
 	frames(a, clock, 3)
@@ -238,15 +238,29 @@ func TestSaverShotsTypesThePaneLinesAndBlinksAfter(t *testing.T) {
 	if n := inked(); n != on {
 		t.Fatalf("the cursor did not come back: %d inked, want %d", n, on)
 	}
-	// a hold draws its line under the whole box, inside the safe zone
+	// the strips are the picture at half: under a hold, with the picture
+	// at full, that is the shot's colour halved, inside the safe zone
+	// only
 	a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})
 	frames(a, clock, saverShotRamp+2)
+	shot := shotRed
+	if a.ds.Rows[s.cur.row].K == "blue" {
+		shot = shotBlue
+	}
+	halved := color.RGBA{R: shot.R >> 1, G: shot.G >> 1, B: shot.B >> 1, A: 255}
+	shaded := 0
 	for y := 0; y < 240; y++ {
 		for x := 0; x < 320; x++ {
-			if p := a.logical.RGBAAt(x, y); p == (color.RGBA{A: 255}) && (x < 15 || x >= 305 || y < 15 || y >= 225) {
-				t.Fatalf("the box or its strip reaches outside the safe zone at %d,%d", x, y)
+			if p := a.logical.RGBAAt(x, y); p == halved {
+				shaded++
+				if x < 15 || x >= 305 || y < 15 || y >= 225 {
+					t.Fatalf("a strip reaches outside the safe zone at %d,%d", x, y)
+				}
 			}
 		}
+	}
+	if shaded < a.sm.W*a.sm.H*len(s.lines) {
+		t.Fatalf("the strips cover only %d pixels", shaded)
 	}
 	a.Handle(platform.Event{Key: platform.KeyStart, At: *clock})
 	// the next wipe takes the caption away, and the shot it brings starts
