@@ -111,7 +111,100 @@ func devicePad(f *os.File) padMapping {
 	}
 	var abs [8]byte // EVIOCGBIT(EV_ABS, 64 axes)
 	ioctl(f.Fd(), uintptr(0x80000000)|uintptr(len(abs))<<16|uintptr(0x45)<<8|uintptr(0x20+3), unsafe.Pointer(&abs[0]))
-	return loadPadMapping("/media/fat/config", fmt.Sprintf("%04x_%04x", id[1], id[2]), bits, abs)
+	m := loadPadMapping("/media/fat/config", fmt.Sprintf("%04x_%04x", id[1], id[2]), bits, abs)
+	if !m.Mapped {
+		return fallbackPad(bits, abs, id[0] == busVirtual)
+	}
+	return m
+}
+
+const busVirtual = 0x06 // BUS_VIRTUAL: a uinput device such as the Zaparoo pad, left to Main
+
+// Linux gamepad codes (linux/input-event-codes.h), by position: the
+// kernel's gamepad drivers name the face buttons by where they sit.
+const (
+	btnSouth  = 304 // bottom
+	btnEast   = 305 // right
+	btnNorth  = 307 // top
+	btnWest   = 308 // left
+	btnTL     = 310
+	btnTR     = 311
+	btnSelect = 314
+	btnMode   = 316 // the home / guide button
+	absX      = 0   // the left stick
+	absY      = 1
+	absHat0X  = 16 // the d-pad
+	absHat0Y  = 17
+)
+
+// fallbackPad is the mapping for a pad with no MiSTer map file: the Linux
+// default layout when the node reports the standard gamepad buttons, else
+// Start alone, the rest through Main. A virtual device is never held.
+func fallbackPad(bits [96]byte, abs [8]byte, virtual bool) padMapping {
+	if !virtual {
+		if m, ok := linuxLayout(bits, abs); ok {
+			return m
+		}
+	}
+	return defaultStart(bits)
+}
+
+// linuxLayout reads a pad MiSTer has not defined by the standard Linux
+// gamepad layout, held exclusively like a defined pad so that its home
+// button is the app's Menu button rather than Main's OSD. The slots follow
+// MiSTer's positional define (A right, B bottom, X top, Y left), and the
+// bottom button is its OK, as in Main's own default and on every pad that
+// prints letters, so B confirms unless Options say otherwise. The hat and
+// the left stick move; the shoulders page. It needs the bottom and right
+// buttons at least; a pad without them stays with Main.
+func linuxLayout(bits [96]byte, abs [8]byte) (padMapping, bool) {
+	if !hasButton(bits, btnSouth) || !hasButton(bits, btnEast) {
+		return padMapping{}, false
+	}
+	m := padMapping{Source: "Linux default layout", Keys: map[uint16]platform.Key{}, Slots: map[string]uint16{}, direct: true}
+	for slot, code := range map[string]uint32{"A": btnEast, "B": btnSouth, "X": btnNorth, "Y": btnWest, "L": btnTL, "R": btnTR, "Select": btnSelect, "Start": btnStart} {
+		if usable(code, bits, abs) {
+			m.Slots[slot] = uint16(code)
+		}
+	}
+	if hasAxis(abs, absHat0X) && hasAxis(abs, absHat0Y) {
+		m.Slots["Right"], m.Slots["Left"] = AxisCode(absHat0X, true), AxisCode(absHat0X, false)
+		m.Slots["Down"], m.Slots["Up"] = AxisCode(absHat0Y, true), AxisCode(absHat0Y, false)
+	} else {
+		for slot, code := range map[string]uint32{"Up": 544, "Down": 545, "Left": 546, "Right": 547} { // BTN_DPAD_*
+			if usable(code, bits, abs) {
+				m.Slots[slot] = uint16(code)
+			}
+		}
+	}
+	m.assignKeys()
+	if hasButton(bits, btnMode) {
+		m.osd = [2]uint16{btnMode, btnMode}
+	}
+	m.okBack = [2]uint16{btnSouth, btnEast}
+	if hasAxis(abs, absX) && hasAxis(abs, absY) {
+		m.stickAxes, m.stickAxesN = [4]uint16{absX, absY}, 2
+		m.menuX, m.menuY, m.menu = absX, absY, [2]bool{true, true}
+		m.setDefault(AxisCode(absX, true), platform.KeyRight)
+		m.setDefault(AxisCode(absX, false), platform.KeyLeft)
+		m.setDefault(AxisCode(absY, true), platform.KeyDown)
+		m.setDefault(AxisCode(absY, false), platform.KeyUp)
+	}
+	if hasButton(bits, btnStart) {
+		m.Code = btnStart
+	}
+	return m, true
+}
+
+// assignKeys gives every slot's code its app key, the higher priority
+// slot winning when two share a code.
+func (m *padMapping) assignKeys() {
+	for i := len(priority) - 1; i >= 0; i-- { // lowest priority first, so higher ones overwrite
+		slot := priority[i]
+		if code, ok := m.Slots[slot]; ok {
+			m.Keys[code] = slotKeys[slot]
+		}
+	}
 }
 
 func hasButton(bits [96]byte, code uint32) bool {
@@ -166,12 +259,7 @@ func loadPadMapping(configDir, id string, bits [96]byte, abs [8]byte) padMapping
 				m.Slots[slot] = uint16(code)
 			}
 		}
-		for i := len(priority) - 1; i >= 0; i-- { // lowest priority first, so higher ones overwrite
-			slot := priority[i]
-			if code, ok := m.Slots[slot]; ok {
-				m.Keys[code] = slotKeys[slot]
-			}
-		}
+		m.assignKeys()
 		// The MiSTer menu (OSD) button: slot 21, and slot 22 for the second
 		// button of a combo (Main sets it equal to the first when there is
 		// none). While the pad is held it is the app's Menu button.

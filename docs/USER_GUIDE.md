@@ -138,10 +138,19 @@ directly, slot by slot: D-pad, A B X Y, L R, Start, and the stick you gave
 the MiSTer menu, if any. A trigger or stick direction used as a button
 counts once it passes a quarter of its travel, as in MiSTer. Each pad
 follows its own definition, so two pads defined differently work side by
-side. A pad that has never been defined works through MiSTer's translation
-instead, and only while no defined pad is connected. A button that is in
-no MiSTer slot does nothing here either; the pad tester under
-Troubleshooting shows it with its raw code.
+side. A button that is in no MiSTer slot does nothing here either; the pad
+tester under Troubleshooting shows it with its raw code.
+
+A pad that has never been defined in MiSTer is held as well when it
+reports the standard Linux gamepad layout, as nearly every pad does: by
+position, the right button is A, the bottom one B, the top one X and the
+left one Y, the shoulders are L and R, the home or guide button is Menu,
+and the hat and the left stick move. The bottom button confirms on such a
+pad, as it does in MiSTer's own default, so B confirms and A goes back
+until you define the pad in the MiSTer menu, which always wins. The pad
+tester calls this "Linux default layout". A pad that reports no such
+layout works through MiSTer's translation instead, and only while no held
+pad is connected.
 
 Which button confirms follows the MENU OK you chose at the end of MiSTer's
 define screen. If you put it on the button you defined as B, B confirms
@@ -334,7 +343,8 @@ the bottom.
 - **OK button:** which face button confirms, per pad. Auto from MiSTer
   (default) follows the MENU OK you gave MiSTer's define screen: on a pad
   whose MENU OK is B, B confirms and A goes back, and the legends name the
-  buttons that way round. A or B overrides it for the pad shown. The row
+  buttons that way round. A pad MiSTer has not defined reads Auto from
+  Linux: its bottom button confirms. A or B overrides it for the pad shown. The row
   follows the pad that last pressed a button, so change it with that pad in
   hand; the hint names it. It is muted, with the reason, before any pad has
   pressed, for a pad that comes through MiSTer's translation, and for one

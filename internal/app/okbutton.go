@@ -172,6 +172,9 @@ func (a *App) okNote(p support.Pad) string {
 	if _, auto := a.okButton(p); !auto {
 		return "set in Options"
 	}
+	if !p.Mapped {
+		return "Linux default layout"
+	}
 	switch p.OK {
 	case "A", "B":
 		return "MiSTer's MENU OK"
@@ -213,6 +216,9 @@ func (a *App) okButtonRow() panelEntry {
 	if !p.Direct {
 		row.vals, row.disabled = []string{"via MiSTer"}, true
 		row.help = name + ": A or B is not in its MiSTer definition, so its buttons come through MiSTer's translation. Define it in the MiSTer menu."
+		if !p.Mapped {
+			row.help = name + ": not defined in MiSTer and no standard gamepad layout, so it comes through MiSTer's translation. Define it in the MiSTer menu."
+		}
 		return row
 	}
 	if sameAB(p) {
@@ -224,12 +230,20 @@ func (a *App) okButtonRow() panelEntry {
 	if p.OK == "B" {
 		auto = "B"
 	}
-	row.vals = []string{"Auto from MiSTer (" + a.label(auto) + ")", a.label("A"), a.label("B")}
+	from := "MiSTer"
+	if !p.Mapped {
+		from = "Linux"
+	}
+	row.vals = []string{"Auto from " + from + " (" + a.label(auto) + ")", a.label("A"), a.label("B")}
 	switch a.cfg.OKButtons[padID(p)] {
 	case "a":
 		row.idx = 1
 	case "b":
 		row.idx = 2
+	}
+	if !p.Mapped {
+		row.help = name + ": not defined in MiSTer; the Linux layout puts OK on the bottom button, so Auto is " + a.label(auto) + ". " + a.label("A") + " or " + a.label("B") + " overrides, for this pad only."
+		return row
 	}
 	why := "Auto follows the MENU OK in its MiSTer definition."
 	switch {

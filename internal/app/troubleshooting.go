@@ -165,6 +165,8 @@ func (a *App) padLines(p support.Pad) []string {
 	switch {
 	case p.Mapped && p.Direct:
 		lines = append(lines, "  "+strings.TrimSpace(slots), "  read by MiSTer slot from "+shortName(p.Map, 40), "  "+a.okLine(p))
+	case p.Direct:
+		lines = append(lines, "  "+strings.TrimSpace(slots), "  no MiSTer map: read by the Linux default layout; define it in MiSTer to change it", "  "+a.okLine(p))
 	case p.Mapped && len(slots) > 0:
 		lines = append(lines, "  "+strings.TrimSpace(slots), "  A or B not readable here: buttons come through MiSTer's translation")
 	case p.Mapped:
