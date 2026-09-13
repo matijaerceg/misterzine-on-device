@@ -238,30 +238,28 @@ func TestSaverShotsTypesThePaneLinesAndBlinksAfter(t *testing.T) {
 	if n := inked(); n != on {
 		t.Fatalf("the cursor did not come back: %d inked, want %d", n, on)
 	}
-	// the strips are the picture at half: under a hold, with the picture
-	// at full, that is the shot's colour halved, inside the safe zone
-	// only
+	// the black strips, and under a hold the hold's strip, sit in a
+	// bottom corner inside the safe zone
 	a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})
 	frames(a, clock, saverShotRamp+2)
-	shot := shotRed
-	if a.ds.Rows[s.cur.row].K == "blue" {
-		shot = shotBlue
+	if s.corner != 1 && s.corner != 3 {
+		t.Fatalf("corner %d is not a bottom one", s.corner)
 	}
-	halved := color.RGBA{R: shot.R >> 1, G: shot.G >> 1, B: shot.B >> 1, A: 255}
-	shaded := 0
+	black := 0
 	for y := 0; y < 240; y++ {
 		for x := 0; x < 320; x++ {
-			if p := a.logical.RGBAAt(x, y); p == halved {
-				shaded++
-				if x < 15 || x >= 305 || y < 15 || y >= 225 {
-					t.Fatalf("a strip reaches outside the safe zone at %d,%d", x, y)
+			if p := a.logical.RGBAAt(x, y); p == (color.RGBA{A: 255}) {
+				black++
+				if x < 15 || x >= 305 || y < 120 || y >= 225 {
+					t.Fatalf("a strip reaches outside the bottom of the safe zone at %d,%d", x, y)
 				}
 			}
 		}
 	}
-	if shaded < a.sm.W*a.sm.H*len(s.lines) {
-		t.Fatalf("the strips cover only %d pixels", shaded)
+	if black < a.sm.W*a.sm.H*len(s.lines) {
+		t.Fatalf("the strips cover only %d pixels", black)
 	}
+	corner := s.corner
 	a.Handle(platform.Event{Key: platform.KeyStart, At: *clock})
 	// the next wipe takes the caption away, and the shot it brings starts
 	// a fresh one
@@ -276,6 +274,9 @@ func TestSaverShotsTypesThePaneLinesAndBlinksAfter(t *testing.T) {
 	frames(a, clock, saverShotWipe-6)
 	if s.cur == first || s.typed != 0 || s.lines[0].text != a.ds.Rows[s.cur.row].Title {
 		t.Fatalf("after the wipe: cur %+v typed %d caption %+v", s.cur, s.typed, s.lines)
+	}
+	if s.corner != 4-corner {
+		t.Fatalf("the caption did not move to the other bottom corner: %d after %d", s.corner, corner)
 	}
 }
 

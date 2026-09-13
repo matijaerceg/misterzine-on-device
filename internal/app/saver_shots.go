@@ -16,10 +16,10 @@ import (
 // side behind a soft, wandering edge. Once a shot is in, what the list's
 // pane says about the game (the title, the card answer, the kind, the
 // core, the year and maker, the rotation, players and controls, the
-// badges) is typed out in a corner, moving from corner to corner, a
-// character a frame with a beat at each line end, each line on a strip
-// of half-dark that grows with its letters, behind an underline cursor
-// that blinks once the block is complete. Start held on a shot plays
+// badges) is typed out in a bottom corner, the other one each time, a
+// character a frame with a beat at each line end, each line on a black
+// strip that grows with its letters, behind an underline cursor that
+// blinks once the block is complete. Start held on a shot plays
 // that game: the hold brings the picture up to full brightness and fills
 // a line under the block; letting go fades it back down and the saver
 // goes on with the shot it was about to show. Every other button wakes.
@@ -103,7 +103,7 @@ type saverShots struct {
 	holdOK bool      // the shot's game is on the card, so the hold plays it
 	bright int       // the picture's brightness now, in 256ths
 
-	corner     int        // the caption's corner: 0 top left, 1 bottom right, 2 top right, 3 bottom left
+	corner     int        // the caption's corner: 1 bottom right, 3 bottom left (the bottom ones only)
 	offX, offY int        // the caption's wander from that corner
 	lines      []paneLine // the caption: the pane's lines for cur, the title in the shot's hue
 	typed      int        // frames the caption has been typing, since cur arrived
@@ -134,7 +134,7 @@ func (a *App) saverShotsStart(now time.Time) {
 	s.in = s.next()
 	s.bright = a.saverShotRest()
 	s.shownAt = now.Add(-saverShotDwell) // the first shot comes as soon as it is here
-	s.corner = int(s.rng.IntN(4))
+	s.corner = 1 + 2*int(s.rng.IntN(2))
 	a.saver.shots = s
 }
 
@@ -324,7 +324,7 @@ func (a *App) saverShotsSkip() {
 }
 
 // saverShotsSwap ends a wipe: the arriving shot is the one on screen, its
-// caption starts typing in the next corner with a fresh wander, and the
+// caption starts typing in the other bottom corner with a fresh wander, and the
 // pick after it is on its way. The next wipe comes from the other side.
 func (a *App) saverShotsSwap(now time.Time) {
 	s := a.saver.shots
@@ -335,7 +335,7 @@ func (a *App) saverShotsSwap(now time.Time) {
 	s.wipe, s.dir = 0, -s.dir
 	s.shownAt, s.dueSince = now, time.Time{}
 	s.version++
-	s.corner = (s.corner + 1) % 4
+	s.corner = 4 - s.corner // bottom right <-> bottom left
 	s.offX, s.offY = int(s.rng.IntN(saverShotOffset+1)), int(s.rng.IntN(saverShotOffset+1))
 }
 
@@ -628,8 +628,8 @@ func saverShotDim(col rgb, bright int) rgb {
 }
 
 // paintSaverCaption draws the caption of the shot on screen as far as it
-// has been typed, in its corner of the safe zone: each line on a strip
-// of half-dark that reaches as far as its letters have got, the block
+// has been typed, in its bottom corner of the safe zone: each line on a
+// black strip that reaches as far as its letters have got, the block
 // placed for its longest line, an underline cursor after the last
 // character, and under the block, while Start is held, the line that
 // fills up to the launch, or the word that the game is not on the card.
@@ -667,8 +667,8 @@ func (a *App) paintSaverCaption(c *gfx.Canvas) {
 			text = text[:t.chars]
 		}
 		// the strip follows the letters, and the cursor's cell on the
-		// line being typed; the strips meet without overlapping, so no
-		// seam is darkened twice, and the last one closes the block
+		// line being typed; the strips meet edge to edge, and the last
+		// one closes the block
 		cells := len(text)
 		if i == t.line {
 			cells++
@@ -678,7 +678,7 @@ func (a *App) paintSaverCaption(c *gfx.Canvas) {
 		if i == len(s.lines)-1 {
 			low++
 		}
-		c.Shade(image.Rect(x, ty-1, x+6+cells*a.sm.W, low))
+		c.Fill(image.Rect(x, ty-1, x+6+cells*a.sm.W, low), rgb{A: 255})
 		c.Text(x+3, ty, a.sm, text, saverShotDim(ln.col, s.bright))
 	}
 	if t.cursor && len(s.lines) > 0 {
@@ -696,7 +696,7 @@ func (a *App) paintSaverCaption(c *gfx.Canvas) {
 	if right {
 		sx = x + tw - sw
 	}
-	c.Shade(image.Rect(sx, y+th, sx+sw, y+th+strip))
+	c.Fill(image.Rect(sx, y+th, sx+sw, y+th+strip), rgb{A: 255})
 	if !s.holdOK {
 		c.Text(sx+3, y+th+1, a.sm, saverShotNoCard, saverShotDim(gen.Eva.Muted, s.bright))
 		return

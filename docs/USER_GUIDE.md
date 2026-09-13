@@ -321,10 +321,10 @@ the bottom.
   cycle, each new one wiping in from the side behind a soft, wandering
   edge about every twelve seconds. Once a shot is in, what the main view's
   pane says about the game (title, card answer, kind, core, year and
-  maker, rotation, players, controls, badges) is typed out in a corner,
-  moving from corner to corner, a character a frame on strips of
-  half-dark that grow with the letters, behind an underline cursor that
-  blinks once the block is complete. Online, a shot the card lacks is
+  maker, rotation, players, controls, badges) is typed out in a bottom
+  corner, the other one each time, a character a frame on black strips
+  that grow with the letters, behind an underline cursor that blinks
+  once the block is complete. Online, a shot the card lacks is
   downloaded when its turn comes; offline, only the shots on the card show
   (Prefetch shots fills the card). Hold Start for 2 seconds on a shot to
   play that game: the picture comes up to full brightness and a line

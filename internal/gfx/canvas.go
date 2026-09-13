@@ -83,23 +83,6 @@ func (c *Canvas) Fill(r image.Rectangle, col color.RGBA) {
 	c.Dirty(r)
 }
 
-// Shade darkens a rectangle by half: black at half opacity over it.
-func (c *Canvas) Shade(r image.Rectangle) {
-	r = r.Intersect(c.Rect)
-	if r.Empty() {
-		return
-	}
-	w := r.Dx()
-	for y := r.Min.Y; y < r.Max.Y; y++ {
-		off := c.PixOffset(r.Min.X, y)
-		row := c.Pix[off : off+w*4]
-		for x := 0; x < len(row); x += 4 {
-			row[x], row[x+1], row[x+2] = row[x]>>1, row[x+1]>>1, row[x+2]>>1
-		}
-	}
-	c.Dirty(r)
-}
-
 // HLine paints a horizontal 1 px line from x0 to x1 inclusive.
 func (c *Canvas) HLine(x0, x1, y int, col color.RGBA) {
 	c.Fill(image.Rect(x0, y, x1+1, y+1), col)
