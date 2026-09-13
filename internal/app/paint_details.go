@@ -196,7 +196,7 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 		add("Type", d.TypeLabel, typeHue(row.Base))
 	}
 	add("Genre", row.Genre, fg)
-	add("Maker", row.Manufacturer, fg)
+	add("Mfr", row.Manufacturer, fg)
 	if row.Core != "" {
 		add("Core", d.CoreLabel+" ("+row.Core+")", fg)
 	}

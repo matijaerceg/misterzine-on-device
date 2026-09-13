@@ -62,7 +62,7 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 	} else if a.mode == data.SortAlphabetical {
 		left = "by: A-Z"
 	} else if a.mode == data.SortMaker {
-		left = "by: maker"
+		left = "by: manufacturer"
 	} else if a.mode == data.SortFavorites {
 		left = "Favorites A-Z"
 	} else if a.mode == data.SortRecents {
@@ -70,7 +70,7 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 	}
 	if a.appUpdate != "" {
 		// Reserve space for a persistent app notice even on narrow tate screens.
-		left = map[data.SortMode]string{data.SortUpdated: "Core updated", data.SortDebut: "MiSTer debut", data.SortYear: "Original year", data.SortAlphabetical: "A-Z", data.SortMaker: "Maker A-Z", data.SortFavorites: "Favorites A-Z", data.SortRecents: "Recents"}[a.mode]
+		left = map[data.SortMode]string{data.SortUpdated: "Core updated", data.SortDebut: "MiSTer debut", data.SortYear: "Original year", data.SortAlphabetical: "A-Z", data.SortMaker: "Manufacturer A-Z", data.SortFavorites: "Favorites A-Z", data.SortRecents: "Recents"}[a.mode]
 		c.Text(l.Status.Min.X+2, y, a.sm, left, gen.Eva.Accent)
 		c.TextRight(l.Status.Max.X-2, y, a.sm, "App update", gen.Eva.Accent)
 		return

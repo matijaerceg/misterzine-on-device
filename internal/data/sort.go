@@ -105,7 +105,7 @@ func (m SortMode) String() string {
 	case SortRecents:
 		return "Recents"
 	case SortMaker:
-		return "Maker"
+		return "Manufacturer"
 	}
 	return "Updated"
 }

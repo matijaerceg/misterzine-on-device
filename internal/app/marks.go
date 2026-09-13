@@ -29,7 +29,7 @@ func (a *App) groupLabel(i int) string {
 		if m := a.ds.Der[i].Maker; m != "" {
 			return m
 		}
-		return "Unknown maker"
+		return "Unknown manufacturer"
 	case data.SortAlphabetical:
 		if c := a.ds.Der[i].TitleInitial(); c != '#' {
 			return string(unicode.ToUpper(c))

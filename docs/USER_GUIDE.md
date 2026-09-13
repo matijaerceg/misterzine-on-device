@@ -65,9 +65,9 @@ Dates highlighted in green and the last-look divider help find changes since
 your previous visit. Visits start at the top of the view you left.
 Options -> Remember last view is on by default; turn it off to start each visit
 in Core updated instead.
-Y cycles Updated, Debut, Year, Alphabetical, Maker, then Favorites; the top
-bar names the order as core updated, MiSTer debut, original year, A-Z, maker
-or Favorites A-Z. Options -> Views can leave any of them out of the cycle.
+Y cycles Updated, Debut, Year, Alphabetical, Manufacturer, then Favorites; the
+top bar names the order as core updated, MiSTer debut, original year, A-Z,
+manufacturer or Favorites A-Z. Options -> Views can leave any of them out of the cycle.
 With Recents on there, Recents follows Favorites: the games launched from
 MisterZine, latest launch first, with the launch date in the date column
 and L/R jumping between launch months.
@@ -79,14 +79,14 @@ only the card status glyph kept at the right.
 Alphabetical sorting ignores case and accents and puts Game 2 before Game 10;
 a header line names each letter, with numbers and symbols under 0-9 and
 symbols before A.
-Maker groups the games by manufacturer: a header line names each maker, makers
-run A-Z with titles A-Z under them, the date column shows the original year,
-and L/R jump from maker to maker. Joint credits and licences count under the
+Manufacturer groups the games by manufacturer: a header line names each one,
+manufacturers run A-Z with titles A-Z under them, the date column shows the
+original year, and L/R jump from manufacturer to manufacturer. Joint credits and licences count under the
 first company named and corporate or regional suffixes are ignored, so Taito
 Corporation Japan and Taito America Corporation sit under Taito and Data East
 USA under Data East; Details still shows the full credit. Games without a
-manufacturer come last under Unknown maker.
-In the three grouped orders (Year, A-Z, Maker) a group whose header has
+manufacturer come last under Unknown manufacturer.
+In the three grouped orders (Year, A-Z, Manufacturer) a group whose header has
 scrolled off the top keeps its name pinned on the top line until its last
 row has gone.
 Favorites shows only your starred entries in alphabetical order, with the same
@@ -97,7 +97,7 @@ order still show the latest update; the last-look divider appears only in the
 latest-update order.
 In alphabetical order, L/R jumps to the first title of the previous/next letter
 in your current search and filters; the title lands centred with its header
-line right above it, as in the Year and Maker orders. Empty letters are
+line right above it, as in the Year and Manufacturer orders. Empty letters are
 skipped; numbers and symbols share a group before A. In the date sorts, L/R
 jumps between months: L goes to a newer month, R to an older one. Empty months
 are skipped, each month's first result appears at the top, and its month/year
@@ -121,7 +121,7 @@ filter choices are saved.
 |---|---|---|---|---|---|---|
 | Up/Down | arrows | move | page information | | move | move |
 | Left/Right | arrows | page, keeping the row centered | choose version | change shot | collapse/expand section or years | change value |
-| L/R | PageUp/PageDown | previous/next letter in A-Z; newer/older month in date sorts; previous/next year or maker | | | previous/next section | first/last |
+| L/R | PageUp/PageDown | previous/next letter in A-Z; newer/older month in date sorts; previous/next year or manufacturer | | | previous/next section | first/last |
 | A | Enter | details | artwork | | toggle a value; open/close a heading | run action |
 | B | Esc | Options / clear search | back | back | back | back |
 | X | Tab | Filters | | | back to the list | |
@@ -239,7 +239,7 @@ the bottom.
   in the view you left; off starts every visit in Core updated. Changing
   this preference leaves the current view alone.
 - **Views:** which list orders Y cycles through, as a checkbox page: core
-  updated, MiSTer debut, original year, A-Z, Maker, Favorites and Recents.
+  updated, MiSTer debut, original year, A-Z, Manufacturer, Favorites and Recents.
   Everything is on except Recents by default. A toggles a view; the last one
   on cannot be turned off (it is greyed, and A there says so), and turning off
   the view you are in moves the list to the next one on. The Options row

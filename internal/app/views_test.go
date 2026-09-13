@@ -137,7 +137,7 @@ func TestMakerHeadersInTheList(t *testing.T) {
 		}
 		return out
 	}
-	// Capcom: Beta; Sega: Alpha, Gamma; Unknown maker: Delta
+	// Capcom: Beta; Sega: Alpha, Gamma; Unknown manufacturer: Delta
 	if got := keys(); !reflect.DeepEqual(got, []string{"b", "a", "c", "d"}) {
 		t.Fatalf("maker order %v", got)
 	}
@@ -149,7 +149,7 @@ func TestMakerHeadersInTheList(t *testing.T) {
 			t.Fatalf("screenLine(%d) = %d, want %d", pos, a.screenLine(pos), line)
 		}
 	}
-	if a.markText(0) != "Capcom" || a.markText(1) != "Sega" || a.markText(2) != "Unknown maker" {
+	if a.markText(0) != "Capcom" || a.markText(1) != "Sega" || a.markText(2) != "Unknown manufacturer" {
 		t.Fatalf("headers %q %q %q", a.markText(0), a.markText(1), a.markText(2))
 	}
 	// L/R jump makers, the row centered like a step (no top alignment), no notice

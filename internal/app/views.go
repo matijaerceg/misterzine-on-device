@@ -107,7 +107,7 @@ func (a *App) setViewOn(m data.SortMode, on bool) bool {
 // viewLabels name the views on the Views page and in the Views help.
 var viewLabels = map[data.SortMode]string{
 	data.SortUpdated: "Core updated", data.SortDebut: "MiSTer debut", data.SortYear: "Original year",
-	data.SortAlphabetical: "A-Z", data.SortMaker: "Maker", data.SortFavorites: "Favorites", data.SortRecents: "Recents",
+	data.SortAlphabetical: "A-Z", data.SortMaker: "Manufacturer", data.SortFavorites: "Favorites", data.SortRecents: "Recents",
 }
 
 // viewsEntries builds the Views page: one checkbox per view in cycle order,

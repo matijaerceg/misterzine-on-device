@@ -377,7 +377,7 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "Remember last view", kind: "remember-sort", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.RememberSort()],
 			help: "On (default): reopen in the view you left, Favorites included. Off: every visit starts in Core updated."},
 		{text: "Views (" + a.viewsSummary() + ")", kind: "views",
-			help: "Which views " + a.btn("Y") + " cycles through: core updated, MiSTer debut, original year, A-Z, maker, Favorites, Recents (launches from here). " + a.btn("A") + " opens the list."},
+			help: "Which views " + a.btn("Y") + " cycles through: core updated, MiSTer debut, original year, A-Z, manufacturer, Favorites, Recents (launches from here). " + a.btn("A") + " opens the list."},
 		{text: "Title font", kind: "title-font", vals: []string{"normal", "narrow", "narrow tall"}, idx: map[string]int{"normal": 0, "narrow": 1, "tall": 2}[a.TitleFont()],
 			help: "Narrow fonts fit a third more title; tall (default) matches the body font height. Normal: body font."},
 		{text: "List shots", kind: "list-shot", vals: []string{"gameplay", "title"}, idx: map[string]int{"gameplay": 0, "title": 1}[a.ListShot()],
