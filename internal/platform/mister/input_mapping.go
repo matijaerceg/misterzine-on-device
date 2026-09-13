@@ -113,12 +113,30 @@ func devicePad(f *os.File) padMapping {
 	ioctl(f.Fd(), uintptr(0x80000000)|uintptr(len(abs))<<16|uintptr(0x45)<<8|uintptr(0x20+3), unsafe.Pointer(&abs[0]))
 	m := loadPadMapping("/media/fat/config", fmt.Sprintf("%04x_%04x", id[1], id[2]), bits, abs)
 	if !m.Mapped {
-		return fallbackPad(bits, abs, id[0] == busVirtual)
+		return fallbackPad(bits, abs, id[0] == busVirtual || devPhys(f) == "")
 	}
 	return m
 }
 
-const busVirtual = 0x06 // BUS_VIRTUAL: a uinput device such as the Zaparoo pad, left to Main
+// A uinput device such as the Zaparoo pad is Main's: it may claim any bus
+// type (Zaparoo says USB), but it has no physical path, where a real pad
+// reports its USB port or Bluetooth address.
+const busVirtual = 0x06 // BUS_VIRTUAL
+
+func eviocgphys(n int) uintptr { return uintptr(0x80000000) | uintptr(n)<<16 | uintptr(0x45)<<8 | 0x07 }
+
+// devPhys is the device's physical path (EVIOCGPHYS): "" for a virtual one.
+func devPhys(f *os.File) string {
+	buf := make([]byte, 256)
+	if err := ioctl(f.Fd(), eviocgphys(len(buf)), unsafe.Pointer(&buf[0])); err != nil {
+		return ""
+	}
+	n := 0
+	for n < len(buf) && buf[n] != 0 {
+		n++
+	}
+	return string(buf[:n])
+}
 
 // Linux gamepad codes (linux/input-event-codes.h), by position: the
 // kernel's gamepad drivers name the face buttons by where they sit.

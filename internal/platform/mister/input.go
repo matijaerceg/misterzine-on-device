@@ -256,7 +256,7 @@ func (in *Input) Pads() []support.Pad {
 
 // slotText is the mapping in one line for the log.
 func (m padMapping) slotText() string {
-	if !m.Mapped {
+	if !m.Mapped && !m.direct {
 		return "via MiSTer (no map file)"
 	}
 	if !m.direct {
