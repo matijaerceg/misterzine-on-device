@@ -84,7 +84,7 @@ func TestFilterOpenShowsOnlyEditsAndRemovesFavorites(t *testing.T) {
 		if e.kind == "decade" {
 			a.panel.cursor = i
 			hint := a.filterHint()
-			if !strings.Contains(hint, "A toggle") || !strings.Contains(hint, "open/close") || a.sm.Width(hint) > a.lay.Hint.Dx()-4 {
+			if !strings.Contains(hint, "A Toggle") || !strings.Contains(hint, "Open/close") || a.sm.Width(hint) > a.lay.Hint.Dx()-4 {
 				t.Fatal("decade hints must be explicit and fit", hint)
 			}
 		}

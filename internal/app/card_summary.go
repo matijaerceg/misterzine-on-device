@@ -83,5 +83,5 @@ func (a *App) paintScan(c *gfx.Canvas) {
 			y += a.sm.H + 2
 		}
 	}
-	a.paintHint(c, "B back")
+	a.paintHint(c, "B Back")
 }

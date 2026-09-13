@@ -72,24 +72,24 @@ func (a *App) filterHint() string {
 	arrows := gfx.ArrowLeft + " " + gfx.ArrowRight
 	if a.onFilterSectionHeader() {
 		// A and the arrows both open or close the heading under the cursor.
-		return "A " + arrows + " open/close  B back"
+		return "A " + arrows + " Open/close  B Back"
 	}
-	hint := "A toggle  " + arrows + " open/close  B back"
+	hint := "A Toggle  " + arrows + " Open/close  B Back"
 	if a.canOnlyFilter() {
-		hint = "A toggle  Y only/all  " + arrows + " open/close  B back"
+		hint = "A Toggle  Y Only/all  " + arrows + " Open/close  B Back"
 	}
 	if a.sm.Width(hint) > a.lay.Hint.Dx()-4 {
-		hint = "A toggle  " + arrows + " open/close  B"
+		hint = "A Toggle  " + arrows + " Open/close  B"
 		if a.canOnlyFilter() {
-			hint = "A toggle  Y only  " + arrows + " open/close  B back"
+			hint = "A Toggle  Y Only  " + arrows + " Open/close  B Back"
 		}
 	}
 	if a.sm.Width(hint) > a.lay.Hint.Dx()-4 {
 		// At the largest tate inset, retain action descriptions and omit
 		// the conventional Back reminder rather than clipping a control.
-		hint = "A toggle  " + gfx.ArrowLeft + gfx.ArrowRight + " open/close"
+		hint = "A Toggle  " + gfx.ArrowLeft + gfx.ArrowRight + " Open/close"
 		if a.canOnlyFilter() {
-			hint = "A toggle  Y only  " + gfx.ArrowLeft + gfx.ArrowRight + " open/close"
+			hint = "A Toggle  Y Only  " + gfx.ArrowLeft + gfx.ArrowRight + " Open/close"
 		}
 	}
 	return hint

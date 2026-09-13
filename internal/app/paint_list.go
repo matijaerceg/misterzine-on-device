@@ -18,15 +18,17 @@ func (a *App) paintList(c *gfx.Canvas) {
 	a.paintRows(c)
 	a.paintScrollbar(c)
 	a.paintPane(c)
-	hint := "A details  B Options  X Filters  Y view"
-	if a.sm.Width(hint) > a.lay.Hint.Dx()-4 {
-		hint = "A open  B opts  X filt  Y mode"
+	// the last chunk reminds of the Select chords (quick.go); the bar drops
+	// it first when the safe zone leaves no room
+	hint := "A Details  B Options  X Filters  Y View  Hold Select"
+	if !a.hintFits(hint) {
+		hint = "A Open  B Opt.  X Filt.  Y View  Hold Select"
 	}
 	if a.query != "" {
-		hint = "A details  B clear find  X Filters"
+		hint = "A Details  B Clear find  X Filters  Hold Select"
 	}
 	if a.quickHeld() {
-		hint = "Y layout  X shots  A favorite"
+		hint = "Y Layout  X Shots  A Favorite"
 	}
 	a.paintHint(c, hint)
 }
@@ -103,8 +105,16 @@ func (a *App) paintHint(c *gfx.Canvas, s string) {
 	a.hintLine(c, l.Hint.Min.X+2, l.Hint.Min.Y+2, l.Hint.Dx()-4, s)
 }
 
-func (a *App) hintLine(c *gfx.Canvas, x, y, w int, s string) {
-	maxX := x + w
+// hintChunk is one legend entry: the control, painted in the accent, and
+// what it does.
+type hintChunk struct{ btn, rest string }
+
+// hintChunks splits a legend line at its double spaces. "Hold" belongs to
+// the button after it, and arrows right after the button belong to it: a
+// pair of arrows is one button, and "A < > open/close" names two controls
+// for one action.
+func hintChunks(s string) []hintChunk {
+	var out []hintChunk
 	for _, chunk := range strings.Split(s, "  ") {
 		chunk = strings.TrimSpace(chunk)
 		if chunk == "" {
@@ -115,8 +125,6 @@ func (a *App) hintLine(c *gfx.Canvas, x, y, w int, s string) {
 			button, tail, _ := strings.Cut(rest, " ")
 			btn, rest = btn+" "+button, tail
 		}
-		// arrows right after the button belong to it: a pair of arrows is
-		// one button, and "A < > open/close" names two controls for one action
 		for {
 			b2, r2, ok := strings.Cut(rest, " ")
 			if !ok || !isArrow(b2) || !(isArrow(btn[len(btn)-1:]) || btn == "A") {
@@ -124,11 +132,52 @@ func (a *App) hintLine(c *gfx.Canvas, x, y, w int, s string) {
 			}
 			btn, rest = btn+" "+b2, r2
 		}
-		if x+a.sm.Width(btn+" "+rest) > maxX {
+		out = append(out, hintChunk{btn, rest})
+	}
+	return out
+}
+
+// hintWidth is the room a legend line takes with the given gap between
+// its chunks.
+func (a *App) hintWidth(chunks []hintChunk, gap string) int {
+	w := 0
+	for i, ch := range chunks {
+		if i > 0 {
+			w += a.sm.Width(gap)
+		}
+		w += a.sm.Width(strings.TrimSpace(ch.btn + " " + ch.rest))
+	}
+	return w
+}
+
+// hintFits reports whether the legend line fits the hint bar, with its
+// chunks two spaces apart or, failing that, one.
+func (a *App) hintFits(s string) bool {
+	return a.hintWidth(hintChunks(s), " ") <= a.lay.Hint.Dx()-4
+}
+
+// hintLine paints a legend line. Chunks sit two spaces apart, one when
+// the line would not fit otherwise; a chunk that still does not fit, and
+// every chunk after it, is left off.
+func (a *App) hintLine(c *gfx.Canvas, x, y, w int, s string) {
+	chunks := hintChunks(s)
+	gap := "  "
+	if a.hintWidth(chunks, gap) > w {
+		gap = " "
+	}
+	maxX := x + w
+	for i, ch := range chunks {
+		text := strings.TrimSpace(ch.btn + " " + ch.rest)
+		if i > 0 {
+			x += a.sm.Width(gap)
+		}
+		if x+a.sm.Width(text) > maxX {
 			break
 		}
-		x += c.Text(x, y, a.sm, a.btn(btn), gen.Eva.Accent)
-		x += c.Text(x, y, a.sm, " "+rest+"  ", gen.Eva.Muted)
+		x += c.Text(x, y, a.sm, a.btn(ch.btn), gen.Eva.Accent)
+		if ch.rest != "" {
+			x += c.Text(x, y, a.sm, " "+ch.rest, gen.Eva.Muted)
+		}
 	}
 }
 

@@ -382,15 +382,15 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 // the game has more than one version to choose from, and the Up/Down hint
 // only while the information actually scrolls.
 func (a *App) detailsHint(scrolls bool, versions int) string {
-	hint := "Start launch  A shots  Y fav"
-	short := "Start go  A art  Y fav"
+	hint := "Start Launch  A Shots  Y Fav"
+	short := "Start Go  A Art  Y Fav"
 	if versions > 1 {
-		hint += "  " + gfx.ArrowLeft + " " + gfx.ArrowRight + " version"
-		short += "  " + gfx.ArrowLeft + gfx.ArrowRight + " alt"
+		hint += "  " + gfx.ArrowLeft + " " + gfx.ArrowRight + " Version"
+		short += "  " + gfx.ArrowLeft + gfx.ArrowRight + " Alt"
 	}
 	if scrolls {
-		hint += "  " + gfx.ArrowUp + " " + gfx.ArrowDown + " info"
-		short += "  " + gfx.ArrowUp + gfx.ArrowDown + " info"
+		hint += "  " + gfx.ArrowUp + " " + gfx.ArrowDown + " Info"
+		short += "  " + gfx.ArrowUp + gfx.ArrowDown + " Info"
 	}
 	if a.sm.Width(hint) > a.lay.Hint.Dx()-4 {
 		return short

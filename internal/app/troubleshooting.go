@@ -496,7 +496,7 @@ func (a *App) paintSupport(c *gfx.Canvas) {
 		if v.cursor == 3 {
 			write("Review the saved result, including after restarting MisterZine.", gen.Eva.Muted)
 		}
-		a.paintHint(c, "Up/Down choose  A open  B back")
+		a.paintHint(c, "Up/Down Choose  A Open  B Back")
 	case "pad":
 		write("PAD TEST", gen.Eva.Accent)
 		y += 2
@@ -554,14 +554,14 @@ func (a *App) paintSupport(c *gfx.Canvas) {
 		write("", gen.Eva.Fg)
 		if v.target == "" {
 			write("No launch target selected. Return to the list and highlight an installed game first.", gen.Eva.Fg)
-			a.paintHint(c, "B back")
+			a.paintHint(c, "B Back")
 		} else {
 			write(v.game, gen.Eva.Fg)
 			write("", gen.Eva.Fg)
 			write(a.btn("A")+" / Enter will launch this game's main version now.", gen.Eva.Fg)
 			write("", gen.Eva.Fg)
 			write("If it works, tell the person helping you. The last result is kept when you reopen MisterZine.", gen.Eva.Muted)
-			a.paintHint(c, "A launch now  B cancel")
+			a.paintHint(c, "A Launch now  B Cancel")
 		}
 	case "result":
 		pages := a.supportPages()
@@ -571,6 +571,6 @@ func (a *App) paintSupport(c *gfx.Canvas) {
 		for _, line := range pages[v.page] {
 			write(line, gen.Eva.Fg)
 		}
-		a.paintHint(c, "L/R or arrows: pages  B back")
+		a.paintHint(c, "L/R or arrows: Pages  B Back")
 	}
 }

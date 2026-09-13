@@ -562,7 +562,7 @@ func TestFilterHeadingOpensAndCloses(t *testing.T) {
 			a.panel.cursor = i
 		}
 	}
-	if !a.panel.sectionClosed["genre"] || !strings.Contains(a.filterHint(), "A "+gfx.ArrowLeft+" "+gfx.ArrowRight+" open/close") {
+	if !a.panel.sectionClosed["genre"] || !strings.Contains(a.filterHint(), "A "+gfx.ArrowLeft+" "+gfx.ArrowRight+" Open/close") {
 		t.Fatalf("unused section starts closed with the heading legend; hint %q", a.filterHint())
 	}
 	a.actPanel(platform.KeyEnter)

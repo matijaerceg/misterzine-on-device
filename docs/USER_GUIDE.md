@@ -144,8 +144,8 @@ through MiSTer's translation instead, and only while no defined pad is
 connected. A button that is in no MiSTer slot does nothing here either;
 the pad tester under Troubleshooting shows it with its raw code.
 
-Hold Select on the list and the legend changes: Y cycles List layout, X
-switches List shots, saved exactly as from Options, and A stars or unstars
+Hold Select on the list (the legend's last entry, Hold Select, is the
+reminder) and the legend changes: Y cycles List layout, X switches List shots, saved exactly as from Options, and A stars or unstars
 the game under the cursor (in the Favorites view an unstarred row drops
 out and the cursor moves to its neighbour). Select alone does nothing, and
 while it is down every other button waits, so nothing moves or launches by
@@ -281,9 +281,9 @@ the bottom.
   image in that direction and the choice is saved. The labels describe the
   monitor's clockwise/counterclockwise turn. While following the INI, the row
   shows the current rotation in grey and cannot be changed here.
-- **Screensaver:** after 1 minute idle by default, fade the picture down over a
-  second and scroll full-height black MISTERZINE lettering, with glinting chrome
-  edges, across it. Left/Right chooses Off, 1, 2,
+- **Screensaver:** after 1 minute idle by default, fade and blur the picture
+  over a second and scroll full-height black MISTERZINE lettering, with glinting
+  chrome edges, across the blurred picture. Left/Right chooses Off, 1, 2,
   5 or 10 minutes. A previews it immediately, even when Off. The first browsing
   button or typing key wakes without acting; release it before pressing again.
   The pad's Menu button opens Options (or quits, per Options -> Menu
@@ -351,7 +351,7 @@ Press Y on a value to select only that value in its section, leaving all other
 sections and your search unchanged. Press Y again on that value to enable all
 values in its section. A still toggles values individually. On a section
 heading, A opens a closed section or closes an open one, the same as Left/Right;
-the legend reads "A ◀ ▶ open/close" while a heading is selected.
+the legend reads "A ◀ ▶ Open/close" while a heading is selected.
 Y does nothing on section headings. For Since last look, Y toggles the choice.
 
 Filters -> Original release year groups arcade games into decades. A toggles

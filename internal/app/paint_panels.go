@@ -629,11 +629,11 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 				hy += font.H + 1
 			}
 		}
-		a.paintHint(c, gfx.ArrowLeft+" "+gfx.ArrowRight+" change  A open  B back")
+		a.paintHint(c, gfx.ArrowLeft+" "+gfx.ArrowRight+" Change  A Open  B Back")
 	} else if a.screen == ScreenViews {
-		a.paintHint(c, "A on/off  B back")
+		a.paintHint(c, "A On/off  B Back")
 	} else if a.screen == ScreenCredits {
-		a.paintHint(c, "B back")
+		a.paintHint(c, "B Back")
 	} else {
 		a.paintHint(c, a.filterHint())
 	}

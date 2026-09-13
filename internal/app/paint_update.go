@@ -269,12 +269,12 @@ func (a *App) paintUpdate(c *gfx.Canvas) {
 		c.Text(box.Min.X+3, y, a.sm, line, gen.Eva.Fg)
 		y += a.sm.H + 1
 	}
-	hint := "B Options  " + gfx.ArrowUp + " " + gfx.ArrowDown + " log"
+	hint := "B Options  " + gfx.ArrowUp + " " + gfx.ArrowDown + " Log"
 	if s.Active() {
-		hint = "Hold B cancel  " + gfx.ArrowUp + " " + gfx.ArrowDown + " log"
+		hint = "Hold B Cancel  " + gfx.ArrowUp + " " + gfx.ArrowDown + " Log"
 	}
 	if s.Active() && s.CancelRequested {
-		hint = gfx.ArrowUp + " " + gfx.ArrowDown + " log"
+		hint = gfx.ArrowUp + " " + gfx.ArrowDown + " Log"
 	}
 	a.paintHint(c, hint)
 }
