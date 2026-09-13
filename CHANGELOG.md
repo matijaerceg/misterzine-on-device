@@ -1,5 +1,32 @@
 # Changelog
 
+## v1.0.23 — 2026-09-13
+
+- The A-Z and Year views gain header lines like Maker: a line before every
+  letter and every release year, numbers and symbols first under "0-9 and
+  symbols" and the unknown years last under "Year unknown". L/R jump from
+  group to group with the row centred under its header and no status
+  notice, and a group whose header has scrolled off keeps its name pinned
+  on the top line until its last row is gone. The Year view drops its date
+  column, since the header names the year: the title takes the room and
+  the card status glyph stays at the right.
+- rmCores (rmonic79) is a known source: the list, Details and Filters name
+  it rmCores instead of the raw id, Options -> Sources: installed only can
+  hide it when the card's downloader.ini has no `[rmonic79/rmcores]`
+  section, and Details explains under Source that the rm build adds CRT
+  Adjust and V-Size on the analog output and a pause overlay to a game the
+  MiSTer Distribution also ships.
+- Alternatives are read from the `_alternatives` folder inside a database's
+  own folder as well as from `_Arcade/_alternatives`, so the MeatCores and
+  rmCores alternatives reach the Details version selector. A database that
+  keeps to that layout is covered without being named.
+- Options -> Credits: a page naming the developer, the projects MisterZine
+  is built on and, under Special thanks, the early adopters who tested it
+  and sent feedback.
+- The Views page loses its top line, and pressing A on the greyed last view
+  says "Keep at least one view on" instead of doing nothing.
+- The embedded first-run catalogue is refreshed to the 2026-09-12 feed.
+
 ## v1.0.22 — 2026-09-12
 
 - A Maker view joins the Y cycle after A-Z: the games grouped by
