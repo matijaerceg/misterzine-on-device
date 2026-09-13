@@ -46,58 +46,68 @@ a duplicate database. Restore the stable URL afterward.
 
 The changelog is the complete record: every change, the reason for a fix and
 the mechanism behind it, in the `## vX.Y.Z — YYYY-MM-DD` section for the
-release. Write it first.
+release. Write it first. Even there, write for a reader of the repository,
+not of the code: it is the screensaver, never the saver.
 
 `docs/RELEASE_NOTES.md` becomes the body of the GitHub release, and the
-releases page shows every body in full, one after another. Write it for that
-feed: a reader scanning the page decides from the headline and a few lines
-whether the release matters to them. The target is under about 120 words.
+releases page shows every body in full, one after another. Its reader is a
+MiSTer user scanning that feed, often one who has never installed
+MisterZine, deciding in a few lines whether this is worth having. The card
+is a pitch and a short success story, not a ledger of changes: it says what
+they get and why they would want it, in the words they would use
+themselves. It stays short, about 150 words with the footer.
 
-- **What counts as a feature:** something a user could not do or see before:
-  a new view, screen, control, chord, option, source, or a new visual such as
-  the screensaver's blur. The test is whether a user would update for it on
-  its own. Everything else is an adjustment, however visible: wording and
-  labels, legends and capitalisation, hint and help text, spacing, colours,
-  timings, defaults, and any tuning or reshaping of something that already
-  existed (a progress line on an existing hold, a lettering that now repeats,
-  a term replaced by a better one). When in doubt it is an adjustment.
-- **Headline:** one sentence naming the feature, or the one or two features.
-  Never a fix or an adjustment. A release without a feature names its most
-  visible fix and has no first list.
-- **First list, no heading:** features only, one sentence each, no bold
-  sub-heads. What the user will notice, not how it works. There is no
-  minimum: one item is the normal case, and a card that is mostly its second
-  list is the correct shape. Never promote an adjustment to fill it.
-- **Second list under `Fixes and adjustments:`** bugfixes, behaviour tweaks,
-  label and copy changes, each one line. Copy changes collapse to a single
-  line unless one changes what a setting does. Omit the list when empty.
+- **Words:** everyday ones. Screensaver, slide, game, card, Options, the
+  bottom bar. Never the code's or the guide's internal names: saver, pane,
+  tab, strip, hue, legend, glyph, quantiser. A phrase that needs the app in
+  front of you to make sense ("the pane's lines") is left out or replaced
+  by what it means to the reader ("game details"). Never a term a new
+  reader has no context for.
+- **Headline:** a short title naming the feature as a benefit, the way a
+  product update is announced: "More info on Screenshots Screensaver". Not
+  a sentence of mechanics, and never a fix. A release without a feature
+  names its most visible fix and skips the paragraph.
+- **The paragraph:** three or four sentences that sell the feature. What it
+  looks like in use, what it does for them, how to reach it and how to set
+  it, with the choices in plain words ("full details, the title only, or
+  nothing but the picture"). Paint the scene ("leave MisterZine idle and it
+  becomes a tour of the arcade catalogue"); do not list mechanisms.
+- **What counts as a feature:** something a user could not do or see
+  before and would update for on its own: a new view, screen, control,
+  option, source, or a new visual. A control that now works in one view as
+  it already did in others is consistency, not a feature. Wording, labels,
+  help text, spacing, colours, timings, defaults and any tuning or reshaping
+  of something that already existed are adjustments. When in doubt it is an
+  adjustment.
+- **`Also in this release:`** everything else, one plain line each:
+  bugfixes, behaviour tweaks, consistency across views, label and copy
+  changes. Copy changes collapse to a single line unless one changes what a
+  setting does. Omit the list when empty.
 - **Not on the card:** credits and early adopter names, timings and pixel
-  sizes, internal mechanisms, test changes, catalogue refreshes. They belong
-  in the changelog.
+  sizes, internal mechanisms, test changes, catalogue refreshes, board
+  measurements. They belong in the changelog.
 - **Footer, always the same three lines:** a link to the changelog section
-  (anchor `#v1024--2026-09-13` for `## v1.0.24 — 2026-09-13`, lowercase with
+  (anchor `#v1028--2026-09-13` for `## v1.0.28 — 2026-09-13`, lowercase with
   dots and the dash removed), the Update All line, and the installation guide
   link. Add a sentence about stored data only when the release migrates it.
 
-The v1.0.24 body is the reference shape. Its first version put the Menu
-hold's progress line in the first list; it is a change to an existing hold,
-so it belongs below:
+The v1.0.28 body is the reference shape. Its first version was rejected as
+"too LLMy": it opened with "The screenshots saver types the pane's details
+about the game onto each shot", listed the Options L and R section jump as a
+feature, and read as facts rather than a reason to update.
 
 ```markdown
-Select + A stars a game from the list.
+More info on Screenshots Screensaver
 
-- Select + A on the list stars or unstars the game under the cursor.
+The screenshots screensaver now types out game details onto each slide, one character at a time behind a blinking cursor: the title, whether the game is on your card, the core, the year and maker, the controls. Leave MisterZine idle and it becomes a tour of the arcade catalogue, a new game sliding in every few seconds with its details written underneath. Hold Start on any slide to play that game. Choose how much it says in Options: full details, the title only, or nothing but the picture.
 
-Fixes and adjustments:
+Also in this release:
 
-- The last view turned back on in Options -> Views no longer switches
-  itself off at the next start.
-- The Menu button hold shows a "keep holding to quit" hint and a green
-  progress line under the top bar. A tap still opens or closes Options.
-- X on the Filters screen returns to the list, as B does.
-- Options labels and hints tidied.
+- The lettering screensaver has a retro low-colour look, dithered like an old display, and it draws faster.
+- L and R jump between sections in Options, as they already do in the list and in Filters.
+- Options rows carry their full names, dependent rows sit indented under their parent, and the bottom bar says what each button does on the selected row.
 
-Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1024--2026-09-13).
+Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1028--2026-09-13).
 Existing installations update through Update All. New installation:
 [installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once).
 ```

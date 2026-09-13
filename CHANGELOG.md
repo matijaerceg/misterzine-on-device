@@ -2,7 +2,7 @@
 
 ## v1.0.28 — 2026-09-13
 
-- The screenshots saver types what the main view's pane says about the
+- The screenshots screensaver types what the main view's pane says about the
   game onto its shot instead of cutting the title onto a tab. Once a shot
   has wiped in, the title on one line in the shot's hue (cut short with
   an ellipsis when it is too long for the width, where the pane wraps it
@@ -31,7 +31,7 @@
   and End still go to the first and last row. The Filters jump and this
   one are one routine, landing on the heading there and on the first row
   here since the Options headings are not selectable.
-- The lettering saver's whole frame is posterised to three bits a channel
+- The lettering screensaver's whole frame is posterised to three bits a channel
   and dithered in a 4x4 Bayer cell, the sharp first picture, the blur
   levels, the fade and the glints alike, so the pattern reads as a display
   with few colours instead of hiding in the last bit. The quantiser

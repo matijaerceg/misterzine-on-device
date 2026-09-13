@@ -1,13 +1,12 @@
-The screenshots saver types each game's details onto its shot, with an option for how much it says.
+More info on Screenshots Screensaver
 
-- The screenshots saver types the pane's details about the game onto each shot, a character at a time, in place of the title tab.
-- Options -> Screensaver info picks the full details, the title only or nothing; holding Start still shows the title.
-- L and R jump between the Options sections.
+The screenshots screensaver now types out game details onto each slide, one character at a time behind a blinking cursor: the title, whether the game is on your card, the core, the year and maker, the controls. Leave MisterZine idle and it becomes a tour of the arcade catalogue, a new game sliding in every few seconds with its details written underneath. Hold Start on any slide to play that game. Choose how much it says in Options: full details, the title only, or nothing but the picture.
 
-Fixes and adjustments:
+Also in this release:
 
-- The lettering saver is posterised and dithered like a display with few colours, and its fade frames draw faster on the boards.
-- Options rows are named in full, dependent rows sit a step in behind a branch mark, and the legend names what the arrows and A do on the selected row.
+- The lettering screensaver has a retro low-colour look, dithered like an old display, and it draws faster.
+- L and R jump between sections in Options, as they already do in the list and in Filters.
+- Options rows carry their full names, dependent rows sit indented under their parent, and the bottom bar says what each button does on the selected row.
 
 Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1028--2026-09-13).
 Existing installations update through Update All. New installation:
