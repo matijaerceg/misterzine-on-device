@@ -19,6 +19,11 @@ const saverFade = time.Second
 // saverShade is the dimmed screen's brightness in 256ths: a quarter.
 const saverShade = 64
 
+// saverBlurDiv sets the blur under the lettering from the screen width:
+// the box radius at full strength is width/saverBlurDiv, applied twice
+// each way (close to a Gaussian), so an 11 px radius on a 320 px screen.
+const saverBlurDiv = 28
+
 var saverValues = []string{"off", "1", "2", "5", "10"}
 
 type saverKey struct {
@@ -32,7 +37,9 @@ type screensaver struct {
 	started   time.Time
 	next      time.Time
 	travel    int
-	shade     int // brightness of the screen under the lettering, in 256ths
+	shade     int     // brightness of the screen under the lettering, in 256ths
+	fade      int     // how far the fade has come, in 256ths; 256 once dark
+	blur      []uint8 // scratch for the blur passes, one canvas
 	mask      *image.Alpha
 	waking    map[saverKey]bool
 }
@@ -111,6 +118,7 @@ func (a *App) startSaver(now time.Time) {
 	a.saver.next = now.Add(saverFrame)
 	a.saver.travel = 0
 	a.saver.shade = 256
+	a.saver.fade = 0
 	a.rep = repeater{}
 	a.all = true
 }
@@ -143,17 +151,73 @@ func (a *App) tickSaver(now time.Time) bool {
 	return true
 }
 
-// saverAdvance sets the shade and the lettering's travel for now: the
-// screen fades over saverFade, then the word slides one pixel a frame.
+// saverAdvance sets the fade, the shade and the lettering's travel for
+// now: the screen dims and blurs over saverFade, then the word slides one
+// pixel a frame.
 func (a *App) saverAdvance(now time.Time) {
 	since := now.Sub(a.saver.started)
 	if since < saverFade {
-		a.saver.shade = 256 - int((256-saverShade)*since/saverFade)
+		a.saver.fade = int(256 * since / saverFade)
+		a.saver.shade = 256 - (256-saverShade)*a.saver.fade/256
 		a.saver.travel = 0
 		return
 	}
+	a.saver.fade = 256
 	a.saver.shade = saverShade
 	a.saver.travel = int((since - saverFade) / saverFrame)
+}
+
+// saverBlur softens the picture under the lettering: a box blur of radius
+// r run twice along the rows and twice down the columns, edges repeated.
+// Running sums make the cost independent of the radius.
+func (a *App) saverBlur(c *gfx.Canvas, r int) {
+	if r < 1 {
+		return
+	}
+	if len(a.saver.blur) != len(c.Pix) {
+		a.saver.blur = make([]uint8, len(c.Pix))
+	}
+	tmp := a.saver.blur
+	w, h := c.W(), c.H()
+	for pass := 0; pass < 2; pass++ {
+		for y := 0; y < h; y++ {
+			blurLine(c.Pix[y*c.Stride:], tmp[y*c.Stride:], w, 4, r)
+		}
+		for x := 0; x < w; x++ {
+			blurLine(tmp[x*4:], c.Pix[x*4:], h, c.Stride, r)
+		}
+	}
+}
+
+// blurLine box-blurs the three colour channels of one line of n pixels,
+// step bytes apart, from src into dst; the alpha byte is copied.
+func blurLine(src, dst []uint8, n, step, r int) {
+	if r > n-1 {
+		r = n - 1
+	}
+	span := 2*r + 1
+	for ch := 0; ch < 3; ch++ {
+		// the window for pixel 0 covers -r..r with the left edge repeated
+		sum := int(src[ch]) * (r + 1)
+		for i := 1; i <= r; i++ {
+			sum += int(src[i*step+ch])
+		}
+		for i := 0; i < n; i++ {
+			dst[i*step+ch] = uint8(sum / span)
+			// slide: drop i-r, take i+r+1, both clamped to the line
+			out, in := i-r, i+r+1
+			if out < 0 {
+				out = 0
+			}
+			if in > n-1 {
+				in = n - 1
+			}
+			sum += int(src[in*step+ch]) - int(src[out*step+ch])
+		}
+	}
+	for i := 0; i < n; i++ {
+		dst[i*step+3] = src[i*step+3]
+	}
 }
 
 func (a *App) saverMask(h int) *image.Alpha {
@@ -326,10 +390,11 @@ func (a *App) paintSaver(c *gfx.Canvas) {
 	// One logical pixel per frame; the whole word enters at the right and
 	// leaves at the left. Safe-zone insets don't clip this overlay.
 	x0 := c.W() - a.saver.travel%(c.W()+m.Rect.Dx())
-	shade := a.saver.shade
+	shade, fade := a.saver.shade, a.saver.fade
 	if shade <= 0 || shade > 256 {
-		shade = saverShade // a saver frame set up outside tickSaver (tests, previews)
+		shade, fade = saverShade, 256 // a saver frame set up outside tickSaver (tests, previews)
 	}
+	a.saverBlur(c, c.W()/saverBlurDiv*fade/256)
 	centres := make([]int, len(saverLights))
 	for i, l := range saverLights {
 		centres[i] = int(l.at*float64(c.W())) + int(l.tilt*float64(c.H())/2)

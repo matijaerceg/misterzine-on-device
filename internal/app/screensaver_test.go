@@ -288,3 +288,48 @@ func TestSaverFadesBeforeTheWordEnters(t *testing.T) {
 		t.Fatalf("ten frames after the fade: travel %d", a.saver.travel)
 	}
 }
+
+// The picture under the lettering is blurred: once the fade is done a
+// hard edge has spread into a ramp, while a flat area is untouched and
+// only dimmed; before the fade starts nothing is blurred.
+func TestSaverBlursThePictureUnderTheLettering(t *testing.T) {
+	a, clock := saverApp()
+	t0 := *clock
+	a.startSaver(t0)
+	c := a.logical
+	edge := c.W() / 2
+	paintHalves := func() {
+		c.Fill(c.Rect, color.RGBA{A: 255})
+		c.Fill(image.Rect(0, 0, edge, c.H()), color.RGBA{R: 255, G: 255, B: 255, A: 255})
+	}
+	paintHalves()
+	a.paintSaver(c)
+	if p := c.RGBAAt(edge-1, 10); p.R != 255 {
+		t.Fatalf("before the fade the edge pixel is %v, not sharp", p)
+	}
+	a.Tick(t0.Add(saverFade))
+	paintHalves()
+	a.paintSaver(c)
+	r := c.W() / saverBlurDiv
+	if r < 4 {
+		t.Fatalf("radius %d too small to test", r)
+	}
+	if p := c.RGBAAt(edge-1, 10); p.R <= 8 || p.R >= 60 {
+		t.Fatalf("edge pixel %v is not a ramp", p)
+	}
+	if p := c.RGBAAt(edge-4*r, 10); p != (color.RGBA{R: 63, G: 63, B: 63, A: 255}) {
+		t.Fatalf("flat pixel %v is not just dimmed", p)
+	}
+	if p := c.RGBAAt(edge+4*r, 10); p != (color.RGBA{A: 255}) {
+		t.Fatalf("flat black pixel %v changed", p)
+	}
+	// the ramp is monotonic across the edge
+	last := 256
+	for x := edge - 2*r; x <= edge+2*r; x++ {
+		v := int(c.RGBAAt(x, 10).R)
+		if v > last {
+			t.Fatalf("ramp rises again at x=%d: %d after %d", x, v, last)
+		}
+		last = v
+	}
+}
