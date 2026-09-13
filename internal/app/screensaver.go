@@ -28,9 +28,10 @@ type SaverLook struct {
 	Knee, Gain, Shade, BlurDiv, Passes int
 }
 
-// DefaultSaverLook: the dark ground ends near a quarter of itself, a bloom
-// near half of white, an 11 px radius on a 320 px screen.
-var DefaultSaverLook = SaverLook{Knee: 96, Gain: 1536, Shade: 128, BlurDiv: 28, Passes: 2}
+// DefaultSaverLook was chosen on a CRT with the debug tuner (2026-09-13):
+// only the brightest parts bloom, six times their excess, the ground shows
+// at 57%, and the blur radius is a 15th of the width (21 px on 320).
+var DefaultSaverLook = SaverLook{Knee: 171, Gain: 1538, Shade: 145, BlurDiv: 15, Passes: 2}
 
 // clamped keeps a look inside what the capture can do.
 func (l SaverLook) clamped() SaverLook {
