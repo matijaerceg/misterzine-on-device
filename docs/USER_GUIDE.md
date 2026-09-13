@@ -124,7 +124,7 @@ filter choices are saved.
 | L/R | PageUp/PageDown | previous/next letter in A-Z; newer/older month in date sorts; previous/next year or maker | | | previous/next section | first/last |
 | A | Enter | details | artwork | | toggle a value; open/close a heading | run action |
 | B | Esc | Options / clear search | back | back | back | back |
-| X | Tab | Filters | | | show/hide years | |
+| X | Tab | Filters | | | back to the list | |
 | Y | Space | change view | favorite | | only/all | |
 | Start | gamepad Start | launch remembered version | launch selected version | launch selected version | | |
 | Select (held) | | + Y: List layout, + X: List shots, + A: favorite | | | | |
@@ -354,9 +354,9 @@ the legend reads "A ◀ ▶ open/close" while a heading is selected.
 Y does nothing on section headings. For Since last look, Y toggles the choice.
 
 Filters -> Original release year groups arcade games into decades. A toggles
-the selected decade; X expands or collapses its individual years. On an individual
-year, X collapses the decade and returns to its row. Left collapses years or
-their section, and Right expands them. Each time you open Filters, only sections
+the selected decade; Right expands its individual years and Left collapses
+them again, returning to the decade's row. Left on a collapsed decade closes
+the section. Each time you open Filters, only sections
 with active choices start expanded. Unchanged sections start collapsed.
 A right/down arrow marks collapsed/expanded sections. An asterisk after the
 arrow marks active filters, including the current-rotation rule. It disappears

@@ -751,7 +751,7 @@ func (a *App) actPanel(k platform.Key) bool {
 		if a.screen != ScreenFilter {
 			return false
 		}
-		return a.toggleYearExpansion()
+		return a.actPanel(platform.KeyBack) // X opened Filters; X closes it again
 	case platform.KeySpace:
 		if a.screen == ScreenFilter {
 			return a.onlyFilter()

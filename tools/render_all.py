@@ -74,9 +74,9 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     for inset in (15, 40):
         scenarios.append([*rotation, "-inset", str(inset),
                           "-out", f"out/year-filter-{orientation}-{inset}", "-script",
-                          "tab; pagedown*4; right; down*2; shot decades; tab; shot expanded; "
+                          "tab; pagedown*4; right; down*2; shot decades; right; shot expanded; "
                           "down*2; enter; shot mixed; space; shot only-year; "
-                          "space; shot all-years; tab; shot collapsed"])
+                          "space; shot all-years; left; shot collapsed"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     scenarios.append([*rotation, "-inset", "40",

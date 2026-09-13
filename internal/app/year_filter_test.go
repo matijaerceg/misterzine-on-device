@@ -52,7 +52,7 @@ func TestYearDecadeFilteringAndPersistence(t *testing.T) {
 	if len(a.view) != 5 || len(a.filters.YearOff) != 0 {
 		t.Fatal("second Y must enable all years")
 	}
-	a.actPanel(platform.KeyTab)
+	a.actPanel(platform.KeyRight)
 	choose("year", "1989", false)
 	a.actPanel(platform.KeyLeft)
 	if a.panel.entries[a.panel.cursor].kind != "decade" || a.panel.yearOpen["1980s"] {
@@ -87,14 +87,14 @@ func TestYearDecadeFilteringAndPersistence(t *testing.T) {
 	}
 	a.SetFilters(restored)
 	choose("year", "1980", false)
-	a.actPanel(platform.KeyTab)
+	a.actPanel(platform.KeyLeft)
 	if e := a.panel.entries[a.panel.cursor]; e.kind != "decade" || e.value != "1980s" {
 		t.Fatal("collapse lost parent cursor", e)
 	}
 	if len(a.view) != 2 {
 		t.Fatal("collapse changed selection")
 	}
-	a.actPanel(platform.KeyTab)
+	a.actPanel(platform.KeyRight)
 	choose("year", "1980", false)
 	a.actPanel(platform.KeySpace)
 	if len(a.view) != 5 {
