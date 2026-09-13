@@ -18,6 +18,7 @@ var earlyAdopters = []string{
 	"hammercompation",
 	"LamerDeluxe",
 	"Malento",
+	"Porieux",
 	"Virtualplayer",
 }
 
