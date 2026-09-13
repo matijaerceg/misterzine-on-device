@@ -1,13 +1,14 @@
-The screensaver can show arcade screenshots, and pads confirm with the button you chose in MiSTer.
+The screenshots saver types each game's details onto its shot, with an option for how much it says.
 
-- Options -> Saver style: screenshots cycles every arcade game's gameplay shot, each wiping in with its title on a tab; hold Start to play the one on screen. Saver brightness picks half or full.
-- Options -> OK button: a pad whose MENU OK in MiSTer is B confirms with B and goes back with A, per pad, with an override.
-- A pad never defined in MiSTer is read directly, so its home button opens Options instead of leaving for the MiSTer menu.
+- The screenshots saver types the pane's details about the game onto each shot, a character at a time, in place of the title tab.
+- Options -> Screensaver info picks the full details, the title only or nothing; holding Start still shows the title.
+- L and R jump between the Options sections.
 
 Fixes and adjustments:
 
-- Options is regrouped into five sections with a mark on each heading; the pad rows sit under Controls.
+- The lettering saver is posterised and dithered like a display with few colours, and its fade frames draw faster on the boards.
+- Options rows are named in full, dependent rows sit a step in behind a branch mark, and the legend names what the arrows and A do on the selected row.
 
-Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1027--2026-09-13).
+Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1028--2026-09-13).
 Existing installations update through Update All. New installation:
 [installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once).

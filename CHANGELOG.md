@@ -1,5 +1,64 @@
 # Changelog
 
+## v1.0.28 — 2026-09-13
+
+- The screenshots saver types what the main view's pane says about the
+  game onto its shot instead of cutting the title onto a tab. Once a shot
+  has wiped in, the title on one line in the shot's hue (cut short with
+  an ellipsis when it is too long for the width, where the pane wraps it
+  over two), the card answer, the kind, the core, the year and maker, the
+  rotation, players and controls and the badges appear a character a
+  frame with a fifth of a second's beat at each line end, in a bottom
+  corner of the safe zone, the other corner at each shot with a little
+  wander, each line on an opaque black strip that reaches only as far as
+  its letters have been typed plus the cursor's cell, behind an underline
+  cursor a cell wide that is solid while it types and blinks once a
+  second once the block is complete. A wipe hides the caption and a wipe
+  turned back by a hold brings it back where it was. The hold's line and
+  the not-on-the-card word sit under the block on the same black, and the
+  caption dims and comes up with the shot as the tab did. The pane's line
+  list is shared with the main view, so the two say the same things.
+- Options -> Screensaver info, with the screenshots only: full (default)
+  types the pane's lines, title only types just the title, none leaves
+  the picture alone. Holding Start still brings the picture up and fills
+  its line whichever is set, and with none it puts the title up whole for
+  the hold, so the hold always shows what it is about to play. The choice
+  is saved as screensaver_info; any other word reads as full.
+- L and R jump between the Options sections as they do between the list's
+  letters and the Filters headings: to the first row of the previous or
+  next section (Data, List, Display, Controls, Operation), from inside a
+  section back to the previous one, stopping at either end. Keyboard Home
+  and End still go to the first and last row. The Filters jump and this
+  one are one routine, landing on the heading there and on the first row
+  here since the Options headings are not selectable.
+- The lettering saver's whole frame is posterised to three bits a channel
+  and dithered in a 4x4 Bayer cell, the sharp first picture, the blur
+  levels, the fade and the glints alike, so the pattern reads as a display
+  with few colours instead of hiding in the last bit. The quantiser
+  scales to the steps so a cell averages to the value it stands for,
+  folds the shade into its one multiply and mixes two blur levels with
+  one more, so a fade frame writes the screen in 13 ms on the boards
+  against 17 before: a divide by 255 and a second multiply on the same
+  chain had cost them 15 ms a frame. The tuner gains Bits and Cell, and a
+  benchmark of the ground write runs on a board from the cross-compiled
+  test binary.
+- Options names its rows in full and steps the dependent ones in:
+  Screensaver delay, Screensaver style and Screensaver brightness replace
+  the truncated Saver rows, Main menu launcher becomes Main menu shortcut,
+  and Rotation, the screensaver rows, Open at boot and Return after game
+  sit a step in behind a branch mark as children of the row above, the
+  mark in the section headings' grey with the name in the row's own
+  colour so it reads as structure. A child whose full name does not fit
+  at the widest tate safe zone falls back to Style, Brightness or Info
+  behind the mark instead of losing its tail.
+- The Options legend follows the row under the cursor instead of always
+  reading Change, A Open, B Back: a choice row names the arrow that can
+  still move, both in the middle and one at either end; a row A acts on
+  says what A does there (Preview on the screensaver rows, Open on Views,
+  Last update result, Troubleshooting and Credits, Edit on the safe zone,
+  Run on the update, Refresh, Rescan, Clear and Quit); a greyed row leaves
+  only Back.
+
 ## v1.0.27 — 2026-09-13
 
 - Options -> Saver style chooses what the screensaver shows. Lettering
