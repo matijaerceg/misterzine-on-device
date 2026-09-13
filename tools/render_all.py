@@ -149,6 +149,11 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                       "-out", f"out/pad-test-{orientation}", "-script",
                       "back; end; up*2; enter; down; shot menu; enter; shot empty; enter; space; tab; start; shot presses; "
                       "press back; wait 1000; shot leave-hold; release back; hold back 2200; shot left"])
+    # Options -> OK button with the defined pad (MENU OK on B) as the current
+    # pad: auto, the A override, the B override, and back to auto
+    scenarios.append([*rotation, "-support-report", "testdata/support-controller.json",
+                      "-out", f"out/ok-button-{orientation}", "-script",
+                      "back; down*18; shot option; right; shot option-a; right; shot option-b; left*2; shot option-auto"])
 for canvas in ("360x270", "400x300"):
     for rotation in ([], ["-rot", "left", "-logical"]):
         orientation = "t" if rotation else "h"

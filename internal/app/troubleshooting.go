@@ -127,7 +127,7 @@ func (a *App) padPressLine(p padPress, prev *padPress) string {
 			s = shortName(pad.Name, 14) + fmt.Sprintf(" btn %d", p.code)
 		}
 		if slot := pad.Slot(p.code); slot != "" {
-			s += " = " + a.btn(slot)
+			s += " = " + a.label(slot) // the slot's own name: the action says what it does
 		}
 		return s + ": " + action + gap
 	}
@@ -150,7 +150,7 @@ func (a *App) padLines(p support.Pad) []string {
 		if code, ok := p.Slots[name]; ok {
 			label := name
 			if len(name) == 1 {
-				label = a.btn(name)
+				label = a.label(name)
 			}
 			slots += label + " " + support.CodeText(code) + "  "
 		}
@@ -164,7 +164,7 @@ func (a *App) padLines(p support.Pad) []string {
 	lines := []string{head}
 	switch {
 	case p.Mapped && p.Direct:
-		lines = append(lines, "  "+strings.TrimSpace(slots), "  read by MiSTer slot from "+shortName(p.Map, 40))
+		lines = append(lines, "  "+strings.TrimSpace(slots), "  read by MiSTer slot from "+shortName(p.Map, 40), "  "+a.okLine(p))
 	case p.Mapped && len(slots) > 0:
 		lines = append(lines, "  "+strings.TrimSpace(slots), "  A or B not readable here: buttons come through MiSTer's translation")
 	case p.Mapped:

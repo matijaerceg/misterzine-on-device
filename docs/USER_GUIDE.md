@@ -135,14 +135,19 @@ Button labels can print them as Xbox letters, PlayStation symbols or numbers.
 
 A pad that has been defined in the MiSTer menu is read by MisterZine
 directly, slot by slot: D-pad, A B X Y, L R, Start, and the stick you gave
-the MiSTer menu, if any. The button you defined as A is A here, whichever
-buttons you chose for the MiSTer menu's own OK and back. A trigger or stick
-direction used as a button counts once it passes a quarter of its travel,
-as in MiSTer. Each pad follows its own definition, so two pads defined
-differently work side by side. A pad that has never been defined works
-through MiSTer's translation instead, and only while no defined pad is
-connected. A button that is in no MiSTer slot does nothing here either;
-the pad tester under Troubleshooting shows it with its raw code.
+the MiSTer menu, if any. A trigger or stick direction used as a button
+counts once it passes a quarter of its travel, as in MiSTer. Each pad
+follows its own definition, so two pads defined differently work side by
+side. A pad that has never been defined works through MiSTer's translation
+instead, and only while no defined pad is connected. A button that is in
+no MiSTer slot does nothing here either; the pad tester under
+Troubleshooting shows it with its raw code.
+
+Which button confirms follows the MENU OK you chose at the end of MiSTer's
+define screen. If you put it on the button you defined as B, B confirms
+here too and A goes back, and the legends say so; the table above then
+reads with A and B swapped for that pad. Options -> OK button shows the
+choice for the pad in your hand and can override it, per pad.
 
 Hold Select on the list (the legend's last entry, Select +, is the
 reminder) and the legend changes: Y cycles List layout, X switches List shots, saved exactly as from Options, and A stars or unstars
@@ -297,6 +302,14 @@ the bottom.
   1 2 3 4 in MiSTer's define order. Only the names change. Which physical
   button MiSTer calls A, B, X or Y comes from its define buttons screen; this
   guide uses those names.
+- **OK button:** which face button confirms, per pad. Auto from MiSTer
+  (default) follows the MENU OK you gave MiSTer's define screen: on a pad
+  whose MENU OK is B, B confirms and A goes back, and the legends name the
+  buttons that way round. A or B overrides it for the pad shown. The row
+  follows the pad that last pressed a button, so change it with that pad in
+  hand; the hint names it. It is muted, with the reason, before any pad has
+  pressed, for a pad that comes through MiSTer's translation, and for one
+  whose A and B are the same button.
 - **Edit safe zone:** D-pad moves the top-right corner of the safe frame;
   Right/Up grows it and Left/Down shrinks it. B saves. Margins can reach 40 px.
 - **HDMI picture:** fit display by default: the picture is sized so that
@@ -331,9 +344,10 @@ the bottom.
 - **Troubleshooting:** a guided Start-button test, a pad tester, and an
   A/Enter game-launch test, with results you can photograph. The last result
   survives restarting. The pad tester lists every connected pad with the raw
-  button code in each MiSTer slot, then shows each press as it happens: which
-  pad, which button, which slot and what MisterZine does with it, plus the
-  gap since the previous press. Hold B for two seconds to leave it.
+  button code in each MiSTer slot and which button is its OK button, then
+  shows each press as it happens: which pad, which button, which slot and
+  what MisterZine does with it, plus the gap since the previous press. Hold
+  the back button for two seconds to leave it.
   See [troubleshooting](TROUBLESHOOTING.md#start-does-not-launch-games).
 - **Credits:** a page naming the developer, the people whose work MisterZine
   builds on (MiSTer, Downloader and Update All, the fonts) and, under Special

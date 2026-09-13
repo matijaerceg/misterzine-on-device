@@ -42,6 +42,10 @@ type Settings struct {
 	MenuButton      string `json:"menu_button"`       // Options -> Menu button: options (default) or leave
 	InsetX          int    `json:"inset_x"`
 	InsetY          int    `json:"inset_y"`
+	// OKButtons is Options -> OK button per pad, keyed by vendor_product as
+	// in MiSTer's map file name ("045e_028e"): "a" or "b". A pad not listed
+	// follows the MENU OK choice in its MiSTer definition.
+	OKButtons map[string]string `json:"ok_buttons,omitempty"`
 }
 
 // DefaultSettings for a fresh install.

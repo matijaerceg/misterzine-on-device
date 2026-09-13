@@ -57,6 +57,12 @@ type Pad struct {
 	Map, Note       string
 	MenuStick       string // the stick that moves Main's menu, when defined ("axes 0/1")
 	Menu            string // the MiSTer menu button's code ("316"), or "a+b" for a combo, when the app reads it as its Menu button
+	// OK and Back are the buttons the user gave MiSTer's own menu as MENU OK
+	// and MENU BACK at the end of its define screen, named by the slot they
+	// sit in ("A", "B", ...), by their code when they are in no slot, or ""
+	// when the map left them unset. They are the user's word for which
+	// button confirms; the app follows OK when it is B.
+	OK, Back string
 }
 
 // SlotOrder is how the tester lists the define-slots.

@@ -52,12 +52,30 @@ func (a *App) ButtonLabels() string {
 	return buttonLabelSets[0]
 }
 
-// btn prints a button name as the current label set shows it. Only the
-// bare names A, B, X and Y change; "Start", "L/R", arrows and any other
-// word pass through, so it is safe on a hint chunk like "Hold B" or
-// "A < >" as well as on a single name.
+// btn prints a button name for a legend: the button that does what the
+// name stands for, in the current label set. On a pad whose OK button is B
+// (okbutton.go) the names A and B trade places first, so "A" names the
+// button that confirms and "Hold B" the one that goes back. Only the bare
+// names A, B, X and Y change; "Start", "L/R", arrows and any other word
+// pass through, so it is safe on a hint chunk like "Hold B" or "A < >" as
+// well as on a single name.
 func (a *App) btn(s string) string {
-	m := buttonLabels[a.ButtonLabels()]
+	if a.legendSwapped() {
+		s = applyLabels(s, swapLabels)
+	}
+	return a.label(s)
+}
+
+// label prints a MiSTer slot name as the current label set shows it, with
+// no regard to what the button does: the pad tester names slots with it.
+func (a *App) label(s string) string {
+	return applyLabels(s, buttonLabels[a.ButtonLabels()])
+}
+
+// swapLabels trades A and B.
+var swapLabels = map[string]string{"A": "B", "B": "A"}
+
+func applyLabels(s string, m map[string]string) string {
 	if l, ok := m[s]; ok {
 		return l
 	}

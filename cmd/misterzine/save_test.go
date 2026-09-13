@@ -179,7 +179,7 @@ func TestRotationIntentSurvivesSaves(t *testing.T) {
 				h.a.Handle(platform.Event{Key: k, At: now.Add(time.Millisecond)})
 			}
 			tap(platform.KeyBack) // Options
-			for n := 0; n < 19; n++ {
+			for n := 0; n < 20; n++ {
 				tap(platform.KeyDown) // Scroll speed opens the Operation group
 			}
 			tap(platform.KeyRight)

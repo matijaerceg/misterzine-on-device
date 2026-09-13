@@ -22,9 +22,10 @@ import (
 //
 // Main names the face slots A, B, X and Y but, while a script runs, turns
 // the pad into keys by its MENU OK / MENU BACK choice (Enter for OK, Esc
-// for back). A user who put OK on B therefore gets "A" and "B" swapped in
-// the app if it trusts those keys. Reading the pad directly by slot keeps
-// the app's A the button the user called A, on every pad at once.
+// for back), which carry no pad name. Reading the pad directly by slot
+// keeps every pad apart; the OK / BACK choice itself is passed on with the
+// pad's description (support.Pad), and the app decides per pad whether to
+// follow it (Options -> OK button).
 //
 // Map codes: a button is its evdev code (256 and up); an axis edge is
 // emuBase + axis*2 + direction (0 = towards minimum, 1 = towards maximum),
@@ -42,6 +43,7 @@ type padMapping struct {
 	menuX, menuY uint16 // slots 28/29: the menu stick's axis numbers
 	menu         [2]bool
 	osd          [2]uint16 // slots 21/22: the MiSTer menu button, or the two buttons of its combo; 0 when unreadable here
+	okBack       [2]uint16 // slot 23: MENU OK and MENU BACK, Main's own menu confirm and back; 0 when unset
 	direct       bool      // A and B are readable: the pad is held exclusively and read here entirely
 }
 
@@ -181,6 +183,15 @@ func loadPadMapping(configDir, id string, bits [96]byte, abs [8]byte) padMapping
 		if m.osd[1] == 0 {
 			m.osd[1] = m.osd[0]
 		}
+		// Slot 23 (SYS_BTN_MENU_FUNC) packs Main's own menu buttons: MENU OK
+		// in the low half, MENU BACK in the high half. They are kept as the
+		// user's word for which button confirms, not acted on here.
+		if v := binary.LittleEndian.Uint32(b[23*4:]); v != 0 {
+			m.okBack = [2]uint16{uint16(v & 0xFFFF), uint16(v >> 16)}
+			if m.okBack[0] == m.okBack[1] { // one button for both means nothing was chosen
+				m.okBack = [2]uint16{}
+			}
+		}
 		for i := 0; i < 4; i++ { // SYS_AXIS1_X..SYS_AXIS2_Y: the sticks' axis numbers
 			if v := binary.LittleEndian.Uint32(b[(24+i)*4:]); v != 0 {
 				m.stickAxes[m.stickAxesN] = uint16(v)
@@ -263,5 +274,22 @@ func (m padMapping) info(node, name string, vendor, product uint16) support.Pad 
 			p.Menu += "+" + fmt.Sprint(m.osd[1])
 		}
 	}
+	p.OK, p.Back = m.okBackName(p, 0), m.okBackName(p, 1)
 	return p
+}
+
+// okBackName names MENU OK (0) or MENU BACK (1) by the slot it sits in, by
+// its code when it is in none, or "" when unset.
+func (m padMapping) okBackName(p support.Pad, i int) string {
+	code := m.okBack[i]
+	if code == 0 {
+		return ""
+	}
+	if slot := p.Slot(code); slot != "" {
+		return slot
+	}
+	if code < emuBase {
+		return fmt.Sprintf("btn %d", code)
+	}
+	return support.CodeText(code)
 }

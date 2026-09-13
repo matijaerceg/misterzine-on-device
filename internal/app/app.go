@@ -127,6 +127,10 @@ type Config struct {
 	// ButtonLabels names the pad buttons in the legends: "mister" (default:
 	// A B X Y), "xbox", "playstation" or "numbers" (see buttons.go).
 	ButtonLabels string
+	// OKButtons is Options -> OK button per pad, keyed by the pad's
+	// vendor_product as in MiSTer's map file name: "a" or "b" overrides
+	// the MENU OK choice read from that map; absent means auto (okbutton.go).
+	OKButtons map[string]string
 }
 
 // App is the state machine.
@@ -176,6 +180,7 @@ type App struct {
 	look       SaverLook                  // the saver ground's tuning (screensaver.go)
 	released   map[platform.Key]time.Time // when each key last came up, for the bounce guard
 	down       map[platform.Key]bool      // keys currently held, across all devices
+	oks        okButtons                  // which pad pressed last and what its OK button is (okbutton.go)
 	menuAt     time.Time                  // when the Menu button went down in Options mode; zero while up
 	menuHinted bool                       // the hold hint is showing
 	menuBar    int                        // hold progress since the hint, in pixels along the status bar's bottom line
@@ -610,6 +615,7 @@ func (a *App) ensureVisible() {
 // that Main also translates delivers every press twice (raw and through the
 // virtual keyboard), and this folds the pair into one.
 func (a *App) Handle(ev platform.Event) bool {
+	ev = a.padEvent(ev) // a pad whose OK button is B trades Enter and back
 	if a.handleSaverInput(ev) {
 		return true
 	}

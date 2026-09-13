@@ -76,6 +76,21 @@ func TestPadSlotsFollowTheDefine(t *testing.T) {
 	if p.Slot(305) != "A" || p.Slot(304) != "B" || p.Slot(773) != "R" || p.Slot(802) != "Up" || p.Slot(999) != "" || p.MenuStick != "axes 0/1" {
 		t.Fatalf("pad info %+v", p)
 	}
+	// MENU OK on the bottom button (slot B) and MENU BACK on the right one
+	// (slot A) are reported by slot name for the app to follow
+	if p.OK != "B" || p.Back != "A" {
+		t.Fatalf("OK %q back %q, want B and A", p.OK, p.Back)
+	}
+	// OK on a button in no slot is named by its code; unset, or one button
+	// for both, is no choice at all
+	writeSlotMap(t, filepath.Join(dir, "inputs"), [12]uint32{801, 800, 803, 802, 305, 304, 308, 307, 310, 773, 314, 315}, 316, 304, 0, 0)
+	if p := loadPadMapping(dir, "045e_028e", bits, abs).info("event3", "pad", 0, 0); p.OK != "btn 316" || p.Back != "B" {
+		t.Fatalf("OK off-slot: OK %q back %q", p.OK, p.Back)
+	}
+	writeSlotMap(t, filepath.Join(dir, "inputs"), [12]uint32{801, 800, 803, 802, 305, 304, 308, 307, 310, 773, 314, 315}, 304, 304, 0, 0)
+	if p := loadPadMapping(dir, "045e_028e", bits, abs).info("event3", "pad", 0, 0); p.OK != "" || p.Back != "" {
+		t.Fatalf("OK = back: OK %q back %q", p.OK, p.Back)
+	}
 	d := &device{pad: true, mapping: m, name: "pad", abs: map[uint16]absInfo{}, axisEdge: map[uint16]uint8{}}
 	if k, ok := d.inputKey(314); !ok || k != platform.KeySelect {
 		t.Fatal("Select should arrive as the quick-toggle modifier:", k, ok)
