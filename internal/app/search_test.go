@@ -73,7 +73,7 @@ func TestFreshArtworkAlwaysStartsAtFirstShot(t *testing.T) {
 		a.Handle(platform.Event{Key: k, Pressed: true, At: now})
 		a.Handle(platform.Event{Key: k, At: now})
 		a.Paint()
-		now = now.Add(10 * time.Millisecond)
+		now = now.Add(50 * time.Millisecond) // quick taps, but past the bounce guard
 	}
 	a.MoveToKey("one")
 	tap(platform.KeyEnter)

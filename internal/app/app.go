@@ -173,10 +173,11 @@ type App struct {
 
 	wants      []ImageReq // pictures this frame asked for, in priority order
 	rep        repeater
-	down       map[platform.Key]bool // keys currently held, across all devices
-	menuAt     time.Time             // when the Menu button went down in Options mode; zero while up
-	menuHinted bool                  // the hold hint is showing
-	menuBar    int                   // hold progress since the hint, in pixels along the status bar's bottom line
+	released   map[platform.Key]time.Time // when each key last came up, for the bounce guard
+	down       map[platform.Key]bool      // keys currently held, across all devices
+	menuAt     time.Time                  // when the Menu button went down in Options mode; zero while up
+	menuHinted bool                       // the hold hint is showing
+	menuBar    int                        // hold progress since the hint, in pixels along the status bar's bottom line
 	// where closing Options returns to (menu.go): the screen it was opened
 	// over, the row key Details or the artwork showed, and the Filters
 	// browsing state kept aside while Options uses the panel.
@@ -222,7 +223,7 @@ func New(cfg Config, ds *data.Dataset, stored *data.SeenRecord) *App {
 	if cfg.Versions == nil {
 		cfg.Versions = map[string]string{}
 	}
-	a := &App{cfg: cfg, body: fonts.Body(), sm: fonts.Small(), narrow: fonts.Narrow(), tall: fonts.NarrowTall(), rot: cfg.Rotation, split: -1, down: map[platform.Key]bool{}}
+	a := &App{cfg: cfg, body: fonts.Body(), sm: fonts.Small(), narrow: fonts.Narrow(), tall: fonts.NarrowTall(), rot: cfg.Rotation, split: -1, down: map[platform.Key]bool{}, released: map[platform.Key]time.Time{}}
 	a.viewsOff = parseViewsOff(cfg.ViewsOff)
 	a.mode = a.firstView()
 	if cfg.RememberSort && a.viewOn(cfg.LastSort) {
@@ -621,6 +622,9 @@ func (a *App) Handle(ev platform.Event) bool {
 		}
 		return false
 	}
+	if a.bounced(ev) {
+		return false
+	}
 	if ev.Key == platform.KeyMenu && a.MenuButton() != "leave" && !(a.screen == ScreenTroubleshooting && a.support.mode == "pad") {
 		// Options mode: the tap acts on the release, a hold quits (menu.go);
 		// the pad tester only logs the button
@@ -681,6 +685,35 @@ func (a *App) Handle(ev platform.Event) bool {
 		}
 	}
 	return a.act(ev.Key)
+}
+
+// debounce is the window after a key comes up in which a new press of the
+// same key is taken for contact bounce and dropped. Worn arcade
+// microswitches deliver a second press 2-8 ms after the release; the
+// quickest deliberate double tap is several times longer.
+const debounce = 25 * time.Millisecond
+
+// bounced reports whether ev is a press that follows this key's release too
+// closely to be a new tap; releases record their time on the way through.
+// Only the press side is guarded: a bounce during a hold ends the hold,
+// which costs one repeat delay, never a wrong action.
+func (a *App) bounced(ev platform.Event) bool {
+	if ev.Key == platform.KeyNone || ev.Key == platform.KeyOther {
+		return false
+	}
+	at := ev.At
+	if at.IsZero() {
+		at = a.cfg.TimerNow()
+	}
+	if ev.Pressed {
+		// strictly after the release: scripted input (tests, the harness,
+		// injected keys) may stamp a press and its release alike, a switch
+		// never does
+		up := a.released[ev.Key]
+		return !a.down[ev.Key] && at.After(up) && at.Before(up.Add(debounce))
+	}
+	a.released[ev.Key] = at
+	return false
 }
 
 // repeatStep says whether a held key repeats on the current screen and how

@@ -35,7 +35,7 @@ func versionsFixture(t *testing.T, versions map[string]string, alts []string) (*
 		a.Handle(platform.Event{Key: key, Pressed: true, At: now})
 		a.Handle(platform.Event{Key: key, At: now.Add(time.Millisecond)})
 		a.Paint()
-		now = now.Add(20 * time.Millisecond)
+		now = now.Add(50 * time.Millisecond) // past the bounce guard
 	}
 	return a, tap, &launched, &changed
 }
