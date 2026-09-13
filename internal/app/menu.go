@@ -9,11 +9,12 @@ import (
 // menuHold is how long the pad's Menu button must stay down to leave
 // MisterZine while Options -> Menu button is "Options": the short press
 // still opens or closes Options at once, so the "leave" route is always
-// there without changing the setting. menuHint is when the hint appears,
-// past a tap held a little long.
+// there without changing the setting. menuHint is when the hint appears:
+// past any tap (well under 200 ms) but early enough to read before the
+// quit.
 const (
 	menuHold = 2 * time.Second
-	menuHint = 500 * time.Millisecond
+	menuHint = 300 * time.Millisecond
 )
 
 const menuHoldNotice = "keep holding to quit MisterZine"

@@ -39,11 +39,11 @@ func TestMenuHeldLeavesInOptionsMode(t *testing.T) {
 	if next := a.NextTick(); !next.Equal(t0.Add(menuHint)) {
 		t.Fatalf("NextTick %v, want the hint at %v", next, t0.Add(menuHint))
 	}
-	if a.Tick(t0.Add(400 * time.Millisecond)); a.notice != "" {
+	if a.Tick(t0.Add(200 * time.Millisecond)); a.notice != "" {
 		t.Fatalf("a tap must not hint: %q", a.notice)
 	}
-	if !a.Tick(t0.Add(600*time.Millisecond)) || a.notice != menuHoldNotice {
-		t.Fatalf("no hint after %v: %q", 600*time.Millisecond, a.notice)
+	if !a.Tick(t0.Add(350*time.Millisecond)) || a.notice != menuHoldNotice {
+		t.Fatalf("no hint after %v: %q", 350*time.Millisecond, a.notice)
 	}
 	if next := a.NextTick(); !next.Equal(t0.Add(menuHold)) {
 		t.Fatalf("NextTick %v, want the leave at %v", next, t0.Add(menuHold))
