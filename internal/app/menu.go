@@ -3,6 +3,8 @@ package app
 import (
 	"time"
 
+	"github.com/matijaerceg/misterzine-on-device/internal/gen"
+	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
 
@@ -64,26 +66,45 @@ func (a *App) menuRelease(at time.Time) bool {
 		at = a.cfg.TimerNow()
 	}
 	engaged := a.menuHinted || at.Sub(a.menuAt) >= menuHint
-	a.menuAt, a.menuHinted = time.Time{}, false
+	a.menuAt, a.menuHinted, a.menuBar = time.Time{}, false, 0
 	if !engaged {
 		return a.menuButton()
 	}
 	if a.notice == menuHoldNotice {
 		a.notice = ""
-		a.all = true
 	}
+	a.all = true
 	return true
 }
 
-// tickMenu shows the hint once a Menu press outlasts a tap and leaves the
-// app once it reaches menuHold; true when the screen changed.
+// menuBarWidth is how much of the status bar's bottom line the hold has
+// filled at now: nothing when the hint appears, the whole line at the
+// quit. Zero while no hold is engaged.
+func (a *App) menuBarWidth(now time.Time) int {
+	if a.menuAt.IsZero() || !a.menuHinted {
+		return 0
+	}
+	w := a.lay.Status.Dx()
+	p, span := now.Sub(a.menuAt.Add(menuHint)), menuHold-menuHint
+	switch {
+	case p <= 0:
+		return 0
+	case p >= span:
+		return w
+	}
+	return int(int64(w) * int64(p) / int64(span))
+}
+
+// tickMenu shows the hint once a Menu press outlasts a tap, grows the
+// progress line under the status bar from then on and quits once the hold
+// reaches menuHold; true when the screen changed.
 func (a *App) tickMenu(now time.Time) bool {
 	if a.menuAt.IsZero() {
 		return false
 	}
 	held := now.Sub(a.menuAt)
 	if held >= menuHold {
-		a.menuAt, a.menuHinted = time.Time{}, false
+		a.menuAt, a.menuHinted, a.menuBar = time.Time{}, false, 0
 		if a.notice == menuHoldNotice {
 			a.notice = ""
 		}
@@ -95,7 +116,13 @@ func (a *App) tickMenu(now time.Time) bool {
 	}
 	if held >= menuHint && !a.menuHinted {
 		a.menuHinted = true
-		a.notice, a.until = menuHoldNotice, a.menuAt.Add(menuHold) // gone with the leave
+		a.menuBar = a.menuBarWidth(now) // 0 on time; a late tick catches up
+		a.notice, a.until = menuHoldNotice, a.menuAt.Add(menuHold) // gone with the quit
+		a.all = true
+		return true
+	}
+	if bar := a.menuBarWidth(now); bar != a.menuBar {
+		a.menuBar = bar
 		a.all = true
 		return true
 	}
@@ -103,7 +130,8 @@ func (a *App) tickMenu(now time.Time) bool {
 }
 
 // nextMenuTick is when the held Menu button next needs a look: the hint,
-// then the leave; zero while it is up.
+// then each pixel of the progress line, then the quit; zero while it is
+// up.
 func (a *App) nextMenuTick() time.Time {
 	if a.menuAt.IsZero() {
 		return time.Time{}
@@ -111,7 +139,26 @@ func (a *App) nextMenuTick() time.Time {
 	if !a.menuHinted {
 		return a.menuAt.Add(menuHint)
 	}
-	return a.menuAt.Add(menuHold)
+	quit := a.menuAt.Add(menuHold)
+	if w := a.lay.Status.Dx(); w > 0 {
+		// the moment the next pixel lands, rounded up to the tick after it
+		span := int64(menuHold - menuHint)
+		next := a.menuAt.Add(menuHint).Add(time.Duration((int64(a.menuBar+1)*span + int64(w) - 1) / int64(w)))
+		if next.Before(quit) {
+			return next
+		}
+	}
+	return quit
+}
+
+// paintMenuBar draws the hold progress along the status bar's bottom
+// line, over the usual muted line, while a Menu hold is engaged.
+func (a *App) paintMenuBar(c *gfx.Canvas) {
+	if a.menuBar <= 0 {
+		return
+	}
+	l := &a.lay
+	c.HLine(l.Status.Min.X, l.Status.Min.X+a.menuBar-1, l.Status.Max.Y-1, gen.Eva.Ok)
 }
 
 // openOptions opens Options over the current screen and remembers where

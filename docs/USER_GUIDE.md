@@ -154,7 +154,9 @@ MisterZine's Menu button, opening Options by default (Options -> Menu button
 can make it quit instead). A tap opens or closes Options as you let go.
 Held for two seconds it quits MisterZine for the MiSTer menu whatever the
 setting; a hint appears after 300 ms, and from then on the screen stays as
-it was: letting go early neither opens nor closes Options.
+it was: letting go early neither opens nor closes Options. While the hint
+is up, the line under the top bar fills green from left to right, reaching
+the far edge at the moment MisterZine quits.
 A pad whose A or B MisterZine cannot read is left to MiSTer's translation,
 as before. Keyboard F12 and the board's own button still hand the screen to
 MiSTer, which closes the app.

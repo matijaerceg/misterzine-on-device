@@ -188,12 +188,12 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                       "space*5; home; down*30; shot year-pinned; end; up*2; shot year-unknown"])
     # over Details, the Menu button option row itself, closing Options back
     # onto Details and Filters, and the held-Menu hint over Filters (the
-    # screen stays put once the hold engages)
+    # screen stays put once the hold engages) with its progress line
     scenarios.append([*rotation,
                       "-out", f"out/menu-{orientation}", "-script",
                       "menu; shot options; menu; shot list; enter; menu; shot options-from-details; "
                       "end; up*3; shot option-row; right; shot option-leave; left; back; shot details-back; "
                       "back; tab; down*2; menu; shot options-over-filters; back; shot filters-back; "
-                      "press menu; wait 700; shot menu-hint; release menu; shot menu-released; back; back"])
+                      "press menu; wait 700; shot menu-hint; wait 900; shot menu-hold; release menu; shot menu-released; back; back"])
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)

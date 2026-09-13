@@ -176,6 +176,7 @@ type App struct {
 	down       map[platform.Key]bool // keys currently held, across all devices
 	menuAt     time.Time             // when the Menu button went down in Options mode; zero while up
 	menuHinted bool                  // the hold hint is showing
+	menuBar    int                   // hold progress since the hint, in pixels along the status bar's bottom line
 	// where closing Options returns to (menu.go): the screen it was opened
 	// over, the row key Details or the artwork showed, and the Filters
 	// browsing state kept aside while Options uses the panel.

@@ -52,15 +52,28 @@ func TestMenuHeldLeavesInOptionsMode(t *testing.T) {
 	if !a.Tick(t0.Add(350*time.Millisecond)) || a.notice != menuHoldNotice || a.screen != ScreenList {
 		t.Fatalf("after %v: notice %q, screen %v", 350*time.Millisecond, a.notice, a.screen)
 	}
-	if next := a.NextTick(); !next.Equal(t0.Add(menuHold)) {
-		t.Fatalf("NextTick %v, want the leave at %v", next, t0.Add(menuHold))
+	// the progress line: empty as the hint appears, half way at the middle
+	// of the remaining hold, ticked pixel by pixel, full at the quit
+	w := a.lay.Status.Dx()
+	if a.menuBar > w/20 { // the tick above ran 50 ms into the 1.7 s span
+		t.Fatalf("the line starts at %d px of %d, want next to nothing", a.menuBar, w)
+	}
+	if next := a.NextTick(); !next.After(t0.Add(menuHint)) || !next.Before(t0.Add(menuHint+100*time.Millisecond)) {
+		t.Fatalf("NextTick %v, want the first pixel shortly after the hint at %v", next, t0.Add(menuHint))
+	}
+	mid := t0.Add(menuHint + (menuHold-menuHint)/2)
+	if !a.Tick(mid) || a.menuBar < w/2-1 || a.menuBar > w/2+1 {
+		t.Fatalf("at the middle of the hold the line is %d px of %d", a.menuBar, w)
+	}
+	if a.Tick(mid.Add(time.Millisecond)) || a.menuBar < w/2-1 || a.menuBar > w/2+1 {
+		t.Fatalf("a tick that lands no new pixel must not repaint: %d px", a.menuBar)
 	}
 	a.Tick(t0.Add(1900 * time.Millisecond))
-	if *quits != 0 {
-		t.Fatal("left before the hold length")
+	if *quits != 0 || a.menuBar < w*9/10 {
+		t.Fatalf("before the hold length: quits %d, line %d px of %d", *quits, a.menuBar, w)
 	}
-	if !a.Tick(t0.Add(menuHold)) || *quits != 1 || a.notice != "" {
-		t.Fatalf("hold: quits %d, notice %q", *quits, a.notice)
+	if !a.Tick(t0.Add(menuHold)) || *quits != 1 || a.notice != "" || a.menuBar != 0 {
+		t.Fatalf("hold: quits %d, notice %q, line %d px", *quits, a.notice, a.menuBar)
 	}
 	a.Tick(t0.Add(5 * time.Second))
 	a.Handle(platform.Event{Key: platform.KeyMenu, Pressed: false, At: t0.Add(5 * time.Second)})
@@ -80,8 +93,11 @@ func TestMenuReleasedBeforeHoldStays(t *testing.T) {
 	if a.notice != menuHoldNotice {
 		t.Fatalf("notice %q", a.notice)
 	}
-	if !a.Handle(platform.Event{Key: platform.KeyMenu, Pressed: false, At: t0.Add(time.Second)}) || a.notice != "" {
-		t.Fatalf("the release should take the hint away: %q", a.notice)
+	if a.menuBar <= 0 {
+		t.Fatal("the progress line should be showing")
+	}
+	if !a.Handle(platform.Event{Key: platform.KeyMenu, Pressed: false, At: t0.Add(time.Second)}) || a.notice != "" || a.menuBar != 0 {
+		t.Fatalf("the release should take the hint and the line away: %q, %d px", a.notice, a.menuBar)
 	}
 	a.Tick(t0.Add(3 * time.Second))
 	if *quits != 0 || a.screen != ScreenList {

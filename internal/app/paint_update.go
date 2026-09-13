@@ -154,6 +154,7 @@ func (a *App) paintUpdate(c *gfx.Canvas) {
 	v := &a.updateView
 	c.Fill(l.Root, gen.Eva.Bg)
 	c.Fill(l.Status, gen.Eva.Surface)
+	a.paintMenuBar(c)
 	c.Text(l.Status.Min.X+2, l.Status.Min.Y+2, a.sm, "Update All", gen.Eva.Accent)
 	status := s.Status
 	if s.Active() {
