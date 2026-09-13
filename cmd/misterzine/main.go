@@ -657,6 +657,10 @@ func (h *host) saverLoop() {
 // pump serves what the main loop would between two saver frames, without
 // blocking; false means the app is stopping.
 func (h *host) pump() bool {
+	var imgReady, imgProgress <-chan struct{} // nil without a picture store (tests): never ready
+	if h.img != nil {
+		imgReady, imgProgress = h.img.Ready(), h.img.ProgressReady()
+	}
 	for i := 0; i < 16; i++ {
 		select {
 		case <-h.quit:
@@ -679,9 +683,9 @@ func (h *host) pump() bool {
 		case s := <-h.netCh:
 			h.a.SetNet(s)
 			h.img.SetOffline(s == "no connection")
-		case <-h.img.Ready():
+		case <-imgReady:
 			h.a.Invalidate()
-		case <-h.img.ProgressReady():
+		case <-imgProgress:
 			if h.a.Screen() == app.ScreenOptions {
 				h.a.Invalidate()
 			}
