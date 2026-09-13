@@ -28,6 +28,7 @@ type Settings struct {
 	Screensaver    string        `json:"screensaver_minutes"`
 	SaverStyle     string        `json:"screensaver_style"`      // word (default: the lettering) or shots
 	SaverBright    string        `json:"screensaver_brightness"` // the shots: half (default) or full
+	SaverInfo      string        `json:"screensaver_info"`       // the shots' caption: full (default), title or none
 	RememberSort   bool          `json:"remember_sort"`
 	LastSort       data.SortMode `json:"last_sort"`
 	ViewsOff       []string      `json:"views_off"` // Options -> Views: the list orders left out of the Y cycle, by name (updated, debut, year, alphabetical, maker, favorites, recents)
@@ -52,7 +53,7 @@ type Settings struct {
 
 // DefaultSettings for a fresh install.
 func DefaultSettings() Settings {
-	return Settings{Schema: 1, Rotation: "auto", FollowRotation: true, Inset: 15, InsetX: 15, InsetY: 15, Scroll: "30", HoldDelay: 300, Screensaver: "1", SaverStyle: "word", SaverBright: "half", RememberSort: true, ViewsOff: []string{"recents"}}
+	return Settings{Schema: 1, Rotation: "auto", FollowRotation: true, Inset: 15, InsetX: 15, InsetY: 15, Scroll: "30", HoldDelay: 300, Screensaver: "1", SaverStyle: "word", SaverBright: "half", SaverInfo: "full", RememberSort: true, ViewsOff: []string{"recents"}}
 }
 
 // LoadSettings reads path over the defaults and migrates older files.
@@ -117,6 +118,11 @@ func (s *Settings) Migrate(legacy bool) {
 	}
 	if s.SaverBright != "full" {
 		s.SaverBright = "half"
+	}
+	switch s.SaverInfo {
+	case "title", "none":
+	default:
+		s.SaverInfo = "full"
 	}
 	switch s.HoldDelay {
 	case 200, 300, 500:

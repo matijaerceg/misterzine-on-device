@@ -19,10 +19,12 @@ import (
 // badges) is typed out in a bottom corner, the other one each time, a
 // character a frame with a beat at each line end, each line on a black
 // strip that grows with its letters, behind an underline cursor that
-// blinks once the block is complete. Start held on a shot plays
+// blinks once the block is complete; Options -> Screensaver info cuts
+// the caption to the title, or leaves it out. Start held on a shot plays
 // that game: the hold brings the picture up to full brightness and fills
-// a line under the block; letting go fades it back down and the saver
-// goes on with the shot it was about to show. Every other button wakes.
+// a line under the block, and with no caption it puts the title up for
+// the hold; letting go fades it back down and the saver goes on with the
+// shot it was about to show. Every other button wakes.
 //
 // The pool is the gameplay shot (the "snap" slot) of every arcade game in
 // the catalogue, shuffled and cycled without repeats: not the title
@@ -50,6 +52,20 @@ func (a *App) SaverBright() string {
 		return "full"
 	}
 	return "half"
+}
+
+// saverInfos are Options -> Screensaver info for the screenshots: the
+// pane's lines (the default), the title only, or nothing.
+var saverInfos = []string{"full", "title", "none"}
+
+// SaverInfo is Options -> Screensaver info for the screenshots: "full"
+// (default), "title" or "none".
+func (a *App) SaverInfo() string {
+	switch a.cfg.SaverInfo {
+	case "title", "none":
+		return a.cfg.SaverInfo
+	}
+	return "full"
 }
 
 const (
@@ -105,7 +121,8 @@ type saverShots struct {
 
 	corner     int        // the caption's corner: 1 bottom right, 3 bottom left (the bottom ones only)
 	offX, offY int        // the caption's wander from that corner
-	lines      []paneLine // the caption: the pane's lines for cur, the title in the shot's hue
+	lines      []paneLine // the caption: the pane's lines for cur as Options has them, the title in the shot's hue
+	title      []paneLine // the title's lines alone: the hold's caption when Options leaves the caption out
 	typed      int        // frames the caption has been typing, since cur arrived
 
 	// the last frame composed, at these settings, so a frame that did not
@@ -237,7 +254,7 @@ func (a *App) tickSaverShots(now time.Time) bool {
 	}
 	// the caption types on while its shot is on screen alone; a wipe
 	// takes it away, a wipe turned back brings it back where it was
-	if s.cur.row >= 0 && s.wipe == 0 {
+	if s.cur.row >= 0 && s.wipe == 0 && len(s.lines) > 0 {
 		before := saverShotTypingAt(s.lines, s.typed)
 		s.typed++
 		if saverShotTypingAt(s.lines, s.typed) != before {
@@ -330,7 +347,8 @@ func (a *App) saverShotsSwap(now time.Time) {
 	s := a.saver.shots
 	s.cur, s.curFrame = s.in, s.inFrame
 	s.curCol = saverShotHue(s.inFrame, a.logical.W(), a.logical.H(), a.logical.Stride)
-	s.lines, s.typed = a.saverShotLines(s.cur.row, s.curCol), 0
+	s.lines, s.title = a.saverShotLines(s.cur.row, s.curCol)
+	s.typed = 0
 	s.in, s.inFrame, s.wanted = s.next(), nil, false
 	s.wipe, s.dir = 0, -s.dir
 	s.shownAt, s.dueSince = now, time.Time{}
@@ -346,11 +364,13 @@ func (a *App) saverShotCols() int {
 }
 
 // saverShotLines is a shot's caption: what the pane says about its game,
-// each line cut to the width, the title in the shot's hue.
-func (a *App) saverShotLines(i int, hue rgb) []paneLine {
+// each line cut to the width, the title in the shot's hue, as Options ->
+// Screensaver info has it (the pane's lines, the title alone, or none),
+// and the title's lines alone for the hold.
+func (a *App) saverShotLines(i int, hue rgb) (lines, title []paneLine) {
 	row, d := &a.ds.Rows[i], &a.ds.Der[i]
 	cols := a.saverShotCols()
-	lines := a.paneLines(row, d, i, cols)
+	lines = a.paneLines(row, d, i, cols)
 	titled := len(gfx.Wrap(d.Title, cols, 2))
 	for j := range lines {
 		lines[j].text = gfx.Fit(lines[j].text, cols)
@@ -358,7 +378,14 @@ func (a *App) saverShotLines(i int, hue rgb) []paneLine {
 			lines[j].col = hue
 		}
 	}
-	return lines
+	title = lines[:titled]
+	switch a.SaverInfo() {
+	case "title":
+		lines = title
+	case "none":
+		lines = nil
+	}
+	return lines, title
 }
 
 // saverShotTyping is where a caption's typing has got to: the line under
@@ -633,20 +660,30 @@ func saverShotDim(col rgb, bright int) rgb {
 // placed for its longest line, an underline cursor after the last
 // character, and under the block, while Start is held, the line that
 // fills up to the launch, or the word that the game is not on the card.
-// A wipe under way hides it.
+// With no caption (Screensaver info: none) the hold puts the title up,
+// whole, for as long as it lasts. A wipe under way hides it.
 func (a *App) paintSaverCaption(c *gfx.Canvas) {
 	s := a.saver.shots
 	if s.cur.row < 0 || s.wipe > 0 {
 		return
 	}
+	lines := s.lines
+	t := saverShotTypingAt(lines, s.typed)
+	if len(lines) == 0 {
+		if s.holdAt.IsZero() {
+			return
+		}
+		lines = s.title
+		t = saverShotTyping{line: len(lines) - 1, chars: len(lines[len(lines)-1].text), done: true}
+	}
 	root := a.lay.Root
 	lh := a.sm.H + 1
 	tw := 0
-	for _, ln := range s.lines {
+	for _, ln := range lines {
 		tw = max(tw, a.sm.Width(ln.text))
 	}
 	tw += a.sm.W + 6 // the cursor's cell after the longest line
-	th := len(s.lines)*lh + 1
+	th := len(lines)*lh + 1
 	strip := a.sm.H + 2
 	right, bottom := s.corner == 1 || s.corner == 2, s.corner == 1 || s.corner == 3
 	x, y := root.Min.X+s.offX, root.Min.Y+s.offY
@@ -657,8 +694,7 @@ func (a *App) paintSaverCaption(c *gfx.Canvas) {
 		y = root.Max.Y - th - strip - s.offY
 	}
 	ink := saverShotDim(s.curCol, s.bright)
-	t := saverShotTypingAt(s.lines, s.typed)
-	for i, ln := range s.lines {
+	for i, ln := range lines {
 		if i > t.line {
 			break
 		}
@@ -675,13 +711,13 @@ func (a *App) paintSaverCaption(c *gfx.Canvas) {
 		}
 		ty := y + 1 + i*lh
 		low := ty + a.sm.H
-		if i == len(s.lines)-1 {
+		if i == len(lines)-1 {
 			low++
 		}
 		c.Fill(image.Rect(x, ty-1, x+6+cells*a.sm.W, low), rgb{A: 255})
 		c.Text(x+3, ty, a.sm, text, saverShotDim(ln.col, s.bright))
 	}
-	if t.cursor && len(s.lines) > 0 {
+	if t.cursor {
 		cx, cy := x+3+t.chars*a.sm.W, y+1+t.line*lh+a.sm.H-1
 		c.Fill(image.Rect(cx, cy, cx+a.sm.W, cy+1), ink)
 	}

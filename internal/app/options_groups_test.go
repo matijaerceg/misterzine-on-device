@@ -63,7 +63,7 @@ func TestOptionsGroups(t *testing.T) {
 	}
 	// the rows that only apply given the row above them are children, drawn
 	// a step in behind the branch mark; every other row sits flush
-	children := map[string]bool{"rotation": true, "saver-style": true, "saver-bright": true, "open-at-boot": true, "return-after-game": true}
+	children := map[string]bool{"rotation": true, "saver-style": true, "saver-bright": true, "saver-info": true, "open-at-boot": true, "return-after-game": true}
 	a.cfg.SaverStyle = "shots"
 	seen := 0
 	for _, e := range a.optionsEntries() {

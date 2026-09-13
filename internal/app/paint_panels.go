@@ -399,7 +399,9 @@ func (a *App) optionsEntries() []panelEntry {
 	// the section headers: a mark, the title and a rule to the right, as
 	// the list's group markers; Controls sits before Operation so the rows
 	// changed with the pad in hand come before the rarely touched ones
-	group := func(glyph, title string) panelEntry { return panelEntry{text: title, glyph: glyph, header: true, info: true} }
+	group := func(glyph, title string) panelEntry {
+		return panelEntry{text: title, glyph: glyph, header: true, info: true}
+	}
 	spacer := panelEntry{header: true, info: true}
 	E := []panelEntry{group(gfx.SectionData, "Data"),
 		{text: "Refresh data now", kind: "refresh",
@@ -442,7 +444,9 @@ func (a *App) optionsEntries() []panelEntry {
 	}
 	if a.SaverStyle() == "shots" {
 		E = append(E, panelEntry{text: "Screensaver brightness", kind: "saver-bright", child: true, short: "Brightness", vals: []string{"half", "full"}, idx: map[string]int{"half": 0, "full": 1}[a.SaverBright()],
-			help: "Half (default): the shots at half brightness, kind to a CRT; holding Start brings one up to full. Full: full brightness throughout."})
+			help: "Half (default): the shots at half brightness, kind to a CRT; holding Start brings one up to full. Full: full brightness throughout."},
+			panelEntry{text: "Screensaver info", kind: "saver-info", child: true, short: "Info", vals: []string{"full", "title only", "none"}, idx: map[string]int{"full": 0, "title": 1, "none": 2}[a.SaverInfo()],
+				help: "Full (default): what the pane says about the shot's game, typed out in a corner. Title only: just the title. None: the picture alone; holding Start still shows the title over its line."})
 	}
 	E = append(E, []panelEntry{
 		{text: "Edit safe zone", kind: "inset",
@@ -732,7 +736,7 @@ func (a *App) optionsHint() string {
 // value, or it is greyed).
 var optionsActs = map[string]string{
 	"refresh": "Refresh", "update": "Run", "update-result": "Open", "rescan": "Rescan", "clearimg": "Clear",
-	"views": "Open", "screensaver": "Preview", "saver-style": "Preview", "saver-bright": "Preview",
+	"views": "Open", "screensaver": "Preview", "saver-style": "Preview", "saver-bright": "Preview", "saver-info": "Preview",
 	"inset": "Edit", "troubleshooting": "Open", "credits": "Open", "quit": "Quit",
 }
 
@@ -931,6 +935,8 @@ func (a *App) stepValue(d int) bool {
 		a.cfg.SaverStyle = saverStyles[i]
 	case "saver-bright":
 		a.cfg.SaverBright = []string{"half", "full"}[i]
+	case "saver-info":
+		a.cfg.SaverInfo = saverInfos[i]
 	case "title-font":
 		a.cfg.TitleFont = titleFonts[i]
 	case "list-shot":
@@ -1014,7 +1020,7 @@ func (a *App) togglePanel() bool {
 		}
 		a.buildPanel()
 		return true
-	case "screensaver", "saver-style", "saver-bright":
+	case "screensaver", "saver-style", "saver-bright", "saver-info":
 		a.startSaver(a.cfg.TimerNow())
 		return true
 	case "update-result":

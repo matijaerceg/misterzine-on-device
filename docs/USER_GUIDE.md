@@ -213,12 +213,12 @@ a rule: Data (a diskette: Refresh data now, Run Update All, Last update
 result, Rescan card, Prefetch shots, Clear image cache), List (stacked
 lines: Sources, Filter by rotation, Remember last view, Views, Title font,
 List shots, Date format, List layout), Display (a monitor: rotation,
-screensaver delay, style and brightness, safe zone, HDMI picture), Controls
+screensaver delay, style, brightness and info, safe zone, HDMI picture), Controls
 (an arcade stick: Button labels, OK button, Menu button, Scroll speed, Hold
 delay) and Operation (sliders: the main menu shortcut, Open at boot, Return
 after game, Troubleshooting, Credits, Quit). The headings cannot be selected.
 A row that only applies given the row above it (Rotation under Follow INI
-rotation, the screensaver's style and brightness, Open at boot and Return
+rotation, the screensaver's style, brightness and info, Open at boot and Return
 after game under the shortcut) sits a step in behind a small branch mark.
 Values line up in one column; a small arrow at the right
 edge of the top or bottom row shows when more options sit above or below the
@@ -339,6 +339,10 @@ and last row.
 - **Screensaver brightness:** with the screenshots only. Half (default) shows the
   shots at half brightness, kinder to a CRT, and holding Start brings one
   up to full; full shows them at full brightness throughout.
+- **Screensaver info:** with the screenshots only. Full (default) types out
+  what the pane says about the shot's game; title only types just the
+  title; none leaves the picture alone. Holding Start still shows the
+  title over its filling line whichever is set.
 - **Edit safe zone:** D-pad moves the top-right corner of the safe frame;
   Right/Up grows it and Left/Down shrinks it. B saves. Margins can reach 40 px.
 - **HDMI picture:** fit display by default: the picture is sized so that

@@ -219,6 +219,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		Screensaver:          h.settings.Screensaver,
 		SaverStyle:           h.settings.SaverStyle,
 		SaverBright:          h.settings.SaverBright,
+		SaverInfo:            h.settings.SaverInfo,
 		RememberSort:         h.settings.RememberSort,
 		FollowRotation:       h.settings.FollowRotation,
 		FilterRotation:       h.settings.FilterRotation,
@@ -356,7 +357,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 					"search": h.a.Search(), "filters": h.a.Filters(), "rotation": h.a.Rotation().String(), "inset": fmt.Sprint(h.a.Inset()), "devices": h.input.Devices(),
 					"sysfs": mister.SysfsMode(), "uptime": time.Since(t0).String(), "frames": h.stats.String(), "cadence": h.stats.Cadence(), "saver": h.a.SaverStats(), "saver_blank_frames": h.saverBlankFrames, "saver_misses": h.saverMisses,
 					"update":      h.a.UpdateState(),
-					"screensaver": h.a.Screensaver(), "screensaver_active": h.a.ScreensaverActive(), "saver_style": h.a.SaverStyle(),
+					"screensaver": h.a.Screensaver(), "screensaver_active": h.a.ScreensaverActive(), "saver_style": h.a.SaverStyle(), "saver_info": h.a.SaverInfo(),
 					"title_font": h.a.TitleFont(), "list_shot": h.a.ListShot(), "date_format": h.a.DateFormat(), "button_labels": h.a.ButtonLabels(),
 				}
 			},
@@ -832,6 +833,7 @@ func (h *host) saveAll(final bool) {
 		h.settings.Screensaver = h.a.Screensaver()
 		h.settings.SaverStyle = h.a.SaverStyle()
 		h.settings.SaverBright = h.a.SaverBright()
+		h.settings.SaverInfo = h.a.SaverInfo()
 		h.settings.RememberSort = h.a.RememberSort()
 		h.settings.FollowRotation = h.a.FollowRotation()
 		h.settings.FilterRotation = h.a.FilterRotation()

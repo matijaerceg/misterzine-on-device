@@ -94,9 +94,12 @@ type Config struct {
 	Screensaver string
 	// SaverStyle is what the saver shows: "word" (default: the lettering)
 	// or "shots" (random arcade screenshots, Start held plays one); with
-	// the shots, SaverBright is "half" (default) or "full".
+	// the shots, SaverBright is "half" (default) or "full" and SaverInfo is
+	// what the caption says about a shot's game: "full" (default: the
+	// pane's lines), "title" (the title alone) or "none".
 	SaverStyle  string
 	SaverBright string
+	SaverInfo   string
 	// RememberSort restores LastSort at startup; otherwise start with latest updates.
 	RememberSort   bool
 	FollowRotation bool
