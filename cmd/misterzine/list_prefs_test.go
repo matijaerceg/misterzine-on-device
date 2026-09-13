@@ -29,10 +29,11 @@ func TestListPreferencesPersist(t *testing.T) {
 	if h.a.TitleFont() != "tall" || h.a.ListShot() != "gameplay" || h.a.DateFormat() != "mm-dd" {
 		t.Fatal("fresh defaults: narrow tall titles, gameplay shots, MM-DD")
 	}
+	at := time.Now()
 	tap := func(key platform.Key) {
-		now := time.Now()
-		h.a.Handle(platform.Event{Key: key, Pressed: true, At: now})
-		h.a.Handle(platform.Event{Key: key, At: now})
+		at = at.Add(50 * time.Millisecond) // taps spaced past the bounce guard
+		h.a.Handle(platform.Event{Key: key, Pressed: true, At: at})
+		h.a.Handle(platform.Event{Key: key, At: at})
 	}
 	tap(platform.KeyBack)
 	for i := 0; i < 10; i++ {

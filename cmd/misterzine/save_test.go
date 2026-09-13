@@ -26,10 +26,11 @@ func TestSortAutosaveRestoreAndOption(t *testing.T) {
 		}, data.Ingest(rows, "test", time.Now()), nil)
 	}
 	open()
+	at := time.Now()
 	tap := func(key platform.Key) {
-		now := time.Now()
-		h.a.Handle(platform.Event{Key: key, Pressed: true, At: now})
-		h.a.Handle(platform.Event{Key: key, At: now})
+		at = at.Add(50 * time.Millisecond) // taps spaced past the bounce guard
+		h.a.Handle(platform.Event{Key: key, Pressed: true, At: at})
+		h.a.Handle(platform.Event{Key: key, At: at})
 	}
 	restart := func() {
 		t.Helper()
