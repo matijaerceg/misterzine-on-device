@@ -825,8 +825,8 @@ func (a *App) actPanel(k platform.Key) bool {
 		}
 		return a.expandFilterSection(true)
 	case platform.KeyPageUp, platform.KeyHome:
-		if a.screen == ScreenFilter && k == platform.KeyPageUp {
-			return a.jumpFilterSection(-1)
+		if (a.screen == ScreenFilter || a.screen == ScreenOptions) && k == platform.KeyPageUp {
+			return a.jumpPanelSection(-1)
 		}
 		for i := 0; i < n; i++ {
 			if selectable(i) {
@@ -835,8 +835,8 @@ func (a *App) actPanel(k platform.Key) bool {
 			}
 		}
 	case platform.KeyPageDown, platform.KeyEnd:
-		if a.screen == ScreenFilter && k == platform.KeyPageDown {
-			return a.jumpFilterSection(1)
+		if (a.screen == ScreenFilter || a.screen == ScreenOptions) && k == platform.KeyPageDown {
+			return a.jumpPanelSection(1)
 		}
 		for i := n - 1; i >= 0; i-- {
 			if selectable(i) {

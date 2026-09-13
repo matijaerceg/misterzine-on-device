@@ -121,7 +121,7 @@ filter choices are saved.
 |---|---|---|---|---|---|---|
 | Up/Down | arrows | move | page information | | move | move |
 | Left/Right | arrows | page, keeping the row centered | choose version | change shot | collapse/expand section or years | change value |
-| L/R | PageUp/PageDown | previous/next letter in A-Z; newer/older month in date sorts; previous/next year or manufacturer | | | previous/next section | first/last |
+| L/R | PageUp/PageDown | previous/next letter in A-Z; newer/older month in date sorts; previous/next year or manufacturer | | | previous/next section | previous/next section |
 | A | Enter | details | artwork | | toggle a value; open/close a heading | run action |
 | B | Esc | Options / clear search | back | back | back | back |
 | X | Tab | Filters | | | back to the list | |
@@ -234,8 +234,10 @@ there, Filters as you left it. The next B reopens Options on the row you
 left, the way the list keeps its row; Filters opened from the list always
 starts at its top. Held
 scrolling stops at either end. Release and press Up again from the first item
-to wrap to Quit, or Down from Quit to wrap to the first item. R also jumps to
-the bottom.
+to wrap to Quit, or Down from Quit to wrap to the first item. L and R jump to
+the first row of the previous or next section (Data, List, Display, Controls,
+Operation), stopping at either end; keyboard Home/End still go to the first
+and last row.
 
 - **Prefetch shots:** downloads the full picture set in the background.
   Off downloads pictures as you browse. The tally shows cached pictures.

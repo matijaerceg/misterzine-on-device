@@ -6,12 +6,21 @@ func centeredTop(row, total, visible int) int {
 	return max(0, min(row-max(visible, 1)/2, total-visible))
 }
 
-func (a *App) jumpFilterSection(direction int) bool {
+// jumpPanelSection moves the cursor a section back or on (L and R, as
+// the list's letter jumps): in Filters to the section's heading, in
+// Options, whose headings are not selectable, to the section's first
+// row. From inside a section, back goes to the previous section, not to
+// the top of this one. Jumps stop at either end.
+func (a *App) jumpPanelSection(direction int) bool {
 	p := &a.panel
 	var sections []int
 	current := -1
 	for i, e := range p.entries {
-		if e.header && !e.info && e.kind != "" {
+		heading := e.header && !e.info && e.kind != ""
+		if a.screen == ScreenOptions {
+			heading = e.header && e.glyph != ""
+		}
+		if heading {
 			sections = append(sections, i)
 			if i <= p.cursor {
 				current = len(sections) - 1
@@ -22,7 +31,11 @@ func (a *App) jumpFilterSection(direction int) bool {
 		return false
 	}
 	target := max(0, min(current+direction, len(sections)-1))
-	p.cursor = sections[target]
+	i := sections[target]
+	for a.screen == ScreenOptions && i+1 < len(p.entries) && p.entries[i].info {
+		i++
+	}
+	p.cursor = i
 	a.all = true
 	return true
 }
