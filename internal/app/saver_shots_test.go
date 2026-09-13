@@ -121,11 +121,16 @@ func TestSaverShotsWipesEachShotInAndNamesIt(t *testing.T) {
 	if !half(centre(a)) {
 		t.Fatalf("the shot is not on screen at half brightness: %v", centre(a))
 	}
-	// the title tab: ink of the shot's hue on black, inside the safe zone
+	// the title tab: ink of the shot's hue, dimmed with the picture, on
+	// black, inside the safe zone
+	ink := saverShotDim(s.curCol, saverShotHalf)
+	if ink == s.curCol || ink.B >= s.curCol.B && ink.R >= s.curCol.R {
+		t.Fatalf("the ink is not dimmed: %v from %v", ink, s.curCol)
+	}
 	inked := 0
 	for y := 0; y < 240; y++ {
 		for x := 0; x < 320; x++ {
-			if p := a.logical.RGBAAt(x, y); p == s.curCol {
+			if p := a.logical.RGBAAt(x, y); p == ink {
 				inked++
 				if x < 15 || x >= 305 || y < 15 || y >= 225 {
 					t.Fatalf("tab ink outside the safe zone at %d,%d", x, y)
@@ -250,7 +255,7 @@ func TestSaverShotsHoldOnAGameNotOnTheCardLaunchesNothing(t *testing.T) {
 	found := false
 	for y := 0; y < 240 && !found; y++ {
 		for x := 0; x < 320; x++ {
-			if a.logical.RGBAAt(x, y) == rgb(muted()) {
+			if a.logical.RGBAAt(x, y) == saverShotDim(muted(), 256) { // the hold brought the picture, and the tab, up to full
 				found = true
 				break
 			}

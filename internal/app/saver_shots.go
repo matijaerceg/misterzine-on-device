@@ -551,6 +551,12 @@ func saverShotsCompose(dst, cur, in []uint8, w, h, stride, wipe, dir int, curve 
 
 const saverShotNoCard = "not on the card"
 
+// saverShotDim is a colour at the picture's brightness (256ths): the tab
+// dims and comes up with the shot under it.
+func saverShotDim(col rgb, bright int) rgb {
+	return rgb{R: uint8(int(col.R) * bright >> 8), G: uint8(int(col.G) * bright >> 8), B: uint8(int(col.B) * bright >> 8), A: col.A}
+}
+
 // paintSaverTab draws the title of the shot on screen on a black tab in
 // its corner of the safe zone, and under it, while Start is held, the
 // line that fills up to the launch, or the word that the game is not on
@@ -572,8 +578,9 @@ func (a *App) paintSaverTab(c *gfx.Canvas) {
 	if bottom {
 		y = root.Max.Y - th - strip - s.offY
 	}
+	ink := saverShotDim(s.curCol, s.bright)
 	c.Fill(image.Rect(x, y, x+tw, y+th), rgb{A: 255})
-	c.Text(x+3, y+2, a.sm, title, s.curCol)
+	c.Text(x+3, y+2, a.sm, title, ink)
 	if s.holdAt.IsZero() {
 		return
 	}
@@ -587,10 +594,10 @@ func (a *App) paintSaverTab(c *gfx.Canvas) {
 	}
 	c.Fill(image.Rect(sx, y+th, sx+sw, y+th+strip), rgb{A: 255})
 	if !s.holdOK {
-		c.Text(sx+3, y+th+1, a.sm, saverShotNoCard, gen.Eva.Muted)
+		c.Text(sx+3, y+th+1, a.sm, saverShotNoCard, saverShotDim(gen.Eva.Muted, s.bright))
 		return
 	}
 	held := a.cfg.TimerNow().Sub(s.holdAt)
 	bar := int(int64(sw-6) * int64(min(held, saverShotHold)) / int64(saverShotHold))
-	c.Fill(image.Rect(sx+3, y+th+strip/2-1, sx+3+bar, y+th+strip/2+1), s.curCol)
+	c.Fill(image.Rect(sx+3, y+th+strip/2-1, sx+3+bar, y+th+strip/2+1), ink)
 }
