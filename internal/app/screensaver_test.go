@@ -159,6 +159,11 @@ func TestSaverSweepsEveryPixel(t *testing.T) {
 		a, _ := saverApp()
 		a.SetRotation(rot)
 		c := a.logical
+		// the flat fill blurs to itself: bloomed and shaded, it is the ground
+		ground := color.RGBA{A: 255}
+		ground.R = uint8(min(a.look.boost(200), 255) * a.look.Shade >> 8)
+		ground.G = uint8(min(a.look.boost(160), 255) * a.look.Shade >> 8)
+		ground.B = uint8(min(a.look.boost(120), 255) * a.look.Shade >> 8)
 		covered := make([]bool, c.W()*c.H())
 		remaining := len(covered)
 		mask := a.saverMask(c.H())
@@ -175,7 +180,7 @@ func TestSaverSweepsEveryPixel(t *testing.T) {
 							covered[i] = true
 							remaining--
 						}
-					} else if p == (color.RGBA{R: 127, G: 127, B: 127, A: 255}) { // the bloomed fill at the shade
+					} else if p == ground {
 						continue
 					} else if sx := x - (c.W() - travel%(c.W()+mask.Rect.Dx())); sx < 0 || sx >= mask.Rect.Dx() || mask.Pix[y*mask.Stride+sx] == 0 || mask.Pix[y*mask.Stride+sx] == saverInk {
 						t.Fatalf("pixel not black, dimmed or a lit outline: %v", p)
