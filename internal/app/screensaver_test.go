@@ -550,7 +550,7 @@ func TestSaverWordRepeatsEdgeToEdge(t *testing.T) {
 	// deep into the run the frame is the mask tiled from the origin: a row
 	// through the capitals is black exactly where the tiled mask has ink,
 	// so the second copy follows the first without a gap
-	a.saver.travel = w + word + word/2
+	a.saver.travel = w + word - w/2 // the first copy's tail ends mid-screen, the second copy follows
 	c.Fill(c.Rect, color.RGBA{R: 200, G: 160, B: 120, A: 255})
 	a.paintSaver(c)
 	x0, y := saverOrigin(a.saver.travel, w, word), c.H()/2
