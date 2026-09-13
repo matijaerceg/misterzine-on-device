@@ -143,7 +143,31 @@ func TestScreensaverMigrationAndSave(t *testing.T) {
 	} {
 		path := writeSettings(t, tc.body)
 		s, err := LoadSettings(path)
-		if err != nil || s.Screensaver != tc.want {
+		if err != nil || s.Screensaver != tc.want || s.SaverStyle != "word" || s.SaverBright != "half" {
+			t.Fatalf("load %s: %+v, %v", tc.body, s, err)
+		}
+		if err := Save(path, s); err != nil {
+			t.Fatal(err)
+		}
+		got, err := LoadSettings(path)
+		if err != nil || !reflect.DeepEqual(got, s) {
+			t.Fatalf("settings changed after save: %+v, %v", got, err)
+		}
+	}
+}
+
+// The saver's style and brightness: the screenshots and full survive a
+// save, and anything else reads as the lettering at half.
+func TestSaverStyleMigrationAndSave(t *testing.T) {
+	for _, tc := range []struct{ body, style, bright string }{
+		{`{"screensaver_style":"shots","screensaver_brightness":"full"}`, "shots", "full"},
+		{`{"screensaver_style":"shots"}`, "shots", "half"},
+		{`{"screensaver_style":"nonsense","screensaver_brightness":"dim"}`, "word", "half"},
+		{`{}`, "word", "half"},
+	} {
+		path := writeSettings(t, tc.body)
+		s, err := LoadSettings(path)
+		if err != nil || s.SaverStyle != tc.style || s.SaverBright != tc.bright {
 			t.Fatalf("load %s: %+v, %v", tc.body, s, err)
 		}
 		if err := Save(path, s); err != nil {

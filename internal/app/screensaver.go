@@ -186,6 +186,10 @@ type screensaver struct {
 	cacheW int // width the picture was taken at (a rotation swaps it)
 	mask   *image.Alpha
 	waking map[saverKey]bool
+	// the run's style (Options -> Saver style, taken at the start) and the
+	// screenshots saver's state while that is the style (saver_shots.go)
+	style string
+	shots *saverShots
 }
 
 func (a *App) Screensaver() string {
@@ -243,6 +247,15 @@ func (a *App) handleSaverInput(ev platform.Event) bool {
 	if !a.ScreensaverActive() {
 		return false
 	}
+	if a.saver.shots != nil && ev.Key == platform.KeyStart {
+		// the screenshots saver: Start is a hold, never a wake
+		if ev.Pressed {
+			a.saverShotsPress(at)
+		} else {
+			a.saverShotsRelease(at)
+		}
+		return true
+	}
 	if !ev.Pressed {
 		delete(a.down, ev.Key)
 		return true // releasing the preview button doesn't dismiss the preview
@@ -266,6 +279,10 @@ func (a *App) startSaver(now time.Time) {
 	s.travel, s.shade, s.fade = 0, 256, 0
 	s.ticks = 0
 	s.sharp, s.ground, s.dark = nil, nil, nil
+	s.style, s.shots = a.SaverStyle(), nil
+	if s.style == "shots" {
+		a.saverShotsStart(now)
+	}
 	a.rep = repeater{}
 	a.all = true
 }
@@ -294,10 +311,11 @@ func (a *App) SaverFrame(now time.Time) bool {
 
 // saverLeave starts a wake: the fade runs backwards over saverWake without
 // the lettering, and the screen under it is painted again once the picture
-// is back. With nothing frozen yet there is nothing to fade back from.
+// is back. With nothing frozen yet there is nothing to fade back from, and
+// the screenshots saver leaves with a cut.
 func (a *App) saverLeave(now time.Time) {
 	s := &a.saver
-	if s.ground == nil {
+	if s.ground == nil || s.shots != nil {
 		a.saverEnd()
 		return
 	}
@@ -311,6 +329,7 @@ func (a *App) saverEnd() {
 	s := &a.saver
 	s.active, s.leaving = false, false
 	s.sharp, s.ground, s.dark = nil, nil, nil
+	s.shots = nil
 	a.all = true
 }
 
@@ -336,10 +355,16 @@ func (a *App) tickSaver(now time.Time) bool {
 		a.startSaver(now)
 	} else {
 		a.saver.ticks++
-		a.saverAdvance(now)
-		if a.saver.leaving && a.saver.fadeT <= 0 {
-			a.saverEnd() // the picture is back
+		changed := true
+		if a.saver.shots != nil {
+			changed = a.tickSaverShots(now) // a launch at the end of a hold takes the saver down
 		} else {
+			a.saverAdvance(now)
+			if a.saver.leaving && a.saver.fadeT <= 0 {
+				a.saverEnd() // the picture is back
+			}
+		}
+		if a.saver.active {
 			// the next frame keeps the grid the last one was on: a tick
 			// that ran late does not push every later one back, which
 			// used to add up until the lettering skipped a column. A
@@ -348,7 +373,9 @@ func (a *App) tickSaver(now time.Time) bool {
 			if a.saver.next.Before(now) {
 				a.saver.next = now.Add(saverFrame)
 			}
-			a.all = true
+			if changed {
+				a.all = true
+			}
 		}
 	}
 	return true

@@ -10,6 +10,12 @@ func (a *App) rememberedPick() int {
 	if row == nil {
 		return 0
 	}
+	return a.rememberedPickOf(row, i)
+}
+
+// rememberedPickOf is the remembered version's launch entry for row i,
+// 0 (the main one) when none is remembered or it is gone.
+func (a *App) rememberedPickOf(row *data.Row, i int) int {
 	want := a.cfg.Versions[row.K]
 	if want == "" {
 		return 0

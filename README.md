@@ -71,7 +71,9 @@ data and pictures remain available without a connection.
 
 After one minute idle, a screensaver dims the picture and sweeps full-height
 black **MISTERZINE** lettering, with glinting chrome edges, across it. Change the delay or turn it off in
-Options; press A on that setting to preview it.
+Options; press A on that setting to preview it. Options -> Saver style can show
+random arcade screenshots instead, each wiping in behind a soft edge; hold
+Start for two seconds on one to play that game.
 
 ## Remove
 

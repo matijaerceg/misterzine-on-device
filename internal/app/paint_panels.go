@@ -393,6 +393,14 @@ func (a *App) optionsEntries() []panelEntry {
 			help: rotationHelp},
 		{text: "Screensaver", kind: "screensaver", vals: []string{"off", "1 min", "2 min", "5 min", "10 min"}, idx: saverIdx,
 			help: "Blur, dim and scroll black lettering after idle time. Left/Right sets the delay; " + a.btn("A") + " previews. Other buttons wake without acting; Menu works as usual."},
+		{text: "Saver style", kind: "saver-style", vals: []string{"lettering", "screenshots"}, idx: map[string]int{"word": 0, "shots": 1}[a.SaverStyle()],
+			help: "Lettering (default): the MISTERZINE sweep. Screenshots: random arcade shots wiping in; hold Start 2 s on one to play it. Other buttons wake."},
+	}
+	if a.SaverStyle() == "shots" {
+		E = append(E, panelEntry{text: "Saver brightness", kind: "saver-bright", vals: []string{"half", "full"}, idx: map[string]int{"half": 0, "full": 1}[a.SaverBright()],
+			help: "Half (default): the shots at half brightness, kind to a CRT; holding Start brings one up to full. Full: full brightness throughout."})
+	}
+	E = append(E, []panelEntry{
 		{text: "Button labels", kind: "button-labels", vals: buttonLabelValues(), idx: map[string]int{"mister": 0, "xbox": 1, "playstation": 2, "numbers": 3}[a.ButtonLabels()],
 			help: "How the legends name the pad buttons, in MiSTer's A B X Y order as set in its define buttons screen. Xbox and PlayStation names go by position."},
 		a.okButtonRow(),
@@ -417,7 +425,7 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Test your Start button or game launching. Results stay on screen for a photo; no keyboard or log files needed."},
 		{text: "Credits", kind: "credits"},
 		{text: "Quit MisterZine", kind: "quit"},
-	}
+	}...)
 	return E
 }
 
@@ -831,6 +839,10 @@ func (a *App) stepValue(d int) bool {
 		a.Refilter()
 	case "screensaver":
 		a.cfg.Screensaver = saverValues[i]
+	case "saver-style":
+		a.cfg.SaverStyle = saverStyles[i]
+	case "saver-bright":
+		a.cfg.SaverBright = []string{"half", "full"}[i]
 	case "title-font":
 		a.cfg.TitleFont = titleFonts[i]
 	case "list-shot":
@@ -914,7 +926,7 @@ func (a *App) togglePanel() bool {
 		}
 		a.buildPanel()
 		return true
-	case "screensaver":
+	case "screensaver", "saver-style", "saver-bright":
 		a.startSaver(a.cfg.TimerNow())
 		return true
 	case "update-result":

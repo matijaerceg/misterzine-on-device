@@ -217,6 +217,8 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		PhysW: h.fb.CanvasW, PhysH: h.fb.CanvasH, Rotation: rotation, SafeInsetX: h.settings.InsetX, SafeInsetY: h.settings.InsetY,
 		Now: h.now, TimerNow: time.Now, ClockTrusted: trusted, Favorites: favSet, Images: h.img, Scroll: h.settings.Scroll, HoldDelay: h.settings.HoldDelay,
 		Screensaver:          h.settings.Screensaver,
+		SaverStyle:           h.settings.SaverStyle,
+		SaverBright:          h.settings.SaverBright,
 		RememberSort:         h.settings.RememberSort,
 		FollowRotation:       h.settings.FollowRotation,
 		FilterRotation:       h.settings.FilterRotation,
@@ -354,7 +356,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 					"search": h.a.Search(), "filters": h.a.Filters(), "rotation": h.a.Rotation().String(), "inset": fmt.Sprint(h.a.Inset()), "devices": h.input.Devices(),
 					"sysfs": mister.SysfsMode(), "uptime": time.Since(t0).String(), "frames": h.stats.String(), "cadence": h.stats.Cadence(), "saver": h.a.SaverStats(), "saver_blank_frames": h.saverBlankFrames, "saver_misses": h.saverMisses,
 					"update":      h.a.UpdateState(),
-					"screensaver": h.a.Screensaver(), "screensaver_active": h.a.ScreensaverActive(),
+					"screensaver": h.a.Screensaver(), "screensaver_active": h.a.ScreensaverActive(), "saver_style": h.a.SaverStyle(),
 					"title_font": h.a.TitleFont(), "list_shot": h.a.ListShot(), "date_format": h.a.DateFormat(), "button_labels": h.a.ButtonLabels(),
 				}
 			},
@@ -828,6 +830,8 @@ func (h *host) saveAll(final bool) {
 		h.settings.Scroll = h.a.ScrollSpeed()
 		h.settings.HoldDelay = h.a.HoldDelay()
 		h.settings.Screensaver = h.a.Screensaver()
+		h.settings.SaverStyle = h.a.SaverStyle()
+		h.settings.SaverBright = h.a.SaverBright()
 		h.settings.RememberSort = h.a.RememberSort()
 		h.settings.FollowRotation = h.a.FollowRotation()
 		h.settings.FilterRotation = h.a.FilterRotation()

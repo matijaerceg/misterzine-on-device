@@ -92,6 +92,11 @@ type Config struct {
 	HoldDelay int
 	// Screensaver is the idle timeout: "off", "1", "2", "5", "10" minutes.
 	Screensaver string
+	// SaverStyle is what the saver shows: "word" (default: the lettering)
+	// or "shots" (random arcade screenshots, Start held plays one); with
+	// the shots, SaverBright is "half" (default) or "full".
+	SaverStyle  string
+	SaverBright string
 	// RememberSort restores LastSort at startup; otherwise start with latest updates.
 	RememberSort   bool
 	FollowRotation bool
@@ -1070,7 +1075,9 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 		a.marquee = marqueeState{} // a return to Details starts its scroll afresh
 	}
 	c := a.logical
-	if a.saver.active && a.saverCached(c) {
+	if a.saver.active && a.saver.shots != nil {
+		a.paintSaverShots(c) // its own pictures: the screen under it is not painted
+	} else if a.saver.active && a.saverCached(c) {
 		// the saver shows the picture it froze on its first frame; the
 		// screen under it is painted again when a key wakes the app
 		a.paintSaver(c)

@@ -202,7 +202,7 @@ Screenshots work without remote debugging.
 Options is in four groups under grey headings: Data (Refresh data now, Run
 Update All, Last update result, Rescan card, Prefetch shots, Clear image
 cache), List (Sources, Filter by rotation, Remember last view, Views,
-Title font, List shots, Date format, List layout), Display (rotation, screensaver, button labels, safe zone, HDMI picture) and
+Title font, List shots, Date format, List layout), Display (rotation, screensaver and its style, button labels, safe zone, HDMI picture) and
 Operation (scrolling, the launcher, Open at boot, Return after game,
 Troubleshooting, Credits, Quit). The
 headings cannot be selected. Values line up in one column; a small arrow at the right
@@ -296,6 +296,24 @@ the bottom.
   button; held 2 s it quits either way). The sweep covers the whole picture,
   including safe-zone margins, in horizontal and tate layouts. Background data
   downloads and Update All continue while dimmed.
+- **Saver style:** what the screensaver shows. Lettering (default) is the
+  MISTERZINE sweep above. Screenshots shows one arcade game's shot after
+  another, every shot of every arcade game in the catalogue in a shuffled
+  cycle, each new one wiping in from the side behind a soft, wandering
+  edge about every twelve seconds, with the game's title on a small tab
+  that moves from corner to corner. Online, a shot the card lacks is
+  downloaded when its turn comes; offline, only the shots on the card show
+  (Prefetch shots fills the card). Hold Start for 2 seconds on a shot to
+  play that game: the picture comes up to full brightness and a line
+  fills under the title; let go early and it fades back and stays a while
+  longer. A hold that catches a wipe half way turns the wipe back, since
+  the game you meant is the one you were looking at, and the shot on its
+  way comes next once you let go. For a game that is not on the card the
+  hold only says so. Every other button wakes. With no shots to show at
+  all, the lettering runs instead.
+- **Saver brightness:** with the screenshots only. Half (default) shows the
+  shots at half brightness, kinder to a CRT, and holding Start brings one
+  up to full; full shows them at full brightness throughout.
 - **Button labels:** how the legends name the pad's face buttons, in MiSTer's
   A B X Y order: A B X Y (default), B A Y X for an Xbox-lettered pad mapped by
   position, the PlayStation circle, cross, triangle and square by position, or

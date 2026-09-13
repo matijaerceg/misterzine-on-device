@@ -506,6 +506,12 @@ func (a *App) launchPick(pick int) bool {
 	if row == nil {
 		return false
 	}
+	return a.launchRow(row, i, pick)
+}
+
+// launchRow launches entry pick of row i's versions; true when the
+// version is not on the card and a notice says so instead.
+func (a *App) launchRow(row *data.Row, i, pick int) bool {
 	entries := a.launchEntries(row, i)
 	if len(entries) > 0 && a.cfg.Launch != nil {
 		pick = max(0, min(pick, len(entries)-1))
