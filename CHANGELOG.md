@@ -1,5 +1,76 @@
 # Changelog
 
+## v1.0.27 — 2026-09-13
+
+- Options -> Saver style chooses what the screensaver shows. Lettering
+  (default) is the MISTERZINE sweep. Screenshots shows one arcade game's
+  gameplay shot after another, every arcade game in the catalogue in a
+  shuffled cycle, each new one wiping in from the side behind a soft
+  dithered edge that wanders and changes shape as it goes, with the
+  game's title on a black tab that moves from corner to corner in the
+  shot's own hue. Only the gameplay shot is used: not the title screens,
+  and not the third slot, which is often a game-over screen. Online, a
+  shot the card lacks is downloaded when its turn comes; offline, only
+  the shots on the card show, and with nothing to show at all the
+  lettering runs. Start held for two seconds on a shot plays that game:
+  the picture comes up to full brightness with a line filling under the
+  title, and a hold let go early fades it back to half brightness. A hold
+  that catches a wipe half way turns the wipe back, so the shot you were
+  looking at is the one that plays and the incoming one waits its turn.
+  A game not on the card only says so. Every other button wakes. The
+  title tab, its hold line and the not-on-the-card word are drawn at the
+  shot's brightness, so a half-bright shot carries a half-bright title
+  and the hold brings both up together.
+- Options -> Saver brightness, with the screenshots only: half (default)
+  shows the shots at half brightness, kinder to a CRT, and the Start hold
+  brings one up to full; full shows them at full brightness throughout.
+- Options -> OK button: which face button confirms, per pad. MiSTer's
+  define buttons screen ends by asking which pad button is MENU OK and
+  which MENU BACK, and stores both in the pad's map file (slot 23,
+  SYS_BTN_MENU_FUNC, back in the high half and OK in the low half). Auto
+  from MiSTer (default) follows it: on a pad whose MENU OK is the button
+  defined as B, B confirms and A goes back, Enter and back trading places
+  as the event arrives, and the legends name the buttons that way round
+  (the label sets apply after the swap, so an Xbox-lettered pad defined
+  by position reads "A Open"). MENU OK unset, on A, or on any other
+  button leaves A confirming, and the hint says which it saw; one button
+  chosen for both counts as unset. A or B overrides it for one pad, kept
+  in settings.json under ok_buttons by the pad's vendor and product as in
+  MiSTer's map file name, so two pads of one model share it. The row
+  shows and edits the pad that last pressed a button, or the only defined
+  pad connected when none has (a pad that is several event nodes with one
+  name, as the Xbox 360 pad is, counts once), and it is muted with the
+  reason before any pad has pressed, for a pad that comes through
+  MiSTer's translation, and for a pad whose A and B are the same button,
+  which has no back button and is called out in the pad tester too. The
+  pad tester names each pad's OK button and where it came from, and the
+  input log line prints each pad's MENU OK and BACK choice.
+- A pad MiSTer has not defined is held and read directly when it reports
+  the standard Linux gamepad layout, as nearly every pad does, instead of
+  staying with Main, whose default menu button opened its OSD and took
+  the screen from the app, which then left at once; and while any held
+  pad was connected such a pad's face buttons were dropped altogether.
+  By position, the right button is A, the bottom B, the top X and the
+  left Y, the shoulders L and R, Select and Start themselves, the home or
+  guide button is Menu with the tap and hold behaviour, and the hat or the
+  d-pad buttons and the left stick move. The bottom button is its OK, as
+  in Main's own default, so Auto from Linux (B) confirms with it until
+  the pad is defined in MiSTer, which always wins. A pad without the face
+  buttons (joystick-class codes) gives up Start alone as before, and a
+  virtual device is never held: the Zaparoo pad claims a USB bus type, so
+  a virtual device is told by its empty physical path, where a real pad
+  reports its USB port or Bluetooth address.
+- Options is in five sections. Controls, before Operation, holds Button
+  labels, OK button, Menu button, Scroll speed and Hold delay, so the rows
+  changed with the pad in hand sit together above the rarely touched
+  ones. Each section heading carries a one-cell mark and a rule to the
+  right instead of a colon, as the list's group markers: a diskette for
+  Data, stacked lines for List, a monitor on a stand for Display, an
+  arcade stick for Controls and two sliders for Operation, five pixels
+  wide and seven tall on the baseline in every font. Credits and Filters
+  headings are unchanged.
+- Credits: shad00m and washaa join the early adopters.
+
 ## v1.0.26 — 2026-09-13
 
 - Fix: a stop signal that arrived while the screensaver was up was not
