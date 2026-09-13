@@ -37,11 +37,15 @@ type screensaver struct {
 	started   time.Time
 	next      time.Time
 	travel    int
-	shade     int     // brightness of the screen under the lettering, in 256ths
-	fade      int     // how far the fade has come, in 256ths; 256 once dark
-	blur      []uint8 // scratch for the blur passes, one canvas
-	mask      *image.Alpha
-	waking    map[saverKey]bool
+	shade     int // brightness of the screen under the lettering, in 256ths
+	fade      int // how far the fade has come, in 256ths; 256 once dark
+	// the picture under the lettering, frozen at the first saver frame:
+	// as painted, blurred, and blurred and dimmed once the fade is done
+	sharp, blurred, dark []uint8
+	cacheW               int     // width the cache was taken at (a rotation swaps it)
+	blur                 []uint8 // scratch for the blur passes, one canvas
+	mask                 *image.Alpha
+	waking               map[saverKey]bool
 }
 
 func (a *App) Screensaver() string {
@@ -102,6 +106,7 @@ func (a *App) handleSaverInput(ev platform.Event) bool {
 		return true // releasing the preview button doesn't dismiss the preview
 	}
 	a.saver.active = false
+	a.saver.sharp, a.saver.blurred, a.saver.dark = nil, nil, nil
 	a.rep = repeater{}
 	a.down = map[platform.Key]bool{}
 	a.updateView.backAt = time.Time{}
@@ -119,6 +124,7 @@ func (a *App) startSaver(now time.Time) {
 	a.saver.travel = 0
 	a.saver.shade = 256
 	a.saver.fade = 0
+	a.saver.sharp, a.saver.blurred, a.saver.dark = nil, nil, nil
 	a.rep = repeater{}
 	a.all = true
 }
@@ -167,24 +173,38 @@ func (a *App) saverAdvance(now time.Time) {
 	a.saver.travel = int((since - saverFade) / saverFrame)
 }
 
-// saverBlur softens the picture under the lettering: a box blur of radius
-// r run twice along the rows and twice down the columns, edges repeated.
-// Running sums make the cost independent of the radius.
-func (a *App) saverBlur(c *gfx.Canvas, r int) {
+// saverCached reports whether the picture under the lettering has been
+// taken for this canvas.
+func (a *App) saverCached(c *gfx.Canvas) bool {
+	return len(a.saver.sharp) == len(c.Pix) && a.saver.cacheW == c.W()
+}
+
+// saverCapture freezes the picture under the lettering as the canvas
+// holds it now, and blurs a copy: a box blur of radius width/saverBlurDiv
+// run twice along the rows and twice down the columns, edges repeated.
+// Running sums make the cost independent of the radius. One pass over the
+// frame costs the boards tens of milliseconds, so it happens once per
+// saver run, not per frame; the saver shows this frozen picture until a
+// key wakes the app.
+func (a *App) saverCapture(c *gfx.Canvas) {
+	s := &a.saver
+	s.sharp = append(s.sharp[:0], c.Pix...)
+	s.blurred = append(s.blurred[:0], c.Pix...)
+	s.dark = nil
+	s.cacheW = c.W()
+	if len(s.blur) != len(c.Pix) {
+		s.blur = make([]uint8, len(c.Pix))
+	}
+	w, h, r := c.W(), c.H(), c.W()/saverBlurDiv
 	if r < 1 {
 		return
 	}
-	if len(a.saver.blur) != len(c.Pix) {
-		a.saver.blur = make([]uint8, len(c.Pix))
-	}
-	tmp := a.saver.blur
-	w, h := c.W(), c.H()
 	for pass := 0; pass < 2; pass++ {
 		for y := 0; y < h; y++ {
-			blurLine(c.Pix[y*c.Stride:], tmp[y*c.Stride:], w, 4, r)
+			blurLine(s.blurred[y*c.Stride:], s.blur[y*c.Stride:], w, 4, r)
 		}
 		for x := 0; x < w; x++ {
-			blurLine(tmp[x*4:], c.Pix[x*4:], h, c.Stride, r)
+			blurLine(s.blur[x*4:], s.blurred[x*4:], h, c.Stride, r)
 		}
 	}
 }
@@ -394,39 +414,60 @@ func (a *App) paintSaver(c *gfx.Canvas) {
 	if shade <= 0 || shade > 256 {
 		shade, fade = saverShade, 256 // a saver frame set up outside tickSaver (tests, previews)
 	}
-	a.saverBlur(c, c.W()/saverBlurDiv*fade/256)
+	s := &a.saver
+	if !a.saverCached(c) {
+		a.saverCapture(c)
+	}
+	if fade >= 256 {
+		// dark: the blurred picture at the saver's shade, made once
+		if s.dark == nil {
+			s.dark = append(s.dark[:0], s.blurred...)
+			for i := 0; i+3 < len(s.dark); i += 4 {
+				s.dark[i] = uint8(int(s.dark[i]) * shade >> 8)
+				s.dark[i+1] = uint8(int(s.dark[i+1]) * shade >> 8)
+				s.dark[i+2] = uint8(int(s.dark[i+2]) * shade >> 8)
+			}
+		}
+		copy(c.Pix, s.dark)
+	} else {
+		// mid-fade: the sharp picture crossing into the blurred one, dimmed
+		for i := 0; i+3 < len(c.Pix); i += 4 {
+			for ch := i; ch < i+3; ch++ {
+				v := (int(s.sharp[ch])*(256-fade) + int(s.blurred[ch])*fade) >> 8
+				c.Pix[ch] = uint8(v * shade >> 8)
+			}
+		}
+	}
+	// the lettering, over the columns it covers this frame
 	centres := make([]int, len(saverLights))
 	for i, l := range saverLights {
 		centres[i] = int(l.at*float64(c.W())) + int(l.tilt*float64(c.H())/2)
 	}
+	from, to := max(x0, 0), min(x0+m.Rect.Dx(), c.W())
 	for y := 0; y < c.H(); y++ {
-		for x := 0; x < c.W(); x++ {
+		for x := from; x < to; x++ {
+			v := m.Pix[y*m.Stride+x-x0]
+			if v == 0 {
+				continue
+			}
 			i := c.PixOffset(x, y)
-			sx := x - x0
-			if sx >= 0 && sx < m.Rect.Dx() {
-				if v := m.Pix[y*m.Stride+sx]; v == saverInk {
-					c.Pix[i], c.Pix[i+1], c.Pix[i+2] = 0, 0, 0
-					continue
-				} else if v != 0 {
-					var r, g, b int
-					for li, l := range saverLights {
-						if l.side != saverSide[v] {
-							continue
-						}
-						if d := x + int(l.tilt*float64(y)) - centres[li]; d < l.half && d > -l.half {
-							k := int(saverBands[li][max(d, -d)]) * int(saverFacing[v]) / 255
-							r += int(l.hue[0]) * k / 255
-							g += int(l.hue[1]) * k / 255
-							b += int(l.hue[2]) * k / 255
-						}
-					}
-					c.Pix[i], c.Pix[i+1], c.Pix[i+2] = uint8(min(r, saverGlintMax)), uint8(min(g, saverGlintMax)), uint8(min(b, saverGlintMax))
+			if v == saverInk {
+				c.Pix[i], c.Pix[i+1], c.Pix[i+2] = 0, 0, 0
+				continue
+			}
+			var r, g, b int
+			for li, l := range saverLights {
+				if l.side != saverSide[v] {
 					continue
 				}
+				if d := x + int(l.tilt*float64(y)) - centres[li]; d < l.half && d > -l.half {
+					k := int(saverBands[li][max(d, -d)]) * int(saverFacing[v]) / 255
+					r += int(l.hue[0]) * k / 255
+					g += int(l.hue[1]) * k / 255
+					b += int(l.hue[2]) * k / 255
+				}
 			}
-			c.Pix[i] = uint8(int(c.Pix[i]) * shade >> 8)
-			c.Pix[i+1] = uint8(int(c.Pix[i+1]) * shade >> 8)
-			c.Pix[i+2] = uint8(int(c.Pix[i+2]) * shade >> 8)
+			c.Pix[i], c.Pix[i+1], c.Pix[i+2] = uint8(min(r, saverGlintMax)), uint8(min(g, saverGlintMax)), uint8(min(b, saverGlintMax))
 		}
 	}
 	c.DirtyAll()

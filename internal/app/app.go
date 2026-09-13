@@ -1063,29 +1063,35 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 		a.marquee = marqueeState{} // a return to Details starts its scroll afresh
 	}
 	c := a.logical
-	c.Fill(c.Rect, gen.Eva.Bg)
-	switch a.screen {
-	case ScreenList:
-		a.paintList(c)
-	case ScreenDetails:
-		a.paintDetails(c)
-	case ScreenShot:
-		a.paintShot(c)
-	case ScreenFilter, ScreenOptions, ScreenViews, ScreenCredits:
-		a.paintPanel(c)
-	case ScreenCalibrate:
-		a.paintCalibrate(c)
-	case ScreenUpdate:
-		a.paintUpdate(c)
-	case ScreenTroubleshooting:
-		a.paintSupport(c)
-	case ScreenScan:
-		a.paintScan(c)
-	}
-	a.neighbourhood()
-	a.cfg.Images.Want(a.wants)
-	if a.saver.active {
+	if a.saver.active && a.saverCached(c) {
+		// the saver shows the picture it froze on its first frame; the
+		// screen under it is painted again when a key wakes the app
 		a.paintSaver(c)
+	} else {
+		c.Fill(c.Rect, gen.Eva.Bg)
+		switch a.screen {
+		case ScreenList:
+			a.paintList(c)
+		case ScreenDetails:
+			a.paintDetails(c)
+		case ScreenShot:
+			a.paintShot(c)
+		case ScreenFilter, ScreenOptions, ScreenViews, ScreenCredits:
+			a.paintPanel(c)
+		case ScreenCalibrate:
+			a.paintCalibrate(c)
+		case ScreenUpdate:
+			a.paintUpdate(c)
+		case ScreenTroubleshooting:
+			a.paintSupport(c)
+		case ScreenScan:
+			a.paintScan(c)
+		}
+		a.neighbourhood()
+		a.cfg.Images.Want(a.wants)
+		if a.saver.active {
+			a.paintSaver(c)
+		}
 	}
 	dirty := c.TakeDirty()
 	var out []image.Rectangle
