@@ -364,7 +364,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			Goto: func(k string) { h.a.MoveToKey(k); h.present() },
 			Saver: func(q url.Values) any {
 				l := h.a.SaverLook()
-				for name, p := range map[string]*int{"knee": &l.Knee, "gain": &l.Gain, "shade": &l.Shade, "div": &l.BlurDiv, "passes": &l.Passes, "dither": &l.Dither} {
+				for name, p := range map[string]*int{"knee": &l.Knee, "gain": &l.Gain, "shade": &l.Shade, "div": &l.BlurDiv, "passes": &l.Passes, "dither": &l.Dither, "bits": &l.Bits, "cell": &l.Cell} {
 					if n, err := strconv.Atoi(q.Get(name)); err == nil {
 						*p = n
 					}

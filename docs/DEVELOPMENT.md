@@ -91,9 +91,10 @@ Mutations require POST. Browser-origin requests and non-IP Host names are reject
 except localhost for tunnels. This opt-in HTTP interface is for a private LAN.
 
 Debug mode enables remote input, state/canvas inspection, detailed input logs and
-frame performance collection. `POST /api/saver?knee=&gain=&shade=&div=&passes=&dither=`
+frame performance collection. `POST /api/saver?knee=&gain=&shade=&div=&passes=&dither=&bits=&cell=`
 tunes the screensaver's ground (the bloom knee and gain in 256ths, the shade in
-256ths, the blur radius as width/div, the blur passes, the ordered dither 0 or 1)
+256ths, the blur radius as width/div, the blur passes, the ordered dither 0 or 1,
+the depth in bits a channel 1 to 8, the dither cell 2, 4 or 8)
 live, and `?saver=on|off`
 starts or wakes it; the reply is the look in force. The values are for tuning
 sessions only and reset with the app. Ordinary mode retains failure/startup/scan logs and

@@ -46,18 +46,25 @@ type saverGround struct {
 // is a box blur of radius width/BlurDiv run Passes times along the rows
 // and down the columns (two passes are close to a Gaussian). The blurred
 // picture is clamped and shown at Shade (256ths). The levels keep eight
-// bits of fraction and Dither (1) spreads the last bit as an ordered
-// pattern at the final write, since the dark ground's gradients band on
-// a CRT otherwise. The debug API sets a look live (SetSaverLook) so it
-// can be tuned on a CRT.
+// bits of fraction, and the final write posterises every channel to Bits
+// bits (1 to 8) with Dither (1) choosing between the two nearest of those
+// coarse steps by an ordered pattern of Cell by Cell thresholds (2, 4 or
+// 8): the retro look of a display with few colours, whose dither is plain
+// to see, and against the banding of the dark ground's gradients on a CRT.
+// The whole saver frame goes through it: the sharp picture on the first
+// frame, the blur levels, the fade, and the lettering's glints. At 8 bits
+// the pattern only spreads the last bit and is all but invisible. The
+// debug API sets a look live (SetSaverLook) so it can be tuned on a CRT.
 type SaverLook struct {
-	Knee, Gain, Shade, BlurDiv, Passes, Dither int
+	Knee, Gain, Shade, BlurDiv, Passes, Dither, Bits, Cell int
 }
 
 // DefaultSaverLook was chosen on a CRT with the debug tuner (2026-09-13):
 // only the brightest parts bloom, six times their excess, the ground shows
-// at 57%, and the blur radius is a 15th of the width (21 px on 320).
-var DefaultSaverLook = SaverLook{Knee: 171, Gain: 1538, Shade: 145, BlurDiv: 15, Passes: 2, Dither: 1}
+// at 57%, and the blur radius is a 15th of the width (21 px on 320). The
+// depth is three bits a channel (eight steps, so the dark ground spans two
+// or three of them) dithered in a 4x4 cell, the plainest classic pattern.
+var DefaultSaverLook = SaverLook{Knee: 171, Gain: 1538, Shade: 145, BlurDiv: 15, Passes: 2, Dither: 1, Bits: 3, Cell: 4}
 
 // clamped keeps a look inside what the capture can do.
 func (l SaverLook) clamped() SaverLook {
@@ -67,29 +74,99 @@ func (l SaverLook) clamped() SaverLook {
 	l.BlurDiv = min(max(l.BlurDiv, 4), 256)
 	l.Passes = min(max(l.Passes, 1), 4)
 	l.Dither = min(max(l.Dither, 0), 1)
+	l.Bits = min(max(l.Bits, 1), 8)
+	switch {
+	case l.Cell < 3:
+		l.Cell = 2
+	case l.Cell < 6:
+		l.Cell = 4
+	default:
+		l.Cell = 8
+	}
 	return l
 }
 
-// saverBayer is the 8x8 ordered dither: a threshold per pixel in 256ths
-// of one 8-bit step. It is the same every frame on purpose; a pattern
-// that changes crawls on a phosphor.
-var saverBayer = func() (t [8][8]uint16) {
-	m := [8][8]uint8{
-		{0, 32, 8, 40, 2, 34, 10, 42}, {48, 16, 56, 24, 50, 18, 58, 26},
-		{12, 44, 4, 36, 14, 46, 6, 38}, {60, 28, 52, 20, 62, 30, 54, 22},
-		{3, 35, 11, 43, 1, 33, 9, 41}, {51, 19, 59, 27, 49, 17, 57, 25},
-		{15, 47, 7, 39, 13, 45, 5, 37}, {63, 31, 55, 23, 61, 29, 53, 21},
+// saverBayerCell is the ordered dither's threshold order for a cell of
+// n by n (2, 4 or 8): the classic Bayer matrix, each pixel's rank from 0
+// to n*n-1. It is the same every frame on purpose; a pattern that changes
+// crawls on a phosphor.
+func saverBayerCell(n int) [][]int {
+	m := [][]int{{0}}
+	for len(m) < n {
+		k := len(m)
+		next := make([][]int, 2*k)
+		for y := range next {
+			next[y] = make([]int, 2*k)
+		}
+		for y := 0; y < k; y++ {
+			for x := 0; x < k; x++ {
+				next[y][x] = 4 * m[y][x]
+				next[y][x+k] = 4*m[y][x] + 2
+				next[y+k][x] = 4*m[y][x] + 3
+				next[y+k][x+k] = 4*m[y][x] + 1
+			}
+		}
+		m = next
 	}
-	for y := range m {
-		for x := range m[y] {
+	return m
+}
+
+// saverBayer is the 8x8 ordered dither as a threshold per pixel in 256ths
+// of one 8-bit step (the screenshots saver's wipe edge and brightness).
+var saverBayer = func() (t [8][8]uint16) {
+	m := saverBayerCell(8)
+	for y := range t {
+		for x := range t[y] {
 			t[y][x] = uint16(m[y][x])*4 + 2
 		}
 	}
 	return
 }()
 
-// saverQuantize turns a ground channel with eight bits of fraction into
-// the byte the canvas takes: rounded, or dithered by the pixel's threshold.
+// saverDither turns a channel with eight bits of fraction into the byte
+// the canvas takes at a depth of a few bits: the value is scaled to the
+// steps, so white is exactly the top one, the pixel's threshold is added
+// and the step is read off, then spread back over the byte. Across a
+// cell the steps average to the value, so the picture keeps its
+// brightness. With the dither off every threshold is half a step, which
+// rounds.
+type saverDither struct {
+	top    int       // the top step: 2^bits - 1
+	thresh [8][8]int // the pattern tiled over 8x8, in 256ths of a step
+	out    []uint8   // each step as a byte
+}
+
+// newSaverDither builds the quantiser for bits a channel and a cell of
+// n by n, or a rounding one with on false.
+func newSaverDither(bits, cell int, on bool) *saverDither {
+	d := &saverDither{top: 1<<bits - 1}
+	m := saverBayerCell(cell)
+	for y := range d.thresh {
+		for x := range d.thresh[y] {
+			d.thresh[y][x] = 128
+			if on {
+				// rank m of n*n cells: (m + 0.5) / (n*n) of a step
+				d.thresh[y][x] = (2*m[y%cell][x%cell] + 1) * 256 / (2 * cell * cell)
+			}
+		}
+	}
+	d.out = make([]uint8, d.top+1)
+	for q := range d.out {
+		d.out[q] = uint8((q*255 + d.top/2) / d.top)
+	}
+	return d
+}
+
+// dither is the look's quantiser.
+func (l SaverLook) dither() *saverDither { return newSaverDither(l.Bits, l.Cell, l.Dither != 0) }
+
+// byte quantises one channel v, over 0..255<<8, for the pixel at x, y.
+func (d *saverDither) byte(v, x, y int) uint8 {
+	return d.out[(v*d.top/255+d.thresh[y&7][x&7])>>8]
+}
+
+// saverQuantize is the plain 8-bit quantiser: rounded, or dithered by the
+// 8x8 pattern's last-bit threshold (the screenshots saver's brightness).
 func saverQuantize(v, x, y int, dither bool) uint8 {
 	t := 128
 	if dither {
@@ -99,8 +176,8 @@ func saverQuantize(v, x, y int, dither bool) uint8 {
 }
 
 // saverPaintGround writes the ground into an RGBA frame: the level from,
-// or its mix with to by frac (256ths), at the shade (256ths).
-func saverPaintGround(dst []uint8, w, h, stride int, from, to []uint16, frac, shade int, dither bool) {
+// or its mix with to by frac (256ths), at the shade (256ths), through d.
+func saverPaintGround(dst []uint8, w, h, stride int, from, to []uint16, frac, shade int, d *saverDither) {
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
 			i, o := y*stride+x*4, (y*w+x)*3
@@ -109,7 +186,7 @@ func saverPaintGround(dst []uint8, w, h, stride int, from, to []uint16, frac, sh
 				if to != nil {
 					v = (v*(256-frac) + int(to[o+ch])*frac) >> 8
 				}
-				dst[i+ch] = saverQuantize(v*shade>>8, x, y, dither)
+				dst[i+ch] = d.byte(v*shade>>8, x, y)
 			}
 		}
 	}
@@ -721,12 +798,12 @@ func (a *App) paintSaver(c *gfx.Canvas) {
 	if lo >= n {
 		lo, frac = n, 0
 	}
-	dither := a.look.Dither != 0
+	d := a.look.dither() // the whole frame at the look's depth, the sharp first picture included
 	if lo == saverLevels {
 		// dark: the last level at the shade, made once
 		if s.dark == nil {
 			s.dark = append([]uint8(nil), s.sharp...) // the alpha bytes
-			saverPaintGround(s.dark, c.W(), c.H(), c.Stride, g.pix[saverLevels], nil, 0, shade, dither)
+			saverPaintGround(s.dark, c.W(), c.H(), c.Stride, g.pix[saverLevels], nil, 0, shade, d)
 		}
 		copy(c.Pix, s.dark)
 	} else {
@@ -734,8 +811,7 @@ func (a *App) paintSaver(c *gfx.Canvas) {
 		if frac != 0 {
 			to = g.pix[lo+1]
 		}
-		// the sharp picture is plain graphics: it only rounds
-		saverPaintGround(c.Pix, c.W(), c.H(), c.Stride, g.pix[lo], to, frac, shade, dither && (lo > 0 || frac > 0))
+		saverPaintGround(c.Pix, c.W(), c.H(), c.Stride, g.pix[lo], to, frac, shade, d)
 	}
 	if s.leaving {
 		c.DirtyAll() // no lettering on the way back
@@ -778,7 +854,9 @@ func (a *App) paintSaver(c *gfx.Canvas) {
 					b += int(l.hue[2]) * k / 255
 				}
 			}
-			c.Pix[i], c.Pix[i+1], c.Pix[i+2] = uint8(min(r, saverGlintMax)), uint8(min(g, saverGlintMax)), uint8(min(b, saverGlintMax))
+			// the glint's gradient at the ground's depth, so one pattern
+			// covers the frame
+			c.Pix[i], c.Pix[i+1], c.Pix[i+2] = d.byte(min(r, saverGlintMax)<<8, x, y), d.byte(min(g, saverGlintMax)<<8, x, y), d.byte(min(b, saverGlintMax)<<8, x, y)
 		}
 	}
 	c.DirtyAll()
