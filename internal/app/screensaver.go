@@ -219,6 +219,28 @@ func saverPaintGround(dst []uint8, w, h, stride int, from, to []uint16, frac int
 	}
 }
 
+// saverPaintBreathing moves broad light waves through the cached blur while
+// keeping the ordered dither fixed to the display. No blur or per-pixel trig.
+func saverPaintBreathing(dst []uint8, w, h, stride int, src []uint16, d *saverDither, seconds float64, phase int) {
+	var wave [64]int
+	for i := range wave {
+		wave[i] = int(18 * math.Sin(float64(i)*2*math.Pi/64+seconds*.27))
+	}
+	for y := phase * h / 4; y < (phase+1)*h/4; y++ {
+		vertical := int(12 * math.Sin(float64(y)/float64(h)*math.Pi*2-seconds*.19))
+		row := &d.thresh[y&7]
+		for x := 0; x < w; x++ {
+			gain := 256 + wave[x*64/w] + vertical
+			mul := uint32((uint64(d.mul) * uint64(gain)) >> 8)
+			i, o, threshold := y*stride+x*4, (y*w+x)*3, row[x&7]
+			for ch := 0; ch < 3; ch++ {
+				q := (int((uint32(src[o+ch])*mul+65535)>>16) + threshold) >> 8
+				dst[i+ch] = d.out[min(q, d.top)]
+			}
+		}
+	}
+}
+
 // boost is the bloom curve for one channel value.
 func (l SaverLook) boost(v int) int {
 	if v > l.Knee {
@@ -852,7 +874,14 @@ func (a *App) paintSaver(c *gfx.Canvas) {
 		lo, frac = n, 0
 	}
 	d := a.look.dither() // the whole frame at the look's depth, the sharp first picture included
-	if lo == saverLevels {
+	if lo == saverLevels && !s.darkAt.IsZero() && !s.leaving {
+		if s.dark == nil {
+			s.dark = append([]uint8(nil), s.sharp...)
+			saverPaintGround(s.dark, c.W(), c.H(), c.Stride, g.pix[saverLevels], nil, 0, d.shaded(shade))
+		}
+		saverPaintBreathing(s.dark, c.W(), c.H(), c.Stride, g.pix[saverLevels], d.shaded(shade), s.ticked.Sub(s.darkAt).Seconds(), s.ticks&3)
+		copy(c.Pix, s.dark)
+	} else if lo == saverLevels {
 		// dark: the last level at the shade, made once
 		if s.dark == nil {
 			s.dark = append([]uint8(nil), s.sharp...) // the alpha bytes
