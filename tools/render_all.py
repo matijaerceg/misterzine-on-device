@@ -51,7 +51,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     for inset in (15, 40):
         scenarios.append([*rotation, "-inset", str(inset), "-status", "missing",
                           "-out", f"out/browsing-{orientation}-{inset}", "-script",
-                          "back; down*8; shot remember-on; left; shot remember-off; back; "
+                          "back; down*9; shot remember-on; left; shot remember-off; back; "
                           "space*3; home; pagedown; shot letter-jump; enter; enter; start; shot launch-failure; "
                           "back; back; wait 3200; end; pageup; pagedown; shot last-letter; "
                           "space*3; home; pagedown; shot updated-month; wait 2200; shot updated-month-settled; "
@@ -130,7 +130,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     scenarios.append([*rotation, "-recents", "9",
                       "-out", f"out/recents-{orientation}", "-script",
                       "space*6; shot recents; home; pagedown; shot month-jump; wait 2200; "
-                      "back; down*9; shot option; enter; end; shot views-on; enter; back; back; shot off"])
+                      "back; down*8; shot option; enter; end; shot views-on; enter; back; back; shot off"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):
@@ -188,7 +188,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     scenarios.append([*rotation,
                       "-out", f"out/maker-{orientation}", "-script",
                       "space*4; shot maker; pagedown*3; shot maker-jump; down*2; shot maker-rows; home; down*48; shot maker-pinned; "
-                      "back; down*9; shot options-views; enter; shot views; down*4; enter; shot views-off; "
+                      "back; down*8; shot options-views; enter; shot views; down*4; enter; shot views-off; "
                       "up*4; enter; down; enter; down; enter; down; enter; down*2; enter; shot views-last; "
                       "enter; back; back"])
     # Options -> Credits: the row, the page from its top, its end and the way back
@@ -221,5 +221,10 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "back; down*10; shot font; left; shot font-narrow; left; shot font-normal; "
                           "down*12; shot speed; wait 200; shot speed-moving; down; shot delay; "
                           "wait 250; shot delay-short; wait 400; shot delay-reverse; down; shot dismissed"])
+for rotation in ([], ["-rot", "left", "-logical"]):
+    orientation = "t" if rotation else "h"
+    for inset in (15, 40):
+        scenarios.append([*rotation, "-inset", str(inset), "-out", f"out/default-view-{orientation}-{inset}", "-script",
+                          "back; down*9; shot remember-on; left; shot remember-off; down; shot default; right*3; shot alphabetical; up; right; shot hidden"])
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)

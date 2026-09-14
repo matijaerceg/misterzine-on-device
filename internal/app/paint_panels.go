@@ -18,6 +18,7 @@ type panelEntry struct {
 	text      string
 	header    bool
 	glyph     string   // Options section headers: the mark before the title, with a rule after it
+	depth     int      // extra indentation levels beyond child
 	child     bool     // Options: only applies given the row above; drawn indented behind a branch mark
 	short     string   // Options: a child row's name without the parent's word, for when the full one does not fit
 	info      bool     // plain text, never selectable
@@ -40,7 +41,7 @@ type panelEntry struct {
 // reads as that row's dependent.
 func (e panelEntry) label() string {
 	if e.child {
-		return gfx.ChildMark + " " + e.text
+		return strings.Repeat("  ", e.depth) + gfx.ChildMark + " " + e.text
 	}
 	return e.text
 }
@@ -63,6 +64,8 @@ func (e panelEntry) fitText(cols int) string {
 // follows two cells in, in the row's own colour.
 func (a *App) paintLabel(c *gfx.Canvas, x, y, cols int, e panelEntry, col color.RGBA) {
 	if e.child {
+		x += 2 * e.depth * a.sm.W
+		cols -= 2 * e.depth
 		c.Text(x, y, a.sm, gfx.ChildMark, gen.Eva.Muted)
 		x += 2 * a.sm.W
 		cols -= 2
@@ -416,10 +419,10 @@ func (a *App) optionsEntries() []panelEntry {
 			help: a.sourcesHelp()},
 		{text: "Filter by rotation", kind: "filter-rotation", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.FilterRotation()],
 			help: "Show only games made for the current orientation (INI or manual); unknowns hidden. Off restores manual filters."},
-		{text: "Remember last view", kind: "remember-sort", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.RememberSort()],
-			help: "On (default): reopen in the view you left, Favorites included. Off: every visit starts in Core updated."},
 		{text: "Views (" + a.viewsSummary() + ")", kind: "views",
 			help: "Which views " + a.btn("Y") + " cycles through: core updated, MiSTer debut, original year, A-Z, manufacturer, Favorites, Recents (launches from here). " + a.btn("A") + " opens the list."},
+		{text: "Remember last view", kind: "remember-sort", child: true, vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.RememberSort()],
+			help: "On: reopen in the last view used. Off: use Default view. Takes effect next time MisterZine opens."},
 		{text: "Title font", kind: "title-font", vals: []string{"normal", "narrow", "narrow tall"}, idx: map[string]int{"normal": 0, "narrow": 1, "tall": 2}[a.TitleFont()],
 			help: "Narrow fonts fit a third more title; tall (default) matches the body font height. Normal: body font."},
 		{text: "Art type", kind: "list-shot", vals: []string{"gameplay", "title"}, idx: map[string]int{"gameplay": 0, "title": 1}[a.ListShot()],
@@ -462,6 +465,14 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "Credits", kind: "credits"},
 		{text: "Quit MisterZine", kind: "quit"},
 	}...)
+	if !a.RememberSort() {
+		for i, e := range E {
+			if e.kind == "remember-sort" {
+				E = append(E[:i+1], append([]panelEntry{a.defaultViewEntry()}, E[i+1:]...)...)
+				break
+			}
+		}
+	}
 	return E
 }
 
@@ -649,6 +660,10 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 				}
 			}
 			value := e.vals[e.idx]
+			if e.kind == "default-view" && font.Width(e.label()+" "+la+" "+value+" "+ra) > edge-inner.Min.X-2 {
+				value = map[data.SortMode]string{data.SortUpdated: "Updated", data.SortDebut: "Debut", data.SortYear: "Year", data.SortAlphabetical: "A-Z", data.SortMaker: "Maker", data.SortFavorites: "Favorites", data.SortRecents: "Recents"}[a.DefaultView()]
+			}
+
 			cells := 0
 			if e.kind == "saver-dim" {
 				cells = 3
@@ -943,6 +958,8 @@ func (a *App) stepValue(d int) bool {
 		a.cfg.HoldDelay = []int{200, 300, 500}[i]
 	case "remember-sort":
 		a.cfg.RememberSort = i == 1
+	case "default-view":
+		a.cfg.DefaultSort = a.enabledViews()[i]
 	case "open-at-boot":
 		a.cfg.OpenAtBoot = i == 1
 	case "return-after-game":
@@ -1154,7 +1171,7 @@ func (a *App) togglePanel() bool {
 		if !e.header {
 			f.Since = !f.Since
 		}
-	case "rotation", "follow-rotation", "filter-rotation", "sources", "launcher", "scroll", "hold-delay", "remember-sort", "prefetch", "title-font", "list-shot", "date-format", "list-layout", "button-labels", "ok-button":
+	case "rotation", "follow-rotation", "filter-rotation", "sources", "launcher", "scroll", "hold-delay", "remember-sort", "default-view", "prefetch", "title-font", "list-shot", "date-format", "list-layout", "button-labels", "ok-button":
 		return true // Left/Right pick these
 	case "inset":
 		a.screen = ScreenCalibrate

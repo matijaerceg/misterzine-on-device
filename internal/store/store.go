@@ -37,6 +37,7 @@ type Settings struct {
 	SaverInfo       string        `json:"screensaver_info"` // the shots' caption: full (default), title or none
 	RememberSort    bool          `json:"remember_sort"`
 	LastSort        data.SortMode `json:"last_sort"`
+	DefaultSort     data.SortMode `json:"default_sort"`
 	ViewsOff        []string      `json:"views_off"` // Options -> Views: the list orders left out of the Y cycle, by name (updated, debut, year, alphabetical, maker, favorites, recents)
 	// OpenAtBoot and ReturnAfterGame are carried out by the resident menu
 	// launcher (misterzine launcher watch), which reads this file itself.
@@ -101,6 +102,9 @@ func LoadSettings(path string) (Settings, error) {
 // becomes two (when legacy says the file predates the split), and the
 // speed adjectives become rows per second.
 func (s *Settings) Migrate(legacy bool) {
+	if !s.DefaultSort.Valid() {
+		s.DefaultSort = data.SortUpdated
+	}
 	if !s.LastSort.Valid() {
 		s.LastSort = data.SortUpdated
 	}

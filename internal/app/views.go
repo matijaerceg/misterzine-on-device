@@ -148,3 +148,31 @@ func (a *App) closeViews() {
 	}
 	a.all = true
 }
+
+// DefaultView is the enabled starting view; unavailable choices fall back safely.
+func (a *App) DefaultView() data.SortMode {
+	if a.viewOn(a.cfg.DefaultSort) {
+		return a.cfg.DefaultSort
+	}
+	return a.firstView()
+}
+func (a *App) enabledViews() []data.SortMode {
+	var modes []data.SortMode
+	for _, m := range data.ViewOrder {
+		if a.viewOn(m) {
+			modes = append(modes, m)
+		}
+	}
+	return modes
+}
+func (a *App) defaultViewEntry() panelEntry {
+	e := panelEntry{text: "Default view", kind: "default-view", child: true, depth: 1,
+		help: "Start in " + viewLabels[a.DefaultView()] + ". Used when MisterZine opens with remembering off. Only enabled views are offered."}
+	for i, m := range a.enabledViews() {
+		e.vals = append(e.vals, viewLabels[m])
+		if m == a.DefaultView() {
+			e.idx = i
+		}
+	}
+	return e
+}

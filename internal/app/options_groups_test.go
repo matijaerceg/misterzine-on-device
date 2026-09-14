@@ -2,6 +2,7 @@ package app
 
 import (
 	"image"
+	"strings"
 	"testing"
 	"time"
 
@@ -20,7 +21,7 @@ func TestOptionsGroups(t *testing.T) {
 		kinds        []string
 	}{
 		{gfx.SectionData, "Data", []string{"refresh", "update", "update-result", "rescan", "prefetch", "clearimg"}},
-		{gfx.SectionList, "List", []string{"sources", "filter-rotation", "remember-sort", "views", "title-font", "list-shot", "date-format", "list-layout"}},
+		{gfx.SectionList, "List", []string{"sources", "filter-rotation", "views", "remember-sort", "default-view", "title-font", "list-shot", "date-format", "list-layout"}},
 		{gfx.SectionDisplay, "Display", []string{"follow-rotation", "rotation", "saver-options", "inset", "canvas"}},
 		{gfx.SectionControls, "Controls", []string{"button-labels", "ok-button", "menu-button", "scroll", "hold-delay"}},
 		{gfx.SectionOperation, "Operation", []string{"launcher", "open-at-boot", "return-after-game", "troubleshooting", "credits", "quit"}},
@@ -63,7 +64,7 @@ func TestOptionsGroups(t *testing.T) {
 	}
 	// the rows that only apply given the row above them are children, drawn
 	// a step in behind the branch mark; every other row sits flush
-	children := map[string]bool{"rotation": true, "open-at-boot": true, "return-after-game": true}
+	children := map[string]bool{"remember-sort": true, "default-view": true, "rotation": true, "open-at-boot": true, "return-after-game": true}
 	a.cfg.SaverStyle = "shots"
 	seen := 0
 	for _, e := range a.optionsEntries() {
@@ -78,7 +79,7 @@ func TestOptionsGroups(t *testing.T) {
 		}
 		want := e.text
 		if children[e.kind] {
-			want = gfx.ChildMark + " " + e.text
+			want = strings.Repeat("  ", e.depth) + gfx.ChildMark + " " + e.text
 		}
 		if e.label() != want {
 			t.Errorf("row %q draws %q, want %q", e.kind, e.label(), want)

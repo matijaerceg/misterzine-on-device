@@ -21,7 +21,7 @@ func TestSortAutosaveRestoreAndOption(t *testing.T) {
 	h := favoritesHost(root)
 	rows := []data.Row{{K: "z", Title: "Zoo", Updated: "2026-09-10"}, {K: "a", Title: "Alpha", Updated: "2020-01-01"}}
 	open := func() {
-		h.a = app.New(app.Config{PhysW: 320, PhysH: 240, RememberSort: h.settings.RememberSort, LastSort: h.settings.LastSort,
+		h.a = app.New(app.Config{PhysW: 320, PhysH: 240, RememberSort: h.settings.RememberSort, LastSort: h.settings.LastSort, DefaultSort: h.settings.DefaultSort,
 			SettingsChanged: func() { h.setDirty = true },
 		}, data.Ingest(rows, "test", time.Now()), nil)
 	}
@@ -56,7 +56,7 @@ func TestSortAutosaveRestoreAndOption(t *testing.T) {
 		t.Fatal("alphabetical restart did not start at its first title")
 	}
 	tap(platform.KeyBack)
-	for i := 0; i < 8; i++ {
+	for i := 0; i < 9; i++ {
 		tap(platform.KeyDown)
 	}
 	tap(platform.KeyLeft) // Remember last view: off, in the List group
@@ -66,6 +66,15 @@ func TestSortAutosaveRestoreAndOption(t *testing.T) {
 	restart()
 	if h.a.Sort() != data.SortUpdated || h.a.RememberSort() {
 		t.Fatal("disabled preference did not restart in latest updates")
+	}
+	tap(platform.KeyBack)
+	for i := 0; i < 10; i++ {
+		tap(platform.KeyDown)
+	}
+	tap(platform.KeyRight) // Default view: MiSTer debut.
+	restart()
+	if h.a.Sort() != data.SortDebut || h.settings.DefaultSort != data.SortDebut {
+		t.Fatal("default view did not persist and restore")
 	}
 }
 

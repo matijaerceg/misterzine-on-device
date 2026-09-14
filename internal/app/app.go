@@ -105,7 +105,7 @@ type Config struct {
 	SaverInfo                                string
 	SaverCard, SaverRotation, SaverFavorites bool
 	SaverResolution                          string
-	// RememberSort restores LastSort at startup; otherwise start with latest updates.
+	// RememberSort restores LastSort at startup; otherwise use DefaultSort.
 	RememberSort   bool
 	FollowRotation bool
 	FilterRotation bool // strict filter on the current orientation
@@ -114,8 +114,9 @@ type Config struct {
 	InstalledOnly bool
 	// ViewsOff names the views Options -> Views left out of the Y cycle
 	// (data.SortMode.Name); a fresh install lists only "recents".
-	ViewsOff []string
-	LastSort data.SortMode
+	ViewsOff    []string
+	LastSort    data.SortMode
+	DefaultSort data.SortMode
 	// OpenAtBoot and ReturnAfterGame are Options -> Operation switches the
 	// host's resident launcher acts on; both need the launcher enabled.
 	OpenAtBoot      bool
@@ -246,7 +247,7 @@ func New(cfg Config, ds *data.Dataset, stored *data.SeenRecord) *App {
 	}
 	a := &App{cfg: cfg, body: fonts.Body(), sm: fonts.Small(), narrow: fonts.Narrow(), tall: fonts.NarrowTall(), rot: cfg.Rotation, split: -1, down: map[platform.Key]bool{}, released: map[platform.Key]time.Time{}, look: DefaultSaverLook}
 	a.viewsOff = parseViewsOff(cfg.ViewsOff)
-	a.mode = a.firstView()
+	a.mode = a.DefaultView()
 	if cfg.RememberSort && a.viewOn(cfg.LastSort) {
 		a.mode = cfg.LastSort
 	}

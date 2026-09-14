@@ -303,3 +303,26 @@ func TestDimSettings(t *testing.T) {
 		}
 	}
 }
+
+func TestDefaultSortMigration(t *testing.T) {
+	for _, c := range []struct {
+		body string
+		want data.SortMode
+	}{
+		{`{}`, data.SortUpdated}, {`{"default_sort":-1}`, data.SortUpdated},
+		{`{"default_sort":999}`, data.SortUpdated}, {`{"default_sort":2}`, data.SortAlphabetical},
+	} {
+		path := writeSettings(t, c.body)
+		s, err := LoadSettings(path)
+		if err != nil || s.DefaultSort != c.want {
+			t.Fatalf("%s: %+v %v", c.body, s, err)
+		}
+		if err = Save(path, s); err != nil {
+			t.Fatal(err)
+		}
+		got, err := LoadSettings(path)
+		if err != nil || got.DefaultSort != c.want {
+			t.Fatal("default lost on save")
+		}
+	}
+}

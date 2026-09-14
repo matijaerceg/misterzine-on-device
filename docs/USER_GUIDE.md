@@ -65,8 +65,8 @@ file can change them.
 
 Dates highlighted in green and the last-look divider help find changes since
 your previous visit. Visits start at the top of the view you left.
-Options -> Remember last view is on by default; turn it off to start each visit
-in Core updated instead.
+Options -> Views -> Remember last view is on by default; turn it off to choose
+a Default view for each new visit (Core updated initially).
 Y cycles Updated, Debut, Year, Alphabetical, Manufacturer, then Favorites; the
 top bar names the order as core updated, MiSTer debut, original year, A-Z,
 manufacturer or Favorites A-Z. Options -> Views can leave any of them out of the cycle.
@@ -213,7 +213,8 @@ Screenshots work without remote debugging.
 Options is in five groups, each under a grey heading with a small mark and
 a rule: Data (a diskette: Refresh data now, Run Update All, Last update
 result, Rescan card, Prefetch shots, Clear image cache), List (stacked
-lines: Sources, Filter by rotation, Remember last view, Views, Title font,
+lines: Sources, Filter by rotation, Views (with Remember last view and its
+conditional Default view beneath it), Title font,
 Art type, Date format, Layout), Display (a monitor: rotation,
 screensaver delay, style, brightness and info, safe zone, HDMI picture), Controls
 (an arcade stick: Button labels, OK button, Menu button, Scroll speed, Hold
@@ -263,9 +264,15 @@ and last row.
   filters remain active; saved manual rotation filters are temporarily
   superseded and restored when this option is turned off. Filters shows the
   active rule, and it follows the interface when the rotation changes.
-- **Remember last view:** on by default, including after upgrading. Reopens
-  in the view you left; off starts every visit in Core updated. Changing
-  this preference leaves the current view alone.
+- **Remember last view:** a child of Views, on by default, including after
+  upgrading. Reopens in the view you left. Turning it off reveals **Default
+  view** one level further in: choose the enabled view used at startup.
+  Core updated is the initial default; a disabled default falls back to the
+  first enabled view. Changing either preference leaves the current view alone.
+  The default applies on opening MisterZine, including at boot and when it
+  reopens after a game or a restart. Returning from Options, Details or Filters,
+  waking the screensaver, and rescanning keep the current view. Return after
+  game also tries to select the game just played within the starting view.
 - **Views:** which list orders Y cycles through, as a checkbox page: core
   updated, MiSTer debut, original year, A-Z, Manufacturer, Favorites and Recents.
   Everything is on except Recents by default. A toggles a view; the last one

@@ -230,6 +230,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		ViewsOff:             h.settings.ViewsOff,
 		RecentLaunches:       h.state.Recents,
 		LastSort:             h.settings.LastSort,
+		DefaultSort:          h.settings.DefaultSort,
 		OpenAtBoot:           h.settings.OpenAtBoot,
 		ReturnAfterGame:      h.settings.ReturnAfterGame,
 		TitleFont:            h.settings.TitleFont,
@@ -846,6 +847,7 @@ func (h *host) saveAll(final bool) {
 		h.settings.InstalledOnly = h.a.InstalledOnly()
 		h.settings.ViewsOff = h.a.ViewsOff()
 		h.settings.LastSort = h.a.Sort()
+		h.settings.DefaultSort = h.a.DefaultView()
 		h.settings.OpenAtBoot = h.a.OpenAtBoot()
 		h.settings.ReturnAfterGame = h.a.ReturnAfterGame()
 		h.settings.TitleFont = h.a.TitleFont()
