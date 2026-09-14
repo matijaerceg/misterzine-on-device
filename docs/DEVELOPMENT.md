@@ -67,8 +67,8 @@ resampling. Their HTML dimensions stay at 320x240 (240x320 in tate), providing
 sharp pixels on 2x displays. Keep the images inline so the gallery wraps with the
 available width; do not combine views into one image or put them in a table.
 
-The startup logo is a paint-only overlay that fades for two seconds from the
-first list frame. Preview it with `mzharness -splash` and scripted `wait 1000`
+The startup logo is a paint-only overlay that dithers away over one second from the
+first list frame. Preview it with `mzharness -splash` and scripted `wait 500`
 steps. `tools/startup_logo.py` renders the checked-in outlined SVG into the
 embedded 160×106 two-tone PNG (requires Pillow and svgpathtools). The app
 draws it at native size in every orientation, without runtime scaling.
