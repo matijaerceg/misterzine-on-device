@@ -8,7 +8,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 )
 
-const pageWipeDuration = 150 * time.Millisecond
+const pageWipeDuration = 200 * time.Millisecond
 
 type pageIdentity struct {
 	screen  Screen
@@ -111,10 +111,11 @@ func (a *App) paintPageTransition() {
 	a.logical.DirtyAll()
 }
 
-// The incoming page is already in dst. Only a narrow boundary blends; either
-// side stays sharp. Forward reveals from the right, Back from the left.
+// The incoming page is already in dst. Only a narrow boundary dissolves; either
+// side stays sharp. The edge uses the screensaver's fine pixel dissolve.
+// Forward reveals from the right, Back from the left.
 func composePageWipe(dst, from []byte, w, h, stride int, progress float64, back bool) {
-	band := max(2.0, float64(w)/50)
+	band := max(2.0, float64(w)/saverShotBandDiv)
 	amp := float64(w) / 32
 	margin := amp*1.4 + band
 	travel := -margin + progress*(float64(w)+2*margin)
@@ -142,10 +143,9 @@ func composePageWipe(dst, from []byte, w, h, stride int, progress float64, back 
 			}
 			alpha := int(max(0, min(1, amount)) * 256)
 			i := row + x*4
-			for c := 0; c < 3; c++ {
-				dst[i+c] = byte((int(dst[i+c])*alpha + int(from[i+c])*(256-alpha) + 128) >> 8)
+			if alpha <= int(saverBayer[y&7][x&7]) {
+				copy(dst[i:i+4], from[i:i+4])
 			}
-			dst[i+3] = 255
 		}
 	}
 }

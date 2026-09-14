@@ -43,15 +43,20 @@ func TestPageWipeLayering(t *testing.T) {
 					t.Fatal("wrong reveal direction")
 				}
 				for y := 0; y < h; y++ {
-					blended := 0
-					for x := 0; x < w; x++ {
-						b := dst[y*from.Stride+x*4+2]
-						if b > 0 && b < 255 {
-							blended++
+					changes := 0
+					previous := dst[y*from.Stride+2]
+					for x := 1; x < w; x++ {
+						pixel := dst[y*from.Stride+x*4+2]
+						if pixel != 0 && pixel != 255 {
+							t.Fatal("dissolve blurred a page pixel")
 						}
+						if pixel != previous {
+							changes++
+						}
+						previous = pixel
 					}
-					if blended == 0 || blended > 8 {
-						t.Fatalf("soft edge too broad or missing: %d pixels", blended)
+					if changes < 3 || changes > 18 {
+						t.Fatalf("soft dissolve missing or too broad: %d changes", changes)
 					}
 				}
 			}
