@@ -121,20 +121,27 @@ func composePageWipe(dst, from []byte, w, h, stride int, progress float64, back 
 	for y := 0; y < h; y++ {
 		v := float64(y) / float64(h)
 		edge := travel + amp*(math.Sin(2*math.Pi*v+0.5)+0.35*math.Sin(4*math.Pi*v+1.2))
-		for x := 0; x < w; x++ {
-			distance := float64(w - 1 - x)
+		center := float64(w-1) - edge
+		if back {
+			center = edge
+		}
+		lo := max(0, min(w, int(math.Floor(center-band/2))))
+		hi := max(0, min(w, int(math.Ceil(center+band/2))))
+		row := y * stride
+		// Copy the solid outgoing span in one operation. Only the few pixels
+		// along the soft edge need arithmetic on these ARM boards.
+		if back {
+			copy(dst[row+hi*4:row+w*4], from[row+hi*4:row+w*4])
+		} else {
+			copy(dst[row:row+lo*4], from[row:row+lo*4])
+		}
+		for x := lo; x < hi; x++ {
+			amount := (float64(x)-center)/band + 0.5
 			if back {
-				distance = float64(x)
+				amount = 1 - amount
 			}
-			alpha := int(max(0, min(1, (edge-distance)/band+0.5)) * 256)
-			i := y*stride + x*4
-			if alpha == 256 {
-				continue
-			}
-			if alpha == 0 {
-				copy(dst[i:i+4], from[i:i+4])
-				continue
-			}
+			alpha := int(max(0, min(1, amount)) * 256)
+			i := row + x*4
 			for c := 0; c < 3; c++ {
 				dst[i+c] = byte((int(dst[i+c])*alpha + int(from[i+c])*(256-alpha) + 128) >> 8)
 			}

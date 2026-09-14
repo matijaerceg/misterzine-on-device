@@ -197,3 +197,12 @@ func TestPageTransitionPreview(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func BenchmarkPageWipe(b *testing.B) {
+	from := make([]byte, 320*240*4)
+	dst := make([]byte, len(from))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		composePageWipe(dst, from, 320, 240, 320*4, 0.5, false)
+	}
+}

@@ -32,6 +32,13 @@ Existing launcher settings and saved favorites/preferences survive an update.
 Earlier versions' Scripts launch entry is replaced by the one-time Setup entry.
 If the main-menu launcher was previously off, run Setup to enable it.
 
+## Page navigation
+
+Opening a page reveals it from the right with a quick, soft-edged wipe. Going
+back reverses the direction. Changing the browsing view uses the same effect;
+list movement, page jumps, and option adjustments remain immediate. Buttons
+keep working during the transition.
+
 ## List and search
 
 Each row has a favorite marker, title, on-card status, and date. Titles use a
