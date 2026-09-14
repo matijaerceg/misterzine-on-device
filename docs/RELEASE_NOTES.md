@@ -1,13 +1,11 @@
-More info on Screenshots Screensaver
+Coin-Op Collection games now show as installed
 
-The screenshots screensaver now types out game details onto each slide, one character at a time behind a blinking cursor: the title, whether the game is on your card, the core, the year and maker, the controls. Leave MisterZine idle and it becomes a tour of the arcade catalogue, a new game sliding in every few seconds with its details written underneath. Hold Start on any slide to play that game. Choose how much it says in Options: full details, the title only, or nothing but the picture.
+Games whose core file carries a longer name than the game's own file says, like Coin-Op's Black Heart, Captain America and The Avengers, Thunder Dragon and Zero Wing, showed as not on your card although they were installed and played fine. MisterZine now finds the core file the same way MiSTer itself does, so they show as installed and their alternative versions appear in the launch picker.
 
 Also in this release:
 
-- The lettering screensaver has a retro low-colour look, dithered like an old display, and it draws faster.
-- L and R jump between sections in Options, as they already do in the list and in Filters.
-- Options rows carry their full names, dependent rows sit indented under their parent, and the bottom bar says what each button does on the selected row.
+- In the latest-update view, the line marking your last look follows the dates of what shipped since, and says Nothing new since your last look when there is nothing new.
 
-Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1028--2026-09-13).
+Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1029--2026-09-14).
 Existing installations update through Update All. New installation:
 [installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once).

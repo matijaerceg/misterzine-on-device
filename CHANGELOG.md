@@ -1,5 +1,37 @@
 # Changelog
 
+## v1.0.29 — 2026-09-14
+
+- Fix: games whose core file carries a longer name than their MRA says
+  read as not found on the card although they were installed and launched
+  fine (issues misterzine#9 and #10: Black Heart, Captain America and The
+  Avengers, Double Wings, Diet Go Go, Mania Challenge, Mat Mania, Thunder
+  Dragon and Zero Wing from the Coin-Op Collection, which ships
+  `blkheart_mister_20260909.rbf` for `<rbf>blkheart</rbf>`). MiSTer's MRA
+  loader resolves that by prefix, accepting any rbf whose filename starts
+  with the tag followed by `_` or `.`, also behind `Arcade-`, the greatest
+  filename winning when several match; the scan only tried the exact,
+  date-stripped and `arcade-` names. The scan now applies MiSTer's rule as
+  its last fallback, after the attempts that matched before, so every row
+  that matched keeps its file; a name without the separator (`tdrago` for
+  `tdragon_mister`) still does not match. The launch path resolves through
+  the same lookup. The launch picker's alternatives treat two core names as
+  the same core when one is the other followed by `_`, with or without the
+  `arcade-` prefix and their own date suffixes, so a row that says
+  `blkheart_mister` (what the catalogue now exports for those games) lists
+  the alternative MRAs that say `blkheart`, and a cached catalogue that
+  still says `blkheart` lists MRAs that say `blkheart_mister`. The guide's
+  card status section says how a core file is matched.
+- The latest-update view's last-look line follows the dates instead of a
+  200-row window: it sits after the last unseen row dated on or after the
+  newest stamp the baseline holds, so a core catalogued late under an old
+  date keeps its own unseen mark but never drags the line down, and the line
+  sits on top reading Nothing new since your last look only when a scan of
+  the whole view finds nothing unseen, shortening to the age alone or to
+  Nothing new where the list is too narrow for the sentence. No changes in
+  top 200 and No changes in this view are gone.
+- ItsDanik joins the early adopters in Credits.
+
 ## v1.0.28 — 2026-09-13
 
 - The screenshots screensaver types what the main view's pane says about the
