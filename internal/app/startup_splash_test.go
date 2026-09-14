@@ -68,8 +68,8 @@ func TestStartupLogoNativeSizeAndCounters(t *testing.T) {
 	}
 	for _, point := range [][2]int{{125, 27}, {135, 71}} {
 		r, g, b, alpha := a.splash.logo.At(point[0], point[1]).RGBA()
-		if r > 0x2000 || g > 0x2000 || b > 0x2000 || alpha != 0xffff {
-			t.Fatalf("e counter at %v must be black, got %x %x %x %x", point, r, g, b, alpha)
+		if r < 158*257 || r > 166*257 || g < 143*257 || g > 151*257 || b < 195*257 || b > 203*257 || alpha != 0xffff {
+			t.Fatalf("e counter at %v must match the secondary-text outline, got %x %x %x %x", point, r, g, b, alpha)
 		}
 	}
 }

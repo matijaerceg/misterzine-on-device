@@ -1,4 +1,4 @@
-# Render the existing outlined vector logo as a transparent black/white asset.
+# Render the existing outlined vector logo as a transparent purple asset.
 # Run from the repository root; requires Pillow and svgpathtools.
 from pathlib import Path
 import xml.etree.ElementTree as ET
@@ -22,8 +22,8 @@ for sub in [sub for path in paths for sub in path.continuous_subpaths()]:
     ImageDraw.Draw(part).polygon(pts,fill=1)
     if outer is None: outer=part.copy()
     mask=ImageChops.logical_xor(mask,part)
-img=Image.new('RGBA',size,'white')
-img.paste((0,0,0,255),(0,0),mask.convert('L'))
+img=Image.new('RGBA',size,'#1d1330')
+img.paste((162,147,199,255),(0,0),mask.convert('L'))
 img.putalpha(outer.convert('L'))
 # Rasterize once at the actual display size; the app never resizes this asset.
 img.resize((160,106),Image.Resampling.LANCZOS).save('internal/app/startup_logo.png')
