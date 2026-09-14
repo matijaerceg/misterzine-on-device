@@ -134,7 +134,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):
-        # Options -> List layout: split and picture, a vertical shot in each
+        # Options -> Layout: split and picture, a vertical shot in each
         scenarios.append([*rotation, "-inset", str(inset), "-layout", "split",
                           "-out", f"out/list-layout-{orientation}-{inset}", "-script",
                           "down*2; shot split; type 1942; shot split-vertical; back; back; down*13; shot option; right; back; "

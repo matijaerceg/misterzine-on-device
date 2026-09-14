@@ -129,7 +129,7 @@ filter choices are saved.
 | X | Tab | Filters | | | back to the list | |
 | Y | Space | change view | favorite | | only/all | |
 | Start | gamepad Start | launch remembered version | launch selected version | launch selected version | | |
-| Select (held) | | + Y: List layout, + X: List shots, + A: favorite | | | | |
+| Select (held) | | + Y: Layout, + X: Art type, + A: favorite | | | | |
 | Menu | | Options; held 2 s: quit MisterZine (or quit at once: Options -> Menu button) | Options | Options | Options | back to the screen it was opened over |
 
 A, B, X and Y are MiSTer's names from its define buttons screen. Options ->
@@ -161,7 +161,7 @@ reads with A and B swapped for that pad. Options -> OK button shows the
 choice for the pad in your hand and can override it, per pad.
 
 Hold Select on the list (the legend's last entry, Select +, is the
-reminder) and the legend changes: Y cycles List layout, X switches List shots, saved exactly as from Options, and A stars or unstars
+reminder) and the legend changes: Y cycles Layout, X switches Art type, saved exactly as from Options, and A stars or unstars
 the game under the cursor (in the Favorites view an unstarred row drops
 out and the cursor moves to its neighbour). Select alone does nothing, and
 while it is down every other button waits, so nothing moves or launches by
@@ -214,7 +214,7 @@ Options is in five groups, each under a grey heading with a small mark and
 a rule: Data (a diskette: Refresh data now, Run Update All, Last update
 result, Rescan card, Prefetch shots, Clear image cache), List (stacked
 lines: Sources, Filter by rotation, Remember last view, Views, Title font,
-List shots, Date format, List layout), Display (a monitor: rotation,
+Art type, Date format, Layout), Display (a monitor: rotation,
 screensaver delay, style, brightness and info, safe zone, HDMI picture), Controls
 (an arcade stick: Button labels, OK button, Menu button, Scroll speed, Hold
 delay) and Operation (sliders: the main menu shortcut, Open at boot, Return
@@ -281,14 +281,14 @@ and last row.
   its capitals and lowercase match the body font's height. Narrow is the
   original, shorter face. Normal uses the body font for titles. The status
   and date columns always use the narrow font at the titles' height.
-- **List shots:** which screenshot the list pane shows for the selected row:
+- **Art type:** which screenshot the list pane shows for the selected row:
   gameplay (default) or the title screen. Details and the artwork view still
   show every shot. Hold Select and press X on the list to switch it there.
 - **Date format:** how list dates read: MM-DD (default), DD-MM, Mon D (Sep 7),
   D Mon (7 Sep) or YYMMDD (260907). The help line shows today's date in the
   chosen format. Rows from earlier years show the year alone, except with
   YYMMDD, which always carries the full date.
-- **List layout:** list by default: the full list with the small pane beside
+- **Layout:** list by default: the full list with the small pane beside
   it (or below it in tate). Split widens the pane to under half the screen
   with a picture to match, leaving shorter rows. Picture runs the picture
   across the screen, in horizontal above a few full-width rows with the
