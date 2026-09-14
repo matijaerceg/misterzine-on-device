@@ -214,5 +214,12 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     scenarios.append([*rotation, "-out", f"out/layout-previews-{orientation}", "-script",
                       "back; down*13; shot list; right; shot split; right; shot picture; down; shot dismissed"])
+for rotation in ([], ["-rot", "left", "-logical"]):
+    orientation = "t" if rotation else "h"
+    for inset in (15, 40):
+        scenarios.append([*rotation, "-inset", str(inset), "-out", f"out/option-samples-{orientation}-{inset}", "-script",
+                          "back; down*10; shot font; left; shot font-narrow; left; shot font-normal; "
+                          "down*12; shot speed; wait 200; shot speed-moving; down; shot delay; "
+                          "wait 250; shot delay-short; wait 400; shot delay-reverse; down; shot dismissed"])
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)

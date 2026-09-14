@@ -705,6 +705,8 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 		c.Box(helpBox, gen.Eva.Line)
 		if p.cursor < len(p.entries) && a.screen == ScreenOptions && p.entries[p.cursor].kind == "list-layout" {
 			a.paintLayoutPreviews(c, helpBox)
+		} else if p.cursor < len(p.entries) && a.screen == ScreenOptions && (p.entries[p.cursor].kind == "title-font" || p.entries[p.cursor].kind == "scroll" || p.entries[p.cursor].kind == "hold-delay") {
+			a.paintOptionSamples(c, helpBox, p.entries[p.cursor])
 		} else if p.cursor < len(p.entries) && p.entries[p.cursor].help != "" {
 			hy := helpBox.Min.Y + 3
 			for _, ln := range gfx.Wrap(p.entries[p.cursor].help, font.Cols(helpBox.Dx()-6), helpLines) {

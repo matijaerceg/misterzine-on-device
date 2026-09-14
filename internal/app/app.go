@@ -148,13 +148,14 @@ type Config struct {
 
 // App is the state machine.
 type App struct {
-	cfg    Config
-	body   *gfx.Font
-	sm     *gfx.Font
-	narrow *gfx.Font // list titles, proportionally spaced
-	tall   *gfx.Font // the same at the body font's height
-	lay    Layout
-	rot    gfx.Rotation
+	optionSamples optionSampleClock
+	cfg           Config
+	body          *gfx.Font
+	sm            *gfx.Font
+	narrow        *gfx.Font // list titles, proportionally spaced
+	tall          *gfx.Font // the same at the body font's height
+	lay           Layout
+	rot           gfx.Rotation
 
 	logical  *gfx.Canvas // what views paint into
 	physical *image.RGBA // rotated frame handed to the display
@@ -785,6 +786,7 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 // Tick runs due repeats and expires notices; returns true to repaint.
 func (a *App) Tick(now time.Time) bool {
 	changed := a.tickMenu(now)
+	changed = a.tickOptionSamples(now) || changed
 	// Expire notices on every screen so NextTick cannot keep returning a past
 	// deadline while Update All handles its own animation and cancel input.
 	if a.notice != "" && !now.Before(a.until) {
@@ -819,6 +821,7 @@ func (a *App) Tick(now time.Time) bool {
 func (a *App) Frame(now time.Time) bool {
 	a.saver.lastInput = now // a held direction is still activity
 	changed := a.tickMenu(now)
+	changed = a.tickOptionSamples(now) || changed
 	if k := a.rep.frameDue(now, a.repeatStep); k != platform.KeyNone {
 		if a.act(k) {
 			changed = true
@@ -836,6 +839,9 @@ func (a *App) Frame(now time.Time) bool {
 // NextTick reports when Tick next needs to run; zero when nothing is pending.
 func (a *App) NextTick() time.Time {
 	t := a.rep.nextAt()
+	if next := a.nextOptionSampleTick(); !next.IsZero() && (t.IsZero() || next.Before(t)) {
+		t = next
+	}
 	if a.screen == ScreenTroubleshooting {
 		t = a.support.next
 		if v := &a.support; v.mode == "pad" && !v.backAt.IsZero() {

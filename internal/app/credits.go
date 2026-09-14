@@ -9,6 +9,7 @@ package app
 // early adopters", A to Z regardless of case. Add a name in its place to
 // add a row.
 var earlyAdopters = []string{
+	"ac3",
 	"akeley",
 	"CobolGuy007",
 	"ctrain_1985",
