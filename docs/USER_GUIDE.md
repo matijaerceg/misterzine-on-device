@@ -53,7 +53,9 @@ ships. Dated core filenames are compared by build date. Undated cores (Jotego's,
 for example) are compared by file checksum against the shipped build, using the
 same record Update All keeps, so “older build likely” means Update All would
 replace the file. A core installed after the catalogue was generated is treated
-as current.
+as current. A core file is matched by name the way MiSTer itself loads it: the
+exact name, or any file whose name starts with that name followed by an
+underscore (Coin-Op ships `blkheart_mister_20260909.rbf` for `blkheart`).
 
 “On card, date unknown” means the scan found the files but cannot compare them
 with the catalogue: the filename carries no date and the catalogue has no
