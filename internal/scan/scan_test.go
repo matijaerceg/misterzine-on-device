@@ -81,6 +81,105 @@ func TestScanCoresAndStatus(t *testing.T) {
 	}
 }
 
+// TestLookupPrefix covers MiSTer's get_rbf rule: an rbf whose filename
+// starts with the core name followed by "_" loads for that name (Coin-Op
+// ships blkheart_mister_20260909.rbf for <rbf>blkheart</rbf>), exact
+// names still win over prefix matches, and the greatest filename wins when
+// several match.
+func TestLookupPrefix(t *testing.T) {
+	cores := map[string]Core{}
+	add := func(stem, dir string) {
+		date := ""
+		if m := rbfName.FindStringSubmatch(stem + ".rbf"); m != nil {
+			cores[strings.ToLower(m[1])] = Core{Date: m[2], Path: dir + "/" + stem + ".rbf"}
+			date = m[2]
+		}
+		cores[strings.ToLower(stem)] = Core{Date: date, Path: dir + "/" + stem + ".rbf"}
+	}
+	add("blkheart_mister_20260909", "_Arcade/cores")
+	add("zerowing_20240404", "_Arcade/cores")
+	add("zerowing_mister_20251119", "_Arcade/cores")
+	add("foo_a", "_Arcade/cores")
+	add("foo_b", "_Arcade/cores")
+	add("tdragon_mister_20260901", "_Arcade/cores")
+	add("Arcade-Bucky_20260812", "_Arcade/cores")
+	cases := []struct {
+		core string
+		want string // path suffix, "" for not found
+	}{
+		{"blkheart", "blkheart_mister_20260909.rbf"},
+		{"BlkHeart", "blkheart_mister_20260909.rbf"},
+		{"blkheart_mister", "blkheart_mister_20260909.rbf"},
+		{"zerowing", "zerowing_20240404.rbf"}, // exact beats prefix
+		{"zerowing_20240404", "zerowing_20240404.rbf"},
+		{"zerowing_mister", "zerowing_mister_20251119.rbf"},
+		{"foo", "foo_b.rbf"}, // greatest filename, as on MiSTer
+		{"tdrago", ""},       // the separator is required
+		{"tdragon", "tdragon_mister_20260901.rbf"},
+		{"bucky", "Arcade-Bucky_20260812.rbf"},
+		{"nothere", ""},
+	}
+	for _, c := range cases {
+		got, ok := lookup(cores, c.core)
+		if ok != (c.want != "") || (ok && !strings.HasSuffix(got.Path, "/"+c.want)) {
+			t.Errorf("lookup(%q) = %+v %v, want %q", c.core, got, ok, c.want)
+		}
+	}
+}
+
+// TestStatusCorePrefix is the Coin-Op case end to end: the MRA says
+// blkheart, the card holds blkheart_mister_20260909.rbf, and the row must
+// read as installed.
+func TestStatusCorePrefix(t *testing.T) {
+	card := fakeCard(t)
+	mk := func(rel string) {
+		p := filepath.Join(card, filepath.FromSlash(rel))
+		os.MkdirAll(filepath.Dir(p), 0755)
+		os.WriteFile(p, []byte("x"), 0644)
+	}
+	mk("_Arcade/cores/blkheart_mister_20260909.rbf")
+	mk("_Arcade/Black Heart.mra")
+	idx := ScanCores(card)
+	if c, ok := idx.Lookup("blkheart"); !ok || !strings.HasSuffix(c.Path, "blkheart_mister_20260909.rbf") {
+		t.Fatalf("blkheart = %+v %v", c, ok)
+	}
+	cases := []struct {
+		row  data.Row
+		want data.Status
+	}{
+		{data.Row{Base: "Arcade", MRA: "_Arcade/Black Heart.mra", Core: "blkheart", Updated: "2026-09-09"}, data.StatusCurrent},
+		{data.Row{Base: "Arcade", MRA: "_Arcade/Black Heart.mra", Core: "blkheart", BD: "2026-09-09", BH: xMD5}, data.StatusCurrent},
+		{data.Row{Base: "Arcade", MRA: "_Arcade/Black Heart.mra", Core: "blkheart_mister", BD: "2026-09-09"}, data.StatusCurrent},
+		{data.Row{Base: "Arcade", MRA: "_Arcade/Black Heart.mra", Core: "blkheart", BD: "2026-09-20"}, data.StatusOutdated},
+	}
+	for i, c := range cases {
+		if got := Status(card, idx, &c.row); got == data.StatusNotFound || got != c.want {
+			t.Errorf("case %d: status %v, want %v", i, got, c.want)
+		}
+	}
+}
+
+func TestSameCore(t *testing.T) {
+	cases := []struct {
+		a, b string
+		want bool
+	}{
+		{"blkheart", "blkheart", true},
+		{"blkheart_mister", "blkheart", true},
+		{"blkheart", "blkheart_mister", true},
+		{"blkheart_mister_20260909", "blkheart", true},
+		{"arcade-bucky", "bucky", true},
+		{"bucky", "Arcade-Bucky_20260812", true},
+		{"tdragon_mister", "tdrago", false},
+		{"defender", "jt1942", false},
+	}
+	for _, c := range cases {
+		if got := sameCore(c.a, c.b); got != c.want {
+			t.Errorf("sameCore(%q, %q) = %v, want %v", c.a, c.b, got, c.want)
+		}
+	}
+}
+
 // md5 of the one-byte "x" every fake rbf holds.
 const xMD5 = "9dd4e461268c8034f5c8564e155c67a6"
 
@@ -193,16 +292,39 @@ func TestAlternatives(t *testing.T) {
  <rbf>rmnightslashers</rbf>
  <rom index="0" zip="nslasherj.zip|nslasher.zip"><part name="x"/></rom>
 </misterromdescription>`), 0644)
+	// Coin-Op: the MRAs say blkheart while the rbf is blkheart_mister_*.rbf,
+	// so the row's core may carry either name
+	bh := filepath.Join(card, "_Arcade", "_rmCores", "_alternatives", "_Black Heart")
+	os.MkdirAll(bh, 0755)
+	os.WriteFile(filepath.Join(bh, "Black Heart (Japan).mra"), []byte(`<misterromdescription>
+ <setname>blkheartj</setname>
+ <rbf>blkheart</rbf>
+ <rom index="0" zip="blkheartj.zip|blkheart.zip"><part name="x"/></rom>
+</misterromdescription>`), 0644)
+	os.WriteFile(filepath.Join(bh, "Black Heart (World).mra"), []byte(`<misterromdescription>
+ <setname>blkheartw</setname>
+ <rbf>blkheart_mister</rbf>
+ <rom index="0" zip="blkheartw.zip|blkheart.zip"><part name="x"/></rom>
+</misterromdescription>`), 0644)
 	os.MkdirAll(filepath.Join(card, "_Arcade", "_rmCores", "_alternatives", "empty"), 0755) // no MRA, fine
 	os.MkdirAll(filepath.Join(card, "_Arcade", "cores", "_alternatives"), 0755)             // cores is not a database folder
 	cache := filepath.Join(card, "cache", "alts.json")
 	alts := ScanAlternatives(card, cache)
-	if len(alts) != 3 || !strings.HasPrefix(alts[2].Path, "_Arcade/_rmCores/_alternatives/") {
+	if len(alts) != 5 || !strings.HasPrefix(alts[2].Path, "_Arcade/_rmCores/_alternatives/") {
 		t.Fatalf("alts = %+v", alts)
 	}
 	// cached second run gives the same answer; the nested folder is keyed by its database
-	if again := ScanAlternatives(card, cache); len(again) != 3 || again[0].Path != alts[0].Path {
+	if again := ScanAlternatives(card, cache); len(again) != 5 || again[0].Path != alts[0].Path {
 		t.Fatalf("cached alts = %+v", again)
+	}
+	for _, core := range []string{"blkheart_mister", "blkheart", "blkheart_mister_20260909"} {
+		row := data.Row{Base: "Arcade", Core: core, SN: "blkheart"}
+		if got := Alternatives(alts, &row); len(got) != 2 {
+			t.Fatalf("black heart alts for core %q = %v", core, got)
+		}
+	}
+	if got := Alternatives(alts, &data.Row{Base: "Arcade", Core: "blkhear", SN: "blkheart"}); len(got) != 0 {
+		t.Fatalf("blkhear alts = %v", got)
 	}
 	if raw, err := os.ReadFile(cache); err != nil || !strings.Contains(string(raw), `"_rmCores/_Night Slashers"`) || !strings.Contains(string(raw), `"_Colony 7"`) {
 		t.Fatalf("cache keys: %s %v", raw, err)

@@ -107,7 +107,9 @@ func ScanCores(card string) *Index {
 
 // Lookup finds a row's core in the index, trying the exact lowercase name,
 // then the name with its own _YYYYMMDD suffix stripped, then an "arcade-"
-// prefix variant for Meathax-style names.
+// prefix variant for Meathax-style names, and last the rule MiSTer's own
+// MRA loader applies: any rbf whose name starts with the core followed by
+// "_" (Coin-Op ships blkheart_mister_20260909.rbf for <rbf>blkheart</rbf>).
 func (idx *Index) Lookup(core string) (Core, bool) {
 	if idx == nil {
 		return Core{}, false
@@ -147,7 +149,29 @@ func lookup(cores map[string]Core, core string) (Core, bool) {
 			return c, true
 		}
 	}
-	return Core{}, false
+	return lookupPrefix(cores, l)
+}
+
+// lookupPrefix is MiSTer's get_rbf rule: an rbf matches a core name when
+// its filename starts with the name followed by "_" (the exact name and
+// the "." case are the early returns above), also with an "Arcade-" prefix,
+// and the greatest matching filename wins when several do. A dated file is
+// indexed under both its base and its full stem, both at the same path, so
+// for one core either key gives the same answer; between two cores that
+// share a prefix (foo_a, foo_b) the greatest wins, as on MiSTer.
+func lookupPrefix(cores map[string]Core, l string) (Core, bool) {
+	best, found := "", false
+	for _, p := range []string{l + "_", "arcade-" + l + "_"} {
+		for k := range cores {
+			if strings.HasPrefix(k, p) && (!found || k > best) {
+				best, found = k, true
+			}
+		}
+	}
+	if !found {
+		return Core{}, false
+	}
+	return cores[best], true
 }
 
 // Status decides a row's card status. Arcade rows need their MRA on the
@@ -557,24 +581,36 @@ func (c *commentStripper) Read(p []byte) (int, error) {
 	return n, nil
 }
 
+// coreStem is a core name as it compares: lowercase, without its own
+// _YYYYMMDD suffix and without an "arcade-" prefix.
+func coreStem(name string) string {
+	l := strings.ToLower(name)
+	if m := rbfName.FindStringSubmatch(l + ".rbf"); m != nil {
+		l = m[1]
+	}
+	return strings.TrimPrefix(l, "arcade-")
+}
+
+// sameCore reports whether two core names load the same rbf under
+// MiSTer's rules: equal, or one is the other followed by "_" and more (the
+// row may say blkheart_mister, the file it was read from, while every
+// alternative MRA still says blkheart, or the other way round on a cached
+// feed), with or without an "arcade-" prefix and their own date suffixes.
+func sameCore(a, b string) bool {
+	a, b = coreStem(a), coreStem(b)
+	return a == b || strings.HasPrefix(a, b+"_") || strings.HasPrefix(b, a+"_")
+}
+
 // Alternatives lists the alternative MRAs for a row: same rbf, and a rom zip
 // list that references the row's setname.
 func Alternatives(alts []Alt, r *data.Row) []string {
 	if r == nil || !r.IsArcade() || r.Core == "" {
 		return nil
 	}
-	core := strings.ToLower(r.Core)
-	if m := rbfName.FindStringSubmatch(core + ".rbf"); m != nil {
-		core = m[1]
-	}
 	sn := strings.ToLower(r.SN)
 	var out []string
 	for _, a := range alts {
-		rbf := a.RBF
-		if m := rbfName.FindStringSubmatch(rbf + ".rbf"); m != nil {
-			rbf = m[1]
-		}
-		if rbf != core && rbf != "arcade-"+core && "arcade-"+rbf != core {
+		if !sameCore(a.RBF, r.Core) {
 			continue
 		}
 		if sn == "" {
