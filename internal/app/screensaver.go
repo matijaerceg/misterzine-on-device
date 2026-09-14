@@ -224,10 +224,10 @@ func saverPaintGround(dst []uint8, w, h, stride int, from, to []uint16, frac int
 func saverPaintBreathing(dst []uint8, w, h, stride int, src []uint16, d *saverDither, seconds float64, phase int) {
 	var wave [64]int
 	for i := range wave {
-		wave[i] = int(18 * math.Sin(float64(i)*2*math.Pi/64+seconds*.27))
+		wave[i] = int(18 * math.Sin(float64(i)*2*math.Pi/64+seconds*.54))
 	}
 	for y := phase * h / 4; y < (phase+1)*h/4; y++ {
-		vertical := int(12 * math.Sin(float64(y)/float64(h)*math.Pi*2-seconds*.19))
+		vertical := int(12 * math.Sin(float64(y)/float64(h)*math.Pi*2-seconds*.38))
 		row := &d.thresh[y&7]
 		for x := 0; x < w; x++ {
 			gain := 256 + wave[x*64/w] + vertical
