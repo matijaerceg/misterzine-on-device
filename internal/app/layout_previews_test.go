@@ -45,20 +45,8 @@ func TestLayoutPreviewsOrientationAndState(t *testing.T) {
 				if a.cursor != cursor || a.top != top || a.lay != layout || !reflect.DeepEqual(a.view, view) || a.ListLayout() != "list" || a.screen != ScreenOptions {
 					t.Fatal("preview changed live navigation or settings")
 				}
-				want := "h"
-				if rot.Rotated() {
-					want = "t"
-				}
-				if len(pictures.requests) != 3 {
-					t.Fatalf("got %d image requests", len(pictures.requests))
-				}
-				for _, req := range pictures.requests {
-					if req.Key != want {
-						t.Fatalf("rotation %v: got %s, want %s", rot, req.Key, want)
-					}
-				}
-				if len(a.wants) == 0 {
-					t.Fatal("preview artwork was not queued")
+				if len(pictures.requests) != 0 || len(a.wants) != 0 {
+					t.Fatal("diagrams requested artwork")
 				}
 				pictures.requests = nil
 				a.panel.cursor++
