@@ -92,7 +92,7 @@ func (a *App) paintLayoutDiagram(c *gfx.Canvas, r image.Rectangle, style string)
 			width = metadata.Dx() / 2
 		}
 		if width > 0 {
-			c.HLine(metadata.Min.X, metadata.Min.X+width-1, y, gen.Eva.TypeArcade)
+			c.HLine(metadata.Min.X, metadata.Min.X+width-1, y, gen.Eva.Warn)
 		}
 	}
 }
