@@ -164,7 +164,7 @@ func TestRotationIntentSurvivesSaves(t *testing.T) {
 		t.Run(string(rune('0'+rotation)), func(t *testing.T) {
 			root := t.TempDir()
 			h := favoritesHost(root)
-			h.a = app.New(app.Config{PhysW: 320, PhysH: 240, Rotation: rotation,
+			h.a = app.New(app.Config{PhysW: 320, PhysH: 240, Rotation: rotation, RememberSort: h.settings.RememberSort,
 				SettingsChanged: func() { h.setDirty = true },
 				Action: func(kind, arg string) {
 					if kind == "rotation" {

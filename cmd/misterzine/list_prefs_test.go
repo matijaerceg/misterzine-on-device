@@ -20,7 +20,7 @@ func TestListPreferencesPersist(t *testing.T) {
 	h := favoritesHost(root)
 	rows := []data.Row{{K: "a", Title: "Alpha", Updated: "2026-09-10"}}
 	open := func() {
-		h.a = app.New(app.Config{PhysW: 320, PhysH: 240,
+		h.a = app.New(app.Config{PhysW: 320, PhysH: 240, RememberSort: h.settings.RememberSort,
 			TitleFont: h.settings.TitleFont, ListShot: h.settings.ListShot, DateFormat: h.settings.DateFormat,
 			SettingsChanged: func() { h.setDirty = true },
 		}, data.Ingest(rows, "test", time.Now()), nil)
