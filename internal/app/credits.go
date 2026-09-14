@@ -13,6 +13,7 @@ var earlyAdopters = []string{
 	"CobolGuy007",
 	"ctrain_1985",
 	"dh3lix-pooch",
+	"Fallon",
 	"Fender",
 	"gamecat666",
 	"hammercompation",
