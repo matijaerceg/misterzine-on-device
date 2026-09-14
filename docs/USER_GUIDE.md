@@ -325,6 +325,7 @@ Screensaver settings are under **Options → Screensaver**. Preview starts it im
   button; held 2 s it quits either way). The sweep covers the whole picture,
   including safe-zone margins, in horizontal and tate layouts. Background data
   downloads and Update All continue while dimmed.
+- **Dim screensaver:** choose Dim as the third style to darken the current screen without animation. Dim level offers 33% (default) or 66% dimming; 66% is darker. Press A to preview.
 - **Screensaver style:** what the screensaver shows. Lettering (default) is the
   MISTERZINE sweep above. Screenshots shows one arcade game's gameplay
   shot after another, every arcade game in the catalogue in a shuffled

@@ -99,6 +99,7 @@ type Config struct {
 	// what the caption says about a shot's game: "full" (default: the
 	// pane's lines), "title" (the title alone) or "none".
 	SaverStyle                               string
+	SaverDim                                 string
 	SaverBright                              string
 	SaverInfo                                string
 	SaverCard, SaverRotation, SaverFavorites bool
@@ -1085,7 +1086,7 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 	c := a.logical
 	if a.saver.active && a.saver.shots != nil {
 		a.paintSaverShots(c) // its own pictures: the screen under it is not painted
-	} else if a.saver.active && a.saverCached(c) {
+	} else if a.saver.active && (a.saverCached(c) || (a.saver.style == "dim" && len(a.saver.dark) == len(c.Pix))) {
 		// the saver shows the picture it froze on its first frame; the
 		// screen under it is painted again when a key wakes the app
 		a.paintSaver(c)

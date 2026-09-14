@@ -733,7 +733,7 @@ func (a *App) optionsHint() string {
 // value, or it is greyed).
 var optionsActs = map[string]string{
 	"refresh": "Refresh", "update": "Run", "update-result": "Open", "rescan": "Rescan", "clearimg": "Clear",
-	"views": "Open", "saver-options": "Open", "saver-preview": "Preview", "screensaver": "Preview", "saver-style": "Preview", "saver-bright": "Preview", "saver-info": "Preview",
+	"views": "Open", "saver-options": "Open", "saver-preview": "Preview", "screensaver": "Preview", "saver-style": "Preview", "saver-bright": "Preview", "saver-dim": "Preview", "saver-info": "Preview",
 	"inset": "Edit", "troubleshooting": "Open", "credits": "Open", "quit": "Quit",
 }
 
@@ -948,6 +948,8 @@ func (a *App) stepValue(d int) bool {
 		a.cfg.SaverResolution = a.saverResValues()[i]
 	case "saver-style":
 		a.cfg.SaverStyle = saverStyles[i]
+	case "saver-dim":
+		a.cfg.SaverDim = []string{"33", "66"}[i]
 	case "saver-bright":
 		a.cfg.SaverBright = []string{"half", "full"}[i]
 	case "saver-info":
@@ -1043,7 +1045,7 @@ func (a *App) togglePanel() bool {
 		}
 		a.buildPanel()
 		return true
-	case "screensaver", "saver-style", "saver-bright", "saver-info", "saver-preview":
+	case "screensaver", "saver-style", "saver-bright", "saver-info", "saver-dim", "saver-preview":
 		a.startSaver(a.cfg.TimerNow())
 		return true
 	case "update-result":
@@ -1225,8 +1227,11 @@ func (a *App) saverEntries() []panelEntry {
 	E := []panelEntry{
 		{text: "Delay", kind: "screensaver", vals: []string{"off", "1 min", "2 min", "5 min", "10 min"}, idx: saverIdx,
 			help: "Start the selected style after idle time. Left/Right sets the delay; " + a.btn("A") + " previews. Other buttons wake without acting; Menu works as usual."},
-		{text: "Style", kind: "saver-style", short: "Style", vals: []string{"lettering", "screenshots"}, idx: map[string]int{"word": 0, "shots": 1}[a.SaverStyle()],
-			help: "Lettering (default): the MISTERZINE sweep. Screenshots: random arcade shots wiping in; hold Start 2 s on one to play it. Other buttons wake."},
+		{text: "Style", kind: "saver-style", short: "Style", vals: []string{"lettering", "screenshots", "dim"}, idx: map[string]int{"word": 0, "shots": 1, "dim": 2}[a.SaverStyle()],
+			help: "Lettering: the MISTERZINE sweep. Screenshots: arcade shots; hold Start to play. Dim: darken the current screen. Other buttons wake."},
+	}
+	if a.SaverStyle() == "dim" {
+		E = append(E, panelEntry{text: "Dim level", kind: "saver-dim", vals: []string{"33%", "66%"}, idx: map[string]int{"33": 0, "66": 1}[a.SaverDim()], help: "Darken the current screen by 33% or 66%. 66% is darker. Press " + a.btn("A") + " to preview."})
 	}
 	if a.SaverStyle() == "shots" {
 		E = append(E, panelEntry{text: "Brightness", kind: "saver-bright", short: "Brightness", vals: []string{"half", "full"}, idx: map[string]int{"half": 0, "full": 1}[a.SaverBright()],

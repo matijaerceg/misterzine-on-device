@@ -219,6 +219,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		Screensaver: h.settings.Screensaver,
 		SaverStyle:  h.settings.SaverStyle,
 		SaverBright: h.settings.SaverBright,
+		SaverDim:    h.settings.SaverDim,
 		SaverInfo:   h.settings.SaverInfo,
 		SaverCard:   h.settings.SaverCard, SaverRotation: h.settings.SaverRotation, SaverFavorites: h.settings.SaverFavorites, SaverResolution: h.settings.SaverResolution,
 		RememberSort:         h.settings.RememberSort,
@@ -834,6 +835,7 @@ func (h *host) saveAll(final bool) {
 		h.settings.Screensaver = h.a.Screensaver()
 		h.settings.SaverStyle = h.a.SaverStyle()
 		h.settings.SaverBright = h.a.SaverBright()
+		h.settings.SaverDim = h.a.SaverDim()
 		h.settings.SaverInfo = h.a.SaverInfo()
 		h.settings.SaverCard, h.settings.SaverRotation, h.settings.SaverFavorites, h.settings.SaverResolution = h.a.SaverFilters()
 		h.settings.RememberSort = h.a.RememberSort()

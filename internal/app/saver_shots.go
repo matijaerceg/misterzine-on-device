@@ -35,14 +35,22 @@ import (
 
 // saverStyles are Options -> Screensaver style: the lettering (the default) or
 // the screenshots.
-var saverStyles = []string{"word", "shots"}
+var saverStyles = []string{"word", "shots", "dim"}
 
 // SaverStyle is Options -> Screensaver style: "word" (default) or "shots".
 func (a *App) SaverStyle() string {
-	if a.cfg.SaverStyle == "shots" {
-		return "shots"
+	if a.cfg.SaverStyle == "shots" || a.cfg.SaverStyle == "dim" {
+		return a.cfg.SaverStyle
 	}
 	return "word"
+}
+
+// SaverDim returns the percentage by which the current screen is darkened.
+func (a *App) SaverDim() string {
+	if a.cfg.SaverDim == "66" {
+		return "66"
+	}
+	return "33"
 }
 
 // SaverBright is Options -> Screensaver brightness for the screenshots: "half"

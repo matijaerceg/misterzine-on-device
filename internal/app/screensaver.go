@@ -462,7 +462,7 @@ func (a *App) tickSaver(now time.Time) bool {
 		changed := true
 		if a.saver.shots != nil {
 			changed = a.tickSaverShots(now) // a launch at the end of a hold takes the saver down
-		} else {
+		} else if a.saver.style != "dim" {
 			a.saverAdvance(now)
 			if a.saver.leaving && a.saver.fadeT <= 0 {
 				a.saverEnd() // the picture is back
@@ -806,6 +806,27 @@ func saverOrigin(travel, w, word int) int {
 }
 
 func (a *App) paintSaver(c *gfx.Canvas) {
+	if a.saver.style == "dim" {
+		if len(a.saver.dark) != len(c.Pix) {
+			a.saver.dark = append([]uint8(nil), c.Pix...)
+			keep := 67
+			if a.SaverDim() == "66" {
+				keep = 34
+			}
+			for y := 0; y < c.H(); y++ {
+				for x := 0; x < c.W(); x++ {
+					i := c.PixOffset(x, y)
+					for ch := 0; ch < 3; ch++ {
+						a.saver.dark[i+ch] = uint8(int(a.saver.dark[i+ch]) * keep / 100)
+					}
+				}
+			}
+		}
+		copy(c.Pix, a.saver.dark)
+		c.DirtyAll()
+		return
+	}
+
 	m := a.saverMask(c.H())
 	// Safe-zone insets don't clip this overlay.
 	x0 := saverOrigin(a.saver.travel, c.W(), m.Rect.Dx())

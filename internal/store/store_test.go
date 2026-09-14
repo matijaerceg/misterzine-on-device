@@ -293,3 +293,13 @@ func TestScreensaverFilterPersistence(t *testing.T) {
 		t.Fatal("filter persistence")
 	}
 }
+
+func TestDimSettings(t *testing.T) {
+	for _, level := range []string{"33", "66"} {
+		path := writeSettings(t, `{"screensaver_style":"dim","screensaver_dim":"`+level+`"}`)
+		s, err := LoadSettings(path)
+		if err != nil || s.SaverStyle != "dim" || s.SaverDim != level {
+			t.Fatalf("dim settings: %+v %v", s, err)
+		}
+	}
+}

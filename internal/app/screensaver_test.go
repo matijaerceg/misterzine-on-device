@@ -748,3 +748,28 @@ func TestSaverTicksKeepTheirGrid(t *testing.T) {
 		t.Fatalf("after a lost frame next is %v, want a fresh grid from %v", a.NextTick().Sub(t0), lost.Add(saverFrame).Sub(t0))
 	}
 }
+
+func TestDimSaverLevelsAndWake(t *testing.T) {
+	for _, tc := range []struct {
+		level string
+		want  uint8
+	}{{"33", 134}, {"66", 68}} {
+		a, now := saverApp()
+		a.cfg.SaverStyle, a.cfg.SaverDim = "dim", tc.level
+		a.startSaver(*now)
+		c := gfx.New(8, 8)
+		c.Fill(c.Rect, color.RGBA{200, 100, 50, 255})
+		a.paintSaver(c)
+		if c.Pix[0] != tc.want || c.Pix[3] != 255 {
+			t.Fatalf("level %s: %v", tc.level, c.Pix[:4])
+		}
+		a.paintSaver(c)
+		if c.Pix[0] != tc.want {
+			t.Fatal("dim compounded on repeated paint")
+		}
+		a.Handle(platform.Event{Key: platform.KeyDown, Pressed: true, At: *now})
+		if a.ScreensaverActive() {
+			t.Fatal("dim did not wake")
+		}
+	}
+}
