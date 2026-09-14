@@ -219,13 +219,14 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	cfg := app.Config{
 		PhysW: h.fb.CanvasW, PhysH: h.fb.CanvasH, Rotation: rotation, SafeInsetX: h.settings.InsetX, SafeInsetY: h.settings.InsetY,
 		Now: h.now, TimerNow: time.Now, ClockTrusted: trusted, Favorites: favSet, Images: h.img, Scroll: h.settings.Scroll, HoldDelay: h.settings.HoldDelay,
-		Screensaver:   h.settings.Screensaver,
-		SaverDisabled: h.settings.SaverDisabled,
-		SaverStyle:    h.settings.SaverStyle,
-		SaverBright:   h.settings.SaverBright,
-		SaverDim:      h.settings.SaverDim,
-		SaverInfo:     h.settings.SaverInfo,
-		SaverCard:     h.settings.SaverCard, SaverRotation: h.settings.SaverRotation, SaverFavorites: h.settings.SaverFavorites, SaverResolution: h.settings.SaverResolution,
+		Screensaver:         h.settings.Screensaver,
+		SaverDisabled:       h.settings.SaverDisabled,
+		TransitionsDisabled: h.settings.TransitionsDisabled,
+		SaverStyle:          h.settings.SaverStyle,
+		SaverBright:         h.settings.SaverBright,
+		SaverDim:            h.settings.SaverDim,
+		SaverInfo:           h.settings.SaverInfo,
+		SaverCard:           h.settings.SaverCard, SaverRotation: h.settings.SaverRotation, SaverFavorites: h.settings.SaverFavorites, SaverResolution: h.settings.SaverResolution,
 		RememberSort:         h.settings.RememberSort,
 		FollowRotation:       h.settings.FollowRotation,
 		FilterRotation:       h.settings.FilterRotation,
@@ -362,8 +363,8 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			Shot:   func() *image.RGBA { return h.a.Logical() },
 			State: func() any {
 				return map[string]any{
-					"page_frames": h.pageFrames,
-					"version":     buildinfo.String(), "screen": h.a.Screen().String(), "cursor": h.a.CursorKey(),
+					"page_frames": h.pageFrames, "page_transitions": h.a.PageTransitions(),
+					"version": buildinfo.String(), "screen": h.a.Screen().String(), "cursor": h.a.CursorKey(),
 					"sort": h.a.Sort().String(), "rows": len(h.a.Data().Rows), "fb": h.fb.Geometry().String(),
 					"search": h.a.Search(), "filters": h.a.Filters(), "rotation": h.a.Rotation().String(), "inset": fmt.Sprint(h.a.Inset()), "devices": h.input.Devices(),
 					"sysfs": mister.SysfsMode(), "uptime": time.Since(t0).String(), "frames": h.stats.String(), "cadence": h.stats.Cadence(), "saver": h.a.SaverStats(), "saver_blank_frames": h.saverBlankFrames, "saver_misses": h.saverMisses,
@@ -878,6 +879,7 @@ func (h *host) saveAll(final bool) {
 		h.settings.HoldDelay = h.a.HoldDelay()
 		h.settings.Screensaver = h.a.Screensaver()
 		h.settings.SaverDisabled = !h.a.SaverEnabled()
+		h.settings.TransitionsDisabled = !h.a.PageTransitions()
 		h.settings.SaverStyle = h.a.SaverStyle()
 		h.settings.SaverBright = h.a.SaverBright()
 		h.settings.SaverDim = h.a.SaverDim()

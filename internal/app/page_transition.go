@@ -29,8 +29,11 @@ type pageTransition struct {
 	fresh, pending   bool
 }
 
-// EnablePageTransitions enables navigation animation for an interactive host.
-// Static renderers can keep drawing the final page without an animation clock.
+// PageTransitions reports the saved navigation animation preference.
+func (a *App) PageTransitions() bool { return !a.cfg.TransitionsDisabled }
+
+// EnablePageTransitions enables the animation clock for an interactive host.
+// Static renderers keep drawing the final page without a clock.
 func (a *App) EnablePageTransitions() { a.transition.enabled = true }
 
 func (a *App) pageIdentity() pageIdentity {
@@ -66,7 +69,11 @@ func (p pageIdentity) depth() int {
 // is the actual composed frame on screen, so no intermediate page flashes up.
 func (a *App) preparePageTransition() {
 	t := &a.transition
-	if !t.enabled {
+	if !t.enabled || !a.PageTransitions() {
+		if len(t.from) > 0 {
+			a.cfg.Images.SetPaused(false)
+		}
+		t.from, t.to, t.next, t.painted = nil, nil, time.Time{}, false
 		return
 	}
 	p, bounds := a.pageIdentity(), a.logical.Rect

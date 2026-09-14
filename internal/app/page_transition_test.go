@@ -337,3 +337,49 @@ func TestPageWipePausesAndResumesPictures(t *testing.T) {
 		t.Fatal("cancelling for saver left decoder paused")
 	}
 }
+
+func TestPageTransitionsOption(t *testing.T) {
+	a, _ := saverApp()
+	pics := &pagePauseImages{}
+	a.cfg.Images = pics
+	a.EnablePageTransitions()
+	a.Paint()
+	a.openOptions()
+	a.Paint()
+	if !a.PageTransitions() || !a.PageTransitionRunning() {
+		t.Fatal("transitions should default on")
+	}
+	for i, e := range a.panel.entries {
+		if e.kind == "page-transitions" {
+			a.panel.cursor = i
+		}
+	}
+	if !a.stepValue(-1) {
+		t.Fatal("cannot disable transitions")
+	}
+	a.Paint()
+	if a.PageTransitions() || a.PageTransitionRunning() || pics.paused {
+		t.Fatal("disabling did not finish immediately")
+	}
+	a.actPanel(platform.KeyBack)
+	a.Paint()
+	if a.PageTransitionRunning() {
+		t.Fatal("disabled navigation still animated")
+	}
+	a.openOptions()
+	a.Paint()
+	for i, e := range a.panel.entries {
+		if e.kind == "page-transitions" {
+			a.panel.cursor = i
+		}
+	}
+	if !a.stepValue(1) {
+		t.Fatal("cannot enable transitions")
+	}
+	a.Paint()
+	a.actPanel(platform.KeyBack)
+	a.Paint()
+	if !a.PageTransitionRunning() {
+		t.Fatal("re-enabled navigation did not animate")
+	}
+}

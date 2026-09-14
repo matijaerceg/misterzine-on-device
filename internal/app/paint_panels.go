@@ -445,6 +445,8 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Margin kept clear of the screen edge (overscan): now " + itoa(a.cfg.SafeInsetX) + " px at the sides, " + itoa(a.cfg.SafeInsetY) + " px top and bottom. A opens the frame; fit it just inside the picture."},
 		{text: "HDMI picture", kind: "canvas", vals: []string{"fit display", "320x240"}, idx: map[bool]int{false: 0, true: 1}[a.Canvas() == "320x240"],
 			help: "Fit display (default): fills the HDMI screen height, 360x270 on 1080p, for more rows. 320x240: the classic size with bars. Applies at the next start."},
+		{text: "Page transitions", kind: "page-transitions", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.PageTransitions()],
+			help: "On: softly wipe between pages. Off: change pages instantly. Saved for next time."},
 		spacer, group(gfx.SectionControls, "Controls"),
 		{text: "Button labels", kind: "button-labels", vals: buttonLabelValues(), idx: map[string]int{"mister": 0, "xbox": 1, "playstation": 2, "numbers": 3}[a.ButtonLabels()],
 			help: "How the legends name the pad buttons, in MiSTer's A B X Y order as set in its define buttons screen. Xbox and PlayStation names go by position."},
@@ -1028,6 +1030,8 @@ func (a *App) stepValue(d int) bool {
 		a.cfg.ButtonLabels = buttonLabelSets[i]
 	case "ok-button":
 		a.setOKButton([]string{"", "a", "b"}[i])
+	case "page-transitions":
+		a.cfg.TransitionsDisabled = i == 0
 	case "canvas":
 		a.cfg.Canvas = []string{"fit", "320x240"}[i]
 	case "menu-button":
@@ -1187,7 +1191,7 @@ func (a *App) togglePanel() bool {
 		if !e.header {
 			f.Since = !f.Since
 		}
-	case "rotation", "follow-rotation", "filter-rotation", "sources", "show-deprecated", "launcher", "scroll", "hold-delay", "remember-sort", "default-view", "prefetch", "title-font", "list-shot", "date-format", "list-layout", "button-labels", "ok-button":
+	case "page-transitions", "rotation", "follow-rotation", "filter-rotation", "sources", "show-deprecated", "launcher", "scroll", "hold-delay", "remember-sort", "default-view", "prefetch", "title-font", "list-shot", "date-format", "list-layout", "button-labels", "ok-button":
 		return true // Left/Right pick these
 	case "inset":
 		a.screen = ScreenCalibrate

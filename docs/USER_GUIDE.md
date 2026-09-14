@@ -37,7 +37,8 @@ If the main-menu launcher was previously off, run Setup to enable it.
 Opening a page reveals it from the right with a quick, soft-edged wipe. Going
 back reverses the direction. Changing the browsing view uses the same effect;
 list movement, page jumps, and option adjustments remain immediate. Buttons
-keep working during the transition.
+keep working during the transition. Options -> Display -> Page transitions
+turns the effect on or off; the choice is remembered.
 
 ## List and search
 

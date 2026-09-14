@@ -147,8 +147,8 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     scenarios.append([*rotation, "-button-labels", "playstation",
                       "-out", f"out/button-labels-{orientation}", "-script",
                       "shot list; enter; shot details; back; tab; shot filters; back; "
-                      "back; down*20; shot option; right; shot option-numbers; back; shot list-numbers; "
-                      "type xyz; shot empty-numbers; back; back; home; down*20; left*3; shot option-mister; left; back; shot list-mister"])
+                      "back; down*21; shot option; right; shot option-numbers; back; shot list-numbers; "
+                      "type xyz; shot empty-numbers; back; back; home; down*21; left*3; shot option-mister; left; back; shot list-mister"])
     scenarios.append([*rotation, "-button-labels", "xbox",
                       "-out", f"out/button-labels-xbox-{orientation}", "-script", "shot list; enter; shot details"])
 for rotation in ([], ["-rot", "left", "-logical"]):
@@ -163,7 +163,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     # pad: auto, the A override, the B override, and back to auto
     scenarios.append([*rotation, "-support-report", "testdata/support-controller.json",
                       "-out", f"out/ok-button-{orientation}", "-script",
-                      "back; down*21; shot option; right; shot option-a; right; shot option-b; left*2; shot option-auto"])
+                      "back; down*22; shot option; right; shot option-a; right; shot option-b; left*2; shot option-auto"])
 for canvas in ("360x270", "400x300"):
     for rotation in ([], ["-rot", "left", "-logical"]):
         orientation = "t" if rotation else "h"
@@ -219,7 +219,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     for inset in (15, 40):
         scenarios.append([*rotation, "-inset", str(inset), "-out", f"out/option-samples-{orientation}-{inset}", "-script",
                           "back; down*11; shot font; left; shot font-narrow; left; shot font-normal; "
-                          "down*12; shot speed; wait 200; shot speed-moving; down; shot delay; "
+                          "down*13; shot speed; wait 200; shot speed-moving; down; shot delay; "
                           "wait 250; shot delay-short; wait 400; shot delay-reverse; down; shot dismissed"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
@@ -230,5 +230,10 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     scenarios.append([*rotation, "-out", f"out/deprecated-{orientation}", "-script",
                       "back; down*7; shot hidden; right; shot shown; back; type genesis; shot found"])
+for rotation in ([], ["-rot", "left", "-logical"]):
+    orientation = "t" if rotation else "h"
+    for inset in (15, 40):
+        scenarios.append([*rotation, "-inset", str(inset), "-out", f"out/transitions-{orientation}-{inset}", "-script",
+                          "back; down*20; shot on; left; shot off"])
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)

@@ -92,8 +92,9 @@ type Config struct {
 	// HoldDelay is the navigation repeat delay in milliseconds: 200, 300, 500.
 	HoldDelay int
 	// Screensaver is the idle timeout: "off", "1", "2", "5", "10" minutes.
-	Screensaver   string
-	SaverDisabled bool
+	Screensaver         string
+	SaverDisabled       bool
+	TransitionsDisabled bool
 	// SaverStyle is what the saver shows: "word" (default: the lettering)
 	// or "shots" (random arcade screenshots, Start held plays one); with
 	// the shots, SaverBright is "half" (default) or "full" and SaverInfo is
