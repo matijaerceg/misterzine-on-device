@@ -25,6 +25,7 @@ type Settings struct {
 	Prefetch        bool          `json:"prefetch"`
 	Scroll          string        `json:"scroll"` // rows per second: 20, 30, 60
 	HoldDelay       int           `json:"hold_delay_ms"`
+	SaverDisabled   bool          `json:"screensaver_disabled"`
 	Screensaver     string        `json:"screensaver_minutes"`
 	SaverStyle      string        `json:"screensaver_style"`      // word (default: the lettering) or shots
 	SaverDim        string        `json:"screensaver_dim"`        // percentage dimmed: 33 (default) or 66
@@ -113,8 +114,11 @@ func (s *Settings) Migrate(legacy bool) {
 		views = []string{} // nothing left on: back to every view
 	}
 	s.ViewsOff = views
+	if s.Screensaver == "off" {
+		s.SaverDisabled, s.Screensaver = true, "1"
+	}
 	switch s.Screensaver {
-	case "off", "1", "2", "5", "10":
+	case "1", "2", "5", "10":
 	default:
 		s.Screensaver = "1"
 	}

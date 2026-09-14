@@ -72,12 +72,12 @@ func TestScreensaverSubpage(t *testing.T) {
 	a.cfg.SaverResolution = "15kHz"
 	a.cfg.SaverStyle = "word"
 	a.buildPanel()
-	if len(a.panel.entries) != 3 {
+	if len(a.panel.entries) != 4 {
 		t.Fatal("screenshot settings visible for lettering")
 	}
 	a.cfg.SaverStyle = "shots"
 	a.buildPanel()
-	if len(a.panel.entries) != 9 || !a.cfg.SaverFavorites || a.cfg.SaverResolution != "15kHz" {
+	if len(a.panel.entries) != 10 || !a.cfg.SaverFavorites || a.cfg.SaverResolution != "15kHz" {
 		t.Fatal("settings lost")
 	}
 	a.panel.cursor = len(a.panel.entries) - 1

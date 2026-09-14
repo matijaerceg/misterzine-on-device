@@ -137,13 +137,13 @@ func TestHoldDelayMigrationAndSave(t *testing.T) {
 func TestScreensaverMigrationAndSave(t *testing.T) {
 	for _, tc := range []struct{ body, want string }{
 		{`{"rotation":"left","inset":15}`, "1"},
-		{`{"screensaver_minutes":"off"}`, "off"},
+		{`{"screensaver_minutes":"off"}`, "1"},
 		{`{"screensaver_minutes":"5"}`, "5"},
 		{`{"screensaver_minutes":"invalid"}`, "1"},
 	} {
 		path := writeSettings(t, tc.body)
 		s, err := LoadSettings(path)
-		if err != nil || s.Screensaver != tc.want || s.SaverStyle != "word" || s.SaverBright != "half" {
+		if err != nil || s.Screensaver != tc.want || s.SaverDisabled != (tc.body == `{"screensaver_minutes":"off"}`) || s.SaverStyle != "word" || s.SaverBright != "half" {
 			t.Fatalf("load %s: %+v, %v", tc.body, s, err)
 		}
 		if err := Save(path, s); err != nil {

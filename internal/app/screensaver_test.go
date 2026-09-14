@@ -773,3 +773,23 @@ func TestDimSaverLevelsAndWake(t *testing.T) {
 		}
 	}
 }
+
+func TestSaverEnabledKeepsDelay(t *testing.T) {
+	a, now := saverApp()
+	a.cfg.Screensaver = "5"
+	a.openPanel(ScreenSaverOptions)
+	a.panel.cursor = 0
+	a.actPanel(platform.KeyLeft)
+	if a.SaverEnabled() || a.saverDelay() != 0 || a.Screensaver() != "5" {
+		t.Fatal("disable lost delay")
+	}
+	a.actPanel(platform.KeyRight)
+	if !a.SaverEnabled() || a.saverDelay() != 5*time.Minute {
+		t.Fatal("enable lost delay")
+	}
+	a.cfg.SaverDisabled = true
+	a.startSaver(*now)
+	if !a.ScreensaverActive() {
+		t.Fatal("disabled preview failed")
+	}
+}

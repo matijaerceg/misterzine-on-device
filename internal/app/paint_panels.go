@@ -936,6 +936,11 @@ func (a *App) stepValue(d int) bool {
 	case "sources":
 		a.cfg.InstalledOnly = i == 1
 		a.Refilter()
+	case "saver-enabled":
+		a.cfg.SaverDisabled = i == 0
+		if a.cfg.Screensaver == "off" {
+			a.cfg.Screensaver = "1"
+		}
 	case "screensaver":
 		a.cfg.Screensaver = saverValues[i]
 	case "saver-card":
@@ -1225,7 +1230,8 @@ func (a *App) saverEntries() []panelEntry {
 		}
 	}
 	E := []panelEntry{
-		{text: "Delay", kind: "screensaver", vals: []string{"off", "1 min", "2 min", "5 min", "10 min"}, idx: saverIdx,
+		{text: "Enabled", kind: "saver-enabled", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.SaverEnabled()], help: "Turn the screensaver on or off. Your delay and style are kept; preview works while disabled."},
+		{text: "Delay", kind: "screensaver", vals: []string{"1 min", "2 min", "5 min", "10 min"}, idx: saverIdx,
 			help: "Start the selected style after idle time. Left/Right sets the delay; " + a.btn("A") + " previews. Other buttons wake without acting; Menu works as usual."},
 		{text: "Style", kind: "saver-style", short: "Style", vals: []string{"lettering", "screenshots", "dim"}, idx: map[string]int{"word": 0, "shots": 1, "dim": 2}[a.SaverStyle()],
 			help: "Lettering: the MISTERZINE sweep. Screenshots: arcade shots; hold Start to play. Dim: darken the current screen. Other buttons wake."},

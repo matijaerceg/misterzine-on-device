@@ -216,12 +216,13 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	cfg := app.Config{
 		PhysW: h.fb.CanvasW, PhysH: h.fb.CanvasH, Rotation: rotation, SafeInsetX: h.settings.InsetX, SafeInsetY: h.settings.InsetY,
 		Now: h.now, TimerNow: time.Now, ClockTrusted: trusted, Favorites: favSet, Images: h.img, Scroll: h.settings.Scroll, HoldDelay: h.settings.HoldDelay,
-		Screensaver: h.settings.Screensaver,
-		SaverStyle:  h.settings.SaverStyle,
-		SaverBright: h.settings.SaverBright,
-		SaverDim:    h.settings.SaverDim,
-		SaverInfo:   h.settings.SaverInfo,
-		SaverCard:   h.settings.SaverCard, SaverRotation: h.settings.SaverRotation, SaverFavorites: h.settings.SaverFavorites, SaverResolution: h.settings.SaverResolution,
+		Screensaver:   h.settings.Screensaver,
+		SaverDisabled: h.settings.SaverDisabled,
+		SaverStyle:    h.settings.SaverStyle,
+		SaverBright:   h.settings.SaverBright,
+		SaverDim:      h.settings.SaverDim,
+		SaverInfo:     h.settings.SaverInfo,
+		SaverCard:     h.settings.SaverCard, SaverRotation: h.settings.SaverRotation, SaverFavorites: h.settings.SaverFavorites, SaverResolution: h.settings.SaverResolution,
 		RememberSort:         h.settings.RememberSort,
 		FollowRotation:       h.settings.FollowRotation,
 		FilterRotation:       h.settings.FilterRotation,
@@ -833,6 +834,7 @@ func (h *host) saveAll(final bool) {
 		h.settings.Scroll = h.a.ScrollSpeed()
 		h.settings.HoldDelay = h.a.HoldDelay()
 		h.settings.Screensaver = h.a.Screensaver()
+		h.settings.SaverDisabled = !h.a.SaverEnabled()
 		h.settings.SaverStyle = h.a.SaverStyle()
 		h.settings.SaverBright = h.a.SaverBright()
 		h.settings.SaverDim = h.a.SaverDim()

@@ -261,7 +261,7 @@ func (a *App) SaverSettle() {
 	}
 }
 
-var saverValues = []string{"off", "1", "2", "5", "10"}
+var saverValues = []string{"1", "2", "5", "10"}
 
 type saverKey struct {
 	key  platform.Key
@@ -309,7 +309,12 @@ func (a *App) Screensaver() string {
 // lettering. The fade back out after a wake counts as awake, so keys act.
 func (a *App) ScreensaverActive() bool { return a.saver.active && !a.saver.leaving }
 
+func (a *App) SaverEnabled() bool { return !a.cfg.SaverDisabled && a.cfg.Screensaver != "off" }
+
 func (a *App) saverDelay() time.Duration {
+	if !a.SaverEnabled() {
+		return 0
+	}
 	switch a.Screensaver() {
 	case "off":
 		return 0
