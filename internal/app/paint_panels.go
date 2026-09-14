@@ -682,7 +682,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 					r := image.Rect(x+cell*2*font.W, y+1, x+(cell+1)*2*font.W+1, y+font.H-1)
 					c.Box(r, col)
 					if cell <= e.idx {
-						c.Fill(image.Rect(r.Min.X+2, r.Min.Y+1, r.Max.X-2, r.Max.Y-1), col)
+						c.Fill(r, col)
 					}
 				}
 			}
