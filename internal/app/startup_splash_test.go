@@ -58,3 +58,18 @@ func TestStartupSplashExpiresCleanly(t *testing.T) {
 		}
 	}
 }
+
+func TestStartupLogoNativeSizeAndCounters(t *testing.T) {
+	a, _ := saverApp()
+	a.StartSplash()
+	a.Paint()
+	if got := a.splash.logo.Bounds().Size(); got.X != 160 || got.Y != 106 {
+		t.Fatalf("logo was resized: %v", got)
+	}
+	for _, point := range [][2]int{{125, 27}, {135, 71}} {
+		r, g, b, alpha := a.splash.logo.At(point[0], point[1]).RGBA()
+		if r > 0x2000 || g > 0x2000 || b > 0x2000 || alpha != 0xffff {
+			t.Fatalf("e counter at %v must be black, got %x %x %x %x", point, r, g, b, alpha)
+		}
+	}
+}

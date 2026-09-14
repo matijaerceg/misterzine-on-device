@@ -66,25 +66,21 @@ func (a *App) paintSplash() {
 		s.opacity = 255
 	}
 	r := a.lay.Body
-	w := r.Dx() * 3 / 4
-	h := w * 354 / 532
-	if h > r.Dy()*3/4 {
-		h = r.Dy() * 3 / 4
-		w = h * 532 / 354
-	}
-	if s.logo == nil || s.logo.Rect.Dx() != w || s.logo.Rect.Dy() != h {
+	if s.logo == nil {
 		src, err := png.Decode(bytes.NewReader(startupLogoPNG))
 		if err != nil {
 			s.enabled = false
 			s.next = time.Time{}
 			return
 		}
-		s.logo = image.NewRGBA(image.Rect(0, 0, w, h))
-		for y := 0; y < h; y++ {
-			for x := 0; x < w; x++ {
-				s.logo.Set(x, y, src.At(x*src.Bounds().Dx()/w, y*src.Bounds().Dy()/h))
-			}
-		}
+		s.logo = image.NewRGBA(src.Bounds())
+		draw.Draw(s.logo, s.logo.Rect, src, src.Bounds().Min, draw.Src)
+	}
+	w, h := s.logo.Rect.Dx(), s.logo.Rect.Dy()
+	// Keep one asset pixel per logical screen pixel in every orientation.
+	// An unusually small safe area omits the effect instead of scaling it.
+	if w > r.Dx() || h > r.Dy() {
+		return
 	}
 	rect := image.Rect(0, 0, w, h).Add(image.Pt(r.Min.X+(r.Dx()-w)/2, r.Min.Y+(r.Dy()-h)/2))
 	draw.DrawMask(a.logical.RGBA, rect, s.logo, image.Point{}, image.NewUniform(color.Alpha{A: s.opacity}), image.Point{}, draw.Over)

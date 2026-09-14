@@ -70,7 +70,8 @@ available width; do not combine views into one image or put them in a table.
 The startup logo is a paint-only overlay that fades for two seconds from the
 first list frame. Preview it with `mzharness -splash` and scripted `wait 1000`
 steps. `tools/startup_logo.py` renders the checked-in outlined SVG into the
-embedded two-tone PNG (requires Pillow and svgpathtools).
+embedded 160×106 two-tone PNG (requires Pillow and svgpathtools). The app
+draws it at native size in every orientation, without runtime scaling.
 
 ## Device tools and debugging
 

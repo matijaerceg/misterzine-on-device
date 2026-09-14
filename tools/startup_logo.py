@@ -5,13 +5,15 @@ import xml.etree.ElementTree as ET
 from svgpathtools import parse_path
 from PIL import Image, ImageDraw, ImageChops
 source = Path('internal/app/startup_logo.svg')
-path = parse_path(next(ET.parse(source).iter('{http://www.w3.org/2000/svg}path')).attrib['d'])
+paths = [parse_path(node.attrib['d']) for node in ET.parse(source).iter('{http://www.w3.org/2000/svg}path')]
+# The two separate paths are the counters (holes) inside the e letters.
+path = paths[0]
 x0,x1,y0,y1 = path.bbox()
 scale = 1200/(x1-x0)
 size = (1200, round((y1-y0)*scale))
 mask = Image.new('1', size)
 outer = None
-for sub in path.continuous_subpaths():
+for sub in [sub for path in paths for sub in path.continuous_subpaths()]:
     pts=[]
     for seg in sub:
         n=max(2, int(seg.length()*scale/2))
@@ -23,4 +25,5 @@ for sub in path.continuous_subpaths():
 img=Image.new('RGBA',size,'white')
 img.paste((0,0,0,255),(0,0),mask.convert('L'))
 img.putalpha(outer.convert('L'))
-img.resize((600,round(size[1]/2)),Image.Resampling.LANCZOS).save('internal/app/startup_logo.png')
+# Rasterize once at the actual display size; the app never resizes this asset.
+img.resize((160,106),Image.Resampling.LANCZOS).save('internal/app/startup_logo.png')
