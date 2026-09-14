@@ -652,7 +652,17 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 					ra = gfx.ArrowRight
 				}
 			}
-			val := la + " " + e.vals[e.idx] + " " + ra
+			value := e.vals[e.idx]
+			cells := 0
+			if e.kind == "saver-dim" {
+				cells = 3
+			} else if e.kind == "saver-bright" {
+				cells = 2
+			}
+			if cells > 0 {
+				value = strings.Repeat(" ", cells*2)
+			}
+			val := la + " " + value + " " + ra
 			vw := font.Width(val)
 			if vx > 0 {
 				a.paintLabel(c, inner.Min.X+2, y, font.Cols(vx-inner.Min.X-2-font.W), e, col)
@@ -660,6 +670,21 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			} else {
 				a.paintLabel(c, inner.Min.X+2, y, font.Cols(edge-inner.Min.X-2-font.W-vw), e, col)
 				c.Text(edge-vw, y, font, val, col)
+			}
+			if cells > 0 {
+				x := vx
+				if x <= 0 {
+					x = edge - vw
+				}
+				x += 2 * font.W
+				// Shared edges make touching cells; fill from the left.
+				for cell := 0; cell < cells; cell++ {
+					r := image.Rect(x+cell*2*font.W, y+1, x+(cell+1)*2*font.W+1, y+font.H-1)
+					c.Box(r, col)
+					if cell <= e.idx {
+						c.Fill(image.Rect(r.Min.X+2, r.Min.Y+1, r.Max.X-2, r.Max.Y-1), col)
+					}
+				}
 			}
 		default:
 			col := gen.Eva.Fg
