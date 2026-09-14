@@ -16,6 +16,7 @@ var earlyAdopters = []string{
 	"Fender",
 	"gamecat666",
 	"hammercompation",
+	"ItsDanik",
 	"LamerDeluxe",
 	"Malento",
 	"Porieux",
