@@ -85,12 +85,12 @@ func (a *App) paintSplash() {
 		return
 	}
 	rect := image.Rect(0, 0, w, h).Add(image.Pt(r.Min.X+(r.Dx()-w)/2, r.Min.Y+(r.Dy()-h)/2))
-	// A fixed ordered pattern removes whole pixels as time passes. Surviving
+	// A fixed noise pattern removes whole pixels as time passes. Surviving
 	// pixels retain the source colour and its original edge antialiasing.
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
 			value := uint8(0)
-			if int(s.coverage) > int(saverBayer[y&7][x&7]) {
+			if s.coverage > startupNoise(x, y) {
 				value = 255
 			}
 			s.mask.Pix[y*s.mask.Stride+x] = value
@@ -98,4 +98,14 @@ func (a *App) paintSplash() {
 	}
 	draw.DrawMask(a.logical.RGBA, rect, s.logo, image.Point{}, s.mask, image.Point{}, draw.Over)
 	a.logical.DirtyAll()
+}
+
+// Hash the full pixel position, with no repeating tile or frame-dependent seed.
+// Once a pixel disappears it stays gone, rather than sparkling between frames.
+func startupNoise(x, y int) uint8 {
+	v := uint32(x) + uint32(y)*65537 + 0x9e3779b9
+	v = (v ^ (v >> 16)) * 0x7feb352d
+	v = (v ^ (v >> 15)) * 0x846ca68b
+	v ^= v >> 16
+	return uint8(v % 255)
 }

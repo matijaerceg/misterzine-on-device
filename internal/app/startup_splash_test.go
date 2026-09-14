@@ -82,8 +82,8 @@ func TestStartupSplashDithersWithoutBlending(t *testing.T) {
 	a.Tick(*clock)
 	a.Paint()
 	visible := 0
-	for y := 0; y < 8; y++ {
-		for x := 0; x < 8; x++ {
+	for y := 0; y < 106; y++ {
+		for x := 0; x < 160; x++ {
 			v := a.splash.mask.Pix[y*a.splash.mask.Stride+x]
 			if v == 255 {
 				visible++
@@ -92,10 +92,19 @@ func TestStartupSplashDithersWithoutBlending(t *testing.T) {
 			}
 		}
 	}
-	if visible != 32 {
-		t.Fatalf("halfway dither keeps %d of 64 pixels", visible)
+	if visible < 8000 || visible > 9000 {
+		t.Fatalf("halfway noise keeps %d of 16960 pixels", visible)
 	}
-	*clock = clock.Add(500 * time.Millisecond)
+	before := append([]byte(nil), a.splash.mask.Pix...)
+	*clock = clock.Add(250 * time.Millisecond)
+	a.Tick(*clock)
+	a.Paint()
+	for i, v := range a.splash.mask.Pix {
+		if before[i] == 0 && v != 0 {
+			t.Fatal("noise pixel reappeared")
+		}
+	}
+	*clock = clock.Add(250 * time.Millisecond)
 	a.Tick(*clock)
 	if a.splash.enabled || a.splash.mask != nil {
 		t.Fatal("splash must finish at one second")
