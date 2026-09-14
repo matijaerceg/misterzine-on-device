@@ -20,7 +20,7 @@ type pageTransition struct {
 	enabled, painted bool
 	page             pageIdentity
 	bounds           image.Rectangle
-	from             []byte
+	from, to         []byte
 	at, next         time.Time
 	progress         float64
 	back             bool
@@ -68,7 +68,7 @@ func (a *App) preparePageTransition() {
 	}
 	p, bounds := a.pageIdentity(), a.logical.Rect
 	if a.saver.active || !t.painted || t.bounds != bounds {
-		t.from, t.next = nil, time.Time{}
+		t.from, t.to, t.next = nil, nil, time.Time{}
 		t.painted = !a.saver.active
 	} else if p != t.page {
 		t.from = append(t.from[:0], a.logical.Pix...)
@@ -91,14 +91,14 @@ func (a *App) tickPageTransition(now time.Time) bool {
 	}
 	t.progress = max(0, float64(now.Sub(t.at))/float64(pageWipeDuration))
 	if t.progress >= 1 || a.saver.active {
-		t.from, t.next = nil, time.Time{}
+		a.all = true
+		t.from, t.to, t.next = nil, nil, time.Time{}
 	} else {
 		t.next = now.Add(frameDur)
 		if end := t.at.Add(pageWipeDuration); t.next.After(end) {
 			t.next = end
 		}
 	}
-	a.all = true
 	return true
 }
 

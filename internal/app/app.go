@@ -1100,7 +1100,12 @@ func (a *App) neighbourhood() {
 // rectangles that need presenting (nil when nothing changed).
 func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 	if !a.all {
-		return a.physical, nil
+		if !a.PageTransitionRunning() {
+			return a.physical, nil
+		}
+		copy(a.logical.Pix, a.transition.to)
+		a.paintPageTransition()
+		return a.rotatePaint()
 	}
 	a.preparePageTransition()
 	a.all = false
@@ -1142,7 +1147,15 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 		}
 	}
 	a.paintSplash()
+	if a.PageTransitionRunning() {
+		a.transition.to = append(a.transition.to[:0], c.Pix...)
+	}
 	a.paintPageTransition()
+	return a.rotatePaint()
+}
+
+func (a *App) rotatePaint() (*image.RGBA, []image.Rectangle) {
+	c := a.logical
 	dirty := c.TakeDirty()
 	var out []image.Rectangle
 	for _, r := range dirty {

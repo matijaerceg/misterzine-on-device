@@ -206,3 +206,33 @@ func BenchmarkPageWipe(b *testing.B) {
 		composePageWipe(dst, from, 320, 240, 320*4, 0.5, false)
 	}
 }
+
+func TestPageTransitionCachedDestinationRefreshes(t *testing.T) {
+	a, clock := saverApp()
+	a.EnablePageTransitions()
+	a.Paint()
+	a.openOptions()
+	a.Paint()
+	incoming := append([]byte(nil), a.transition.to...)
+	*clock = clock.Add(40 * time.Millisecond)
+	a.Tick(*clock)
+	a.Paint()
+	composed := append([]byte(nil), a.logical.Pix...)
+	a.Paint()
+	if !bytes.Equal(composed, a.logical.Pix) {
+		t.Fatal("cached frame blended twice")
+	}
+	a.Handle(platform.Event{Key: platform.KeyDown, Pressed: true, At: *clock})
+	a.Handle(platform.Event{Key: platform.KeyDown, At: *clock})
+	a.Paint()
+	if bytes.Equal(incoming, a.transition.to) {
+		t.Fatal("input failed to refresh the destination")
+	}
+	refreshed := append([]byte(nil), a.transition.to...)
+	*clock = clock.Add(30 * time.Millisecond)
+	a.Tick(*clock)
+	a.Paint()
+	if !bytes.Equal(refreshed, a.transition.to) {
+		t.Fatal("animation modified its cached destination")
+	}
+}
