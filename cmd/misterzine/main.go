@@ -552,7 +552,7 @@ func (h *host) frameLoop() {
 	longWaits := 0
 	defer func() {
 		if paused {
-			h.img.SetPaused(false)
+			h.img.SetPaused(h.a.PageTransitionRunning())
 		}
 		h.a.Invalidate()
 		if d := time.Since(t0); h.debugEnabled && d > time.Second {

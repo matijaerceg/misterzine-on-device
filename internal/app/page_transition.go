@@ -71,9 +71,14 @@ func (a *App) preparePageTransition() {
 	}
 	p, bounds := a.pageIdentity(), a.logical.Rect
 	if a.saver.active || !t.painted || t.bounds != bounds {
+		if len(t.from) > 0 {
+			a.cfg.Images.SetPaused(false)
+		}
 		t.from, t.to, t.next = nil, nil, time.Time{}
 		t.painted = !a.saver.active
 	} else if p != t.page {
+		a.cfg.Images.SetPaused(true)
+		t.pending = false
 		t.from = append(t.from[:0], a.logical.Pix...)
 		t.at = a.cfg.TimerNow()
 		t.next = t.at.Add(frameDur)
@@ -99,6 +104,7 @@ func (a *App) tickPageTransition(now time.Time) bool {
 	}
 	t.progress = min(1, max(0, float64(now.Sub(t.at))/float64(pageWipeDuration)))
 	if a.saver.active {
+		a.cfg.Images.SetPaused(false)
 		a.all = true
 		t.from, t.to, t.next = nil, nil, time.Time{}
 	} else {
@@ -131,6 +137,7 @@ func (a *App) paintPageTransition(full bool) {
 	}
 	t.lastProgress = t.progress
 	if t.progress >= 1 {
+		a.cfg.Images.SetPaused(a.RepeatActive())
 		t.from, t.to, t.next = nil, nil, time.Time{}
 		if t.pending {
 			t.pending = false
