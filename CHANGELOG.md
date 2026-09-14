@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.0.31 — 2026-09-14
+
+- Highlight List layout in Options to compare diagrams of List, Split and Picture side by side. The previews follow horizontal or tate orientation, with list lines, an artwork rectangle and colored metadata lines. Left/Right changes the layout and selection border; moving to another option closes the previews.
+
 ## v1.0.30 — 2026-09-14
 
 - Screensaver settings now have their own Options subpage, with an immediate Preview.
