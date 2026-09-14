@@ -43,21 +43,29 @@ func TestOptionSampleScheduling(t *testing.T) {
 			a.panel.cursor = i
 		}
 	}
-	if a.nextOptionSampleTick().IsZero() {
-		t.Fatal("animation not scheduled")
+	a.Tick(now)
+	if !a.OptionSamplesRunning() {
+		t.Fatal("no frame loop requested")
 	}
-	if !a.Tick(now) || !a.nextOptionSampleTick().After(now) {
-		t.Fatal("animation did not advance")
-	}
-	before := a.optionSamples.now
-	if a.Tick(now.Add(time.Millisecond)) || a.optionSamples.now != before {
-		t.Fatal("early animation frame")
+	for frame := 1; frame <= 12; frame++ {
+		// Irregular timer calls, including a long stall, cannot advance the preview.
+		a.Tick(now.Add(time.Duration(frame) * time.Second))
+		if a.optionSamples.elapsed != time.Duration(frame-1)*frameDur {
+			t.Fatal("timer moved selection")
+		}
+		a.OptionSampleFrame()
+		for i, speed := range ScrollValues {
+			got := sampleListSelection(a.optionSamples.elapsed, scrollPace(speed), 0, 3)
+			every := []int{3, 2, 1}[i]
+			if got != (frame/every)%3 {
+				t.Fatalf("frame %d speed %s selection %d", frame, speed, got)
+			}
+		}
 	}
 	a.screen = ScreenList
-	if !a.nextOptionSampleTick().IsZero() {
-		t.Fatal("animation continues off Options")
+	if a.OptionSamplesRunning() || a.OptionSampleFrame() {
+		t.Fatal("animation continues outside Options")
 	}
-	a.tickOptionSamples(now)
 	if a.optionSamples.kind != "" {
 		t.Fatal("clock not cleared")
 	}

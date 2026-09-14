@@ -299,13 +299,21 @@ func main() {
 // advance moves the virtual clock in 10 ms steps, ticking the app.
 func advance(a *app.App, clock time.Time, d time.Duration, present func()) time.Time {
 	end := clock.Add(d)
+	nextFrame := clock.Add(16667 * time.Microsecond)
 	for clock.Before(end) {
 		clock = clock.Add(10 * time.Millisecond)
 		if clock.After(end) {
 			clock = end
 		}
 		a.SaverSettle() // the saver's blur levels come from a worker; the scripted clock waits for them
-		if a.Tick(clock) {
+		changed := a.Tick(clock)
+		for !clock.Before(nextFrame) {
+			if a.OptionSamplesRunning() {
+				changed = a.OptionSampleFrame() || changed
+			}
+			nextFrame = nextFrame.Add(16667 * time.Microsecond)
+		}
+		if changed {
 			present()
 		}
 	}

@@ -787,7 +787,7 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 // Tick runs due repeats and expires notices; returns true to repaint.
 func (a *App) Tick(now time.Time) bool {
 	changed := a.tickMenu(now)
-	changed = a.tickOptionSamples(now) || changed
+	changed = a.tickOptionSamples() || changed
 	// Expire notices on every screen so NextTick cannot keep returning a past
 	// deadline while Update All handles its own animation and cancel input.
 	if a.notice != "" && !now.Before(a.until) {
@@ -822,7 +822,7 @@ func (a *App) Tick(now time.Time) bool {
 func (a *App) Frame(now time.Time) bool {
 	a.saver.lastInput = now // a held direction is still activity
 	changed := a.tickMenu(now)
-	changed = a.tickOptionSamples(now) || changed
+	changed = a.OptionSampleFrame() || changed
 	if k := a.rep.frameDue(now, a.repeatStep); k != platform.KeyNone {
 		if a.act(k) {
 			changed = true
@@ -839,10 +839,11 @@ func (a *App) Frame(now time.Time) bool {
 
 // NextTick reports when Tick next needs to run; zero when nothing is pending.
 func (a *App) NextTick() time.Time {
-	t := a.rep.nextAt()
-	if next := a.nextOptionSampleTick(); !next.IsZero() && (t.IsZero() || next.Before(t)) {
-		t = next
+	// Enter the preview frame loop immediately, including after releasing a key.
+	if a.OptionSamplesRunning() {
+		return a.cfg.TimerNow()
 	}
+	t := a.rep.nextAt()
 	if a.screen == ScreenTroubleshooting {
 		t = a.support.next
 		if v := &a.support; v.mode == "pad" && !v.backAt.IsZero() {

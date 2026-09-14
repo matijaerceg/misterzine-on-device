@@ -8,12 +8,12 @@ import (
 )
 
 type optionSampleClock struct {
-	kind             string
-	start, now, next time.Time
+	kind    string
+	elapsed time.Duration // advances once per displayed frame, never from wall time
 }
 
 func (a *App) animatedOption() string {
-	if a.screen == ScreenOptions && a.panel.cursor < len(a.panel.entries) {
+	if a.screen == ScreenOptions && !a.saver.active && a.panel.cursor < len(a.panel.entries) {
 		k := a.panel.entries[a.panel.cursor].kind
 		if k == "scroll" || k == "hold-delay" {
 			return k
@@ -21,31 +21,33 @@ func (a *App) animatedOption() string {
 	}
 	return ""
 }
-func (a *App) tickOptionSamples(now time.Time) bool {
+
+// OptionSamplesRunning asks the host for the same vertical-blank cadence as scrolling.
+func (a *App) OptionSamplesRunning() bool { return a.animatedOption() != "" }
+
+func (a *App) tickOptionSamples() bool {
 	k := a.animatedOption()
+	if a.optionSamples.kind == k {
+		return false
+	}
+	a.optionSamples = optionSampleClock{kind: k}
 	if k == "" {
-		a.optionSamples = optionSampleClock{}
 		return false
 	}
-	s := &a.optionSamples
-	if s.kind != k {
-		*s = optionSampleClock{kind: k, start: now}
-	}
-	if !s.next.IsZero() && now.Before(s.next) {
-		return false
-	}
-	s.now, s.next = now, now.Add(frameDur)
 	a.all = true
 	return true
 }
-func (a *App) nextOptionSampleTick() time.Time {
-	if a.animatedOption() == "" {
-		return time.Time{}
+
+// OptionSampleFrame advances by one refresh, even if background work delayed it.
+// A late frame must never skip over one or more selected rows.
+func (a *App) OptionSampleFrame() bool {
+	a.tickOptionSamples()
+	if !a.OptionSamplesRunning() {
+		return false
 	}
-	if a.optionSamples.kind != a.animatedOption() || a.optionSamples.next.IsZero() {
-		return a.cfg.TimerNow()
-	}
-	return a.optionSamples.next
+	a.optionSamples.elapsed += frameDur
+	a.all = true
+	return true
 }
 
 // The names stay fixed: only the selection loops or reverses, pausing at each end.
@@ -80,7 +82,7 @@ func (a *App) paintOptionSamples(c *gfx.Canvas, area image.Rectangle, e panelEnt
 	c.Fill(area, gen.Eva.Surface)
 	c.Box(area, gen.Eva.Line)
 	if e.kind != "title-font" && a.optionSamples.kind != e.kind {
-		a.tickOptionSamples(a.cfg.TimerNow())
+		a.tickOptionSamples()
 	}
 	for i := 0; i < 3; i++ {
 		cell := image.Rect(area.Min.X+3+i*(area.Dx()-6)/3, area.Min.Y+3, area.Min.X+3+(i+1)*(area.Dx()-6)/3-2, area.Max.Y-3)
@@ -108,13 +110,14 @@ func (a *App) paintOptionSamples(c *gfx.Canvas, area image.Rectangle, e panelEnt
 		if e.kind == "hold-delay" {
 			pace = scrollPace(a.ScrollSpeed())
 			delay = time.Duration([]int{200, 300, 500}[i]) * time.Millisecond
+			delay = ((delay + frameDur/2) / frameDur) * frameDur
 		}
 		r = cell.Inset(1)
 		rows := 3
 		if a.lay.Portrait {
 			rows = 4
 		}
-		selected := sampleListSelection(a.optionSamples.now.Sub(a.optionSamples.start), pace, delay, rows)
+		selected := sampleListSelection(a.optionSamples.elapsed, pace, delay, rows)
 		names := []string{"Galaga", "Pac-Man", "Out Run", "1942"}
 		top := r.Min.Y + (r.Dy()-rows*a.sm.H)/2
 		for row := 0; row < rows; row++ {

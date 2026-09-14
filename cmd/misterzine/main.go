@@ -489,6 +489,8 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			h.frameLoop()
 		} else if h.a.SaverRunning() {
 			h.saverLoop()
+		} else if h.a.OptionSamplesRunning() {
+			h.optionSampleLoop()
 		}
 		h.autosave(time.Now(), false)
 		if h.launch != "" {
@@ -603,6 +605,33 @@ func (h *host) frameLoop() {
 			return
 		default:
 		}
+	}
+}
+
+// optionSampleLoop uses one vertical blank per sample frame, as frameLoop does.
+// Keep servicing events and saves, and allow inactivity to start the screensaver.
+func (h *host) optionSampleLoop() {
+	for h.a.OptionSamplesRunning() && !h.a.Repeating() {
+		if !h.pump() {
+			return
+		}
+		now := time.Now()
+		h.a.Tick(now)
+		if !h.a.OptionSamplesRunning() || h.a.Repeating() {
+			return
+		}
+		h.a.OptionSampleFrame()
+		frame, dirty := h.a.Paint()
+		painted := time.Now()
+		h.fb.WaitVSync()
+		at := time.Now()
+		if dirty != nil {
+			h.fb.PresentWait(frame, dirty, false)
+		}
+		if h.debugEnabled {
+			h.stats.add(painted.Sub(now), at.Sub(painted), time.Since(at), at)
+		}
+		h.autosave(time.Now(), false)
 	}
 }
 
