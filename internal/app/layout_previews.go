@@ -76,6 +76,13 @@ func (a *App) paintLayoutDiagram(c *gfx.Canvas, r image.Rectangle, style string)
 	} else {
 		list.Max.X = min(list.Max.X, min(picture.Min.X, metadata.Min.X)-gutter)
 	}
+	if !l.Portrait || style != "list" {
+		if meta.Min.X >= art.Max.X {
+			metadata.Min.X = max(metadata.Min.X, picture.Max.X+gutter)
+		} else {
+			metadata.Min.Y = max(metadata.Min.Y, picture.Max.Y+gutter)
+		}
+	}
 	for y := list.Min.Y; y < list.Max.Y; y += 4 {
 		c.HLine(list.Min.X, list.Max.X-1, y, gen.Eva.Fg)
 	}
