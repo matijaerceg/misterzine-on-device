@@ -21,10 +21,11 @@ const (
 )
 
 type marqueeState struct {
-	key   string    // the row and version scrolling, "" when idle
-	start time.Time // when the scroll began
-	next  time.Time // the next frame
-	span  int       // pixels the label overflows the line by
+	key    string    // the row and version scrolling, "" when idle
+	start  time.Time // when the scroll began
+	next   time.Time // the next frame
+	span   int       // pixels the label overflows the line by
+	offset int       // offset in the last painted frame
 }
 
 // marqueeOffset is how far the label has scrolled left at elapsed.
@@ -53,11 +54,12 @@ func (a *App) runMarquee(key string, span int) int {
 		a.marquee = marqueeState{key: key, start: now, next: now.Add(marqueeFrame)}
 	}
 	a.marquee.span = span
-	return marqueeOffset(now.Sub(a.marquee.start), span)
+	a.marquee.offset = marqueeOffset(now.Sub(a.marquee.start), span)
+	return a.marquee.offset
 }
 
 func (a *App) nextMarqueeTick() time.Time {
-	if a.marquee.key == "" || a.screen != ScreenDetails || a.saver.active {
+	if a.marquee.key == "" || a.screen != ScreenDetails || a.saver.active || a.PageTransitionRunning() {
 		return time.Time{}
 	}
 	return a.marquee.next
@@ -69,6 +71,9 @@ func (a *App) tickMarquee(now time.Time) bool {
 		return false
 	}
 	a.marquee.next = now.Add(marqueeFrame)
+	if marqueeOffset(now.Sub(a.marquee.start), a.marquee.span) == a.marquee.offset {
+		return false
+	}
 	a.all = true
 	return true
 }

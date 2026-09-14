@@ -1043,6 +1043,10 @@ func (a *App) Refilter() {
 // Invalidate forces a full repaint on the next Paint (a picture landed,
 // a scan finished).
 func (a *App) Invalidate() {
+	if a.PageTransitionRunning() {
+		a.transition.pending = true
+		return
+	}
 	a.all = true
 	if a.screen == ScreenOptions || a.screen == ScreenSaverOptions {
 		a.buildPanel() // the prefetch tally and screenshot availability
@@ -1104,7 +1108,7 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 			return a.physical, nil
 		}
 		copy(a.logical.Pix, a.transition.to)
-		a.paintPageTransition()
+		a.paintPageTransition(false)
 		return a.rotatePaint()
 	}
 	a.preparePageTransition()
@@ -1150,7 +1154,7 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 	if a.PageTransitionRunning() {
 		a.transition.to = append(a.transition.to[:0], c.Pix...)
 	}
-	a.paintPageTransition()
+	a.paintPageTransition(true)
 	return a.rotatePaint()
 }
 

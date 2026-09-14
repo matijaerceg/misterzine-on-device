@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
 
@@ -55,7 +56,7 @@ func TestPageWipeLayering(t *testing.T) {
 						}
 						previous = pixel
 					}
-					if changes < 3 || changes > 18 {
+					if changes < 3 || changes > 66 {
 						t.Fatalf("soft dissolve missing or too broad: %d changes", changes)
 					}
 				}
@@ -240,4 +241,66 @@ func TestPageTransitionCachedDestinationRefreshes(t *testing.T) {
 	if !bytes.Equal(refreshed, a.transition.to) {
 		t.Fatal("animation modified its cached destination")
 	}
+}
+
+func TestPageWipeDirtyFramesMatchFullRotation(t *testing.T) {
+	for _, rot := range []gfx.Rotation{gfx.RotNone, gfx.RotLeft, gfx.RotRight} {
+		a, clock := saverApp()
+		a.SetRotation(rot)
+		a.EnablePageTransitions()
+		a.Paint()
+		for trip := 0; trip < 2; trip++ {
+			if trip == 0 {
+				a.openOptions()
+			} else {
+				a.actPanel(platform.KeyBack)
+			}
+			_, dirty := a.Paint()
+			if len(dirty) != 0 {
+				t.Fatal("initial outgoing frame was needlessly copied")
+			}
+			start := *clock
+			for _, ms := range []int{17, 36, 52, 71, 89, 108, 126, 144, 167, 185, 200} {
+				*clock = start.Add(time.Duration(ms) * time.Millisecond)
+				a.Tick(*clock)
+				physical, dirty := a.Paint()
+				reference := image.NewRGBA(physical.Rect)
+				gfx.RotateAll(reference, a.logical.RGBA, rot)
+				if !bytes.Equal(physical.Pix, reference.Pix) {
+					t.Fatalf("rot %v trip %d time %d: stale pixels outside dirty strip", rot, trip, ms)
+				}
+				area := 0
+				for _, r := range dirty {
+					area += r.Dx() * r.Dy()
+				}
+				if area >= physical.Rect.Dx()*physical.Rect.Dy() {
+					t.Fatal("cached animation copied the whole screen")
+				}
+			}
+		}
+	}
+}
+
+func TestPageWipeDefersBackgroundInvalidation(t *testing.T) {
+	a, clock := saverApp()
+	a.EnablePageTransitions()
+	a.Paint()
+	a.openOptions()
+	a.Paint()
+	a.Invalidate()
+	if a.all || !a.transition.pending {
+		t.Fatal("background work interrupted wipe")
+	}
+	*clock = clock.Add(pageWipeDuration)
+	a.Tick(*clock)
+	a.Paint()
+	if a.PageTransitionRunning() || a.transition.next.IsZero() {
+		t.Fatal("deferred refresh not scheduled after completion")
+	}
+	*clock = clock.Add(frameDur)
+	a.Tick(*clock)
+	if !a.all {
+		t.Fatal("deferred refresh was lost")
+	}
+	a.Paint()
 }

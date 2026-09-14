@@ -43,6 +43,9 @@ import (
 const logMax = 1 << 20
 
 type host struct {
+	pageFrames                    []pageFrameTiming
+	pageLastAt                    time.Time
+	pageLastScreen                string
 	root, card                    string
 	lg                            *log.Logger
 	console                       *mister.Console
@@ -359,7 +362,8 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			Shot:   func() *image.RGBA { return h.a.Logical() },
 			State: func() any {
 				return map[string]any{
-					"version": buildinfo.String(), "screen": h.a.Screen().String(), "cursor": h.a.CursorKey(),
+					"page_frames": h.pageFrames,
+					"version":     buildinfo.String(), "screen": h.a.Screen().String(), "cursor": h.a.CursorKey(),
 					"sort": h.a.Sort().String(), "rows": len(h.a.Data().Rows), "fb": h.fb.Geometry().String(),
 					"search": h.a.Search(), "filters": h.a.Filters(), "rotation": h.a.Rotation().String(), "inset": fmt.Sprint(h.a.Inset()), "devices": h.input.Devices(),
 					"sysfs": mister.SysfsMode(), "uptime": time.Since(t0).String(), "frames": h.stats.String(), "cadence": h.stats.Cadence(), "saver": h.a.SaverStats(), "saver_blank_frames": h.saverBlankFrames, "saver_misses": h.saverMisses,
@@ -574,6 +578,7 @@ func (h *host) frameLoop() {
 			paused = true
 			h.img.SetPaused(true)
 		}
+		wasPage := h.a.PageTransitionRunning()
 		frame, dirty := h.a.Paint()
 		var paint time.Duration
 		if h.debugEnabled {
@@ -596,6 +601,7 @@ func (h *host) frameLoop() {
 			if h.debugEnabled {
 				cp := time.Since(t)
 				h.stats.add(paint, 0, cp, t)
+				h.recordPageFrame(wasPage || h.a.PageTransitionRunning(), paint, 0, cp, t)
 				if paint+cp > 16*time.Millisecond {
 					late++
 				}
@@ -624,6 +630,7 @@ func (h *host) optionSampleLoop() {
 			return
 		}
 		h.a.OptionSampleFrame()
+		wasPage := h.a.PageTransitionRunning()
 		frame, dirty := h.a.Paint()
 		painted := time.Now()
 		h.fb.WaitVSync()
@@ -633,6 +640,7 @@ func (h *host) optionSampleLoop() {
 		}
 		if h.debugEnabled {
 			h.stats.add(painted.Sub(now), at.Sub(painted), time.Since(at), at)
+			h.recordPageFrame(wasPage || h.a.PageTransitionRunning(), painted.Sub(now), at.Sub(painted), time.Since(at), at)
 		}
 		h.autosave(time.Now(), false)
 	}
@@ -785,11 +793,13 @@ func (h *host) present() {
 		return
 	}
 	t0 := time.Now()
+	wasPage := h.a.PageTransitionRunning()
 	frame, dirty := h.a.Paint()
 	if dirty != nil {
 		t1 := time.Now()
 		h.fb.Present(frame, dirty)
 		h.stats.add(t1.Sub(t0), h.fb.LastWait, time.Since(t1)-h.fb.LastWait, t1.Add(h.fb.LastWait))
+		h.recordPageFrame(wasPage || h.a.PageTransitionRunning(), t1.Sub(t0), h.fb.LastWait, time.Since(t1)-h.fb.LastWait, t1.Add(h.fb.LastWait))
 		if d := time.Since(t0); d > 40*time.Millisecond && time.Since(h.slowLog) > 5*time.Second {
 			h.slowLog = time.Now()
 			h.lg.Printf("slow frame: paint %s, present %s", t1.Sub(t0).Round(time.Millisecond), time.Since(t1).Round(time.Millisecond))
