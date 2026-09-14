@@ -296,6 +296,10 @@ and last row.
   and the details sit beside it when there is room, otherwise below in three
   lines. Every layout keeps at least four rows, even with a wide safe zone.
   Hold Select and press Y on the list to cycle the layout there.
+  Highlighting this option shows miniature screenshots of all three layouts;
+  Left/Right changes the selection border and the saved layout. The previews
+  follow the current orientation and use a game with matching horizontal or
+  vertical artwork. Moving to another option dismisses them.
 - **Follow INI rotation:** on by default, including after upgrading. Every
   startup reads `osd_rotate` from the MiSTer INI that is currently active: the
   main MiSTer.ini, or the alternative INI (`MiSTer_*.ini`) you selected in the

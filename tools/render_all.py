@@ -206,5 +206,9 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                       "end; up*8; shot option-row; right; shot option-leave; left; back; shot details-back; "
                       "back; tab; down*2; menu; shot options-over-filters; back; shot filters-back; "
                       "press menu; wait 700; shot menu-hint; wait 900; shot menu-hold; release menu; shot menu-released; back; back"])
+for rotation in ([], ["-rot", "left", "-logical"]):
+    orientation = "t" if rotation else "h"
+    scenarios.append([*rotation, "-out", f"out/layout-previews-{orientation}", "-script",
+                      "back; down*13; shot list; right; shot split; right; shot picture; down; shot dismissed"])
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)

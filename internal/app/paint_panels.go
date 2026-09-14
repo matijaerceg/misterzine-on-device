@@ -591,12 +591,16 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 	vx := a.valueColumn(inner, edge)
 	y := inner.Min.Y
 	lastY := y
+	previewY := 0
 	for n := p.top; n < len(p.entries) && n < p.top+shown; n++ {
 		e := p.entries[n]
 		lastY = y
 		r := image.Rect(inner.Min.X, y, inner.Max.X, y+rowH(n))
 		if n == p.cursor {
 			c.Fill(r, gen.Eva.Surface)
+			if a.screen == ScreenOptions && e.kind == "list-layout" {
+				previewY = r.Max.Y + 2
+			}
 		}
 		switch {
 		case e.header && e.info && e.glyph != "":
@@ -675,6 +679,9 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 	}
 	if p.top+shown < len(p.entries) {
 		c.Text(edge, lastY, font, gfx.ArrowDown, gen.Eva.Muted)
+	}
+	if previewY > 0 {
+		a.paintLayoutPreviews(c, image.Rect(inner.Min.X, previewY, inner.Max.X, helpBox.Min.Y-2))
 	}
 	if a.screen == ScreenOptions || a.screen == ScreenSaverOptions {
 		c.Box(helpBox, gen.Eva.Line)
