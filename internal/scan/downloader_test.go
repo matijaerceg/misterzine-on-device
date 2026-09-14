@@ -31,7 +31,7 @@ func TestDownloaderDBs(t *testing.T) {
 	if !found || !reflect.DeepEqual(dbs, want) {
 		t.Fatalf("Scripts/downloader.ini: found=%v dbs=%v", found, dbs)
 	}
-	if got := data.HiddenSources(dbs); !reflect.DeepEqual(got, map[string]bool{"jtbindb": true, "rmcores": true}) {
+	if got := data.HiddenSources(dbs); !reflect.DeepEqual(got, map[string]bool{"jtbindb": true, "rmcores": true, "theypsilon_unofficial_distribution": true}) {
 		t.Fatalf("hidden = %v", got)
 	}
 	// the card root's ini wins; without database sections Downloader's

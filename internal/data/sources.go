@@ -17,11 +17,12 @@ var sourceDBs = map[string]struct {
 	url string
 	ids []string
 }{
-	"distribution_mister": {"https://raw.githubusercontent.com/MiSTer-devel/Distribution_MiSTer/main/db.json.zip", []string{"distribution_mister"}},
-	"jtbindb":             {"https://raw.githubusercontent.com/jotego/jtcores_mister/main/jtbindb.json.zip", []string{"jtcores"}},
-	"coinop":              {"https://raw.githubusercontent.com/Coin-OpCollection/Distribution-MiSTerFPGA/db/db.json.zip", []string{"coin-opcollection/distribution-misterfpga", "atrac17/coin-op_collection"}},
-	"meathax":             {"https://raw.githubusercontent.com/meathax/meatcores/db/db.json.zip", []string{"meathax/meatcores"}},
-	"rmcores":             {"https://raw.githubusercontent.com/rmonic79/rmcores/db/db.json.zip", []string{"rmonic79/rmcores"}},
+	"distribution_mister":                {"https://raw.githubusercontent.com/MiSTer-devel/Distribution_MiSTer/main/db.json.zip", []string{"distribution_mister"}},
+	"jtbindb":                            {"https://raw.githubusercontent.com/jotego/jtcores_mister/main/jtbindb.json.zip", []string{"jtcores"}},
+	"coinop":                             {"https://raw.githubusercontent.com/Coin-OpCollection/Distribution-MiSTerFPGA/db/db.json.zip", []string{"coin-opcollection/distribution-misterfpga", "atrac17/coin-op_collection"}},
+	"meathax":                            {"https://raw.githubusercontent.com/meathax/meatcores/db/db.json.zip", []string{"meathax/meatcores"}},
+	"theypsilon_unofficial_distribution": {"https://raw.githubusercontent.com/theypsilon/Unofficial_Distribution_MiSTer/main/unofficialdb.json.zip", []string{"theypsilon_unofficial_distribution"}},
+	"rmcores":                            {"https://raw.githubusercontent.com/rmonic79/rmcores/db/db.json.zip", []string{"rmonic79/rmcores"}},
 }
 
 // HiddenSources lists the feed sources whose Downloader database is not
@@ -35,7 +36,10 @@ func HiddenSources(dbs []DB) map[string]bool {
 	for _, db := range dbs {
 		have[strings.ToLower(db.ID)] = true
 		if db.URL != "" {
-			have[strings.ToLower(db.URL)] = true
+			url := strings.ToLower(db.URL)
+			// Update All still writes the repository's former name.
+			url = strings.Replace(url, "/theypsilon/distribution_unofficial_mister/", "/theypsilon/unofficial_distribution_mister/", 1)
+			have[url] = true
 		}
 	}
 	hidden := map[string]bool{}

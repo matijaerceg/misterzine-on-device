@@ -130,9 +130,10 @@ var CoreNames = map[string]string{
 
 // SrcNames mirrors SRC_NAMES: pipeline source id to display name.
 var SrcNames = map[string]string{
-	"coinop":              "Coin-Op Collection",
-	"distribution_mister": "MiSTer Distribution",
-	"jtbindb":             "Jotego (JTcores)",
-	"meathax":             "Meathax (MeatCores)",
-	"rmcores":             "rmCores (rmonic79)",
+	"coinop":                             "Coin-Op Collection",
+	"distribution_mister":                "MiSTer Distribution",
+	"jtbindb":                            "Jotego (JTcores)",
+	"meathax":                            "Meathax (MeatCores)",
+	"rmcores":                            "rmCores (rmonic79)",
+	"theypsilon_unofficial_distribution": "theypsilon Unofficial Distribution",
 }

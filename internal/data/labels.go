@@ -84,11 +84,12 @@ func SrcFull(src string) string {
 
 // srcShort are the device's short source chips (the list is 53 columns wide).
 var srcShort = map[string]string{
-	"distribution_mister": "MiSTer",
-	"jtbindb":             "Jotego",
-	"coinop":              "Coin-Op",
-	"meathax":             "Meathax",
-	"rmcores":             "rmCores",
+	"distribution_mister":                "MiSTer",
+	"jtbindb":                            "Jotego",
+	"coinop":                             "Coin-Op",
+	"meathax":                            "Meathax",
+	"rmcores":                            "rmCores",
+	"theypsilon_unofficial_distribution": "theypsilon",
 }
 
 // SrcShort is the short source chip, falling back to the full name.
