@@ -309,6 +309,8 @@ and last row.
   image in that direction and the choice is saved. The labels describe the
   monitor's clockwise/counterclockwise turn. While following the INI, the row
   shows the current rotation in grey and cannot be changed here.
+Screensaver settings are under **Options → Screensaver**. Preview starts it immediately, even with delay off; waking returns here.
+
 - **Screensaver delay:** after 1 minute idle by default, blur and dim the picture
   into a soft glow over a second and scroll full-height black MISTERZINE
   lettering, with glinting chrome edges, across it; a key brings the picture
@@ -346,6 +348,15 @@ and last row.
   what the pane says about the shot's game; title only types just the
   title; none leaves the picture alone. Holding Start still shows the
   title over its filling line whichever is set.
+- **Only on card:** screenshots of games found on the card, including older versions.
+- **Match rotation:** games matching the current horizontal or tate orientation; unknown orientations are excluded.
+- **Favorites only:** screenshots of starred games.
+- **Resolution:** All, an original game resolution category (such as 15 kHz), or Unknown. Independent of list filters.
+
+Brightness, Info and these four filters appear only with Screenshots selected.
+Their values are remembered when switching styles. Filters combine; if no
+screenshots match, lettering runs instead and the Preview help explains why.
+
 - **Edit safe zone:** D-pad moves the top-right corner of the safe frame;
   Right/Up grows it and Left/Down shrinks it. B saves. Margins can reach 40 px.
 - **HDMI picture:** fit display by default: the picture is sized so that

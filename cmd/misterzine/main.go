@@ -216,10 +216,11 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	cfg := app.Config{
 		PhysW: h.fb.CanvasW, PhysH: h.fb.CanvasH, Rotation: rotation, SafeInsetX: h.settings.InsetX, SafeInsetY: h.settings.InsetY,
 		Now: h.now, TimerNow: time.Now, ClockTrusted: trusted, Favorites: favSet, Images: h.img, Scroll: h.settings.Scroll, HoldDelay: h.settings.HoldDelay,
-		Screensaver:          h.settings.Screensaver,
-		SaverStyle:           h.settings.SaverStyle,
-		SaverBright:          h.settings.SaverBright,
-		SaverInfo:            h.settings.SaverInfo,
+		Screensaver: h.settings.Screensaver,
+		SaverStyle:  h.settings.SaverStyle,
+		SaverBright: h.settings.SaverBright,
+		SaverInfo:   h.settings.SaverInfo,
+		SaverCard:   h.settings.SaverCard, SaverRotation: h.settings.SaverRotation, SaverFavorites: h.settings.SaverFavorites, SaverResolution: h.settings.SaverResolution,
 		RememberSort:         h.settings.RememberSort,
 		FollowRotation:       h.settings.FollowRotation,
 		FilterRotation:       h.settings.FilterRotation,
@@ -834,6 +835,7 @@ func (h *host) saveAll(final bool) {
 		h.settings.SaverStyle = h.a.SaverStyle()
 		h.settings.SaverBright = h.a.SaverBright()
 		h.settings.SaverInfo = h.a.SaverInfo()
+		h.settings.SaverCard, h.settings.SaverRotation, h.settings.SaverFavorites, h.settings.SaverResolution = h.a.SaverFilters()
 		h.settings.RememberSort = h.a.RememberSort()
 		h.settings.FollowRotation = h.a.FollowRotation()
 		h.settings.FilterRotation = h.a.FilterRotation()

@@ -32,7 +32,8 @@ func TestOptionsHintsFitTheHelpBox(t *testing.T) {
 				lines = 3
 			}
 			cols := a.sm.Cols(a.lay.Body.Dx() - 6)
-			for _, e := range a.optionsEntries() {
+			a.cfg.SaverStyle = "shots"
+			for _, e := range append(a.optionsEntries(), a.saverEntries()...) {
 				if e.kind == "credits" || e.kind == "quit" {
 					if e.help != "" {
 						t.Errorf("%s: %s has a hint: %q", c.name, e.text, e.help)

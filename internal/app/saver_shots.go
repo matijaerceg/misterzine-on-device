@@ -26,7 +26,7 @@ import (
 // the hold; letting go fades it back down and the saver goes on with the
 // shot it was about to show. Every other button wakes.
 //
-// The pool is the gameplay shot (the "snap" slot) of every arcade game in
+// The pool is the gameplay shot (the "snap" slot) of every arcade game allowed by the screensaver filters in
 // the catalogue, shuffled and cycled without repeats: not the title
 // screens, and not the third slot, which is often a game-over screen. A
 // shot the card lacks is downloaded when it is next, so online the cycle
@@ -136,17 +136,7 @@ type saverShots struct {
 func (a *App) saverShotsStart(now time.Time) {
 	s := &saverShots{cur: saverPick{row: -1}, in: saverPick{row: -1}, dir: 1}
 	s.rng = rand.New(rand.NewPCG(uint64(now.UnixNano()), uint64(len(a.ds.Rows))))
-	for i := range a.ds.Rows {
-		r := &a.ds.Rows[i]
-		if !r.IsArcade() || r.Img == "" {
-			continue
-		}
-		for _, slot := range r.ImgSlots {
-			if slot == "snap" {
-				s.pool = append(s.pool, saverPick{i, slot})
-			}
-		}
-	}
+	s.pool = a.saverPool()
 	s.shuffle()
 	s.in = s.next()
 	s.bright = a.saverShotRest()
@@ -738,4 +728,34 @@ func (a *App) paintSaverCaption(c *gfx.Canvas) {
 	held := a.cfg.TimerNow().Sub(s.holdAt)
 	bar := int(int64(sw-6) * int64(min(held, saverShotHold)) / int64(saverShotHold))
 	c.Fill(image.Rect(sx+3, y+th+strip/2-1, sx+3+bar, y+th+strip/2+1), ink)
+}
+
+func (a *App) saverPool() []saverPick {
+	var pool []saverPick
+	for i := range a.ds.Rows {
+		r := &a.ds.Rows[i]
+		if !r.IsArcade() || r.Img == "" || (a.cfg.SaverCard && !a.status(i).Found()) || (a.cfg.SaverFavorites && !a.cfg.Favorites[r.K]) {
+			continue
+		}
+
+		if a.cfg.SaverRotation {
+			orientation := "h"
+			if a.rot.Rotated() {
+				orientation = "v"
+			}
+			if r.RotGroup() != orientation {
+				continue
+			}
+		}
+		res := a.cfg.SaverResolution
+		if res != "" && !((res == "unknown" && r.Res == "") || r.Res == res) {
+			continue
+		}
+		for _, slot := range r.ImgSlots {
+			if slot == "snap" {
+				pool = append(pool, saverPick{i, slot})
+			}
+		}
+	}
+	return pool
 }

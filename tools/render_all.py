@@ -24,15 +24,15 @@ scenarios = [
     ["-rot", "left", "-logical", "-out", "out/search-t",
      "-script", "type 1943; shot matches; type xyz; shot empty"],
     ["-out", "out/saver-h", "-script",
-     "back; down*16; shot option; enter; wait 12000; shot preview; back; wait 300; up*16; up; shot wrap; down; shot top"],
+     "back; down*16; enter; shot option; enter; wait 12000; shot preview; back; wait 300; back; home; up; shot wrap; down; shot top"],
     ["-rot", "left", "-logical", "-out", "out/saver-t", "-script",
-     "back; down*16; shot option; enter; wait 12000; shot preview; back; wait 300; up*16; up; shot wrap; down; shot top"],
+     "back; down*16; enter; shot option; enter; wait 12000; shot preview; back; wait 300; back; home; up; shot wrap; down; shot top"],
     # Options -> Screensaver style and the brightness row it brings; the preview
     # with no pictures at all falls back to the lettering
     ["-out", "out/saver-shots-h", "-script",
-     "back; down*17; shot style; right; shot style-shots; down; shot bright; right; shot bright-full; enter; wait 1500; shot preview; back; wait 300; left; up; left; shot style-word"],
+     "back; down*16; enter; down; shot style; right; shot style-shots; down; shot bright; right; shot bright-full; enter; wait 1500; shot preview; back; wait 300; left; up; left; shot style-word"],
     ["-rot", "left", "-logical", "-out", "out/saver-shots-t", "-script",
-     "back; down*17; shot style; right; shot style-shots; down; shot bright; right; shot bright-full; enter; wait 1500; shot preview; back; wait 300; left; up; left; shot style-word"],
+     "back; down*16; enter; down; shot style; right; shot style-shots; down; shot bright; right; shot bright-full; enter; wait 1500; shot preview; back; wait 300; left; up; left; shot style-word"],
     ["-support-report", "testdata/support-controller.json", "-out", "out/support-h", "-script",
      "back; end; up*2; enter; shot menu; enter; shot ready; wait 3500; shot capture; wait 6000; shot result; right; shot evidence; back; down*2; enter; shot launch; enter; shot launch-result"],
     ["-support-report", "testdata/support-controller.json", "-rot", "left", "-logical", "-out", "out/support-t", "-script",
@@ -143,8 +143,8 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     scenarios.append([*rotation, "-button-labels", "playstation",
                       "-out", f"out/button-labels-{orientation}", "-script",
                       "shot list; enter; shot details; back; tab; shot filters; back; "
-                      "back; down*20; shot option; right; shot option-numbers; back; shot list-numbers; "
-                      "type xyz; shot empty-numbers; back; back; down*20; left*3; shot option-mister; left; back; shot list-mister"])
+                      "back; down*19; shot option; right; shot option-numbers; back; shot list-numbers; "
+                      "type xyz; shot empty-numbers; back; back; home; down*19; left*3; shot option-mister; left; back; shot list-mister"])
     scenarios.append([*rotation, "-button-labels", "xbox",
                       "-out", f"out/button-labels-xbox-{orientation}", "-script", "shot list; enter; shot details"])
 for rotation in ([], ["-rot", "left", "-logical"]):
@@ -159,7 +159,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     # pad: auto, the A override, the B override, and back to auto
     scenarios.append([*rotation, "-support-report", "testdata/support-controller.json",
                       "-out", f"out/ok-button-{orientation}", "-script",
-                      "back; down*21; shot option; right; shot option-a; right; shot option-b; left*2; shot option-auto"])
+                      "back; down*20; shot option; right; shot option-a; right; shot option-b; left*2; shot option-auto"])
 for canvas in ("360x270", "400x300"):
     for rotation in ([], ["-rot", "left", "-logical"]):
         orientation = "t" if rotation else "h"

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Screensaver settings now have their own Options subpage, with an immediate Preview.
+- Screenshot filters combine games on the card, current rotation, favorites and original resolution. They are independent of list filters and appear only with Screenshots selected, alongside Brightness and Info. Switching styles keeps their values.
+- With no matching screenshots, lettering runs instead; Preview explains the empty selection.
+
 ## v1.0.29 — 2026-09-14
 
 - Fix: games whose core file carries a longer name than their MRA says

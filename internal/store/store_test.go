@@ -244,9 +244,9 @@ func TestViewsOffMigrationAndSave(t *testing.T) {
 		{`{"views_off":null}`, []string{}},              // every view on, as older builds saved it; not a pre-Views file
 		{`{"views_off":null,"recents_view":false}`, []string{}},
 		{`{"views_off":["year","maker"]}`, []string{"year", "maker"}},
-		{`{"views_off":["year","bogus"]}`, []string{"year"}},                                                    // unknown names dropped
+		{`{"views_off":["year","bogus"]}`, []string{"year"}},                                                  // unknown names dropped
 		{`{"views_off":["updated","debut","year","alphabetical","maker","favorites","recents"]}`, []string{}}, // nothing on: back to all
-		{`{"views_off":[],"recents_view":false}`, []string{}},                                                  // views_off wins over the old flag
+		{`{"views_off":[],"recents_view":false}`, []string{}},                                                 // views_off wins over the old flag
 	} {
 		s, err := LoadSettings(writeSettings(t, tc.body))
 		if err != nil || !reflect.DeepEqual(s.ViewsOff, tc.off) {
@@ -276,5 +276,20 @@ func TestViewsOffMigrationAndSave(t *testing.T) {
 	got, err := LoadSettings(path)
 	if err != nil || !reflect.DeepEqual(got.ViewsOff, []string{"favorites"}) {
 		t.Fatalf("restart lost the views: %v, %v", got.ViewsOff, err)
+	}
+}
+
+func TestScreensaverFilterPersistence(t *testing.T) {
+	path := writeSettings(t, `{"screensaver_on_card":true,"screensaver_match_rotation":true,"screensaver_favorites":true,"screensaver_resolution":"15kHz"}`)
+	s, err := LoadSettings(path)
+	if err != nil || !s.SaverCard || !s.SaverRotation || !s.SaverFavorites || s.SaverResolution != "15kHz" {
+		t.Fatalf("load: %+v %v", s, err)
+	}
+	if err = Save(path, s); err != nil {
+		t.Fatal(err)
+	}
+	got, err := LoadSettings(path)
+	if err != nil || !reflect.DeepEqual(s, got) {
+		t.Fatal("filter persistence")
 	}
 }

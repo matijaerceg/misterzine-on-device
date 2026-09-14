@@ -112,7 +112,7 @@ func TestSaverPreviewAndOff(t *testing.T) {
 	if a.ScreensaverActive() || !a.nextSaverTick().IsZero() {
 		t.Fatal("Off still started or scheduled the saver")
 	}
-	a.openPanel(ScreenOptions)
+	a.openPanel(ScreenSaverOptions)
 	for i, e := range a.panel.entries {
 		if e.kind == "screensaver" {
 			a.panel.cursor = i
@@ -124,7 +124,7 @@ func TestSaverPreviewAndOff(t *testing.T) {
 		t.Fatal("preview must work while Off and survive releasing A")
 	}
 	a.Handle(platform.Event{Key: platform.KeyBack, Pressed: true, At: *clock})
-	if a.Screen() != ScreenOptions {
+	if a.Screen() != ScreenSaverOptions {
 		t.Fatal("preview wake navigated away")
 	}
 }

@@ -59,7 +59,7 @@ func TestOptionsHintFollowsTheRow(t *testing.T) {
 		}
 		// the rows that matter for the shape: a greyed child, both ends
 		// of a choice, a preview row and an action row
-		for _, want := range []string{"B Back", right + "  A Preview  B Back", both + "  B Back", "A Quit  B Back"} {
+		for _, want := range []string{"B Back", "A Open  B Back", both + "  B Back", "A Quit  B Back"} {
 			if !seen[want] {
 				t.Errorf("rot=%v: no row gives %q; got %v", rot, want, seen)
 			}

@@ -567,7 +567,7 @@ func TestSaverShotsOptionsRows(t *testing.T) {
 	a.cfg.SaverStyle = ""
 	saved := 0
 	a.cfg.SettingsChanged = func() { saved++ }
-	a.openPanel(ScreenOptions)
+	a.openPanel(ScreenSaverOptions)
 	find := func(kind string) int {
 		for i, e := range a.panel.entries {
 			if e.kind == kind {
@@ -596,7 +596,7 @@ func TestSaverShotsOptionsRows(t *testing.T) {
 		t.Fatal("A on the brightness row did not preview the screenshots at full")
 	}
 	a.Handle(platform.Event{Key: platform.KeyBack, Pressed: true, At: *clock})
-	if a.Screen() != ScreenOptions || a.ScreensaverActive() {
+	if a.Screen() != ScreenSaverOptions || a.ScreensaverActive() {
 		t.Fatal("the preview's wake navigated away")
 	}
 	a.panel.cursor = style

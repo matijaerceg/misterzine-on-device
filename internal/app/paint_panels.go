@@ -122,6 +122,8 @@ func (a *App) buildPanel() {
 	switch a.screen {
 	case ScreenOptions:
 		a.panel.entries = a.optionsEntries()
+	case ScreenSaverOptions:
+		a.panel.entries = a.saverEntries()
 	case ScreenViews:
 		a.panel.entries = a.viewsEntries()
 	case ScreenCredits:
@@ -374,12 +376,6 @@ func (a *App) optionsEntries() []panelEntry {
 	if a.panel.prefetch {
 		prefetchIdx = 1
 	}
-	saverIdx := 1
-	for i, v := range saverValues {
-		if v == a.Screensaver() {
-			saverIdx = i
-		}
-	}
 	dateIdx := 0
 	for i, f := range dateFormats {
 		if f == a.DateFormat() {
@@ -437,16 +433,7 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "On (default): match osd_rotate in the active MiSTer INI at every startup. Off: rotate manually below. Never edits the INI."},
 		{text: "Rotation", kind: "rotation", child: true, vals: []string{"monitor CW", "horizontal", "monitor CCW"}, idx: rotIdx, disabled: a.FollowRotation(),
 			help: rotationHelp},
-		{text: "Screensaver delay", kind: "screensaver", vals: []string{"off", "1 min", "2 min", "5 min", "10 min"}, idx: saverIdx,
-			help: "Blur, dim and scroll black lettering after idle time. Left/Right sets the delay; " + a.btn("A") + " previews. Other buttons wake without acting; Menu works as usual."},
-		{text: "Screensaver style", kind: "saver-style", child: true, short: "Style", vals: []string{"lettering", "screenshots"}, idx: map[string]int{"word": 0, "shots": 1}[a.SaverStyle()],
-			help: "Lettering (default): the MISTERZINE sweep. Screenshots: random arcade shots wiping in; hold Start 2 s on one to play it. Other buttons wake."},
-	}
-	if a.SaverStyle() == "shots" {
-		E = append(E, panelEntry{text: "Screensaver brightness", kind: "saver-bright", child: true, short: "Brightness", vals: []string{"half", "full"}, idx: map[string]int{"half": 0, "full": 1}[a.SaverBright()],
-			help: "Half (default): the shots at half brightness, kind to a CRT; holding Start brings one up to full. Full: full brightness throughout."},
-			panelEntry{text: "Screensaver info", kind: "saver-info", child: true, short: "Info", vals: []string{"full", "title only", "none"}, idx: map[string]int{"full": 0, "title": 1, "none": 2}[a.SaverInfo()],
-				help: "Full (default): the pane's lines, typed in a corner. Title only: the title alone. None: nothing; holding Start still shows the title."})
+		{text: "Screensaver", kind: "saver-options", help: "Open screensaver settings and preview: delay, style and screenshot filters."},
 	}
 	E = append(E, []panelEntry{
 		{text: "Edit safe zone", kind: "inset",
@@ -527,8 +514,11 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 	if a.notice == "" {
 		c.Fill(l.Status, gen.Eva.Surface)
 		title := "Filters"
-		if a.screen == ScreenOptions {
+		if a.screen == ScreenOptions || a.screen == ScreenSaverOptions {
 			title = "Options"
+			if a.screen == ScreenSaverOptions {
+				title = "Screensaver"
+			}
 		} else if a.screen == ScreenViews {
 			title = "Views"
 		} else if a.screen == ScreenCredits {
@@ -542,7 +532,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 	// lists the build and data details, greyed, just above the hint bar.
 	var inner, helpBox image.Rectangle
 	helpLines := 0
-	if a.screen == ScreenOptions {
+	if a.screen == ScreenOptions || a.screen == ScreenSaverOptions {
 		// Horizontal uses three help lines; the narrower tate view keeps four.
 		helpLines = 4
 		if !l.Portrait {
@@ -637,7 +627,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			col := gen.Eva.Fg
 			if e.disabled && a.screen == ScreenViews {
 				col = gen.Eva.Muted // the last view on stays on
-			} else if n == p.cursor && a.screen == ScreenOptions {
+			} else if n == p.cursor && (a.screen == ScreenOptions || a.screen == ScreenSaverOptions) {
 				col = gen.Eva.Accent
 			}
 			c.Text(inner.Min.X+2, y, font, gfx.Fit(text, cols), col)
@@ -686,7 +676,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 	if p.top+shown < len(p.entries) {
 		c.Text(edge, lastY, font, gfx.ArrowDown, gen.Eva.Muted)
 	}
-	if a.screen == ScreenOptions {
+	if a.screen == ScreenOptions || a.screen == ScreenSaverOptions {
 		c.Box(helpBox, gen.Eva.Line)
 		if p.cursor < len(p.entries) && p.entries[p.cursor].help != "" {
 			hy := helpBox.Min.Y + 3
@@ -736,7 +726,7 @@ func (a *App) optionsHint() string {
 // value, or it is greyed).
 var optionsActs = map[string]string{
 	"refresh": "Refresh", "update": "Run", "update-result": "Open", "rescan": "Rescan", "clearimg": "Clear",
-	"views": "Open", "screensaver": "Preview", "saver-style": "Preview", "saver-bright": "Preview", "saver-info": "Preview",
+	"views": "Open", "saver-options": "Open", "saver-preview": "Preview", "screensaver": "Preview", "saver-style": "Preview", "saver-bright": "Preview", "saver-info": "Preview",
 	"inset": "Edit", "troubleshooting": "Open", "credits": "Open", "quit": "Quit",
 }
 
@@ -746,7 +736,7 @@ var optionsActs = map[string]string{
 // instead, because a fixed column would cut into the labels, as in the
 // narrow tate layout.
 func (a *App) valueColumn(inner image.Rectangle, edge int) int {
-	if a.screen != ScreenOptions {
+	if a.screen != ScreenOptions && a.screen != ScreenSaverOptions {
 		return 0
 	}
 	font := a.sm
@@ -775,6 +765,16 @@ func (a *App) actPanel(k platform.Key) bool {
 	}
 	switch k {
 	case platform.KeyBack:
+		if a.screen == ScreenSaverOptions {
+			a.openOptions()
+			for i, e := range a.panel.entries {
+				if e.kind == "saver-options" {
+					a.panel.cursor = i
+					break
+				}
+			}
+			return true
+		}
 		if a.screen == ScreenOptions {
 			if p.cursor < n {
 				row := p.entries[p.cursor]
@@ -802,7 +802,7 @@ func (a *App) actPanel(k platform.Key) bool {
 		for step := 1; step <= n; step++ {
 			i := p.cursor + step*d
 			// Only a fresh press at the end of Options can wrap.
-			if a.screen == ScreenOptions && a.rep.count == 0 {
+			if (a.screen == ScreenOptions || a.screen == ScreenSaverOptions) && a.rep.count == 0 {
 				i = (i%n + n) % n
 			} else if i < 0 || i >= n {
 				break
@@ -813,7 +813,7 @@ func (a *App) actPanel(k platform.Key) bool {
 			}
 		}
 	case platform.KeyLeft:
-		if a.screen == ScreenOptions {
+		if a.screen == ScreenOptions || a.screen == ScreenSaverOptions {
 			return a.stepValue(-1)
 		}
 		if a.screen != ScreenFilter {
@@ -821,7 +821,7 @@ func (a *App) actPanel(k platform.Key) bool {
 		}
 		return a.expandFilterSection(false)
 	case platform.KeyRight:
-		if a.screen == ScreenOptions {
+		if a.screen == ScreenOptions || a.screen == ScreenSaverOptions {
 			return a.stepValue(1)
 		}
 		if a.screen != ScreenFilter {
@@ -931,6 +931,14 @@ func (a *App) stepValue(d int) bool {
 		a.Refilter()
 	case "screensaver":
 		a.cfg.Screensaver = saverValues[i]
+	case "saver-card":
+		a.cfg.SaverCard = i == 1
+	case "saver-rotation":
+		a.cfg.SaverRotation = i == 1
+	case "saver-favorites":
+		a.cfg.SaverFavorites = i == 1
+	case "saver-resolution":
+		a.cfg.SaverResolution = a.saverResValues()[i]
 	case "saver-style":
 		a.cfg.SaverStyle = saverStyles[i]
 	case "saver-bright":
@@ -1003,6 +1011,14 @@ func (a *App) togglePanel() bool {
 	case "troubleshooting":
 		a.OpenTroubleshooting()
 		return true
+	case "saver-options":
+		a.screen = ScreenSaverOptions
+		a.panel.entries = nil
+		a.panel.cursor = 0
+		a.panel.top = 0
+		a.buildPanel()
+		a.all = true
+		return true
 	case "views":
 		a.openViews()
 		return true
@@ -1020,7 +1036,7 @@ func (a *App) togglePanel() bool {
 		}
 		a.buildPanel()
 		return true
-	case "screensaver", "saver-style", "saver-bright", "saver-info":
+	case "screensaver", "saver-style", "saver-bright", "saver-info", "saver-preview":
 		a.startSaver(a.cfg.TimerNow())
 		return true
 	case "update-result":
@@ -1190,4 +1206,72 @@ func (a *App) actCalibrate(k platform.Key) bool {
 	}
 	a.all = true
 	return true
+}
+
+func (a *App) saverEntries() []panelEntry {
+	saverIdx := 1
+	for i, v := range saverValues {
+		if v == a.Screensaver() {
+			saverIdx = i
+		}
+	}
+	E := []panelEntry{
+		{text: "Delay", kind: "screensaver", vals: []string{"off", "1 min", "2 min", "5 min", "10 min"}, idx: saverIdx,
+			help: "Start the selected style after idle time. Left/Right sets the delay; " + a.btn("A") + " previews. Other buttons wake without acting; Menu works as usual."},
+		{text: "Style", kind: "saver-style", short: "Style", vals: []string{"lettering", "screenshots"}, idx: map[string]int{"word": 0, "shots": 1}[a.SaverStyle()],
+			help: "Lettering (default): the MISTERZINE sweep. Screenshots: random arcade shots wiping in; hold Start 2 s on one to play it. Other buttons wake."},
+	}
+	if a.SaverStyle() == "shots" {
+		E = append(E, panelEntry{text: "Brightness", kind: "saver-bright", short: "Brightness", vals: []string{"half", "full"}, idx: map[string]int{"half": 0, "full": 1}[a.SaverBright()],
+			help: "Half (default): the shots at half brightness, kind to a CRT; holding Start brings one up to full. Full: full brightness throughout."},
+			panelEntry{text: "Info", kind: "saver-info", short: "Info", vals: []string{"full", "title only", "none"}, idx: map[string]int{"full": 0, "title": 1, "none": 2}[a.SaverInfo()],
+				help: "Full (default): the pane's lines, typed in a corner. Title only: the title alone. None: nothing; holding Start still shows the title."})
+	}
+
+	if a.SaverStyle() == "shots" {
+		toggle := func(text, kind, help string, on bool) panelEntry {
+			return panelEntry{text: text, kind: kind, help: help, vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[on]}
+		}
+		E = append(E,
+			toggle("Only on card", "saver-card", "Only games found on this card, including older versions. Combines with the other screenshot filters.", a.cfg.SaverCard),
+			toggle("Match rotation", "saver-rotation", "Only games matching the current horizontal or tate orientation. Unknown orientations are hidden.", a.cfg.SaverRotation),
+			toggle("Favorites only", "saver-favorites", "Only starred games. Combines with the other screenshot filters.", a.cfg.SaverFavorites))
+		vals := a.saverResValues()
+		labels := append([]string(nil), vals...)
+		labels[0] = "all"
+		selected := 0
+		for i, v := range vals {
+			if v == a.cfg.SaverResolution {
+				selected = i
+			}
+		}
+		E = append(E, panelEntry{text: "Resolution", kind: "saver-resolution", vals: labels, idx: selected, help: "Original game resolution category. Independent of list filters; all includes unknown resolutions."})
+	}
+	help := "Start immediately, even with delay off. Wake to return here."
+	if a.SaverStyle() == "shots" && len(a.saverPool()) == 0 {
+		help = "No matching screenshots. Preview will show lettering. Change the filters to include more games."
+	}
+	E = append(E, panelEntry{text: "Preview", kind: "saver-preview", help: help})
+	return E
+}
+
+func (a *App) saverResValues() []string {
+	values := []string{""}
+	for v := range a.ds.Facets.Res {
+		if v != "" {
+			values = append(values, v)
+		}
+	}
+	sort.Strings(values[1:])
+	values = append(values, "unknown")
+	if a.cfg.SaverResolution != "" {
+		found := false
+		for _, v := range values {
+			found = found || v == a.cfg.SaverResolution
+		}
+		if !found {
+			values = append(values, a.cfg.SaverResolution)
+		}
+	}
+	return values
 }

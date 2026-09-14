@@ -109,7 +109,7 @@ func TestSaverShotsInfoOptionRow(t *testing.T) {
 	a.cfg.SaverStyle = ""
 	saved := 0
 	a.cfg.SettingsChanged = func() { saved++ }
-	a.openPanel(ScreenOptions)
+	a.openPanel(ScreenSaverOptions)
 	find := func(kind string) int {
 		for i, e := range a.panel.entries {
 			if e.kind == kind {
@@ -146,7 +146,7 @@ func TestSaverShotsInfoOptionRow(t *testing.T) {
 		t.Fatalf("the preview has a caption with info none: %+v", a.saver.shots.lines)
 	}
 	a.Handle(platform.Event{Key: platform.KeyBack, Pressed: true, At: *clock})
-	if a.Screen() != ScreenOptions || a.ScreensaverActive() {
+	if a.Screen() != ScreenSaverOptions || a.ScreensaverActive() {
 		t.Fatal("the preview's wake navigated away")
 	}
 }

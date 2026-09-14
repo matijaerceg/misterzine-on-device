@@ -33,10 +33,11 @@ const (
 	ScreenScan
 	ScreenViews   // Options -> Views: the checkbox page of the Y cycle
 	ScreenCredits // Options -> Credits: who made it, what it builds on, the early adopters
+	ScreenSaverOptions
 )
 
 func (s Screen) String() string {
-	return [...]string{"list", "details", "screen", "filter", "options", "calibrate", "update", "troubleshooting", "scan", "views", "credits"}[s]
+	return [...]string{"list", "details", "screen", "filter", "options", "calibrate", "update", "troubleshooting", "scan", "views", "credits", "screensaver-options"}[s]
 }
 
 // Config is what the app needs from its host.
@@ -97,9 +98,11 @@ type Config struct {
 	// the shots, SaverBright is "half" (default) or "full" and SaverInfo is
 	// what the caption says about a shot's game: "full" (default: the
 	// pane's lines), "title" (the title alone) or "none".
-	SaverStyle  string
-	SaverBright string
-	SaverInfo   string
+	SaverStyle                               string
+	SaverBright                              string
+	SaverInfo                                string
+	SaverCard, SaverRotation, SaverFavorites bool
+	SaverResolution                          string
 	// RememberSort restores LastSort at startup; otherwise start with latest updates.
 	RememberSort   bool
 	FollowRotation bool
@@ -691,7 +694,7 @@ func (a *App) Handle(ev platform.Event) bool {
 	if ev.Key == platform.KeyMenu {
 		return a.menuButton()
 	}
-	if a.screen == ScreenList || a.screen == ScreenFilter || a.screen == ScreenOptions || a.screen == ScreenViews || a.screen == ScreenCredits {
+	if a.screen == ScreenList || a.screen == ScreenFilter || a.screen == ScreenOptions || a.screen == ScreenViews || a.screen == ScreenCredits || a.screen == ScreenSaverOptions {
 		switch ev.Key {
 		case platform.KeyUp, platform.KeyDown, platform.KeyLeft, platform.KeyRight:
 			a.rep.next = ev.At.Add(time.Duration(a.HoldDelay()) * time.Millisecond)
@@ -756,7 +759,7 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 		case platform.KeyUp, platform.KeyDown:
 			return repeatPage
 		}
-	case ScreenFilter, ScreenOptions, ScreenViews, ScreenCredits:
+	case ScreenFilter, ScreenOptions, ScreenViews, ScreenCredits, ScreenSaverOptions:
 		switch k {
 		case platform.KeyUp, platform.KeyDown:
 			return scrollPace(a.cfg.Scroll)
@@ -875,7 +878,7 @@ func (a *App) act(k platform.Key) bool {
 		return a.actSupport(k)
 	case ScreenShot:
 		return a.actShot(k)
-	case ScreenFilter, ScreenOptions, ScreenViews, ScreenCredits:
+	case ScreenFilter, ScreenOptions, ScreenViews, ScreenCredits, ScreenSaverOptions:
 		return a.actPanel(k)
 	case ScreenCalibrate:
 		return a.actCalibrate(k)
@@ -1016,8 +1019,8 @@ func (a *App) Refilter() {
 // a scan finished).
 func (a *App) Invalidate() {
 	a.all = true
-	if a.screen == ScreenOptions {
-		a.buildPanel() // the prefetch tally
+	if a.screen == ScreenOptions || a.screen == ScreenSaverOptions {
+		a.buildPanel() // the prefetch tally and screenshot availability
 	}
 }
 
@@ -1095,7 +1098,7 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 			a.paintDetails(c)
 		case ScreenShot:
 			a.paintShot(c)
-		case ScreenFilter, ScreenOptions, ScreenViews, ScreenCredits:
+		case ScreenFilter, ScreenOptions, ScreenViews, ScreenCredits, ScreenSaverOptions:
 			a.paintPanel(c)
 		case ScreenCalibrate:
 			a.paintCalibrate(c)
@@ -1307,4 +1310,8 @@ func plrShort(plr string) string {
 		s += "P"
 	}
 	return s
+}
+
+func (a *App) SaverFilters() (bool, bool, bool, string) {
+	return a.cfg.SaverCard, a.cfg.SaverRotation, a.cfg.SaverFavorites, a.cfg.SaverResolution
 }
