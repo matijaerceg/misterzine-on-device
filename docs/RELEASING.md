@@ -85,7 +85,9 @@ themselves. It stays short, about 150 words with the footer.
   setting does. Omit the list when empty.
 - **Not on the card:** credits and early adopter names, timings and pixel
   sizes, internal mechanisms, test changes, catalogue refreshes, board
-  measurements. They belong in the changelog.
+  measurements. They belong in the changelog. The one exception is a thanks
+  to whoever reported a fix, one short sentence closing the paragraph
+  ("Thanks to ItsDanik for reporting it.").
 - **Footer, always the same three lines:** a link to the changelog section
   (anchor `#v1028--2026-09-13` for `## v1.0.28 — 2026-09-13`, lowercase with
   dots and the dash removed), the Update All line, and the installation guide
