@@ -814,9 +814,9 @@ func (a *App) paintSaver(c *gfx.Canvas) {
 	if a.saver.style == "dim" {
 		if len(a.saver.dark) != len(c.Pix) {
 			a.saver.dark = append([]uint8(nil), c.Pix...)
-			keep := 67
+			keep := 33
 			if a.SaverDim() == "66" {
-				keep = 34
+				keep = 66
 			}
 			for y := 0; y < c.H(); y++ {
 				for x := 0; x < c.W(); x++ {

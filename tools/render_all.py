@@ -6,6 +6,10 @@ import subprocess
 os.chdir(Path(__file__).resolve().parents[1])
 go = os.environ.get("GO", "go")
 scenarios = [
+    ["-out", "out/saver-dim-h", "-script",
+     "back; down*16; enter; down*2; right*2; down; shot brightness-33; enter; wait 1500; shot preview-33; back; right; shot brightness-66; enter; wait 1500; shot preview-66"],
+    ["-rot", "left", "-logical", "-out", "out/saver-dim-t", "-script",
+     "back; down*16; enter; down*2; right*2; down; shot brightness-33; enter; wait 1500; shot preview-33; back; right; shot brightness-66; enter; wait 1500; shot preview-66"],
     ["-support-report", "testdata/support-mapped-start.json", "-out", "out/support-mapped-h", "-script",
      "back; end; up*2; enter; down*3; enter; shot result; right; shot mapping"],
     ["-support-report", "testdata/support-mapped-start.json", "-inset", "40", "-rot", "left", "-logical", "-out", "out/support-mapped-t", "-script",
@@ -24,15 +28,15 @@ scenarios = [
     ["-rot", "left", "-logical", "-out", "out/search-t",
      "-script", "type 1943; shot matches; type xyz; shot empty"],
     ["-out", "out/saver-h", "-script",
-     "back; down*16; enter; shot option; enter; wait 12000; shot preview; back; wait 300; back; home; up; shot wrap; down; shot top"],
+     "back; down*16; enter; down; shot option; enter; wait 12000; shot preview; back; wait 300; back; home; up; shot wrap; down; shot top"],
     ["-rot", "left", "-logical", "-out", "out/saver-t", "-script",
-     "back; down*16; enter; shot option; enter; wait 12000; shot preview; back; wait 300; back; home; up; shot wrap; down; shot top"],
+     "back; down*16; enter; down; shot option; enter; wait 12000; shot preview; back; wait 300; back; home; up; shot wrap; down; shot top"],
     # Options -> Screensaver style and the brightness row it brings; the preview
     # with no pictures at all falls back to the lettering
     ["-out", "out/saver-shots-h", "-script",
-     "back; down*16; enter; down; shot style; right; shot style-shots; down; shot bright; right; shot bright-full; enter; wait 1500; shot preview; back; wait 300; left; up; left; shot style-word"],
+     "back; down*16; enter; down*2; shot style; right; shot style-shots; down; shot bright; right; shot bright-full; enter; wait 1500; shot preview; back; wait 300; left; up; left; shot style-word"],
     ["-rot", "left", "-logical", "-out", "out/saver-shots-t", "-script",
-     "back; down*16; enter; down; shot style; right; shot style-shots; down; shot bright; right; shot bright-full; enter; wait 1500; shot preview; back; wait 300; left; up; left; shot style-word"],
+     "back; down*16; enter; down*2; shot style; right; shot style-shots; down; shot bright; right; shot bright-full; enter; wait 1500; shot preview; back; wait 300; left; up; left; shot style-word"],
     ["-support-report", "testdata/support-controller.json", "-out", "out/support-h", "-script",
      "back; end; up*2; enter; shot menu; enter; shot ready; wait 3500; shot capture; wait 6000; shot result; right; shot evidence; back; down*2; enter; shot launch; enter; shot launch-result"],
     ["-support-report", "testdata/support-controller.json", "-rot", "left", "-logical", "-out", "out/support-t", "-script",

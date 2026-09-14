@@ -1237,7 +1237,7 @@ func (a *App) saverEntries() []panelEntry {
 			help: "Lettering: the MISTERZINE sweep. Screenshots: arcade shots; hold Start to play. Dim: darken the current screen. Other buttons wake."},
 	}
 	if a.SaverStyle() == "dim" {
-		E = append(E, panelEntry{text: "Dim level", kind: "saver-dim", vals: []string{"33%", "66%"}, idx: map[string]int{"33": 0, "66": 1}[a.SaverDim()], help: "Darken the current screen by 33% or 66%. 66% is darker. Press " + a.btn("A") + " to preview."})
+		E = append(E, panelEntry{text: "Brightness", kind: "saver-dim", vals: []string{"33%", "66%"}, idx: map[string]int{"33": 0, "66": 1}[a.SaverDim()], help: "Show the current screen at 33% or 66% brightness. 33% is darker. Press " + a.btn("A") + " to preview."})
 	}
 	if a.SaverStyle() == "shots" {
 		E = append(E, panelEntry{text: "Brightness", kind: "saver-bright", short: "Brightness", vals: []string{"half", "full"}, idx: map[string]int{"half": 0, "full": 1}[a.SaverBright()],

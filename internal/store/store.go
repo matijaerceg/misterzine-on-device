@@ -28,7 +28,7 @@ type Settings struct {
 	SaverDisabled   bool          `json:"screensaver_disabled"`
 	Screensaver     string        `json:"screensaver_minutes"`
 	SaverStyle      string        `json:"screensaver_style"`      // word (default: the lettering) or shots
-	SaverDim        string        `json:"screensaver_dim"`        // percentage dimmed: 33 (default) or 66
+	SaverDim        string        `json:"screensaver_dim"`        // percentage brightness: 33 (default) or 66
 	SaverBright     string        `json:"screensaver_brightness"` // the shots: half (default) or full
 	SaverCard       bool          `json:"screensaver_on_card"`
 	SaverRotation   bool          `json:"screensaver_match_rotation"`

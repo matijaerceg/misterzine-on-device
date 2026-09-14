@@ -753,7 +753,7 @@ func TestDimSaverLevelsAndWake(t *testing.T) {
 	for _, tc := range []struct {
 		level string
 		want  uint8
-	}{{"33", 134}, {"66", 68}} {
+	}{{"33", 66}, {"66", 132}} {
 		a, now := saverApp()
 		a.cfg.SaverStyle, a.cfg.SaverDim = "dim", tc.level
 		a.startSaver(*now)

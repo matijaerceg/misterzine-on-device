@@ -45,7 +45,7 @@ func (a *App) SaverStyle() string {
 	return "word"
 }
 
-// SaverDim returns the percentage by which the current screen is darkened.
+// SaverDim returns the percentage brightness retained by the current screen.
 func (a *App) SaverDim() string {
 	if a.cfg.SaverDim == "66" {
 		return "66"

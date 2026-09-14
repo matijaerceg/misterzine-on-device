@@ -326,7 +326,7 @@ Screensaver settings are under **Options → Screensaver**. Preview starts it im
   including safe-zone margins, in horizontal and tate layouts. Background data
   downloads and Update All continue while dimmed.
 - **Screensaver enabled:** switch automatic activation on or off separately from Delay (1, 2, 5 or 10 minutes). Disabling keeps your chosen delay and style; preview still works.
-- **Dim screensaver:** choose Dim as the third style to darken the current screen without animation. Dim level offers 33% (default) or 66% dimming; 66% is darker. Press A to preview.
+- **Dim screensaver:** choose Dim as the third style to darken the current screen without animation. Brightness offers 33% (default) or 66% of the original brightness; 33% is darker. Press A to preview.
 - **Screensaver style:** what the screensaver shows. Lettering (default) is the
   MISTERZINE sweep above. Screenshots shows one arcade game's gameplay
   shot after another, every arcade game in the catalogue in a shuffled
