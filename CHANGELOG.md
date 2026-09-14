@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.0.32 — 2026-09-14
+
+- Options previews now live inside the existing hint box. Layout shows three diagrams; Title font shows the three fonts. Scroll speed and Hold delay show a selection moving over fixed game names, with three rows horizontally and four in tate. Animation follows display frames, matching held-button scrolling.
+- Remember last view is now a child of Views. Turn it off to choose a Default view from the enabled views, used each time MisterZine starts, including after a game. Changing these settings leaves the current view alone.
+- Add a dim screensaver that keeps the current screen visible at 33% or 66% brightness. Screensaver Enabled is separate from its saved delay; brightness choices use filled indicators.
+- Recognize the theypsilon unofficial distribution source, including Nemesis in the bundled catalogue.
+- Shorten the list option labels to Art type and Layout. Thank ac3 and Fallon in the early adopters credits.
+
 ## v1.0.31 — 2026-09-14
 
 - Highlight List layout in Options to compare diagrams of List, Split and Picture side by side. The previews follow horizontal or tate orientation, with list lines, an artwork rectangle and colored metadata lines. Left/Right changes the layout and selection border; moving to another option closes the previews.
