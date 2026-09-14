@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
+	"reflect"
+	"strings"
 	"testing"
 	"time"
 )
@@ -85,22 +87,51 @@ func TestOnlyToggleAfterRestartAndOtherSectionEdits(t *testing.T) {
 	}
 }
 
-func TestNoChangesLabelHonorsBoundedWindow(t *testing.T) {
+func TestLastLookLineFollowsDatesNotDepth(t *testing.T) {
 	now := time.Now()
-	rows := make([]data.Row, data.SplitScan+1)
+	rows := make([]data.Row, 300)
 	base := map[string]string{}
 	for i := range rows {
 		rows[i] = data.Row{K: fmt.Sprint(i), Title: fmt.Sprint(i), Updated: "2026-09-10"}
 		base[rows[i].K] = rows[i].Updated
 	}
-	rows[data.SplitScan].Updated = "2020-01-01"
-	base[rows[data.SplitScan].K] = "2019-01-01"
-	a := New(Config{PhysW: 320, PhysH: 240, ClockTrusted: true}, data.Ingest(rows, "", now), &data.SeenRecord{T: now.Add(-2 * time.Hour).Format(time.RFC3339), Cur: base})
-	if !a.topMark || a.noChangesLabel() != "No changes in top 200" {
-		t.Fatal("unseen row beyond marker window misrepresented")
+	// a row catalogued late: unseen, but dated years before the last look
+	rows[299].Updated = "2020-01-01"
+	base[rows[299].K] = "2019-01-01"
+	stored := &data.SeenRecord{T: now.Add(-2 * time.Hour).Format(time.RFC3339), Cur: base}
+	a := New(Config{PhysW: 320, PhysH: 240, ClockTrusted: true}, data.Ingest(rows, "", now), stored)
+	if a.topMark || a.split != -1 || !reflect.DeepEqual(a.marks, []int{0}) {
+		t.Fatalf("backfilled row: topMark=%v split=%d marks=%v", a.topMark, a.split, a.marks)
+	}
+	if got := a.markText(0); !strings.HasPrefix(got, "your last look") {
+		t.Fatalf("a deep unseen row must not read as nothing new: %q", got)
 	}
 	a.SetFilters(data.Filters{Since: true})
 	if len(a.view) != 1 {
 		t.Fatal("Since filter must still scan full catalogue")
+	}
+	a.SetFilters(data.Filters{})
+
+	// the same row, once seen: nothing new anywhere, and the line says so
+	base[rows[299].K] = "2020-01-01"
+	a = New(Config{PhysW: 320, PhysH: 240, ClockTrusted: true}, data.Ingest(rows, "", now), stored)
+	if !a.topMark || !reflect.DeepEqual(a.marks, []int{0}) {
+		t.Fatalf("seen view: topMark=%v marks=%v", a.topMark, a.marks)
+	}
+	if got := a.markText(0); !strings.HasPrefix(got, "Nothing new since ") || !strings.HasSuffix(got, " ago") {
+		t.Fatalf("top line = %q", got)
+	}
+
+	// two rows shipped since: the line sits after the lower one, and the
+	// late-catalogued row deep below never drags it down
+	rows[5].Updated = "2026-09-12"
+	rows[7].Updated = "2026-09-11"
+	base[rows[299].K] = "2019-01-01"
+	a = New(Config{PhysW: 320, PhysH: 240, ClockTrusted: true}, data.Ingest(rows, "", now), stored)
+	if a.topMark || a.split != 1 || !reflect.DeepEqual(a.marks, []int{2}) {
+		t.Fatalf("fresh rows: topMark=%v split=%d marks=%v", a.topMark, a.split, a.marks)
+	}
+	if got := a.markText(0); !strings.HasPrefix(got, "your last look") {
+		t.Fatalf("line = %q", got)
 	}
 }

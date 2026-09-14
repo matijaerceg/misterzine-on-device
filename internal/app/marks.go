@@ -7,8 +7,8 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 )
 
-// The list can carry marker lines between its rows: the last-look divider
-// and "no changes" line under the updated order, and a header before every
+// The list can carry marker lines between its rows: the last-look line
+// under the updated order, on top when nothing is new, and a header before every
 // group under the grouped orders (a maker, a letter, a release year). marks
 // holds, in ascending order, the view positions each marker line precedes
 // (len(view) = after the last row), so screen lines are view positions plus
@@ -45,7 +45,9 @@ func (a *App) groupLabel(i int) string {
 }
 
 // rebuildMarks derives the marker lines from the view, the sort order and
-// the last-look state (split/topMark, set by rebuild).
+// the last-look state (marker/split/topMark, set by rebuild). The last-look
+// line is a timeline marker for the previous visit: it sits after the last
+// row that shipped since, or on top when none did.
 func (a *App) rebuildMarks() {
 	a.marks = a.marks[:0]
 	switch {
@@ -57,9 +59,7 @@ func (a *App) rebuildMarks() {
 				prev = k
 			}
 		}
-	case a.topMark:
-		a.marks = append(a.marks, 0)
-	case a.split >= 0:
+	case a.marker:
 		a.marks = append(a.marks, a.split+1)
 	}
 }
@@ -108,8 +108,21 @@ func (a *App) markText(k int) string {
 		}
 		return ""
 	}
-	if a.topMark {
-		return a.noChangesLabel()
+	label := a.seen.Label(a.cfg.Now(), a.cfg.ClockTrusted)
+	if !a.topMark {
+		return label
 	}
-	return a.seen.Label(a.cfg.Now(), a.cfg.ClockTrusted)
+	// the whole view was checked, so the line can say so without naming a
+	// window; where the full sentence would lose its age to the ellipsis,
+	// the age alone stands for the visit, and beside a wide pane the bare
+	// verdict is all that fits
+	full := "Nothing new since " + label
+	cols := a.sm.Cols(a.lay.lineRect(0).Dx()) - 2
+	if len(full) <= cols {
+		return full
+	}
+	if ago := data.VisitAgo(a.cfg.Now(), a.seen.BaseTime, a.cfg.ClockTrusted); ago != "" && len("Nothing new since "+ago) <= cols {
+		return "Nothing new since " + ago
+	}
+	return "Nothing new"
 }

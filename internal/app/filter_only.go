@@ -121,10 +121,3 @@ func sameSection(kind string, a, b data.Filters) bool {
 	copySection(kind, &right, b)
 	return reflect.DeepEqual(left, right)
 }
-
-func (a *App) noChangesLabel() string {
-	if len(a.view) > data.SplitScan {
-		return "No changes in top " + itoa(data.SplitScan)
-	}
-	return "No changes in this view"
-}

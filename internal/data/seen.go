@@ -8,9 +8,6 @@ import (
 // so the baseline holds still instead of advancing on every quick return.
 const SeenHold = 60 * time.Minute
 
-// SplitScan bounds how far down the list the marker is looked for.
-const SplitScan = 200
-
 // SeenRecord is the persisted state, the site's mz-seen record: t is this
 // visit's clock, bt the baseline visit's clock, base the k -> updated map
 // as of the baseline visit, cur the map as of the rows now on screen.
@@ -25,6 +22,7 @@ type SeenRecord struct {
 type Seen struct {
 	BaseRows map[string]string // nil = first visit, no marker
 	BaseTime string            // ISO clock of the baseline visit
+	Horizon  string            // newest Updated stamp the baseline holds
 	State    SeenRecord        // what to persist
 }
 
@@ -61,6 +59,11 @@ func InitSeen(stored *SeenRecord, rows []Row, now time.Time, clockTrusted bool) 
 		if len(s.BaseRows) == 0 {
 			s.BaseRows = nil
 		}
+		for _, u := range s.BaseRows {
+			if u > s.Horizon {
+				s.Horizon = u
+			}
+		}
 	}
 	t := ""
 	if clockTrusted {
@@ -92,23 +95,41 @@ func (s *Seen) MarkerOn(mode SortMode) bool {
 	return s != nil && s.BaseRows != nil && mode == SortUpdated
 }
 
-// SplitAt mirrors splitAt(): the position in order of the LAST unseen row
-// within the first SplitScan rows, -1 for none or when the marker is off.
+// SplitAt is the position in order of the LAST unseen row dated on or after
+// the baseline's horizon, -1 for none or when the marker is off. The line
+// after it is a timeline marker: everything above it shipped since the last
+// look. Under the updated-desc sort those rows are a prefix, so the scan
+// stops where the dates pass the horizon. A row with an older date that is
+// nonetheless unseen (a core catalogued late, a renamed key, a corrected
+// stamp) keeps its own mark but never drags the line down to it. Same-day
+// rows interleave seen with unseen (the stamps are day-granular), so the
+// line lands approximately on busy days; that's accepted, it's a hint and
+// not an audit.
 func (s *Seen) SplitAt(ds *Dataset, order []int, mode SortMode) int {
 	if !s.MarkerOn(mode) {
 		return -1
 	}
 	last := -1
-	n := len(order)
-	if n > SplitScan {
-		n = SplitScan
-	}
-	for i := 0; i < n; i++ {
-		if s.Unseen(&ds.Rows[order[i]]) {
+	for i, idx := range order {
+		r := &ds.Rows[idx]
+		if r.Updated < s.Horizon {
+			break
+		}
+		if s.Unseen(r) {
 			last = i
 		}
 	}
 	return last
+}
+
+// AnyUnseen reports whether any row of order, however deep, is unseen.
+func (s *Seen) AnyUnseen(ds *Dataset, order []int) bool {
+	for _, idx := range order {
+		if s.Unseen(&ds.Rows[idx]) {
+			return true
+		}
+	}
+	return false
 }
 
 // VisitAgo mirrors visitAgo(iso): under a day the minute/hour ladder, from a

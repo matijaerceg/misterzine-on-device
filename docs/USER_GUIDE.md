@@ -439,10 +439,12 @@ decade shows `[-]`. Choices are saved and combine with your other filters.
 Unknown or uncertain years have an Unknown choice. System cores are unaffected.
 These are the games' original release years, not their MiSTer debut/update dates.
 
-The latest-update view's last-look marker examines at most the first 200 matching
-entries. With no changes there it says **No changes in top 200**; if the entire
-view fits within that window it says **No changes in this view**. These compare
-against your previous visit. The Since last look filter checks the full catalogue.
+The latest-update view's last-look line is a timeline marker for your previous
+visit: it sits under the last entry that shipped since then, so everything above
+it is new to you. When nothing in the view is new it sits at the top and says
+**Nothing new since your last look**. An entry the catalogue added late under an
+old date still shows its own unseen mark below the line, and the Since last look
+filter finds it, but it does not move the line.
 On-card choices include counts across the whole catalogue, independent of the
 current search and other filters. Favorites mode always shows favorites only;
 use Y in the main view to leave it.

@@ -231,8 +231,22 @@ func TestSeen(t *testing.T) {
 		t.Fatal("unseen detection wrong")
 	}
 	order2 := ds2.Order(SortUpdated) // n, b, c, a
+	if next.Horizon != "2026-09-03" {
+		t.Fatalf("horizon = %q, want the baseline's newest stamp", next.Horizon)
+	}
 	if got := next.SplitAt(ds2, order2, SortUpdated); got != 1 {
 		t.Fatalf("SplitAt = %d, want 1 (after b)", got)
+	}
+	// A row catalogued late carries an old stamp: unseen, so the view has
+	// news, but the line stays where the dates pass the horizon.
+	rows3 := append(rows2, Row{K: "old", Updated: "2020-01-01"})
+	ds3 := Ingest(rows3, "", time.Time{})
+	order3 := ds3.Order(SortUpdated) // n, b, c, a, old
+	if got := next.SplitAt(ds3, order3, SortUpdated); got != 1 {
+		t.Fatalf("SplitAt with a backfilled row = %d, want 1", got)
+	}
+	if !next.AnyUnseen(ds3, order3) || next.AnyUnseen(ds2, order2[2:]) {
+		t.Fatal("AnyUnseen must scan the whole order")
 	}
 	if got := next.Label(later, true); got != "your last look, 2 days ago" {
 		t.Fatalf("label = %q", got)

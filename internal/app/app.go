@@ -167,8 +167,9 @@ type App struct {
 	hiddenSrc          map[string]bool
 	iniKnown, iniFound bool
 	seen               *data.Seen
-	split              int                    // last-look marker after view[split]; -1 none
-	topMark            bool                   // "nothing new" marker on top
+	marker             bool                   // the last-look line is drawn (baseline held, updated sort)
+	split              int                    // the line sits after view[split]; -1 puts it on top
+	topMark            bool                   // no row anywhere in the view is unseen: the line says so
 	marks              []int                  // every marker line, by the view position it precedes (marks.go)
 	viewsOff           map[data.SortMode]bool // views left out of the Y cycle (views.go)
 
@@ -371,11 +372,12 @@ func (a *App) rebuild() {
 		}
 		a.view = matched
 	}
+	a.marker = a.seen != nil && a.seen.MarkerOn(a.mode)
 	a.split = -1
 	a.topMark = false
-	if a.seen != nil && a.seen.MarkerOn(a.mode) {
+	if a.marker {
 		a.split = a.seen.SplitAt(a.ds, a.view, a.mode)
-		a.topMark = a.split < 0
+		a.topMark = !a.seen.AnyUnseen(a.ds, a.view)
 	}
 	a.rebuildMarks()
 	if a.cursor >= len(a.view) {
