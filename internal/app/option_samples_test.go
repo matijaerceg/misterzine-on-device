@@ -7,25 +7,29 @@ import (
 )
 
 func TestSampleListTiming(t *testing.T) {
-	for _, speed := range ScrollValues {
-		pace := scrollPace(speed)
-		for _, ms := range []int{200, 300, 500} {
-			delay := time.Duration(ms) * time.Millisecond
-			for _, c := range []struct {
-				at   time.Duration
-				want int
-			}{
-				{0, 0}, {delay - time.Nanosecond, 0}, {delay + pace, 1},
-				{delay + 12*pace, 12}, {2*delay + 12*pace - time.Nanosecond, 12},
-				{2*delay + 13*pace, 11}, {2 * (delay + 12*pace), 0},
-			} {
-				if got := sampleListOffset(c.at, pace, delay); got != c.want {
-					t.Fatalf("%s/%d at %v: %d want %d", speed, ms, c.at, got, c.want)
+	for _, rows := range []int{3, 4} {
+		for _, speed := range ScrollValues {
+			pace := scrollPace(speed)
+			for step := 0; step < rows*3; step++ {
+				if got := sampleListSelection(time.Duration(step)*pace, pace, 0, rows); got != step%rows {
+					t.Fatal("selection does not wrap", got)
 				}
 			}
-		}
-		if got := sampleListOffset(6*pace, pace, 0); got != 6 {
-			t.Fatal(got)
+			for _, ms := range []int{200, 300, 500} {
+				delay := time.Duration(ms) * time.Millisecond
+				end := delay + time.Duration(rows-2)*pace
+				for _, c := range []struct {
+					at   time.Duration
+					want int
+				}{
+					{0, 0}, {delay - time.Nanosecond, 0}, {delay, 1}, {end, rows - 1},
+					{end + delay - time.Nanosecond, rows - 1}, {end + delay, rows - 2}, {2 * end, 0},
+				} {
+					if got := sampleListSelection(c.at, pace, delay, rows); got != c.want {
+						t.Fatalf("rows %d speed %s delay %d at %v: got %d want %d", rows, speed, ms, c.at, got, c.want)
+					}
+				}
+			}
 		}
 	}
 }

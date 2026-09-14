@@ -48,28 +48,32 @@ func (a *App) nextOptionSampleTick() time.Time {
 	return a.optionSamples.next
 }
 
-// Twelve rows in each direction, with the chosen initial-repeat delay at each end.
-func sampleListOffset(elapsed, pace, delay time.Duration) int {
+// The names stay fixed: only the selection loops or reverses, pausing at each end.
+func sampleListSelection(elapsed, pace, delay time.Duration, rows int) int {
+	if rows < 2 {
+		return 0
+	}
 	if elapsed < 0 {
 		elapsed = 0
 	}
 	if delay == 0 {
-		return int(elapsed / pace)
+		return int(elapsed/pace) % rows
 	}
-	travel := 12 * pace
-	phase := elapsed % (2 * (delay + travel))
-	if phase < delay {
-		return 0
+	last := rows - 1
+	half := delay + time.Duration(last-1)*pace
+	phase := elapsed % (2 * half)
+	reverse := phase >= half
+	if reverse {
+		phase -= half
 	}
-	phase -= delay
-	if phase < travel {
-		return int(phase / pace)
+	selected := 0
+	if phase >= delay {
+		selected = 1 + int((phase-delay)/pace)
 	}
-	phase -= travel
-	if phase < delay {
-		return 12
+	if reverse {
+		return last - selected
 	}
-	return 12 - int((phase-delay)/pace)
+	return selected
 }
 
 func (a *App) paintOptionSamples(c *gfx.Canvas, area image.Rectangle, e panelEntry) {
@@ -80,6 +84,9 @@ func (a *App) paintOptionSamples(c *gfx.Canvas, area image.Rectangle, e panelEnt
 	}
 	for i := 0; i < 3; i++ {
 		cell := image.Rect(area.Min.X+3+i*(area.Dx()-6)/3, area.Min.Y+3, area.Min.X+3+(i+1)*(area.Dx()-6)/3-2, area.Max.Y-3)
+		if e.kind != "title-font" {
+			c.Fill(cell, gen.Eva.Bg)
+		}
 		col := gen.Eva.Fg
 		if i == e.idx {
 			col = gen.Eva.Accent
@@ -102,12 +109,22 @@ func (a *App) paintOptionSamples(c *gfx.Canvas, area image.Rectangle, e panelEnt
 			pace = scrollPace(a.ScrollSpeed())
 			delay = time.Duration([]int{200, 300, 500}[i]) * time.Millisecond
 		}
-		offset := sampleListOffset(a.optionSamples.now.Sub(a.optionSamples.start), pace, delay)
-		// Unequal strokes make each moving row recognizable without tiny text.
-		for row := 0; row < 4; row++ {
-			y := r.Min.Y + row*(r.Dy()-1)/3
-			width := r.Dx() * (5 + (offset+row)%7) / 12
-			c.HLine(r.Min.X, r.Min.X+width-1, y, col)
+		r = cell.Inset(1)
+		rows := 3
+		if a.lay.Portrait {
+			rows = 4
+		}
+		selected := sampleListSelection(a.optionSamples.now.Sub(a.optionSamples.start), pace, delay, rows)
+		names := []string{"Galaga", "Pac-Man", "Out Run", "1942"}
+		top := r.Min.Y + (r.Dy()-rows*a.sm.H)/2
+		for row := 0; row < rows; row++ {
+			y := top + row*a.sm.H
+			textCol := gen.Eva.Fg
+			if row == selected {
+				c.Fill(image.Rect(r.Min.X, y, r.Max.X, y+a.sm.H), gen.Eva.Surface)
+				textCol = gen.Eva.Accent
+			}
+			c.Text(r.Min.X+1, y, a.sm, gfx.Fit(names[row], a.sm.Cols(r.Dx()-2)), textCol)
 		}
 	}
 }
