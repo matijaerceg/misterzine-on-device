@@ -223,12 +223,14 @@ type App struct {
 }
 
 type detailState struct {
-	scroll int       // first information line wanted at the top
-	pixel  int       // where the information sits now, in pixels, easing toward scroll
-	next   time.Time // the next animation frame
-	lines  int       // visible information lines, used for paging
-	pick   int       // launch entry cursor
-	from   Screen    // where B returns to
+	scroll int           // first information line wanted at the top
+	pixel  int           // where the information sits now, in pixels, easing toward scroll
+	next   time.Time     // the next animation frame
+	last   time.Time     // previous scroll sample
+	carry  time.Duration // fractional pixel travel between frames
+	lines  int           // visible information lines, used for paging
+	pick   int           // launch entry cursor
+	from   Screen        // where B returns to
 }
 
 // New builds an app around a dataset. stored is the persisted last-look
@@ -838,7 +840,7 @@ func (a *App) Frame(now time.Time) bool {
 			changed = true
 		}
 	}
-	changed = a.tickDetailScroll(now) || changed // keeps paging smooth under a held key
+	changed = a.DetailScrollFrame(now) || changed // follows the display cadence under a held key
 	if a.notice != "" && !now.Before(a.until) {
 		a.notice = ""
 		a.all = true

@@ -78,8 +78,8 @@ func (a *App) tickMarquee(now time.Time) bool {
 	return true
 }
 
-// The information pages by the pixel: six pixels a frame at 60 frames a
-// second toward the wanted line, so a page turn reads as a quick slide.
+// The information slides at 360 pixels per second toward the wanted line.
+// The timer fallback uses 60 Hz; the device follows its display refresh.
 const (
 	detailFrame = time.Second / 60
 	detailStep  = 6
@@ -95,17 +95,40 @@ func (a *App) nextDetailTick() time.Time {
 	return a.detail.next
 }
 
-// tickDetailScroll moves the information one step toward its target.
+// DetailScrollRunning keeps the host in its display-paced loop after release.
+func (a *App) DetailScrollRunning() bool { return !a.nextDetailTick().IsZero() }
+
+// DetailScrollFrame advances at the display's cadence, without a second timer
+// rejecting a refresh that arrives slightly before the nominal 60 Hz deadline.
+func (a *App) DetailScrollFrame(now time.Time) bool {
+	if !a.DetailScrollRunning() {
+		return false
+	}
+	elapsed := now.Sub(a.detail.last)
+	if elapsed <= 0 {
+		return false
+	}
+	travel := elapsed*detailStep + a.detail.carry
+	step := int(travel / detailFrame)
+	a.detail.carry = travel % detailFrame
+	a.detail.last = now
+	a.detail.next = now.Add(detailFrame)
+	d := a.detail.scroll*a.detailLine() - a.detail.pixel
+	a.detail.pixel += max(-step, min(step, d))
+	if step == 0 {
+		return false
+	}
+	a.all = true
+	return true
+}
+
+// Timer-driven callers (including the harness) use the nominal frame deadline.
 func (a *App) tickDetailScroll(now time.Time) bool {
 	next := a.nextDetailTick()
 	if next.IsZero() || now.Before(next) {
 		return false
 	}
-	d := a.detail.scroll*a.detailLine() - a.detail.pixel
-	a.detail.pixel += max(-detailStep, min(detailStep, d))
-	a.detail.next = now.Add(detailFrame)
-	a.all = true
-	return true
+	return a.DetailScrollFrame(now)
 }
 
 // launchEntry is one thing the details view can launch.
@@ -492,8 +515,13 @@ func (a *App) actDetails(k platform.Key) bool {
 		if k == platform.KeyUp {
 			page = -page
 		}
+		running := a.DetailScrollRunning()
 		a.detail.scroll = max(0, a.detail.scroll+page)
-		a.detail.next = a.cfg.TimerNow()
+		if !running {
+			a.detail.next = a.cfg.TimerNow()
+			a.detail.last = a.detail.next
+			a.detail.carry = 0
+		}
 	case platform.KeySpace:
 		if a.toggleFavorite() {
 			a.screen = ScreenList // the row left the filtered view
