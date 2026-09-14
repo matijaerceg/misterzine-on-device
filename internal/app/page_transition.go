@@ -165,7 +165,7 @@ func pageWipeDirty(w, h int, previous, current float64, back bool) image.Rectang
 	return image.Rect(lo, 0, hi, h).Intersect(image.Rect(0, 0, w, h))
 }
 
-// The incoming page is already in dst. Only a narrow boundary dissolves; either
+// The incoming page is already in dst. A broad boundary dissolves; either
 // side stays sharp. The edge uses the screensaver's fine pixel dissolve.
 // Forward reveals from the right, Back from the left.
 func composePageWipe(dst, from []byte, w, h, stride int, progress float64, back bool) {

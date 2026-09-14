@@ -20,7 +20,7 @@ func (h *host) recordPageFrame(active bool, paint, wait, copyTime time.Duration,
 	}
 	screen := h.a.Screen().String()
 	interval := time.Duration(0)
-	if screen == h.pageLastScreen && !h.pageLastAt.IsZero() && at.Sub(h.pageLastAt) < 100*time.Millisecond {
+	if screen == h.pageLastScreen && !h.pageLastAt.IsZero() {
 		interval = at.Sub(h.pageLastAt)
 	}
 	h.pageLastAt, h.pageLastScreen = at, screen

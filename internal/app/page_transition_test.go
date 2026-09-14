@@ -304,3 +304,36 @@ func TestPageWipeDefersBackgroundInvalidation(t *testing.T) {
 	}
 	a.Paint()
 }
+
+type pagePauseImages struct {
+	noImages
+	paused bool
+}
+
+func (p *pagePauseImages) SetPaused(paused bool) { p.paused = paused }
+func TestPageWipePausesAndResumesPictures(t *testing.T) {
+	a, clock := saverApp()
+	pics := &pagePauseImages{}
+	a.cfg.Images = pics
+	a.EnablePageTransitions()
+	a.Paint()
+	a.openOptions()
+	a.Paint()
+	if !pics.paused {
+		t.Fatal("decoder competed with transition")
+	}
+	*clock = clock.Add(pageWipeDuration)
+	a.Tick(*clock)
+	a.Paint()
+	if pics.paused {
+		t.Fatal("decoder remained paused after transition")
+	}
+	a.actPanel(platform.KeyBack)
+	a.Paint()
+	a.saver.active = true
+	a.all = true
+	a.Paint()
+	if pics.paused {
+		t.Fatal("cancelling for saver left decoder paused")
+	}
+}

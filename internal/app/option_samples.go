@@ -42,7 +42,7 @@ func (a *App) tickOptionSamples() bool {
 // A late frame must never skip over one or more selected rows.
 func (a *App) OptionSampleFrame() bool {
 	a.tickOptionSamples()
-	if !a.OptionSamplesRunning() {
+	if !a.OptionSamplesRunning() || a.PageTransitionRunning() {
 		return false
 	}
 	a.optionSamples.elapsed += frameDur
