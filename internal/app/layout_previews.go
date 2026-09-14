@@ -63,21 +63,36 @@ func (a *App) paintLayoutDiagram(c *gfx.Canvas, r image.Rectangle, style string)
 		return image.Rect(target.Min.X+(b.Min.X-l.Body.Min.X)*target.Dx()/l.Body.Dx(), target.Min.Y+(b.Min.Y-l.Body.Min.Y)*target.Dy()/l.Body.Dy(), target.Min.X+(b.Max.X-l.Body.Min.X)*target.Dx()/l.Body.Dx(), target.Min.Y+(b.Max.Y-l.Body.Min.Y)*target.Dy()/l.Body.Dy()).Intersect(target)
 	}
 	list := scaled(l.List)
+	picture := scaled(art)
+	metadata := scaled(meta)
+	// Keep a visible gutter even when the real layout's spacing rounds down
+	// to less than a pixel in these small diagrams.
+	const gutter = 3
+	if l.Portrait {
+		list.Max.Y = min(list.Max.Y, min(picture.Min.Y, metadata.Min.Y)-gutter)
+	} else if l.PaneTop {
+		list.Min.Y = max(list.Min.Y, picture.Max.Y+gutter)
+		metadata.Max.Y = min(metadata.Max.Y, list.Min.Y-gutter)
+	} else {
+		list.Max.X = min(list.Max.X, min(picture.Min.X, metadata.Min.X)-gutter)
+	}
 	for y := list.Min.Y; y < list.Max.Y; y += 4 {
 		c.HLine(list.Min.X, list.Max.X-1, y, gen.Eva.Fg)
 	}
-	picture := scaled(art)
 	if !picture.Empty() {
 		c.Box(picture, gen.Eva.Fg)
 	}
-	metadata := scaled(meta)
+	if !l.Portrait && style == "split" && !list.Empty() {
+		lastListY := list.Min.Y + (list.Dy()-1)/4*4
+		metadata.Max.Y = min(metadata.Max.Y, lastListY+1)
+	}
 	for y, n := metadata.Min.Y, 0; y < metadata.Max.Y && n < 6; y, n = y+3, n+1 {
 		width := metadata.Dx() * 3 / 4
 		if n%2 == 1 {
 			width = metadata.Dx() / 2
 		}
 		if width > 0 {
-			c.HLine(metadata.Min.X, metadata.Min.X+width-1, y, gen.Eva.Muted)
+			c.HLine(metadata.Min.X, metadata.Min.X+width-1, y, gen.Eva.TypeArcade)
 		}
 	}
 }
