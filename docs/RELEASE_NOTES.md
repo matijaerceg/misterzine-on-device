@@ -1,11 +1,11 @@
-Coin-Op Collection games now show as installed
+Your games on the Screenshots Screensaver
 
-Games whose core file carries a longer name than the game's own file says, like Coin-Op's Black Heart, Captain America and The Avengers, Thunder Dragon and Zero Wing, showed as not on your card although they were installed and played fine. MisterZine now finds the core file the same way MiSTer itself does, so they show as installed and their alternative versions appear in the launch picker. Thanks to ItsDanik for reporting it.
+Leave MisterZine idle and let it show your favorites, games on your card, or games that suit your horizontal or tate setup. Combine those choices with an original resolution category, such as 15 kHz, to make your own selection. Everything is together in Options → Screensaver, with Preview to try it immediately. The screenshot choices appear when Screenshots is selected, and lettering takes over if nothing matches.
 
 Also in this release:
 
-- In the latest-update view, the line marking your last look follows the dates of what shipped since, and says Nothing new since your last look when there is nothing new.
+- Button hints in Filters and while holding Select follow A, B, X, Y order.
 
-Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1029--2026-09-14).
+Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1030--2026-09-14).
 Existing installations update through Update All. New installation:
 [installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once).

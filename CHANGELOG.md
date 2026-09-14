@@ -1,10 +1,11 @@
 # Changelog
 
-## Unreleased
+## v1.0.30 — 2026-09-14
 
 - Screensaver settings now have their own Options subpage, with an immediate Preview.
 - Screenshot filters combine games on the card, current rotation, favorites and original resolution. They are independent of list filters and appear only with Screenshots selected, alongside Brightness and Info. Switching styles keeps their values.
 - With no matching screenshots, lettering runs instead; Preview explains the empty selection.
+- Button hints in Filters and while holding Select follow A, B, X, Y order.
 
 ## v1.0.29 — 2026-09-14
 
