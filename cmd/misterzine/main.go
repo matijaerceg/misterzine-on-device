@@ -324,6 +324,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	}
 	h.a = app.New(cfg, ds, seen)
 	h.a.StartSplash()
+	h.a.EnablePageTransitions()
 	h.dirty = true // persist the new visit even without input
 	h.initUpdates()
 	h.a.SetPrefetch(h.settings.Prefetch)
@@ -491,7 +492,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			h.frameLoop()
 		} else if h.a.SaverRunning() {
 			h.saverLoop()
-		} else if h.a.OptionSamplesRunning() {
+		} else if h.a.OptionSamplesRunning() || h.a.PageTransitionRunning() {
 			h.optionSampleLoop()
 		}
 		h.autosave(time.Now(), false)
@@ -610,16 +611,16 @@ func (h *host) frameLoop() {
 	}
 }
 
-// optionSampleLoop uses one vertical blank per sample frame, as frameLoop does.
+// optionSampleLoop drives option previews and page wipes at vertical blank.
 // Keep servicing events and saves, and allow inactivity to start the screensaver.
 func (h *host) optionSampleLoop() {
-	for h.a.OptionSamplesRunning() && !h.a.Repeating() {
+	for (h.a.OptionSamplesRunning() || h.a.PageTransitionRunning()) && !h.a.Repeating() {
 		if !h.pump() {
 			return
 		}
 		now := time.Now()
 		h.a.Tick(now)
-		if !h.a.OptionSamplesRunning() || h.a.Repeating() {
+		if h.a.Repeating() {
 			return
 		}
 		h.a.OptionSampleFrame()
