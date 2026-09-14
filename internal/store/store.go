@@ -16,6 +16,7 @@ import (
 
 // Settings are the user's device settings.
 type Settings struct {
+	ShowDeprecated  bool          `json:"show_deprecated"`
 	Schema          int           `json:"schema"`
 	Rotation        string        `json:"rotation"` // auto, left, right, off
 	FollowRotation  bool          `json:"follow_ini_rotation"`

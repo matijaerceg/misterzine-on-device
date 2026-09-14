@@ -417,6 +417,8 @@ func (a *App) optionsEntries() []panelEntry {
 		spacer, group(gfx.SectionList, "List"),
 		{text: "Sources", kind: "sources", vals: []string{"all", "installed only"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.InstalledOnly],
 			help: a.sourcesHelp()},
+		{text: "Show deprecated cores", kind: "show-deprecated", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ShowDeprecated],
+			help: "Include cores marked deprecated in the catalogue."},
 		{text: "Filter by rotation", kind: "filter-rotation", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.FilterRotation()],
 			help: "Show only games made for the current orientation (INI or manual); unknowns hidden. Off restores manual filters."},
 		{text: "Views (" + a.viewsSummary() + ")", kind: "views",
@@ -983,6 +985,9 @@ func (a *App) stepValue(d int) bool {
 	case "filter-rotation":
 		a.cfg.FilterRotation = i == 1
 		a.Refilter()
+	case "show-deprecated":
+		a.cfg.ShowDeprecated = i == 1
+		a.Refilter()
 	case "sources":
 		a.cfg.InstalledOnly = i == 1
 		a.Refilter()
@@ -1182,7 +1187,7 @@ func (a *App) togglePanel() bool {
 		if !e.header {
 			f.Since = !f.Since
 		}
-	case "rotation", "follow-rotation", "filter-rotation", "sources", "launcher", "scroll", "hold-delay", "remember-sort", "default-view", "prefetch", "title-font", "list-shot", "date-format", "list-layout", "button-labels", "ok-button":
+	case "rotation", "follow-rotation", "filter-rotation", "sources", "show-deprecated", "launcher", "scroll", "hold-delay", "remember-sort", "default-view", "prefetch", "title-font", "list-shot", "date-format", "list-layout", "button-labels", "ok-button":
 		return true // Left/Right pick these
 	case "inset":
 		a.screen = ScreenCalibrate

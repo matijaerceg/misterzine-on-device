@@ -227,6 +227,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		FollowRotation:       h.settings.FollowRotation,
 		FilterRotation:       h.settings.FilterRotation,
 		InstalledOnly:        h.settings.InstalledOnly,
+		ShowDeprecated:       h.settings.ShowDeprecated,
 		ViewsOff:             h.settings.ViewsOff,
 		RecentLaunches:       h.state.Recents,
 		LastSort:             h.settings.LastSort,
@@ -875,6 +876,7 @@ func (h *host) saveAll(final bool) {
 		h.settings.FollowRotation = h.a.FollowRotation()
 		h.settings.FilterRotation = h.a.FilterRotation()
 		h.settings.InstalledOnly = h.a.InstalledOnly()
+		h.settings.ShowDeprecated = h.a.ShowDeprecated()
 		h.settings.ViewsOff = h.a.ViewsOff()
 		h.settings.LastSort = h.a.Sort()
 		h.settings.DefaultSort = h.a.DefaultView()

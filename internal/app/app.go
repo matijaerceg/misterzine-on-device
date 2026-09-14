@@ -111,7 +111,8 @@ type Config struct {
 	FilterRotation bool // strict filter on the current orientation
 	// InstalledOnly is Options -> Sources: installed only. Sources whose Downloader
 	// database the card lacks (SetHiddenSources) leave every view.
-	InstalledOnly bool
+	InstalledOnly  bool
+	ShowDeprecated bool // Include catalogue rows marked deprecated.
 	// ViewsOff names the views Options -> Views left out of the Y cycle
 	// (data.SortMode.Name); a fresh install lists only "recents".
 	ViewsOff    []string
@@ -362,10 +363,10 @@ func (a *App) rebuild() {
 		filters.FavOnly = true
 	}
 	a.total = len(a.ds.Rows)
-	if len(filters.SrcHidden) > 0 {
+	if len(filters.SrcHidden) > 0 || filters.HideDeprecated {
 		a.total = 0
 		for i := range a.ds.Rows {
-			if !filters.SrcHidden[a.ds.Rows[i].Src] {
+			if !filters.SrcHidden[a.ds.Rows[i].Src] && !(filters.HideDeprecated && a.ds.Rows[i].Deprecated) {
 				a.total++
 			}
 		}
@@ -463,6 +464,8 @@ func (a *App) FilterRotation() bool  { return a.cfg.FilterRotation }
 
 // InstalledOnly reports Options -> Sources: installed only.
 func (a *App) InstalledOnly() bool { return a.cfg.InstalledOnly }
+
+func (a *App) ShowDeprecated() bool { return a.cfg.ShowDeprecated }
 
 // SetInstalledOnly is the Sources option; the host calls Refilter after.
 func (a *App) SetInstalledOnly(on bool) { a.cfg.InstalledOnly = on }

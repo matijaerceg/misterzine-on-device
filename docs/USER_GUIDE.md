@@ -245,6 +245,9 @@ and last row.
 - **Prefetch shots:** downloads the full picture set in the background.
   Off downloads pictures as you browse. The tally shows cached pictures.
 - **Clear image cache:** removes downloaded pictures, which return as needed.
+- **Show deprecated cores:** off by default. Turn it on to include cores marked
+  deprecated in the catalogue. This choice is remembered and is unaffected by
+  Clear all filters. Hidden cores keep their saved favourites.
 - **Sources:** all by default. Installed only shows games from the databases
   listed in the card's `downloader.ini`, the file Update All rewrites on every
   run, so a source you never enabled (Coin-Op, Meathax, rmCores or Jotego) stays out of

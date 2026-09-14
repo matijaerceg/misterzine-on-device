@@ -326,3 +326,21 @@ func TestDefaultSortMigration(t *testing.T) {
 		}
 	}
 }
+
+func TestShowDeprecatedPersistence(t *testing.T) {
+	p := writeSettings(t, `{}`)
+	s, err := LoadSettings(p)
+	if err != nil || s.ShowDeprecated {
+		t.Fatal("old settings must default to hidden")
+	}
+	for _, show := range []bool{true, false} {
+		s.ShowDeprecated = show
+		if err := Save(p, s); err != nil {
+			t.Fatal(err)
+		}
+		restored, err := LoadSettings(p)
+		if err != nil || restored.ShowDeprecated != show {
+			t.Fatal("deprecated preference not saved")
+		}
+	}
+}

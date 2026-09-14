@@ -74,7 +74,7 @@ func TestShotReturnPreservesSelectedVersion(t *testing.T) {
 				alts := []string{"_Arcade/_alternatives/Example A.mra", "_Arcade/_alternatives/Example B.mra"}
 				launched := ""
 				a := New(Config{
-					PhysW: 320, PhysH: 240, Rotation: rotation.rot, SafeInsetX: 15, SafeInsetY: 15,
+					PhysW: 320, PhysH: 240, Rotation: rotation.rot, SafeInsetX: 15, SafeInsetY: 15, ShowDeprecated: true,
 					Now: func() time.Time { return now }, ClockTrusted: true,
 					Status:       func(int) data.Status { return data.StatusCurrent },
 					Exists:       func(string) bool { return true },

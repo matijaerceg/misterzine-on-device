@@ -17,6 +17,7 @@ func (a *App) rotationFilter() string {
 
 func (a *App) effectiveFilters() data.Filters {
 	f := a.filters
+	f.HideDeprecated = !a.cfg.ShowDeprecated
 	if orientation := a.rotationFilter(); orientation != "" {
 		f.MatchRotation = orientation
 		f.RotOff = nil // keep saved manual rotation choices, temporarily superseded
@@ -33,6 +34,7 @@ func (a *App) effectiveFilters() data.Filters {
 func (a *App) filtersActive() bool {
 	f := a.effectiveFilters()
 	f.SrcHidden = nil
+	f.HideDeprecated = false
 	return f.Active()
 }
 

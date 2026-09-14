@@ -39,21 +39,22 @@ const (
 // Filters follow the site's all-checked model: a value listed in an Off set
 // is hidden, so a value the data gains later defaults to visible.
 type Filters struct {
-	MatchRotation string          `json:"-"`                 // runtime INI rule; includes system/unknown rows
-	SrcHidden     map[string]bool `json:"-"`                 // runtime rule: sources whose Downloader database the card lacks
-	ResOff        map[string]bool `json:"res_off,omitempty"` // raw resolution, "" = unknown
-	BaseOff       map[string]bool `json:"base_off,omitempty"`
-	BetaOff       map[string]bool `json:"beta_off,omitempty"` // arcade sub-type: "stable", "beta"
-	SrcOff        map[string]bool `json:"src_off,omitempty"`
-	RotOff        map[string]bool `json:"rot_off,omitempty"`   // "h", "v", ""
-	PlrOff        map[string]bool `json:"plr_off,omitempty"`   // raw plr, "" = unknown
-	GenreOff      map[string]bool `json:"genre_off,omitempty"` // raw genre, "" = no genre
-	DirectionsOff map[string]bool `json:"directions_off,omitempty"`
-	ButtonsOff    map[string]bool `json:"buttons_off,omitempty"`
-	YearOff       map[string]bool `json:"year_off,omitempty"` // original arcade release year; "" = unknown
-	Install       string          `json:"install,omitempty"`  // InstallAll (default) or one of the Install* values
-	FavOnly       bool            `json:"fav_only,omitempty"`
-	Since         bool            `json:"since,omitempty"` // only rows changed since the last look
+	HideDeprecated bool            `json:"-"`                 // runtime catalogue preference
+	MatchRotation  string          `json:"-"`                 // runtime INI rule; includes system/unknown rows
+	SrcHidden      map[string]bool `json:"-"`                 // runtime rule: sources whose Downloader database the card lacks
+	ResOff         map[string]bool `json:"res_off,omitempty"` // raw resolution, "" = unknown
+	BaseOff        map[string]bool `json:"base_off,omitempty"`
+	BetaOff        map[string]bool `json:"beta_off,omitempty"` // arcade sub-type: "stable", "beta"
+	SrcOff         map[string]bool `json:"src_off,omitempty"`
+	RotOff         map[string]bool `json:"rot_off,omitempty"`   // "h", "v", ""
+	PlrOff         map[string]bool `json:"plr_off,omitempty"`   // raw plr, "" = unknown
+	GenreOff       map[string]bool `json:"genre_off,omitempty"` // raw genre, "" = no genre
+	DirectionsOff  map[string]bool `json:"directions_off,omitempty"`
+	ButtonsOff     map[string]bool `json:"buttons_off,omitempty"`
+	YearOff        map[string]bool `json:"year_off,omitempty"` // original arcade release year; "" = unknown
+	Install        string          `json:"install,omitempty"`  // InstallAll (default) or one of the Install* values
+	FavOnly        bool            `json:"fav_only,omitempty"`
+	Since          bool            `json:"since,omitempty"` // only rows changed since the last look
 }
 
 // Active reports whether any narrowing is in effect.
@@ -61,7 +62,7 @@ func (f *Filters) Active() bool {
 	if f == nil {
 		return false
 	}
-	return f.MatchRotation != "" || len(f.SrcHidden) > 0 || len(f.YearOff) > 0 || len(f.BaseOff) > 0 || len(f.BetaOff) > 0 || len(f.SrcOff) > 0 || len(f.RotOff) > 0 || len(f.PlrOff) > 0 ||
+	return f.HideDeprecated || f.MatchRotation != "" || len(f.SrcHidden) > 0 || len(f.YearOff) > 0 || len(f.BaseOff) > 0 || len(f.BetaOff) > 0 || len(f.SrcOff) > 0 || len(f.RotOff) > 0 || len(f.PlrOff) > 0 ||
 		len(f.ResOff) > 0 || len(f.GenreOff) > 0 || len(f.DirectionsOff) > 0 || len(f.ButtonsOff) > 0 || (f.Install != "" && f.Install != InstallAll) || f.FavOnly || f.Since
 }
 
@@ -73,7 +74,7 @@ func (f *Filters) Pass(r *Row, d *Derived, st Status, fav, unseen bool) bool {
 	if f.MatchRotation != "" && d.RotGroup != f.MatchRotation {
 		return false
 	}
-	if f.BaseOff[r.Base] || f.SrcOff[r.Src] || f.SrcHidden[r.Src] {
+	if (f.HideDeprecated && r.Deprecated) || f.BaseOff[r.Base] || f.SrcOff[r.Src] || f.SrcHidden[r.Src] {
 		return false
 	}
 	if r.IsArcade() && f.BetaOff[BetaKind(r)] {

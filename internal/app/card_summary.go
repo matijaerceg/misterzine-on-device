@@ -41,7 +41,7 @@ func (a *App) cardCounts() map[data.Status]int {
 	counts := map[data.Status]int{}
 	hidden := a.effectiveFilters().SrcHidden
 	for i := range a.ds.Rows {
-		if hidden[a.ds.Rows[i].Src] {
+		if hidden[a.ds.Rows[i].Src] || (!a.cfg.ShowDeprecated && a.ds.Rows[i].Deprecated) {
 			continue
 		}
 		counts[a.status(i)]++
