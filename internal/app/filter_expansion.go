@@ -1,6 +1,8 @@
 package app
 
 import (
+	"strings"
+
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 )
@@ -69,28 +71,39 @@ func (a *App) filterSectionActive(kind string) bool {
 }
 
 func (a *App) filterHint() string {
-	arrows := gfx.ArrowLeft + " " + gfx.ArrowRight
+	p := &a.panel
+	if p.cursor >= len(p.entries) {
+		return "B Back"
+	}
+	e := p.entries[p.cursor]
+	if e.disabled || e.info || (e.kind == "rot" && a.rotationFilter() != "") {
+		return "B Back"
+	}
+	if e.kind == "clear" {
+		return "A Clear  B Back"
+	}
 	if a.onFilterSectionHeader() {
-		// A and the arrows both open or close the heading under the cursor.
-		return "A " + arrows + " Open/close  B Back"
+		if p.sectionClosed[e.kind] {
+			return "A " + gfx.ArrowRight + " Open  B Back"
+		}
+		return "A " + gfx.ArrowLeft + " Close  B Back"
 	}
-	hint := "A Toggle  " + arrows + " Open/close  B Back"
+	parts := []string{"A Toggle", "B Back"}
 	if a.canOnlyFilter() {
-		hint = "A Toggle  B Back  Y Only/all  " + arrows + " Open/close"
+		parts = append(parts, "Y Only/all")
+	}
+	// Left closes the containing group; Right only opens a closed subgroup.
+	if group := a.selectedDecade(); group != "" && !p.yearOpen[group] {
+		parts = append(parts, gfx.ArrowLeft+" Close", gfx.ArrowRight+" Open")
+	} else {
+		parts = append(parts, gfx.ArrowLeft+" Close")
+	}
+	hint := strings.Join(parts, "  ")
+	if a.sm.Width(hint) > a.lay.Hint.Dx()-4 {
+		hint = strings.ReplaceAll(hint, "Y Only/all", "Y Only")
 	}
 	if a.sm.Width(hint) > a.lay.Hint.Dx()-4 {
-		hint = "A Toggle  " + arrows + " Open/close  B"
-		if a.canOnlyFilter() {
-			hint = "A Toggle  B Back  Y Only  " + arrows + " Open/close"
-		}
-	}
-	if a.sm.Width(hint) > a.lay.Hint.Dx()-4 {
-		// At the largest tate inset, retain action descriptions and omit
-		// the conventional Back reminder rather than clipping a control.
-		hint = "A Toggle  " + gfx.ArrowLeft + gfx.ArrowRight + " Open/close"
-		if a.canOnlyFilter() {
-			hint = "A Toggle  Y Only  " + gfx.ArrowLeft + gfx.ArrowRight + " Open/close"
-		}
+		hint = strings.ReplaceAll(hint, "  B Back", "")
 	}
 	return hint
 }

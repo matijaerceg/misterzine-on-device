@@ -731,7 +731,18 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 		}
 		a.paintHint(c, a.optionsHint())
 	} else if a.screen == ScreenViews {
-		a.paintHint(c, "A On/off  B Back")
+		hint := "B Back"
+		if a.panel.cursor < len(a.panel.entries) {
+			e := a.panel.entries[a.panel.cursor]
+			if !e.disabled {
+				action := "Enable"
+				if e.checked {
+					action = "Disable"
+				}
+				hint = "A " + action + "  B Back"
+			}
+		}
+		a.paintHint(c, hint)
 	} else if a.screen == ScreenCredits {
 		a.paintHint(c, "B Back")
 	} else {

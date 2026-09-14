@@ -514,8 +514,8 @@ func TestDetailsHintNamesOnlyLiveControls(t *testing.T) {
 				if (len(entries) > 1) != want {
 					t.Fatalf("row %q: fixture has %d versions", row.K, len(entries))
 				}
-				hint := a.detailsHint(want, len(entries))
-				if strings.Contains(hint, gfx.ArrowUp) != want || strings.Contains(hint, gfx.ArrowLeft) != want {
+				hint := a.detailsHint(want, len(entries), max(0, len(lines)-a.detail.lines))
+				if strings.Contains(hint, gfx.ArrowDown) != want || strings.Contains(hint, gfx.ArrowRight) != want || strings.Contains(hint, gfx.ArrowUp) || strings.Contains(hint, gfx.ArrowLeft) {
 					t.Fatalf("rot=%v inset=%d: hint %q names controls while scrolls=%v versions=%d", rot, inset, hint, want, len(entries))
 				}
 				c := gfx.New(a.lay.W, a.lay.H)
@@ -529,6 +529,41 @@ func TestDetailsHintNamesOnlyLiveControls(t *testing.T) {
 				}
 			}
 		}
+	}
+}
+
+func TestDetailsHintAtNavigationBoundaries(t *testing.T) {
+	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest(nil, "", time.Now()), nil)
+	for _, tc := range []struct {
+		pick, scroll          int
+		left, right, up, down bool
+	}{
+		{0, 0, false, true, false, true},
+		{1, 5, true, true, true, true},
+		{2, 10, true, false, true, false},
+	} {
+		a.detail.pick, a.detail.scroll = tc.pick, tc.scroll
+		hint := a.detailsHint(true, 3, 10)
+		for arrow, want := range map[string]bool{gfx.ArrowLeft: tc.left, gfx.ArrowRight: tc.right, gfx.ArrowUp: tc.up, gfx.ArrowDown: tc.down} {
+			if strings.Contains(hint, arrow) != want {
+				t.Fatalf("pick=%d scroll=%d hint=%q", tc.pick, tc.scroll, hint)
+			}
+		}
+	}
+}
+
+func TestFilterClearLegend(t *testing.T) {
+	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest([]data.Row{{K: "a", Base: "Arcade", Genre: "Puzzle"}}, "", time.Now()), nil)
+	a.SetFilters(data.Filters{GenreOff: map[string]bool{"Puzzle": true}})
+	a.openPanel(ScreenFilter)
+	a.panel.cursor = 0
+	if got := a.filterHint(); got != "A Clear  B Back" {
+		t.Fatalf("active clear row: %q", got)
+	}
+	a.actPanel(platform.KeyEnter)
+	a.panel.cursor = 0
+	if got := a.filterHint(); got != "B Back" {
+		t.Fatalf("inactive clear row: %q", got)
 	}
 }
 
@@ -562,7 +597,7 @@ func TestFilterHeadingOpensAndCloses(t *testing.T) {
 			a.panel.cursor = i
 		}
 	}
-	if !a.panel.sectionClosed["genre"] || !strings.Contains(a.filterHint(), "A "+gfx.ArrowLeft+" "+gfx.ArrowRight+" Open/close") {
+	if !a.panel.sectionClosed["genre"] || !strings.Contains(a.filterHint(), "A "+gfx.ArrowRight+" Open") {
 		t.Fatalf("unused section starts closed with the heading legend; hint %q", a.filterHint())
 	}
 	a.actPanel(platform.KeyEnter)

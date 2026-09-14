@@ -441,7 +441,7 @@ Press Y on a value to select only that value in its section, leaving all other
 sections and your search unchanged. Press Y again on that value to enable all
 values in its section. A still toggles values individually. On a section
 heading, A opens a closed section or closes an open one, the same as Left/Right;
-the legend reads "A ◀ ▶ Open/close" while a heading is selected.
+the legend reads "A ▶ Open" or "A ◀ Close" to match the selected heading.
 Y does nothing on section headings. For Since last look, Y toggles the choice.
 
 Filters -> Original release year groups arcade games into decades. A toggles

@@ -375,22 +375,25 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 		c.Text(l.Hint.Min.X+2, l.Hint.Min.Y+2, a.sm, gfx.Fit(a.notice, a.sm.Cols(l.Hint.Dx()-4)), gen.Eva.Fg)
 		return
 	}
-	a.paintHint(c, a.detailsHint(len(lines) > maxLines, len(entries)))
+	a.paintHint(c, a.detailsHint(len(lines) > maxLines, len(entries), max(0, len(lines)-maxLines)))
 }
 
 // detailsHint is the Details legend. The Left/Right hint appears only when
 // the game has more than one version to choose from, and the Up/Down hint
 // only while the information actually scrolls.
-func (a *App) detailsHint(scrolls bool, versions int) string {
+func (a *App) detailsHint(scrolls bool, versions int, scrollLimit int) string {
 	hint := "Start Launch  A Shots  Y Fav"
 	short := "Start Go  A Art  Y Fav"
 	if versions > 1 {
-		hint += "  " + gfx.ArrowLeft + " " + gfx.ArrowRight + " Version"
-		short += "  " + gfx.ArrowLeft + gfx.ArrowRight + " Alt"
+		arrows := availableArrows(a.detail.pick > 0, a.detail.pick < versions-1, gfx.ArrowLeft, gfx.ArrowRight)
+		hint += "  " + arrows + " Version"
+		short += "  " + strings.ReplaceAll(arrows, " ", "") + " Alt"
 	}
 	if scrolls {
-		hint += "  " + gfx.ArrowUp + " " + gfx.ArrowDown + " Info"
-		short += "  " + gfx.ArrowUp + gfx.ArrowDown + " Info"
+		down := a.detail.scroll < scrollLimit
+		arrows := availableArrows(a.detail.scroll > 0, down, gfx.ArrowUp, gfx.ArrowDown)
+		hint += "  " + arrows + " Info"
+		short += "  " + strings.ReplaceAll(arrows, " ", "") + " Info"
 	}
 	if a.sm.Width(hint) > a.lay.Hint.Dx()-4 {
 		return short

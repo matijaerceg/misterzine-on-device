@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Legends in Filters, Views, the main list, Details and the updater log now follow the available actions, including disabled rows, empty lists and scrolling boundaries.
+
 ## v1.0.32 — 2026-09-14
 
 - Options previews now live inside the existing hint box. Layout shows three diagrams; Title font shows the three fonts. Scroll speed and Hold delay show a selection moving over fixed game names, with three rows horizontally and four in tate. Animation follows display frames, matching held-button scrolling.

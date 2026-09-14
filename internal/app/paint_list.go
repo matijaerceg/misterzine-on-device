@@ -20,15 +20,29 @@ func (a *App) paintList(c *gfx.Canvas) {
 	a.paintPane(c)
 	// the last chunk reminds of the Select chords (quick.go); the bar drops
 	// it first when the safe zone leaves no room
-	hint := "A Details  B Options  X Filters  Y View  Select +"
-	if !a.hintFits(hint) {
-		hint = "A Open  B Opt.  X Filt.  Y View  Select +"
+	var parts []string
+	if len(a.view) > 0 {
+		parts = append(parts, "A Details")
 	}
+	back := "B Options"
 	if a.query != "" {
-		hint = "A Details  B Clear find  X Filters  Select +"
+		back = "B Clear find"
 	}
+	parts = append(parts, back, "X Filters")
+	if a.viewsOnCount() > 1 {
+		parts = append(parts, "Y View")
+	}
+	parts = append(parts, "Select +")
 	if a.quickHeld() {
-		hint = "A Favorite  X Shots  Y Layout"
+		parts = nil
+		if len(a.view) > 0 {
+			parts = append(parts, "A Favorite")
+		}
+		parts = append(parts, "X Shots", "Y Layout")
+	}
+	hint := strings.Join(parts, "  ")
+	if !a.hintFits(hint) {
+		hint = strings.NewReplacer("A Details", "A Open", "B Options", "B Opt.", "X Filters", "X Filt.").Replace(hint)
 	}
 	a.paintHint(c, hint)
 }
@@ -515,4 +529,16 @@ func nonEmpty(ss ...string) []string {
 		}
 	}
 	return out
+}
+
+// availableArrows names only directions that can change the current position.
+func availableArrows(back, forward bool, backLabel, forwardLabel string) string {
+	var arrows []string
+	if back {
+		arrows = append(arrows, backLabel)
+	}
+	if forward {
+		arrows = append(arrows, forwardLabel)
+	}
+	return strings.Join(arrows, " ")
 }
