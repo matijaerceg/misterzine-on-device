@@ -67,6 +67,11 @@ resampling. Their HTML dimensions stay at 320x240 (240x320 in tate), providing
 sharp pixels on 2x displays. Keep the images inline so the gallery wraps with the
 available width; do not combine views into one image or put them in a table.
 
+The startup logo is a paint-only overlay that fades for two seconds from the
+first list frame. Preview it with `mzharness -splash` and scripted `wait 1000`
+steps. `tools/startup_logo.py` renders the checked-in outlined SVG into the
+embedded two-tone PNG (requires Pillow and svgpathtools).
+
 ## Device tools and debugging
 
 Set `PI` to your device's IP or SSH hostname when using `tools/dev.sh`; Go

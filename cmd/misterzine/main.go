@@ -322,6 +322,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		seen = &h.state.Seen
 	}
 	h.a = app.New(cfg, ds, seen)
+	h.a.StartSplash()
 	h.dirty = true // persist the new visit even without input
 	h.initUpdates()
 	h.a.SetPrefetch(h.settings.Prefetch)

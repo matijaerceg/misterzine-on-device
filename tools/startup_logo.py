@@ -1,0 +1,26 @@
+# Render the existing outlined vector logo as a transparent black/white asset.
+# Run from the repository root; requires Pillow and svgpathtools.
+from pathlib import Path
+import xml.etree.ElementTree as ET
+from svgpathtools import parse_path
+from PIL import Image, ImageDraw, ImageChops
+source = Path('internal/app/startup_logo.svg')
+path = parse_path(next(ET.parse(source).iter('{http://www.w3.org/2000/svg}path')).attrib['d'])
+x0,x1,y0,y1 = path.bbox()
+scale = 1200/(x1-x0)
+size = (1200, round((y1-y0)*scale))
+mask = Image.new('1', size)
+outer = None
+for sub in path.continuous_subpaths():
+    pts=[]
+    for seg in sub:
+        n=max(2, int(seg.length()*scale/2))
+        pts.extend(((seg.point(i/n).real-x0)*scale,(y1-seg.point(i/n).imag)*scale) for i in range(n))
+    part=Image.new('1',size)
+    ImageDraw.Draw(part).polygon(pts,fill=1)
+    if outer is None: outer=part.copy()
+    mask=ImageChops.logical_xor(mask,part)
+img=Image.new('RGBA',size,'white')
+img.paste((0,0,0,255),(0,0),mask.convert('L'))
+img.putalpha(outer.convert('L'))
+img.resize((600,round(size[1]/2)),Image.Resampling.LANCZOS).save('internal/app/startup_logo.png')

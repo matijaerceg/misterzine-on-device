@@ -63,6 +63,7 @@ func main() {
 	recents := flag.Int("recents", 0, "pretend the first N rows were launched, the last one most recently; turns the Recents view on")
 	viewsOff := flag.String("views-off", "", "views left out of the Y cycle, comma separated names (updated, debut, year, alphabetical, maker, favorites, recents); Recents is off unless -recents is given")
 	installed := flag.String("installed", "", "Downloader database ids the card has, comma separated (e.g. distribution_mister,jtcores): Sources starts on installed only and the other sources are hidden")
+	splash := flag.Bool("splash", false, "show the startup logo fade")
 	flag.Parse()
 
 	rows, meta := load(*dataPath, *metaPath)
@@ -184,6 +185,9 @@ func main() {
 		stored = &data.SeenRecord{T: now.Add(-*seenAge).UTC().Format(time.RFC3339), Cur: cur}
 	}
 	a := app.New(cfg, ds, stored)
+	if *splash {
+		a.StartSplash()
+	}
 	if *installed != "" {
 		var dbs []data.DB
 		for _, id := range strings.Split(*installed, ",") {

@@ -149,6 +149,7 @@ type Config struct {
 
 // App is the state machine.
 type App struct {
+	splash        startupSplash
 	optionSamples optionSampleClock
 	cfg           Config
 	body          *gfx.Font
@@ -786,7 +787,8 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 
 // Tick runs due repeats and expires notices; returns true to repaint.
 func (a *App) Tick(now time.Time) bool {
-	changed := a.tickMenu(now)
+	changed := a.tickSplash(now)
+	changed = a.tickMenu(now) || changed
 	changed = a.tickOptionSamples() || changed
 	// Expire notices on every screen so NextTick cannot keep returning a past
 	// deadline while Update All handles its own animation and cancel input.
@@ -821,7 +823,8 @@ func (a *App) Tick(now time.Time) bool {
 // held: called once per frame, it moves at most one step.
 func (a *App) Frame(now time.Time) bool {
 	a.saver.lastInput = now // a held direction is still activity
-	changed := a.tickMenu(now)
+	changed := a.tickSplash(now)
+	changed = a.tickMenu(now) || changed
 	changed = a.OptionSampleFrame() || changed
 	if k := a.rep.frameDue(now, a.repeatStep); k != platform.KeyNone {
 		if a.act(k) {
@@ -866,6 +869,9 @@ func (a *App) NextTick() time.Time {
 		t = next
 	}
 	if next := a.nextMenuTick(); !next.IsZero() && (t.IsZero() || next.Before(t)) {
+		t = next
+	}
+	if next := a.splash.next; !next.IsZero() && (t.IsZero() || next.Before(t)) {
 		t = next
 	}
 	return t
@@ -1125,6 +1131,7 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 			a.paintSaver(c)
 		}
 	}
+	a.paintSplash()
 	dirty := c.TakeDirty()
 	var out []image.Rectangle
 	for _, r := range dirty {
