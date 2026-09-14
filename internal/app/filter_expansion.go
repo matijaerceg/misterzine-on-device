@@ -76,12 +76,12 @@ func (a *App) filterHint() string {
 	}
 	hint := "A Toggle  " + arrows + " Open/close  B Back"
 	if a.canOnlyFilter() {
-		hint = "A Toggle  Y Only/all  " + arrows + " Open/close  B Back"
+		hint = "A Toggle  B Back  Y Only/all  " + arrows + " Open/close"
 	}
 	if a.sm.Width(hint) > a.lay.Hint.Dx()-4 {
 		hint = "A Toggle  " + arrows + " Open/close  B"
 		if a.canOnlyFilter() {
-			hint = "A Toggle  Y Only  " + arrows + " Open/close  B Back"
+			hint = "A Toggle  B Back  Y Only  " + arrows + " Open/close"
 		}
 	}
 	if a.sm.Width(hint) > a.lay.Hint.Dx()-4 {
