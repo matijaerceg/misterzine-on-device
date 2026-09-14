@@ -14,7 +14,7 @@ func (a *App) paintLayoutPreviews(c *gfx.Canvas, area image.Rectangle) {
 	w, h := c.W(), c.H()
 	shotW := cellW - 4
 	shotH := shotW * h / w
-	maxH := area.Dy() - a.sm.H - 10
+	maxH := area.Dy() - 8
 	if shotH > maxH {
 		shotH = maxH
 		shotW = shotH * w / h
@@ -27,14 +27,11 @@ func (a *App) paintLayoutPreviews(c *gfx.Canvas, area image.Rectangle) {
 	c.Box(box, gen.Eva.Line)
 	for i, style := range listLayouts {
 		x := box.Min.X + 2 + i*(cellW+gap)
-		r := image.Rect(x+(cellW-shotW)/2, box.Min.Y+4, x+(cellW-shotW)/2+shotW, box.Min.Y+4+shotH)
+		r := image.Rect(x+(cellW-shotW)/2, box.Min.Y+(box.Dy()-shotH)/2, x+(cellW-shotW)/2+shotW, box.Min.Y+(box.Dy()-shotH)/2+shotH)
 		a.paintLayoutDiagram(c, r, style)
-		col := gen.Eva.Fg
 		if style == a.ListLayout() {
-			col = gen.Eva.Accent
-			c.Box(r.Inset(-2), col)
+			c.Box(r.Inset(-2), gen.Eva.Accent)
 		}
-		c.Text(x+(cellW-a.sm.Width(style))/2, r.Max.Y+3, a.sm, style, col)
 	}
 }
 
