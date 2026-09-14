@@ -22,7 +22,7 @@ func (a *App) paintLayoutPreviews(c *gfx.Canvas, area image.Rectangle) {
 	if shotW < 1 || shotH < 1 {
 		return
 	}
-	box := image.Rect(area.Min.X, area.Min.Y, area.Max.X, area.Min.Y+shotH+a.sm.H+10)
+	box := area
 	c.Fill(box, gen.Eva.Surface)
 	c.Box(box, gen.Eva.Line)
 	for i, style := range listLayouts {
