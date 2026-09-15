@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.0.37 — 2026-09-15
+
+- Restore missing arcade alternatives, including Galaga's Namco versions and hacks. Match explicit MAME game families and clone setnames from the catalogue, with installed MRA parent metadata as a fallback. Recognize directory-qualified HBMAME ZIP references while keeping the compatible-core requirement; shared BIOS files and folder names do not establish a game family. Thanks to ac3 for reporting the Galaga issue.
+- Build the alternatives lookup during the background scan, preserve remembered launch paths, and discard results for an obsolete catalogue. Rebuild old alternative caches with parent metadata and notice in-place MRA changes. Read parent-only headers before large embedded ROM bodies.
+- Clear routine data-age and checking text from the top bar. Options now shows the catalogue publication time and the last successful check this session, including checks that find no new data. Connection failures and app-update notices remain visible. Compact timestamps fit narrow displays; unknown times are labeled explicitly.
+- Make screenshot fixtures independent of the host time zone and refresh the embedded catalogue snapshot.
+
 ## v1.0.36 — 2026-09-15
 
 - Show missing arcade ROM archives in Details and check again before launching. Check every ROM section and the selected alternative, following MiSTer's storage search order. Archive contents remain unchecked. Launch logs now describe a request handed to MiSTer, rather than claiming the game loaded.
