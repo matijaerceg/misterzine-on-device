@@ -119,6 +119,10 @@ speed as Up/Down row scrolling. Releasing the button stops the jumps.
 The app checks data on launch and every 30 minutes; Options can request a check
 immediately. An unset system clock hides relative dates until trusted time is
 available.
+Options shows **Catalog**, when the catalog was published, and **Last checked**,
+the last successful check during this session. An older publication time can
+still be current. Routine checks and data age stay out of the list's top bar;
+connection failures and app-update availability remain visible.
 
 Type a title in the list to search. Matching ignores case and spaces and works
 together with Filters. Backspace edits, and held it erases quickly after the

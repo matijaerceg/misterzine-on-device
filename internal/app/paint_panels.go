@@ -416,7 +416,7 @@ func (a *App) optionsEntries() []panelEntry {
 	spacer := panelEntry{header: true, info: true}
 	E := []panelEntry{group(gfx.SectionData, "Data"),
 		{text: "Refresh data now", kind: "refresh",
-			help: "Check misterzine.fyi for new releases now. This also happens on launch and every 30 minutes."},
+			help: "Checks on launch and every 30 minutes. Catalog: publication time. Last checked: last successful check this session."},
 		{text: updateText, kind: "update", help: updateHelp},
 		{text: "Last update result", kind: "update-result",
 			help: "Review the last Update All result and its saved output. This does not start another update."},
@@ -529,11 +529,12 @@ func onOff(b bool) string {
 	return "off"
 }
 
-func short(h string) string {
-	if len(h) > 8 {
-		return h[:8]
+// Compact absolute timestamps stay readable on narrow displays.
+func catalogStamp(t time.Time, unknown string) string {
+	if t.IsZero() {
+		return unknown
 	}
-	return h
+	return t.Local().Format("02 Jan 15:04")
 }
 
 func (a *App) paintPanel(c *gfx.Canvas) {
@@ -567,14 +568,15 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 		if !l.Portrait {
 			helpLines = 3
 		}
-		versionH := 2*font.H + 2
+		versionH := 3*font.H + 2
 		helpH := helpLines*(font.H+1) + 5
 		helpBox = image.Rect(l.Body.Min.X, l.Body.Max.Y-versionH-helpH, l.Body.Max.X, l.Body.Max.Y-versionH)
 		inner = image.Rect(l.Body.Min.X+2, l.Body.Min.Y+2, l.Body.Max.X-2, helpBox.Min.Y-2)
 		cols := font.Cols(l.Body.Dx() - 4)
 		vy := helpBox.Max.Y + 2
 		c.Text(l.Body.Min.X+2, vy, font, gfx.Fit("misterzine "+a.cfg.Version, cols), gen.Eva.Muted)
-		c.Text(l.Body.Min.X+2, vy+font.H, font, gfx.Fit("data "+a.ds.Updated.Format("2006-01-02 15:04")+"  "+short(a.ds.Hash), cols), gen.Eva.Muted)
+		c.Text(l.Body.Min.X+2, vy+font.H, font, gfx.Fit("Catalog: "+catalogStamp(a.ds.Updated, "Unknown"), cols), gen.Eva.Muted)
+		c.Text(l.Body.Min.X+2, vy+2*font.H, font, gfx.Fit("Last checked: "+catalogStamp(a.catalogChecked, "Not yet"), cols), gen.Eva.Muted)
 	} else {
 		c.Box(l.Body, gen.Eva.Line)
 		inner = l.Body.Inset(2)

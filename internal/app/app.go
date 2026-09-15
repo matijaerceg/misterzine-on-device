@@ -212,19 +212,20 @@ type App struct {
 	// where closing Options returns to (menu.go): the screen it was opened
 	// over, the row key Details or the artwork showed, and the Filters
 	// browsing state kept aside while Options uses the panel.
-	optionsFrom Screen
-	optionsKey  string
-	filterHeld  *panelState
-	notice      string
-	until       time.Time
-	net         string // status bar right text: "offline", "updating", "data 2h ago"
-	appUpdate   string
-	scanReady   bool
-	scanError   string
-	scanCounts  bool // the finished scan delivered statuses worth showing
-	all         bool // full repaint pending
-	saver       screensaver
-	marquee     marqueeState
+	optionsFrom    Screen
+	optionsKey     string
+	filterHeld     *panelState
+	notice         string
+	until          time.Time
+	net            string    // connection failures in the status bar
+	catalogChecked time.Time // last successful catalog check this session
+	appUpdate      string
+	scanReady      bool
+	scanError      string
+	scanCounts     bool // the finished scan delivered statuses worth showing
+	all            bool // full repaint pending
+	saver          screensaver
+	marquee        marqueeState
 
 	arcadeIntroAt  time.Time
 	arcadeIntroBar int
@@ -610,6 +611,15 @@ func (a *App) SetNet(s string) {
 		a.all = true
 	}
 }
+
+// SetCatalogChecked records a successful check, even when the catalog is unchanged.
+func (a *App) SetCatalogChecked(t time.Time) {
+	a.catalogChecked = t
+	a.all = true
+}
+
+// CatalogChecked is the last successful check in this session.
+func (a *App) CatalogChecked() time.Time { return a.catalogChecked }
 
 // Screen reports the current view.
 func (a *App) Screen() Screen { return a.screen }

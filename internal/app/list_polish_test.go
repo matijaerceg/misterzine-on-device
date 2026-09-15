@@ -217,7 +217,7 @@ func TestOptionsLayoutCuesAndColumn(t *testing.T) {
 		return n
 	}
 	// the build and data lines sit just above the hint bar, greyed
-	versionRows := image.Rect(l.Body.Min.X, l.Body.Max.Y-2*font.H-2, l.Body.Max.X, l.Body.Max.Y)
+	versionRows := image.Rect(l.Body.Min.X, l.Body.Max.Y-3*font.H-2, l.Body.Max.X, l.Body.Max.Y)
 	if count(versionRows, gen.Eva.Muted) == 0 || count(versionRows, gen.Eva.Line) != 0 {
 		t.Fatal("version rows must be greyed and unframed above the hint bar")
 	}
@@ -267,7 +267,7 @@ func TestOptionsLayoutCuesAndColumn(t *testing.T) {
 	a.openPanel(ScreenOptions)
 	a.Paint()
 	l = &a.lay
-	inner = image.Rect(l.Body.Min.X+2, l.Body.Min.Y+2, l.Body.Max.X-2, l.Body.Max.Y-2*font.H-2-(4*(font.H+1)+5)-2)
+	inner = image.Rect(l.Body.Min.X+2, l.Body.Min.Y+2, l.Body.Max.X-2, l.Body.Max.Y-3*font.H-2-(4*(font.H+1)+5)-2)
 	if a.valueColumn(inner, inner.Max.X-2-font.W) != 0 {
 		t.Fatal("the narrow tate layout right-aligns values")
 	}

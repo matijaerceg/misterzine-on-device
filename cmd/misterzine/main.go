@@ -30,7 +30,6 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/debugsrv"
 	"github.com/matijaerceg/misterzine-on-device/internal/fetch"
-	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/images"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform/mister"
@@ -360,7 +359,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		// Return after game: the launcher reopened us; land on the game.
 		h.a.MoveToKey(h.state.Recents[0].K)
 	}
-	h.a.SetNet(h.netLabel(ds))
+	h.a.SetNet("")
 	if ini.Found && !ini.AnalogVisible() && !hasState { // first run only: HDMI users need nothing
 		if ini.DirectVideoAuto() { // MiSTercade's INI: the cabinet never sees this without vga_scaler
 			h.a.Notice("JAMMA cab? add vga_scaler=1 + video_mode under [Menu], see README", 20*time.Second)
@@ -1044,17 +1043,10 @@ func (h *host) clockTrusted() bool {
 	return h.clock.Trusted
 }
 
-func (h *host) netLabel(ds *data.Dataset) string {
-	if ds.Updated.IsZero() || !h.clock.Trusted {
-		return ""
-	}
-	return "data " + data.RelUpdated(h.now(), ds.Updated)
-}
-
 // check runs a freshness check off the UI goroutine.
 func (h *host) check(current string, trusted bool) {
 	defer h.runOnUI(h.finishCheck)
-	h.sendNet("checking" + gfx.Ellipsis)
+
 	if !trusted {
 		// the clock is still unset: TLS will fail, but a plain HTTP answer
 		// tells the time, so relative dates work before NTP does
@@ -1081,6 +1073,11 @@ func (h *host) check(current string, trusted bool) {
 		return
 	}
 	h.checkFailed.Store(false)
+	h.runOnUI(func() {
+		if h.clockTrusted() {
+			h.a.SetCatalogChecked(h.now())
+		}
+	})
 	if !fr.Changed {
 		h.lg.Printf("check: current (%.8s)", fr.Meta.Hash)
 		h.sendNet("")
@@ -1107,7 +1104,7 @@ func (h *host) swap(fr fetch.Fresh) {
 	h.a.SetData(ds, nil)
 	h.requestScan()
 	h.img.SetPrefetch(picsFor(ds), h.settings.Prefetch)
-	h.a.SetNet(h.netLabel(ds))
+	h.a.SetNet("")
 	if news != "" {
 		h.a.Notice(news, 12*time.Second)
 	}

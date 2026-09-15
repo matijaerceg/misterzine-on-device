@@ -91,6 +91,10 @@ func TestRefreshUsesInstalledHashAndCoalescesRequests(t *testing.T) {
 	if metas.Load() != 1 || downloads.Load() != 1 || h.a.Data().Hash != hash {
 		t.Fatal("overlapping check or missing dataset installation")
 	}
+	if h.a.CatalogChecked().IsZero() {
+		t.Fatal("successful changed check not recorded")
+	}
+	firstChecked := h.a.CatalogChecked()
 	for i := 0; i < 3; i++ {
 		h.requestCheck()
 		finishBackground(t, h)
@@ -98,9 +102,16 @@ func TestRefreshUsesInstalledHashAndCoalescesRequests(t *testing.T) {
 	if metas.Load() != 4 || downloads.Load() != 1 {
 		t.Fatalf("unchanged data downloaded again: meta=%d data=%d", metas.Load(), downloads.Load())
 	}
+	if !h.a.CatalogChecked().After(firstChecked) {
+		t.Fatal("unchanged checks did not advance timestamp")
+	}
+	lastChecked := h.a.CatalogChecked()
 	fail.Store(true)
 	h.requestCheck()
 	finishBackground(t, h)
+	if !h.a.CatalogChecked().Equal(lastChecked) {
+		t.Fatal("failed check advanced success timestamp")
+	}
 	if d := time.Until(h.nextCheck); d < 10*time.Second || d > 16*time.Second {
 		t.Fatalf("failure retry delay: %v", d)
 	}

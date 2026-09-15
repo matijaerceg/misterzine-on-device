@@ -205,7 +205,7 @@ func main() {
 		a.OpenScan()
 		a.FinishScan("", true)
 	}
-	a.SetNet("data " + data.RelUpdated(now, upd))
+	a.SetCatalogChecked(now)
 	if *updatePath != "" {
 		b, err := os.ReadFile(*updatePath)
 		if err != nil {
