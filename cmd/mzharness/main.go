@@ -50,6 +50,7 @@ func main() {
 	logical := flag.Bool("logical", false, "save the unrotated logical canvas instead of the physical frame")
 	imgDir := flag.String("images", "../misterzine/docs/images", "directory laid out like the site's docs/images; empty = placeholders")
 	updatePath := flag.String("update-state", "", "render an Update All state JSON without running an updater")
+	updateRestart := flag.Bool("update-restart", false, "show the updated-program restart prompt")
 	supportPath := flag.String("support-report", "", "controller diagnostic fixture; no devices are opened")
 	appUpdate := flag.String("app-update", "", "available app version fixture")
 	scanResult := flag.Bool("scan-result", false, "show completed card scan fixture")
@@ -218,6 +219,7 @@ func main() {
 			die(err)
 		}
 		a.SetUpdate(state, true)
+		a.SetUpdateRestart(state.ID, *updateRestart)
 	}
 
 	if err := os.MkdirAll(*out, 0755); err != nil {

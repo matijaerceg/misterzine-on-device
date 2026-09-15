@@ -4,16 +4,19 @@ package main
 
 import (
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/updater"
 )
 
 type updateResult struct {
-	state    updater.State
-	start    bool
-	cancelID string
-	err      error
+	state            updater.State
+	start            bool
+	cancelID         string
+	err              error
+	restartID        string
+	restartAvailable bool
 }
 
 func (h *host) initUpdates() {
@@ -75,6 +78,10 @@ func (h *host) dismissUpdate(id string) {
 }
 
 func (h *host) receiveUpdate(u updateResult) {
+	if u.restartID != "" {
+		h.a.SetUpdateRestart(u.restartID, u.restartAvailable)
+		return
+	}
 	if u.cancelID != "" {
 		if h.a.UpdateState().ID == u.cancelID {
 			h.a.UpdateCancelError(u.err.Error())
@@ -130,6 +137,18 @@ func (h *host) applyUpdate(s updater.State, open bool) {
 		h.img.SetPaused(active)
 	}
 	h.updateRunning = active
+	if finished && s.ID != "" {
+		go func(id string) {
+			available, err := differentProgram("/proc/self/exe", filepath.Join(h.root, "misterzine"))
+			if err != nil {
+				h.lg.Printf("updated program check: %v", err)
+			}
+			select {
+			case h.updates <- updateResult{restartID: id, restartAvailable: available}:
+			case <-h.quit:
+			}
+		}(s.ID)
+	}
 	if finished || (!active && h.scanPending) {
 		h.requestScan()
 	}

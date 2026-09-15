@@ -24,7 +24,18 @@ type updateView struct {
 	lines      int
 	log        []string // last painted log; held still while scrolled back
 	error      string
+	restart    bool
 }
+
+// SetUpdateRestart applies a background check only to the finished run it belongs to.
+func (a *App) SetUpdateRestart(id string, available bool) {
+	if a.update.ID == id && !a.update.Active() {
+		a.updateView.restart = available
+		a.all = true
+	}
+}
+
+func (a *App) UpdateRestartAvailable() bool { return a.updateView.restart && !a.update.Active() }
 
 func (a *App) UpdateState() updater.State { return a.update }
 
@@ -95,6 +106,10 @@ func (a *App) handleUpdate(ev platform.Event) bool {
 	}
 	a.down[ev.Key] = true
 	switch ev.Key {
+	case platform.KeyEnter:
+		if a.UpdateRestartAvailable() && a.cfg.Action != nil {
+			a.cfg.Action("update-restart", a.update.ID)
+		}
 	case platform.KeyMenu:
 		return a.menuButton()
 	case platform.KeyBack:
@@ -248,6 +263,12 @@ func (a *App) paintUpdate(c *gfx.Canvas) {
 		c.Text(l.Body.Min.X+2, y, a.sm, line, gen.Eva.Fg)
 		y += a.sm.H + 1
 	}
+	if a.UpdateRestartAvailable() {
+		for _, line := range gfx.Wrap("MisterZine updated. Restart to use the new version.", a.sm.Cols(l.Body.Dx()-4), 3) {
+			c.Text(l.Body.Min.X+2, y, a.sm, line, gen.Eva.Accent)
+			y += a.sm.H + 1
+		}
+	}
 	y += 3
 	box := image.Rect(l.Body.Min.X, y, l.Body.Max.X, l.Body.Max.Y-2)
 	c.Box(box, gen.Eva.Line)
@@ -274,6 +295,9 @@ func (a *App) paintUpdate(c *gfx.Canvas) {
 		y += a.sm.H + 1
 	}
 	hint := "B Back"
+	if a.UpdateRestartAvailable() {
+		hint = "A Restart  B Back"
+	}
 	if s.Active() {
 		hint = "Hold B Cancel"
 	}

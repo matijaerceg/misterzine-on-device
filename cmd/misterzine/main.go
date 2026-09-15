@@ -100,6 +100,7 @@ type host struct {
 	updatePending                 bool
 	updateReadError               string // UI-owned; suppress repeated status-read diagnostics
 	updateRunning                 bool
+	restartRequested              bool
 	troubleshooting               supportHost
 }
 
@@ -287,6 +288,10 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		SettingsChanged: func() { h.setDirty = true },
 		Action: func(kind, arg string) {
 			lg.Printf("action: %s %s", kind, arg)
+			if kind == "update-restart" {
+				h.requestUpdateRestart(arg)
+				return
+			}
 			if kind == "update" {
 				h.startUpdate()
 				return
@@ -521,6 +526,15 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			h.optionSampleLoop()
 		}
 		h.autosave(time.Now(), false)
+		if h.restartRequested {
+			h.saveAll(true)
+			if h.pendingSave() {
+				h.restartRequested = false
+				h.a.Notice("Could not save settings; restart postponed", 8*time.Second)
+				continue
+			}
+			return h.restartApp()
+		}
 		if h.launch != "" {
 			h.saveAll(true)
 			return h.doLaunch()

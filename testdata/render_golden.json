@@ -614,6 +614,8 @@
   "update-h/cancel-hold.png": "685ef29ab152758a07e92645e7d86e6190b93faf0b91d2cadbdeedb0c81ef7d2",
   "update-h/cancel.png": "b03d1bf2289a16b04fa046a33a29eeba1b62ca1617d13ebd541fb86aa64c3637",
   "update-h/running.png": "24276623d708e893edf1f7d3ae9557758519245c6ba84df5fe867276841a1d3c",
+  "update-restart-h/restart.png": "a0bfe31db6afd540b00b9cbe8600b3dd5428f7a4c5ba42206fb84acf8bd2774f",
+  "update-restart-t/restart.png": "abc298798e8a3c6029c5efc5a308dc6d5813911ef09703ad3c5d0e2059c0e31e",
   "update-t/cancel-hold.png": "b8d46d6e78c408a74b67acc3d27952156196999499ba554f35483b49ae63d859",
   "update-t/cancel.png": "4b95f21d0ef5e4f7d46f69bf656849fa074179c611c9ff0622ac52d01b2d0a2c",
   "update-t/running.png": "889d6eb8b06ebd33441b65e5a8fe9cb3006ee91522d2539dd70ccb8896ddd4ac",
