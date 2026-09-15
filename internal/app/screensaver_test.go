@@ -130,6 +130,35 @@ func TestSaverPreviewAndOff(t *testing.T) {
 	}
 }
 
+func TestSaverWaitsForUpdate(t *testing.T) {
+	for _, status := range []string{"starting", "running", "cancelling"} {
+		t.Run(status, func(t *testing.T) {
+			for _, result := range []string{"completed", "errors", "failed", "cancelled"} {
+				a, clock := saverApp()
+				a.SetUpdate(updater.State{ID: "run", Status: status}, true)
+				*clock = clock.Add(20 * time.Minute)
+				a.Tick(*clock)
+				if a.ScreensaverActive() || !a.nextSaverTick().IsZero() {
+					t.Fatal("active update allowed idle screensaver")
+				}
+				a.SetUpdate(updater.State{ID: "run", Status: result}, false)
+				deadline := clock.Add(time.Minute)
+				if !a.nextSaverTick().Equal(deadline) {
+					t.Fatal("finished update did not restart the idle countdown")
+				}
+				a.Tick(deadline.Add(-time.Millisecond))
+				if a.ScreensaverActive() {
+					t.Fatal("screensaver hid the result early")
+				}
+				a.Tick(deadline)
+				if !a.ScreensaverActive() || a.Screen() != ScreenUpdate {
+					t.Fatal("finished update did not allow screensaver over its result")
+				}
+			}
+		})
+	}
+}
+
 func TestSaverWakeCannotCancelUpdate(t *testing.T) {
 	a, clock := saverApp()
 	cancels := 0
@@ -139,6 +168,8 @@ func TestSaverWakeCannotCancelUpdate(t *testing.T) {
 		}
 	}
 	a.SetUpdate(updater.State{ID: "run", Status: "running", Started: *clock}, true)
+	// Exercise the wake-input guard explicitly; active updates suppress idle entry.
+	a.startSaver(*clock)
 	*clock = clock.Add(time.Minute)
 	a.Tick(*clock)
 	a.Handle(platform.Event{Key: platform.KeyBack, Pressed: true, At: *clock})

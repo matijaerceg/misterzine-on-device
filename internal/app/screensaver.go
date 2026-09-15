@@ -471,6 +471,9 @@ func (a *App) nextSaverTick() time.Time {
 	if a.saver.active {
 		return a.saver.next
 	}
+	if a.update.Active() {
+		return time.Time{}
+	}
 	if delay := a.saverDelay(); delay > 0 && len(a.down) == 0 && len(a.saver.waking) == 0 {
 		return a.saver.lastInput.Add(delay)
 	}

@@ -53,6 +53,10 @@ func (a *App) SetUpdate(s updater.State, open bool) {
 			a.updateView.backAt = held
 		}
 	}
+	if a.update.Active() && !s.Active() {
+		// Leave the result visible for a full idle interval after the run.
+		a.saver.lastInput = a.cfg.TimerNow()
+	}
 	a.update = s
 	if !s.Active() {
 		a.updateView.backAt = time.Time{}
