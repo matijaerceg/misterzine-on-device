@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.38 — 2026-09-15
+
+- Remove the pause when navigating away from the Scroll speed and Hold delay previews in Options. Draw the new selection before leaving the animation loop.
+- Prevent the screensaver from starting while Update All is active. Restart the normal idle countdown when the update finishes so its result stays visible first.
+- Label the finished Update All screen's return action Back.
+
 ## v1.0.37 — 2026-09-15
 
 - Restore missing arcade alternatives, including Galaga's Namco versions and hacks. Match explicit MAME game families and clone setnames from the catalogue, with installed MRA parent metadata as a fallback. Recognize directory-qualified HBMAME ZIP references while keeping the compatible-core requirement; shared BIOS files and folder names do not establish a game family. Thanks to ac3 for reporting the Galaga issue.
