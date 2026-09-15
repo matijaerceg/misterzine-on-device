@@ -6,6 +6,8 @@ import subprocess
 os.chdir(Path(__file__).resolve().parents[1])
 go = os.environ.get("GO", "go")
 scenarios = [
+    ["-update-state", "testdata/update-completed.json", "-out", "out/update-completed-h", "-script", "shot completed"],
+    ["-update-state", "testdata/update-completed.json", "-rot", "left", "-logical", "-out", "out/update-completed-t", "-script", "shot completed"],
     ["-data", "testdata/rom-warning.json", "-rom-issue", "Missing game ROM: jpark.zip", "-out", "out/missing-rom-h", "-script",
      "enter; shot details; start; shot blocked"],
     ["-data", "testdata/rom-warning.json", "-rom-issue", "Missing game ROM: jpark.zip", "-rot", "left", "-logical", "-out", "out/missing-rom-t", "-script",
