@@ -55,8 +55,8 @@ func TestAlternativeSkipsUnreadableMRAAndSeesRepair(t *testing.T) {
 	}
 }
 
-// A version 2 cache entry (written before skips were recorded) stays valid.
-func TestAlternativeCacheAcceptsVersion2(t *testing.T) {
+// Older entries must be rebuilt to acquire parent metadata.
+func TestAlternativeCacheRebuildsVersion2(t *testing.T) {
 	card := fakeCard(t)
 	for _, name := range []string{"_1942", "_Colony 7"} {
 		dir := filepath.Join(card, "_Arcade", "_alternatives", name)
@@ -73,9 +73,9 @@ func TestAlternativeCacheAcceptsVersion2(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	old := bytes.ReplaceAll(b, []byte(`"version":3`), []byte(`"version":2`))
+	old := bytes.ReplaceAll(b, []byte(`"version":4`), []byte(`"version":2`))
 	if bytes.Equal(old, b) {
-		t.Fatalf("cache holds no version 3 entries: %s", b)
+		t.Fatalf("cache holds no version 4 entries: %s", b)
 	}
 	if err := os.WriteFile(cache, old, 0644); err != nil {
 		t.Fatal(err)
@@ -85,8 +85,8 @@ func TestAlternativeCacheAcceptsVersion2(t *testing.T) {
 	if got, _, err := ScanAlternativesWithError(card, cache); err != nil || len(got) != 2 {
 		t.Fatalf("version 2 cache: %v %v", got, err)
 	}
-	if info, err := os.Stat(cache); err != nil || !info.ModTime().Equal(stamp) {
-		t.Fatal("version 2 cache entries were rewritten without a change on the card")
+	if info, err := os.Stat(cache); err != nil || info.ModTime().Equal(stamp) {
+		t.Fatal("version 2 cache entries were not upgraded")
 	}
 }
 

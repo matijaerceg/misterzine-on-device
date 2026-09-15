@@ -36,7 +36,9 @@ type Row struct {
 	ImgSlots     []string `json:"img_slots"`
 	ImgW         int      `json:"img_w"`
 	ImgH         int      `json:"img_h"`
-	SN           string   `json:"sn"` // MAME setname
+	FamilySets   []string `json:"family_sets,omitempty"` // known clone setnames
+	Family       string   `json:"family,omitempty"`      // MAME clone root
+	SN           string   `json:"sn"`                    // MAME setname
 	Rot          string   `json:"rot"`
 	Plr          string   `json:"plr"`
 	Ctl          string   `json:"ctl"`

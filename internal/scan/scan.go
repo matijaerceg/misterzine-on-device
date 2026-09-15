@@ -247,8 +247,11 @@ func Statuses(card string, idx *Index, rows []data.Row) []data.Status {
 // Alt is one alternative MRA under an _alternatives folder.
 type Alt struct {
 	Path    string   `json:"path"` // card-relative
-	RBF     string   `json:"rbf"`  // lowercase <rbf> text
+	Size    int64    `json:"size,omitempty"`
+	Mtime   int64    `json:"mtime,omitempty"`
+	RBF     string   `json:"rbf"` // lowercase <rbf> text
 	Setname string   `json:"setname"`
+	Parent  string   `json:"parent,omitempty"`
 	Zips    []string `json:"zips"` // lowercase zip names the rom index 0 references
 }
 
@@ -272,9 +275,8 @@ type altDir struct {
 	Skipped []Skipped `json:"skipped,omitempty"`
 }
 
-// altCacheVersion is the format written now; version 2 entries (no skip
-// records, written only for directories where every MRA parsed) stay valid.
-const altCacheVersion = 3
+// Version 4 adds parent metadata; older entries must be reparsed.
+const altCacheVersion = 4
 
 // ScanAlternatives walks every _alternatives folder (altRoots), parsing
 // only the header of each MRA. A per-directory cache keyed by mtime
@@ -330,7 +332,7 @@ func ScanAlternativesWithError(card, cachePath string) ([]Alt, []Skipped, error)
 			}
 			key := root.key + d.Name()
 			mt := info.ModTime().UnixNano()
-			if c, ok := cache[key]; ok && (c.Version == 2 || c.Version == altCacheVersion) && c.Mtime == mt && skippedUnchanged(card, c.Skipped) {
+			if c, ok := cache[key]; ok && c.Version == altCacheVersion && c.Mtime == mt && alternativesUnchanged(card, c.Alts) && skippedUnchanged(card, c.Skipped) {
 				fresh[key] = c
 				out = append(out, c.Alts...)
 				skipped = append(skipped, c.Skipped...)
@@ -417,6 +419,17 @@ func altRoots(card string) []altRoot {
 	return roots
 }
 
+// Directory mtimes do not change when an existing MRA is rewritten.
+func alternativesUnchanged(card string, alts []Alt) bool {
+	for _, a := range alts {
+		st, err := os.Stat(filepath.Join(card, filepath.FromSlash(a.Path)))
+		if err != nil || st.Size() != a.Size || st.ModTime().UnixNano() != a.Mtime {
+			return false
+		}
+	}
+	return true
+}
+
 // skippedUnchanged reports whether every skipped file still has the size and
 // mtime recorded with the cache entry, so a file rewritten in place (the
 // directory's mtime does not move) is read again.
@@ -452,6 +465,7 @@ func parseMRAHeader(p string) (Alt, *Skipped, error) {
 	}
 	a, ok, err := parseMRAResult(io.LimitReader(f, 64<<10))
 	if ok {
+		a.Size, a.Mtime = st.Size(), st.ModTime().UnixNano()
 		return a, nil, nil
 	}
 	var syntax *xml.SyntaxError
@@ -494,7 +508,7 @@ func parseMRAResult(r io.Reader) (Alt, bool, error) {
 			depth++
 			name := strings.ToLower(t.Name.Local)
 			switch name {
-			case "rbf", "setname":
+			case "rbf", "setname", "parent":
 				want = name
 			case "rom":
 				idx, zip := "", ""
@@ -513,7 +527,7 @@ func parseMRAResult(r io.Reader) (Alt, bool, error) {
 							a.Zips = append(a.Zips, z)
 						}
 					}
-					if a.RBF != "" && a.Setname != "" {
+					if a.RBF != "" && (a.Setname != "" || a.Parent != "") {
 						return a, true, nil
 					}
 				}
@@ -524,6 +538,8 @@ func parseMRAResult(r io.Reader) (Alt, bool, error) {
 				if v != "" {
 					if want == "rbf" {
 						a.RBF = strings.ToLower(v)
+					} else if want == "parent" {
+						a.Parent = identity(v)
 					} else {
 						a.Setname = v
 					}
@@ -601,30 +617,82 @@ func sameCore(a, b string) bool {
 	return a == b || strings.HasPrefix(a, b+"_") || strings.HasPrefix(b, a+"_")
 }
 
-// Alternatives lists the alternative MRAs for a row: same rbf, and a rom zip
-// list that references the row's setname.
-func Alternatives(alts []Alt, r *data.Row) []string {
+// AlternativeIndex groups explicit identities by compatible FPGA core.
+// Build once in the background, rather than normalizing every file per row.
+type AlternativeIndex map[string]map[string][]string
+
+func IndexAlternatives(alts []Alt) AlternativeIndex {
+	index := AlternativeIndex{}
+	for _, a := range alts {
+		core := coreStem(a.RBF)
+		if core == "" {
+			continue
+		}
+		ids := []string{a.Setname, a.Parent}
+		for _, z := range a.Zips {
+			z = strings.ToLower(strings.TrimSpace(strings.ReplaceAll(z, "\\", "/")))
+			if strings.HasSuffix(z, ".zip") {
+				ids = append(ids, strings.TrimSuffix(path.Base(z), ".zip"))
+			}
+		}
+		if index[core] == nil {
+			index[core] = map[string][]string{}
+		}
+		for _, value := range ids {
+			if id := identity(value); id != "" {
+				index[core][id] = append(index[core][id], a.Path)
+			}
+		}
+	}
+	return index
+}
+
+// ForRow matches game identities, never arbitrary shared ROM dependencies.
+func (index AlternativeIndex) ForRow(r *data.Row) []string {
 	if r == nil || !r.IsArcade() || r.Core == "" {
 		return nil
 	}
-	sn := strings.ToLower(r.SN)
-	var out []string
-	for _, a := range alts {
-		if !sameCore(a.RBF, r.Core) {
-			continue
-		}
-		if sn == "" {
-			continue
-		}
-		hit := strings.EqualFold(a.Setname, sn)
-		for _, z := range a.Zips {
-			if z == sn+".zip" {
-				hit = true
-			}
-		}
-		if hit {
-			out = append(out, a.Path)
+	values := []string{r.SN, r.Family}
+	if identity(r.Family) != "" {
+		values = append(values, r.FamilySets...)
+	}
+	ids := map[string]bool{}
+	for _, value := range values {
+		if id := identity(value); id != "" {
+			ids[id] = true
 		}
 	}
+	seen := map[string]bool{}
+	var out []string
+	core := coreStem(r.Core)
+	for candidate, byID := range index {
+		// Both sides are already normalized, including dated core suffixes.
+		if core != candidate && !strings.HasPrefix(core, candidate+"_") && !strings.HasPrefix(candidate, core+"_") {
+			continue
+		}
+		for id := range ids {
+			for _, p := range byID[id] {
+				if !seen[p] && p != r.MRA {
+					seen[p] = true
+					out = append(out, p)
+				}
+			}
+		}
+	}
+	sort.Strings(out)
 	return out
+}
+
+// Alternatives is the convenience matcher for a single row.
+func Alternatives(alts []Alt, r *data.Row) []string { return IndexAlternatives(alts).ForRow(r) }
+
+// identity accepts setnames, not paths or malformed parent text.
+func identity(value string) string {
+	value = strings.ToLower(strings.TrimSpace(value))
+	for _, c := range value {
+		if !(c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '_' || c == '-') {
+			return ""
+		}
+	}
+	return value
 }

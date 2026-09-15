@@ -58,8 +58,9 @@ func (h *host) receiveScan(r scanResult) {
 		h.scanPending = true
 	}
 	// A nil alternatives result means genuinely empty only on the final pass.
-	if r.final && r.index != nil {
+	if r.final && r.index != nil && r.hash == h.a.Data().Hash {
 		h.alts = r.alts
+		h.altHash = r.hash
 	}
 	if r.index != nil {
 		h.a.SetHiddenSources(r.hidden, r.iniFound)

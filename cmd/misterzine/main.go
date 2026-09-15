@@ -83,7 +83,9 @@ type host struct {
 	img                           *images.Service
 	index                         *scan.Index
 	status                        []data.Status
-	alts                          []scan.Alt
+	alts                          map[string][]string
+	altHash                       string
+	familyCache                   scan.FamilyCache
 	scanCh                        chan scanResult
 	timeSample                    atomic.Pointer[serverClockSample]
 	checkRunning                  bool // UI-owned; held until the result is installed
@@ -263,8 +265,13 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			}
 			return data.StatusUnknown
 		},
-		Alternatives: func(r *data.Row) []string { return scan.Alternatives(h.alts, r) },
-		Versions:     h.state.Versions,
+		Alternatives: func(r *data.Row) []string {
+			if h.altHash != h.a.Data().Hash {
+				return nil
+			}
+			return h.alts[r.K]
+		},
+		Versions: h.state.Versions,
 		Exists: func(rel string) bool {
 			_, err := os.Stat(filepath.Join(card, filepath.FromSlash(rel)))
 			return err == nil
@@ -1111,7 +1118,7 @@ type scanResult struct {
 	index  *scan.Index
 	status []data.Status
 	hash   string // the dataset the statuses index into
-	alts   []scan.Alt
+	alts   map[string][]string
 	notice string
 	final  bool // alternatives pass finished, including an empty result
 	// hidden are the sources without a Downloader database in the card's
@@ -1175,7 +1182,7 @@ func (h *host) scan(rows []data.Row, hash string, feedAt time.Time) {
 	if err != nil {
 		notice = "Card scan incomplete"
 	}
-	h.sendScan(scanResult{index: idx, status: st, hash: hash, alts: alts, notice: notice, final: true, hidden: hidden, iniFound: iniFound})
+	h.sendScan(scanResult{index: idx, status: st, hash: hash, alts: h.familyCache.Resolve(h.card, alts, rows), notice: notice, final: true, hidden: hidden, iniFound: iniFound})
 }
 
 // screenshot saves the logical canvas (F12 on a keyboard).

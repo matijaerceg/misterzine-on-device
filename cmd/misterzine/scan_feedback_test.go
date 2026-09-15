@@ -16,7 +16,7 @@ func TestScanFailureKeepsPreviousInventory(t *testing.T) {
 	h.card = filepath.Join(h.card, "absent")
 	h.index = &scan.Index{Cores: map[string]scan.Core{"known": {Path: "old.rbf"}}}
 	h.status = []data.Status{data.StatusCurrent}
-	h.alts = []scan.Alt{{Path: "old.mra"}}
+	h.alts = map[string][]string{"old": {"old.mra"}}
 	h.manualScan = true
 	h.a.OpenScan()
 	h.requestScan()

@@ -16,7 +16,6 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/fetch"
 	"github.com/matijaerceg/misterzine-on-device/internal/images"
-	"github.com/matijaerceg/misterzine-on-device/internal/scan"
 	"github.com/matijaerceg/misterzine-on-device/internal/updater"
 )
 
@@ -120,7 +119,7 @@ func TestRefreshUsesInstalledHashAndCoalescesRequests(t *testing.T) {
 func TestScanCoalescesAndReplacesStaleRowStatuses(t *testing.T) {
 	h := backgroundHost(t)
 	h.a.SetData(data.Ingest([]data.Row{{Base: "Arcade", K: "old", Core: "Missing"}}, "old", time.Now()), nil)
-	h.alts = []scan.Alt{{Path: "previous.mra"}}
+	h.alts = map[string][]string{"old": {"previous.mra"}}
 	h.requestScan()
 	for i := 0; i < 20; i++ {
 		h.requestScan()
@@ -145,11 +144,11 @@ func TestScanCoalescesAndReplacesStaleRowStatuses(t *testing.T) {
 		t.Fatal("missing final scan result")
 	}
 	h.receiveScan(final)
-	if len(h.alts) != 0 {
-		t.Fatal("empty alternatives scan failed to clear deleted alternatives")
+	if len(h.alts) != 1 {
+		t.Fatal("stale final scan replaced alternatives")
 	}
 	finishBackground(t, h)
-	if len(h.status) != 2 || h.scanPending {
+	if len(h.status) != 2 || h.scanPending || h.altHash != "new" || len(h.alts) != 2 {
 		t.Fatal("coalesced rescan did not use latest rows")
 	}
 	select {
