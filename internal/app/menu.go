@@ -182,14 +182,20 @@ func (a *App) holdBar() int {
 }
 
 // paintHoldBar draws the hold progress along the status bar's bottom
-// line, over the usual muted line, while a hold is running.
+// line, over the usual muted line, while a hold is running. The arcade
+// notice uses the bottom legend instead so its action and feedback stay together.
 func (a *App) paintHoldBar(c *gfx.Canvas) {
 	bar := a.holdBar()
 	if bar <= 0 {
 		return
 	}
 	l := &a.lay
-	c.HLine(l.Status.Min.X, l.Status.Min.X+bar-1, l.Status.Max.Y-1, gen.Eva.Ok)
+	line := l.Status
+	y := line.Max.Y - 1
+	if a.cfg.ArcadeIntro {
+		line, y = l.Hint, l.Hint.Min.Y
+	}
+	c.HLine(line.Min.X, line.Min.X+bar-1, y, gen.Eva.Ok)
 }
 
 // openOptions opens Options over the current screen and remembers where

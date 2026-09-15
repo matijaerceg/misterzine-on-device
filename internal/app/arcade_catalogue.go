@@ -100,5 +100,6 @@ func (a *App) paintArcadeIntro(c *gfx.Canvas) {
 			y += a.sm.H + 2
 		}
 	}
-	a.paintHint(c, "Hold A 2 s to continue")
+	a.paintHint(c, "Hold A Dismiss")
+	a.paintHoldBar(c)
 }
