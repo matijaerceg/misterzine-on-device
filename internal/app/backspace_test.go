@@ -12,7 +12,7 @@ import (
 // erases at the quick erase pace.
 func TestHeldBackspaceErasesQuickly(t *testing.T) {
 	now := time.Now()
-	rows := []data.Row{{K: "one", Title: "Space Invaders"}, {K: "two", Title: "Invaders"}}
+	rows := []data.Row{{Base: "Arcade", K: "one", Title: "Space Invaders"}, {Base: "Arcade", K: "two", Title: "Invaders"}}
 	a := New(Config{PhysW: 320, PhysH: 240, HoldDelay: 300, Now: func() time.Time { return now }}, data.Ingest(rows, "test", now), nil)
 	for _, ch := range "inva" {
 		a.Handle(platform.Event{Text: ch, Pressed: true, At: now})

@@ -113,6 +113,8 @@ type Config struct {
 	// InstalledOnly is Options -> Sources: installed only. Sources whose Downloader
 	// database the card lacks (SetHiddenSources) leave every view.
 	InstalledOnly  bool
+	ShowNonArcade  bool
+	ArcadeIntro    bool // one-time explanation for upgraded installations
 	ShowDeprecated bool // Include catalogue rows marked deprecated.
 	// ViewsOff names the views Options -> Views left out of the Y cycle
 	// (data.SortMode.Name); a fresh install lists only "recents".
@@ -367,10 +369,10 @@ func (a *App) rebuild() {
 		filters.FavOnly = true
 	}
 	a.total = len(a.ds.Rows)
-	if len(filters.SrcHidden) > 0 || filters.HideDeprecated {
+	if len(filters.SrcHidden) > 0 || filters.HideDeprecated || filters.ArcadeOnly {
 		a.total = 0
 		for i := range a.ds.Rows {
-			if !filters.SrcHidden[a.ds.Rows[i].Src] && !(filters.HideDeprecated && a.ds.Rows[i].Deprecated) {
+			if a.catalogueIncludes(&a.ds.Rows[i]) {
 				a.total++
 			}
 		}
@@ -468,6 +470,9 @@ func (a *App) FilterRotation() bool  { return a.cfg.FilterRotation }
 
 // InstalledOnly reports Options -> Sources: installed only.
 func (a *App) InstalledOnly() bool { return a.cfg.InstalledOnly }
+
+func (a *App) ShowNonArcade() bool      { return a.cfg.ShowNonArcade }
+func (a *App) ArcadeIntroPending() bool { return a.cfg.ArcadeIntro }
 
 func (a *App) ShowDeprecated() bool { return a.cfg.ShowDeprecated }
 
@@ -641,6 +646,9 @@ func (a *App) ensureVisible() {
 // virtual keyboard), and this folds the pair into one.
 func (a *App) Handle(ev platform.Event) bool {
 	ev = a.padEvent(ev) // a pad whose OK button is B trades Enter and back
+	if a.cfg.ArcadeIntro {
+		return a.handleArcadeIntro(ev)
+	}
 	if a.handleSaverInput(ev) {
 		return true
 	}
@@ -1152,6 +1160,9 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 		if a.saver.active {
 			a.paintSaver(c)
 		}
+	}
+	if a.cfg.ArcadeIntro {
+		a.paintArcadeIntro(c)
 	}
 	a.paintSplash()
 	if a.PageTransitionRunning() {

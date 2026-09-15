@@ -17,7 +17,7 @@ func viewsApp(off ...string) (*App, func(platform.Key)) {
 		{K: "c", Title: "Gamma", Base: "Arcade", Manufacturer: "Sega Enterprises", Year: "1988", Updated: "2026-01-01", Date: "2020-01-03"},
 		{K: "d", Title: "Delta", Base: "Console", Updated: "2025-12-31", Date: "2020-01-04"},
 	}
-	a := New(Config{PhysW: 320, PhysH: 240, ViewsOff: off, Now: func() time.Time { return clock }}, data.Ingest(rows, "", clock), nil)
+	a := New(Config{ShowNonArcade: true, PhysW: 320, PhysH: 240, ViewsOff: off, Now: func() time.Time { return clock }}, data.Ingest(rows, "", clock), nil)
 	tap := func(k platform.Key) {
 		a.Handle(platform.Event{Key: k, Pressed: true, At: clock})
 		a.Handle(platform.Event{Key: k, Pressed: false, At: clock})
@@ -121,7 +121,7 @@ func TestViewsPageTogglesAndKeepsTheLastOne(t *testing.T) {
 		t.Fatalf("screen %v", a.screen)
 	}
 	// a remembered view that is off falls back to the first one on
-	b := New(Config{PhysW: 320, PhysH: 240, RememberSort: true, LastSort: data.SortYear, ViewsOff: []string{"updated", "year"}}, a.ds, nil)
+	b := New(Config{ShowNonArcade: true, PhysW: 320, PhysH: 240, RememberSort: true, LastSort: data.SortYear, ViewsOff: []string{"updated", "year"}}, a.ds, nil)
 	if b.mode != data.SortDebut {
 		t.Fatalf("remembered off view: %v", b.mode)
 	}

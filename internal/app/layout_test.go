@@ -36,7 +36,7 @@ func TestListLayouts(t *testing.T) {
 		}
 	}
 	// the option relays out the list and an unknown saved value is the default
-	rows := []data.Row{{K: "a", Title: "Alpha"}, {K: "b", Title: "Beta"}}
+	rows := []data.Row{{Base: "Arcade", K: "a", Title: "Alpha"}, {Base: "Arcade", K: "b", Title: "Beta"}}
 	a := New(Config{PhysW: 320, PhysH: 240, ListLayout: "huge"}, data.Ingest(rows, "", time.Now()), nil)
 	if a.ListLayout() != "list" || a.lay.Style != "list" {
 		t.Fatal("unknown layout not defaulted")

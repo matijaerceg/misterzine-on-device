@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Start with an arcade-only catalogue. Options > List > Show non-arcade cores restores console, computer and other cores; hidden favorites are kept. Upgrades explain the new default once. Filters show Stable/Beta directly, and catalogue counts and refresh announcements follow the enabled catalogue. Clear all filters leaves the preference alone; Update All keeps its normal scope.
+
 - Legends in Filters, Views, the main list, Details and the updater log now follow the available actions, including disabled rows, empty lists and scrolling boundaries.
 
 ## v1.0.32 — 2026-09-14

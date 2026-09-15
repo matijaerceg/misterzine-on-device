@@ -11,7 +11,7 @@ import (
 func TestKeyboardFindCombinesWithFiltersAndClears(t *testing.T) {
 	now := time.Now()
 	rows := []data.Row{{K: "one", Title: "Space Invaders", Base: "Arcade"}, {K: "two", Title: "SpaceInvaders II", Base: "Console"}, {K: "three", Title: "Invaders", Base: "Arcade"}}
-	a := New(Config{PhysW: 320, PhysH: 240, Now: func() time.Time { return now }}, data.Ingest(rows, "test", now), nil)
+	a := New(Config{ShowNonArcade: true, PhysW: 320, PhysH: 240, Now: func() time.Time { return now }}, data.Ingest(rows, "test", now), nil)
 	tap := func(k platform.Key) {
 		a.Handle(platform.Event{Key: k, Pressed: true, At: now})
 		a.Handle(platform.Event{Key: k, At: now})
@@ -65,7 +65,7 @@ func TestKeyboardFindCombinesWithFiltersAndClears(t *testing.T) {
 
 func TestFreshArtworkAlwaysStartsAtFirstShot(t *testing.T) {
 	now := time.Now()
-	a := New(Config{PhysW: 320, PhysH: 240, Now: func() time.Time { return now }}, data.Ingest([]data.Row{
+	a := New(Config{ShowNonArcade: true, PhysW: 320, PhysH: 240, Now: func() time.Time { return now }}, data.Ingest([]data.Row{
 		{K: "one", Title: "One", Img: "one", ImgSlots: []string{"title", "snap"}},
 		{K: "two", Title: "Two", Img: "two", ImgSlots: []string{"title", "snap"}},
 	}, "test", now), nil)

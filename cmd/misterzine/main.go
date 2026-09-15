@@ -232,6 +232,8 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		FilterRotation:       h.settings.FilterRotation,
 		InstalledOnly:        h.settings.InstalledOnly,
 		ShowDeprecated:       h.settings.ShowDeprecated,
+		ShowNonArcade:        h.settings.ShowNonArcade,
+		ArcadeIntro:          h.settings.ArcadeIntroPending,
 		ViewsOff:             h.settings.ViewsOff,
 		RecentLaunches:       h.state.Recents,
 		LastSort:             h.settings.LastSort,
@@ -891,6 +893,8 @@ func (h *host) saveAll(final bool) {
 		h.settings.FilterRotation = h.a.FilterRotation()
 		h.settings.InstalledOnly = h.a.InstalledOnly()
 		h.settings.ShowDeprecated = h.a.ShowDeprecated()
+		h.settings.ShowNonArcade = h.a.ShowNonArcade()
+		h.settings.ArcadeIntroPending = h.a.ArcadeIntroPending()
 		h.settings.ViewsOff = h.a.ViewsOff()
 		h.settings.LastSort = h.a.Sort()
 		h.settings.DefaultSort = h.a.DefaultView()
@@ -1070,7 +1074,7 @@ func (h *host) swap(fr fetch.Fresh) {
 	old := h.a.Data()
 	upd, _ := data.ParseMetaTime(fr.Meta.Updated)
 	ds := data.Ingest(fr.Rows, fr.Meta.Hash, upd)
-	news := data.DiffNews(old, fr.Rows)
+	news := h.a.CatalogueNews(old, fr.Rows)
 	// Old status indices belong to the previous row order. Rebuild off the UI.
 	h.status = nil
 	h.a.SetData(ds, nil)

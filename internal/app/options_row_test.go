@@ -11,7 +11,7 @@ import (
 // B from the list reopens Options on the row B left from, even after the
 // rows shift, while Filters still opens at its top.
 func TestOptionsReopensOnLastRow(t *testing.T) {
-	rows := []data.Row{{K: "a", Title: "Alpha"}, {K: "b", Title: "Beta"}}
+	rows := []data.Row{{Base: "Arcade", K: "a", Title: "Alpha"}, {Base: "Arcade", K: "b", Title: "Beta"}}
 	a := New(Config{PhysW: 320, PhysH: 240, Launcher: func() bool { return true }}, data.Ingest(rows, "", time.Now()), nil)
 	a.actList(platform.KeyBack)
 	if a.screen != ScreenOptions || a.panel.cursor > 1 { // the first row is the Data: heading

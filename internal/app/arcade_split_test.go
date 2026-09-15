@@ -16,7 +16,7 @@ func TestArcadeTypeSplitsIntoStableAndBeta(t *testing.T) {
 		{K: "b", Title: "Beta", Base: "Arcade", Beta: true},
 		{K: "c", Title: "Console", Base: "Console"},
 	}
-	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest(rows, "", time.Now()), nil)
+	a := New(Config{ShowNonArcade: true, PhysW: 320, PhysH: 240}, data.Ingest(rows, "", time.Now()), nil)
 	openExpandedFilters(a)
 	find := func(kind, value string) int {
 		t.Helper()

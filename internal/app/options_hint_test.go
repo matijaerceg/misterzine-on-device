@@ -14,7 +14,7 @@ import (
 // a row that answers A, and Back alone on a greyed row; every legend fits
 // the hint bar in both layouts at the widest safe zone.
 func TestOptionsHintFollowsTheRow(t *testing.T) {
-	rows := []data.Row{{K: "a", Title: "Alpha", Src: "jtcores"}}
+	rows := []data.Row{{Base: "Arcade", K: "a", Title: "Alpha", Src: "jtcores"}}
 	for _, rot := range []gfx.Rotation{gfx.RotNone, gfx.RotRight} {
 		a := New(Config{PhysW: 320, PhysH: 240, Rotation: rot, SafeInsetX: 40, SafeInsetY: 40, Launcher: func() bool { return false }},
 			data.Ingest(rows, "", time.Now()), nil)

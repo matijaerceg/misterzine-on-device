@@ -18,7 +18,7 @@ import (
 func TestRememberedVersionsPersist(t *testing.T) {
 	root := t.TempDir()
 	h := favoritesHost(root)
-	rows := []data.Row{{K: "game", Title: "Example", MRA: "_Arcade/Example.mra", Updated: "2026-09-10"}}
+	rows := []data.Row{{Base: "Arcade", K: "game", Title: "Example", MRA: "_Arcade/Example.mra", Updated: "2026-09-10"}}
 	alts := []string{"_Arcade/_alternatives/Example A.mra"}
 	open := func() {
 		h.a = app.New(app.Config{PhysW: 320, PhysH: 240,

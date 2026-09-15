@@ -13,7 +13,7 @@ import (
 func TestDetailsSpaceDoesNotDependOnAlternativeCount(t *testing.T) {
 	for _, rot := range []gfx.Rotation{gfx.RotNone, gfx.RotLeft, gfx.RotRight} {
 		for _, inset := range []int{15, 40} {
-			row := data.Row{K: "game", Title: "A long title for the cramped details layout", Core: "Game",
+			row := data.Row{Base: "Arcade", K: "game", Title: "A long title for the cramped details layout", Core: "Game",
 				Img: "game", ImgSlots: []string{"snap"}, ImgW: 320, ImgH: 240,
 				Note: strings.Repeat("Every word of this information must remain reachable. ", 20)}
 			alts := []string{}

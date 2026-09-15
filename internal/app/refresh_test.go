@@ -45,7 +45,7 @@ func TestShrinkingListKeepsLastPageFilled(t *testing.T) {
 				now := time.Now()
 				rows := make([]data.Row, 100)
 				for i := range rows {
-					rows[i] = data.Row{K: fmt.Sprint(i), Title: fmt.Sprintf("Game %03d", i)}
+					rows[i] = data.Row{Base: "Arcade", K: fmt.Sprint(i), Title: fmt.Sprintf("Game %03d", i)}
 				}
 				a := New(Config{PhysW: 320, PhysH: 240, Rotation: rotation}, data.Ingest(rows, "old", now), nil)
 				a.Paint()

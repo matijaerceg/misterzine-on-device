@@ -119,14 +119,14 @@ func TestRefreshUsesInstalledHashAndCoalescesRequests(t *testing.T) {
 
 func TestScanCoalescesAndReplacesStaleRowStatuses(t *testing.T) {
 	h := backgroundHost(t)
-	h.a.SetData(data.Ingest([]data.Row{{K: "old", Core: "Missing"}}, "old", time.Now()), nil)
+	h.a.SetData(data.Ingest([]data.Row{{Base: "Arcade", K: "old", Core: "Missing"}}, "old", time.Now()), nil)
 	h.alts = []scan.Alt{{Path: "previous.mra"}}
 	h.requestScan()
 	for i := 0; i < 20; i++ {
 		h.requestScan()
 	}
 	// Data changes before either queued scan result is applied.
-	h.a.SetData(data.Ingest([]data.Row{{K: "a"}, {K: "b"}}, "new", time.Now()), nil)
+	h.a.SetData(data.Ingest([]data.Row{{Base: "Arcade", K: "a"}, {Base: "Arcade", K: "b"}}, "new", time.Now()), nil)
 	var first scanResult
 	select {
 	case first = <-h.scanCh:
@@ -203,7 +203,7 @@ func TestEmptyRefreshPreservesWorkingDataAndCache(t *testing.T) {
 	for _, raw := range []string{"[]", "null", "[ ]"} {
 		t.Run(raw, func(t *testing.T) {
 			h := backgroundHost(t)
-			h.a.SetData(data.Ingest([]data.Row{{K: "kept", Title: "Kept game"}}, "working", time.Now()), nil)
+			h.a.SetData(data.Ingest([]data.Row{{Base: "Arcade", K: "kept", Title: "Kept game"}}, "working", time.Now()), nil)
 			cache := filepath.Join(h.root, "cache")
 			if err := os.MkdirAll(cache, 0755); err != nil {
 				t.Fatal(err)

@@ -23,7 +23,7 @@ func TestOptionsShouldersJumpSections(t *testing.T) {
 	if kind() != "refresh" {
 		t.Fatalf("Options opens on %s", kind())
 	}
-	for _, want := range []string{"sources", "follow-rotation", "button-labels", "launcher", "launcher"} {
+	for _, want := range []string{"show-non-arcade", "follow-rotation", "button-labels", "launcher", "launcher"} {
 		press(platform.KeyPageDown)
 		if kind() != want {
 			t.Fatalf("R landed on %s, want %s", kind(), want)
@@ -34,7 +34,7 @@ func TestOptionsShouldersJumpSections(t *testing.T) {
 	if kind() != "return-after-game" {
 		t.Fatalf("down twice from the shortcut: %s", kind())
 	}
-	for _, want := range []string{"button-labels", "follow-rotation", "sources", "refresh", "refresh"} {
+	for _, want := range []string{"button-labels", "follow-rotation", "show-non-arcade", "refresh", "refresh"} {
 		press(platform.KeyPageUp)
 		if kind() != want {
 			t.Fatalf("L landed on %s, want %s", kind(), want)

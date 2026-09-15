@@ -39,9 +39,8 @@ func (a *App) FinishScan(message string, counts bool) {
 
 func (a *App) cardCounts() map[data.Status]int {
 	counts := map[data.Status]int{}
-	hidden := a.effectiveFilters().SrcHidden
 	for i := range a.ds.Rows {
-		if hidden[a.ds.Rows[i].Src] || (!a.cfg.ShowDeprecated && a.ds.Rows[i].Deprecated) {
+		if !a.catalogueIncludes(&a.ds.Rows[i]) {
 			continue
 		}
 		counts[a.status(i)]++
@@ -63,7 +62,7 @@ func (a *App) paintScan(c *gfx.Canvas) {
 			"Build date unknown: " + itoa(counts[data.StatusFoundUndated]),
 			"Not found on card: " + itoa(counts[data.StatusNotFound]),
 			"Status unknown: " + itoa(counts[data.StatusUnknown]),
-			"", "Compared with the catalogue."}
+			"", "Compared with the enabled catalogue."}
 		if a.scanError != "" && !a.scanCounts {
 			lines = []string{a.scanError, "", "Could not finish every scan step.", "See the device log for details."}
 		} else if a.scanError != "" {

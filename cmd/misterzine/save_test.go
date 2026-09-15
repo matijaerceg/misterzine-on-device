@@ -19,7 +19,7 @@ import (
 func TestSortAutosaveRestoreAndOption(t *testing.T) {
 	root := t.TempDir()
 	h := favoritesHost(root)
-	rows := []data.Row{{K: "z", Title: "Zoo", Updated: "2026-09-10"}, {K: "a", Title: "Alpha", Updated: "2020-01-01"}}
+	rows := []data.Row{{Base: "Arcade", K: "z", Title: "Zoo", Updated: "2026-09-10"}, {Base: "Arcade", K: "a", Title: "Alpha", Updated: "2020-01-01"}}
 	open := func() {
 		h.a = app.New(app.Config{PhysW: 320, PhysH: 240, RememberSort: h.settings.RememberSort, LastSort: h.settings.LastSort, DefaultSort: h.settings.DefaultSort,
 			SettingsChanged: func() { h.setDirty = true },
@@ -56,7 +56,7 @@ func TestSortAutosaveRestoreAndOption(t *testing.T) {
 		t.Fatal("alphabetical restart did not start at its first title")
 	}
 	tap(platform.KeyBack)
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 11; i++ {
 		tap(platform.KeyDown)
 	}
 	tap(platform.KeyLeft) // Remember last view: off, in the List group
@@ -68,7 +68,7 @@ func TestSortAutosaveRestoreAndOption(t *testing.T) {
 		t.Fatal("disabled preference did not restart in latest updates")
 	}
 	tap(platform.KeyBack)
-	for i := 0; i < 11; i++ {
+	for i := 0; i < 12; i++ {
 		tap(platform.KeyDown)
 	}
 	tap(platform.KeyRight) // Default view: MiSTer debut.
@@ -188,7 +188,7 @@ func TestRotationIntentSurvivesSaves(t *testing.T) {
 				h.a.Handle(platform.Event{Key: k, At: now.Add(time.Millisecond)})
 			}
 			tap(platform.KeyBack) // Options
-			for n := 0; n < 19; n++ {
+			for n := 0; n < 20; n++ {
 				tap(platform.KeyDown) // HDMI picture: a value row with no rotation in it
 			}
 			tap(platform.KeyRight)
@@ -198,7 +198,7 @@ func TestRotationIntentSurvivesSaves(t *testing.T) {
 			h.saveAll(false)
 			check("auto")
 			tap(platform.KeyHome)
-			for n := 0; n < 16; n++ {
+			for n := 0; n < 17; n++ {
 				tap(platform.KeyDown) // Rotation follows the Data and List groups and Follow INI rotation
 			}
 			if rotation == gfx.RotLeft {
@@ -219,7 +219,7 @@ func TestRotationIntentSurvivesSaves(t *testing.T) {
 func TestFiltersAutosaveAndRestore(t *testing.T) {
 	root := t.TempDir()
 	h := favoritesHost(root)
-	h.a = app.New(app.Config{PhysW: 320, PhysH: 240, FiltersChanged: func() { h.dirty = true }}, data.Ingest([]data.Row{{K: "game"}}, "test", time.Now()), nil)
+	h.a = app.New(app.Config{PhysW: 320, PhysH: 240, FiltersChanged: func() { h.dirty = true }}, data.Ingest([]data.Row{{Base: "Arcade", K: "game"}}, "test", time.Now()), nil)
 	choices := data.Filters{Install: data.InstallFound, FavOnly: true, Since: true, BaseOff: map[string]bool{"Console": true}, SrcOff: map[string]bool{"other": true}, RotOff: map[string]bool{"v": true}, PlrOff: map[string]bool{"4": true}, GenreOff: map[string]bool{"Racing": true}, DirectionsOff: map[string]bool{"4": true}, ButtonsOff: map[string]bool{"6": true}}
 	h.a.SetFilters(choices)
 	now := time.Now()

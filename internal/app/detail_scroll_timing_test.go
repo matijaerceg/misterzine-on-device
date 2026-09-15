@@ -48,7 +48,7 @@ func TestDetailScrollDisplayCadence(t *testing.T) {
 
 func TestDetailScrollReversalAndEnd(t *testing.T) {
 	clock := time.Date(2026, 9, 14, 12, 0, 0, 0, time.UTC)
-	a := New(Config{PhysW: 320, PhysH: 240, TimerNow: func() time.Time { return clock }}, data.Ingest([]data.Row{{K: "game", Title: "Game"}}, "", clock), nil)
+	a := New(Config{PhysW: 320, PhysH: 240, TimerNow: func() time.Time { return clock }}, data.Ingest([]data.Row{{Base: "Arcade", K: "game", Title: "Game"}}, "", clock), nil)
 	a.screen = ScreenDetails
 	a.detail.lines = 4
 	a.actDetails(platform.KeyDown)

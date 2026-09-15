@@ -24,7 +24,7 @@ func okTestPads() []support.Pad {
 
 func okTestApp(pads func() []support.Pad) *App {
 	now := time.Date(2026, 9, 13, 12, 0, 0, 0, time.UTC)
-	rows := []data.Row{{K: "a", Title: "Alpha", Updated: "2026-09-07"}, {K: "b", Title: "Beta", Updated: "2026-09-07"}}
+	rows := []data.Row{{Base: "Arcade", K: "a", Title: "Alpha", Updated: "2026-09-07"}, {Base: "Arcade", K: "b", Title: "Beta", Updated: "2026-09-07"}}
 	cfg := Config{PhysW: 320, PhysH: 240, Now: func() time.Time { return now }, Launcher: func() bool { return true }}
 	if pads != nil {
 		cfg.Support = &SupportHooks{Pads: pads}

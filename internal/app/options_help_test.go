@@ -14,7 +14,7 @@ import (
 // case is 320x240 tate, 40 columns by 4 lines. Credits and Quit carry no
 // hint at all.
 func TestOptionsHintsFitTheHelpBox(t *testing.T) {
-	rows := []data.Row{{K: "a", Title: "Alpha", Src: "jtcores"}}
+	rows := []data.Row{{Base: "Arcade", K: "a", Title: "Alpha", Src: "jtcores"}}
 	for _, c := range []struct {
 		name string
 		w, h int
@@ -57,7 +57,7 @@ func TestOptionsHintsFitTheHelpBox(t *testing.T) {
 
 // Credits sits above Quit, which is the last row of Options.
 func TestOptionsEndsWithCreditsThenQuit(t *testing.T) {
-	a := New(Config{PhysW: 320, PhysH: 240, Launcher: func() bool { return true }}, data.Ingest([]data.Row{{K: "a", Title: "Alpha"}}, "", time.Now()), nil)
+	a := New(Config{PhysW: 320, PhysH: 240, Launcher: func() bool { return true }}, data.Ingest([]data.Row{{Base: "Arcade", K: "a", Title: "Alpha"}}, "", time.Now()), nil)
 	E := a.optionsEntries()
 	if n := len(E); n < 2 || E[n-2].kind != "credits" || E[n-1].kind != "quit" {
 		t.Fatalf("last rows %q, %q; want credits then quit", E[len(E)-2].text, E[len(E)-1].text)

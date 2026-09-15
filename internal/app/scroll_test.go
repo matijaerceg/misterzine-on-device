@@ -13,7 +13,7 @@ import (
 func TestMainRowsFollowCenterAndStopAtEnds(t *testing.T) {
 	var rows []data.Row
 	for i := 0; i < 11; i++ {
-		rows = append(rows, data.Row{K: fmt.Sprint(i), Title: fmt.Sprintf("%02d", i)})
+		rows = append(rows, data.Row{Base: "Arcade", K: fmt.Sprint(i), Title: fmt.Sprintf("%02d", i)})
 	}
 	a := New(Config{PhysW: 320, PhysH: 240, RememberSort: true, LastSort: data.SortUpdated}, data.Ingest(rows, "", time.Now()), nil)
 	a.lay.Lines = 5

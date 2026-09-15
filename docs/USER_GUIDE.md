@@ -256,6 +256,12 @@ and last row.
 - **Show deprecated cores:** off by default. Turn it on to include cores marked
   deprecated in the catalogue. This choice is remembered and is unaffected by
   Clear all filters. Hidden cores keep their saved favourites.
+- **Show non-arcade cores:** off by default, including after upgrading an older
+  installation. Turn on to include console, computer and other cores. This
+  preference applies to every browsing view, search, Favorites, catalogue counts
+  and refresh announcements. Hidden favorites and Type selections are kept;
+  clearing filters does not change this preference. Upgraded installations show
+  a one-time explanation; A or B dismisses it.
 - **Sources:** all by default. Installed only shows games from the databases
   listed in the card's `downloader.ini`, the file Update All rewrites on every
   run, so a source you never enabled (Coin-Op, Meathax, rmCores or Jotego) stays out of
@@ -482,12 +488,13 @@ it is new to you. When nothing in the view is new it sits at the top and says
 **Nothing new since your last look**. An entry the catalogue added late under an
 old date still shows its own unseen mark below the line, and the Since last look
 filter finds it, but it does not move the line.
-On-card choices include counts across the whole catalogue, independent of the
+On-card choices include counts across the enabled catalogue, independent of the
 current search and other filters. Favorites mode always shows favorites only;
 use Y in the main view to leave it.
 
 Card scans run quietly on launch. Options -> Rescan card shows a result screen
-with up-to-date, older, undated, missing and unknown totals. B closes it even
+with up-to-date, older, undated, missing and unknown totals for the enabled
+catalogue. B closes it even
 while scanning; completion does not interrupt the screen you moved to.
 Unreadable card scans retain the previous inventory and show a failure banner.
 
@@ -497,7 +504,12 @@ shows the version beside the Update All instructions. Run Update All, then quit
 and reopen MisterZine to use the new app. Offline checks stay quiet. This is
 separate from automatically refreshing the games catalogue; prerelease and
 development builds do not advertise stable downgrades.
-The **Arcade game filters** section contains Rotation, Resolution, Genre,
+By default, **Type** offers Stable and Beta directly and the **Game filters**
+section contains Rotation, Resolution, Genre, Controls, Buttons and Players.
+Enable **Options > List > Show non-arcade cores** to restore the broader Type
+choices and the **Arcade game filters** heading.
+
+With non-arcade cores enabled, the **Arcade game filters** section contains Rotation, Resolution, Genre,
 Controls, Buttons and Players. These choices affect arcade games only; Type
 controls whether console, computer and other cores appear. Excluding Arcade
 hides its filter section while retaining your choices for later. Under Type,
@@ -508,7 +520,8 @@ shows `[-]` on Arcade. Turning both off is the same as turning Arcade off.
 Counts reflect your search and the other filter sections. A choice's count
 ignores its own section, so unchecked choices still show how many entries they
 could include. Choices remain selectable at zero. Y on a value twice enables
-every choice in its section; Clear all filters restores everything.
+every choice in its section; Clear all filters restores the ordinary filter choices within your enabled
+catalogue; it does not change Options preferences.
 
 Resolution uses the catalogue's 15kHz/31kHz labels. **Unknown** means that value
 is missing. Controls includes separately recorded special controls such as
@@ -521,6 +534,9 @@ Arcade Database. They match their ordinary filter categories and are marked
 "(provisional)" in the game's details.
 
 ## Update All
+
+Catalogue visibility does not change what Update All updates. It continues to
+use your normal updater configuration.
 
 Choose **Run Update All** in Options. Browsing pauses while a dedicated screen
 shows stages, elapsed time, an activity spinner and a live log. Stages are

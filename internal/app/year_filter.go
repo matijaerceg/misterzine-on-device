@@ -55,7 +55,7 @@ func (a *App) selectedDecade() string {
 	}
 	// Type > Arcade opens into Stable and Beta the same way a decade opens
 	// into years; its group is named after the type
-	if e.kind == "beta" || (e.kind == "base" && e.value == "Arcade" && !e.header) {
+	if a.cfg.ShowNonArcade && (e.kind == "beta" || (e.kind == "base" && e.value == "Arcade" && !e.header)) {
 		return "Arcade"
 	}
 	return ""

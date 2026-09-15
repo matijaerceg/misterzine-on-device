@@ -92,7 +92,7 @@ func TestLastLookLineFollowsDatesNotDepth(t *testing.T) {
 	rows := make([]data.Row, 300)
 	base := map[string]string{}
 	for i := range rows {
-		rows[i] = data.Row{K: fmt.Sprint(i), Title: fmt.Sprint(i), Updated: "2026-09-10"}
+		rows[i] = data.Row{Base: "Arcade", K: fmt.Sprint(i), Title: fmt.Sprint(i), Updated: "2026-09-10"}
 		base[rows[i].K] = rows[i].Updated
 	}
 	// a row catalogued late: unseen, but dated years before the last look

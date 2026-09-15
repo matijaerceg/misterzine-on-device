@@ -27,7 +27,7 @@ func TestListDateFormats(t *testing.T) {
 		}
 	}
 	now := time.Date(2026, 9, 11, 12, 0, 0, 0, time.UTC)
-	rows := []data.Row{{K: "a", Title: "Alpha", Updated: "2026-09-07"}, {K: "b", Title: "Beta", Updated: "2025-01-02"}}
+	rows := []data.Row{{Base: "Arcade", K: "a", Title: "Alpha", Updated: "2026-09-07"}, {Base: "Arcade", K: "b", Title: "Beta", Updated: "2025-01-02"}}
 	a := New(Config{PhysW: 320, PhysH: 240, Now: func() time.Time { return now }}, data.Ingest(rows, "", now), nil)
 	if a.DateFormat() != "mm-dd" || a.dateCols() != 5 || a.dateCol("2025-01-02") != " 2025" {
 		t.Fatalf("default format: %q cols %d", a.dateCol("2025-01-02"), a.dateCols())
@@ -74,7 +74,7 @@ func TestThumbSlotPreference(t *testing.T) {
 	if _, s := thumbSlot(row, "title"); s != "snap" {
 		t.Fatalf("title preference without a title picked %s", s)
 	}
-	a := New(Config{PhysW: 320, PhysH: 240, ListShot: "title"}, data.Ingest([]data.Row{{K: "a", Title: "A"}}, "", time.Now()), nil)
+	a := New(Config{PhysW: 320, PhysH: 240, ListShot: "title"}, data.Ingest([]data.Row{{Base: "Arcade", K: "a", Title: "A"}}, "", time.Now()), nil)
 	if a.ListShot() != "title" {
 		t.Fatal("preference not carried")
 	}
@@ -106,7 +106,7 @@ func titleInk(a *App, col rgb) int {
 
 func TestNarrowTitlesAndBetaSign(t *testing.T) {
 	long := strings.Repeat("Mmmmmmmmm ", 8)
-	rows := []data.Row{{K: "a", Title: long, Updated: "2026-09-07", Beta: true}}
+	rows := []data.Row{{Base: "Arcade", K: "a", Title: long, Updated: "2026-09-07", Beta: true}}
 	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest(rows, "", time.Now()), nil)
 	if a.TitleFont() != "tall" || a.rowFont() != a.tall {
 		t.Fatal("narrow tall is the default")
@@ -199,7 +199,7 @@ func TestClearAllFiltersRowIsAlwaysListed(t *testing.T) {
 }
 
 func TestOptionsLayoutCuesAndColumn(t *testing.T) {
-	rows := []data.Row{{K: "a", Title: "A", Updated: "2026-09-07"}}
+	rows := []data.Row{{Base: "Arcade", K: "a", Title: "A", Updated: "2026-09-07"}}
 	a := New(Config{PhysW: 320, PhysH: 240, Version: "v9.9.9-test"}, data.Ingest(rows, "", time.Now()), nil)
 	a.openPanel(ScreenOptions)
 	a.Paint()
@@ -331,7 +331,7 @@ func TestVersionLineMarqueeScrolls(t *testing.T) {
 func TestPageJumpsCenterTheRow(t *testing.T) {
 	var rows []data.Row
 	for i := 0; i < 80; i++ {
-		rows = append(rows, data.Row{K: itoa(i), Title: "Game " + itoa(i), Updated: "2026-09-07"})
+		rows = append(rows, data.Row{Base: "Arcade", K: itoa(i), Title: "Game " + itoa(i), Updated: "2026-09-07"})
 	}
 	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest(rows, "", time.Now()), nil)
 	a.actList(platform.KeyRight)
@@ -355,7 +355,7 @@ func TestPageJumpsCenterTheRow(t *testing.T) {
 func TestDetailsInformationSlides(t *testing.T) {
 	clock := time.Date(2026, 9, 12, 12, 0, 0, 0, time.UTC)
 	row := data.Row{K: "game", Title: "Game", Core: "Game", Note: strings.Repeat("Every word of this information must remain reachable. ", 20)}
-	a := New(Config{PhysW: 320, PhysH: 240, Now: func() time.Time { return clock },
+	a := New(Config{ShowNonArcade: true, PhysW: 320, PhysH: 240, Now: func() time.Time { return clock },
 		Alternatives: func(*data.Row) []string {
 			return []string{"_Arcade/_alternatives/A.mra", "_Arcade/_alternatives/B.mra"}
 		}},
@@ -568,7 +568,7 @@ func TestFilterClearLegend(t *testing.T) {
 }
 
 func TestStatusBarNamesTheOrder(t *testing.T) {
-	rows := []data.Row{{K: "a", Title: "A", Updated: "2026-09-07", Date: "2026-09-01", Year: "1985"}}
+	rows := []data.Row{{Base: "Arcade", K: "a", Title: "A", Updated: "2026-09-07", Date: "2026-09-01", Year: "1985"}}
 	for _, rot := range []gfx.Rotation{gfx.RotNone, gfx.RotLeft} {
 		a := New(Config{PhysW: 320, PhysH: 240, Rotation: rot, SafeInsetX: 40, SafeInsetY: 40, Favorites: map[string]bool{"a": true}}, data.Ingest(rows, "", time.Now()), nil)
 		for mode, want := range map[data.SortMode]string{data.SortUpdated: "by: core updated", data.SortDebut: "by: MiSTer debut", data.SortYear: "by: original year", data.SortAlphabetical: "by: A-Z", data.SortFavorites: "Favorites A-Z"} {

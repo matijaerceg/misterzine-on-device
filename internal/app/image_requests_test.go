@@ -9,7 +9,7 @@ import (
 
 func TestNeighbourThumbnailMatchesDisplayedVariant(t *testing.T) {
 	for _, size := range [][2]int{{320, 240}, {240, 320}, {240, 240}} {
-		rows := []data.Row{{K: "a", Title: "A", Img: "a", ImgSlots: []string{"snap"}, ImgW: size[0], ImgH: size[1]}, {K: "b", Title: "B", Img: "b", ImgSlots: []string{"snap"}, ImgW: size[0], ImgH: size[1]}}
+		rows := []data.Row{{Base: "Arcade", K: "a", Title: "A", Img: "a", ImgSlots: []string{"snap"}, ImgW: size[0], ImgH: size[1]}, {Base: "Arcade", K: "b", Title: "B", Img: "b", ImgSlots: []string{"snap"}, ImgW: size[0], ImgH: size[1]}}
 		a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest(rows, "test", time.Now()), nil)
 		a.MoveToKey("a")
 		a.Paint()

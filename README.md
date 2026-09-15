@@ -1,10 +1,14 @@
 # MisterZine Frontend for MiSTer
 
-See what's new, check what's on your card, and launch a game from the
-MiSTer main menu. MisterZine brings the [release tracker](https://misterzine.fyi)
+An arcade-first frontend for MiSTer. Browse games, follow new releases,
+see what's on your card, and launch straight into play from the MiSTer main menu. MisterZine brings the [release tracker](https://misterzine.fyi)
 to your display, with screenshots, favorites, filters, and keyboard search.
 
-It follows new releases and updated builds across the catalogue. The interface
+Arcade games are shown by default. Enable **Options > List > Show non-arcade
+cores** to include console, computer and other cores for browsing and tracking
+updates. Favorites are kept when their cores are hidden.
+
+It follows new releases and updated builds across the enabled catalogue. The interface
 uses a 320x240 framebuffer, with horizontal and rotated CRT layouts.
 
 <p>

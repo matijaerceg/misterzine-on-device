@@ -25,8 +25,8 @@ func TestLayoutPreviewsOrientationAndState(t *testing.T) {
 			for _, fallback := range []bool{false, true} {
 				pictures := &previewImages{}
 				rows := []data.Row{
-					{K: "h", Title: "Horizontal", Img: "h", ImgW: 320, ImgH: 240, ImgSlots: []string{"snap"}},
-					{K: "t", Title: "Tate", Img: "t", ImgW: 240, ImgH: 320, ImgSlots: []string{"snap"}},
+					{Base: "Arcade", K: "h", Title: "Horizontal", Img: "h", ImgW: 320, ImgH: 240, ImgSlots: []string{"snap"}},
+					{Base: "Arcade", K: "t", Title: "Tate", Img: "t", ImgW: 240, ImgH: 320, ImgSlots: []string{"snap"}},
 				}
 				a := New(Config{PhysW: 320, PhysH: 240, Rotation: rot, SafeInsetX: inset, SafeInsetY: inset, Images: pictures}, data.Ingest(rows, "", time.Now()), nil)
 				if fallback {

@@ -18,7 +18,7 @@ func TestFacetCountsRespectOtherFiltersAndSearch(t *testing.T) {
 		{K: "d", Title: "Game D", Base: "Arcade", Src: "one"},
 		{K: "console", Title: "Console", Base: "Console", Src: "one"},
 	}
-	a := New(Config{PhysW: 320, PhysH: 240, Favorites: map[string]bool{"a": true, "b": true}, Status: func(i int) data.Status {
+	a := New(Config{ShowNonArcade: true, PhysW: 320, PhysH: 240, Favorites: map[string]bool{"a": true, "b": true}, Status: func(i int) data.Status {
 		if i == 3 {
 			return data.StatusNotFound
 		}
@@ -70,8 +70,8 @@ func TestFacetCountsRespectOtherFiltersAndSearch(t *testing.T) {
 }
 
 func TestAlphabeticalSortCyclePreservesSelectionAndFilters(t *testing.T) {
-	rows := []data.Row{{K: "z", Title: "Zulu", Updated: "2026-09-09", Date: "2026-09-07"}, {K: "a", Title: "alpha", Updated: "2026-09-08", Date: "2026-09-09"}, {K: "n", Title: "Game 10"}, {K: "m", Title: "Game 2"}}
-	a := New(Config{PhysW: 320, PhysH: 240, ViewsOff: []string{"recents"}, Favorites: map[string]bool{"z": true, "a": true, "n": true, "m": true}}, data.Ingest(rows, "", time.Now()), &data.SeenRecord{Cur: map[string]string{}})
+	rows := []data.Row{{Base: "Arcade", K: "z", Title: "Zulu", Updated: "2026-09-09", Date: "2026-09-07"}, {Base: "Arcade", K: "a", Title: "alpha", Updated: "2026-09-08", Date: "2026-09-09"}, {Base: "Arcade", K: "n", Title: "Game 10"}, {Base: "Arcade", K: "m", Title: "Game 2"}}
+	a := New(Config{ShowNonArcade: true, PhysW: 320, PhysH: 240, ViewsOff: []string{"recents"}, Favorites: map[string]bool{"z": true, "a": true, "n": true, "m": true}}, data.Ingest(rows, "", time.Now()), &data.SeenRecord{Cur: map[string]string{}})
 	a.SetFilters(data.Filters{FavOnly: true})
 	a.MoveToKey("z")
 	for _, mode := range []data.SortMode{data.SortDebut, data.SortYear, data.SortAlphabetical, data.SortMaker, data.SortFavorites, data.SortUpdated} {
@@ -103,7 +103,7 @@ func TestAlphabeticalSortCyclePreservesSelectionAndFilters(t *testing.T) {
 
 func TestProvisionalDetailsExplainPresentValues(t *testing.T) {
 	r := data.Row{Base: "Arcade", Rot: "Horizontal", Ctl: "4-way · 0 buttons", Prov: []string{"rot", "ctl"}}
-	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest([]data.Row{r}, "", time.Now()), nil)
+	a := New(Config{ShowNonArcade: true, PhysW: 320, PhysH: 240}, data.Ingest([]data.Row{r}, "", time.Now()), nil)
 	var text string
 	for _, line := range a.detailLines(&a.ds.Rows[0], &a.ds.Der[0], 0) {
 		text += line.text + "\n"
@@ -115,7 +115,7 @@ func TestProvisionalDetailsExplainPresentValues(t *testing.T) {
 
 func TestOpenFilterCountsFollowCardScan(t *testing.T) {
 	status := data.StatusNotFound
-	a := New(Config{PhysW: 320, PhysH: 240, Status: func(int) data.Status { return status }}, data.Ingest([]data.Row{{K: "a", Base: "Arcade", Rot: "Horizontal"}}, "", time.Now()), nil)
+	a := New(Config{ShowNonArcade: true, PhysW: 320, PhysH: 240, Status: func(int) data.Status { return status }}, data.Ingest([]data.Row{{K: "a", Base: "Arcade", Rot: "Horizontal"}}, "", time.Now()), nil)
 	a.SetFilters(data.Filters{Install: data.InstallFound})
 	openExpandedFilters(a)
 	for i, e := range a.panel.entries {

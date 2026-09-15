@@ -39,6 +39,7 @@ const (
 // Filters follow the site's all-checked model: a value listed in an Off set
 // is hidden, so a value the data gains later defaults to visible.
 type Filters struct {
+	ArcadeOnly     bool            `json:"-"`                 // runtime catalogue preference
 	HideDeprecated bool            `json:"-"`                 // runtime catalogue preference
 	MatchRotation  string          `json:"-"`                 // runtime INI rule; includes system/unknown rows
 	SrcHidden      map[string]bool `json:"-"`                 // runtime rule: sources whose Downloader database the card lacks
@@ -62,7 +63,7 @@ func (f *Filters) Active() bool {
 	if f == nil {
 		return false
 	}
-	return f.HideDeprecated || f.MatchRotation != "" || len(f.SrcHidden) > 0 || len(f.YearOff) > 0 || len(f.BaseOff) > 0 || len(f.BetaOff) > 0 || len(f.SrcOff) > 0 || len(f.RotOff) > 0 || len(f.PlrOff) > 0 ||
+	return f.ArcadeOnly || f.HideDeprecated || f.MatchRotation != "" || len(f.SrcHidden) > 0 || len(f.YearOff) > 0 || len(f.BaseOff) > 0 || len(f.BetaOff) > 0 || len(f.SrcOff) > 0 || len(f.RotOff) > 0 || len(f.PlrOff) > 0 ||
 		len(f.ResOff) > 0 || len(f.GenreOff) > 0 || len(f.DirectionsOff) > 0 || len(f.ButtonsOff) > 0 || (f.Install != "" && f.Install != InstallAll) || f.FavOnly || f.Since
 }
 
@@ -70,6 +71,9 @@ func (f *Filters) Active() bool {
 func (f *Filters) Pass(r *Row, d *Derived, st Status, fav, unseen bool) bool {
 	if f == nil {
 		return true
+	}
+	if f.ArcadeOnly && !r.IsArcade() {
+		return false
 	}
 	if f.MatchRotation != "" && d.RotGroup != f.MatchRotation {
 		return false

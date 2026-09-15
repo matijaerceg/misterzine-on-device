@@ -20,7 +20,7 @@ func TestYearDecadeFilteringAndPersistence(t *testing.T) {
 		{K: "s", Title: "System", Base: "Console", Year: "1980"},
 	}
 	saves := 0
-	a := New(Config{PhysW: 320, PhysH: 240, FiltersChanged: func() { saves++ }}, data.Ingest(rows, "", time.Now()), nil)
+	a := New(Config{ShowNonArcade: true, PhysW: 320, PhysH: 240, FiltersChanged: func() { saves++ }}, data.Ingest(rows, "", time.Now()), nil)
 	openExpandedFilters(a)
 	choose := func(kind, value string, header bool) {
 		t.Helper()

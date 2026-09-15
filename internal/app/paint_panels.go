@@ -305,7 +305,15 @@ func (a *App) rawFilterEntries() []panelEntry {
 		}
 	}
 	ident := func(s string) string { return s }
-	section("Type", "base", a.ds.Facets.Base, f.BaseOff, ident)
+	if a.cfg.ShowNonArcade {
+		section("Type", "base", a.ds.Facets.Base, f.BaseOff, ident)
+	} else {
+		E = append(E, panelEntry{text: "Type", header: true, kind: "base"})
+		counts := a.facetCounts("beta")
+		for _, v := range []struct{ value, text string }{{"stable", "Stable"}, {"beta", "Beta"}} {
+			E = append(E, panelEntry{text: v.text, kind: "beta", value: v.value, checked: !f.BaseOff["Arcade"] && !f.BetaOff[v.value], count: counts[v.value], showCount: true})
+		}
+	}
 	section("Source", "src", a.ds.Facets.Src, f.SrcOff, func(s string) string {
 		if s == "" {
 			return "Unknown"
@@ -315,8 +323,12 @@ func (a *App) rawFilterEntries() []panelEntry {
 	if f.BaseOff["Arcade"] || a.ds.Facets.Base["Arcade"] == 0 {
 		return E
 	}
+	gameHeading := "Game filters:"
+	if a.cfg.ShowNonArcade {
+		gameHeading = "Arcade game filters:"
+	}
 	E = append(E, panelEntry{header: true, info: true},
-		panelEntry{text: "Arcade game filters:", header: true, info: true})
+		panelEntry{text: gameHeading, header: true, info: true})
 	E = append(E, a.yearEntries()...)
 	section("Rotation", "rot", a.ds.Facets.Rot, f.RotOff, func(s string) string {
 		switch s {
@@ -415,6 +427,8 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "Clear image cache", kind: "clearimg",
 			help: "Delete the downloaded screenshots and system photos; they come back as you browse."},
 		spacer, group(gfx.SectionList, "List"),
+		{text: "Show non-arcade cores", kind: "show-non-arcade", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ShowNonArcade],
+			help: "Include console, computer and other cores. Off (default): browse arcade games only. Saved favorites are kept."},
 		{text: "Sources", kind: "sources", vals: []string{"all", "installed only"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.InstalledOnly],
 			help: a.sourcesHelp()},
 		{text: "Show deprecated cores", kind: "show-deprecated", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ShowDeprecated],
@@ -986,6 +1000,9 @@ func (a *App) stepValue(d int) bool {
 		}
 	case "filter-rotation":
 		a.cfg.FilterRotation = i == 1
+		a.Refilter()
+	case "show-non-arcade":
+		a.cfg.ShowNonArcade = i == 1
 		a.Refilter()
 	case "show-deprecated":
 		a.cfg.ShowDeprecated = i == 1

@@ -17,6 +17,8 @@ import (
 // Settings are the user's device settings.
 type Settings struct {
 	TransitionsDisabled bool          `json:"transitions_disabled,omitempty"`
+	ShowNonArcade       bool          `json:"show_non_arcade"`
+	ArcadeIntroPending  bool          `json:"arcade_intro_pending"`
 	ShowDeprecated      bool          `json:"show_deprecated"`
 	Schema              int           `json:"schema"`
 	Rotation            string        `json:"rotation"` // auto, left, right, off
@@ -89,6 +91,9 @@ func LoadSettings(path string) (Settings, error) {
 	// view is on, and must not switch Recents back off.
 	var keys map[string]json.RawMessage
 	json.Unmarshal(b, &keys)
+	if _, has := keys["show_non_arcade"]; !has {
+		s.ArcadeIntroPending = true
+	}
 	if _, has := keys["views_off"]; !has {
 		// a file from before Options -> Views: Recents was the one optional view
 		s.ViewsOff = []string{}

@@ -41,6 +41,13 @@ func (a *App) toggleArcade(only bool) bool {
 	}
 	other := map[string]string{"stable": "beta", "beta": "stable"}[child]
 	switch {
+	case only && !a.cfg.ShowNonArcade:
+		if !base["Arcade"] && len(beta) == 1 && beta[other] {
+			beta = map[string]bool{}
+		} else {
+			beta = map[string]bool{other: true}
+		}
+		delete(base, "Arcade")
 	case only:
 		// only this child (or only Arcade): everything else in the section
 		// off, unless it already is, in which case the whole section comes back

@@ -13,7 +13,7 @@ import (
 // the projects MisterZine builds on and every early adopter, with only the
 // credited rows under the cursor, and B returns to Options on Credits.
 func TestCreditsPage(t *testing.T) {
-	rows := []data.Row{{K: "a", Title: "Alpha"}, {K: "b", Title: "Beta"}}
+	rows := []data.Row{{Base: "Arcade", K: "a", Title: "Alpha"}, {Base: "Arcade", K: "b", Title: "Beta"}}
 	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest(rows, "", time.Now()), nil)
 	a.actList(platform.KeyBack)
 	a.actPanel(platform.KeyEnd)

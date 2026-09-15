@@ -17,7 +17,7 @@ func TestHeldGroupJumpsMatchRowScrolling(t *testing.T) {
 		date := time.Date(2024, time.Month(i+1), 1, 0, 0, 0, 0, time.UTC).Format("2006-01-02")
 		for j := 0; j < 2; j++ {
 			title := fmt.Sprintf("%c %d", 'A'+i, j)
-			row := data.Row{K: title, Title: title, Date: date, Updated: date}
+			row := data.Row{Base: "Arcade", K: title, Title: title, Date: date, Updated: date}
 			groups = append(groups, row)
 			if j == 0 {
 				singles = append(singles, row)
@@ -79,7 +79,7 @@ func TestLetterJumpsCenterTheGroupUnderItsHeader(t *testing.T) {
 			for _, initial := range []string{"A", "B", "Z"} {
 				for i := 0; i < groupSize; i++ {
 					title := fmt.Sprintf("%s %02d", initial, i)
-					rows = append(rows, data.Row{K: title, Title: title})
+					rows = append(rows, data.Row{Base: "Arcade", K: title, Title: title})
 				}
 			}
 			a := New(Config{PhysW: 320, PhysH: 240, Rotation: rot, RememberSort: true, LastSort: data.SortAlphabetical}, data.Ingest(rows, "test", time.Now()), nil)
@@ -119,7 +119,7 @@ func TestLetterJumpsCenterTheGroupUnderItsHeader(t *testing.T) {
 func TestLetterJumpUsesVisibleCollationGroups(t *testing.T) {
 	rows := []data.Row{}
 	for _, title := range []string{"!Game", "2 Game", "10 Game", "Alpha", "alpha 2", "Beta", "beta 2", "Éclair", "Elephant", "Zoo"} {
-		rows = append(rows, data.Row{K: title, Title: title})
+		rows = append(rows, data.Row{Base: "Arcade", K: title, Title: title})
 	}
 	a := New(Config{PhysW: 320, PhysH: 240, RememberSort: true, LastSort: data.SortAlphabetical}, data.Ingest(rows, "test", time.Now()), nil)
 	step := func(key platform.Key, want string) {
@@ -159,11 +159,11 @@ func TestLetterJumpUsesVisibleCollationGroups(t *testing.T) {
 func TestMonthJumpsUseSortDateVisibleGroupsAndTopAlignment(t *testing.T) {
 	now := time.Date(2026, 9, 10, 12, 0, 0, 0, time.UTC)
 	rows := []data.Row{
-		{K: "new", Title: "Newest", Updated: "2026-09-10", Date: "2024-02-10"},
-		{K: "same-month", Title: "Same update month", Updated: "2026-09-01", Date: "2024-01-01"},
-		{K: "july", Title: "July 2026", Updated: "2026-07-15", Date: "2023-12-15"},
-		{K: "older-july", Title: "July 2025", Updated: "2025-07-20", Date: "2023-01-20"},
-		{K: "undated", Title: "Undated"},
+		{Base: "Arcade", K: "new", Title: "Newest", Updated: "2026-09-10", Date: "2024-02-10"},
+		{Base: "Arcade", K: "same-month", Title: "Same update month", Updated: "2026-09-01", Date: "2024-01-01"},
+		{Base: "Arcade", K: "july", Title: "July 2026", Updated: "2026-07-15", Date: "2023-12-15"},
+		{Base: "Arcade", K: "older-july", Title: "July 2025", Updated: "2025-07-20", Date: "2023-01-20"},
+		{Base: "Arcade", K: "undated", Title: "Undated"},
 	}
 	base := map[string]string{}
 	for _, row := range rows {

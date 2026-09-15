@@ -67,6 +67,12 @@ func (a *App) filterSectionActive(kind string) bool {
 	}
 	var section data.Filters
 	copySection(kind, &section, a.filters)
+	if kind == "base" && !a.cfg.ShowNonArcade {
+		section.BaseOff = nil
+		if a.filters.BaseOff["Arcade"] {
+			section.BaseOff = map[string]bool{"Arcade": true}
+		}
+	}
 	return section.Active()
 }
 

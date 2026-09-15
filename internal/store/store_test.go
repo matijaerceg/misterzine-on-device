@@ -344,3 +344,33 @@ func TestShowDeprecatedPersistence(t *testing.T) {
 		}
 	}
 }
+
+func TestArcadeDefaultAndUpgrade(t *testing.T) {
+	fresh := DefaultSettings()
+	if fresh.ShowNonArcade || fresh.ArcadeIntroPending {
+		t.Fatal("fresh install should quietly start arcade-only")
+	}
+	p := writeSettings(t, `{"title_font":"normal","show_deprecated":true}`)
+	s, err := LoadSettings(p)
+	if err != nil || s.ShowNonArcade || !s.ArcadeIntroPending || s.TitleFont != "normal" || !s.ShowDeprecated {
+		t.Fatalf("migration: %+v %v", s, err)
+	}
+	// Saving before acknowledgement must retain the pending explanation.
+	if err := Save(p, s); err != nil {
+		t.Fatal(err)
+	}
+	s, err = LoadSettings(p)
+	if err != nil || !s.ArcadeIntroPending {
+		t.Fatal("explanation lost before acknowledgement")
+	}
+	for _, show := range []bool{true, false} {
+		s.ShowNonArcade, s.ArcadeIntroPending = show, false
+		if err := Save(p, s); err != nil {
+			t.Fatal(err)
+		}
+		s, err = LoadSettings(p)
+		if err != nil || s.ShowNonArcade != show || s.ArcadeIntroPending {
+			t.Fatal("saved choice or acknowledgement lost")
+		}
+	}
+}

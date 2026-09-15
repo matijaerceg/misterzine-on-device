@@ -9,7 +9,7 @@ import (
 func TestClockRecoveryStampsVisitOnceAndKeepsBaseline(t *testing.T) {
 	now := time.Date(2026, 9, 8, 12, 0, 0, 0, time.UTC)
 	stored := &data.SeenRecord{T: "2026-09-01T00:00:00Z", Cur: map[string]string{"a": "old"}}
-	a := New(Config{PhysW: 320, PhysH: 240, Now: func() time.Time { return now }}, data.Ingest([]data.Row{{K: "a", Updated: "new"}}, "", now), stored)
+	a := New(Config{PhysW: 320, PhysH: 240, Now: func() time.Time { return now }}, data.Ingest([]data.Row{{Base: "Arcade", K: "a", Updated: "new"}}, "", now), stored)
 	baseline := a.seen.BaseTime
 	a.SetClockTrusted(true)
 	if a.seen.State.T != now.Format(time.RFC3339) || a.seen.BaseTime != baseline || !a.seen.Unseen(&a.ds.Rows[0]) {

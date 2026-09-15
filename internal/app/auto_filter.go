@@ -17,6 +17,7 @@ func (a *App) rotationFilter() string {
 
 func (a *App) effectiveFilters() data.Filters {
 	f := a.filters
+	f.ArcadeOnly = !a.cfg.ShowNonArcade
 	f.HideDeprecated = !a.cfg.ShowDeprecated
 	if orientation := a.rotationFilter(); orientation != "" {
 		f.MatchRotation = orientation
@@ -35,6 +36,14 @@ func (a *App) filtersActive() bool {
 	f := a.effectiveFilters()
 	f.SrcHidden = nil
 	f.HideDeprecated = false
+	f.ArcadeOnly = false
+	if !a.cfg.ShowNonArcade {
+		arcadeOff := f.BaseOff["Arcade"]
+		f.BaseOff = nil
+		if arcadeOff {
+			f.BaseOff = map[string]bool{"Arcade": true}
+		}
+	}
 	return f.Active()
 }
 

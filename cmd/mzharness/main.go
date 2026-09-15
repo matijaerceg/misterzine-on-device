@@ -32,7 +32,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/updater"
 )
 
-const allViews = "shot list; enter; shot details; wait 600; enter; shot screen; back; back; tab; shot filter; back; back; shot options; down*18; enter; shot calibrate; back; end; shot options-bottom; back"
+const allViews = "shot list; enter; shot details; wait 600; enter; shot screen; back; back; tab; shot filter; back; back; shot options; down*19; enter; shot calibrate; back; end; shot options-bottom; back"
 
 func main() {
 	dataPath := flag.String("data", "testdata/data.json", "data.json")
@@ -63,6 +63,8 @@ func main() {
 	recents := flag.Int("recents", 0, "pretend the first N rows were launched, the last one most recently; turns the Recents view on")
 	viewsOff := flag.String("views-off", "", "views left out of the Y cycle, comma separated names (updated, debut, year, alphabetical, maker, favorites, recents); Recents is off unless -recents is given")
 	installed := flag.String("installed", "", "Downloader database ids the card has, comma separated (e.g. distribution_mister,jtcores): Sources starts on installed only and the other sources are hidden")
+	showNonArcade := flag.Bool("show-non-arcade", false, "include console, computer and other cores")
+	arcadeIntro := flag.Bool("arcade-intro", false, "show upgrade explanation")
 	splash := flag.Bool("splash", false, "show the startup logo fade")
 	flag.Parse()
 
@@ -88,7 +90,7 @@ func main() {
 	}
 	disp := headless.NewDisplay(cw, ch)
 	cmd := &headless.Cmd{}
-	cfg := app.Config{
+	cfg := app.Config{ShowNonArcade: *showNonArcade, ArcadeIntro: *arcadeIntro,
 		PhysW: cw, PhysH: ch, Rotation: rotation, SafeInsetX: *inset, SafeInsetY: *inset,
 		Now:            func() time.Time { return clock },
 		ClockTrusted:   true,

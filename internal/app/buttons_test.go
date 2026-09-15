@@ -12,7 +12,7 @@ import (
 
 func TestButtonLabelSets(t *testing.T) {
 	now := time.Date(2026, 9, 12, 12, 0, 0, 0, time.UTC)
-	rows := []data.Row{{K: "a", Title: "Alpha", Updated: "2026-09-07"}}
+	rows := []data.Row{{Base: "Arcade", K: "a", Title: "Alpha", Updated: "2026-09-07"}}
 	a := New(Config{PhysW: 320, PhysH: 240, Now: func() time.Time { return now }}, data.Ingest(rows, "", now), nil)
 	if a.ButtonLabels() != "mister" {
 		t.Fatalf("default set %q", a.ButtonLabels())
@@ -70,7 +70,7 @@ func TestButtonLabelSets(t *testing.T) {
 
 func TestButtonLabelsOption(t *testing.T) {
 	now := time.Date(2026, 9, 12, 12, 0, 0, 0, time.UTC)
-	rows := []data.Row{{K: "a", Title: "Alpha", Updated: "2026-09-07"}}
+	rows := []data.Row{{Base: "Arcade", K: "a", Title: "Alpha", Updated: "2026-09-07"}}
 	a := New(Config{PhysW: 320, PhysH: 240, Now: func() time.Time { return now }}, data.Ingest(rows, "", now), nil)
 	a.openPanel(ScreenOptions)
 	found := false

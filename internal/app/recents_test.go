@@ -9,7 +9,7 @@ import (
 )
 
 func TestRecentsViewLifecycle(t *testing.T) {
-	rows := []data.Row{{K: "z", Title: "Zulu", MRA: "_Arcade/z.mra"}, {K: "a", Title: "Alpha", MRA: "_Arcade/a.mra"}, {K: "b", Title: "Beta", MRA: "_Arcade/b.mra"}}
+	rows := []data.Row{{Base: "Arcade", K: "z", Title: "Zulu", MRA: "_Arcade/z.mra"}, {Base: "Arcade", K: "a", Title: "Alpha", MRA: "_Arcade/a.mra"}, {Base: "Arcade", K: "b", Title: "Beta", MRA: "_Arcade/b.mra"}}
 	clock := time.Date(2026, 9, 11, 12, 0, 0, 0, time.UTC)
 	launched, changed := 0, 0
 	a := New(Config{PhysW: 320, PhysH: 240, Now: func() time.Time { return clock }, ViewsOff: []string{"recents"},

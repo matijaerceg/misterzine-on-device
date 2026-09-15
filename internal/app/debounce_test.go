@@ -13,7 +13,7 @@ import (
 // one stamped at the very instant of the release (scripted input), counts.
 func TestBouncePressAfterReleaseIsDropped(t *testing.T) {
 	now := time.Now()
-	rows := []data.Row{{K: "one", Title: "One"}, {K: "two", Title: "Two"}, {K: "three", Title: "Three"}, {K: "four", Title: "Four"}}
+	rows := []data.Row{{Base: "Arcade", K: "one", Title: "One"}, {Base: "Arcade", K: "two", Title: "Two"}, {Base: "Arcade", K: "three", Title: "Three"}, {Base: "Arcade", K: "four", Title: "Four"}}
 	a := New(Config{PhysW: 320, PhysH: 240, Now: func() time.Time { return now }}, data.Ingest(rows, "test", now), nil)
 	press := func(at time.Duration) bool {
 		return a.Handle(platform.Event{Key: platform.KeyDown, Pressed: true, At: now.Add(at)})

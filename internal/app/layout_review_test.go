@@ -90,7 +90,7 @@ func TestOverscanLayoutsStayInsideTheirRegions(t *testing.T) {
 }
 
 func TestFirstVisitCannotEnableSinceFilter(t *testing.T) {
-	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest([]data.Row{{K: "game"}}, "test", time.Now()), nil)
+	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest([]data.Row{{Base: "Arcade", K: "game"}}, "test", time.Now()), nil)
 	openExpandedFilters(a)
 	explained := false
 	for i, e := range a.panel.entries {

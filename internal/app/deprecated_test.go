@@ -8,7 +8,7 @@ import (
 
 func TestDeprecatedCataloguePreference(t *testing.T) {
 	changes := 0
-	a := New(Config{PhysW: 320, PhysH: 240, Favorites: map[string]bool{"old": true}, SettingsChanged: func() { changes++ }}, data.Ingest([]data.Row{
+	a := New(Config{ShowNonArcade: true, PhysW: 320, PhysH: 240, Favorites: map[string]bool{"old": true}, SettingsChanged: func() { changes++ }}, data.Ingest([]data.Row{
 		{K: "old", Title: "Old", Base: "Console", Deprecated: true},
 		{K: "new", Title: "New", Base: "Console"},
 	}, "", time.Now()), nil)
