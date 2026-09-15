@@ -240,7 +240,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     for inset in (15, 40):
         scenarios.append([*rotation, "-inset", str(inset), "-arcade-intro",
                           "-out", f"out/arcade-first-{orientation}-{inset}", "-script",
-                          "shot intro; enter; shot arcade; back; down*6; shot preference-off; right; shot preference-on; "
+                          "shot intro; press enter; wait 1000; shot intro-hold; release enter; shot intro-cancelled; hold enter 2000; shot arcade; back; down*6; shot preference-off; right; shot preference-on; "
                           "back; shot mixed; tab; pagedown*2; right; shot mixed-types; back; back; left; back; "
                           "tab; pagedown*2; right; shot arcade-types; down; space; shot stable-only; space; shot restored; "
                           "home; shot clear; back; shot arcade-restored"])

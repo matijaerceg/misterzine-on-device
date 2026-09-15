@@ -222,6 +222,9 @@ type App struct {
 	all         bool // full repaint pending
 	saver       screensaver
 	marquee     marqueeState
+
+	arcadeIntroAt  time.Time
+	arcadeIntroBar int
 }
 
 type detailState struct {
@@ -814,6 +817,7 @@ func (a *App) Tick(now time.Time) bool {
 	changed := a.tickPageTransition(now)
 	changed = a.tickSplash(now) || changed
 	changed = a.tickMenu(now) || changed
+	changed = a.tickArcadeIntro(now) || changed
 	changed = a.tickOptionSamples() || changed
 	// Expire notices on every screen so NextTick cannot keep returning a past
 	// deadline while Update All handles its own animation and cancel input.
@@ -851,6 +855,7 @@ func (a *App) Frame(now time.Time) bool {
 	changed := a.tickPageTransition(now)
 	changed = a.tickSplash(now) || changed
 	changed = a.tickMenu(now) || changed
+	changed = a.tickArcadeIntro(now) || changed
 	changed = a.OptionSampleFrame() || changed
 	if k := a.rep.frameDue(now, a.repeatStep); k != platform.KeyNone {
 		if a.act(k) {
@@ -892,6 +897,9 @@ func (a *App) NextTick() time.Time {
 		t = next
 	}
 	if next := a.nextDetailTick(); !next.IsZero() && (t.IsZero() || next.Before(t)) {
+		t = next
+	}
+	if next := a.nextArcadeIntroTick(); !next.IsZero() && (t.IsZero() || next.Before(t)) {
 		t = next
 	}
 	if next := a.nextMenuTick(); !next.IsZero() && (t.IsZero() || next.Before(t)) {

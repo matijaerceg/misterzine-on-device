@@ -261,7 +261,8 @@ and last row.
   preference applies to every browsing view, search, Favorites, catalogue counts
   and refresh announcements. Hidden favorites and Type selections are kept;
   clearing filters does not change this preference. Upgraded installations show
-  a one-time explanation; A or B dismisses it.
+  a one-time explanation. Hold A for two seconds to continue; the progress line
+  fills while held. Releasing early resets it.
 - **Sources:** all by default. Installed only shows games from the databases
   listed in the card's `downloader.ini`, the file Update All rewrites on every
   run, so a source you never enabled (Coin-Op, Meathax, rmCores or Jotego) stays out of

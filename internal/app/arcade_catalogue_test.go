@@ -128,25 +128,68 @@ func TestArcadeCatalogueNews(t *testing.T) {
 		t.Fatal("opt-in news")
 	}
 }
-func TestArcadeIntroConsumesAcknowledgement(t *testing.T) {
+func TestArcadeIntroRequiresFullHold(t *testing.T) {
+	for _, frame := range []bool{false, true} {
+		a := arcadeCatalogueApp()
+		a.cfg.ArcadeIntro = true
+		saves := 0
+		a.cfg.SettingsChanged = func() { saves++ }
+		now := time.Now()
+		event := func(k platform.Key, pressed bool, at time.Time) {
+			a.Handle(platform.Event{Key: k, Pressed: pressed, At: at})
+		}
+		tick := a.Tick
+		if frame {
+			tick = a.Frame
+		}
+		for _, k := range []platform.Key{platform.KeyStart, platform.KeyBack, platform.KeyMenu} {
+			event(k, true, now)
+			tick(now.Add(3 * time.Second))
+			event(k, false, now.Add(3*time.Second))
+		}
+		if !a.ArcadeIntroPending() || saves != 0 {
+			t.Fatal("another button dismissed notice")
+		}
+		event(platform.KeyEnter, true, now)
+		next := a.NextTick()
+		if !next.After(now) || !next.Before(now.Add(arcadeIntroHold)) {
+			t.Fatal("hold has no progress tick")
+		}
+		tick(now.Add(time.Second))
+		if a.holdBar() != a.lay.Status.Dx()/2 || !a.ArcadeIntroPending() {
+			t.Fatal("hold progress missing or early dismissal")
+		}
+		event(platform.KeyEnter, true, now.Add(time.Second)) // repeated press must not reset timer
+		tick(now.Add(arcadeIntroHold - time.Millisecond))
+		if !a.ArcadeIntroPending() {
+			t.Fatal("dismissed early")
+		}
+		event(platform.KeyEnter, false, now.Add(arcadeIntroHold-time.Millisecond))
+		if !a.ArcadeIntroPending() || a.holdBar() != 0 || !a.nextArcadeIntroTick().IsZero() {
+			t.Fatal("short hold did not reset")
+		}
+		now = now.Add(3 * time.Second)
+		event(platform.KeyEnter, true, now)
+		tick(now.Add(arcadeIntroHold))
+		if a.ArcadeIntroPending() || saves != 1 || a.screen != ScreenList || a.holdBar() != 0 {
+			t.Fatal("full hold failed")
+		}
+		event(platform.KeyEnter, true, now.Add(arcadeIntroHold+time.Millisecond))
+		event(platform.KeyEnter, false, now.Add(arcadeIntroHold+2*time.Millisecond))
+		if a.screen != ScreenList || len(a.down) != 0 {
+			t.Fatal("held acknowledgement leaked into navigation")
+		}
+	}
+}
+
+func TestArcadeIntroReleaseAtDeadline(t *testing.T) {
 	a := arcadeCatalogueApp()
 	a.cfg.ArcadeIntro = true
-	saves := 0
-	a.cfg.SettingsChanged = func() { saves++ }
 	now := time.Now()
-	a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: now})
-	a.Handle(platform.Event{Key: platform.KeyStart, At: now})
-	a.Tick(now.Add(10 * time.Minute))
-	if !a.ArcadeIntroPending() || a.saver.active {
-		t.Fatal("intro dismissed or obscured without acknowledgement")
-	}
 	a.Handle(platform.Event{Key: platform.KeyEnter, Pressed: true, At: now})
-	if !a.ArcadeIntroPending() {
-		t.Fatal("dismissed before release")
-	}
-	a.Handle(platform.Event{Key: platform.KeyEnter, At: now})
-	if a.ArcadeIntroPending() || saves != 1 || a.screen != ScreenList || len(a.down) != 0 {
-		t.Fatal("acknowledgement navigated or failed to save")
+	a.Handle(platform.Event{Key: platform.KeyEnter, At: now.Add(arcadeIntroHold)})
+	if a.ArcadeIntroPending() || a.screen != ScreenList || len(a.down) != 0 {
+		t.Fatal("deadline release did not complete cleanly")
 	}
 }
 

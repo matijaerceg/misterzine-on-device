@@ -88,7 +88,10 @@ func TestArcadePreferenceAndIntroPersistThroughHost(t *testing.T) {
 	if !h.a.ArcadeIntroPending() {
 		t.Fatal("saving before acknowledgement lost explanation")
 	}
-	tap(platform.KeyBack)
+	h.a.Handle(platform.Event{Key: platform.KeyEnter, Pressed: true, At: now})
+	now = now.Add(2 * time.Second)
+	h.a.Tick(now)
+	h.a.Handle(platform.Event{Key: platform.KeyEnter, At: now})
 	reopen()
 	if h.a.ArcadeIntroPending() || h.a.ShowNonArcade() {
 		t.Fatal("acknowledgement did not persist")

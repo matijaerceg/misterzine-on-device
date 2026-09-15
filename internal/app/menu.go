@@ -137,7 +137,7 @@ func (a *App) tickMenu(now time.Time) bool {
 	}
 	if held >= menuHint && !a.menuHinted {
 		a.menuHinted = true
-		a.menuBar = a.menuBarWidth(now) // 0 on time; a late tick catches up
+		a.menuBar = a.menuBarWidth(now)                            // 0 on time; a late tick catches up
 		a.notice, a.until = menuHoldNotice, a.menuAt.Add(menuHold) // gone with the quit
 		a.all = true
 		return true
@@ -165,9 +165,13 @@ func (a *App) nextMenuTick() time.Time {
 
 // holdBar is the hold line to paint on the current screen, in pixels: the
 // Menu hold, the B hold that cancels Update All, or the B hold that
-// leaves the pad tester, whichever is running (the longest if two are).
+// leaves the pad tester, or the arcade notice acknowledgement hold
+// (the longest if two are running).
 func (a *App) holdBar() int {
 	bar := a.menuBar
+	if a.cfg.ArcadeIntro {
+		bar = max(bar, a.arcadeIntroBar)
+	}
 	if a.screen == ScreenUpdate {
 		bar = max(bar, a.updateView.holdBar)
 	}
