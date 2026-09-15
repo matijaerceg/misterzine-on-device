@@ -93,5 +93,12 @@ func (a *App) paintArcadeIntro(c *gfx.Canvas) {
 		c.Text(x, y, a.sm, line, gen.Eva.Fg)
 		y += a.sm.H + 2
 	}
+	y += a.sm.H + 2
+	for _, line := range []string{"Thanks for trying MisterZine!", "- Matija"} {
+		for _, part := range gfx.Wrap(line, a.sm.Cols(box.Dx()-10), 4) {
+			c.Text(x, y, a.sm, part, gen.Eva.Fg)
+			y += a.sm.H + 2
+		}
+	}
 	a.paintHint(c, "Hold A 2 s to continue")
 }
