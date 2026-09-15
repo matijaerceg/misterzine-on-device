@@ -35,6 +35,8 @@ import (
 const allViews = "shot list; enter; shot details; wait 600; enter; shot screen; back; back; tab; shot filter; back; back; shot options; down*19; enter; shot calibrate; back; end; shot options-bottom; back"
 
 func main() {
+	// Fixture timestamps must not depend on the machine running the harness.
+	time.Local = time.UTC
 	dataPath := flag.String("data", "testdata/data.json", "data.json")
 	metaPath := flag.String("meta", "testdata/meta.json", "meta.json")
 	rot := flag.String("rot", "none", "none, left or right (how the monitor is turned)")
