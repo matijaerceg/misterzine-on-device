@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"image"
 	"image/color"
 	"testing"
@@ -791,5 +792,41 @@ func TestSaverEnabledKeepsDelay(t *testing.T) {
 	a.startSaver(*now)
 	if !a.ScreensaverActive() {
 		t.Fatal("disabled preview failed")
+	}
+}
+
+func TestArcadeIntroAllowsSaverAndSurvivesWake(t *testing.T) {
+	for _, style := range []string{"word", "dim", "shots"} {
+		t.Run(style, func(t *testing.T) {
+			a, clock := saverApp()
+			a.cfg.ArcadeIntro = true
+			a.cfg.SaverStyle = style
+			a.Paint()
+			notice := append([]byte(nil), a.logical.Pix...)
+			if !a.nextSaverTick().Equal(clock.Add(time.Minute)) {
+				t.Fatal("notice blocked idle deadline")
+			}
+			*clock = clock.Add(time.Minute)
+			a.Tick(*clock)
+			if !a.ScreensaverActive() {
+				t.Fatal("notice blocked screensaver")
+			}
+			a.Paint()
+			if style == "dim" && bytes.Equal(notice, a.logical.Pix) {
+				t.Fatal("notice painted over dim screensaver")
+			}
+			a.Handle(platform.Event{Key: platform.KeyEnter, Pressed: true, At: *clock})
+			a.Handle(platform.Event{Key: platform.KeyEnter, Pressed: true, At: clock.Add(3 * time.Second)})
+			a.Tick(clock.Add(3 * time.Second))
+			a.Handle(platform.Event{Key: platform.KeyEnter, At: clock.Add(3 * time.Second)})
+			if a.ScreensaverActive() || !a.ArcadeIntroPending() || !a.arcadeIntroAt.IsZero() {
+				t.Fatal("wake dismissed notice or failed to wake")
+			}
+			a.Handle(platform.Event{Key: platform.KeyEnter, Pressed: true, At: clock.Add(4 * time.Second)})
+			a.Tick(clock.Add(6 * time.Second))
+			if a.ArcadeIntroPending() {
+				t.Fatal("fresh hold did not dismiss notice")
+			}
+		})
 	}
 }

@@ -658,11 +658,11 @@ func (a *App) ensureVisible() {
 // virtual keyboard), and this folds the pair into one.
 func (a *App) Handle(ev platform.Event) bool {
 	ev = a.padEvent(ev) // a pad whose OK button is B trades Enter and back
-	if a.cfg.ArcadeIntro {
-		return a.handleArcadeIntro(ev)
-	}
 	if a.handleSaverInput(ev) {
 		return true
+	}
+	if a.cfg.ArcadeIntro {
+		return a.handleArcadeIntro(ev)
 	}
 	if a.supportCapturing() {
 		// Observe releases but do not navigate, search, launch or repeat. A
@@ -1185,12 +1185,12 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 		}
 		a.neighbourhood()
 		a.cfg.Images.Want(a.wants)
+		if a.cfg.ArcadeIntro {
+			a.paintArcadeIntro(c)
+		}
 		if a.saver.active {
 			a.paintSaver(c)
 		}
-	}
-	if a.cfg.ArcadeIntro {
-		a.paintArcadeIntro(c)
 	}
 	a.paintSplash()
 	if a.PageTransitionRunning() {

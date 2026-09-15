@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.0.34 - 2026-09-14
+
+- Allow the screensaver to start while the arcade-only welcome notice is open. Waking returns to the notice; a fresh hold of A dismisses it.
+
 ## v1.0.33 - 2026-09-14
 
 - Start with an arcade-only catalogue. Options > List > Show non-arcade cores restores console, computer and other cores; hidden favorites are kept. Upgrades explain the new default once; hold A for two seconds to dismiss, with a progress indicator beside the legend. Filters show Stable/Beta directly, and catalogue counts and refresh announcements follow the enabled catalogue. Clear all filters leaves the preference alone; Update All keeps its normal scope.

@@ -465,9 +465,6 @@ func (a *App) saverEnd() {
 }
 
 func (a *App) nextSaverTick() time.Time {
-	if a.cfg.ArcadeIntro {
-		return time.Time{}
-	}
 	if a.screen == ScreenTroubleshooting {
 		return time.Time{}
 	}
