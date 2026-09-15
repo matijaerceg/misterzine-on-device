@@ -42,21 +42,28 @@ script. Choosing MisterZine then looks like a blink and a return to the
 menu, and the first run says "JAMMA cab?" while the log warns about
 `direct_video=2`. `fb_terminal` is not involved; leave it at 1.
 
-Add the section MiSTercade documents for seeing scripts on the cabinet, at
-the end of MiSTer.ini, then reboot:
+Add this section at the end of MiSTer.ini, then reboot:
 
 ```ini
 [Menu]
-video_mode=320,240,60
+video_mode=320,16,32,16,240,4,3,16,6048
 vga_scaler=1
 ```
 
 That routes the menu core's scaler output to the cabinet at 240p, so Update
-All and the other scripts become visible there too. If the monitor is
-rotated, add the `osd_rotate` value for it under the same section. Use
-`[MisterZine]` instead of `[Menu]` only if an HDMI display also serves the
-menu and should keep it. Confirmed on a MiSTercade v1 on September 14, 2026
-with the section under `[Menu]`.
+All and the other scripts become visible there too. The long `video_mode`
+line is the 15.7 kHz, 60 Hz timing the arcade cores themselves send, taken
+from the timings MiSTercade lists in its INI. MiSTercade's README suggests
+`video_mode=320,240,60` for this section instead; Main computes that form
+into a 15.0 kHz, 59 Hz signal, which some arcade monitors will not hold, and
+the picture rolls in the menu and in MisterZine. Keep `vga_scaler=0` in the
+main `[MiSTer]` section: games must bypass the scaler, or they reach the
+cabinet at the HDMI resolution and lose sync.
+
+If the monitor is rotated, add the `osd_rotate` value for it under the same
+section. Use `[MisterZine]` instead of `[Menu]` only if an HDMI display also
+serves the menu and should keep it. Confirmed on a MiSTercade v1 on
+September 15, 2026 with exactly the section above under `[Menu]`.
 
 ### HDMI for the menu, CRT for MisterZine
 
