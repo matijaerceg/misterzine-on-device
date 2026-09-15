@@ -32,6 +32,32 @@ A CRT connected through a supported HDMI-to-VGA direct-video adapter already
 receives the direct-video output. Power off before changing between that adapter
 and a normal HDMI display. Keep the sync and RGB/YPbPr settings your CRT needs.
 
+### JAMMA cabinets (MiSTercade)
+
+MiSTercade's MiSTer.ini ships with `vga_scaler=0` and `direct_video=2`.
+Setting 2 is Main's auto mode: it only switches direct video on when an HDMI
+DAC is plugged in. With nothing on HDMI, as in a cabinet, the framebuffer
+stays on HDMI, so the cabinet monitor never shows MisterZine or any other
+script. Choosing MisterZine then looks like a blink and a return to the
+menu, and the first run says "JAMMA cab?" while the log warns about
+`direct_video=2`. `fb_terminal` is not involved; leave it at 1.
+
+Add the section MiSTercade documents for seeing scripts on the cabinet, at
+the end of MiSTer.ini, then reboot:
+
+```ini
+[Menu]
+video_mode=320,240,60
+vga_scaler=1
+```
+
+That routes the menu core's scaler output to the cabinet at 240p, so Update
+All and the other scripts become visible there too. If the monitor is
+rotated, add the `osd_rotate` value for it under the same section. Use
+`[MisterZine]` instead of `[Menu]` only if an HDMI display also serves the
+menu and should keep it. Confirmed on a MiSTercade v1 on September 14, 2026
+with the section under `[Menu]`.
+
 ### HDMI for the menu, CRT for MisterZine
 
 If an HDMI display serves the MiSTer menu, the terminal and Update All, and

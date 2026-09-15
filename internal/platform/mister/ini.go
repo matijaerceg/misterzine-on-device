@@ -94,6 +94,14 @@ func ReadIni(path string) IniSettings {
 // AnalogVisible reports whether the framebuffer can reach the analog port
 // on this configuration: the scaler is routed to VGA, or direct video
 // carries the framebuffer while a script runs. HDMI always shows it.
+// direct_video=2 is Main's auto mode: it only turns direct video on when
+// an HDMI DAC reporting 1024x768 is attached, so on its own it promises
+// nothing. MiSTercade's shipped INI uses 2 with nothing on HDMI, and the
+// framebuffer then stays HDMI-only while the cabinet shows the menu core.
 func (s IniSettings) AnalogVisible() bool {
-	return s.VGAScaler == 1 || s.DirectVideo >= 1
+	return s.VGAScaler == 1 || s.DirectVideo == 1
 }
+
+// DirectVideoAuto reports the auto direct-video setting, whose analog
+// reach depends on a DAC that MisterZine cannot see.
+func (s IniSettings) DirectVideoAuto() bool { return s.DirectVideo == 2 }

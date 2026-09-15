@@ -32,7 +32,9 @@ to a normal HDMI display and a 15 kHz CRT at their separate resolutions.
 Game cores keep their own display settings. The choice can cover the whole
 MiSTer menu or MisterZine alone, so an HDMI display can keep the menu and the
 terminal while the CRT shows MisterZine. For CRT setup or switching outputs,
-see [display setup](docs/TROUBLESHOOTING.md#display-setup).
+see [display setup](docs/TROUBLESHOOTING.md#display-setup). A MiSTercade or
+other JAMMA cabinet needs one extra INI section, described under
+[JAMMA cabinets](docs/TROUBLESHOOTING.md#jamma-cabinets-mistercade).
 
 1. Download [downloader_misterzine.ini](https://github.com/matijaerceg/misterzine-on-device/releases/latest/download/downloader_misterzine.ini).
 2. Copy it to the root of your SD card, beside `downloader.ini`.

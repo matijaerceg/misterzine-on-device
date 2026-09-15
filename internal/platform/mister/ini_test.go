@@ -40,3 +40,24 @@ func TestReadIniAppliesSectionsInFileOrderLikeMain(t *testing.T) {
 		t.Errorf("absent file: got %+v", got)
 	}
 }
+
+func TestAnalogVisibleNeedsScalerOrForcedDirectVideo(t *testing.T) {
+	for _, tc := range []struct {
+		name          string
+		s             IniSettings
+		visible, auto bool
+	}{
+		{"hdmi defaults", IniSettings{}, false, false},
+		{"vga scaler", IniSettings{VGAScaler: 1}, true, false},
+		{"direct video on", IniSettings{DirectVideo: 1}, true, false},
+		{"direct video auto (MiSTercade INI)", IniSettings{DirectVideo: 2}, false, true},
+		{"auto with scaler", IniSettings{DirectVideo: 2, VGAScaler: 1}, true, true},
+	} {
+		if got := tc.s.AnalogVisible(); got != tc.visible {
+			t.Errorf("%s: AnalogVisible=%v want %v", tc.name, got, tc.visible)
+		}
+		if got := tc.s.DirectVideoAuto(); got != tc.auto {
+			t.Errorf("%s: DirectVideoAuto=%v want %v", tc.name, got, tc.auto)
+		}
+	}
+}
