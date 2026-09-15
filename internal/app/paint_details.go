@@ -74,7 +74,11 @@ func (a *App) tickMarquee(now time.Time) bool {
 	if marqueeOffset(now.Sub(a.marquee.start), a.marquee.span) == a.marquee.offset {
 		return false
 	}
-	a.all = true
+	if a.detail.clip.Empty() {
+		a.all = true
+	} else {
+		a.detail.versionDirty = true
+	}
 	return true
 }
 
@@ -118,7 +122,7 @@ func (a *App) DetailScrollFrame(now time.Time) bool {
 	if step == 0 {
 		return false
 	}
-	a.all = true
+	a.invalidateDetailScroll()
 	return true
 }
 
@@ -345,24 +349,28 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 	if a.detail.scroll < 0 {
 		a.detail.scroll = 0
 	}
-	specTop := y
-	// the text sits at its animated pixel offset, clipped to the area, so a
-	// page turn slides the lines through
-	off := max(0, min(a.detail.pixel, max(0, len(lines)-maxLines)*lh))
-	a.detail.pixel = off
-	clip := image.Rect(body.Min.X, specTop, body.Max.X, specTop+maxLines*lh)
-	for n := off / lh; n < len(lines) && n*lh-off < maxLines*lh; n++ {
-		c.TextClip(body.Min.X, specTop+n*lh-off, a.sm, gfx.Fit(lines[n].text, sc), lines[n].col, clip)
+	a.detail.clip = image.Rect(body.Min.X, y, body.Max.X, y+maxLines*lh)
+	a.detail.text, a.detail.cols, a.detail.entries = lines, sc, len(entries)
+	a.paintDetailInfo(c)
+	a.detail.versions, a.detail.versionY = entries, body.Max.Y-launchH
+	a.paintDetailVersion(c)
+	if a.notice != "" {
+		c.Fill(l.Hint, gen.Eva.Surface)
+		c.Text(l.Hint.Min.X+2, l.Hint.Min.Y+2, a.sm, gfx.Fit(a.notice, a.sm.Cols(l.Hint.Dx()-4)), gen.Eva.Fg)
+		return
 	}
-	if len(lines) > maxLines && maxLines > 0 {
-		// the thumb alone, in the list's green, following the slide
-		trackH := maxLines * lh
-		thumbH := max(2, trackH*maxLines/len(lines))
-		thumbY := specTop + (trackH-thumbH)*off/((len(lines)-maxLines)*lh)
-		c.Fill(image.Rect(body.Max.X-2, thumbY, body.Max.X, thumbY+thumbH), gen.Eva.Accent)
+	a.paintHint(c, a.detailsHint(len(lines) > maxLines, len(entries), max(0, len(lines)-maxLines)))
+}
+
+// The version marquee has its own small dirty region; it must not rebuild
+// the information or query installed alternatives on every animation tick.
+func (a *App) paintDetailVersion(c *gfx.Canvas) {
+	body, y, entries := a.lay.Body, a.detail.versionY, a.detail.versions
+	row, _, _ := a.current()
+	if row == nil {
+		return
 	}
-	// One fixed-height selector leaves the same space for every game's details.
-	y = body.Max.Y - launchH
+	c.Fill(image.Rect(body.Min.X, y-1, body.Max.X, y+a.detailLine()), gen.Eva.Bg)
 	c.HLine(body.Min.X, body.Max.X-1, y-1, gen.Eva.Line)
 	if a.detail.pick >= len(entries) {
 		a.detail.pick = len(entries) - 1
@@ -396,14 +404,36 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 			a.marquee = marqueeState{}
 			c.Text(body.Min.X, y, a.sm, text, col)
 		}
-		y += lh
 	}
-	if a.notice != "" {
-		c.Fill(l.Hint, gen.Eva.Surface)
-		c.Text(l.Hint.Min.X+2, l.Hint.Min.Y+2, a.sm, gfx.Fit(a.notice, a.sm.Cols(l.Hint.Dx()-4)), gen.Eva.Fg)
-		return
+}
+
+// Scrolling only changes the information viewport and its navigation hint.
+// Full invalidations still rebuild the cache when images, metadata or layout change.
+func (a *App) invalidateDetailScroll() {
+	if a.detail.clip.Empty() || a.PageTransitionRunning() || a.saver.active {
+		a.all = true
+	} else {
+		a.detail.dirty = true
 	}
-	a.paintHint(c, a.detailsHint(len(lines) > maxLines, len(entries), max(0, len(lines)-maxLines)))
+}
+
+func (a *App) paintDetailInfo(c *gfx.Canvas) {
+	clip, lines, sc, lh := a.detail.clip, a.detail.text, a.detail.cols, a.detailLine()
+	maxLines := a.detail.lines
+	off := max(0, min(a.detail.pixel, max(0, len(lines)-maxLines)*lh))
+	a.detail.pixel = off
+	c.Fill(clip, gen.Eva.Bg)
+	for n := off / lh; n < len(lines) && n*lh-off < clip.Dy(); n++ {
+		c.TextClip(clip.Min.X, clip.Min.Y+n*lh-off, a.sm, gfx.Fit(lines[n].text, sc), lines[n].col, clip)
+	}
+	if len(lines) > maxLines && maxLines > 0 {
+		thumbH := max(2, clip.Dy()*maxLines/len(lines))
+		thumbY := clip.Min.Y + (clip.Dy()-thumbH)*off/((len(lines)-maxLines)*lh)
+		c.Fill(image.Rect(clip.Max.X-2, thumbY, clip.Max.X, thumbY+thumbH), gen.Eva.Accent)
+	}
+	if a.notice == "" {
+		a.paintHint(c, a.detailsHint(len(lines) > maxLines, a.detail.entries, max(0, len(lines)-maxLines)))
+	}
 }
 
 // detailsHint is the Details legend. The Left/Right hint appears only when
@@ -517,11 +547,16 @@ func (a *App) actDetails(k platform.Key) bool {
 		}
 		running := a.DetailScrollRunning()
 		a.detail.scroll = max(0, a.detail.scroll+page)
+		if !a.detail.clip.Empty() {
+			a.detail.scroll = min(a.detail.scroll, max(0, len(a.detail.text)-a.detail.lines))
+		}
 		if !running {
 			a.detail.next = a.cfg.TimerNow()
 			a.detail.last = a.detail.next
 			a.detail.carry = 0
 		}
+		a.invalidateDetailScroll()
+		return true
 	case platform.KeySpace:
 		if a.toggleFavorite() {
 			a.screen = ScreenList // the row left the filtered view

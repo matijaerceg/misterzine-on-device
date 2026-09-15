@@ -225,6 +225,15 @@ type App struct {
 }
 
 type detailState struct {
+	versionDirty bool
+	versions     []launchEntry
+	versionY     int
+
+	dirty         bool
+	clip          image.Rectangle
+	text          []paneLine
+	cols, entries int
+
 	scroll int           // first information line wanted at the top
 	pixel  int           // where the information sits now, in pixels, easing toward scroll
 	next   time.Time     // the next animation frame
@@ -1115,6 +1124,16 @@ func (a *App) neighbourhood() {
 // rectangles that need presenting (nil when nothing changed).
 func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 	if !a.all {
+		if (a.detail.dirty || a.detail.versionDirty) && a.screen == ScreenDetails && !a.saver.active && !a.PageTransitionRunning() {
+			if a.detail.dirty {
+				a.paintDetailInfo(a.logical)
+			}
+			if a.detail.versionDirty || (a.detail.dirty && a.marquee.key != "") {
+				a.paintDetailVersion(a.logical)
+			}
+			a.detail.dirty, a.detail.versionDirty = false, false
+			return a.rotatePaint()
+		}
 		if !a.PageTransitionRunning() {
 			return a.physical, nil
 		}
@@ -1123,6 +1142,7 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 		return a.rotatePaint()
 	}
 	a.preparePageTransition()
+	a.detail.dirty, a.detail.versionDirty = false, false
 	a.all = false
 	a.wants = a.wants[:0]
 	if a.screen != ScreenDetails {

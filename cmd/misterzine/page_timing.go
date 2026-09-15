@@ -30,3 +30,24 @@ func (h *host) recordPageFrame(active bool, paint, wait, copyTime time.Duration,
 	}
 	h.pageFrames = append(h.pageFrames, pageFrameTiming{screen, paint.Microseconds(), wait.Microseconds(), copyTime.Microseconds(), interval.Microseconds()})
 }
+
+// Keep scrolling measurements separate from page changes and idle gaps.
+func (h *host) recordDetailFrame(active bool, paint, wait, copyTime time.Duration, at time.Time) {
+	if !active {
+		h.detailLastAt = time.Time{}
+		return
+	}
+	interval := time.Duration(0)
+	if !h.detailLastAt.IsZero() {
+		interval = at.Sub(h.detailLastAt)
+	}
+	h.detailLastAt = at
+	if len(h.detailFrames) == 1024 {
+		copy(h.detailFrames, h.detailFrames[1:])
+		h.detailFrames = h.detailFrames[:1023]
+	}
+	h.detailFrames = append(h.detailFrames, pageFrameTiming{h.a.Screen().String(), paint.Microseconds(), wait.Microseconds(), copyTime.Microseconds(), interval.Microseconds()})
+	if !h.a.DetailScrollRunning() {
+		h.detailLastAt = time.Time{}
+	}
+}
