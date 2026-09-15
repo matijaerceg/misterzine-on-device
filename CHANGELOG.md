@@ -1,8 +1,10 @@
 # Changelog
 
-## Unreleased
+## v1.0.36 — 2026-09-15
 
 - Show missing arcade ROM archives in Details and check again before launching. Check every ROM section and the selected alternative, following MiSTer's storage search order. Archive contents remain unchecked. Launch logs now describe a request handed to MiSTer, rather than claiming the game loaded.
+
+- Correct the MiSTercade/JAMMA setup instructions and log hint to use explicit arcade display timing, preventing rolling pictures on affected cabinets.
 
 ## v1.0.35 — 2026-09-15
 

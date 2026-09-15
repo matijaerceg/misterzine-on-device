@@ -1,7 +1,14 @@
-MiSTercade and JAMMA cabinets
+# MisterZine v1.0.36
 
-If you run MisterZine on a MiSTercade, it used to flash the cabinet screen and drop you back at the menu, because the MiSTercade's stock MiSTer.ini keeps scripts on HDMI. This release explains the fix on first run and in the log, and the troubleshooting guide now has a JAMMA cabinets section with the three INI lines that put MisterZine, Update All and every other script on your cabinet monitor. Thanks to ctrain_1985 for reporting it.
+Arcade games now warn when a required ROM archive is missing, instead of handing a known incomplete installation to MiSTer.
 
-Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1035--2026-09-15).
-Existing installations update through Update All. New installation:
-[installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once).
+- Details shows the missing archive for the selected game version, such as **Missing game ROM: jpark.zip**.
+- Start checks again before launching, including requirements in later ROM sections and alternative game versions.
+- Checks follow MiSTer's storage search order and accept alternative archive names.
+- Launch logs describe the request handed to MiSTer, rather than claiming the game loaded.
+
+Also corrects the MiSTercade/JAMMA display-timing instructions and log hint for cabinets affected by a rolling picture.
+
+These checks detect missing archives; they do not validate archive contents or guarantee playability. Card status continues to describe installation and core version.
+
+Update through Update All, then quit and reopen MisterZine. Settings and favorites are preserved.
