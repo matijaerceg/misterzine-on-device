@@ -1,9 +1,11 @@
-See your settings before you choose
+Arcade first
 
-Options now shows layout diagrams, font samples, and animated Scroll speed and Hold delay previews inside the hint box. The game names stay still while the selection moves, paced to the display refresh.
+MisterZine now opens with arcade games by default. You can bring back console, computer and other cores in Options > List > Show non-arcade cores. Your favorites are kept, and Update All works as before.
 
-Choose a Default view beneath Views → Remember last view when remembering is off. There is also a dim screensaver with 33% and 66% brightness, a separate screensaver Enabled switch, and Nemesis source support. Thanks to ac3 and Fallon, now in the early adopters credits.
+A short welcome notice explains the change, with a thanks from Matija. Hold A to dismiss it; the two-second progress line sits beside the legend.
 
-Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1032--2026-09-14).
+This release also brings smoother Details scrolling, a dissolving startup logo, optional page transitions, and legends that follow the actions available. Deprecated cores are hidden by default, with an option to show them.
+
+Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1033---2026-09-14).
 Existing installations update through Update All. New installation:
 [installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once).
