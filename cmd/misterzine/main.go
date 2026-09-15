@@ -269,6 +269,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			_, err := os.Stat(filepath.Join(card, filepath.FromSlash(rel)))
 			return err == nil
 		},
+		ROMIssue:        scan.NewROMCheck(card),
 		Launch:          h.requestLaunch,
 		Quit:            h.stop,
 		Version:         buildinfo.String(),
@@ -995,7 +996,7 @@ func (h *host) doLaunch() int {
 		os.Remove(marker)
 		return 1
 	}
-	h.lg.Printf("launched %s", h.launch)
+	h.lg.Printf("launch requested: %s (handed to MiSTer)", h.launch)
 	h.supportLaunchResult("Command sent; game startup not verified", nil)
 	return 0
 }

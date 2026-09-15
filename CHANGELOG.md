@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Show missing arcade ROM archives in Details and check again before launching. Check every ROM section and the selected alternative, following MiSTer's storage search order. Archive contents remain unchecked. Launch logs now describe a request handed to MiSTer, rather than claiming the game loaded.
+
 ## v1.0.35 — 2026-09-15
 
 - Fix: on a MiSTercade, choosing MisterZine flashed the cabinet monitor and returned to the menu. MiSTercade's shipped MiSTer.ini sets `direct_video=2`, Main's auto mode, which only switches direct video on when an HDMI DAC is attached; with nothing on HDMI the framebuffer stays there, so the cabinet never shows MisterZine or any other script. MisterZine treated 2 like 1 and kept quiet. It now counts only `vga_scaler=1` or `direct_video=1` as reaching the analog port, and with `direct_video=2` the first-run notice and the log warning name the cure: `vga_scaler=1` and `video_mode=320,240,60` under `[Menu]`, the section MiSTercade documents for seeing scripts. The troubleshooting guide has a JAMMA cabinets section with that configuration, confirmed on a MiSTercade v1, and the README points to it. Thanks to ctrain_1985 for reporting it.

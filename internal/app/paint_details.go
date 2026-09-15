@@ -194,6 +194,17 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 		L = append(L, paneLine{label + data.ASCII(val), col})
 	}
 	fg, mu := gen.Eva.Fg, gen.Eva.Muted
+	if a.cfg.ROMIssue != nil {
+		entries := a.launchEntries(row, i)
+		if len(entries) > 0 {
+			e := entries[max(0, min(a.detail.pick, len(entries)-1))]
+			if e.ok {
+				if issue := a.cfg.ROMIssue(e.path, false); issue != "" {
+					L = append(L, paneLine{issue, gen.Eva.Warn})
+				}
+			}
+		}
+	}
 	prov := func(f string) rgb {
 		if row.HasProv(f) {
 			return mu
@@ -590,6 +601,12 @@ func (a *App) launchRow(row *data.Row, i, pick int) bool {
 		if !e.ok {
 			a.Notice("that file is not on the card", 3*time.Second)
 			return true
+		}
+		if a.cfg.ROMIssue != nil {
+			if issue := a.cfg.ROMIssue(e.path, true); issue != "" {
+				a.Notice(issue, 6*time.Second)
+				return true
+			}
 		}
 		if pick > 0 {
 			// An alternative launched is the choice from now on. Launching

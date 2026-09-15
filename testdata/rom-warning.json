@@ -1,0 +1,37 @@
+[
+  {
+    "title": "Jurassic Park",
+    "base": "Arcade",
+    "genre": "Shooter",
+    "date": "2026-08-17",
+    "date_kind": "debut",
+    "year": "1993",
+    "manufacturer": "Sega",
+    "core": "Arcade-SegaSystem32",
+    "deprecated": false,
+    "updated": "2026-08-31",
+    "repo": "meathax/s32",
+    "src": "meathax",
+    "ft": "arcade-arcadesegasystem32",
+    "mra": "_Arcade/_MeatCores/Jurassic Park.mra",
+    "sn": "jpark",
+    "rot": "Horizontal",
+    "plr": "2",
+    "ctl": "1 button",
+    "spc": "Lightgun",
+    "prov": [
+      "rot",
+      "plr",
+      "ctl",
+      "spc"
+    ],
+    "k": "jpark",
+    "img": "jpark",
+    "img_slots": [
+      "title",
+      "snap"
+    ],
+    "img_w": 320,
+    "img_h": 224
+  }
+]

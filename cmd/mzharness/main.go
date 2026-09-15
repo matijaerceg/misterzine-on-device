@@ -43,6 +43,7 @@ func main() {
 	script := flag.String("script", "", "key script; empty = every view")
 	nowStr := flag.String("now", "2026-09-08T12:00Z", "virtual clock start")
 	status := flag.String("status", "fake", "fake, missing or unknown install statuses")
+	romIssue := flag.String("rom-issue", "", "missing ROM archive warning fixture")
 	seenAge := flag.Duration("seen", 48*time.Hour, "pretend the last look was this long ago (0 = first run)")
 	logical := flag.Bool("logical", false, "save the unrotated logical canvas instead of the physical frame")
 	imgDir := flag.String("images", "../misterzine/docs/images", "directory laid out like the site's docs/images; empty = placeholders")
@@ -96,6 +97,7 @@ func main() {
 		ClockTrusted:   true,
 		Favorites:      map[string]bool{},
 		Launch:         func(p string) { fmt.Println("launch:", p); cmd.Send("load_core " + p) },
+		ROMIssue:       func(string, bool) string { return *romIssue },
 		Quit:           func() { fmt.Println("quit") },
 		Version:        "harness",
 		RememberSort:   true,

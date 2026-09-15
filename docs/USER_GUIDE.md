@@ -216,6 +216,13 @@ selected in Details. Any launch failure appears over the artwork.
 F12 on a keyboard saves a PNG to `/media/fat/misterzine/screenshots/`.
 Screenshots work without remote debugging.
 
+For arcade games, Details shows a warning if a required game ROM archive is
+missing. Start checks again and shows the missing archive name instead of
+handing the game to MiSTer. This follows the selected version's requirements
+and MiSTer's storage search order. It checks archive presence, not the files
+inside it: a present archive can still be incomplete or incompatible. The card
+status describes installation and core version, not a guarantee of playability.
+
 ## Options
 
 Options is in five groups, each under a grey heading with a small mark and

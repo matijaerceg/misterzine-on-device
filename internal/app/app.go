@@ -85,6 +85,9 @@ type Config struct {
 	Progress func() (have, total int)
 	// Exists reports whether a card-relative file is present (launch targets).
 	Exists func(rel string) bool
+	// ROMIssue returns a missing archive warning for the selected MRA.
+	// fresh bypasses cached Details results when the user presses Start.
+	ROMIssue func(rel string, fresh bool) string
 	// Launcher reports whether the main-menu launcher is enabled (nil = unsupported).
 	Launcher func() bool
 	// Scroll is the held-scrolling speed in rows per second: 20, 30, 60.
