@@ -653,9 +653,8 @@ func (h *host) optionSampleLoop() {
 		wasDetail := h.a.DetailScrollRunning()
 		h.a.DetailScrollFrame(now)
 		h.a.Tick(now)
-		if h.a.Repeating() {
-			return
-		}
+		// Input may have left the preview and armed key repeat. Paint that
+		// selection before the loop condition hands control back to the host.
 		h.a.OptionSampleFrame()
 		wasPage := h.a.PageTransitionRunning()
 		frame, dirty := h.a.Paint()
