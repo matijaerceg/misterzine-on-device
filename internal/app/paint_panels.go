@@ -629,7 +629,10 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 	lastY := y
 	for n := p.top; n < len(p.entries) && n < p.top+shown; n++ {
 		e := p.entries[n]
-		lastY = y
+		// A half-height spacer cannot hold the full scroll arrow.
+		if rowH(n) == lh {
+			lastY = y
+		}
 		r := image.Rect(inner.Min.X, y, inner.Max.X, y+rowH(n))
 		if n == p.cursor {
 			c.Fill(r, gen.Eva.Surface)

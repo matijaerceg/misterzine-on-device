@@ -207,6 +207,7 @@ func TestOptionsLayoutCuesAndColumn(t *testing.T) {
 	rows := []data.Row{{Base: "Arcade", K: "a", Title: "A", Updated: "2026-09-07"}}
 	a := New(Config{PhysW: 320, PhysH: 240, Version: "v9.9.9-test"}, data.Ingest(rows, "", time.Now()), nil)
 	a.openPanel(ScreenOptions)
+	expandOptionsForTest(a)
 	a.Paint()
 	l := &a.lay
 	font := a.sm

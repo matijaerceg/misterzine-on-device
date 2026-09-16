@@ -16,6 +16,11 @@ func (a *App) visibleOptionsEntries() []panelEntry {
 		if e.header {
 			hidden = e.kind == "options-section" && !a.optionSectionOpen(e.value)
 			out = append(out, e)
+			if e.kind == "options-section" && !hidden {
+				// Match the half-row gap between sections without adding a
+				// selectable stop or padding beneath a collapsed heading.
+				out = append(out, panelEntry{header: true, info: true})
+			}
 		} else if !hidden {
 			out = append(out, e)
 		}
