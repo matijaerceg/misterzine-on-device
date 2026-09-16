@@ -153,22 +153,20 @@ func (a *App) paintSmoothScrollSamples(c *gfx.Canvas, area image.Rectangle, e pa
 		a.tickOptionSamples()
 	}
 	names := []string{"Galaga", "Pac-Man", "Out Run", "1942", "R-Type", "Gradius"}
-	for i, label := range []string{"off", "on"} {
-		cell := image.Rect(area.Min.X+3+i*(area.Dx()-6)/2, area.Min.Y+3, area.Min.X+3+(i+1)*(area.Dx()-6)/2-2, area.Max.Y-3)
+	for i := 0; i < 2; i++ {
+		cell := image.Rect(area.Min.X+3+i*(area.Dx()-6)/2, area.Min.Y+2, area.Min.X+3+(i+1)*(area.Dx()-6)/2-2, area.Max.Y-2)
 		c.Fill(cell, gen.Eva.Bg)
 		col := gen.Eva.Fg
 		if i == e.idx {
 			col = gen.Eva.Accent
 			c.Box(cell, col)
 		}
-		c.Text(cell.Min.X+(cell.Dx()-a.sm.Width(label))/2, cell.Min.Y+1, a.sm, label, col)
-		viewport := cell.Inset(2)
-		viewport.Min.Y += a.sm.H + 1
+		viewport := cell.Inset(1)
 		clipped := &gfx.Canvas{RGBA: c.Sub(viewport)}
 		line := a.lay.Line
 		travel := smoothSampleTravel(a.optionSamples.elapsed, scrollPace(a.ScrollSpeed()), i == 1, line)
 		first, offset := travel/line, travel%line
-		selectedY := viewport.Min.Y + max(0, (viewport.Dy()/line-1)/2)*line
+		selectedY := viewport.Min.Y + max(0, (viewport.Dy()/line)/2)*line
 		clipped.Fill(image.Rect(viewport.Min.X, selectedY, viewport.Max.X, selectedY+line), gen.Eva.Surface)
 		for row, y := first, viewport.Min.Y-offset; y < viewport.Max.Y; row, y = row+1, y+line {
 			clipped.Text(viewport.Min.X+1, y+2, a.sm, gfx.Fit(names[row%len(names)], a.sm.Cols(viewport.Dx()-2)), gen.Eva.Fg)

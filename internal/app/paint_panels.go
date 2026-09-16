@@ -579,16 +579,10 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 	var inner, helpBox image.Rectangle
 	helpLines := 0
 	if a.screen == ScreenOptions || a.screen == ScreenSaverOptions {
-		// Horizontal uses three help lines; the narrower tate view keeps four.
+		// Keep the hint and preview area fixed at four lines in both orientations.
 		helpLines = 4
-		if !l.Portrait {
-			helpLines = 3
-		}
 		versionH := 3*font.H + 2
 		helpH := helpLines*(font.H+1) + 5
-		if a.screen == ScreenOptions && a.panel.cursor < len(a.panel.entries) && a.panel.entries[a.panel.cursor].kind == "smooth-scroll" {
-			helpH = max(helpH, 3*l.Line+font.H+11)
-		}
 		helpBox = image.Rect(l.Body.Min.X, l.Body.Max.Y-versionH-helpH, l.Body.Max.X, l.Body.Max.Y-versionH)
 		inner = image.Rect(l.Body.Min.X+2, l.Body.Min.Y+2, l.Body.Max.X-2, helpBox.Min.Y-2)
 		cols := font.Cols(l.Body.Dx() - 4)

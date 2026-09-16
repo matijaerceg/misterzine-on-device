@@ -228,7 +228,7 @@ func TestOptionsLayoutCuesAndColumn(t *testing.T) {
 		t.Fatal("version rows must be greyed and unframed above the hint bar")
 	}
 	// the help text is framed
-	helpBox := image.Rect(l.Body.Min.X, versionRows.Min.Y-(3*(font.H+1)+5), l.Body.Max.X, versionRows.Min.Y)
+	helpBox := image.Rect(l.Body.Min.X, versionRows.Min.Y-(4*(font.H+1)+5), l.Body.Max.X, versionRows.Min.Y)
 	if count(image.Rect(helpBox.Min.X, helpBox.Min.Y, helpBox.Max.X, helpBox.Min.Y+1), gen.Eva.Line) != helpBox.Dx() {
 		t.Fatal("help text must be framed")
 	}
