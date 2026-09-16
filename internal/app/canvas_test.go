@@ -19,6 +19,7 @@ func TestLiveCanvasKeepsNavigation(t *testing.T) {
 		}}, data.Ingest([]data.Row{{K: "game", Base: "Arcade", Title: "Game"}}, "test", time.Now()), nil)
 		a.screen = ScreenOptions
 		a.buildPanel()
+		expandOptionsForTest(a)
 		for i, e := range a.panel.entries {
 			if e.kind == "canvas" {
 				a.panel.cursor = i

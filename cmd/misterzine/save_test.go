@@ -262,7 +262,11 @@ func TestFullDisplayChoiceSurvivesRestart(t *testing.T) {
 		h.a.Handle(platform.Event{Key: k, At: now.Add(time.Millisecond)})
 	}
 	tap(platform.KeyBack)
-	for n := 0; n < 20; n++ {
+	tap(platform.KeyHome)
+	tap(platform.KeyPageDown)
+	tap(platform.KeyPageDown)
+	tap(platform.KeyRight)
+	for n := 0; n < 5; n++ {
 		tap(platform.KeyDown)
 	}
 	tap(platform.KeyRight)
