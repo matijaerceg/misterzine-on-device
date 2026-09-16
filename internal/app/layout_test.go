@@ -85,3 +85,24 @@ func TestFullDisplayLayouts(t *testing.T) {
 		t.Fatal("full display must add tate rows")
 	}
 }
+
+func TestPictureColumnsAndTateCaptions(t *testing.T) {
+	for _, inset := range []int{0, 15, 40} {
+		for _, size := range [][2]int{{480, 270}, {640, 360}, {512, 288}, {688, 288}} {
+			l := NewLayout(size[0], size[1], inset, inset, fonts.Body(), fonts.NarrowTall().W, 5, "picture")
+			if !l.PictureColumns || l.PaneTop || l.TextBeside || l.Thumb.Overlaps(l.PaneText) || l.Thumb.Dy() != l.Body.Dy()-6 || l.PaneText.Max.X != l.Body.Max.X || l.TitleW > l.List.Dx()-fonts.Body().W {
+				t.Fatalf("columns invalid: %+v", l)
+			}
+			for _, style := range []string{"split", "picture"} {
+				portrait := NewLayout(size[1], size[0], inset, inset, fonts.Body(), fonts.NarrowTall().W, 5, style)
+				if portrait.Pane.Max.Y-portrait.Thumb.Max.Y-3 < paneH {
+					t.Fatalf("tate captions clipped: %+v", portrait)
+				}
+			}
+		}
+	}
+	classic := NewLayout(320, 240, 15, 15, fonts.Body(), fonts.NarrowTall().W, 5, "picture")
+	if classic.PictureColumns || !classic.PaneTop {
+		t.Fatal("classic picture must remain stacked")
+	}
+}

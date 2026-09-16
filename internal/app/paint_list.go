@@ -322,11 +322,14 @@ func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {
 	// height, whose baseline sits one pixel below the body font's
 	rf := a.rowFont()
 	tw := l.TitleW
-	if a.mode == data.SortYear {
+	if a.mode == data.SortYear && !l.PictureColumns {
 		// the year is on the header line, so the title takes the date column
 		tw += a.dateCols() * rf.W
 	}
 	a.paintTitle(c, x, y, tw, d.Title, row.Beta, titleCol)
+	if l.PictureColumns {
+		return
+	}
 	x += tw + rf.W
 	g, gc := statusGlyph(st)
 	c.Text(x, y-1, rf, g, gc)
@@ -407,7 +410,19 @@ func (a *App) paintPane(c *gfx.Canvas) {
 			text = image.Rect(l.Thumb.Min.X, l.Thumb.Max.Y+3, l.Pane.Max.X, l.Pane.Max.Y)
 		}
 	}
-	a.paintPaneText(c, text, a.paneLines(row, d, i, a.sm.Cols(text.Dx())))
+	lines := a.paneLines(row, d, i, a.sm.Cols(text.Dx()))
+	if l.PictureColumns {
+		// The fixed right column is narrow but tall: wrap information rather
+		// than losing it to the ellipsis used by the smaller classic panes.
+		var wrapped []paneLine
+		for _, line := range lines {
+			for _, part := range gfx.Wrap(line.text, a.sm.Cols(text.Dx()), 99) {
+				wrapped = append(wrapped, paneLine{part, line.col})
+			}
+		}
+		lines = wrapped
+	}
+	a.paintPaneText(c, text, lines)
 }
 
 // paneLines is what the pane says about a row, in lines of at most cols
@@ -504,7 +519,7 @@ func (a *App) paintThumb(c *gfx.Canvas, box image.Rectangle, row *data.Row) imag
 	// classic tate pane centres it in the box beside the text; the wider
 	// layouts keep it left so the text can sit beside it
 	p := image.Pt(box.Min.X, box.Min.Y+(box.Dy()-img.Rect.Dy())/2)
-	if a.lay.Portrait && !a.lay.TextBeside {
+	if (a.lay.Portrait && !a.lay.TextBeside) || a.lay.PictureColumns {
 		p.X = box.Min.X + (box.Dx()-img.Rect.Dx())/2
 	}
 	if slot == "system" {

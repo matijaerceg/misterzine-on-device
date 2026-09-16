@@ -415,7 +415,12 @@ screenshots match, lettering runs instead and the Preview help explains why.
   next starts. The additional **full display** choice uses both HDMI dimensions
   with square integer-scaled pixels: 480x270 on 1080p, or 270x480 as viewed
   in tate. Tate gains list rows; horizontal layouts gain width. Screensavers
-  use the expanded canvas too. Low-resolution CRT modes retain their existing
+  use the expanded canvas too. On widescreen horizontal displays, Picture
+  puts a narrow title list on the left, full-height artwork in the middle and
+  information on the far right. The narrow list keeps favorite stars and omits
+  the status/date columns. On 4:3 it retains the stacked arrangement. Tall tate
+  Split and Picture layouts reserve the full caption area below horizontal art.
+  Low-resolution CRT modes retain their existing
   sizing. Unusual video timings that cannot fit a bounded canvas fall back to
   fit display. Safe-zone margins still apply. Option names are provisional.
 - **Button labels:** how the legends name the pad's face buttons, in MiSTer's

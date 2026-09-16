@@ -397,6 +397,10 @@ func (a *App) optionsEntries() []panelEntry {
 			dateIdx = i
 		}
 	}
+	layoutHelp := "List (default): the full list with a small pane. Split: a wider pane with a bigger picture. Picture: the picture across the screen with a few rows."
+	if a.lay.W*9 >= a.lay.H*16 {
+		layoutHelp = "List: full list, small picture. Split: list beside a larger picture. Picture: narrow title list, full-height art in the middle, info on the right."
+	}
 	rotationHelp := "Left/Right turn the image; the choice is saved. Labels describe the monitor's turn."
 	if a.FollowRotation() {
 		rotationHelp = "Set by the active MiSTer INI. Turn off Follow INI rotation above to rotate manually."
@@ -446,7 +450,7 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "Date format", kind: "date-format", vals: dateFormatLabels, idx: dateIdx,
 			help: a.dateFormatHelp()},
 		{text: "Layout", kind: "list-layout", vals: listLayouts, idx: map[string]int{"list": 0, "split": 1, "picture": 2}[a.ListLayout()],
-			help: "List (default): the full list with a small pane. Split: a wider pane with a bigger picture. Picture: the picture across the screen with a few rows."},
+			help: layoutHelp},
 		spacer, group(gfx.SectionDisplay, "Display"),
 		{text: "Follow INI rotation", kind: "follow-rotation", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.FollowRotation()],
 			help: "On (default): match osd_rotate in the active MiSTer INI at every startup. Off: rotate manually below. Never edits the INI."},

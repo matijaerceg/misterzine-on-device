@@ -35,6 +35,8 @@ type Layout struct {
 	// TextBeside: the pane text follows the picture's drawn width, sitting
 	// beside a picture that leaves room and below one that does not.
 	TextBeside bool
+	// PictureColumns keeps a compact title list, centered artwork and fixed right metadata.
+	PictureColumns bool
 }
 
 const (
@@ -63,6 +65,11 @@ func NewLayout(w, h, ix, iy int, body *gfx.Font, rowW, dateCols int, style strin
 	l.Hint = image.Rect(l.Root.Min.X, l.Root.Max.Y-hintH, l.Root.Max.X, l.Root.Max.Y)
 	l.Body = image.Rect(l.Root.Min.X, l.Status.Max.Y, l.Root.Max.X, l.Hint.Min.Y)
 	b := l.Body
+	tall := h*3 > w*4
+	captionH := paneTextH
+	if tall {
+		captionH = paneH
+	}
 	switch {
 	case l.Portrait && style == "split":
 		// the bottom pane takes 40% of the body: a 4:3 picture at the left
@@ -79,6 +86,9 @@ func NewLayout(w, h, ix, iy int, body *gfx.Font, rowW, dateCols int, style strin
 			tw = b.Dx() - 6
 			th = tw * 3 / 4
 		}
+		if tall {
+			ph = max(ph, 3+th+3+captionH)
+		}
 		l.Pane = image.Rect(b.Min.X, b.Max.Y-ph, b.Max.X, b.Max.Y)
 		l.List = image.Rect(b.Min.X, b.Min.Y, b.Max.X, l.Pane.Min.Y-1)
 		l.Thumb = image.Rect(l.Pane.Min.X, l.Pane.Min.Y+3, l.Pane.Min.X+tw, l.Pane.Min.Y+3+th)
@@ -89,7 +99,7 @@ func NewLayout(w, h, ix, iy int, body *gfx.Font, rowW, dateCols int, style strin
 		// a vertical shot keeps its shape and the text moves beside it
 		tw := b.Dx() - 6
 		th := tw * 3 / 4
-		ph := 3 + th + 3 + paneTextH
+		ph := 3 + th + 3 + captionH
 		l.Pane = image.Rect(b.Min.X, b.Max.Y-ph, b.Max.X, b.Max.Y)
 		l.List = image.Rect(b.Min.X, b.Min.Y, b.Max.X, l.Pane.Min.Y-1)
 		l.Thumb = image.Rect(l.Pane.Min.X+3, l.Pane.Min.Y+3, l.Pane.Min.X+3+tw, l.Pane.Min.Y+3+th)
@@ -109,6 +119,24 @@ func NewLayout(w, h, ix, iy int, body *gfx.Font, rowW, dateCols int, style strin
 		tx := l.Pane.Min.X + 3
 		l.Thumb = image.Rect(tx, l.Pane.Min.Y+3, tx+tw, l.Pane.Min.Y+3+th)
 		l.PaneText = image.Rect(tx, l.Thumb.Max.Y+3, l.Pane.Max.X, l.Pane.Max.Y)
+	case !l.Portrait && w*9 >= h*16 && style == "picture":
+		// Widescreen Picture: full-height artwork between a narrow title list
+		// and fixed metadata. Keep image proportions; spare width is a gutter.
+		th := b.Dy() - 6
+		tw := th * 4 / 3
+		metaW := max(72, b.Dx()/7)
+		listW := min(120, max(72, b.Dx()-tw-metaW-10))
+		l.PictureColumns = true
+		l.List = image.Rect(b.Min.X, b.Min.Y, b.Min.X+listW, b.Max.Y)
+		l.Pane = image.Rect(l.List.Max.X+1, b.Min.Y, b.Max.X, b.Max.Y)
+		l.PaneText = image.Rect(b.Max.X-metaW, b.Min.Y+3, b.Max.X, b.Max.Y)
+		artLeft, artRight := l.Pane.Min.X+3, l.PaneText.Min.X-4
+		if tw > artRight-artLeft {
+			tw = artRight - artLeft
+			th = tw * 3 / 4
+		}
+		tx := artLeft + (artRight-artLeft-tw)/2
+		l.Thumb = image.Rect(tx, b.Min.Y+3, tx+tw, b.Min.Y+3+th)
 	case !l.Portrait && style == "picture":
 		// the pane runs across the top, a 4:3 picture 55% of the body high
 		// with the text beside it; the rows use the full width below
@@ -143,7 +171,9 @@ func NewLayout(w, h, ix, iy int, body *gfx.Font, rowW, dateCols int, style strin
 	// a row: the favorite star (body font), the title, then a gap, the
 	// status glyph, a gap and the date, all in rowW cells of the row font
 	l.TitleW = l.List.Dx() - body.W - rowW*(3+dateCols)
-	if l.TitleW < 8*body.W {
+	if l.PictureColumns {
+		l.TitleW = l.List.Dx() - body.W
+	} else if l.TitleW < 8*body.W {
 		l.TitleW = 8 * body.W
 	}
 	return l
