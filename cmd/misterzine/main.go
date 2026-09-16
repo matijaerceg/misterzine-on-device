@@ -543,7 +543,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			h.frameLoop()
 		} else if h.a.SaverRunning() {
 			h.saverLoop()
-		} else if h.a.OptionSamplesRunning() || h.a.PageTransitionRunning() || h.a.DetailScrollRunning() {
+		} else if h.a.OptionSamplesRunning() || h.a.PageTransitionRunning() || h.a.DetailScrollRunning() || h.a.ListScrollRunning() {
 			h.optionSampleLoop()
 		}
 		h.autosave(time.Now(), false)
@@ -683,12 +683,13 @@ func (h *host) frameLoop() {
 // optionSampleLoop drives previews, page wipes and detail scrolling at vertical blank.
 // Keep servicing events and saves, and allow inactivity to start the screensaver.
 func (h *host) optionSampleLoop() {
-	for (h.a.OptionSamplesRunning() || h.a.PageTransitionRunning() || h.a.DetailScrollRunning()) && !h.a.Repeating() {
+	for (h.a.OptionSamplesRunning() || h.a.PageTransitionRunning() || h.a.DetailScrollRunning() || h.a.ListScrollRunning()) && !h.a.Repeating() {
 		if !h.pump() {
 			return
 		}
 		now := time.Now()
 		wasDetail := h.a.DetailScrollRunning()
+		h.a.ListScrollFrame(now)
 		h.a.DetailScrollFrame(now)
 		h.a.Tick(now)
 		// Input may have left the preview and armed key repeat. Paint that

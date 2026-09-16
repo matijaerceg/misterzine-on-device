@@ -157,6 +157,7 @@ type Config struct {
 // App is the state machine.
 type App struct {
 	transition    pageTransition
+	listMotion    listMotion
 	splash        startupSplash
 	optionSamples optionSampleClock
 	cfg           Config
@@ -284,6 +285,7 @@ func New(cfg Config, ds *data.Dataset, stored *data.SeenRecord) *App {
 }
 
 func (a *App) setRotation(rot gfx.Rotation) {
+	a.listMotion = listMotion{}
 	orientationChanged := a.rot.Rotated() != rot.Rotated()
 	a.rot = rot
 	w, h := a.cfg.PhysW, a.cfg.PhysH
@@ -399,6 +401,7 @@ func (a *App) Data() *data.Dataset { return a.ds }
 
 // rebuild recomputes order, view and marker from the current state.
 func (a *App) rebuild() {
+	a.listMotion = listMotion{}
 	a.shortPage = false
 	a.order = a.ds.Order(a.mode)
 	if a.mode == data.SortRecents {
@@ -448,6 +451,7 @@ func (a *App) rebuild() {
 }
 
 func (a *App) moveToKey(k string) {
+	a.listMotion = listMotion{}
 	for i, idx := range a.view {
 		if a.ds.Rows[idx].K == k {
 			a.cursor = i
@@ -897,10 +901,15 @@ func (a *App) Frame(now time.Time) bool {
 	changed = a.tickArcadeIntro(now) || changed
 	changed = a.OptionSampleFrame() || changed
 	if k := a.rep.frameDue(now, a.repeatStep); k != platform.KeyNone {
+		oldTop, oldScreen := a.top, a.screen
 		if a.act(k) {
 			changed = true
 		}
+		if oldScreen == ScreenList && a.screen == ScreenList && (k == platform.KeyUp || k == platform.KeyDown) && a.rep.every > 1 {
+			a.listMotion = listMotion{offset: (a.top - oldTop) * a.lay.Line, frames: a.rep.every}
+		}
 	}
+	changed = a.ListScrollFrame(now) || changed
 	changed = a.DetailScrollFrame(now) || changed // follows the display cadence under a held key
 	if a.notice != "" && !now.Before(a.until) {
 		a.notice = ""
@@ -913,7 +922,7 @@ func (a *App) Frame(now time.Time) bool {
 // NextTick reports when Tick next needs to run; zero when nothing is pending.
 func (a *App) NextTick() time.Time {
 	// Enter the preview frame loop immediately, including after releasing a key.
-	if a.OptionSamplesRunning() {
+	if a.OptionSamplesRunning() || a.ListScrollRunning() {
 		return a.cfg.TimerNow()
 	}
 	t := a.rep.nextAt()
@@ -955,6 +964,10 @@ func (a *App) NextTick() time.Time {
 
 // act performs a key on the current screen.
 func (a *App) act(k platform.Key) bool {
+	if a.listMotion.offset != 0 {
+		a.all = true
+	}
+	a.listMotion = listMotion{}
 	switch a.screen {
 	case ScreenScan:
 		if k == platform.KeyBack || (k == platform.KeyEnter && a.scanReady) {
@@ -1170,6 +1183,15 @@ func (a *App) neighbourhood() {
 // Paint renders whatever changed and returns the physical frame with the
 // rectangles that need presenting (nil when nothing changed).
 func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
+	if a.screen != ScreenList || a.saver.active {
+		a.listMotion = listMotion{}
+	}
+	if !a.all && a.listMotion.dirty && !a.PageTransitionRunning() {
+		a.paintRows(a.logical)
+		a.listMotion.dirty = false
+		return a.rotatePaint()
+	}
+	a.listMotion.dirty = false
 	if !a.all {
 		if (a.detail.dirty || a.detail.versionDirty) && a.screen == ScreenDetails && !a.saver.active && !a.PageTransitionRunning() {
 			if a.detail.dirty {

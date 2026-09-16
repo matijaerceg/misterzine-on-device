@@ -227,6 +227,60 @@ func (a *App) emptyListMessage() string {
 // paintRows draws the visible list lines: rows and the marker lines
 // between them (the last-look divider, the maker headers).
 func (a *App) paintRows(c *gfx.Canvas) {
+	if a.listMotion.offset == 0 {
+		a.paintRowsStill(c)
+		return
+	}
+	l := &a.lay
+	c.Fill(l.List, gen.Eva.Bg)
+	if len(a.view) == 0 {
+		c.Text(l.List.Min.X+a.body.W, l.List.Min.Y+l.Line, a.body, gfx.Fit(a.emptyListMessage(), l.Cols-1), gen.Eva.Muted)
+		return
+	}
+	// Clip partial rows to the list, keeping the snapped selection background
+	// independent of the travelling text.
+	parent := c
+	c = &gfx.Canvas{RGBA: c.Sub(l.List)}
+	defer parent.Dirty(l.List)
+	c.Fill(l.lineRect(a.screenLine(a.cursor)-a.top), gen.Eva.Surface)
+	offset := a.listMotion.offset
+	first := a.top - (offset+l.Line-1)/l.Line
+	if offset < 0 {
+		first = a.top + (-offset)/l.Line
+	}
+	first = max(0, first)
+	pos, mk := 0, 0
+	for pos < len(a.view) && a.screenLine(pos) < first {
+		pos++
+	}
+	for mk < len(a.marks) && (a.marks[mk] < pos || a.markLine(mk) < first) {
+		mk++
+	}
+	for line := first; ; line++ {
+		r := l.lineRect(line - a.top).Add(image.Pt(0, offset))
+		if r.Min.Y >= l.List.Max.Y {
+			break
+		}
+		if mk < len(a.marks) && a.marks[mk] == pos {
+			a.paintMarker(c, r, a.markText(mk))
+			mk++
+			continue
+		}
+		if pos >= len(a.view) {
+			break
+		}
+		a.paintRow(c, r, pos)
+		pos++
+	}
+	// a maker whose header scrolled off keeps its name on the top line
+	if h := a.pinnedHeader(); h != "" {
+		r := l.lineRect(0)
+		c.Fill(r, gen.Eva.Bg)
+		a.paintMarker(c, r, h)
+	}
+}
+
+func (a *App) paintRowsStill(c *gfx.Canvas) {
 	l := &a.lay
 	c.Fill(l.List, gen.Eva.Bg)
 	if len(a.view) == 0 {
@@ -299,7 +353,7 @@ func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {
 	row := &a.ds.Rows[i]
 	d := &a.ds.Der[i]
 	selected := pos == a.cursor
-	if selected {
+	if selected && a.listMotion.offset == 0 {
 		c.Fill(r, gen.Eva.Surface)
 	}
 	x := r.Min.X
