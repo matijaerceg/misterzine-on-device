@@ -52,7 +52,7 @@ type Settings struct {
 	DateFormat      string `json:"date_format"`       // list dates: mm-dd (default), dd-mm, mon-d, d-mon, yymmdd
 	ListLayout      string `json:"list_layout"`       // main view: list (default), split or picture
 	ButtonLabels    string `json:"button_labels"`     // legend button names: mister (default), xbox, playstation or numbers
-	Canvas          string `json:"canvas"`            // Options -> Canvas: fit (default: sized to the display's integer scale) or 320x240
+	Canvas          string `json:"canvas"`            // Options -> Canvas: fit (default: sized to the display's integer scale), full (both display dimensions), or 320x240
 	MenuButton      string `json:"menu_button"`       // Options -> Menu button: options (default) or leave
 	InsetX          int    `json:"inset_x"`
 	InsetY          int    `json:"inset_y"`

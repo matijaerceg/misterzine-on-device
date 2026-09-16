@@ -69,6 +69,11 @@ func NewLayout(w, h, ix, iy int, body *gfx.Font, rowW, dateCols int, style strin
 		// and the text beside it (a vertical shot leaves it more room)
 		ph := b.Dy() * 40 / 100
 		th := ph - 6
+		// Tall panels can make the picture too wide for text beside it.
+		// Keep space below for captions, including missing-image placeholders.
+		if h*3 > w*4 {
+			th -= paneTextH
+		}
 		tw := th * 4 / 3
 		if tw > b.Dx()-6 {
 			tw = b.Dx() - 6
@@ -95,6 +100,10 @@ func NewLayout(w, h, ix, iy int, body *gfx.Font, rowW, dateCols int, style strin
 		pw := b.Dx() * 45 / 100
 		tw := pw - 6
 		th := tw * 3 / 4
+		if w*3 > h*4 && th > b.Dy()-6-paneTextH {
+			th = max(0, b.Dy()-6-paneTextH)
+			tw = th * 4 / 3
+		}
 		l.Pane = image.Rect(b.Max.X-pw, b.Min.Y, b.Max.X, b.Max.Y)
 		l.List = image.Rect(b.Min.X, b.Min.Y, l.Pane.Min.X-1, b.Max.Y)
 		tx := l.Pane.Min.X + 3

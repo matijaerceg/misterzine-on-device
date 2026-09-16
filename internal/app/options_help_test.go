@@ -21,6 +21,7 @@ func TestOptionsHintsFitTheHelpBox(t *testing.T) {
 		rot  gfx.Rotation
 	}{
 		{"320x240 horizontal", 320, 240, gfx.RotNone}, {"320x240 tate", 320, 240, gfx.RotRight},
+		{"480x270 horizontal", 480, 270, gfx.RotNone}, {"480x270 tate", 480, 270, gfx.RotRight},
 		{"360x270 horizontal", 360, 270, gfx.RotNone}, {"360x270 tate", 360, 270, gfx.RotRight},
 	} {
 		for _, update := range []string{"", "v9.9.9"} {

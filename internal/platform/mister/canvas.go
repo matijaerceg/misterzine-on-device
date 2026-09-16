@@ -22,3 +22,22 @@ func FitCanvas(nativeW, nativeH int) (int, int) {
 	}
 	return 320, 240
 }
+
+// FullCanvas fills both axes with square, integer-scaled pixels. Keep low
+// resolution CRT modes on the existing path. Bound the canvas for unusual
+// timings rather than allocating a native-resolution UI just to remove bars.
+func FullCanvas(nativeW, nativeH int) (int, int) {
+	if nativeH < 480 || nativeW <= 0 {
+		return FitCanvas(nativeW, nativeH)
+	}
+	for k := nativeH / 240; k >= 1; k-- {
+		if nativeW%k != 0 || nativeH%k != 0 {
+			continue
+		}
+		w, h := nativeW/k, nativeH/k
+		if w >= 320 && w <= 960 && h <= 600 {
+			return w, h
+		}
+	}
+	return FitCanvas(nativeW, nativeH)
+}

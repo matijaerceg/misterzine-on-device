@@ -259,5 +259,11 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "back; shot default; enter; shot collapsed; pagedown; shot list-closed; right; shot list-open; "
                           "pagedown; enter; shot display-open; left; shot display-closed; back; back; shot remembered; "
                           "end; shot bottom; up*2; enter; shot troubleshooting; back; shot returned"])
+for rotation in ([], ["-rot", "left", "-logical"], ["-rot", "right", "-logical"]):
+    orientation = rotation[1] if rotation else "horizontal"
+    for layout in ("list", "split", "picture"):
+        scenarios.append([*rotation, "-canvas", "480x270", "-layout", layout,
+                          "-out", f"out/full-display-{orientation}-{layout}", "-script",
+                          "shot list; enter; shot details; back; tab; shot filters; back; back; shot options; down*20; right*2; shot full-option; home; down*18; enter; down; enter; wait 12000; shot saver"])
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)

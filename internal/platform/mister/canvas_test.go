@@ -26,3 +26,20 @@ func TestFitCanvas(t *testing.T) {
 		}
 	}
 }
+
+func TestFullCanvas(t *testing.T) {
+	for _, c := range []struct{ nw, nh, w, h int }{
+		{1920, 1080, 480, 270}, {1280, 720, 640, 360}, {2560, 1440, 512, 288},
+		{3840, 2160, 480, 270}, {1920, 1200, 384, 240}, {1024, 768, 512, 384},
+		{640, 480, 320, 240}, {640, 240, 320, 240}, {768, 288, 384, 288},
+		{1366, 768, 683, 384}, {3440, 1440, 688, 288}, {1919, 1079, 320, 240},
+	} {
+		w, h := FullCanvas(c.nw, c.nh)
+		if w != c.w || h != c.h {
+			t.Errorf("FullCanvas(%d,%d)=%dx%d want %dx%d", c.nw, c.nh, w, h, c.w, c.h)
+		}
+		if c.nh >= 480 && c.nw != 1919 && (c.nw%w != 0 || c.nh%h != 0 || c.nw/w != c.nh/h) {
+			t.Errorf("nonuniform or incomplete fill: %+v", c)
+		}
+	}
+}

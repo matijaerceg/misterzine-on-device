@@ -250,3 +250,33 @@ func TestFiltersAutosaveAndRestore(t *testing.T) {
 		t.Fatalf("cleared filters returned: %+v %v", state.Filters, err)
 	}
 }
+
+func TestFullDisplayChoiceSurvivesRestart(t *testing.T) {
+	root := t.TempDir()
+	h := favoritesHost(root)
+	h.a = app.New(app.Config{PhysW: 320, PhysH: 240, RememberSort: true, SettingsChanged: func() { h.setDirty = true }}, data.Ingest(nil, "test", time.Now()), nil)
+	now := time.Now()
+	tap := func(k platform.Key) {
+		now = now.Add(time.Second)
+		h.a.Handle(platform.Event{Key: k, Pressed: true, At: now})
+		h.a.Handle(platform.Event{Key: k, At: now.Add(time.Millisecond)})
+	}
+	tap(platform.KeyBack)
+	for n := 0; n < 20; n++ {
+		tap(platform.KeyDown)
+	}
+	tap(platform.KeyRight)
+	tap(platform.KeyRight)
+	if h.a.Canvas() != "full" || !h.setDirty {
+		t.Fatal("full display selection not applied")
+	}
+	h.saveAll(false)
+	saved, err := store.LoadSettings(filepath.Join(root, "settings.json"))
+	if err != nil || saved.Canvas != "full" {
+		t.Fatalf("saved canvas=%q: %v", saved.Canvas, err)
+	}
+	next := app.New(app.Config{PhysW: 480, PhysH: 270, Canvas: saved.Canvas}, data.Ingest(nil, "test", time.Now()), nil)
+	if next.Canvas() != "full" {
+		t.Fatal("full display lost on restart")
+	}
+}

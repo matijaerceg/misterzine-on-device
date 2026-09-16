@@ -187,57 +187,62 @@ func TestSaverWakeCannotCancelUpdate(t *testing.T) {
 }
 
 func TestSaverSweepsEveryPixel(t *testing.T) {
-	for _, rot := range []gfx.Rotation{gfx.RotNone, gfx.RotLeft, gfx.RotRight} {
-		a, _ := saverApp()
-		a.SetRotation(rot)
-		c := a.logical
-		// the flat fill blurs to itself: bloomed and shaded, it is the
-		// ground, dithered to one of the look's two steps either side of
-		// it per channel
-		d := a.look.dither().shaded(a.look.Shade)
-		var ground [3][2]uint8
-		for ch, v := range []int{200, 160, 120} {
-			q := d.level(min(a.look.boost(v), 255)<<8) >> 8
-			ground[ch] = [2]uint8{d.out[q], d.out[min(q+1, d.top)]}
-		}
-		isGround := func(p color.RGBA) bool {
-			near := func(v uint8, want [2]uint8) bool { return v == want[0] || v == want[1] }
-			return near(p.R, ground[0]) && near(p.G, ground[1]) && near(p.B, ground[2])
-		}
-		covered := make([]bool, c.W()*c.H())
-		remaining := len(covered)
-		mask := a.saverMask(c.H())
-		c.Fill(c.Rect, color.RGBA{R: 200, G: 160, B: 120, A: 255})
-		a.paintSaver(c) // takes the picture and starts the levels
-		a.SaverSettle()
-		for travel := 0; travel < c.W()+mask.Rect.Dx() && remaining > 0; travel++ {
+	for _, size := range [][2]int{{320, 240}, {480, 270}} {
+		for _, rot := range []gfx.Rotation{gfx.RotNone, gfx.RotLeft, gfx.RotRight} {
+			a, _ := saverApp()
+			cfg := a.cfg
+			cfg.PhysW, cfg.PhysH = size[0], size[1]
+			a = New(cfg, a.ds, nil)
+			a.SetRotation(rot)
+			c := a.logical
+			// the flat fill blurs to itself: bloomed and shaded, it is the
+			// ground, dithered to one of the look's two steps either side of
+			// it per channel
+			d := a.look.dither().shaded(a.look.Shade)
+			var ground [3][2]uint8
+			for ch, v := range []int{200, 160, 120} {
+				q := d.level(min(a.look.boost(v), 255)<<8) >> 8
+				ground[ch] = [2]uint8{d.out[q], d.out[min(q+1, d.top)]}
+			}
+			isGround := func(p color.RGBA) bool {
+				near := func(v uint8, want [2]uint8) bool { return v == want[0] || v == want[1] }
+				return near(p.R, ground[0]) && near(p.G, ground[1]) && near(p.B, ground[2])
+			}
+			covered := make([]bool, c.W()*c.H())
+			remaining := len(covered)
+			mask := a.saverMask(c.H())
 			c.Fill(c.Rect, color.RGBA{R: 200, G: 160, B: 120, A: 255})
-			a.saver.travel = travel
-			a.paintSaver(c)
-			for y := 0; y < c.H(); y++ {
-				for x := 0; x < c.W(); x++ {
-					p := c.RGBAAt(x, y)
-					if p == (color.RGBA{A: 255}) {
-						i := y*c.W() + x
-						if !covered[i] {
-							covered[i] = true
-							remaining--
+			a.paintSaver(c) // takes the picture and starts the levels
+			a.SaverSettle()
+			for travel := 0; travel < c.W()+mask.Rect.Dx() && remaining > 0; travel++ {
+				c.Fill(c.Rect, color.RGBA{R: 200, G: 160, B: 120, A: 255})
+				a.saver.travel = travel
+				a.paintSaver(c)
+				for y := 0; y < c.H(); y++ {
+					for x := 0; x < c.W(); x++ {
+						p := c.RGBAAt(x, y)
+						if p == (color.RGBA{A: 255}) {
+							i := y*c.W() + x
+							if !covered[i] {
+								covered[i] = true
+								remaining--
+							}
+						} else if isGround(p) {
+							continue
+						} else if x0 := saverOrigin(travel, c.W(), mask.Rect.Dx()); x < x0 || mask.Pix[y*mask.Stride+(x-x0)%mask.Rect.Dx()] == 0 || mask.Pix[y*mask.Stride+(x-x0)%mask.Rect.Dx()] == saverInk {
+							t.Fatalf("pixel not black, dimmed or a lit outline: %v", p)
 						}
-					} else if isGround(p) {
-						continue
-					} else if x0 := saverOrigin(travel, c.W(), mask.Rect.Dx()); x < x0 || mask.Pix[y*mask.Stride+(x-x0)%mask.Rect.Dx()] == 0 || mask.Pix[y*mask.Stride+(x-x0)%mask.Rect.Dx()] == saverInk {
-						t.Fatalf("pixel not black, dimmed or a lit outline: %v", p)
 					}
 				}
 			}
-		}
-		if remaining != 0 {
-			t.Fatalf("rotation %v: %d pixels never swept black", rot, remaining)
-		}
-		// Include the physical frame bounds after tate rotation.
-		physical := image.NewRGBA(image.Rect(0, 0, 320, 240))
-		if got := gfx.RotateRect(physical, c.RGBA, c.Rect, rot); got != physical.Rect {
-			t.Fatalf("saver left physical margins uncovered: %v", got)
+			if remaining != 0 {
+				t.Fatalf("rotation %v: %d pixels never swept black", rot, remaining)
+			}
+			// Include the physical frame bounds after tate rotation.
+			physical := image.NewRGBA(image.Rect(0, 0, size[0], size[1]))
+			if got := gfx.RotateRect(physical, c.RGBA, c.Rect, rot); got != physical.Rect {
+				t.Fatalf("saver left physical margins uncovered: %v", got)
+			}
 		}
 	}
 }

@@ -199,9 +199,11 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	if h.cmd, err = mister.NewCmd(lg); err != nil {
 		lg.Printf("cmd: %v", err)
 	}
-	// Options -> Canvas: fit the display's integer scale (default) or the classic size
+	// Apply the saved picture area at startup; existing settings keep their size.
 	choose := mister.FitCanvas
-	if h.settings.Canvas == "320x240" {
+	if h.settings.Canvas == "full" {
+		choose = mister.FullCanvas
+	} else if h.settings.Canvas == "320x240" {
 		choose = func(int, int) (int, int) { return 320, 240 }
 	}
 	if h.fb, err = mister.OpenFB(h.cmd, choose, lg); err != nil {

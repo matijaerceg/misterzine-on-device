@@ -139,7 +139,7 @@ type Config struct {
 	// ListLayout is the main view's arrangement: "list" (default), "split"
 	// or "picture" (see Layout.Style).
 	ListLayout string
-	// Canvas is Options -> Canvas, "fit" (default) or "320x240"; the host
+	// Canvas is Options -> Canvas, "fit" (default), "full" or "320x240"; the host
 	// applies it at the next start, the app only shows and saves it.
 	Canvas string
 	// MenuButton is Options -> Menu button: what the pad's MiSTer menu (OSD)
@@ -474,10 +474,10 @@ func (a *App) MenuButton() string {
 	return "options"
 }
 
-// Canvas is the Options -> Canvas choice: "fit" or "320x240".
+// Canvas is the Options -> Canvas choice: "fit", "full" or "320x240".
 func (a *App) Canvas() string {
-	if a.cfg.Canvas == "320x240" {
-		return "320x240"
+	if a.cfg.Canvas == "320x240" || a.cfg.Canvas == "full" {
+		return a.cfg.Canvas
 	}
 	return "fit"
 }

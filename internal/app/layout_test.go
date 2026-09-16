@@ -61,3 +61,27 @@ func TestListLayouts(t *testing.T) {
 		t.Fatal("A on the layout row")
 	}
 }
+
+func TestFullDisplayLayouts(t *testing.T) {
+	for _, size := range [][2]int{{480, 270}, {270, 480}, {640, 360}, {360, 640}, {512, 288}, {288, 512}, {683, 384}, {384, 683}, {688, 288}, {288, 688}} {
+		for _, inset := range []int{0, 15, 40} {
+			for _, style := range listLayouts {
+				l := NewLayout(size[0], size[1], inset, inset, fonts.Body(), fonts.NarrowTall().W, 5, style)
+				if !l.Pane.In(l.Body) || !l.List.In(l.Body) || !l.Thumb.In(l.Pane) || l.List.Overlaps(l.Pane) || l.Lines < 4 {
+					t.Fatalf("%v inset %d %s: invalid layout %+v", size, inset, style, l)
+				}
+				if l.Portrait && style == "split" && l.Pane.Max.Y-l.Thumb.Max.Y-3 < paneTextH {
+					t.Fatalf("no fallback caption room: %+v", l)
+				}
+				if !l.Portrait && style == "split" && (!l.PaneText.In(l.Pane) || l.PaneText.Dy() < paneTextH) {
+					t.Fatalf("metadata clipped: %+v", l)
+				}
+			}
+		}
+	}
+	classic := NewLayout(270, 360, 15, 15, fonts.Body(), fonts.NarrowTall().W, 5, "list")
+	full := NewLayout(270, 480, 15, 15, fonts.Body(), fonts.NarrowTall().W, 5, "list")
+	if full.Lines <= classic.Lines {
+		t.Fatal("full display must add tate rows")
+	}
+}
