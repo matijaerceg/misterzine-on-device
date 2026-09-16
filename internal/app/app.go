@@ -91,7 +91,8 @@ type Config struct {
 	// Launcher reports whether the main-menu launcher is enabled (nil = unsupported).
 	Launcher func() bool
 	// Scroll is the held-scrolling speed in rows per second: 20, 30, 60.
-	Scroll string
+	Scroll               string
+	SmoothScrollDisabled bool
 	// HoldDelay is the navigation repeat delay in milliseconds: 200, 300, 500.
 	HoldDelay int
 	// Screensaver is the idle timeout: "off", "1", "2", "5", "10" minutes.
@@ -905,7 +906,7 @@ func (a *App) Frame(now time.Time) bool {
 		if a.act(k) {
 			changed = true
 		}
-		if oldScreen == ScreenList && a.screen == ScreenList && (k == platform.KeyUp || k == platform.KeyDown) && a.rep.every > 1 {
+		if oldScreen == ScreenList && a.screen == ScreenList && (k == platform.KeyUp || k == platform.KeyDown) && a.rep.every > 1 && a.SmoothScrolling() {
 			a.listMotion = listMotion{offset: (a.top - oldTop) * a.lay.Line, frames: a.rep.every}
 		}
 	}

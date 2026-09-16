@@ -445,6 +445,10 @@ screenshots match, lettering runs instead and the Preview help explains why.
   the button for two seconds quits as well, so the way out is always there.
   Keyboard F12 and the board's button still quit.
 - **Scroll speed:** 20, 30 or 60 rows/pages per second once a hold repeats.
+- **Smooth scrolling:** shown beneath Scroll speed at 20 or 30 Hz. On (default)
+  adds intermediate list movement; off moves whole rows. Both choices animate
+  in the preview. Releasing finishes the current step. The choice is saved
+  even when 60 Hz hides it.
 - **Hold delay:** short 200 ms, normal 300 ms (default), or long 500 ms before
   navigation repeats. Artwork and calibration retain their own timing.
 - **Main menu shortcut:** off removes the menu entry and boot hook. If the

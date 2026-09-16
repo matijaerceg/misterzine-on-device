@@ -227,7 +227,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     for inset in (15, 40):
         scenarios.append([*rotation, "-inset", str(inset), "-out", f"out/option-samples-{orientation}-{inset}", "-script",
                           "back; home; pagedown; right; down*7; shot font; left; shot font-narrow; left; shot font-normal; "
-                          "home; pagedown*3; right; down*4; shot speed; wait 200; shot speed-moving; down; shot delay; "
+                          "home; pagedown*3; right; down*4; shot speed; wait 200; shot speed-moving; down; shot smooth-on; wait 17; shot smooth-moving; left; shot smooth-off; down; shot delay; "
                           "wait 250; shot delay-short; wait 400; shot delay-reverse; down; shot dismissed"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"

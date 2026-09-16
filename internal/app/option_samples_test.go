@@ -71,3 +71,53 @@ func TestOptionSampleScheduling(t *testing.T) {
 		t.Fatal("clock not cleared")
 	}
 }
+
+func TestSmoothScrollOption(t *testing.T) {
+	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest(nil, "", time.Now()), nil)
+	a.screen = ScreenOptions
+	for _, speed := range []string{"20", "30", "60", "30"} {
+		a.cfg.Scroll = speed
+		a.buildPanel()
+		expandOptionsForTest(a)
+		found := false
+		for i, e := range a.panel.entries {
+			if e.kind != "smooth-scroll" {
+				continue
+			}
+			found = true
+			if !e.child || i == 0 || a.panel.entries[i-1].kind != "scroll" {
+				t.Fatal("not a child of speed")
+			}
+			a.panel.cursor = i
+			a.stepValue(-1)
+			if a.SmoothScrolling() {
+				t.Fatal("toggle failed")
+			}
+			if !a.OptionSamplesRunning() {
+				t.Fatal("samples not animated")
+			}
+		}
+		if found != (speed != "60") {
+			t.Fatal("wrong visibility", speed)
+		}
+	}
+	if a.SmoothScrolling() {
+		t.Fatal("hidden setting lost")
+	}
+}
+
+func TestSmoothSampleFrames(t *testing.T) {
+	for _, speed := range []string{"20", "30"} {
+		pace := scrollPace(speed)
+		every := int(pace / frameDur)
+		for frame := 0; frame < 12; frame++ {
+			at := time.Duration(frame) * frameDur
+			if got := smoothSampleTravel(at, pace, true, 12); got != frame*12/every {
+				t.Fatal("uneven smooth travel")
+			}
+			if got := smoothSampleTravel(at, pace, false, 12); got != frame/every*12 {
+				t.Fatal("off sample interpolated")
+			}
+		}
+	}
+}

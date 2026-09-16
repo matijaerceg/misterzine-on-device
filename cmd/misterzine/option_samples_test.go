@@ -34,6 +34,7 @@ func TestOptionPreviewExitPaintsBeforeWaitingForMoreInput(t *testing.T) {
 				tap(platform.KeyDown)
 			}
 			if holdDelay {
+				tap(platform.KeyDown) // smooth scrolling
 				tap(platform.KeyDown)
 			}
 			if !a.OptionSamplesRunning() {

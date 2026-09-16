@@ -90,3 +90,19 @@ func TestListScrollCancellation(t *testing.T) {
 		t.Fatal("navigation retained motion")
 	}
 }
+
+func TestDisabledListScroll(t *testing.T) {
+	rows := make([]data.Row, 100)
+	for i := range rows {
+		rows[i] = data.Row{K: fmt.Sprint(i), Title: fmt.Sprint(i), Base: "Arcade"}
+	}
+	now := time.Now()
+	a := New(Config{PhysW: 320, PhysH: 240, Scroll: "20", SmoothScrollDisabled: true}, data.Ingest(rows, "", now), nil)
+	a.cursor = 40
+	a.top = centeredTop(a.screenLine(a.cursor), a.totalLines(), a.lay.Lines)
+	a.rep.press(platform.KeyDown, now)
+	a.Frame(now.Add(time.Second))
+	if a.cursor != 41 || a.ListScrollRunning() {
+		t.Fatal("disabled smoothing changed navigation")
+	}
+}

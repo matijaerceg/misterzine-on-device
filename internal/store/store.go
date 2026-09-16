@@ -16,33 +16,34 @@ import (
 
 // Settings are the user's device settings.
 type Settings struct {
-	TransitionsDisabled bool          `json:"transitions_disabled,omitempty"`
-	ShowNonArcade       bool          `json:"show_non_arcade"`
-	ArcadeIntroPending  bool          `json:"arcade_intro_pending"`
-	ShowDeprecated      bool          `json:"show_deprecated"`
-	Schema              int           `json:"schema"`
-	Rotation            string        `json:"rotation"` // auto, left, right, off
-	FollowRotation      bool          `json:"follow_ini_rotation"`
-	FilterRotation      bool          `json:"filter_ini_rotation"`
-	InstalledOnly       bool          `json:"installed_sources_only"` // Options -> Sources: installed only
-	Inset               int           `json:"inset"`
-	Prefetch            bool          `json:"prefetch"`
-	Scroll              string        `json:"scroll"` // rows per second: 20, 30, 60
-	HoldDelay           int           `json:"hold_delay_ms"`
-	SaverDisabled       bool          `json:"screensaver_disabled"`
-	Screensaver         string        `json:"screensaver_minutes"`
-	SaverStyle          string        `json:"screensaver_style"`      // word (default: the lettering) or shots
-	SaverDim            string        `json:"screensaver_dim"`        // percentage brightness: 33 (default) or 66
-	SaverBright         string        `json:"screensaver_brightness"` // the shots: half (default) or full
-	SaverCard           bool          `json:"screensaver_on_card"`
-	SaverRotation       bool          `json:"screensaver_match_rotation"`
-	SaverFavorites      bool          `json:"screensaver_favorites"`
-	SaverResolution     string        `json:"screensaver_resolution"`
-	SaverInfo           string        `json:"screensaver_info"` // the shots' caption: full (default), title or none
-	RememberSort        bool          `json:"remember_sort"`
-	LastSort            data.SortMode `json:"last_sort"`
-	DefaultSort         data.SortMode `json:"default_sort"`
-	ViewsOff            []string      `json:"views_off"` // Options -> Views: the list orders left out of the Y cycle, by name (updated, debut, year, alphabetical, maker, favorites, recents)
+	SmoothScrollDisabled bool          `json:"smooth_scroll_disabled,omitempty"`
+	TransitionsDisabled  bool          `json:"transitions_disabled,omitempty"`
+	ShowNonArcade        bool          `json:"show_non_arcade"`
+	ArcadeIntroPending   bool          `json:"arcade_intro_pending"`
+	ShowDeprecated       bool          `json:"show_deprecated"`
+	Schema               int           `json:"schema"`
+	Rotation             string        `json:"rotation"` // auto, left, right, off
+	FollowRotation       bool          `json:"follow_ini_rotation"`
+	FilterRotation       bool          `json:"filter_ini_rotation"`
+	InstalledOnly        bool          `json:"installed_sources_only"` // Options -> Sources: installed only
+	Inset                int           `json:"inset"`
+	Prefetch             bool          `json:"prefetch"`
+	Scroll               string        `json:"scroll"` // rows per second: 20, 30, 60
+	HoldDelay            int           `json:"hold_delay_ms"`
+	SaverDisabled        bool          `json:"screensaver_disabled"`
+	Screensaver          string        `json:"screensaver_minutes"`
+	SaverStyle           string        `json:"screensaver_style"`      // word (default: the lettering) or shots
+	SaverDim             string        `json:"screensaver_dim"`        // percentage brightness: 33 (default) or 66
+	SaverBright          string        `json:"screensaver_brightness"` // the shots: half (default) or full
+	SaverCard            bool          `json:"screensaver_on_card"`
+	SaverRotation        bool          `json:"screensaver_match_rotation"`
+	SaverFavorites       bool          `json:"screensaver_favorites"`
+	SaverResolution      string        `json:"screensaver_resolution"`
+	SaverInfo            string        `json:"screensaver_info"` // the shots' caption: full (default), title or none
+	RememberSort         bool          `json:"remember_sort"`
+	LastSort             data.SortMode `json:"last_sort"`
+	DefaultSort          data.SortMode `json:"default_sort"`
+	ViewsOff             []string      `json:"views_off"` // Options -> Views: the list orders left out of the Y cycle, by name (updated, debut, year, alphabetical, maker, favorites, recents)
 	// OpenAtBoot and ReturnAfterGame are carried out by the resident menu
 	// launcher (misterzine launcher watch), which reads this file itself.
 	OpenAtBoot      bool   `json:"open_at_boot"`      // Options -> Open at boot: pick the menu entry once Main's menu is up

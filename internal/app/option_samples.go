@@ -15,7 +15,7 @@ type optionSampleClock struct {
 func (a *App) animatedOption() string {
 	if a.screen == ScreenOptions && !a.saver.active && a.panel.cursor < len(a.panel.entries) {
 		k := a.panel.entries[a.panel.cursor].kind
-		if k == "scroll" || k == "hold-delay" {
+		if k == "scroll" || k == "smooth-scroll" || k == "hold-delay" {
 			return k
 		}
 	}
@@ -79,6 +79,10 @@ func sampleListSelection(elapsed, pace, delay time.Duration, rows int) int {
 }
 
 func (a *App) paintOptionSamples(c *gfx.Canvas, area image.Rectangle, e panelEntry) {
+	if e.kind == "smooth-scroll" {
+		a.paintSmoothScrollSamples(c, area, e)
+		return
+	}
 	c.Fill(area, gen.Eva.Surface)
 	c.Box(area, gen.Eva.Line)
 	if e.kind != "title-font" && a.optionSamples.kind != e.kind {
@@ -129,5 +133,46 @@ func (a *App) paintOptionSamples(c *gfx.Canvas, area image.Rectangle, e panelEnt
 			}
 			c.Text(r.Min.X+1, y, a.sm, gfx.Fit(names[row], a.sm.Cols(r.Dx()-2)), textCol)
 		}
+	}
+}
+
+// Both samples share a clock and row speed; only the intermediate frames differ.
+func smoothSampleTravel(elapsed, pace time.Duration, smooth bool, line int) int {
+	frames := int(elapsed / frameDur)
+	every := max(1, int(pace/frameDur))
+	if smooth {
+		return frames * line / every
+	}
+	return frames / every * line
+}
+
+func (a *App) paintSmoothScrollSamples(c *gfx.Canvas, area image.Rectangle, e panelEntry) {
+	c.Fill(area, gen.Eva.Surface)
+	c.Box(area, gen.Eva.Line)
+	if a.optionSamples.kind != e.kind {
+		a.tickOptionSamples()
+	}
+	names := []string{"Galaga", "Pac-Man", "Out Run", "1942", "R-Type", "Gradius"}
+	for i, label := range []string{"off", "on"} {
+		cell := image.Rect(area.Min.X+3+i*(area.Dx()-6)/2, area.Min.Y+3, area.Min.X+3+(i+1)*(area.Dx()-6)/2-2, area.Max.Y-3)
+		c.Fill(cell, gen.Eva.Bg)
+		col := gen.Eva.Fg
+		if i == e.idx {
+			col = gen.Eva.Accent
+			c.Box(cell, col)
+		}
+		c.Text(cell.Min.X+(cell.Dx()-a.sm.Width(label))/2, cell.Min.Y+1, a.sm, label, col)
+		viewport := cell.Inset(2)
+		viewport.Min.Y += a.sm.H + 1
+		clipped := &gfx.Canvas{RGBA: c.Sub(viewport)}
+		line := a.lay.Line
+		travel := smoothSampleTravel(a.optionSamples.elapsed, scrollPace(a.ScrollSpeed()), i == 1, line)
+		first, offset := travel/line, travel%line
+		selectedY := viewport.Min.Y + max(0, (viewport.Dy()/line-1)/2)*line
+		clipped.Fill(image.Rect(viewport.Min.X, selectedY, viewport.Max.X, selectedY+line), gen.Eva.Surface)
+		for row, y := first, viewport.Min.Y-offset; y < viewport.Max.Y; row, y = row+1, y+line {
+			clipped.Text(viewport.Min.X+1, y+2, a.sm, gfx.Fit(names[row%len(names)], a.sm.Cols(viewport.Dx()-2)), gen.Eva.Fg)
+		}
+		c.Dirty(viewport)
 	}
 }

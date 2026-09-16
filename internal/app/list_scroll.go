@@ -23,3 +23,6 @@ func (a *App) ListScrollFrame(_ time.Time) bool {
 	m.dirty = true
 	return true
 }
+
+// SmoothScrolling is retained when the 60 Hz choice hides its control.
+func (a *App) SmoothScrolling() bool { return !a.cfg.SmoothScrollDisabled }

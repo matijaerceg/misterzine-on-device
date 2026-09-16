@@ -488,6 +488,17 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "Credits", kind: "credits"},
 		{text: "Quit MisterZine", kind: "quit"},
 	}...)
+	if a.ScrollSpeed() != "60" {
+		for i, e := range E {
+			if e.kind == "scroll" {
+				child := panelEntry{text: "Smooth scrolling", kind: "smooth-scroll", child: true,
+					vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.SmoothScrolling()],
+					help: "Smooth held list movement between rows. Release finishes the current step."}
+				E = append(E[:i+1], append([]panelEntry{child}, E[i+1:]...)...)
+				break
+			}
+		}
+	}
 	if !a.RememberSort() {
 		for i, e := range E {
 			if e.kind == "remember-sort" {
@@ -575,6 +586,9 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 		}
 		versionH := 3*font.H + 2
 		helpH := helpLines*(font.H+1) + 5
+		if a.screen == ScreenOptions && a.panel.cursor < len(a.panel.entries) && a.panel.entries[a.panel.cursor].kind == "smooth-scroll" {
+			helpH = max(helpH, 3*l.Line+font.H+11)
+		}
 		helpBox = image.Rect(l.Body.Min.X, l.Body.Max.Y-versionH-helpH, l.Body.Max.X, l.Body.Max.Y-versionH)
 		inner = image.Rect(l.Body.Min.X+2, l.Body.Min.Y+2, l.Body.Max.X-2, helpBox.Min.Y-2)
 		cols := font.Cols(l.Body.Dx() - 4)
@@ -756,7 +770,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 		c.Box(helpBox, gen.Eva.Line)
 		if p.cursor < len(p.entries) && a.screen == ScreenOptions && p.entries[p.cursor].kind == "list-layout" {
 			a.paintLayoutPreviews(c, helpBox)
-		} else if p.cursor < len(p.entries) && a.screen == ScreenOptions && (p.entries[p.cursor].kind == "title-font" || p.entries[p.cursor].kind == "scroll" || p.entries[p.cursor].kind == "hold-delay") {
+		} else if p.cursor < len(p.entries) && a.screen == ScreenOptions && (p.entries[p.cursor].kind == "title-font" || p.entries[p.cursor].kind == "scroll" || p.entries[p.cursor].kind == "smooth-scroll" || p.entries[p.cursor].kind == "hold-delay") {
 			a.paintOptionSamples(c, helpBox, p.entries[p.cursor])
 		} else if p.cursor < len(p.entries) && p.entries[p.cursor].help != "" {
 			hy := helpBox.Min.Y + 3
@@ -1013,6 +1027,8 @@ func (a *App) stepValue(d int) bool {
 		}
 	case "scroll":
 		a.cfg.Scroll = ScrollValues[i]
+	case "smooth-scroll":
+		a.cfg.SmoothScrollDisabled = i == 0
 	case "hold-delay":
 		a.cfg.HoldDelay = []int{200, 300, 500}[i]
 	case "remember-sort":
@@ -1244,7 +1260,7 @@ func (a *App) togglePanel() bool {
 		if !e.header {
 			f.Since = !f.Since
 		}
-	case "page-transitions", "rotation", "follow-rotation", "filter-rotation", "sources", "show-deprecated", "launcher", "scroll", "hold-delay", "remember-sort", "default-view", "prefetch", "title-font", "list-shot", "date-format", "list-layout", "button-labels", "ok-button":
+	case "page-transitions", "rotation", "follow-rotation", "filter-rotation", "sources", "show-deprecated", "launcher", "scroll", "smooth-scroll", "hold-delay", "remember-sort", "default-view", "prefetch", "title-font", "list-shot", "date-format", "list-layout", "button-labels", "ok-button":
 		return true // Left/Right pick these
 	case "inset":
 		a.screen = ScreenCalibrate

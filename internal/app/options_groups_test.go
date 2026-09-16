@@ -23,7 +23,7 @@ func TestOptionsGroups(t *testing.T) {
 		{gfx.SectionData, "Data", []string{"refresh", "update", "update-result", "rescan", "prefetch", "clearimg"}},
 		{gfx.SectionList, "List", []string{"show-non-arcade", "sources", "show-deprecated", "filter-rotation", "views", "remember-sort", "default-view", "title-font", "list-shot", "date-format", "list-layout"}},
 		{gfx.SectionDisplay, "Display", []string{"follow-rotation", "rotation", "saver-options", "inset", "canvas", "page-transitions"}},
-		{gfx.SectionControls, "Controls", []string{"button-labels", "ok-button", "menu-button", "scroll", "hold-delay"}},
+		{gfx.SectionControls, "Controls", []string{"button-labels", "ok-button", "menu-button", "scroll", "smooth-scroll", "hold-delay"}},
 		{gfx.SectionOperation, "Operation", []string{"launcher", "open-at-boot", "return-after-game", "troubleshooting", "credits", "quit"}},
 	}
 	var got []struct {
@@ -64,7 +64,7 @@ func TestOptionsGroups(t *testing.T) {
 	}
 	// the rows that only apply given the row above them are children, drawn
 	// a step in behind the branch mark; every other row sits flush
-	children := map[string]bool{"remember-sort": true, "default-view": true, "rotation": true, "open-at-boot": true, "return-after-game": true}
+	children := map[string]bool{"smooth-scroll": true, "remember-sort": true, "default-view": true, "rotation": true, "open-at-boot": true, "return-after-game": true}
 	a.cfg.SaverStyle = "shots"
 	seen := 0
 	for _, e := range a.optionsEntries() {
