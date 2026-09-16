@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## v1.0.39 — 2026-09-16
+
+- Smooth held list scrolling at 20 or 30 Hz with evenly spaced intermediate frames. Add a saved Smooth scrolling option below Scroll speed and animated comparisons; releasing finishes the current step without advancing the selection.
+- Keep Options hints and previews at a fixed four-line height in both orientations, avoiding a layout jump when selecting Smooth scrolling.
+- Add full-display HDMI layouts, apply picture changes live with framebuffer recovery, and improve widescreen artwork sizing and portrait captions.
+- Offer to restart MisterZine after Update All replaces the running program.
+- Add Penetron to the early-adopter credits.
+
 - Order HDMI picture choices as Full display, 320x240 and Fit 4:3. New installations default to Full display; existing installations retain their saved picture mode.
 
 - Make Options sections collapsible, with only Data expanded on startup. Match Filters' expansion arrows and controls, remember open sections during the session, and keep Troubleshooting, Credits and Quit outside the collapsible groups.
