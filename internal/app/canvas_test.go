@@ -9,6 +9,33 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 )
 
+func TestCanvasChoiceOrder(t *testing.T) {
+	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest(nil, "", time.Now()), nil)
+	a.openOptions()
+	expandOptionsForTest(a)
+	for i, e := range a.panel.entries {
+		if e.kind == "canvas" {
+			a.panel.cursor = i
+			break
+		}
+	}
+	for i, want := range []struct{ value, label string }{{"full", "full display"}, {"320x240", "320x240"}, {"fit", "fit 4:3"}} {
+		e := a.panel.entries[a.panel.cursor]
+		if a.Canvas() != want.value || e.idx != i || e.vals[i] != want.label {
+			t.Fatalf("choice %d: canvas=%q row=%+v", i, a.Canvas(), e)
+		}
+		if i < 2 && !a.stepValue(1) {
+			t.Fatal("cannot advance choice")
+		}
+	}
+	if a.stepValue(1) {
+		t.Fatal("advanced beyond Fit 4:3")
+	}
+	if !a.stepValue(-1) || !a.stepValue(-1) || a.Canvas() != "full" {
+		t.Fatal("cannot return to Full display")
+	}
+}
+
 func TestLiveCanvasKeepsNavigation(t *testing.T) {
 	for _, rot := range []gfx.Rotation{gfx.RotNone, gfx.RotLeft, gfx.RotRight} {
 		var requested string
@@ -27,7 +54,7 @@ func TestLiveCanvasKeepsNavigation(t *testing.T) {
 		}
 		a.EnablePageTransitions()
 		a.Paint()
-		a.stepValue(-1)
+		a.stepValue(1)
 		if requested != "320x240" {
 			t.Fatalf("host not notified: %q", requested)
 		}
@@ -56,7 +83,7 @@ func TestLiveCanvasKeepsNavigation(t *testing.T) {
 		}
 		requested = ""
 		a.RestoreCanvasChoice("full")
-		if requested != "" || a.Canvas() != "full" || a.panel.entries[a.panel.cursor].idx != 2 {
+		if requested != "" || a.Canvas() != "full" || a.panel.entries[a.panel.cursor].idx != 0 {
 			t.Fatal("rollback requested another switch or lost option")
 		}
 	}

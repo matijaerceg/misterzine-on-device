@@ -19,6 +19,31 @@ func writeSettings(t *testing.T, body string) string {
 	return p
 }
 
+func TestCanvasDefaultAndMigration(t *testing.T) {
+	s, err := LoadSettings(filepath.Join(t.TempDir(), "settings.json"))
+	if !os.IsNotExist(err) || s.Canvas != "full" || DefaultSettings().Canvas != "full" {
+		t.Fatalf("fresh install: canvas=%q err=%v", s.Canvas, err)
+	}
+	for _, tc := range []struct{ body, want string }{
+		{`{}`, "fit"}, {`{"canvas":""}`, "fit"}, {`{"canvas":null}`, "fit"},
+		{`{"canvas":"fit"}`, "fit"}, {`{"canvas":"320x240"}`, "320x240"},
+		{`{"canvas":"full"}`, "full"}, {`{"canvas":"unknown"}`, "fit"},
+	} {
+		p := writeSettings(t, tc.body)
+		s, err := LoadSettings(p)
+		if err != nil || s.Canvas != tc.want {
+			t.Fatalf("%s: %q, %v", tc.body, s.Canvas, err)
+		}
+		if err := Save(p, s); err != nil {
+			t.Fatal(err)
+		}
+		s, err = LoadSettings(p)
+		if err != nil || s.Canvas != tc.want {
+			t.Fatalf("restart %s: %q, %v", tc.body, s.Canvas, err)
+		}
+	}
+}
+
 func TestRememberSortMigration(t *testing.T) {
 	for _, tc := range []struct {
 		body     string

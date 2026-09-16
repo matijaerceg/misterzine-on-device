@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Order HDMI picture choices as Full display, 320x240 and Fit 4:3. New installations default to Full display; existing installations retain their saved picture mode.
+
 - Make Options sections collapsible, with only Data expanded on startup. Match Filters' expansion arrows and controls, remember open sections during the session, and keep Troubleshooting, Credits and Quit outside the collapsible groups.
 
 ## v1.0.38 — 2026-09-15

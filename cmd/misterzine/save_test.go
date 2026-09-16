@@ -254,7 +254,7 @@ func TestFiltersAutosaveAndRestore(t *testing.T) {
 func TestFullDisplayChoiceSurvivesRestart(t *testing.T) {
 	root := t.TempDir()
 	h := favoritesHost(root)
-	h.a = app.New(app.Config{PhysW: 320, PhysH: 240, RememberSort: true, SettingsChanged: func() { h.setDirty = true }}, data.Ingest(nil, "test", time.Now()), nil)
+	h.a = app.New(app.Config{PhysW: 320, PhysH: 240, Canvas: "fit", RememberSort: true, SettingsChanged: func() { h.setDirty = true }}, data.Ingest(nil, "test", time.Now()), nil)
 	now := time.Now()
 	tap := func(k platform.Key) {
 		now = now.Add(time.Second)
@@ -269,8 +269,8 @@ func TestFullDisplayChoiceSurvivesRestart(t *testing.T) {
 	for n := 0; n < 5; n++ {
 		tap(platform.KeyDown)
 	}
-	tap(platform.KeyRight)
-	tap(platform.KeyRight)
+	tap(platform.KeyLeft)
+	tap(platform.KeyLeft)
 	if h.a.Canvas() != "full" || !h.setDirty {
 		t.Fatal("full display selection not applied")
 	}

@@ -406,25 +406,23 @@ screenshots match, lettering runs instead and the Preview help explains why.
 
 - **Edit safe zone:** D-pad moves the top-right corner of the safe frame;
   Right/Up grows it and Left/Down shrinks it. B saves. Margins can reach 40 px.
-- **HDMI picture:** fit display by default: the picture is sized so that
-  MiSTer's integer scaling fills the screen height: 360x270 on 1080p, 340x256
-  on 1024x768, 400x300 on 1600x900, instead of 320x240 with bars above and
-  below. Text keeps its size; the list gains rows. CRT modes, 720p and 1440p
-  already fit and stay 320x240, so the setting changes nothing there. Choose
-  320x240 to keep the classic size on every display. Applies live after a brief
-  pause, keeping your place in Options. The additional **full display** choice
-  uses both HDMI dimensions
-  with square integer-scaled pixels: 480x270 on 1080p, or 270x480 as viewed
-  in tate. Tate gains list rows; horizontal layouts gain width. Screensavers
-  use the expanded canvas too. On widescreen horizontal displays, Picture
-  puts a narrow title list on the left, full-height artwork in the middle and
-  information on the far right. The narrow list keeps favorite stars and omits
-  the status/date columns. On 4:3 it retains the stacked arrangement. Tall tate
-  Split and Picture layouts reserve the full caption area below horizontal art.
-  Low-resolution CRT modes retain their existing
-  sizing. Unusual video timings that cannot fit a bounded canvas fall back to
-  fit display. If a live switch fails, MisterZine attempts to restore the previous
-  picture. Safe-zone margins still apply. Option names are provisional.
+- **HDMI picture:** Full display, 320x240, or Fit 4:3. **Full display** is
+  the default for new installations; existing installations keep their saved
+  choice. It uses both HDMI dimensions with square integer-scaled pixels:
+  480x270 on 1080p, or 270x480 as viewed in tate. **320x240** keeps the classic
+  canvas size. **Fit 4:3** keeps a 4:3 picture, sized to the HDMI height:
+  360x270 on 1080p, 340x256 on 1024x768, or 400x300 on 1600x900.
+  Changes apply live after a brief pause, keeping your place in Options.
+  Full display gives tate more rows and horizontal layouts more width;
+  screensavers use the expanded canvas too. On widescreen horizontal displays,
+  Picture puts a narrow title list on the left, full-height artwork in the
+  middle and information on the far right. The narrow list keeps favorite
+  stars and omits status/date columns. On 4:3 it retains the stacked arrangement.
+  Tall tate Split and Picture layouts reserve the full caption area below
+  horizontal art. Low-resolution CRT modes retain their existing sizing.
+  Unusual video timings that cannot fit a bounded canvas fall back to Fit 4:3.
+  If a live switch fails, MisterZine attempts to restore the previous picture.
+  Safe-zone margins still apply.
 - **Button labels:** how the legends name the pad's face buttons, in MiSTer's
   A B X Y order: A B X Y (default), B A Y X for an Xbox-lettered pad mapped by
   position, the PlayStation circle, cross, triangle and square by position, or

@@ -52,7 +52,7 @@ type Settings struct {
 	DateFormat      string `json:"date_format"`       // list dates: mm-dd (default), dd-mm, mon-d, d-mon, yymmdd
 	ListLayout      string `json:"list_layout"`       // main view: list (default), split or picture
 	ButtonLabels    string `json:"button_labels"`     // legend button names: mister (default), xbox, playstation or numbers
-	Canvas          string `json:"canvas"`            // Options -> Canvas: fit (default: sized to the display's integer scale), full (both display dimensions), or 320x240
+	Canvas          string `json:"canvas"`            // Options -> Canvas: full (default: both display dimensions), fit (4:3), or 320x240
 	MenuButton      string `json:"menu_button"`       // Options -> Menu button: options (default) or leave
 	InsetX          int    `json:"inset_x"`
 	InsetY          int    `json:"inset_y"`
@@ -64,7 +64,7 @@ type Settings struct {
 
 // DefaultSettings for a fresh install.
 func DefaultSettings() Settings {
-	return Settings{Schema: 1, Rotation: "auto", FollowRotation: true, Inset: 15, InsetX: 15, InsetY: 15, Scroll: "30", HoldDelay: 300, Screensaver: "1", SaverStyle: "word", SaverBright: "half", SaverInfo: "full", RememberSort: true, ViewsOff: []string{"recents"}}
+	return Settings{Schema: 1, Canvas: "full", Rotation: "auto", FollowRotation: true, Inset: 15, InsetX: 15, InsetY: 15, Scroll: "30", HoldDelay: 300, Screensaver: "1", SaverStyle: "word", SaverBright: "half", SaverInfo: "full", RememberSort: true, ViewsOff: []string{"recents"}}
 }
 
 // LoadSettings reads path over the defaults and migrates older files.
@@ -74,6 +74,8 @@ func LoadSettings(path string) (Settings, error) {
 	if err != nil {
 		return s, err
 	}
+	// Existing files predate the new default unless they explicitly chose full.
+	s.Canvas = "fit"
 	if err := json.Unmarshal(b, &s); err != nil {
 		bad := path + ".bad"
 		os.Rename(path, bad)
@@ -109,6 +111,9 @@ func LoadSettings(path string) (Settings, error) {
 // becomes two (when legacy says the file predates the split), and the
 // speed adjectives become rows per second.
 func (s *Settings) Migrate(legacy bool) {
+	if s.Canvas != "full" && s.Canvas != "320x240" {
+		s.Canvas = "fit" // includes old empty/invalid saved values
+	}
 	if !s.DefaultSort.Valid() {
 		s.DefaultSort = data.SortUpdated
 	}

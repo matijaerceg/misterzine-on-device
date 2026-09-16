@@ -461,8 +461,8 @@ func (a *App) optionsEntries() []panelEntry {
 	E = append(E, []panelEntry{
 		{text: "Edit safe zone", kind: "inset",
 			help: "Margin kept clear of the screen edge (overscan): now " + itoa(a.cfg.SafeInsetX) + " px at the sides, " + itoa(a.cfg.SafeInsetY) + " px top and bottom. A opens the frame; fit it just inside the picture."},
-		{text: "HDMI picture", kind: "canvas", vals: []string{"fit display", "320x240", "full display"}, idx: map[string]int{"fit": 0, "320x240": 1, "full": 2}[a.Canvas()],
-			help: "Fit display: 4:3, sized to HDMI height. 320x240: classic size. Full display: use both HDMI dimensions. Applies live."},
+		{text: "HDMI picture", kind: "canvas", vals: []string{"full display", "320x240", "fit 4:3"}, idx: map[string]int{"full": 0, "320x240": 1, "fit": 2}[a.Canvas()],
+			help: "Full display: use both HDMI dimensions. 320x240: classic size. Fit 4:3: keep a 4:3 picture sized to HDMI height. Applies live."},
 		{text: "Page transitions", kind: "page-transitions", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.PageTransitions()],
 			help: "On: softly wipe between pages. Off: change pages instantly. Saved for next time."},
 		spacer, group(gfx.SectionControls, "Controls"),
@@ -1080,7 +1080,7 @@ func (a *App) stepValue(d int) bool {
 	case "page-transitions":
 		a.cfg.TransitionsDisabled = i == 0
 	case "canvas":
-		a.cfg.Canvas = []string{"fit", "320x240", "full"}[i]
+		a.cfg.Canvas = []string{"full", "320x240", "fit"}[i]
 		if a.cfg.Action != nil {
 			a.cfg.Action("canvas", a.cfg.Canvas)
 		}
