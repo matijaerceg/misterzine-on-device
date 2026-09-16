@@ -411,8 +411,9 @@ screenshots match, lettering runs instead and the Preview help explains why.
   on 1024x768, 400x300 on 1600x900, instead of 320x240 with bars above and
   below. Text keeps its size; the list gains rows. CRT modes, 720p and 1440p
   already fit and stay 320x240, so the setting changes nothing there. Choose
-  320x240 to keep the classic size on every display. Applies when MisterZine
-  next starts. The additional **full display** choice uses both HDMI dimensions
+  320x240 to keep the classic size on every display. Applies live after a brief
+  pause, keeping your place in Options. The additional **full display** choice
+  uses both HDMI dimensions
   with square integer-scaled pixels: 480x270 on 1080p, or 270x480 as viewed
   in tate. Tate gains list rows; horizontal layouts gain width. Screensavers
   use the expanded canvas too. On widescreen horizontal displays, Picture
@@ -422,7 +423,8 @@ screenshots match, lettering runs instead and the Preview help explains why.
   Split and Picture layouts reserve the full caption area below horizontal art.
   Low-resolution CRT modes retain their existing
   sizing. Unusual video timings that cannot fit a bounded canvas fall back to
-  fit display. Safe-zone margins still apply. Option names are provisional.
+  fit display. If a live switch fails, MisterZine attempts to restore the previous
+  picture. Safe-zone margins still apply. Option names are provisional.
 - **Button labels:** how the legends name the pad's face buttons, in MiSTer's
   A B X Y order: A B X Y (default), B A Y X for an Xbox-lettered pad mapped by
   position, the PlayStation circle, cross, triangle and square by position, or

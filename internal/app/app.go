@@ -140,7 +140,7 @@ type Config struct {
 	// or "picture" (see Layout.Style).
 	ListLayout string
 	// Canvas is Options -> Canvas, "fit" (default), "full" or "320x240"; the host
-	// applies it at the next start, the app only shows and saves it.
+	// applies it live, the app shows and saves the selected choice.
 	Canvas string
 	// MenuButton is Options -> Menu button: what the pad's MiSTer menu (OSD)
 	// button does here, "options" (default) or "leave".
@@ -303,6 +303,31 @@ func (a *App) setRotation(rot gfx.Rotation) {
 
 // SetRotation switches orientation (settings / calibration).
 func (a *App) SetRotation(rot gfx.Rotation) { a.setRotation(rot) }
+
+// SetCanvasSize rebuilds display-dependent surfaces without losing navigation.
+func (a *App) SetCanvasSize(w, h int) {
+	a.SaverSettle()
+	a.saver = screensaver{lastInput: a.cfg.TimerNow()}
+	a.cfg.Images.SetPaused(false)
+	a.transition = pageTransition{enabled: a.transition.enabled}
+	a.invalidateDetailScroll()
+	a.splash = startupSplash{}
+	a.cfg.PhysW, a.cfg.PhysH = w, h
+	a.physical = image.NewRGBA(image.Rect(0, 0, w, h))
+	a.setRotation(a.rot)
+	switch a.screen {
+	case ScreenOptions, ScreenSaverOptions, ScreenViews, ScreenCredits, ScreenFilter:
+		a.buildPanel()
+	}
+}
+
+// RestoreCanvasChoice reverts a failed host display change without requesting it again.
+func (a *App) RestoreCanvasChoice(choice string) {
+	a.cfg.Canvas = choice
+	a.buildPanel()
+	a.all = true
+	a.settingsChanged()
+}
 
 // SetInset changes the safe-zone margins (physical horizontal, vertical).
 func (a *App) SetInset(x, y int) {

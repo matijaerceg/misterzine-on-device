@@ -100,6 +100,8 @@ type host struct {
 	updatePending                 bool
 	updateReadError               string // UI-owned; suppress repeated status-read diagnostics
 	updateRunning                 bool
+	canvasDue                     time.Time
+	appliedCanvas                 string
 	restartRequested              bool
 	troubleshooting               supportHost
 }
@@ -200,6 +202,10 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		lg.Printf("cmd: %v", err)
 	}
 	// Apply the saved picture area at startup; existing settings keep their size.
+	h.appliedCanvas = h.settings.Canvas
+	if h.appliedCanvas != "full" && h.appliedCanvas != "320x240" {
+		h.appliedCanvas = "fit"
+	}
 	choose := mister.FitCanvas
 	if h.settings.Canvas == "full" {
 		choose = mister.FullCanvas
@@ -290,6 +296,10 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		SettingsChanged: func() { h.setDirty = true },
 		Action: func(kind, arg string) {
 			lg.Printf("action: %s %s", kind, arg)
+			if kind == "canvas" {
+				h.canvasDue = time.Now().Add(200 * time.Millisecond)
+				return
+			}
 			if kind == "update-restart" {
 				h.requestUpdateRestart(arg)
 				return
@@ -392,6 +402,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 					"detail_frames": h.detailFrames,
 					"page_frames":   h.pageFrames, "page_transitions": h.a.PageTransitions(),
 					"version": buildinfo.String(), "screen": h.a.Screen().String(), "cursor": h.a.CursorKey(),
+					"canvas": h.a.Canvas(), "applied_canvas": h.appliedCanvas,
 					"sort": h.a.Sort().String(), "rows": len(h.a.Data().Rows), "fb": h.fb.Geometry().String(),
 					"search": h.a.Search(), "filters": h.a.Filters(), "rotation": h.a.Rotation().String(), "inset": fmt.Sprint(h.a.Inset()), "devices": h.input.Devices(),
 					"sysfs": mister.SysfsMode(), "uptime": time.Since(t0).String(), "frames": h.stats.String(), "cadence": h.stats.Cadence(), "saver": h.a.SaverStats(), "saver_blank_frames": h.saverBlankFrames, "saver_misses": h.saverMisses,
@@ -474,6 +485,9 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		var tick <-chan time.Time
 		next := h.a.NextTick()
 		wait := 250 * time.Millisecond
+		if !h.canvasDue.IsZero() {
+			wait = min(wait, time.Until(h.canvasDue))
+		}
 		if !next.IsZero() {
 			if d := time.Until(next); d < wait {
 				wait = d
@@ -515,6 +529,11 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			h.stop()
 			continue
 		case <-tick:
+		}
+		if h.canvasReady() && !h.stopRequested.Load() && h.launch == "" {
+			if !h.applyCanvasChange() {
+				return 3
+			}
 		}
 		h.a.Tick(time.Now())
 		h.present()
@@ -599,6 +618,9 @@ func (h *host) frameLoop() {
 		}
 	}()
 	for h.a.Repeating() {
+		if h.canvasReady() {
+			return
+		}
 		iters++
 		h.drainEvents()
 		select {
@@ -746,8 +768,11 @@ func (h *host) saverLoop() {
 }
 
 // pump serves what the main loop would between two saver frames, without
-// blocking; false means the app is stopping.
+// blocking; false yields to shutdown or a pending display change.
 func (h *host) pump() bool {
+	if h.canvasReady() {
+		return false
+	}
 	var imgReady, imgProgress <-chan struct{} // nil without a picture store (tests): never ready
 	if h.img != nil {
 		imgReady, imgProgress = h.img.Ready(), h.img.ProgressReady()
