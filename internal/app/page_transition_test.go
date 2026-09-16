@@ -349,6 +349,7 @@ func TestPageTransitionsOption(t *testing.T) {
 	if !a.PageTransitions() || !a.PageTransitionRunning() {
 		t.Fatal("transitions should default on")
 	}
+	expandOptionsForTest(a)
 	for i, e := range a.panel.entries {
 		if e.kind == "page-transitions" {
 			a.panel.cursor = i
@@ -368,6 +369,7 @@ func TestPageTransitionsOption(t *testing.T) {
 	}
 	a.openOptions()
 	a.Paint()
+	expandOptionsForTest(a)
 	for i, e := range a.panel.entries {
 		if e.kind == "page-transitions" {
 			a.panel.cursor = i

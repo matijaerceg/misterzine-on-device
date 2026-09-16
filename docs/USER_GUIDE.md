@@ -230,7 +230,7 @@ status describes installation and core version, not a guarantee of playability.
 ## Options
 
 Options is in five groups, each under a grey heading with a small mark and
-a rule: Data (a diskette: Refresh data now, Run Update All, Last update
+a rule and an expansion arrow: Data (a diskette: Refresh data now, Run Update All, Last update
 result, Rescan card, Prefetch shots, Clear image cache), List (stacked
 lines: Sources, Filter by rotation, Views (with Remember last view and its
 conditional Default view beneath it), Title font,
@@ -238,7 +238,12 @@ Art type, Date format, Layout), Display (a monitor: rotation,
 screensaver delay, style, brightness and info, safe zone, HDMI picture), Controls
 (an arcade stick: Button labels, OK button, Menu button, Scroll speed, Hold
 delay) and Operation (sliders: the main menu shortcut, Open at boot, Return
-after game, Troubleshooting, Credits, Quit). The headings cannot be selected.
+after game). Troubleshooting, Credits and Quit sit below the sections and
+are never hidden by collapsing one. Only Data starts expanded. Select a
+heading and press A to open or close it, or Right to open and Left to close.
+Several sections can stay open. MisterZine remembers their state during the
+session, including trips through Filters and subpages; restarting restores
+the default. Left/Right on a setting still changes its value.
 A row that only applies given the row above it (Rotation under Follow INI
 rotation, the screensaver's style, brightness and info, Open at boot and Return
 after game under the shortcut) sits a step in behind a small branch mark.
@@ -257,7 +262,7 @@ left, the way the list keeps its row; Filters opened from the list always
 starts at its top. Held
 scrolling stops at either end. Release and press Up again from the first item
 to wrap to Quit, or Down from Quit to wrap to the first item. L and R jump to
-the first row of the previous or next section (Data, List, Display, Controls,
+the heading of the previous or next section (Data, List, Display, Controls,
 Operation), stopping at either end; keyboard Home/End still go to the first
 and last row.
 

@@ -86,6 +86,7 @@ func TestOKButtonFollowsMiSTer(t *testing.T) {
 	}
 	// the override: A for this pad, saved by vendor_product, then back to auto
 	a.openPanel(ScreenOptions)
+	expandOptionsForTest(a)
 	for i, e := range a.panel.entries {
 		if e.kind == "ok-button" {
 			a.panel.cursor = i
@@ -104,6 +105,7 @@ func TestOKButtonFollowsMiSTer(t *testing.T) {
 	if lines := a.padLines(okTestPads()[1]); lines[len(lines)-1] != "  OK button: A (set in Options)" {
 		t.Fatalf("tester pad lines with override %q", lines)
 	}
+	expandOptionsForTest(a)
 	for i, e := range a.panel.entries {
 		if e.kind == "ok-button" {
 			a.panel.cursor = i

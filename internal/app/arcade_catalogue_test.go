@@ -50,6 +50,7 @@ func TestArcadeCatalogueScope(t *testing.T) {
 	}
 	a.SetSort(data.SortFavorites)
 	a.openPanel(ScreenOptions)
+	expandOptionsForTest(a)
 	for i, e := range a.panel.entries {
 		if e.kind == "show-non-arcade" {
 			a.panel.cursor = i

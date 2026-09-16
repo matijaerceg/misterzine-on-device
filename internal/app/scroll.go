@@ -7,9 +7,7 @@ func centeredTop(row, total, visible int) int {
 }
 
 // jumpPanelSection moves the cursor a section back or on (L and R, as
-// the list's letter jumps): in Filters to the section's heading, in
-// Options, whose headings are not selectable, to the section's first
-// row. From inside a section, back goes to the previous section, not to
+// the list's letter jumps): to the section heading in Filters and Options. From inside a section, back goes to the previous section, not to
 // the top of this one. Jumps stop at either end.
 func (a *App) jumpPanelSection(direction int) bool {
 	p := &a.panel

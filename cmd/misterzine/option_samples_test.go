@@ -26,6 +26,10 @@ func TestOptionPreviewExitPaintsBeforeWaitingForMoreInput(t *testing.T) {
 				a.Handle(platform.Event{Key: k, At: now})
 			}
 			tap(platform.KeyBack)
+			tap(platform.KeyPageDown)
+			tap(platform.KeyPageDown)
+			tap(platform.KeyPageDown)
+			tap(platform.KeyRight)
 			for i := 0; i < 60 && !a.OptionSamplesRunning(); i++ {
 				tap(platform.KeyDown)
 			}

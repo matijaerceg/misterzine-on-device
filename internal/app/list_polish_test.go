@@ -34,6 +34,7 @@ func TestListDateFormats(t *testing.T) {
 	}
 	wide := a.lay.TitleW
 	a.openPanel(ScreenOptions)
+	expandOptionsForTest(a)
 	for i, e := range a.panel.entries {
 		if e.kind == "date-format" {
 			a.panel.cursor = i
@@ -79,6 +80,7 @@ func TestThumbSlotPreference(t *testing.T) {
 		t.Fatal("preference not carried")
 	}
 	a.openPanel(ScreenOptions)
+	expandOptionsForTest(a)
 	for i, e := range a.panel.entries {
 		if e.kind == "list-shot" {
 			a.panel.cursor = i
@@ -124,6 +126,7 @@ func TestNarrowTitlesAndBetaSign(t *testing.T) {
 		t.Fatalf("narrow font fits %d characters, normal %d: want at least 15 percent more", len(narrow), len(normal))
 	}
 	a.openPanel(ScreenOptions)
+	expandOptionsForTest(a)
 	for i, e := range a.panel.entries {
 		if e.kind == "title-font" {
 			a.panel.cursor = i
@@ -139,6 +142,7 @@ func TestNarrowTitlesAndBetaSign(t *testing.T) {
 		t.Fatal("beta sign missing after a narrow title")
 	}
 	a.openPanel(ScreenOptions)
+	expandOptionsForTest(a)
 	for i, e := range a.panel.entries {
 		if e.kind == "title-font" {
 			a.panel.cursor = i
@@ -154,6 +158,7 @@ func TestNarrowTitlesAndBetaSign(t *testing.T) {
 		t.Fatal("beta sign missing after a normal title")
 	}
 	a.openPanel(ScreenOptions)
+	expandOptionsForTest(a)
 	for i, e := range a.panel.entries {
 		if e.kind == "title-font" {
 			a.panel.cursor = i

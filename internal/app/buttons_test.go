@@ -74,6 +74,7 @@ func TestButtonLabelsOption(t *testing.T) {
 	a := New(Config{PhysW: 320, PhysH: 240, Now: func() time.Time { return now }}, data.Ingest(rows, "", now), nil)
 	a.openPanel(ScreenOptions)
 	found := false
+	expandOptionsForTest(a)
 	for i, e := range a.panel.entries {
 		if e.kind == "button-labels" {
 			a.panel.cursor, found = i, true

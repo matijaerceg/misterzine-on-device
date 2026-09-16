@@ -26,6 +26,7 @@ func TestDeprecatedCataloguePreference(t *testing.T) {
 		t.Fatal("hidden favourite must be preserved")
 	}
 	a.openPanel(ScreenOptions)
+	expandOptionsForTest(a)
 	for i, e := range a.panel.entries {
 		if e.kind == "show-deprecated" {
 			a.panel.cursor = i
@@ -39,6 +40,7 @@ func TestDeprecatedCataloguePreference(t *testing.T) {
 	a.stepValue(-1)
 	a.filters = data.Filters{BaseOff: map[string]bool{"Console": true}}
 	a.openPanel(ScreenFilter)
+	expandOptionsForTest(a)
 	for i, e := range a.panel.entries {
 		if e.kind == "clear" {
 			a.panel.cursor = i

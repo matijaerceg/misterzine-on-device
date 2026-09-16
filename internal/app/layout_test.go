@@ -43,6 +43,7 @@ func TestListLayouts(t *testing.T) {
 	}
 	a.screen = ScreenOptions
 	a.buildPanel()
+	expandOptionsForTest(a)
 	for i, e := range a.panel.entries {
 		if e.kind == "list-layout" {
 			a.panel.cursor = i

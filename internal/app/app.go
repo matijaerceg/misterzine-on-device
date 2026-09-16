@@ -212,6 +212,7 @@ type App struct {
 	// where closing Options returns to (menu.go): the screen it was opened
 	// over, the row key Details or the artwork showed, and the Filters
 	// browsing state kept aside while Options uses the panel.
+	optionsOpen    map[string]bool // session-only expansion, separate from the shared panel
 	optionsFrom    Screen
 	optionsKey     string
 	filterHeld     *panelState

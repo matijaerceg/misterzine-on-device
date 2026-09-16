@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Make Options sections collapsible, with only Data expanded on startup. Match Filters' expansion arrows and controls, remember open sections during the session, and keep Troubleshooting, Credits and Quit outside the collapsible groups.
+
 ## v1.0.38 — 2026-09-15
 
 - Remove the pause when navigating away from the Scroll speed and Hold delay previews in Options. Draw the new selection before leaving the animation loop.

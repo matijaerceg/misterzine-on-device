@@ -124,7 +124,7 @@ func (a *App) buildPanel() {
 	}
 	switch a.screen {
 	case ScreenOptions:
-		a.panel.entries = a.optionsEntries()
+		a.panel.entries = a.visibleOptionsEntries()
 	case ScreenSaverOptions:
 		a.panel.entries = a.saverEntries()
 	case ScreenViews:
@@ -411,7 +411,7 @@ func (a *App) optionsEntries() []panelEntry {
 	// the list's group markers; Controls sits before Operation so the rows
 	// changed with the pad in hand come before the rarely touched ones
 	group := func(glyph, title string) panelEntry {
-		return panelEntry{text: title, glyph: glyph, header: true, info: true}
+		return panelEntry{text: title, glyph: glyph, header: true, kind: "options-section", value: title}
 	}
 	spacer := panelEntry{header: true, info: true}
 	E := []panelEntry{group(gfx.SectionData, "Data"),
@@ -478,6 +478,7 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "On: once the MiSTer menu is up after power-on or reboot, MisterZine opens as if picked from it. A bootcore in the INI wins. Needs the shortcut."},
 		{text: "Return after game", kind: "return-after-game", child: true, vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ReturnAfterGame], disabled: launcherIdx == 0,
 			help: "On: when a game started here exits to the MiSTer menu, MisterZine reopens on that game. Not after quitting with the Menu button. Needs the shortcut."},
+		spacer,
 		{text: "Troubleshooting", kind: "troubleshooting",
 			help: "Test your Start button or game launching. Results stay on screen for a photo; no keyboard or log files needed."},
 		{text: "Credits", kind: "credits"},
@@ -630,11 +631,19 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			c.Fill(r, gen.Eva.Surface)
 		}
 		switch {
-		case e.header && e.info && e.glyph != "":
+		case e.header && e.glyph != "":
 			// an Options section: the mark, the title, and a rule to the
 			// gutter after a space, as the list's group markers
-			title := gfx.Fit(e.glyph+" "+e.text, cols)
-			w := c.Text(inner.Min.X+2, y, font, title, gen.Eva.Muted)
+			arrow := gfx.ArrowDown
+			if !a.optionSectionOpen(e.value) {
+				arrow = gfx.ArrowRight
+			}
+			title := gfx.Fit(arrow+" "+e.glyph+" "+e.text, cols)
+			col := gen.Eva.Muted
+			if n == p.cursor {
+				col = gen.Eva.Accent
+			}
+			w := c.Text(inner.Min.X+2, y, font, title, col)
 			if x := inner.Min.X + 2 + w + font.W; x < edge {
 				c.HLine(x, edge-1, y+font.H/2, gen.Eva.Line)
 			}
@@ -773,12 +782,18 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 // optionsHint is the Options legend for the row under the cursor: only the
 // controls that do something there. A choice row names the arrow that can
 // still move (both in the middle, one at either end); a row A acts on says
-// what A does; a greyed row, or a header, leaves only Back.
+// what A does; headings offer Open/Close and greyed rows leave only Back.
 func (a *App) optionsHint() string {
 	p := &a.panel
 	var parts []string
 	if p.cursor < len(p.entries) {
 		e := p.entries[p.cursor]
+		if e.kind == "options-section" {
+			if a.optionSectionOpen(e.value) {
+				return "A " + gfx.ArrowLeft + " Close  B Back"
+			}
+			return "A " + gfx.ArrowRight + " Open  B Back"
+		}
 		if len(e.vals) > 1 && !e.disabled {
 			arrows := gfx.ArrowLeft + " " + gfx.ArrowRight
 			if e.idx <= 0 {
@@ -888,6 +903,9 @@ func (a *App) actPanel(k platform.Key) bool {
 			}
 		}
 	case platform.KeyLeft:
+		if a.onOptionsSection() {
+			return a.expandOptionsSection(false)
+		}
 		if a.screen == ScreenOptions || a.screen == ScreenSaverOptions {
 			return a.stepValue(-1)
 		}
@@ -896,6 +914,9 @@ func (a *App) actPanel(k platform.Key) bool {
 		}
 		return a.expandFilterSection(false)
 	case platform.KeyRight:
+		if a.onOptionsSection() {
+			return a.expandOptionsSection(true)
+		}
 		if a.screen == ScreenOptions || a.screen == ScreenSaverOptions {
 			return a.stepValue(1)
 		}
@@ -1080,6 +1101,9 @@ func (a *App) togglePanel() bool {
 		return false
 	}
 	e := p.entries[p.cursor]
+	if a.onOptionsSection() {
+		return a.expandOptionsSection(!a.optionSectionOpen(e.value))
+	}
 	if a.screen == ScreenFilter && e.header && !e.info && e.kind != "" {
 		return a.toggleFilterSection()
 	}

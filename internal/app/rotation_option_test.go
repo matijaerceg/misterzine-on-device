@@ -19,6 +19,7 @@ func TestDisablingFollowKeepsCurrentOrientation(t *testing.T) {
 		SettingsChanged: func() { changes++ },
 	}, data.Ingest(nil, "", time.Now()), nil)
 	a.openPanel(ScreenOptions)
+	expandOptionsForTest(a)
 	for i, e := range a.panel.entries {
 		if e.kind == "follow-rotation" {
 			a.panel.cursor = i
@@ -39,6 +40,7 @@ func TestRotationRowDisabledWhileFollowing(t *testing.T) {
 	a := New(Config{PhysW: 320, PhysH: 240, Rotation: gfx.RotNone, FollowRotation: true}, data.Ingest(nil, "", time.Now()), nil)
 	a.openPanel(ScreenOptions)
 	idx := map[string]int{}
+	expandOptionsForTest(a)
 	for i, e := range a.panel.entries {
 		idx[e.kind] = i
 	}

@@ -59,6 +59,7 @@ func TestScreensaverFiltersCombine(t *testing.T) {
 func TestScreensaverSubpage(t *testing.T) {
 	a, _, clock, _ := shotsApp()
 	a.openOptions()
+	expandOptionsForTest(a)
 	for i, e := range a.panel.entries {
 		if e.kind == "saver-options" {
 			a.panel.cursor = i

@@ -144,6 +144,7 @@ func TestRotationKeysTurnImageInPressedDirection(t *testing.T) {
 	} {
 		a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest(nil, "test", time.Now()), nil)
 		a.openPanel(ScreenOptions)
+		expandOptionsForTest(a)
 		for i, entry := range a.panel.entries {
 			if entry.kind == "rotation" {
 				a.panel.cursor = i

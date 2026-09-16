@@ -36,7 +36,9 @@ func TestListPreferencesPersist(t *testing.T) {
 		h.a.Handle(platform.Event{Key: key, At: at})
 	}
 	tap(platform.KeyBack)
-	for i := 0; i < 12; i++ {
+	tap(platform.KeyPageDown)
+	tap(platform.KeyRight)
+	for i := 0; i < 7; i++ {
 		tap(platform.KeyDown)
 	}
 	tap(platform.KeyLeft) // Title font: narrow, in the List group after Recents view
@@ -98,7 +100,9 @@ func TestArcadePreferenceAndIntroPersistThroughHost(t *testing.T) {
 	}
 	for _, show := range []bool{true, false} {
 		tap(platform.KeyBack)
-		for i := 0; i < 6; i++ {
+		tap(platform.KeyPageDown)
+		tap(platform.KeyRight)
+		for i := 0; i < 1; i++ {
 			tap(platform.KeyDown)
 		}
 		if show {

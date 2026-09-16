@@ -65,6 +65,7 @@ func TestViewsPageTogglesAndKeepsTheLastOne(t *testing.T) {
 	a, tap := viewsApp("recents")
 	tap(platform.KeyBack) // Options
 	row := -1
+	expandOptionsForTest(a)
 	for i, e := range a.panel.entries {
 		if e.kind == "views" {
 			row = i

@@ -104,6 +104,7 @@ func TestOptionsGroups(t *testing.T) {
 	// the mark is drawn in the headings' grey and the name in the row's
 	// colour two cells in, so the selected child row reads its mark grey
 	a.openPanel(ScreenOptions)
+	expandOptionsForTest(a)
 	for i, e := range a.panel.entries {
 		if e.kind == "rotation" {
 			a.panel.cursor = i

@@ -38,6 +38,7 @@ func TestOptionSampleScheduling(t *testing.T) {
 	a := New(Config{PhysW: 320, PhysH: 240, TimerNow: func() time.Time { return now }}, data.Ingest(nil, "", now), nil)
 	a.screen = ScreenOptions
 	a.buildPanel()
+	expandOptionsForTest(a)
 	for i, e := range a.panel.entries {
 		if e.kind == "scroll" {
 			a.panel.cursor = i

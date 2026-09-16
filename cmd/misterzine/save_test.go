@@ -56,7 +56,9 @@ func TestSortAutosaveRestoreAndOption(t *testing.T) {
 		t.Fatal("alphabetical restart did not start at its first title")
 	}
 	tap(platform.KeyBack)
-	for i := 0; i < 11; i++ {
+	tap(platform.KeyPageDown)
+	tap(platform.KeyRight)
+	for i := 0; i < 6; i++ {
 		tap(platform.KeyDown)
 	}
 	tap(platform.KeyLeft) // Remember last view: off, in the List group
@@ -68,7 +70,9 @@ func TestSortAutosaveRestoreAndOption(t *testing.T) {
 		t.Fatal("disabled preference did not restart in latest updates")
 	}
 	tap(platform.KeyBack)
-	for i := 0; i < 12; i++ {
+	tap(platform.KeyPageDown)
+	tap(platform.KeyRight)
+	for i := 0; i < 7; i++ {
 		tap(platform.KeyDown)
 	}
 	tap(platform.KeyRight) // Default view: MiSTer debut.
@@ -188,7 +192,10 @@ func TestRotationIntentSurvivesSaves(t *testing.T) {
 				h.a.Handle(platform.Event{Key: k, At: now.Add(time.Millisecond)})
 			}
 			tap(platform.KeyBack) // Options
-			for n := 0; n < 20; n++ {
+			tap(platform.KeyPageDown)
+			tap(platform.KeyPageDown)
+			tap(platform.KeyRight)
+			for n := 0; n < 5; n++ {
 				tap(platform.KeyDown) // HDMI picture: a value row with no rotation in it
 			}
 			tap(platform.KeyRight)
@@ -198,7 +205,9 @@ func TestRotationIntentSurvivesSaves(t *testing.T) {
 			h.saveAll(false)
 			check("auto")
 			tap(platform.KeyHome)
-			for n := 0; n < 17; n++ {
+			tap(platform.KeyPageDown)
+			tap(platform.KeyPageDown)
+			for n := 0; n < 2; n++ {
 				tap(platform.KeyDown) // Rotation follows the Data and List groups and Follow INI rotation
 			}
 			if rotation == gfx.RotLeft {

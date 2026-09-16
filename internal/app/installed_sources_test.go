@@ -71,6 +71,7 @@ func TestInstalledSourcesLeaveEveryView(t *testing.T) {
 	a.screen = ScreenList
 	a.openPanel(ScreenOptions)
 	row := -1
+	expandOptionsForTest(a)
 	for i, e := range a.panel.entries {
 		if e.kind == "sources" {
 			row = i

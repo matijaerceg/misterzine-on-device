@@ -22,6 +22,7 @@ func TestOptionsHintFollowsTheRow(t *testing.T) {
 		a.openPanel(ScreenOptions)
 		both, left, right := gfx.ArrowLeft+" "+gfx.ArrowRight+" Change", gfx.ArrowLeft+" Change", gfx.ArrowRight+" Change"
 		seen := map[string]bool{}
+		expandOptionsForTest(a)
 		for i, e := range a.panel.entries {
 			if e.header {
 				continue

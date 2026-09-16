@@ -36,6 +36,7 @@ func TestStrictRotationFilterAndManualRestoration(t *testing.T) {
 			t.Fatal("counts ignored rotation", counts)
 		}
 		a.openPanel(ScreenOptions)
+		expandOptionsForTest(a)
 		for i, e := range a.panel.entries {
 			if e.kind == "filter-rotation" {
 				a.panel.cursor = i
