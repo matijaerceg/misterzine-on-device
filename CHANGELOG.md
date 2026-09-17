@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## v1.0.40 — 2026-09-17
+
+- Animate layout changes made with Select+Y in the main view, including the list and artwork regions and their divider, in both orientations. Keep the divider visible throughout each transition.
+- Simplify Options: put Sources first in List and remove the Layout setting; Select+Y remains the way to change layouts.
+- Rename Edit safe zone to Safe zone and mark rows that open another screen with an arrow: Views, Safe zone, Screensaver, Run Update All, Rescan card and Last Update All result.
+- Indent Clear image cache and Last Update All result beneath their related options.
+
 ## v1.0.39 — 2026-09-16
 
 - Smooth held list scrolling at 20 or 30 Hz with evenly spaced intermediate frames. Add a saved Smooth scrolling option below Scroll speed and animated comparisons; releasing finishes the current step without advancing the selection.
