@@ -173,12 +173,24 @@ reads with A and B swapped for that pad. Options -> OK button shows the
 choice for the pad in your hand and can override it, per pad.
 
 Hold Select on the list (the legend's last entry, Select +, is the
-reminder) and the legend changes: Y cycles Layout, X switches Art type, saved exactly as from Options, and A stars or unstars
+reminder) and the legend changes: Y cycles Layout, X switches Art type, and A stars or unstars
 the game under the cursor (in the Favorites view an unstarred row drops
 out and the cursor moves to its neighbour). Select alone does nothing, and
 while it is down every other button waits, so nothing moves or launches by
-accident. Only a pad defined in MiSTer has a Select; keyboards use Options
-and Details.
+accident. Layout and Art type are saved. Layout is changed through this
+shortcut; Art type is also in Options. Only a pad defined in MiSTer has a Select.
+
+**Layouts:** List is the default: the full list with the small pane beside
+it (or below it in tate). Split widens the pane to under half the screen
+with a picture to match, leaving shorter rows. Picture runs the picture
+across the screen, in horizontal above a few full-width rows with the
+details beside it, in tate below the rows; a vertical shot keeps its shape
+and the details sit beside it when there is room, otherwise below in three
+lines. Every layout keeps at least four rows, even with a wide safe zone.
+Hold Select and press Y on the list to cycle the layout there.
+The list and artwork move into place in a short animation; pressing again
+redirects it immediately. Display -> Page transitions also turns this motion
+off. The screenshot stays visible while resizing when it is already loaded.
 
 MisterZine holds a defined pad exclusively while it runs, so MiSTer sees
 nothing from it: the button you defined as MiSTer's menu (OSD) button is
@@ -264,7 +276,7 @@ scrolling stops at either end. Release and press Up again from the first item
 to wrap to Quit, or Down from Quit to wrap to the first item. L and R jump to
 the heading of the previous or next section (Data, List, Display, Controls,
 Operation), stopping at either end; keyboard Home/End still go to the first
-and last row.
+and last row. Rows marked ↗ open another screen or editor.
 
 - **Prefetch shots:** downloads the full picture set in the background.
   Off downloads pictures as you browse. The tally shows cached pictures.
@@ -329,21 +341,6 @@ and last row.
   D Mon (7 Sep) or YYMMDD (260907). The help line shows today's date in the
   chosen format. Rows from earlier years show the year alone, except with
   YYMMDD, which always carries the full date.
-- **Layout:** list by default: the full list with the small pane beside
-  it (or below it in tate). Split widens the pane to under half the screen
-  with a picture to match, leaving shorter rows. Picture runs the picture
-  across the screen, in horizontal above a few full-width rows with the
-  details beside it, in tate below the rows; a vertical shot keeps its shape
-  and the details sit beside it when there is room, otherwise below in three
-  lines. Every layout keeps at least four rows, even with a wide safe zone.
-  Hold Select and press Y on the list to cycle the layout there.
-  The list and artwork move into place in a short animation; pressing again
-  redirects it immediately. Display -> Page transitions also turns this motion
-  off. The screenshot stays visible while resizing when it is already loaded.
-  Highlighting this option shows diagrams of all three layouts;
-  Left/Right changes the selection border and the saved layout. The previews
-  follow the current orientation, with stacked list lines, an artwork rectangle,
-  and smaller metadata lines. Moving to another option dismisses them.
 - **Follow INI rotation:** on by default, including after upgrading. Every
   startup reads `osd_rotate` from the MiSTer INI that is currently active: the
   main MiSTer.ini, or the alternative INI (`MiSTer_*.ini`) you selected in the
@@ -407,7 +404,7 @@ Brightness, Info and these four filters appear only with Screenshots selected.
 Their values are remembered when switching styles. Filters combine; if no
 screenshots match, lettering runs instead and the Preview help explains why.
 
-- **Edit safe zone:** D-pad moves the top-right corner of the safe frame;
+- **Safe zone:** opens the safe-zone editor. D-pad moves the top-right corner of the safe frame;
   Right/Up grows it and Left/Down shrinks it. B saves. Margins can reach 40 px.
 - **HDMI picture:** Full display, 320x240, or Fit 4:3. **Full display** is
   the default for new installations; existing installations keep their saved

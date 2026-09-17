@@ -129,7 +129,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     # Options -> Sources: installed only, with the MiSTer and Jotego databases
     scenarios.append([*rotation, "-installed", "distribution_mister,jtcores",
                       "-out", f"out/installed-sources-{orientation}", "-script",
-                      "shot list; tab; down*3; right; shot filters; back; back; home; pagedown; right; down*2; shot option; left; shot option-all; back; shot list-all"])
+                      "shot list; tab; down*3; right; shot filters; back; back; home; pagedown; right; down; shot option; left; shot option-all; back; shot list-all"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     # the Recents view with nine launches: the view, a month jump, the
@@ -142,10 +142,10 @@ for rotation in ([], ["-rot", "left", "-logical"]):
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):
-        # Options -> Layout: split and picture, a vertical shot in each
+        # Select+Y: split and picture, a vertical shot in each
         scenarios.append([*rotation, "-inset", str(inset), "-layout", "split",
                           "-out", f"out/list-layout-{orientation}-{inset}", "-script",
-                          "down*2; shot split; type 1942; shot split-vertical; back; back; home; pagedown; right; down*10; shot option; right; back; "
+                          "down*2; shot split; type 1942; shot split-vertical; back; press select; space; release select; wait 2200; "
                           "shot picture; type 1942; shot picture-vertical"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
@@ -180,7 +180,7 @@ for canvas in ("360x270", "400x300"):
         scenarios.append([*rotation, "-canvas", canvas,
                           "-out", f"out/fit-{canvas}-{orientation}", "-script",
                           "shot list; enter; shot details; back; tab; shot filter; back; back; shot options; "
-                          "home; pagedown; right; down*10; right; back; shot split; back; right; back; shot picture"])
+                          "back; press select; space; release select; wait 2200; shot split; press select; space; release select; wait 2200; shot picture"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     # Select held on the list: the chord legend, Y cycling the layout, X the
@@ -220,10 +220,6 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                       "press menu; wait 700; shot menu-hint; wait 900; shot menu-hold; release menu; shot menu-released; back; back"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
-    scenarios.append([*rotation, "-out", f"out/layout-previews-{orientation}", "-script",
-                      "back; home; pagedown; right; down*10; shot list; right; shot split; right; shot picture; down; shot dismissed"])
-for rotation in ([], ["-rot", "left", "-logical"]):
-    orientation = "t" if rotation else "h"
     for inset in (15, 40):
         scenarios.append([*rotation, "-inset", str(inset), "-out", f"out/option-samples-{orientation}-{inset}", "-script",
                           "back; home; pagedown; right; down*7; shot font; left; shot font-narrow; left; shot font-normal; "
@@ -248,7 +244,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     for inset in (15, 40):
         scenarios.append([*rotation, "-inset", str(inset), "-arcade-intro",
                           "-out", f"out/arcade-first-{orientation}-{inset}", "-script",
-                          "shot intro; press enter; wait 1000; shot intro-hold; release enter; shot intro-cancelled; hold enter 2000; shot arcade; back; home; pagedown; right; down; shot preference-off; right; shot preference-on; "
+                          "shot intro; press enter; wait 1000; shot intro-hold; release enter; shot intro-cancelled; hold enter 2000; shot arcade; back; home; pagedown; right; down*2; shot preference-off; right; shot preference-on; "
                           "back; shot mixed; tab; pagedown*2; right; shot mixed-types; back; back; left; back; "
                           "tab; pagedown*2; right; shot arcade-types; down; space; shot stable-only; space; shot restored; "
                           "home; shot clear; back; shot arcade-restored"])

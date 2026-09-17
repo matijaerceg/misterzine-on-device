@@ -35,31 +35,26 @@ func TestListLayouts(t *testing.T) {
 			}
 		}
 	}
-	// the option relays out the list and an unknown saved value is the default
+	// the shortcut relays out the list and an unknown saved value is the default
 	rows := []data.Row{{Base: "Arcade", K: "a", Title: "Alpha"}, {Base: "Arcade", K: "b", Title: "Beta"}}
 	a := New(Config{PhysW: 320, PhysH: 240, ListLayout: "huge"}, data.Ingest(rows, "", time.Now()), nil)
 	if a.ListLayout() != "list" || a.lay.Style != "list" {
 		t.Fatal("unknown layout not defaulted")
 	}
-	a.screen = ScreenOptions
-	a.buildPanel()
-	expandOptionsForTest(a)
-	for i, e := range a.panel.entries {
-		if e.kind == "list-layout" {
-			a.panel.cursor = i
-		}
-	}
-	a.stepValue(1)
+
+	a.cycleListLayout()
 	if a.ListLayout() != "split" || a.lay.Style != "split" || a.lay.Pane.Dx() <= paneW {
-		t.Fatalf("split not applied: %q %v", a.ListLayout(), a.lay.Pane)
+		t.Fatal("split not applied")
 	}
-	a.stepValue(1)
+	a.cycleListLayout()
 	if a.ListLayout() != "picture" || !a.lay.PaneTop {
 		t.Fatal("picture not applied")
 	}
-	if !a.togglePanel() {
-		t.Fatal("A on the layout row")
+	a.cycleListLayout()
+	if a.ListLayout() != "list" {
+		t.Fatal("layout did not wrap")
 	}
+
 }
 
 func TestFullDisplayLayouts(t *testing.T) {

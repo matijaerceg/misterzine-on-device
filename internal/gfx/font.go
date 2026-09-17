@@ -248,6 +248,7 @@ const (
 	// ChildMark heads an Options row that only applies given the row above
 	// it: a stem from the top of the cell turning into a short rule
 	ChildMark = "\x10"
+	OpenPage  = "\x0f" // northeast arrow: opens another screen/editor
 )
 
 // SetGlyph installs a glyph (rows top to bottom, MSB = leftmost pixel).
@@ -282,6 +283,7 @@ func (f *Font) AddArrows() {
 	f.SetGlyph(ArrowDown[0], place(down))
 	f.SetGlyph(ArrowLeft[0], place(left))
 	f.SetGlyph(ArrowRight[0], place(right))
+	f.SetGlyph(OpenPage[0], place([]byte{0x38, 0x18, 0x28, 0x40, 0x80}))
 	// the ellipsis: three dots on the baseline in a single cell
 	dots := make([]byte, f.H)
 	base := max(0, min(f.H-1, f.H-f.descent-1))

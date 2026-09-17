@@ -32,6 +32,7 @@ type panelEntry struct {
 	disabled  bool // settings: shown muted, Left/Right ignored
 	count     int
 	showCount bool
+	opensPage bool // append an opening arrow after the row label
 }
 
 // label is the row's text as drawn: a child row sits two cells in behind
@@ -52,6 +53,15 @@ func (e panelEntry) label() string {
 // "Screensaver brightness" reads "Brightness" under its parent instead of
 // losing its tail.
 func (e panelEntry) fitText(cols int) string {
+	if e.opensPage {
+		if cols <= 0 {
+			return ""
+		}
+		if cols == 1 {
+			return gfx.OpenPage
+		}
+		return gfx.Fit(e.text, cols-2) + " " + gfx.OpenPage
+	}
 	if e.child && e.short != "" && len(e.text) > cols {
 		return gfx.Fit(e.short, cols)
 	}
@@ -397,10 +407,6 @@ func (a *App) optionsEntries() []panelEntry {
 			dateIdx = i
 		}
 	}
-	layoutHelp := "List (default): the full list with a small pane. Split: a wider pane with a bigger picture. Picture: the picture across the screen with a few rows."
-	if a.lay.W*9 >= a.lay.H*16 {
-		layoutHelp = "List: full list, small picture. Split: list beside a larger picture. Picture: narrow title list, full-height art in the middle, info on the right."
-	}
 	rotationHelp := "Left/Right turn the image; the choice is saved. Labels describe the monitor's turn."
 	if a.FollowRotation() {
 		rotationHelp = "Set by the active MiSTer INI. Turn off Follow INI rotation above to rotate manually."
@@ -421,25 +427,25 @@ func (a *App) optionsEntries() []panelEntry {
 	E := []panelEntry{group(gfx.SectionData, "Data"),
 		{text: "Refresh data now", kind: "refresh",
 			help: "Checks on launch and every 30 minutes. Catalog: publication time. Last checked: last successful check this session."},
-		{text: updateText, kind: "update", help: updateHelp},
+		{text: updateText, kind: "update", opensPage: true, help: updateHelp},
 		{text: "Last update result", kind: "update-result",
 			help: "Review the last Update All result and its saved output. This does not start another update."},
-		{text: "Rescan card", kind: "rescan",
+		{text: "Rescan card", kind: "rescan", opensPage: true,
 			help: "Refresh on-card status after an external update. The built-in Update All rescans automatically when it finishes."},
 		{text: "Prefetch shots" + a.progressText(), kind: "prefetch", vals: []string{"off", "on"}, idx: prefetchIdx,
 			help: "Download every screenshot in the background (about 55 MB) so browsing never waits; the tally counts up as they land. Off: only what you look at."},
 		{text: "Clear image cache", kind: "clearimg",
 			help: "Delete the downloaded screenshots and system photos; they come back as you browse."},
 		spacer, group(gfx.SectionList, "List"),
-		{text: "Show non-arcade cores", kind: "show-non-arcade", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ShowNonArcade],
-			help: "Include console, computer and other cores. Off (default): browse arcade games only. Saved favorites are kept."},
 		{text: "Sources", kind: "sources", vals: []string{"all", "installed only"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.InstalledOnly],
 			help: a.sourcesHelp()},
+		{text: "Show non-arcade cores", kind: "show-non-arcade", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ShowNonArcade],
+			help: "Include console, computer and other cores. Off (default): browse arcade games only. Saved favorites are kept."},
 		{text: "Show deprecated cores", kind: "show-deprecated", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ShowDeprecated],
 			help: "Include cores marked deprecated in the catalogue."},
 		{text: "Filter by rotation", kind: "filter-rotation", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.FilterRotation()],
 			help: "Show only games made for the current orientation (INI or manual); unknowns hidden. Off restores manual filters."},
-		{text: "Views (" + a.viewsSummary() + ")", kind: "views",
+		{text: "Views (" + a.viewsSummary() + ")", kind: "views", opensPage: true,
 			help: "Which views " + a.btn("Y") + " cycles through: core updated, MiSTer debut, original year, A-Z, manufacturer, Favorites, Recents (launches from here). " + a.btn("A") + " opens the list."},
 		{text: "Remember last view", kind: "remember-sort", child: true, vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.RememberSort()],
 			help: "On: reopen in the last view used. Off: use Default view. Takes effect next time MisterZine opens."},
@@ -449,17 +455,15 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Which screenshot the list pane shows: gameplay (default) or the title screen. Details and the artwork view still show every shot."},
 		{text: "Date format", kind: "date-format", vals: dateFormatLabels, idx: dateIdx,
 			help: a.dateFormatHelp()},
-		{text: "Layout", kind: "list-layout", vals: listLayouts, idx: map[string]int{"list": 0, "split": 1, "picture": 2}[a.ListLayout()],
-			help: layoutHelp},
 		spacer, group(gfx.SectionDisplay, "Display"),
 		{text: "Follow INI rotation", kind: "follow-rotation", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.FollowRotation()],
 			help: "On (default): match osd_rotate in the active MiSTer INI at every startup. Off: rotate manually below. Never edits the INI."},
 		{text: "Rotation", kind: "rotation", child: true, vals: []string{"monitor CW", "horizontal", "monitor CCW"}, idx: rotIdx, disabled: a.FollowRotation(),
 			help: rotationHelp},
-		{text: "Screensaver", kind: "saver-options", help: "Open screensaver settings and preview: delay, style and screenshot filters."},
+		{text: "Screensaver", kind: "saver-options", opensPage: true, help: "Open screensaver settings and preview: delay, style and screenshot filters."},
 	}
 	E = append(E, []panelEntry{
-		{text: "Edit safe zone", kind: "inset",
+		{text: "Safe zone", kind: "inset", opensPage: true,
 			help: "Margin kept clear of the screen edge (overscan): now " + itoa(a.cfg.SafeInsetX) + " px at the sides, " + itoa(a.cfg.SafeInsetY) + " px top and bottom. A opens the frame; fit it just inside the picture."},
 		{text: "HDMI picture", kind: "canvas", vals: []string{"full display", "320x240", "fit 4:3"}, idx: map[string]int{"full": 0, "320x240": 1, "fit": 2}[a.Canvas()],
 			help: "Full display: use both HDMI dimensions. 320x240: classic size. Fit 4:3: keep a 4:3 picture sized to HDMI height. Applies live."},
@@ -762,9 +766,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 	}
 	if a.screen == ScreenOptions || a.screen == ScreenSaverOptions {
 		c.Box(helpBox, gen.Eva.Line)
-		if p.cursor < len(p.entries) && a.screen == ScreenOptions && p.entries[p.cursor].kind == "list-layout" {
-			a.paintLayoutPreviews(c, helpBox)
-		} else if p.cursor < len(p.entries) && a.screen == ScreenOptions && (p.entries[p.cursor].kind == "title-font" || p.entries[p.cursor].kind == "scroll" || p.entries[p.cursor].kind == "smooth-scroll" || p.entries[p.cursor].kind == "hold-delay") {
+		if p.cursor < len(p.entries) && a.screen == ScreenOptions && (p.entries[p.cursor].kind == "title-font" || p.entries[p.cursor].kind == "scroll" || p.entries[p.cursor].kind == "smooth-scroll" || p.entries[p.cursor].kind == "hold-delay") {
 			a.paintOptionSamples(c, helpBox, p.entries[p.cursor])
 		} else if p.cursor < len(p.entries) && p.entries[p.cursor].help != "" {
 			hy := helpBox.Min.Y + 3
@@ -1080,9 +1082,6 @@ func (a *App) stepValue(d int) bool {
 	case "date-format":
 		a.cfg.DateFormat = dateFormats[i]
 		a.setRotation(a.rot) // the date column width changes the row layout
-	case "list-layout":
-		a.cfg.ListLayout = listLayouts[i]
-		a.setRotation(a.rot)
 	case "button-labels":
 		a.cfg.ButtonLabels = buttonLabelSets[i]
 	case "ok-button":
@@ -1254,7 +1253,7 @@ func (a *App) togglePanel() bool {
 		if !e.header {
 			f.Since = !f.Since
 		}
-	case "page-transitions", "rotation", "follow-rotation", "filter-rotation", "sources", "show-deprecated", "launcher", "scroll", "smooth-scroll", "hold-delay", "remember-sort", "default-view", "prefetch", "title-font", "list-shot", "date-format", "list-layout", "button-labels", "ok-button":
+	case "page-transitions", "rotation", "follow-rotation", "filter-rotation", "sources", "show-deprecated", "launcher", "scroll", "smooth-scroll", "hold-delay", "remember-sort", "default-view", "prefetch", "title-font", "list-shot", "date-format", "button-labels", "ok-button":
 		return true // Left/Right pick these
 	case "inset":
 		a.screen = ScreenCalibrate

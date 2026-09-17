@@ -51,7 +51,7 @@ const (
 	paneTextH = 30
 )
 
-// listLayouts are the Options -> Layout choices.
+// listLayouts are the choices cycled by Select+Y on the main list.
 var listLayouts = []string{"list", "split", "picture"}
 
 // NewLayout computes the layout for a logical W x H canvas. The insets are
