@@ -1428,6 +1428,9 @@ func chips(r *data.Row, d *data.Derived) []string {
 	if r.Deprecated {
 		out = append(out, "deprecated")
 	}
+	if r.IsLocal() {
+		out = append(out, "local")
+	}
 	if r.Brot != "" {
 		dir := "CW"
 		if strings.Contains(r.Brot, "CCW") {

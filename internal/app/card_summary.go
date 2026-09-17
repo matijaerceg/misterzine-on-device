@@ -63,6 +63,9 @@ func (a *App) paintScan(c *gfx.Canvas) {
 			"Not found on card: " + itoa(counts[data.StatusNotFound]),
 			"Status unknown: " + itoa(counts[data.StatusUnknown]),
 			"", "Compared with the enabled catalogue."}
+		if n := a.ds.Facets.Src[data.SrcLocal]; n > 0 {
+			lines = append(lines, "Local games not in the catalogue: "+itoa(n))
+		}
 		if a.scanError != "" && !a.scanCounts {
 			lines = []string{a.scanError, "", "Could not finish every scan step.", "See the device log for details."}
 		} else if a.scanError != "" {

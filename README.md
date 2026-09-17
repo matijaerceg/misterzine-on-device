@@ -6,7 +6,9 @@ to your display, with screenshots, favorites, filters, and keyboard search.
 
 Arcade games are shown by default. Enable **Options > List > Show non-arcade
 cores** to include console, computer and other cores for browsing and tracking
-updates. Favorites are kept when their cores are hidden.
+updates. Favorites are kept when their cores are hidden. Arcade games on your
+card that the catalogue does not list show up too, marked "local", with their
+details read from the MRA file.
 
 It follows new releases and updated builds across the enabled catalogue. The interface
 uses a 320x240 framebuffer, with horizontal and rotated CRT layouts.

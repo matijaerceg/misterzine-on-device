@@ -228,6 +228,10 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 		_, sc := statusGlyph(st)
 		L = append(L, paneLine{"Card:     " + statusText(st, ""), sc})
 	}
+	if row.IsLocal() {
+		L = append(L, paneLine{"Not in the MisterZine catalogue; details read from the MRA file", mu})
+		add("File", row.MRA, mu)
+	}
 	if row.Rot != "" {
 		addSpec("Rotation", "rot", row.Rot)
 		if row.Brot != "" {

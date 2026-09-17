@@ -1,0 +1,10 @@
+[
+  {"title": "Orphan Fighter", "base": "Arcade", "src": "local", "k": "local:orphanf", "sn": "orphanf", "family": "orphanf",
+   "core": "defender", "mra": "_Arcade/_Extra/Orphan Fighter.mra", "year": "1983", "manufacturer": "Homebrew Works",
+   "reg": "World", "rot": "Vertical (CW)", "plr": "2", "ctl": "8-way · 2 buttons", "buttons": 2,
+   "note": "MRA category: Shooter - Vertical"},
+  {"title": "Local Puzzle", "base": "Arcade", "src": "local", "k": "local:locpuz", "sn": "locpuz",
+   "core": "puzzlecore", "mra": "_Arcade/Local Puzzle.mra", "year": "1991", "manufacturer": "Someone",
+   "rot": "Horizontal", "plr": "1", "ctl": "4-way",
+   "img": "locpuz", "img_slots": ["lsnap"], "img_w": 4, "img_h": 3}
+]

@@ -73,6 +73,21 @@ file can change them.
 
 Dates highlighted in green and the last-look divider help find changes since
 your previous visit. Visits start at the top of the view you left.
+
+### Games only on your card
+
+Arcade games on the card that the catalogue does not list appear as well, with
+a "local" chip and "Local" as their source. The scan reads every `.mra` under
+`_Arcade` except `cores`, the `_alternatives` folders (those attach to the game
+they belong to) and arcade_organizer's `_Organized` copies. Title, year, maker,
+rotation, region, players and buttons come from the file itself; Details shows
+the file's path and the MRA category as a note. One row is shown per game
+however many copies are installed; the extra copies are offered as versions.
+Local games carry no release dates, so they sit at the end of the date views
+and never count as new since your last look. To hide them, turn the Local
+source off in Filters -> Source; "Installed only" in Options never hides them.
+Pictures for local games come from the image service by MAME set name once it
+is enabled; until then they show a placeholder.
 Options -> Views -> Remember last view is on by default; turn it off to choose
 a Default view for each new visit (Core updated initially).
 Y cycles Updated, Debut, Year, Alphabetical, Manufacturer, then Favorites; the

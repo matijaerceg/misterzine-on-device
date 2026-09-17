@@ -71,9 +71,14 @@ func main() {
 	showNonArcade := flag.Bool("show-non-arcade", false, "include console, computer and other cores")
 	arcadeIntro := flag.Bool("arcade-intro", false, "show upgrade explanation")
 	splash := flag.Bool("splash", false, "show the startup logo fade")
+	localPath := flag.String("local", "", "local rows fixture (a data.json-shaped array of rows the card scan would add)")
 	flag.Parse()
 
 	rows, meta := load(*dataPath, *metaPath)
+	if *localPath != "" {
+		local, _ := load(*localPath, "")
+		rows = data.MergeLocal(rows, local)
+	}
 	upd, _ := data.ParseMetaTime(meta.Updated)
 	ds := data.Ingest(rows, meta.Hash, upd)
 
@@ -119,6 +124,9 @@ func main() {
 			if r.SN == "galagamw" {
 				return []string{"_Arcade/_alternatives/_Galaga/Galaga (Namco).mra",
 					"_Arcade/_alternatives/_Galaga/Galaga (Midway set 1, fast shoot hack, bootleg set 2).mra"}
+			}
+			if r.K == "local:orphanf" {
+				return []string{"_Arcade/_Extra/Orphan Fighter (set 2).mra"}
 			}
 			return nil
 		},
