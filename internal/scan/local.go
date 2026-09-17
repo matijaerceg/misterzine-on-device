@@ -23,7 +23,7 @@ var localMaxFiles = 20000 // a variable so a test can lower it
 var ErrTooManyMRAs = errors.New("too many MRA files under _Arcade; list cut short")
 
 // SlotLocalSnap is the picture slot of a local row whose shot comes from the
-// image service rather than the catalogue.
+// image service rather than the catalogue (fetch.SlotLocalSnap).
 const SlotLocalSnap = "lsnap"
 
 // LocalResult is what DiscoverLocal hands the host to merge.

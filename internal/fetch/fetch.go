@@ -23,6 +23,15 @@ import (
 // Site is the base URL of the release tracker.
 var Site = "https://misterzine.fyi"
 
+// SnapService is the base URL of the screenshot service that serves shots
+// by MAME setname for games the catalogue does not list (the "lsnap" slot).
+// Empty until the service is live: such pictures are then simply missing,
+// without a request.
+var SnapService = ""
+
+// SlotLocalSnap is the picture slot served by SnapService.
+const SlotLocalSnap = "lsnap"
+
 // validHash accepts a lower-case hex SHA-256.
 func validHash(h string) bool {
 	if len(h) != 64 {
@@ -166,8 +175,14 @@ func (c *Client) Check(ctx context.Context, current string) (Fresh, error) {
 // Image downloads one picture: images/<slot>/<key>.png or the system photo.
 func (c *Client) Image(ctx context.Context, slot, key string) ([]byte, error) {
 	url := Site + "/images/" + slot + "/" + key + ".png"
-	if slot == "system" {
+	switch slot {
+	case "system":
 		url = Site + "/images/systems/" + key + ".png"
+	case SlotLocalSnap:
+		if SnapService == "" {
+			return nil, ErrNotFound
+		}
+		url = SnapService + "/snap/" + key + ".png"
 	}
 	return c.get(ctx, url, 8*time.Second)
 }

@@ -67,7 +67,7 @@ func TestCloseWithPendingDownload(t *testing.T) {
 	}
 	closeAndCheck()
 	p := Pic{Key: "pending", Slot: "snap"}
-	if s.missing[p] || s.failed[p] || !s.retryAt[p].IsZero() {
+	if s.isMissing(p) || s.failed[p] || !s.retryAt[p].IsZero() {
 		t.Fatal("cancelling shutdown must not blacklist or back off a picture")
 	}
 }
@@ -136,7 +136,7 @@ func TestPrefetchRevisitsDelayedDownloads(t *testing.T) {
 		t.Fatal("delayed image blocked later prefetch")
 	}
 	delete(s.netBusy, second)
-	s.missing[second] = true
+	s.missing[second] = time.Now()
 	if _, ok := s.nextDownload(); ok {
 		t.Fatal("retried before backoff expired")
 	}

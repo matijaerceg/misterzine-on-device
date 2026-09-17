@@ -53,7 +53,9 @@ type Service struct {
 	wanted        []scaledKey // priority order, replaced on every Want
 	inflight      map[scaledKey]bool
 	netBusy       map[Pic]bool
-	missing       map[Pic]bool
+	missing       map[Pic]time.Time // 404 seen at; forgotten after missingTTL
+	missingDirty  bool
+	missingSaved  time.Time
 	failed        map[Pic]bool      // decode failed this run
 	retryAt       map[Pic]time.Time // download failed: not before this
 	retries       map[Pic]int
@@ -84,12 +86,12 @@ func New(dir string, client *fetch.Client, lg *log.Logger, budget int) *Service 
 		dir: dir, client: client, lg: lg,
 		cache: map[scaledKey]*entry{}, lru: list.New(), budget: budget,
 		raw: map[Pic]*image.RGBA{}, inflight: map[scaledKey]bool{}, netBusy: map[Pic]bool{},
-		missing: map[Pic]bool{}, failed: map[Pic]bool{}, retryAt: map[Pic]time.Time{}, retries: map[Pic]int{},
+		missing: map[Pic]time.Time{}, failed: map[Pic]bool{}, retryAt: map[Pic]time.Time{}, retries: map[Pic]int{},
 		kick: make(chan struct{}, 1), decodeKick: make(chan struct{}, 1),
 		progressReady: make(chan struct{}, 1), ready: make(chan struct{}, 1), stop: make(chan struct{}),
 	}
 	s.ctx, s.cancel = context.WithCancel(context.Background())
-	for _, sub := range []string{"title", "snap", "ingame", "systems"} {
+	for _, sub := range slotDirs {
 		os.MkdirAll(filepath.Join(dir, sub), 0755)
 	}
 	s.loadMissing()
@@ -214,7 +216,7 @@ func (s *Service) Get(req app.ImageReq) (*image.RGBA, app.ImageState) {
 		s.lru.MoveToFront(e.el)
 		return e.img, app.ImageReady
 	}
-	if s.missing[p] || s.failed[p] {
+	if s.isMissing(p) || s.failed[p] {
 		return nil, app.ImageMissing
 	}
 	if s.raw[p] == nil && !s.exists(p) {
@@ -246,7 +248,7 @@ func (s *Service) nextDecode() (scaledKey, bool) {
 		return scaledKey{}, false
 	}
 	for _, k := range s.wanted {
-		if _, ok := s.cache[k]; ok || s.inflight[k] || s.missing[k.Pic] || s.failed[k.Pic] {
+		if _, ok := s.cache[k]; ok || s.inflight[k] || s.isMissing(k.Pic) || s.failed[k.Pic] {
 			continue
 		}
 		if s.raw[k.Pic] == nil && !s.exists(k.Pic) {
@@ -365,7 +367,7 @@ func (s *Service) nextDownload() (Pic, bool) {
 	now := time.Now()
 	for _, k := range s.wanted {
 		p := k.Pic
-		if s.missing[p] || s.failed[p] || s.netBusy[p] || s.raw[p] != nil || s.exists(p) || now.Before(s.retryAt[p]) {
+		if s.isMissing(p) || s.failed[p] || s.netBusy[p] || s.raw[p] != nil || s.exists(p) || now.Before(s.retryAt[p]) {
 			continue
 		}
 		s.netBusy[p] = true
@@ -380,7 +382,7 @@ func (s *Service) nextDownload() (Pic, bool) {
 		for s.prefetchPos < len(s.prefetch) {
 			p := s.prefetch[s.prefetchPos]
 			s.prefetchPos++
-			if s.missing[p] || s.failed[p] || s.netBusy[p] || s.exists(p) || now.Before(s.retryAt[p]) {
+			if s.isMissing(p) || s.failed[p] || s.netBusy[p] || s.exists(p) || now.Before(s.retryAt[p]) {
 				continue
 			}
 			s.netBusy[p] = true
@@ -390,7 +392,7 @@ func (s *Service) nextDownload() (Pic, bool) {
 		// without stat-ing every successfully cached file on each idle wake.
 		for _, p := range s.prefetch {
 			at, retry := s.retryAt[p]
-			if !retry || now.Before(at) || s.missing[p] || s.failed[p] || s.netBusy[p] {
+			if !retry || now.Before(at) || s.isMissing(p) || s.failed[p] || s.netBusy[p] {
 				continue
 			}
 			if s.exists(p) {
@@ -455,7 +457,18 @@ func (s *Service) download(p Pic) {
 	if err != nil {
 		s.mu.Lock()
 		if errors.Is(err, fetch.ErrNotFound) {
-			s.missing[p] = true
+			s.missing[p] = time.Now()
+			s.missingDirty = true
+			save := time.Since(s.missingSaved) > time.Minute
+			if save {
+				s.missingSaved = time.Now()
+			}
+			s.mu.Unlock()
+			if save {
+				s.saveMissing() // not only on Close: a crash must not forget a run's 404s
+			}
+			s.signal()
+			return
 		} else if errors.Is(err, fetch.ErrOffline) {
 			s.offline = true
 			s.lg.Printf("images: offline: %v", err)
@@ -501,35 +514,80 @@ func (s *Service) download(p Pic) {
 	s.poke(s.progressReady)
 }
 
-// missing.json remembers 404s so they are not retried every run.
+// isMissing reports a remembered 404 (the caller holds mu).
+func (s *Service) isMissing(p Pic) bool {
+	_, ok := s.missing[p]
+	return ok
+}
+
+// slotDirs are the picture folders under the store directory.
+var slotDirs = []string{"title", "snap", "ingame", "systems", fetch.SlotLocalSnap}
+
+// missingTTL is how long a 404 is remembered. The site's catalogue pictures
+// rarely appear later, but the screenshot service fills in over time, so a
+// miss is asked again after a week rather than never.
+const missingTTL = 7 * 24 * time.Hour
+
+// missingFile is missing.json: version 2 keeps when each 404 was seen.
+type missingFile struct {
+	V       int              `json:"v"`
+	Missing map[string]int64 `json:"missing"` // "slot/key" -> unix seconds
+}
+
+// missing.json remembers 404s so they are not retried every run. The first
+// format was a flat array of "slot/key"; those entries are dated now, so
+// they expire a week after the upgrade like any other.
 func (s *Service) loadMissing() {
 	b, err := os.ReadFile(filepath.Join(s.dir, "missing.json"))
 	if err != nil {
 		return
 	}
+	now := time.Now()
+	entries := map[string]time.Time{}
 	var keys []string
-	if json.Unmarshal(b, &keys) != nil {
+	var mf missingFile
+	if json.Unmarshal(b, &keys) == nil {
+		for _, k := range keys {
+			entries[k] = now
+		}
+		s.missingDirty = true // rewrite in the dated format
+	} else if json.Unmarshal(b, &mf) == nil && mf.V == 2 {
+		for k, at := range mf.Missing {
+			entries[k] = time.Unix(at, 0)
+		}
+	} else {
 		return
 	}
-	for _, k := range keys {
+	for k, at := range entries {
+		if now.Sub(at) > missingTTL {
+			s.missingDirty = true // expired: the file shrinks on the next save
+			continue
+		}
 		if i := indexByte(k, '/'); i > 0 {
-			s.missing[Pic{Key: k[i+1:], Slot: k[:i]}] = true
+			s.missing[Pic{Key: k[i+1:], Slot: k[:i]}] = at
 		}
 	}
 }
 
 func (s *Service) saveMissing() {
 	s.mu.Lock()
-	var keys []string
-	for p := range s.missing {
-		keys = append(keys, p.Slot+"/"+p.Key)
-	}
-	s.mu.Unlock()
-	if len(keys) == 0 {
+	if !s.missingDirty {
+		s.mu.Unlock()
 		return
 	}
-	b, _ := json.Marshal(keys)
-	os.WriteFile(filepath.Join(s.dir, "missing.json"), b, 0644)
+	s.missingDirty = false
+	mf := missingFile{V: 2, Missing: map[string]int64{}}
+	for p, at := range s.missing {
+		mf.Missing[p.Slot+"/"+p.Key] = at.Unix()
+	}
+	s.mu.Unlock()
+	path := filepath.Join(s.dir, "missing.json")
+	if len(mf.Missing) == 0 {
+		os.Remove(path)
+		return
+	}
+	b, _ := json.Marshal(mf)
+	os.WriteFile(path, b, 0644)
 }
 
 func indexByte(s string, c byte) int {
@@ -549,13 +607,14 @@ func (s *Service) ClearCache() {
 	s.bytes = 0
 	s.raw = map[Pic]*image.RGBA{}
 	s.rawOrder = nil
-	s.missing = map[Pic]bool{}
+	s.missing = map[Pic]time.Time{}
+	s.missingDirty = false
 	s.failed = map[Pic]bool{}
 	s.prefetchPos = 0
 	s.have = 0
 	s.mu.Unlock()
 	s.signal()
-	for _, sub := range []string{"title", "snap", "ingame", "systems"} {
+	for _, sub := range slotDirs {
 		os.RemoveAll(filepath.Join(s.dir, sub))
 		os.MkdirAll(filepath.Join(s.dir, sub), 0755)
 	}

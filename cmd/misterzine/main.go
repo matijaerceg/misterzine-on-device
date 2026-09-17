@@ -1236,7 +1236,7 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 	t2 := time.Now()
 	catalogue := rows[:ncat]
 	resolved := h.familyCache.Resolve(h.card, alts, catalogue)
-	local := scan.DiscoverLocal(h.card, filepath.Join(h.root, "cache", "local.json"), catalogue, alts, scan.AttachedPaths(resolved), false)
+	local := scan.DiscoverLocal(h.card, filepath.Join(h.root, "cache", "local.json"), catalogue, alts, scan.AttachedPaths(resolved), fetch.SnapService != "")
 	for _, s := range local.Skipped {
 		if s.Fresh {
 			h.lg.Printf("scan: skipped %s: %s", s.Path, s.Reason)
@@ -1287,7 +1287,7 @@ func picsFor(ds *data.Dataset) []images.Pic {
 	for _, i := range ds.Order(data.SortUpdated) {
 		r := &ds.Rows[i]
 		if r.Img != "" && len(r.ImgSlots) > 0 {
-			for _, want := range []string{"snap", "title", "ingame"} {
+			for _, want := range []string{"snap", "title", "ingame", fetch.SlotLocalSnap} {
 				for _, s := range r.ImgSlots {
 					if s == want {
 						out = append(out, images.Pic{Key: r.Img, Slot: s})
