@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
+	"github.com/matijaerceg/misterzine-on-device/internal/gen"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
@@ -210,13 +211,25 @@ func TestLayoutMotionPreview(t *testing.T) {
 	if dir == "" {
 		t.Skip("set MZ_LAYOUT_PREVIEW to export frames")
 	}
+	frames := 12
+	if os.Getenv("MZ_LAYOUT_PREVIEW_FPS") == "30" {
+		frames = 6
+	}
 	for _, rot := range []gfx.Rotation{gfx.RotNone, gfx.RotLeft} {
 		a, clock, _ := layoutTestApp(rot, 320, 240, 0)
+		// Settle the selected row before recording so the loop closes seamlessly.
+		for i := 0; i < 3; i++ {
+			a.cycleListLayout()
+			*clock = clock.Add(layoutMotionDuration)
+			a.Tick(*clock)
+			a.Paint()
+		}
 		for cycle := 0; cycle < 3; cycle++ {
 			a.cycleListLayout()
-			for frame := 0; frame <= 12; frame++ {
+			start := *clock
+			for frame := 0; frame <= frames; frame++ {
 				if frame > 0 {
-					*clock = clock.Add(17 * time.Millisecond)
+					*clock = start.Add(time.Duration(frame) * layoutMotionDuration / time.Duration(frames))
 					a.Tick(*clock)
 				}
 				a.Paint()
@@ -275,6 +288,47 @@ func TestLayoutMotionLoadingDestinationKeepsCaptionGeometry(t *testing.T) {
 		a.Paint()
 		if targetThumb != a.paintedThumb || targetText != a.paintedPaneText {
 			t.Fatalf("loading target moved captions at completion: %v %v -> %v %v", targetThumb, targetText, a.paintedThumb, a.paintedPaneText)
+		}
+	}
+}
+
+func TestLayoutDividerVisibleThroughMotion(t *testing.T) {
+	for _, rot := range []gfx.Rotation{gfx.RotNone, gfx.RotLeft, gfx.RotRight} {
+		a, clock, _ := layoutTestApp(rot, 320, 240, 0)
+		for cycle := 0; cycle < 3; cycle++ {
+			a.cycleListLayout()
+			a.Paint()
+			for frame := 1; frame < 6; frame++ {
+				*clock = clock.Add(30 * time.Millisecond)
+				a.Tick(*clock)
+				a.Paint()
+				d := a.layoutMotion.currentDivider
+				if d[0].X != d[1].X || d[1].Y != d[2].Y {
+					t.Fatal("divider lost its connected corner")
+				}
+				if d[0] == d[2] {
+					t.Fatal("divider collapsed")
+				}
+				for y := d[0].Y; y <= d[1].Y; y++ {
+					if got := a.logical.RGBAAt(d[0].X, y); got != gen.Eva.Line {
+						t.Fatal("vertical divider disappeared", rot, cycle, frame, y)
+					}
+				}
+				for x := d[1].X; x <= d[2].X; x++ {
+					if got := a.logical.RGBAAt(x, d[2].Y); got != gen.Eva.Line {
+						t.Fatal("horizontal divider disappeared", rot, cycle, frame, x)
+					}
+				}
+			}
+			from := a.layoutMotion.currentDivider
+			a.cycleListLayout()
+			a.Paint()
+			if a.layoutMotion.currentDivider != from {
+				t.Fatal("divider jumped on repeated press")
+			}
+			*clock = clock.Add(layoutMotionDuration)
+			a.Tick(*clock)
+			a.Paint()
 		}
 	}
 }

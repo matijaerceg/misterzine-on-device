@@ -27,6 +27,7 @@ type layoutMotion struct {
 	key, shot                        string
 	view                             pageIdentity
 	artX                             []int
+	fromDivider, currentDivider      paneDivider
 }
 
 func (a *App) LayoutTransitionRunning() bool { return a.layoutMotion.active }
@@ -49,11 +50,12 @@ func (a *App) captureLayoutMotion() layoutMotion {
 		return layoutMotion{}
 	}
 	m := layoutMotion{active: true, from: a.lay, fromY: a.lay.List.Min.Y + (a.screenLine(a.cursor)-a.top)*a.lay.Line + a.listMotion.offset,
-		fromThumb: a.paintedThumb, fromText: a.paintedPaneText, key: a.CursorKey(), shot: a.ListShot(), view: a.pageIdentity()}
+		fromDivider: dividerForLayout(a.lay), fromThumb: a.paintedThumb, fromText: a.paintedPaneText, key: a.CursorKey(), shot: a.ListShot(), view: a.pageIdentity()}
 	if a.LayoutTransitionRunning() {
 		old := &a.layoutMotion
 		m.from, m.fromY, m.fromThumb, m.fromText = old.current, old.currentY, old.currentThumb, old.currentText
 		m.art = old.art
+		m.fromDivider = old.currentDivider
 	} else if a.paintedThumbImage != nil {
 		m.art = copyLayoutPixels(a.logical.RGBA, m.fromThumb)
 	}
@@ -90,6 +92,7 @@ func (a *App) startLayoutMotion(m layoutMotion) {
 		m.art = copyLayoutPixels(c.RGBA, m.toThumb)
 	}
 	m.current, m.currentY, m.currentThumb, m.currentText = m.from, m.fromY, m.fromThumb, m.fromText
+	m.currentDivider = m.fromDivider
 	m.artX = make([]int, a.lay.W)
 	m.at = a.cfg.TimerNow()
 	a.layoutMotion = m
@@ -211,6 +214,8 @@ func (a *App) paintLayoutMotion(c *gfx.Canvas) {
 			copy(c.Pix[di:di+4], src.Pix[si:si+4])
 		}
 	}
+	m.currentDivider = m.fromDivider.interpolate(dividerForLayout(final), p)
+	m.currentDivider.paint(c)
 	c.Dirty(final.Body)
 }
 
@@ -265,4 +270,33 @@ func (f layoutFallbackImages) Get(req ImageReq) (*image.RGBA, ImageState) {
 	c := gfx.New(max(1, w), max(1, h))
 	scaleLayoutArt(c, f.art, c.Rect, make([]int, c.W()))
 	return c.RGBA, ImageReady
+}
+
+// The divider is a connected vertical/horizontal path. When a side pane
+// becomes a top pane, the vertical leg shortens as the horizontal leg grows
+// around its corner; it never disappears or cuts diagonally through the art.
+type paneDivider [3]image.Point
+
+func dividerForLayout(l Layout) paneDivider {
+	if l.PaneTop || l.Portrait {
+		y := l.Pane.Min.Y - 1
+		if l.PaneTop {
+			y = l.Pane.Max.Y
+		}
+		left, right := image.Pt(l.Pane.Min.X, y), image.Pt(l.Pane.Max.X-1, y)
+		return paneDivider{left, left, right}
+	}
+	top, bottom := image.Pt(l.Pane.Min.X-1, l.Pane.Min.Y), image.Pt(l.Pane.Min.X-1, l.Pane.Max.Y-1)
+	return paneDivider{top, bottom, bottom}
+}
+func (d paneDivider) interpolate(to paneDivider, p float64) paneDivider {
+	var out paneDivider
+	for i := range out {
+		out[i] = image.Pt(layoutMix(d[i].X, to[i].X, p), layoutMix(d[i].Y, to[i].Y, p))
+	}
+	return out
+}
+func (d paneDivider) paint(c *gfx.Canvas) {
+	c.VLine(d[0].X, d[0].Y, d[1].Y, gen.Eva.Line)
+	c.HLine(d[1].X, d[2].X, d[2].Y, gen.Eva.Line)
 }

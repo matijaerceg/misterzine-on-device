@@ -446,14 +446,7 @@ func (a *App) paintTitle(c *gfx.Canvas, x, y, w int, title string, beta bool, co
 func (a *App) paintPane(c *gfx.Canvas) {
 	l := &a.lay
 	c.Fill(l.Pane, gen.Eva.Bg)
-	switch {
-	case l.PaneTop:
-		c.HLine(l.Pane.Min.X, l.Pane.Max.X-1, l.Pane.Max.Y, gen.Eva.Line)
-	case l.Portrait:
-		c.HLine(l.Pane.Min.X, l.Pane.Max.X-1, l.Pane.Min.Y-1, gen.Eva.Line)
-	default:
-		c.VLine(l.Pane.Min.X-1, l.Pane.Min.Y, l.Pane.Max.Y-1, gen.Eva.Line)
-	}
+	dividerForLayout(*l).paint(c)
 	a.paintedThumb, a.paintedPaneText = image.Rectangle{}, image.Rectangle{}
 	row, d, i := a.current()
 	if row == nil {
