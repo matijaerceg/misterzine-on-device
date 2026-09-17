@@ -53,6 +53,35 @@ func main() {
 	}
 	families.Resolve(*card, again, rows)
 	warm := time.Since(start)
+
+	// Local discovery: the MRAs no catalogue row accounts for. Timed apart
+	// from the alternatives pass; a warm run should read no files.
+	attached := scan.AttachedPaths(resolved)
+	localCache := ""
+	if *cache != "" {
+		localCache = *cache + ".local"
+	}
+	start = time.Now()
+	local := scan.DiscoverLocal(*card, localCache, rows, alts, attached, false)
+	localCold := time.Since(start)
+	start = time.Now()
+	scan.DiscoverLocal(*card, localCache, rows, alts, attached, false)
+	localWarm := time.Since(start)
+	type localRow struct {
+		Key   string   `json:"key"`
+		Title string   `json:"title"`
+		Path  string   `json:"path"`
+		Core  string   `json:"core"`
+		Alts  []string `json:"alts,omitempty"`
+	}
+	locals := make([]localRow, 0, len(local.Rows))
+	for _, r := range local.Rows {
+		locals = append(locals, localRow{r.K, r.Title, r.MRA, r.Core, local.Alts[r.K]})
+	}
+	localErr := ""
+	if local.Err != nil {
+		localErr = local.Err.Error()
+	}
 	findings := []finding{}
 	changes := []finding{}
 	changed := 0
@@ -131,7 +160,15 @@ func main() {
 		AddedMatches int
 		Changes      []finding
 		Findings     []finding
-	}{len(alts), len(skipped), cold.String(), warm.String(), changed, added, changes, findings}
+		LocalFiles   int    // MRAs the local walk read (outside _alternatives)
+		LocalRows    int    // games no catalogue row accounts for
+		LocalSkipped int    // unreadable headers or files without a setname
+		LocalCold    string // discovery walk, files read
+		LocalWarm    string // discovery walk, from the cache
+		LocalError   string `json:",omitempty"`
+		Locals       []localRow
+	}{len(alts), len(skipped), cold.String(), warm.String(), changed, added, changes, findings,
+		local.Files, len(local.Rows), len(local.Skipped), localCold.String(), localWarm.String(), localErr, locals}
 	b, err := json.MarshalIndent(result, "", "  ")
 	if err != nil {
 		panic(err)

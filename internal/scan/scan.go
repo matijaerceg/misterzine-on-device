@@ -314,28 +314,13 @@ func ScanAlternativesWithError(card, cachePath string) ([]Alt, []Skipped, error)
 	if len(roots) == 0 {
 		return nil, nil, nil
 	}
-	var problems []error
-	var original []byte
-	var err error
-	cache := map[string]altDir{}
-	if cachePath != "" {
-		original, err = os.ReadFile(cachePath)
-		if err == nil {
-			if err = json.Unmarshal(original, &cache); err != nil {
-				problems = append(problems, fmt.Errorf("alternatives cache: %w", err))
-				cache = map[string]altDir{}
-			}
-		} else if !os.IsNotExist(err) {
-			problems = append(problems, err)
-		}
-	}
-	fresh := map[string]altDir{}
+	dc := openDirCache(cachePath)
 	var out []Alt
 	var skipped []Skipped
 	for _, root := range roots {
 		dirs, err := os.ReadDir(filepath.Join(card, filepath.FromSlash(root.rel)))
 		if err != nil {
-			problems = append(problems, err)
+			dc.problems = append(dc.problems, err)
 			continue
 		}
 		for _, d := range dirs {
@@ -344,62 +329,102 @@ func ScanAlternativesWithError(card, cachePath string) ([]Alt, []Skipped, error)
 			}
 			info, err := d.Info()
 			if err != nil {
-				problems = append(problems, err)
+				dc.problems = append(dc.problems, err)
 				continue
 			}
-			key := root.key + d.Name()
-			mt := info.ModTime().UnixNano()
-			if c, ok := cache[key]; ok && c.Version == altCacheVersion && c.Mtime == mt && alternativesUnchanged(card, c.Alts) && skippedUnchanged(card, c.Skipped) {
-				fresh[key] = c
-				out = append(out, c.Alts...)
-				skipped = append(skipped, c.Skipped...)
-				continue
-			}
-			var alts []Alt
-			var skips []Skipped
-			complete := true
 			files, err := os.ReadDir(filepath.Join(card, filepath.FromSlash(root.rel), d.Name()))
 			if err != nil {
-				problems = append(problems, err)
+				dc.problems = append(dc.problems, err)
 				continue
 			}
-			for _, f := range files {
-				if f.IsDir() || !strings.HasSuffix(strings.ToLower(f.Name()), ".mra") {
-					continue
-				}
-				rel := path.Join(root.rel, d.Name(), f.Name())
-				a, s, readErr := parseMRAHeader(filepath.Join(card, filepath.FromSlash(rel)))
-				if readErr != nil {
-					complete = false
-					problems = append(problems, fmt.Errorf("%s: %w", rel, readErr))
-					continue
-				}
-				if s != nil {
-					s.Path = rel
-					skips = append(skips, *s)
-					continue
-				}
-				a.Path = rel
-				alts = append(alts, a)
-			}
-			if complete {
-				fresh[key] = altDir{Version: altCacheVersion, Mtime: mt, Alts: alts, Skipped: skips}
-			}
+			alts, skips := dc.dir(card, root.key+d.Name(), path.Join(root.rel, d.Name()), info.ModTime().UnixNano(), files)
 			out = append(out, alts...)
 			skipped = append(skipped, skips...)
 		}
 	}
-	if cachePath != "" {
-		b, err := json.Marshal(fresh)
-		if err == nil && !bytes.Equal(b, original) {
-			err = store.WriteAtomic(cachePath, b)
-		}
-		if err != nil {
-			problems = append(problems, fmt.Errorf("alternatives cache save: %w", err))
-		}
-	}
+	dc.save("alternatives cache")
 	sort.Slice(out, func(i, j int) bool { return out[i].Path < out[j].Path })
-	return out, skipped, errors.Join(problems...)
+	return out, skipped, errors.Join(dc.problems...)
+}
+
+// dirCache is the per-directory header cache both walks share: an entry is
+// reused while the directory's mtime and every listed file's size and mtime
+// hold; otherwise the directory's MRAs are parsed again.
+type dirCache struct {
+	path     string
+	original []byte
+	cache    map[string]altDir
+	fresh    map[string]altDir
+	problems []error
+}
+
+func openDirCache(cachePath string) *dirCache {
+	dc := &dirCache{path: cachePath, cache: map[string]altDir{}, fresh: map[string]altDir{}}
+	if cachePath == "" {
+		return dc
+	}
+	original, err := os.ReadFile(cachePath)
+	if err == nil {
+		dc.original = original
+		if err = json.Unmarshal(original, &dc.cache); err != nil {
+			dc.problems = append(dc.problems, fmt.Errorf("scan cache: %w", err))
+			dc.cache = map[string]altDir{}
+		}
+	} else if !os.IsNotExist(err) {
+		dc.problems = append(dc.problems, err)
+	}
+	return dc
+}
+
+// dir returns the headers of the MRAs directly inside one directory (rel,
+// card-relative; files is its listing), from the cache when it still holds.
+// A directory with a failed read is never cached as complete.
+func (dc *dirCache) dir(card, key, rel string, mtime int64, files []os.DirEntry) ([]Alt, []Skipped) {
+	if c, ok := dc.cache[key]; ok && c.Version == altCacheVersion && c.Mtime == mtime && alternativesUnchanged(card, c.Alts) && skippedUnchanged(card, c.Skipped) {
+		dc.fresh[key] = c
+		return c.Alts, c.Skipped
+	}
+	var alts []Alt
+	var skips []Skipped
+	complete := true
+	for _, f := range files {
+		if f.IsDir() || !strings.HasSuffix(strings.ToLower(f.Name()), ".mra") {
+			continue
+		}
+		p := path.Join(rel, f.Name())
+		a, s, readErr := parseMRAHeader(filepath.Join(card, filepath.FromSlash(p)))
+		if readErr != nil {
+			complete = false
+			dc.problems = append(dc.problems, fmt.Errorf("%s: %w", p, readErr))
+			continue
+		}
+		if s != nil {
+			s.Path = p
+			skips = append(skips, *s)
+			continue
+		}
+		a.Path = p
+		alts = append(alts, a)
+	}
+	if complete {
+		dc.fresh[key] = altDir{Version: altCacheVersion, Mtime: mtime, Alts: alts, Skipped: skips}
+	}
+	return alts, skips
+}
+
+// save writes the entries this run confirmed, only when they differ from
+// what was read; stale directories drop out.
+func (dc *dirCache) save(what string) {
+	if dc.path == "" {
+		return
+	}
+	b, err := json.Marshal(dc.fresh)
+	if err == nil && !bytes.Equal(b, dc.original) {
+		err = store.WriteAtomic(dc.path, b)
+	}
+	if err != nil {
+		dc.problems = append(dc.problems, fmt.Errorf("%s save: %w", what, err))
+	}
 }
 
 // altRoot is one _alternatives folder: the top one, which the Distribution
