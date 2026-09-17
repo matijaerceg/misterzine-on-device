@@ -217,14 +217,15 @@ func TestLayoutMotionPreview(t *testing.T) {
 	}
 	for _, rot := range []gfx.Rotation{gfx.RotNone, gfx.RotLeft} {
 		a, clock, _ := layoutTestApp(rot, 320, 240, 0)
-		// Settle the selected row before recording so the loop closes seamlessly.
-		for i := 0; i < 3; i++ {
+		// Settle the selected row before recording so the loop closes
+		// seamlessly: a full round of the layouts ends back at the first.
+		for range listLayouts {
 			a.cycleListLayout()
 			*clock = clock.Add(layoutMotionDuration)
 			a.Tick(*clock)
 			a.Paint()
 		}
-		for cycle := 0; cycle < 3; cycle++ {
+		for cycle := range listLayouts {
 			a.cycleListLayout()
 			start := *clock
 			for frame := 0; frame <= frames; frame++ {

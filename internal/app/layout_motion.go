@@ -149,8 +149,8 @@ func (a *App) paintLayoutMotion(c *gfx.Canvas) {
 		c.Dirty(a.lay.Body)
 		return
 	}
-	// Cubic ease-out starts promptly and settles without overshoot.
-	p := 1 - math.Pow(1-m.progress, 3)
+	// Linear: the regions travel at one speed from press to rest, no easing.
+	p := m.progress
 	final := a.lay
 	l := final
 	l.List = layoutRect(m.from.List, final.List, p)
