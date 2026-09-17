@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## v1.0.41 — 2026-09-17
+
+- Add the Text layout: the rows alone across the body with no pane, so titles get the full width in horizontal and tate shows more rows. Select+Y cycles List, Split, Picture and Text. A transition to or from Text slides the picture, its caption and the divider off the far edge and back in, clipped to the body.
+- Restore Options -> List -> Layout as a value row beside Art type, with the four layouts drawn as diagrams in the help box and the chosen one framed.
+- Move layout transitions at a constant speed instead of a cubic ease-out. At 320x240 with nearest-neighbour scaling the slow start and end moved regions by a pixel or less per frame, which read as jitter.
+- Harness: `-motion` runs page and layout transitions on the scripted clock and the `frames` script command records them frame by frame; the layout preview exporter covers every layout.
+
 ## v1.0.40 — 2026-09-17
 
 - Animate layout changes made with Select+Y in the main view, including the list and artwork regions and their divider, in both orientations. Keep the divider visible throughout each transition.

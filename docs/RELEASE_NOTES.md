@@ -1,12 +1,11 @@
-Smooth layout changes while browsing
+A layout with nothing but the list
 
-Press Select+Y in the main view to switch layouts, and watch the list and game details move into place. The divider moves with them, so the screen stays easy to follow as it changes. This works in both orientations.
+Hold Select and press Y in the main view to reach Text, a fourth layout with no picture: the game list takes the whole screen. Long titles get far more room on a normal screen, and a rotated screen shows more games at once. Press A on any game for its details and screenshots as before. Picking a layout is back in Options under List, with small drawings of all four so you can see what each looks like before you choose.
 
 Also in this release:
 
-- Sources is easier to find at the top of the List section in Options. Layout selection now lives with the Select+Y shortcut.
-- Options rows that open another screen have an arrow, Safe zone has a shorter name, and related maintenance rows are indented.
+- Layout changes move at one steady speed, which looks smoother on a real CRT.
 
-Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1040--2026-09-17).
+Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1041--2026-09-17).
 Existing installations update through Update All. New installation:
 [installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once).
