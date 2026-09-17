@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -244,7 +245,9 @@ func Statuses(card string, idx *Index, rows []data.Row) []data.Status {
 	return out
 }
 
-// Alt is one alternative MRA under an _alternatives folder.
+// Alt is one MRA's header: an alternative under an _alternatives folder, or
+// any MRA the local walk found. The descriptive fields are what the header
+// says, verbatim; they only matter for a row the catalogue cannot supply.
 type Alt struct {
 	Path    string   `json:"path"` // card-relative
 	Size    int64    `json:"size,omitempty"`
@@ -253,6 +256,19 @@ type Alt struct {
 	Setname string   `json:"setname"`
 	Parent  string   `json:"parent,omitempty"`
 	Zips    []string `json:"zips"` // lowercase zip names the rom index 0 references
+
+	Name         string   `json:"name,omitempty"`
+	Year         string   `json:"year,omitempty"`
+	Manufacturer string   `json:"manufacturer,omitempty"`
+	Category     string   `json:"category,omitempty"`
+	Rotation     string   `json:"rotation,omitempty"` // e.g. "vertical (cw)"
+	Region       string   `json:"region,omitempty"`
+	Players      string   `json:"players,omitempty"`
+	Joystick     string   `json:"joystick,omitempty"`
+	NumButtons   int      `json:"num_buttons,omitempty"` // <num_buttons>; 0 = absent
+	ButtonNames  []string `json:"button_names,omitempty"`
+	Homebrew     bool     `json:"homebrew,omitempty"`
+	Bootleg      bool     `json:"bootleg,omitempty"`
 }
 
 // Skipped is an MRA under _Arcade/_alternatives whose header could not be
@@ -275,8 +291,9 @@ type altDir struct {
 	Skipped []Skipped `json:"skipped,omitempty"`
 }
 
-// Version 4 adds parent metadata; older entries must be reparsed.
-const altCacheVersion = 4
+// Version 4 added parent metadata, version 5 the descriptive header fields;
+// older entries must be reparsed.
+const altCacheVersion = 5
 
 // ScanAlternatives walks every _alternatives folder (altRoots), parsing
 // only the header of each MRA. A per-directory cache keyed by mtime
@@ -443,8 +460,10 @@ func skippedUnchanged(card string, skips []Skipped) bool {
 	return true
 }
 
-// ParseMRAHeader reads <rbf>, <setname> and the zip list of the first
-// <rom index="0"> from an MRA, stopping before the bulky <part> data.
+// ParseMRAHeader reads an MRA's header: <rbf>, <setname>, the zip list of
+// the first <rom index="0"> and the descriptive fields, skipping over the
+// bulky <part> data. Only the first 64 KiB are read; a header that continues
+// past that (ROM patches before <buttons>) simply loses its tail.
 func ParseMRAHeader(p string) (Alt, bool) {
 	a, s, err := parseMRAHeader(p)
 	return a, s == nil && err == nil
@@ -488,6 +507,18 @@ func parseMRA(r io.Reader) (Alt, bool) {
 // yields: the decoder reaches the end with nothing open.
 var errNoXML = errors.New("no XML content")
 
+// headerText names the root's children whose text is kept.
+var headerText = map[string]bool{
+	"rbf": true, "setname": true, "parent": true, "name": true, "year": true,
+	"manufacturer": true, "category": true, "rotation": true, "region": true,
+	"players": true, "joystick": true, "num_buttons": true, "homebrew": true, "bootleg": true,
+}
+
+// parseMRAResult reads the whole header. <rom> and <switches> subtrees are
+// skipped rather than tokenised. Once a <rom> has been seen the header is
+// complete enough: a read that fails after it (the 64 KiB limit landing in
+// ROM data) still yields the header, while a file cut short before any
+// <rom> is reported as unreadable, as before.
 func parseMRAResult(r io.Reader) (Alt, bool, error) {
 	var a Alt
 	dec := xml.NewDecoder(&commentStripper{br: bufio.NewReader(r)})
@@ -495,9 +526,13 @@ func parseMRAResult(r io.Reader) (Alt, bool, error) {
 	dec.CharsetReader = func(charset string, input io.Reader) (io.Reader, error) { return input, nil }
 	depth := 0
 	want := ""
+	sawROM := false
 	for {
 		tok, err := dec.Token()
 		if err != nil {
+			if sawROM && a.RBF != "" {
+				return a, true, nil
+			}
 			if err == io.EOF {
 				err = errNoXML
 			}
@@ -507,42 +542,51 @@ func parseMRAResult(r io.Reader) (Alt, bool, error) {
 		case xml.StartElement:
 			depth++
 			name := strings.ToLower(t.Name.Local)
-			switch name {
-			case "rbf", "setname", "parent":
+			if depth != 2 {
+				continue
+			}
+			switch {
+			case headerText[name]:
 				want = name
-			case "rom":
-				idx, zip := "", ""
+			case name == "buttons":
 				for _, at := range t.Attr {
-					switch strings.ToLower(at.Name.Local) {
-					case "index":
-						idx = at.Value
-					case "zip":
-						zip = at.Value
+					if strings.ToLower(at.Name.Local) == "names" {
+						a.ButtonNames = splitNames(at.Value)
 					}
 				}
-				if idx == "0" && a.Zips == nil {
-					for _, z := range strings.Split(zip, "|") {
-						z = strings.ToLower(strings.TrimSpace(z))
-						if z != "" {
-							a.Zips = append(a.Zips, z)
+			case name == "rom" || name == "switches":
+				if name == "rom" {
+					idx, zip := "", ""
+					for _, at := range t.Attr {
+						switch strings.ToLower(at.Name.Local) {
+						case "index":
+							idx = at.Value
+						case "zip":
+							zip = at.Value
 						}
 					}
-					if a.RBF != "" && (a.Setname != "" || a.Parent != "") {
+					if idx == "0" && a.Zips == nil {
+						for _, z := range strings.Split(zip, "|") {
+							z = strings.ToLower(strings.TrimSpace(z))
+							if z != "" {
+								a.Zips = append(a.Zips, z)
+							}
+						}
+					}
+					sawROM = true
+				}
+				if err := dec.Skip(); err != nil {
+					if a.RBF != "" {
 						return a, true, nil
 					}
+					return a, false, err
 				}
+				depth--
 			}
 		case xml.CharData:
 			if want != "" {
-				v := strings.TrimSpace(string(t))
-				if v != "" {
-					if want == "rbf" {
-						a.RBF = strings.ToLower(v)
-					} else if want == "parent" {
-						a.Parent = identity(v)
-					} else {
-						a.Setname = v
-					}
+				if v := strings.TrimSpace(string(t)); v != "" {
+					a.setText(want, v)
 				}
 			}
 		case xml.EndElement:
@@ -553,6 +597,62 @@ func parseMRAResult(r io.Reader) (Alt, bool, error) {
 			}
 		}
 	}
+}
+
+// setText stores one header element's text. Elements MiSTer reads
+// case-insensitively are kept as written except where matching needs a
+// canonical form.
+func (a *Alt) setText(name, v string) {
+	switch name {
+	case "rbf":
+		a.RBF = strings.ToLower(v)
+	case "parent":
+		a.Parent = identity(v)
+	case "setname":
+		a.Setname = v
+	case "name":
+		a.Name = v
+	case "year":
+		a.Year = v
+	case "manufacturer":
+		a.Manufacturer = v
+	case "category":
+		a.Category = v
+	case "rotation":
+		a.Rotation = v
+	case "region":
+		a.Region = v
+	case "players":
+		a.Players = v
+	case "joystick":
+		a.Joystick = v
+	case "num_buttons":
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			a.NumButtons = n
+		}
+	case "homebrew":
+		a.Homebrew = yes(v)
+	case "bootleg":
+		a.Bootleg = yes(v)
+	}
+}
+
+func yes(v string) bool {
+	switch strings.ToLower(strings.TrimSpace(v)) {
+	case "yes", "true", "1":
+		return true
+	}
+	return false
+}
+
+// splitNames splits a <buttons names="..."> list, keeping empty slots so
+// the positions stay meaningful to a caller that wants them.
+func splitNames(s string) []string {
+	parts := strings.Split(s, ",")
+	for i := range parts {
+		parts[i] = strings.TrimSpace(parts[i])
+	}
+	return parts
 }
 
 // commentStripper drops <!-- ... --> spans before the XML decoder sees them.
