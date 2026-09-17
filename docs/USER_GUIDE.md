@@ -337,6 +337,9 @@ and last row.
   and the details sit beside it when there is room, otherwise below in three
   lines. Every layout keeps at least four rows, even with a wide safe zone.
   Hold Select and press Y on the list to cycle the layout there.
+  The list and artwork move into place in a short animation; pressing again
+  redirects it immediately. Display -> Page transitions also turns this motion
+  off. The screenshot stays visible while resizing when it is already loaded.
   Highlighting this option shows diagrams of all three layouts;
   Left/Right changes the selection border and the saved layout. The previews
   follow the current orientation, with stacked list lines, an artwork rectangle,

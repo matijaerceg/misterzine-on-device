@@ -544,7 +544,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			h.frameLoop()
 		} else if h.a.SaverRunning() {
 			h.saverLoop()
-		} else if h.a.OptionSamplesRunning() || h.a.PageTransitionRunning() || h.a.DetailScrollRunning() || h.a.ListScrollRunning() {
+		} else if h.a.OptionSamplesRunning() || h.a.PageTransitionRunning() || h.a.LayoutTransitionRunning() || h.a.DetailScrollRunning() || h.a.ListScrollRunning() {
 			h.optionSampleLoop()
 		}
 		h.autosave(time.Now(), false)
@@ -684,7 +684,7 @@ func (h *host) frameLoop() {
 // optionSampleLoop drives previews, page wipes and detail scrolling at vertical blank.
 // Keep servicing events and saves, and allow inactivity to start the screensaver.
 func (h *host) optionSampleLoop() {
-	for (h.a.OptionSamplesRunning() || h.a.PageTransitionRunning() || h.a.DetailScrollRunning() || h.a.ListScrollRunning()) && !h.a.Repeating() {
+	for (h.a.OptionSamplesRunning() || h.a.PageTransitionRunning() || h.a.LayoutTransitionRunning() || h.a.DetailScrollRunning() || h.a.ListScrollRunning()) && !h.a.Repeating() {
 		if !h.pump() {
 			return
 		}

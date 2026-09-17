@@ -15,9 +15,13 @@ type rgb = color.RGBA
 // paintList draws the status bar, the list, the pane and the hint bar.
 func (a *App) paintList(c *gfx.Canvas) {
 	a.paintStatus(c)
-	a.paintRows(c)
-	a.paintScrollbar(c)
-	a.paintPane(c)
+	if a.LayoutTransitionRunning() {
+		a.paintLayoutMotion(c)
+	} else {
+		a.paintRows(c)
+		a.paintScrollbar(c)
+		a.paintPane(c)
+	}
 	// the last chunk reminds of the Select chords (quick.go); the bar drops
 	// it first when the safe zone leaves no room
 	var parts []string
@@ -450,6 +454,7 @@ func (a *App) paintPane(c *gfx.Canvas) {
 	default:
 		c.VLine(l.Pane.Min.X-1, l.Pane.Min.Y, l.Pane.Max.Y-1, gen.Eva.Line)
 	}
+	a.paintedThumb, a.paintedPaneText = image.Rectangle{}, image.Rectangle{}
 	row, d, i := a.current()
 	if row == nil {
 		return
@@ -464,6 +469,7 @@ func (a *App) paintPane(c *gfx.Canvas) {
 			text = image.Rect(l.Thumb.Min.X, l.Thumb.Max.Y+3, l.Pane.Max.X, l.Pane.Max.Y)
 		}
 	}
+	a.paintedThumb, a.paintedPaneText = drawn, text
 	lines := a.paneLines(row, d, i, a.sm.Cols(text.Dx()))
 	if l.PictureColumns {
 		// The fixed right column is narrow but tall: wrap information rather
@@ -548,6 +554,7 @@ func (a *App) paintPaneText(c *gfx.Canvas, r image.Rectangle, lines []paneLine) 
 // paintThumb draws a row's list thumbnail or a placeholder into box and
 // returns the rectangle it covered.
 func (a *App) paintThumb(c *gfx.Canvas, box image.Rectangle, row *data.Row) image.Rectangle {
+	a.paintedThumbImage = nil
 	key, slot := thumbSlot(row, a.ListShot())
 	if key == "" {
 		a.placeholder(c, box, "no shot")
@@ -569,6 +576,7 @@ func (a *App) paintThumb(c *gfx.Canvas, box image.Rectangle, row *data.Row) imag
 		}
 		return box
 	}
+	a.paintedThumbImage = img
 	// horizontal: on the left edge, in line with the text below; the
 	// classic tate pane centres it in the box beside the text; the wider
 	// layouts keep it left so the text can sit beside it

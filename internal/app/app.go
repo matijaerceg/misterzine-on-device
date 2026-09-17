@@ -157,17 +157,20 @@ type Config struct {
 
 // App is the state machine.
 type App struct {
-	transition    pageTransition
-	listMotion    listMotion
-	splash        startupSplash
-	optionSamples optionSampleClock
-	cfg           Config
-	body          *gfx.Font
-	sm            *gfx.Font
-	narrow        *gfx.Font // list titles, proportionally spaced
-	tall          *gfx.Font // the same at the body font's height
-	lay           Layout
-	rot           gfx.Rotation
+	transition                    pageTransition
+	layoutMotion                  layoutMotion
+	paintedThumb, paintedPaneText image.Rectangle
+	paintedThumbImage             *image.RGBA
+	listMotion                    listMotion
+	splash                        startupSplash
+	optionSamples                 optionSampleClock
+	cfg                           Config
+	body                          *gfx.Font
+	sm                            *gfx.Font
+	narrow                        *gfx.Font // list titles, proportionally spaced
+	tall                          *gfx.Font // the same at the body font's height
+	lay                           Layout
+	rot                           gfx.Rotation
 
 	logical  *gfx.Canvas // what views paint into
 	physical *image.RGBA // rotated frame handed to the display
@@ -286,6 +289,7 @@ func New(cfg Config, ds *data.Dataset, stored *data.SeenRecord) *App {
 }
 
 func (a *App) setRotation(rot gfx.Rotation) {
+	a.layoutMotion = layoutMotion{}
 	a.listMotion = listMotion{}
 	orientationChanged := a.rot.Rotated() != rot.Rotated()
 	a.rot = rot
@@ -859,6 +863,7 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 // Tick runs due repeats and expires notices; returns true to repaint.
 func (a *App) Tick(now time.Time) bool {
 	changed := a.tickPageTransition(now)
+	changed = a.tickLayoutMotion(now) || changed
 	changed = a.tickSplash(now) || changed
 	changed = a.tickMenu(now) || changed
 	changed = a.tickArcadeIntro(now) || changed
@@ -897,6 +902,7 @@ func (a *App) Tick(now time.Time) bool {
 func (a *App) Frame(now time.Time) bool {
 	a.saver.lastInput = now // a held direction is still activity
 	changed := a.tickPageTransition(now)
+	changed = a.tickLayoutMotion(now) || changed
 	changed = a.tickSplash(now) || changed
 	changed = a.tickMenu(now) || changed
 	changed = a.tickArcadeIntro(now) || changed
@@ -923,7 +929,7 @@ func (a *App) Frame(now time.Time) bool {
 // NextTick reports when Tick next needs to run; zero when nothing is pending.
 func (a *App) NextTick() time.Time {
 	// Enter the preview frame loop immediately, including after releasing a key.
-	if a.OptionSamplesRunning() || a.ListScrollRunning() {
+	if a.OptionSamplesRunning() || a.ListScrollRunning() || a.LayoutTransitionRunning() {
 		return a.cfg.TimerNow()
 	}
 	t := a.rep.nextAt()
@@ -1184,6 +1190,13 @@ func (a *App) neighbourhood() {
 // Paint renders whatever changed and returns the physical frame with the
 // rectangles that need presenting (nil when nothing changed).
 func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
+	a.validateLayoutMotion()
+	if !a.all && a.LayoutTransitionRunning() && a.layoutMotion.dirty {
+		a.wants = a.wants[:0]
+		a.logical.Fill(a.lay.Body, gen.Eva.Bg)
+		a.paintLayoutMotion(a.logical)
+		return a.rotatePaint()
+	}
 	if a.screen != ScreenList || a.saver.active {
 		a.listMotion = listMotion{}
 	}

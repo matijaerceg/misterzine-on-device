@@ -24,8 +24,10 @@ func (a *App) cycleListLayout() bool {
 			i = n
 		}
 	}
+	motion := a.captureLayoutMotion()
 	a.cfg.ListLayout = listLayouts[(i+1)%len(listLayouts)]
 	a.setRotation(a.rot) // the rows and the pane change shape
+	a.startLayoutMotion(motion)
 	a.settingsChanged()
 	a.Notice("Layout: "+a.cfg.ListLayout, 2*time.Second)
 	return true
