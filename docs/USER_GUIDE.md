@@ -177,8 +177,8 @@ reminder) and the legend changes: Y cycles Layout, X switches Art type, and A st
 the game under the cursor (in the Favorites view an unstarred row drops
 out and the cursor moves to its neighbour). Select alone does nothing, and
 while it is down every other button waits, so nothing moves or launches by
-accident. Layout and Art type are saved. Layout is changed through this
-shortcut; Art type is also in Options. Only a pad defined in MiSTer has a Select.
+accident. Layout and Art type are saved, and both are also in Options.
+Only a pad defined in MiSTer has a Select.
 
 **Layouts:** List is the default: the full list with the small pane beside
 it (or below it in tate). Split widens the pane to under half the screen
@@ -186,8 +186,11 @@ with a picture to match, leaving shorter rows. Picture runs the picture
 across the screen, in horizontal above a few full-width rows with the
 details beside it, in tate below the rows; a vertical shot keeps its shape
 and the details sit beside it when there is room, otherwise below in three
-lines. Every layout keeps at least four rows, even with a wide safe zone.
-Hold Select and press Y on the list to cycle the layout there.
+lines. Text drops the pane: the rows alone fill the screen, so long titles
+have more room in horizontal and tate shows more of them; A still opens the
+details. Every layout keeps at least four rows, even with a wide safe zone.
+Hold Select and press Y on the list to cycle the layout there, or pick one
+in Options -> List -> Layout, where the help box draws all four.
 The list and artwork move into place in a short animation; pressing again
 redirects it immediately. Display -> Page transitions also turns this motion
 off. The screenshot stays visible while resizing when it is already loaded.
@@ -337,6 +340,10 @@ and last row. Rows marked ↗ open another screen or editor.
 - **Art type:** which screenshot the list pane shows for the selected row:
   gameplay (default) or the title screen. Details and the artwork view still
   show every shot. Hold Select and press X on the list to switch it there.
+- **Layout:** List (default), Split, Picture or Text, as described under
+  Layouts above. The help box draws the four at the current orientation
+  with the chosen one framed. Hold Select and press Y on the list to cycle
+  them there.
 - **Date format:** how list dates read: MM-DD (default), DD-MM, Mon D (Sep 7),
   D Mon (7 Sep) or YYMMDD (260907). The help line shows today's date in the
   chosen format. Rows from earlier years show the year alone, except with

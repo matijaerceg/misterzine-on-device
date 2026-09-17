@@ -84,12 +84,23 @@ func (a *App) startLayoutMotion(m layoutMotion) {
 	a.cfg.Images = images
 	m.toThumb, m.toText = a.paintedThumb, a.paintedPaneText
 	m.toCaption = copyLayoutPixels(c.RGBA, m.toText)
-	if row, _, _ := a.current(); row != nil {
+	if row, _, _ := a.current(); row != nil && !a.lay.Thumb.Empty() {
 		key, slot := thumbSlot(row, a.ListShot())
 		m.request = ImageReq{Key: key, Slot: slot, W: a.lay.Thumb.Dx(), H: a.lay.Thumb.Dy(), Stretch: slot != "system" && row.ImgW > row.ImgH}
 	}
 	if m.art == nil && a.paintedThumbImage != nil {
 		m.art = copyLayoutPixels(c.RGBA, m.toThumb)
+	}
+	// To or from the text layout the pane's contents keep their size and
+	// slide off the body's far edge, the side that layout's empty pane marks.
+	if m.from.Pane.Empty() && !a.lay.Pane.Empty() {
+		off := offBody(m.from, a.lay.Body)
+		m.fromThumb, m.fromText = m.toThumb.Add(off), m.toText.Add(off)
+		m.caption = m.toCaption
+	} else if !m.from.Pane.Empty() && a.lay.Pane.Empty() {
+		off := offBody(a.lay, a.lay.Body)
+		m.toThumb, m.toText = m.fromThumb.Add(off), m.fromText.Add(off)
+		m.toCaption = m.caption
 	}
 	m.current, m.currentY, m.currentThumb, m.currentText = m.from, m.fromY, m.fromThumb, m.fromText
 	m.currentDivider = m.fromDivider
@@ -189,14 +200,16 @@ func (a *App) paintLayoutMotion(c *gfx.Canvas) {
 		pos++
 	}
 	a.paintScrollbar(c)
-	// Keep the pane opaque while its contents move with it.
-	c.Fill(l.Pane, gen.Eva.Bg)
+	// Keep the pane opaque while its contents move with it; nothing of it
+	// spills past the body when it slides out for the text layout.
+	body := &gfx.Canvas{RGBA: c.Sub(final.Body)}
+	body.Fill(l.Pane, gen.Eva.Bg)
 	if m.art != nil {
-		scaleLayoutArt(c, m.art, l.Thumb, m.artX)
+		scaleLayoutArt(body, m.art, l.Thumb, m.artX)
 	}
 	// Dissolve between the two fixed caption rasters at their moving origin.
 	// Neither lettering nor line spacing is scaled or rewrapped per frame.
-	clip := l.PaneText.Intersect(l.Pane).Intersect(c.Rect)
+	clip := l.PaneText.Intersect(l.Pane).Intersect(body.Rect)
 	for y := clip.Min.Y; y < clip.Max.Y; y++ {
 		for x := clip.Min.X; x < clip.Max.X; x++ {
 			src := m.caption
@@ -215,8 +228,17 @@ func (a *App) paintLayoutMotion(c *gfx.Canvas) {
 		}
 	}
 	m.currentDivider = m.fromDivider.interpolate(dividerForLayout(final), p)
-	m.currentDivider.paint(c)
+	m.currentDivider.paint(c, final.Body)
 	c.Dirty(final.Body)
+}
+
+// offBody is the translation that moves a rectangle in the body just past
+// the edge where l's empty pane sits (text layout): right, or down in tate.
+func offBody(l Layout, body image.Rectangle) image.Point {
+	if l.Portrait {
+		return image.Pt(0, body.Dy())
+	}
+	return image.Pt(body.Dx(), 0)
 }
 
 // Nearest-neighbour is deliberately inexpensive and preserves screenshot pixels.
@@ -278,6 +300,16 @@ func (f layoutFallbackImages) Get(req ImageReq) (*image.RGBA, ImageState) {
 type paneDivider [3]image.Point
 
 func dividerForLayout(l Layout) paneDivider {
+	if l.Pane.Empty() {
+		// the text layout: a divider on the body's far edge, which paint
+		// clips away; a transition slides the real one out to it
+		if l.Portrait {
+			left, right := image.Pt(l.Pane.Min.X, l.Body.Max.Y), image.Pt(l.Pane.Max.X-1, l.Body.Max.Y)
+			return paneDivider{left, left, right}
+		}
+		top, bottom := image.Pt(l.Body.Max.X, l.Pane.Min.Y), image.Pt(l.Body.Max.X, l.Pane.Max.Y-1)
+		return paneDivider{top, bottom, bottom}
+	}
 	if l.PaneTop || l.Portrait {
 		y := l.Pane.Min.Y - 1
 		if l.PaneTop {
@@ -296,7 +328,8 @@ func (d paneDivider) interpolate(to paneDivider, p float64) paneDivider {
 	}
 	return out
 }
-func (d paneDivider) paint(c *gfx.Canvas) {
-	c.VLine(d[0].X, d[0].Y, d[1].Y, gen.Eva.Line)
-	c.HLine(d[1].X, d[2].X, d[2].Y, gen.Eva.Line)
+func (d paneDivider) paint(c *gfx.Canvas, body image.Rectangle) {
+	b := &gfx.Canvas{RGBA: c.Sub(body)}
+	b.VLine(d[0].X, d[0].Y, d[1].Y, gen.Eva.Line)
+	b.HLine(d[1].X, d[2].X, d[2].Y, gen.Eva.Line)
 }

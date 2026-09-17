@@ -27,8 +27,10 @@ type Layout struct {
 	Thumb    image.Rectangle // thumbnail box inside the pane
 	PaneText image.Rectangle // text area of the pane
 	// Style is the list layout: "list" (the pane beside or below a full
-	// list), "split" (a wider pane with a bigger picture) or "picture" (the
-	// picture across the screen with a few rows beside it).
+	// list), "split" (a wider pane with a bigger picture), "picture" (the
+	// picture across the screen with a few rows beside it) or "text" (the
+	// rows alone across the body: no pane, so Pane and Thumb are empty and
+	// the titles get the room).
 	Style string
 	// PaneTop puts the pane above the list (picture layout, horizontal).
 	PaneTop bool
@@ -51,8 +53,9 @@ const (
 	paneTextH = 30
 )
 
-// listLayouts are the choices cycled by Select+Y on the main list.
-var listLayouts = []string{"list", "split", "picture"}
+// listLayouts are the choices cycled by Select+Y on the main list and picked
+// by Options -> Layout; the first is the default.
+var listLayouts = []string{"list", "split", "picture", "text"}
 
 // NewLayout computes the layout for a logical W x H canvas. The insets are
 // the safe-zone margins as the viewer sees the picture: ix at the left and
@@ -71,6 +74,18 @@ func NewLayout(w, h, ix, iy int, body *gfx.Font, rowW, dateCols int, style strin
 		captionH = paneH
 	}
 	switch {
+	case style == "text":
+		// the rows fill the body; the pane is an empty rectangle on the far
+		// edge (right, or bottom in tate) so the divider and the art slide
+		// out that way in a layout transition
+		l.List = b
+		if l.Portrait {
+			l.Pane = image.Rect(b.Min.X, b.Max.Y, b.Max.X, b.Max.Y)
+		} else {
+			l.Pane = image.Rect(b.Max.X, b.Min.Y, b.Max.X, b.Max.Y)
+		}
+		l.Thumb = image.Rectangle{Min: l.Pane.Min, Max: l.Pane.Min}
+		l.PaneText = l.Thumb
 	case l.Portrait && style == "split":
 		// the bottom pane takes 40% of the body: a 4:3 picture at the left
 		// and the text beside it (a vertical shot leaves it more room)

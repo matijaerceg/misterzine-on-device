@@ -137,8 +137,8 @@ type Config struct {
 	// DateFormat is the list date column: "mm-dd" (default), "dd-mm",
 	// "mon-d", "d-mon" or "yymmdd".
 	DateFormat string
-	// ListLayout is the main view's arrangement: "list" (default), "split"
-	// or "picture" (see Layout.Style).
+	// ListLayout is the main view's arrangement: "list" (default), "split",
+	// "picture" or "text" (see Layout.Style).
 	ListLayout string
 	// Canvas is Options -> Canvas, "full" (default), "fit" or "320x240"; the host
 	// applies it live, the app shows and saves the selected choice.
@@ -1173,6 +1173,9 @@ func (a *App) neighbourhood() {
 		return
 	}
 	box := a.lay.Thumb
+	if box.Empty() {
+		return // the text layout shows no pictures
+	}
 	for d := 1; d <= 16; d++ {
 		for _, pos := range []int{a.cursor + d, a.cursor - d} {
 			if pos < 0 || pos >= len(a.view) || (d > 6 && pos < a.cursor) {

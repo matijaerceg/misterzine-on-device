@@ -28,6 +28,10 @@ func TestSelectChordsToggleLayoutAndShots(t *testing.T) {
 	}
 	tap(platform.KeySpace)
 	tap(platform.KeySpace)
+	if a.ListLayout() != "text" {
+		t.Fatalf("Select+Y should reach text, got %q", a.ListLayout())
+	}
+	tap(platform.KeySpace)
 	if a.ListLayout() != "list" {
 		t.Fatalf("Select+Y should cycle back to list, got %q", a.ListLayout())
 	}
@@ -35,8 +39,8 @@ func TestSelectChordsToggleLayoutAndShots(t *testing.T) {
 	if a.ListShot() != "title" || a.screen != ScreenList {
 		t.Fatalf("Select+X: shot %q, screen %v", a.ListShot(), a.screen)
 	}
-	if changed != 4 {
-		t.Fatalf("settings changed %d times, want 4", changed)
+	if changed != 5 {
+		t.Fatalf("settings changed %d times, want 5", changed)
 	}
 	// Select + A stars the row; the other buttons wait while Select is down
 	if a.cursor != 0 {

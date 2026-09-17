@@ -309,15 +309,28 @@ func TestLayoutDividerVisibleThroughMotion(t *testing.T) {
 				if d[0] == d[2] {
 					t.Fatal("divider collapsed")
 				}
+				// on the way to the text layout it slides off the body's edge
+				inside := 0
 				for y := d[0].Y; y <= d[1].Y; y++ {
+					if !image.Pt(d[0].X, y).In(a.lay.Body) {
+						continue
+					}
+					inside++
 					if got := a.logical.RGBAAt(d[0].X, y); got != gen.Eva.Line {
 						t.Fatal("vertical divider disappeared", rot, cycle, frame, y)
 					}
 				}
 				for x := d[1].X; x <= d[2].X; x++ {
+					if !image.Pt(x, d[2].Y).In(a.lay.Body) {
+						continue
+					}
+					inside++
 					if got := a.logical.RGBAAt(x, d[2].Y); got != gen.Eva.Line {
 						t.Fatal("horizontal divider disappeared", rot, cycle, frame, x)
 					}
+				}
+				if inside == 0 && a.layoutMotion.progress < 0.9 {
+					t.Fatal("divider left the body early", rot, cycle, frame)
 				}
 			}
 			from := a.layoutMotion.currentDivider

@@ -21,7 +21,14 @@ func TestListLayouts(t *testing.T) {
 					t.Fatalf("%dx%d inset %d %s: pane %v list %v thumb %v body %v", size[0], size[1], inset, style, l.Pane, l.List, l.Thumb, l.Body)
 				}
 				area := l.Thumb.Dx() * l.Thumb.Dy()
-				if style == "list" {
+				if style == "text" {
+					// no pane: the rows take the body, so the titles are wider
+					// (horizontal) or there are more of them (tate)
+					classic := NewLayout(size[0], size[1], inset, inset, fonts.Body(), fonts.NarrowTall().W, 5, "list")
+					if !l.Pane.Empty() || !l.Thumb.Empty() || l.List.Max.X != l.Body.Max.X-4 || l.List.Max.Y != l.Body.Max.Y || l.TitleW < classic.TitleW || l.Lines < classic.Lines || (l.TitleW == classic.TitleW && l.Lines == classic.Lines) {
+						t.Fatalf("%dx%d inset %d text: pane %v list %v body %v title %d lines %d", size[0], size[1], inset, l.Pane, l.List, l.Body, l.TitleW, l.Lines)
+					}
+				} else if style == "list" {
 					classic[l.Portrait] = area
 				} else if area <= classic[l.Portrait] {
 					t.Fatalf("%dx%d inset %d %s: picture %v not bigger than the classic one", size[0], size[1], inset, style, l.Thumb)
@@ -29,7 +36,7 @@ func TestListLayouts(t *testing.T) {
 				if l.Lines < 4 {
 					t.Fatalf("%dx%d inset %d %s: only %d rows", size[0], size[1], inset, style, l.Lines)
 				}
-				if l.Style != style || l.TextBeside != (style != "list" && !(style == "split" && !l.Portrait)) || l.PaneTop != (style == "picture" && !l.Portrait) {
+				if l.Style != style || l.TextBeside != (style == "picture" || (style == "split" && l.Portrait)) || l.PaneTop != (style == "picture" && !l.Portrait) {
 					t.Fatalf("%dx%d %s: flags style %q beside %v top %v", size[0], size[1], style, l.Style, l.TextBeside, l.PaneTop)
 				}
 			}
@@ -51,8 +58,37 @@ func TestListLayouts(t *testing.T) {
 		t.Fatal("picture not applied")
 	}
 	a.cycleListLayout()
+	if a.ListLayout() != "text" || !a.lay.Pane.Empty() || a.lay.List.Dx() <= 320-2*paneW {
+		t.Fatal("text not applied")
+	}
+	a.cycleListLayout()
 	if a.ListLayout() != "list" {
 		t.Fatal("layout did not wrap")
+	}
+	// Options -> Layout picks one directly
+	a.screen = ScreenOptions
+	a.buildPanel()
+	expandOptionsForTest(a)
+	for i, e := range a.panel.entries {
+		if e.kind == "list-layout" {
+			a.panel.cursor = i
+		}
+	}
+	for range 3 {
+		a.stepValue(1)
+	}
+	if a.ListLayout() != "text" || a.lay.Style != "text" {
+		t.Fatalf("Right on the layout row: %q", a.ListLayout())
+	}
+	if a.stepValue(1) {
+		t.Fatal("stepped past the last layout")
+	}
+	a.stepValue(-1)
+	if a.ListLayout() != "picture" || !a.lay.PaneTop {
+		t.Fatalf("Left on the layout row: %q", a.ListLayout())
+	}
+	if !a.togglePanel() {
+		t.Fatal("A on the layout row")
 	}
 
 }
@@ -62,7 +98,7 @@ func TestFullDisplayLayouts(t *testing.T) {
 		for _, inset := range []int{0, 15, 40} {
 			for _, style := range listLayouts {
 				l := NewLayout(size[0], size[1], inset, inset, fonts.Body(), fonts.NarrowTall().W, 5, style)
-				if !l.Pane.In(l.Body) || !l.List.In(l.Body) || !l.Thumb.In(l.Pane) || l.List.Overlaps(l.Pane) || l.Lines < 4 {
+				if !l.Pane.In(l.Body) || !l.List.In(l.Body) || !l.Thumb.In(l.Pane) || l.List.Overlaps(l.Pane) || l.Lines < 4 || (style == "text") != l.Pane.Empty() {
 					t.Fatalf("%v inset %d %s: invalid layout %+v", size, inset, style, l)
 				}
 				if l.Portrait && style == "split" && l.Pane.Max.Y-l.Thumb.Max.Y-3 < paneTextH {

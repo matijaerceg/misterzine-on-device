@@ -142,11 +142,12 @@ for rotation in ([], ["-rot", "left", "-logical"]):
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):
-        # Select+Y: split and picture, a vertical shot in each
+        # Select+Y: split, picture and text, a vertical shot in each
         scenarios.append([*rotation, "-inset", str(inset), "-layout", "split",
                           "-out", f"out/list-layout-{orientation}-{inset}", "-script",
                           "down*2; shot split; type 1942; shot split-vertical; back; press select; space; release select; wait 2200; "
-                          "shot picture; type 1942; shot picture-vertical"])
+                          "shot picture; type 1942; shot picture-vertical; back; press select; space; release select; wait 2200; "
+                          "shot text; type 1942; shot text-vertical"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     # Options -> Button labels: PlayStation symbols on the list, Details and
@@ -180,14 +181,15 @@ for canvas in ("360x270", "400x300"):
         scenarios.append([*rotation, "-canvas", canvas,
                           "-out", f"out/fit-{canvas}-{orientation}", "-script",
                           "shot list; enter; shot details; back; tab; shot filter; back; back; shot options; "
-                          "back; press select; space; release select; wait 2200; shot split; press select; space; release select; wait 2200; shot picture"])
+                          "back; press select; space; release select; wait 2200; shot split; press select; space; release select; wait 2200; shot picture; "
+                          "press select; space; release select; wait 2200; shot text"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     # Select held on the list: the chord legend, Y cycling the layout, X the
     # list shot, then the ordinary legend and the sort once it is released
     scenarios.append([*rotation,
                       "-out", f"out/quick-{orientation}", "-script",
-                      "press select; shot chord-legend; space; shot layout-split; space; shot layout-picture; "
+                      "press select; shot chord-legend; space; shot layout-split; space; shot layout-picture; space; shot layout-text; space; "
                       "tab; shot shots-title; enter; shot favorite-added; release select; shot released; space; shot sorted"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
@@ -241,6 +243,11 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "back; home; pagedown*2; right; down*6; shot on; left; shot off"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
+    # Options -> Layout: the four diagrams in the help box, the chosen one framed
+    scenarios.append([*rotation, "-out", f"out/layout-previews-{orientation}", "-script",
+                      "back; home; pagedown; right; down*10; shot list; right; shot split; right; shot picture; right; shot text; down; shot dismissed"])
+for rotation in ([], ["-rot", "left", "-logical"]):
+    orientation = "t" if rotation else "h"
     for inset in (15, 40):
         scenarios.append([*rotation, "-inset", str(inset), "-arcade-intro",
                           "-out", f"out/arcade-first-{orientation}-{inset}", "-script",
@@ -257,7 +264,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "end; shot bottom; up*2; enter; shot troubleshooting; back; shot returned"])
 for rotation in ([], ["-rot", "left", "-logical"], ["-rot", "right", "-logical"]):
     orientation = rotation[1] if rotation else "horizontal"
-    for layout in ("list", "split", "picture"):
+    for layout in ("list", "split", "picture", "text"):
         scenarios.append([*rotation, "-canvas", "480x270", "-layout", layout,
                           "-out", f"out/full-display-{orientation}-{layout}", "-script",
                           "shot list; enter; shot details; back; tab; shot filters; back; back; shot options; home; pagedown*2; right; down*5; left*2; shot full-option; home; pagedown*2; right; down*3; enter; down; enter; wait 12000; shot saver"])

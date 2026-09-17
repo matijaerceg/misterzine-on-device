@@ -51,7 +51,7 @@ type Settings struct {
 	TitleFont       string `json:"title_font"`        // list titles: tall (default), narrow or normal
 	ListShot        string `json:"list_shot"`         // list thumbnail: gameplay (default) or title
 	DateFormat      string `json:"date_format"`       // list dates: mm-dd (default), dd-mm, mon-d, d-mon, yymmdd
-	ListLayout      string `json:"list_layout"`       // main view: list (default), split or picture
+	ListLayout      string `json:"list_layout"`       // main view: list (default), split, picture or text
 	ButtonLabels    string `json:"button_labels"`     // legend button names: mister (default), xbox, playstation or numbers
 	Canvas          string `json:"canvas"`            // Options -> Canvas: full (default: both display dimensions), fit (4:3), or 320x240
 	MenuButton      string `json:"menu_button"`       // Options -> Menu button: options (default) or leave

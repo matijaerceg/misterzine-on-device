@@ -446,8 +446,12 @@ func (a *App) paintTitle(c *gfx.Canvas, x, y, w int, title string, beta bool, co
 func (a *App) paintPane(c *gfx.Canvas) {
 	l := &a.lay
 	c.Fill(l.Pane, gen.Eva.Bg)
-	dividerForLayout(*l).paint(c)
+	dividerForLayout(*l).paint(c, l.Body)
 	a.paintedThumb, a.paintedPaneText = image.Rectangle{}, image.Rectangle{}
+	if l.Pane.Empty() {
+		a.paintedThumbImage = nil // the text layout: rows only
+		return
+	}
 	row, d, i := a.current()
 	if row == nil {
 		return
