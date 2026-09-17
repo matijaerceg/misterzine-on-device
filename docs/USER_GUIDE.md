@@ -119,8 +119,8 @@ speed as Up/Down row scrolling. Releasing the button stops the jumps.
 The app checks data on launch and every 30 minutes; Options can request a check
 immediately. An unset system clock hides relative dates until trusted time is
 available.
-Options shows **Catalog**, when the catalog was published, and **Last checked**,
-the last successful check during this session. An older publication time can
+The end of the Options list shows **Catalog**, when the catalog was published,
+and **Last checked**, the last successful check during this session. An older publication time can
 still be current. Routine checks and data age stay out of the list's top bar;
 connection failures and app-update availability remain visible.
 
@@ -269,7 +269,8 @@ row: Change with the arrow that can still move on a choice row, A with what
 it does where A acts (Preview on the screensaver rows, Open, Edit, Run,
 Refresh, Rescan, Clear, Quit), and only Back on a greyed row.
 The framed text under the list describes the selected
-option, and the build version and catalogue date sit below it in grey. B
+option. The build version, the catalogue date and the last check are grey
+rows after Quit MisterZine, at the end of the list. B
 (or the Menu button) returns to the screen Options was opened over: the
 list, or Details, the artwork or Filters when the Menu button opened it
 there, Filters as you left it. The next B reopens Options on the row you

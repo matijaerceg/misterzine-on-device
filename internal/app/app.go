@@ -650,6 +650,9 @@ func (a *App) SetNet(s string) {
 // SetCatalogChecked records a successful check, even when the catalog is unchanged.
 func (a *App) SetCatalogChecked(t time.Time) {
 	a.catalogChecked = t
+	if a.screen == ScreenOptions {
+		a.buildPanel() // the Last checked row at the end of the list
+	}
 	a.all = true
 }
 

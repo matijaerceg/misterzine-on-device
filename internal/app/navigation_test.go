@@ -15,6 +15,9 @@ func TestOptionsHoldStopsAtEndsAndFreshPressWraps(t *testing.T) {
 				a.openPanel(ScreenOptions)
 				first := a.panel.cursor // past the Data heading
 				last := len(a.panel.entries) - 1
+				for a.panel.entries[last].kind != "quit" {
+					last-- // the greyed build and data rows after Quit are not stops
+				}
 				end, other, start := first, last, first+1
 				if key == platform.KeyDown {
 					end, other, start = last, first, last-1

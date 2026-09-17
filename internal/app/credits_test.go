@@ -18,7 +18,7 @@ func TestCreditsPage(t *testing.T) {
 	a.actList(platform.KeyBack)
 	a.actPanel(platform.KeyEnd)
 	a.actPanel(platform.KeyUp)
-	if e := a.panel.entries[a.panel.cursor]; e.kind != "credits" || a.panel.cursor != len(a.panel.entries)-2 {
+	if e := a.panel.entries[a.panel.cursor]; e.kind != "credits" || a.panel.entries[a.panel.cursor+1].kind != "quit" {
 		t.Fatalf("End, Up lands on %q at %d of %d", e.text, a.panel.cursor, len(a.panel.entries))
 	}
 	a.actPanel(platform.KeyEnter)

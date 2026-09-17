@@ -1,6 +1,7 @@
 package app
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -56,11 +57,37 @@ func TestOptionsHintsFitTheHelpBox(t *testing.T) {
 	}
 }
 
-// Credits sits above Quit, which is the last row of Options.
+// Credits sits above Quit, the last selectable row of Options; the build
+// and data details follow as greyed info rows, so they cost no room until
+// scrolled to.
 func TestOptionsEndsWithCreditsThenQuit(t *testing.T) {
-	a := New(Config{PhysW: 320, PhysH: 240, Launcher: func() bool { return true }}, data.Ingest([]data.Row{{Base: "Arcade", K: "a", Title: "Alpha"}}, "", time.Now()), nil)
+	a := New(Config{PhysW: 320, PhysH: 240, Version: "v9.9.9", Launcher: func() bool { return true }}, data.Ingest([]data.Row{{Base: "Arcade", K: "a", Title: "Alpha"}}, "", time.Now()), nil)
 	E := a.optionsEntries()
-	if n := len(E); n < 2 || E[n-2].kind != "credits" || E[n-1].kind != "quit" {
-		t.Fatalf("last rows %q, %q; want credits then quit", E[len(E)-2].text, E[len(E)-1].text)
+	n := len(E)
+	if n < 6 || E[n-6].kind != "credits" || E[n-5].kind != "quit" {
+		t.Fatalf("rows before the details %q, %q; want credits then quit", E[n-6].text, E[n-5].text)
+	}
+	for _, e := range E[n-4:] {
+		if !e.header || !e.info || e.kind != "" {
+			t.Fatalf("detail row %q must be a greyed info row", e.text)
+		}
+	}
+	if E[n-4].text != "" || E[n-3].text != "misterzine v9.9.9" || !strings.HasPrefix(E[n-2].text, "Catalog: ") || !strings.HasPrefix(E[n-1].text, "Last checked: ") {
+		t.Fatalf("detail rows %q, %q, %q, %q", E[n-4].text, E[n-3].text, E[n-2].text, E[n-1].text)
+	}
+}
+
+// A check that finishes while Options is open refreshes the Last checked row.
+func TestOptionsLastCheckedRowFollowsChecks(t *testing.T) {
+	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest([]data.Row{{Base: "Arcade", K: "a", Title: "Alpha"}}, "", time.Now()), nil)
+	a.openPanel(ScreenOptions)
+	last := func() string { return a.panel.entries[len(a.panel.entries)-1].text }
+	if last() != "Last checked: Not yet" {
+		t.Fatalf("before any check: %q", last())
+	}
+	now := time.Date(2026, 9, 17, 12, 34, 0, 0, time.Local)
+	a.SetCatalogChecked(now)
+	if want := "Last checked: " + catalogStamp(now, "Not yet"); last() != want {
+		t.Fatalf("after a check: %q, want %q", last(), want)
 	}
 }

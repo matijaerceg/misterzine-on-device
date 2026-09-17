@@ -37,10 +37,10 @@ func TestOptionsGroups(t *testing.T) {
 				glyph, title string
 				kinds        []string
 			}{e.glyph, e.text, nil})
+		case e.header && e.info:
+			// a spacer, or one of the greyed build and data rows after Quit
 		case e.header:
-			if e.text != "" {
-				t.Errorf("header %q without a mark", e.text)
-			}
+			t.Errorf("header %q without a mark", e.text)
 		default:
 			got[len(got)-1].kinds = append(got[len(got)-1].kinds, e.kind)
 		}

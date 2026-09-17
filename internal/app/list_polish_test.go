@@ -222,13 +222,8 @@ func TestOptionsLayoutCuesAndColumn(t *testing.T) {
 		}
 		return n
 	}
-	// the build and data lines sit just above the hint bar, greyed
-	versionRows := image.Rect(l.Body.Min.X, l.Body.Max.Y-3*font.H-2, l.Body.Max.X, l.Body.Max.Y)
-	if count(versionRows, gen.Eva.Muted) == 0 || count(versionRows, gen.Eva.Line) != 0 {
-		t.Fatal("version rows must be greyed and unframed above the hint bar")
-	}
-	// the help text is framed
-	helpBox := image.Rect(l.Body.Min.X, versionRows.Min.Y-(4*(font.H+1)+5), l.Body.Max.X, versionRows.Min.Y)
+	// the help text is framed at the bottom of the body
+	helpBox := image.Rect(l.Body.Min.X, l.Body.Max.Y-(4*(font.H+1)+5), l.Body.Max.X, l.Body.Max.Y)
 	if count(image.Rect(helpBox.Min.X, helpBox.Min.Y, helpBox.Max.X, helpBox.Min.Y+1), gen.Eva.Line) != helpBox.Dx() {
 		t.Fatal("help text must be framed")
 	}
@@ -273,7 +268,7 @@ func TestOptionsLayoutCuesAndColumn(t *testing.T) {
 	a.openPanel(ScreenOptions)
 	a.Paint()
 	l = &a.lay
-	inner = image.Rect(l.Body.Min.X+2, l.Body.Min.Y+2, l.Body.Max.X-2, l.Body.Max.Y-3*font.H-2-(4*(font.H+1)+5)-2)
+	inner = image.Rect(l.Body.Min.X+2, l.Body.Min.Y+2, l.Body.Max.X-2, l.Body.Max.Y-(4*(font.H+1)+5)-2)
 	if a.valueColumn(inner, inner.Max.X-2-font.W) != 0 {
 		t.Fatal("the narrow tate layout right-aligns values")
 	}

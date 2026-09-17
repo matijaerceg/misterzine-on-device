@@ -503,6 +503,11 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Test your Start button or game launching. Results stay on screen for a photo; no keyboard or log files needed."},
 		{text: "Credits", kind: "credits"},
 		{text: "Quit MisterZine", kind: "quit"},
+		// the build and data details: greyed, not selectable, below Quit
+		spacer,
+		{text: "misterzine " + a.cfg.Version, header: true, info: true},
+		{text: "Catalog: " + catalogStamp(a.ds.Updated, "Unknown"), header: true, info: true},
+		{text: "Last checked: " + catalogStamp(a.catalogChecked, "Not yet"), header: true, info: true},
 	}...)
 	if a.ScrollSpeed() != "60" {
 		for i, e := range E {
@@ -590,22 +595,17 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 		a.paintHoldBar(c)
 	}
 	c.Fill(l.Body, gen.Eva.Bg)
-	// Filters frames its entries. Options frames the help text instead and
-	// lists the build and data details, greyed, just above the hint bar.
+	// Filters frames its entries. Options frames the help text instead, at
+	// the bottom of the body; the build and data details are greyed rows at
+	// the end of the list, so they take no room unless scrolled to.
 	var inner, helpBox image.Rectangle
 	helpLines := 0
 	if a.screen == ScreenOptions || a.screen == ScreenSaverOptions {
 		// Keep the hint and preview area fixed at four lines in both orientations.
 		helpLines = 4
-		versionH := 3*font.H + 2
 		helpH := helpLines*(font.H+1) + 5
-		helpBox = image.Rect(l.Body.Min.X, l.Body.Max.Y-versionH-helpH, l.Body.Max.X, l.Body.Max.Y-versionH)
+		helpBox = image.Rect(l.Body.Min.X, l.Body.Max.Y-helpH, l.Body.Max.X, l.Body.Max.Y)
 		inner = image.Rect(l.Body.Min.X+2, l.Body.Min.Y+2, l.Body.Max.X-2, helpBox.Min.Y-2)
-		cols := font.Cols(l.Body.Dx() - 4)
-		vy := helpBox.Max.Y + 2
-		c.Text(l.Body.Min.X+2, vy, font, gfx.Fit("misterzine "+a.cfg.Version, cols), gen.Eva.Muted)
-		c.Text(l.Body.Min.X+2, vy+font.H, font, gfx.Fit("Catalog: "+catalogStamp(a.ds.Updated, "Unknown"), cols), gen.Eva.Muted)
-		c.Text(l.Body.Min.X+2, vy+2*font.H, font, gfx.Fit("Last checked: "+catalogStamp(a.catalogChecked, "Not yet"), cols), gen.Eva.Muted)
 	} else {
 		c.Box(l.Body, gen.Eva.Line)
 		inner = l.Body.Inset(2)
