@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/app"
+	"github.com/matijaerceg/misterzine-on-device/internal/data"
 )
 
 // Requests and completion flags belong to the UI loop. Snapshot the current
@@ -42,38 +43,58 @@ func (h *host) requestScan() {
 	h.scanPending = false
 	h.scanRunning = true
 	ds := h.a.Data()
-	go h.scan(ds.Rows, ds.Hash, ds.Updated)
+	go h.scan(ds.Rows, ds.NCat, ds.Gen, ds.Hash, ds.Updated)
 }
 
+// receiveScan installs a scan result. Results are checked against the
+// dataset generation they were computed for: the catalogue hash plus the
+// local rows, since positional statuses are only right for that row set.
 func (h *host) receiveScan(r scanResult) {
 	first := h.index == nil
 	if r.index != nil {
 		h.index = r.index
 	}
-	if r.hash == h.a.Data().Hash && r.index != nil {
+	current := r.gen == h.a.Data().Gen
+	if current && r.final && r.rows != nil {
+		// The card's local rows changed: install the new row set and its
+		// statuses in one step, before anything paints.
+		old := h.a.Data()
+		ds := data.Ingest(r.rows, old.Hash, old.Updated)
+		if ds.Gen != r.nextGen {
+			h.lg.Printf("scan: local rows generation mismatch (%s vs %s); rescanning", ds.Gen, r.nextGen)
+			h.scanPending = true
+			current = false
+		} else {
+			h.status = r.status
+			h.a.SetData(ds, nil)
+			if h.img != nil {
+				h.img.SetPrefetch(picsFor(ds), h.settings.Prefetch)
+			}
+		}
+	} else if current && r.index != nil {
 		h.status = r.status
-	} else if r.hash != h.a.Data().Hash {
+	} else if !current {
 		// Reordered/new rows cannot use old positional statuses. Queue one scan
 		// of the latest data rather than doing filesystem work during painting.
 		h.scanPending = true
 	}
 	// A nil alternatives result means genuinely empty only on the final pass.
-	if r.final && r.index != nil && r.hash == h.a.Data().Hash {
+	if r.final && r.index != nil && current {
 		h.alts = r.alts
-		h.altHash = r.hash
+		h.altGen = h.a.Data().Gen
 	}
 	if r.index != nil {
 		h.a.SetHiddenSources(r.hidden, r.iniFound)
 	}
 	h.a.Refilter()
-	if r.hash == h.a.Data().Hash && r.notice != "" {
+	if current && r.notice != "" {
 		h.a.Notice(r.notice, 8*time.Second)
 	} else if first && h.favLoadFailed {
 		h.a.Notice(app.FavoritesUnavailableNotice, 12*time.Second)
 	}
 	if r.final {
 		h.scanRunning = false
-		if h.manualScan && !h.scanPending && r.hash == h.a.Data().Hash {
+		if h.manualScan && !h.scanPending && current {
 			h.manualScan = false
 			// A failed core index sends no index: nothing to count. An
 			// incomplete alternatives pass still delivers every status.

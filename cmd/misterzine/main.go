@@ -83,7 +83,7 @@ type host struct {
 	index                         *scan.Index
 	status                        []data.Status
 	alts                          map[string][]string
-	altHash                       string
+	altGen                        string // the dataset generation alts belongs to
 	familyCache                   scan.FamilyCache
 	scanCh                        chan scanResult
 	timeSample                    atomic.Pointer[serverClockSample]
@@ -275,7 +275,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			return data.StatusUnknown
 		},
 		Alternatives: func(r *data.Row) []string {
-			if h.altHash != h.a.Data().Hash {
+			if h.altGen != h.a.Data().Gen {
 				return nil
 			}
 			return h.alts[r.K]
@@ -1136,11 +1136,13 @@ func (h *host) check(current string, trusted bool) {
 	h.runOnUI(func() { h.swap(fr) })
 }
 
-// swap installs fetched data on the UI goroutine.
+// swap installs fetched data on the UI goroutine. The local rows the last
+// scan found stay in place (less any the new catalogue now covers) so they
+// do not blink out; the rescan below re-derives them against the new rows.
 func (h *host) swap(fr fetch.Fresh) {
 	old := h.a.Data()
 	upd, _ := data.ParseMetaTime(fr.Meta.Updated)
-	ds := data.Ingest(fr.Rows, fr.Meta.Hash, upd)
+	ds := data.Ingest(data.MergeLocal(fr.Rows, old.Rows[old.NCat:]), fr.Meta.Hash, upd)
 	news := h.a.CatalogueNews(old, fr.Rows)
 	// Old status indices belong to the previous row order. Rebuild off the UI.
 	h.status = nil
@@ -1157,10 +1159,15 @@ func (h *host) swap(fr fetch.Fresh) {
 type scanResult struct {
 	index  *scan.Index
 	status []data.Status
-	hash   string // the dataset the statuses index into
+	gen    string // the dataset generation the statuses index into
 	alts   map[string][]string
 	notice string
 	final  bool // alternatives pass finished, including an empty result
+	// rows is set on the final pass when the card's local rows changed: the
+	// catalogue rows followed by the new local rows, which the statuses then
+	// index into; nextGen is their generation. nil when nothing changed.
+	rows    []data.Row
+	nextGen string
 	// hidden are the sources without a Downloader database in the card's
 	// downloader.ini; iniFound is whether that file was read at all.
 	hidden   map[string]bool
@@ -1168,8 +1175,9 @@ type scanResult struct {
 }
 
 // scan reads the card off the UI goroutine: cores and MRA stats first (fast),
-// alternatives after (slow the first time).
-func (h *host) scan(rows []data.Row, hash string, feedAt time.Time) {
+// alternatives and the local walk after (slow the first time). rows are the
+// dataset's rows, local rows included; ncat of them are the catalogue's.
+func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Time) {
 	t0 := time.Now()
 	idx := scan.ScanCores(h.card)
 	idx.FeedAt = feedAt
@@ -1185,7 +1193,7 @@ func (h *host) scan(rows []data.Row, hash string, feedAt time.Time) {
 		counts[data.StatusCurrent], counts[data.StatusOutdated], counts[data.StatusLikelyOutdated], counts[data.StatusFoundUndated], counts[data.StatusNotFound], time.Since(t0).Round(time.Millisecond))
 	if idx.Err != nil {
 		h.lg.Printf("scan failed: %v", idx.Err)
-		h.sendScan(scanResult{hash: hash, notice: "Card scan failed", final: true})
+		h.sendScan(scanResult{gen: gen, notice: "Card scan failed", final: true})
 		return
 	}
 	if !iniFound {
@@ -1198,7 +1206,7 @@ func (h *host) scan(rows []data.Row, hash string, feedAt time.Time) {
 		sort.Strings(names)
 		h.lg.Printf("scan: downloader.ini lists %d databases; sources without one: %v", len(dbs), names)
 	}
-	if !h.sendScan(scanResult{index: idx, status: st, hash: hash, hidden: hidden, iniFound: iniFound}) {
+	if !h.sendScan(scanResult{index: idx, status: st, gen: gen, hidden: hidden, iniFound: iniFound}) {
 		return
 	}
 	t1 := time.Now()
@@ -1222,7 +1230,35 @@ func (h *host) scan(rows []data.Row, hash string, feedAt time.Time) {
 	if err != nil {
 		notice = "Card scan incomplete"
 	}
-	h.sendScan(scanResult{index: idx, status: st, hash: hash, alts: h.familyCache.Resolve(h.card, alts, rows), notice: notice, final: true, hidden: hidden, iniFound: iniFound})
+	// Local rows: the MRAs no catalogue row accounts for. Resolved against
+	// the catalogue rows alone, so a file tied to a catalogue game is never
+	// also a row of its own.
+	t2 := time.Now()
+	catalogue := rows[:ncat]
+	resolved := h.familyCache.Resolve(h.card, alts, catalogue)
+	local := scan.DiscoverLocal(h.card, filepath.Join(h.root, "cache", "local.json"), catalogue, alts, scan.AttachedPaths(resolved), false)
+	for _, s := range local.Skipped {
+		if s.Fresh {
+			h.lg.Printf("scan: skipped %s: %s", s.Path, s.Reason)
+		}
+	}
+	if local.Err != nil {
+		h.lg.Printf("scan: local: %v", local.Err)
+		notice = "Card scan incomplete"
+	}
+	merged := data.MergeLocal(catalogue, local.Rows)
+	nextGen := data.Generation(hash, merged[ncat:])
+	h.lg.Printf("scan: %d MRAs outside the catalogue's folders, %d local rows (%v)", local.Files, len(merged)-ncat, time.Since(t2).Round(time.Millisecond))
+	for k, ps := range local.Alts {
+		resolved[k] = ps
+	}
+	res := scanResult{index: idx, status: st, gen: gen, alts: resolved, notice: notice, final: true, hidden: hidden, iniFound: iniFound}
+	if nextGen != gen {
+		// The row set changes: statuses must index into the new rows.
+		res.status = scan.Statuses(h.card, idx, merged)
+		res.rows, res.nextGen = merged, nextGen
+	}
+	h.sendScan(res)
 }
 
 // screenshot saves the logical canvas (F12 on a keyboard).

@@ -1,0 +1,129 @@
+//go:build linux
+
+package main
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+	"time"
+
+	"github.com/matijaerceg/misterzine-on-device/internal/data"
+	"github.com/matijaerceg/misterzine-on-device/internal/fetch"
+)
+
+func writeMRA(t *testing.T, card, rel, name, setname, rbf string) {
+	t.Helper()
+	p := filepath.Join(card, filepath.FromSlash(rel))
+	os.MkdirAll(filepath.Dir(p), 0755)
+	body := `<misterromdescription><name>` + name + `</name><setname>` + setname + `</setname><rbf>` + rbf + `</rbf>` +
+		`<rotation>horizontal</rotation><rom index="0" zip="` + setname + `.zip"><part name="x"/></rom></misterromdescription>`
+	if err := os.WriteFile(p, []byte(body), 0644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func catalogueRows() []data.Row {
+	return []data.Row{
+		{K: "colony7", Title: "Colony 7", Base: "Arcade", Src: "distribution_mister", Core: "defender", SN: "colony7", MRA: "_Arcade/Colony 7 (Set 1).mra", Updated: "2026-07-14"},
+		{K: "1942", Title: "1942", Base: "Arcade", Src: "distribution_mister", Core: "jt1942", SN: "1942", MRA: "_Arcade/1942.mra", Updated: "2026-06-01"},
+	}
+}
+
+func TestReceiveScanInstallsLocalRows(t *testing.T) {
+	h := backgroundHost(t)
+	os.MkdirAll(filepath.Join(h.card, "_Arcade", "cores"), 0755)
+	os.WriteFile(filepath.Join(h.card, "_Arcade", "cores", "Defender_20260714.rbf"), []byte("x"), 0644)
+	writeMRA(t, h.card, "_Arcade/Colony 7 (Set 1).mra", "Colony 7", "colony7", "defender")
+	writeMRA(t, h.card, "_Arcade/_Extra/Orphan.mra", "Orphan", "orphan", "defender")
+	writeMRA(t, h.card, "_Arcade/_Extra/Orphan (set 2).mra", "Orphan", "orphan", "defender")
+	writeMRA(t, h.card, "_Arcade/_Organized/_O/Orphan.mra", "Orphan", "orphan", "defender")
+	h.a.SetData(data.Ingest(catalogueRows(), "cat", time.Now()), nil)
+	h.a.MoveToKey("1942") // kept by key through the swap
+	h.requestScan()
+	finishBackground(t, h)
+
+	ds := h.a.Data()
+	if ds.Hash != "cat" || ds.NCat != 2 || len(ds.Rows) != 3 || ds.Gen == ds.Hash {
+		t.Fatalf("dataset after scan: hash=%q ncat=%d rows=%d gen=%q", ds.Hash, ds.NCat, len(ds.Rows), ds.Gen)
+	}
+	local := ds.Rows[2]
+	if local.K != "local:orphan" || local.MRA != "_Arcade/_Extra/Orphan.mra" || local.Core != "defender" || !local.IsLocal() {
+		t.Fatalf("local row: %+v", local)
+	}
+	// A local row has no shipped build to compare with: "on card, date unknown".
+	if len(h.status) != 3 || h.status[2] != data.StatusFoundUndated || h.status[0] != data.StatusCurrent || h.status[1] != data.StatusNotFound {
+		t.Fatalf("statuses: %v", h.status)
+	}
+	if h.altGen != ds.Gen || len(h.alts["local:orphan"]) != 1 || h.alts["local:orphan"][0] != "_Arcade/_Extra/Orphan (set 2).mra" {
+		t.Fatalf("alternatives: gen=%q alts=%v", h.altGen, h.alts)
+	}
+	if h.a.CursorKey() != "1942" {
+		t.Fatalf("cursor moved to %q", h.a.CursorKey())
+	}
+	if h.scanPending {
+		t.Fatal("a settled local set must not queue another scan")
+	}
+
+	// A second scan with an unchanged card reports the same generation and
+	// installs nothing new.
+	h.requestScan()
+	finishBackground(t, h)
+	if h.a.Data() != ds || h.altGen != ds.Gen || len(h.status) != 3 {
+		t.Fatal("unchanged card replaced the dataset")
+	}
+
+	// Removing the file drops the row on the next scan.
+	os.Remove(filepath.Join(h.card, "_Arcade", "_Extra", "Orphan.mra"))
+	os.Remove(filepath.Join(h.card, "_Arcade", "_Extra", "Orphan (set 2).mra"))
+	dir := filepath.Join(h.card, "_Arcade", "_Extra")
+	st, _ := os.Stat(dir)
+	os.Chtimes(dir, st.ModTime().Add(2e9), st.ModTime().Add(2e9))
+	h.requestScan()
+	finishBackground(t, h)
+	if ds = h.a.Data(); len(ds.Rows) != 2 || ds.Gen != "cat" || len(h.status) != 2 {
+		t.Fatalf("removed file kept its row: rows=%d gen=%q", len(ds.Rows), ds.Gen)
+	}
+}
+
+func TestReceiveScanStaleGenIgnored(t *testing.T) {
+	h := backgroundHost(t)
+	h.a.SetData(data.Ingest(catalogueRows(), "cat", time.Now()), nil)
+	stale := data.MergeLocal(catalogueRows(), []data.Row{{K: "local:x", Title: "x", Base: "Arcade", Src: data.SrcLocal, Core: "c", MRA: "_Arcade/x.mra"}})
+	h.receiveScan(scanResult{gen: "other", final: true, rows: stale, nextGen: data.Generation("cat", stale[2:]),
+		status: []data.Status{data.StatusCurrent, data.StatusCurrent, data.StatusCurrent}, alts: map[string][]string{"local:x": {"y"}}})
+	// Nothing installed; a scan of the current generation is queued or
+	// already under way (a final result starts the pending scan itself).
+	if len(h.a.Data().Rows) != 2 || len(h.status) != 0 || len(h.alts) != 0 || !(h.scanPending || h.scanRunning) {
+		t.Fatalf("a result for another generation was installed: rows=%d status=%v alts=%v pending=%v running=%v",
+			len(h.a.Data().Rows), h.status, h.alts, h.scanPending, h.scanRunning)
+	}
+	finishBackground(t, h)
+	if len(h.status) != 2 || h.altGen != "cat" {
+		t.Fatalf("rescan of the current generation: status=%v altGen=%q", h.status, h.altGen)
+	}
+}
+
+func TestSwapKeepsLocals(t *testing.T) {
+	h := backgroundHost(t)
+	local := []data.Row{
+		{K: "local:orphan", Title: "Orphan", Base: "Arcade", Src: data.SrcLocal, SN: "orphan", Core: "defender", MRA: "_Arcade/_Extra/Orphan.mra"},
+		{K: "local:soon", Title: "Soon", Base: "Arcade", Src: data.SrcLocal, SN: "soon", Core: "defender", MRA: "_Arcade/_Extra/Soon.mra"},
+	}
+	h.a.SetData(data.Ingest(data.MergeLocal(catalogueRows(), local), "cat", time.Now()), nil)
+	// The new catalogue lists "soon": that local row must go; the other stays.
+	rows := append(catalogueRows(), data.Row{K: "soon", Title: "Soon", Base: "Arcade", Src: "coinop", Core: "defender", SN: "soon", MRA: "_Arcade/_Coin-Op/Soon.mra"})
+	h.swap(fetch.Fresh{Changed: true, Rows: rows, Meta: data.Meta{Hash: "new", Updated: "2026-09-17T00:00Z"}})
+	ds := h.a.Data()
+	if ds.Hash != "new" || ds.NCat != 3 || len(ds.Rows) != 4 || ds.Rows[3].K != "local:orphan" {
+		t.Fatalf("swap: hash=%q ncat=%d rows=%d", ds.Hash, ds.NCat, len(ds.Rows))
+	}
+	if !h.scanRunning {
+		t.Fatal("swap must rescan the card against the new catalogue")
+	}
+	finishBackground(t, h)
+	// An empty card: the rescan drops the stale local row.
+	if ds = h.a.Data(); len(ds.Rows) != 3 || ds.Gen != "new" {
+		t.Fatalf("rescan: rows=%d gen=%q", len(ds.Rows), ds.Gen)
+	}
+}

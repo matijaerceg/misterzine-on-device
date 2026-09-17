@@ -159,7 +159,7 @@ func TestScanCoalescesAndReplacesStaleRowStatuses(t *testing.T) {
 		t.Fatal("stale final scan replaced alternatives")
 	}
 	finishBackground(t, h)
-	if len(h.status) != 2 || h.scanPending || h.altHash != "new" || len(h.alts) != 2 {
+	if len(h.status) != 2 || h.scanPending || h.altGen != "new" || len(h.alts) != 2 {
 		t.Fatal("coalesced rescan did not use latest rows")
 	}
 	select {
