@@ -59,7 +59,8 @@ func main() {
 	titleFont := flag.String("title-font", "tall", "list title font: tall, narrow or normal")
 	listShot := flag.String("list-shot", "gameplay", "list thumbnail preference: gameplay or title")
 	dateFormat := flag.String("date-format", "mm-dd", "list date column: mm-dd, dd-mm, mon-d, d-mon or yymmdd")
-	layout := flag.String("layout", "list", "main view arrangement: list, split or picture")
+	layout := flag.String("layout", "list", "main view arrangement: list, split, picture or text")
+	motion := flag.Bool("motion", false, "run the page and layout transitions on the scripted clock (off: every shot is an end state); the frames command records them")
 	buttonLabels := flag.String("button-labels", "mister", "legend button names: mister, xbox, playstation or numbers")
 	menuButton := flag.String("menu-button", "options", "what the pad's Menu button does: options or leave")
 	canvas := flag.String("canvas", "320x240", "canvas size WxH: 320x240, or a fit-display size such as 360x270 (1080p) or 400x300")
@@ -192,6 +193,9 @@ func main() {
 		stored = &data.SeenRecord{T: now.Add(-*seenAge).UTC().Format(time.RFC3339), Cur: cur}
 	}
 	a := app.New(cfg, ds, stored)
+	if *motion {
+		a.EnablePageTransitions()
+	}
 	if *splash {
 		a.StartSplash()
 	}
@@ -232,6 +236,19 @@ func main() {
 		}
 	}
 	present()
+	shot := func(name string) {
+		p := filepath.Join(*out, name+".png")
+		var err error
+		if *logical {
+			err = savePNG(p, a.Logical())
+		} else {
+			err = disp.SavePNG(p)
+		}
+		if err != nil {
+			die(err)
+		}
+		fmt.Println("wrote", p, "screen", a.Screen())
+	}
 	s := *script
 	if s == "" {
 		s = allViews
@@ -242,24 +259,14 @@ func main() {
 			continue
 		}
 		f := strings.Fields(tok)
-		need := map[string]int{"shot": 2, "wait": 2, "hold": 3, "press": 2, "release": 2}[f[0]]
+		need := map[string]int{"shot": 2, "wait": 2, "hold": 3, "press": 2, "release": 2, "frames": 4}[f[0]]
 		if len(f) < need {
 			die(fmt.Errorf("script: %q needs %d words", tok, need))
 		}
 		switch f[0] {
 		case "shot":
 			present()
-			p := filepath.Join(*out, f[1]+".png")
-			var err error
-			if *logical {
-				err = savePNG(p, a.Logical())
-			} else {
-				err = disp.SavePNG(p)
-			}
-			if err != nil {
-				die(err)
-			}
-			fmt.Println("wrote", p, "screen", a.Screen())
+			shot(f[1])
 		case "type":
 			for _, ch := range strings.TrimPrefix(tok, "type ") {
 				a.Handle(platform.Event{Text: ch, Pressed: true, At: clock, Source: "script"})
@@ -269,6 +276,16 @@ func main() {
 		case "wait":
 			ms, _ := strconv.Atoi(f[1])
 			clock = advance(a, clock, time.Duration(ms)*time.Millisecond, present)
+		case "frames": // frames NAME MS COUNT: COUNT shots NAME-00.. MS apart (with -motion, a transition frame by frame)
+			ms, _ := strconv.Atoi(f[2])
+			count, _ := strconv.Atoi(f[3])
+			for i := 0; i < count; i++ {
+				if i > 0 {
+					clock = advance(a, clock, time.Duration(ms)*time.Millisecond, present)
+				}
+				present()
+				shot(fmt.Sprintf("%s-%02d", f[1], i))
+			}
 		case "press", "release": // one edge, for chords such as Select held
 			k := platform.ParseKey(f[1])
 			if k == platform.KeyNone {

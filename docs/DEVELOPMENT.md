@@ -62,6 +62,16 @@ go run ./cmd/mzharness -rot left -logical -images /path/to/misterzine/docs/image
 go run ./cmd/mzharness -canvas 360x270 -out preview-1080p   # the fit-display size for 1080p
 ```
 
+The harness leaves page and layout transitions off, so every scripted shot
+is an end state. `-motion` runs them on the scripted clock, and the script
+command `frames NAME MS COUNT` saves COUNT shots NAME-00, NAME-01, ... MS
+apart, for frame-by-frame review or an animated preview:
+
+```sh
+go run ./cmd/mzharness -motion -images /path/to/misterzine/docs/images -out motion \
+  -script "shot start; press select; press space; frames split 33 7; release space; release select"
+```
+
 README screenshots are individual PNGs enlarged to 2x with nearest-neighbor
 resampling. Their HTML dimensions stay at 320x240 (240x320 in tate), providing
 sharp pixels on 2x displays. Keep the images inline so the gallery wraps with the
@@ -70,7 +80,7 @@ available width; do not combine views into one image or put them in a table.
 The startup logo is a paint-only overlay that dithers away over one second from the
 first list frame. Preview it with `mzharness -splash` and scripted `wait 500`
 steps. `tools/startup_logo.py` renders the checked-in outlined SVG into the
-embedded 160×106 two-tone PNG (requires Pillow and svgpathtools). The app
+embedded 160Ã—106 two-tone PNG (requires Pillow and svgpathtools). The app
 draws it at native size in every orientation, without runtime scaling.
 
 ## Device tools and debugging
