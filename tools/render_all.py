@@ -35,9 +35,9 @@ scenarios = [
     # Games the card scan found outside the catalogue: the "local" chip in the
     # list and Details, the file line, and the Local source in Filters
     ["-local", "testdata/local-rows.json", "-out", "out/local-h", "-script",
-     "type orphan; shot list; enter; shot details; back; back; type local puzzle; enter; shot details-lsnap; back; back; tab; shot filters"],
+     "type orphan; shot list; enter; shot details; back; back; type local puzzle; enter; shot details-lsnap; back; back; tab; down*3; right; shot source"],
     ["-local", "testdata/local-rows.json", "-rot", "left", "-logical", "-out", "out/local-t", "-script",
-     "type orphan; shot list; enter; shot details; back; back; type local puzzle; enter; shot details-lsnap; back; back; tab; shot filters"],
+     "type orphan; shot list; enter; shot details; back; back; type local puzzle; enter; shot details-lsnap; back; back; tab; down*3; right; shot source"],
     ["-out", "out/search-h", "-script", "type 1943; shot matches; type xyz; shot empty"],
     ["-rot", "left", "-logical", "-out", "out/search-t",
      "-script", "type 1943; shot matches; type xyz; shot empty"],
