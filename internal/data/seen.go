@@ -26,10 +26,12 @@ type Seen struct {
 	State    SeenRecord        // what to persist
 }
 
+// rowMap leaves local rows out: they carry no release stamp and a file the
+// scan finds is not news from the catalogue.
 func rowMap(rows []Row) map[string]string {
 	m := make(map[string]string, len(rows))
 	for i := range rows {
-		if rows[i].K != "" {
+		if rows[i].K != "" && !rows[i].IsLocal() {
 			m[rows[i].K] = rows[i].Updated
 		}
 	}
@@ -83,7 +85,7 @@ func (s *Seen) Bank(rows []Row) {
 
 // Unseen mirrors isUnseen(d).
 func (s *Seen) Unseen(r *Row) bool {
-	if s == nil || s.BaseRows == nil || r.K == "" {
+	if s == nil || s.BaseRows == nil || r.K == "" || r.IsLocal() {
 		return false
 	}
 	base, ok := s.BaseRows[r.K]

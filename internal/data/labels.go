@@ -38,12 +38,13 @@ func CoreLabel(core string, sole map[string]string) string {
 }
 
 // SoleTitles mirrors the site's ingest(): core -> title for cores whose rows
-// all share ONE title (a core with two distinct titles gets no entry).
+// all share ONE title (a core with two distinct titles gets no entry). Local
+// rows do not take part: a file on the card must not rename a catalogue core.
 func SoleTitles(rows []Row) map[string]string {
 	seen := map[string]*string{}
 	for i := range rows {
 		r := &rows[i]
-		if r.Core == "" {
+		if r.Core == "" || r.IsLocal() {
 			continue
 		}
 		if cur, ok := seen[r.Core]; !ok {
@@ -76,14 +77,22 @@ func TypeLabel(r *Row) string {
 
 // SrcFull is the site's display name for a source id, the raw id when unknown.
 func SrcFull(src string) string {
+	if src == SrcLocal {
+		return SrcLocalFull
+	}
 	if n, ok := gen.SrcNames[src]; ok {
 		return n
 	}
 	return src
 }
 
+// SrcLocalFull is the full source name of a local row; the short chip is
+// "Local".
+const SrcLocalFull = "Local file (not in the catalogue)"
+
 // srcShort are the device's short source chips (the list is 53 columns wide).
 var srcShort = map[string]string{
+	SrcLocal:                             "Local",
 	"distribution_mister":                "MiSTer",
 	"jtbindb":                            "Jotego",
 	"coinop":                             "Coin-Op",

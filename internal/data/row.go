@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 )
 
 // Row is one release row exactly as docs/releases/data.json emits it. Field
@@ -94,6 +95,18 @@ func (r *Row) HasProv(field string) bool {
 
 // IsArcade reports whether the row is an arcade game (as opposed to a core).
 func (r *Row) IsArcade() bool { return r.Base == "Arcade" }
+
+// SrcLocal is the source of a row the card scan made from an MRA the
+// catalogue does not list. Such rows never come from data.json.
+const SrcLocal = "local"
+
+// IsLocal reports whether the row was built from a file on the card rather
+// than from the catalogue.
+func (r *Row) IsLocal() bool { return r.Src == SrcLocal }
+
+// LocalKey is the K of a local row: "local:" plus the lowercase setname, so
+// favorites and remembered versions survive a move of the file.
+func LocalKey(setname string) string { return "local:" + strings.ToLower(setname) }
 
 // RotGroup buckets the MAD rotation string for the rotation filter:
 // "h" horizontal, "v" vertical, "" unknown.

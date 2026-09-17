@@ -1,6 +1,10 @@
 package data
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 )
@@ -44,7 +48,9 @@ type Facets struct {
 type Dataset struct {
 	Rows    []Row
 	Der     []Derived
-	Hash    string    // sha256 hex from meta.json, "" when unknown
+	Hash    string    // sha256 hex from meta.json, "" when unknown; catalogue only
+	Gen     string    // Hash plus a digest of the local rows: what positional scan results index into
+	NCat    int       // Rows[:NCat] are catalogue rows, Rows[NCat:] local rows
 	Updated time.Time // meta.json updated stamp, zero when unknown
 	ByKey   map[string]int
 	Sole    map[string]string
@@ -56,12 +62,22 @@ type Dataset struct {
 }
 
 // Ingest mirrors the site's ingest(): it rebuilds (never merges) every
-// derived map from the rows.
+// derived map from the rows. Local rows, if any, follow the catalogue rows
+// (MergeLocal keeps that order).
 func Ingest(rows []Row, hash string, updated time.Time) *Dataset {
+	ncat := len(rows)
+	for i := range rows {
+		if rows[i].IsLocal() {
+			ncat = i
+			break
+		}
+	}
 	ds := &Dataset{
 		Rows:    rows,
 		Der:     make([]Derived, len(rows)),
 		Hash:    hash,
+		Gen:     Generation(hash, rows[ncat:]),
+		NCat:    ncat,
 		Updated: updated,
 		ByKey:   make(map[string]int, len(rows)),
 		Sole:    SoleTitles(rows),
@@ -126,6 +142,74 @@ func (ds *Dataset) ClusterN(i int) int {
 		return 0
 	}
 	return ds.cluster[r.Core+"\x00"+r.Updated]
+}
+
+// Catalogue is the rows that came from data.json.
+func (ds *Dataset) Catalogue() []Row { return ds.Rows[:ds.NCat] }
+
+// MergeLocal appends the local rows to the catalogue rows, dropping any local
+// row whose game the catalogue now names (by K, setname, family root or a
+// known clone setname). The catalogue keeps its order; local rows follow
+// sorted by K, so the merge is deterministic and Generation is stable.
+func MergeLocal(catalogue, local []Row) []Row {
+	if len(local) == 0 {
+		return catalogue
+	}
+	known := make(map[string]bool, len(catalogue)*2)
+	for i := range catalogue {
+		r := &catalogue[i]
+		if r.K != "" {
+			known[r.K] = true
+		}
+		if !r.IsArcade() {
+			continue
+		}
+		for _, id := range append([]string{r.SN, r.Family}, r.FamilySets...) {
+			if id != "" {
+				known[LocalKey(id)] = true
+			}
+		}
+	}
+	kept := make([]Row, 0, len(local))
+	seen := map[string]bool{}
+	for i := range local {
+		r := &local[i]
+		if !r.IsLocal() || r.K == "" || known[r.K] || seen[r.K] {
+			continue
+		}
+		seen[r.K] = true
+		kept = append(kept, *r)
+	}
+	sort.Slice(kept, func(i, j int) bool { return kept[i].K < kept[j].K })
+	out := make([]Row, 0, len(catalogue)+len(kept))
+	out = append(out, catalogue...)
+	return append(out, kept...)
+}
+
+// LocalDigest summarises a set of local rows: it changes only when a row is
+// added, removed, or launches a different file or core.
+func LocalDigest(local []Row) string {
+	if len(local) == 0 {
+		return ""
+	}
+	parts := make([]string, 0, len(local))
+	for i := range local {
+		r := &local[i]
+		parts = append(parts, r.K+"|"+r.MRA+"|"+r.Core)
+	}
+	sort.Strings(parts)
+	h := sha256.Sum256([]byte(strings.Join(parts, "\n")))
+	return hex.EncodeToString(h[:8])
+}
+
+// Generation is the dataset identity the scanner's positional results are
+// checked against: the catalogue hash alone when there are no local rows.
+func Generation(hash string, local []Row) string {
+	d := LocalDigest(local)
+	if d == "" {
+		return hash
+	}
+	return hash + ":" + d
 }
 
 // Index returns the row index for a key, -1 when absent.

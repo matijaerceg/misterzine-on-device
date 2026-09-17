@@ -12,7 +12,7 @@ func DiffNews(old *Dataset, rows []Row) string {
 	var fresh, built []string
 	for i := range rows {
 		r := &rows[i]
-		if r.K == "" {
+		if r.K == "" || r.IsLocal() {
 			continue
 		}
 		j := old.Index(r.K)
