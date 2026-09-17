@@ -22,8 +22,15 @@ func (a *App) paintList(c *gfx.Canvas) {
 		a.paintScrollbar(c)
 		a.paintPane(c)
 	}
-	// the last chunk reminds of the Select chords (quick.go); the bar drops
-	// it first when the safe zone leaves no room
+	a.paintHint(c, a.listHint())
+}
+
+// listHint is the list legend: the buttons as they act right now. The last
+// chunk reminds of the Select chords (quick.go) and the bar drops it first
+// when the safe zone leaves no room; while Select is down the chords take
+// the bar over, and X is left out of them in the text layout, which has no
+// picture for Art type to change.
+func (a *App) listHint() string {
 	var parts []string
 	if len(a.view) > 0 {
 		parts = append(parts, "A Details")
@@ -42,13 +49,16 @@ func (a *App) paintList(c *gfx.Canvas) {
 		if len(a.view) > 0 {
 			parts = append(parts, "A Favorite")
 		}
-		parts = append(parts, "X Shots", "Y Layout")
+		if a.listShowsArt() {
+			parts = append(parts, "X Shots")
+		}
+		parts = append(parts, "Y Layout")
 	}
 	hint := strings.Join(parts, "  ")
 	if !a.hintFits(hint) {
 		hint = strings.NewReplacer("A Details", "A Open", "B Options", "B Opt.", "X Filters", "X Filt.").Replace(hint)
 	}
-	a.paintHint(c, hint)
+	return hint
 }
 
 func (a *App) paintStatus(c *gfx.Canvas) {

@@ -17,6 +17,12 @@ import (
 // quickHeld reports whether Select is down, so Y and X are chords.
 func (a *App) quickHeld() bool { return a.down[platform.KeySelect] }
 
+// listShowsArt reports whether the list layout has a picture for Art type
+// to change. The text layout is rows alone, so the chord is left out of
+// the legend and does nothing there; Options keeps the row, since the
+// choice still applies to the layouts you switch back to.
+func (a *App) listShowsArt() bool { return a.ListLayout() != "text" }
+
 func (a *App) cycleListLayout() bool {
 	i := 0
 	for n, s := range listLayouts {
@@ -34,6 +40,9 @@ func (a *App) cycleListLayout() bool {
 }
 
 func (a *App) cycleListShot() bool {
+	if !a.listShowsArt() {
+		return false // no picture on screen: the chord is not offered
+	}
 	if a.ListShot() == "title" {
 		a.cfg.ListShot = "gameplay"
 	} else {

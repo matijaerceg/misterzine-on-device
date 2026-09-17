@@ -462,7 +462,7 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "Title font", kind: "title-font", vals: []string{"normal", "narrow", "narrow tall"}, idx: map[string]int{"normal": 0, "narrow": 1, "tall": 2}[a.TitleFont()],
 			help: "Narrow fonts fit a third more title; tall (default) matches the body font height. Normal: body font."},
 		{text: "Art type", kind: "list-shot", vals: []string{"gameplay", "title"}, idx: map[string]int{"gameplay": 0, "title": 1}[a.ListShot()],
-			help: "Which screenshot the list pane shows: gameplay (default) or the title screen. Details and the artwork view still show every shot."},
+			help: "Which screenshot the list pane shows: gameplay (default) or the title screen; the Text layout has no pane. Details and the artwork view show every shot."},
 		{text: "Date format", kind: "date-format", vals: dateFormatLabels, idx: dateIdx,
 			help: a.dateFormatHelp()},
 		{text: "Layout", kind: "list-layout", vals: listLayouts, idx: layoutIdx,

@@ -192,7 +192,9 @@ reminder) and the legend changes: Y cycles Layout, X switches Art type, and A st
 the game under the cursor (in the Favorites view an unstarred row drops
 out and the cursor moves to its neighbour). Select alone does nothing, and
 while it is down every other button waits, so nothing moves or launches by
-accident. Layout and Art type are saved, and both are also in Options.
+accident. Layout and Art type are saved, and both are also in Options. The
+Text layout shows no pictures, so X is left out of the legend and does
+nothing there; Art type is still in Options, ready for the layouts that do.
 Only a pad defined in MiSTer has a Select.
 
 **Layouts:** List is the default: the full list with the small pane beside
@@ -355,7 +357,8 @@ and last row. Rows marked ↗ open another screen or editor.
   and date columns always use the narrow font at the titles' height.
 - **Art type:** which screenshot the list pane shows for the selected row:
   gameplay (default) or the title screen. Details and the artwork view still
-  show every shot. Hold Select and press X on the list to switch it there.
+  show every shot. Hold Select and press X on the list to switch it there,
+  in any layout but Text, which shows no pictures.
 - **Layout:** List (default), Split, Picture or Text, as described under
   Layouts above. The help box draws the four at the current orientation
   with the chosen one framed. Hold Select and press Y on the list to cycle
