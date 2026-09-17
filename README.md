@@ -110,7 +110,9 @@ for scientifica, the narrow title font.
 
 Code: [MIT](LICENSE). Fonts: Spleen [BSD-2-Clause](internal/fonts/SPLEEN-LICENSE),
 scientifica [SIL OFL 1.1](internal/fonts/SCIENTIFICA-LICENSE).
-Catalogue: MiSTerZine by Matija Erceg, CC BY 4.0.
+Catalogue: MiSTerZine by Matija Erceg, under the [MiSTerZine Catalogue Licence](LICENSE-CATALOGUE):
+CC BY 4.0 terms plus a source neutrality condition, so consumers must not by default
+hide or single out entries by database or installed status.
 Screenshots and hardware photos retain their owners' rights; see the
 [website's image credits](https://github.com/matijaerceg/misterzine#the-image-pipeline-tools).
 The installation includes [third-party notices](deploy/THIRD-PARTY-NOTICES.txt).

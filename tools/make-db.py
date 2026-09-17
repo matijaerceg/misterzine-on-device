@@ -32,6 +32,7 @@ ASSETS = {
     "Scripts/MisterZine-Uninstall.sh": ("deploy/Scripts/MisterZine-Uninstall.sh", "MisterZine-Uninstall.sh"),
     "MisterZine.mgl": ("deploy/MisterZine.mgl", "MisterZine.mgl"),
     "misterzine/LICENSE": ("LICENSE", "LICENSE"),
+    "misterzine/LICENSE-CATALOGUE": ("LICENSE-CATALOGUE", "LICENSE-CATALOGUE"),
     "misterzine/SPLEEN-LICENSE": ("internal/fonts/SPLEEN-LICENSE", "SPLEEN-LICENSE"),
     "misterzine/SCIENTIFICA-LICENSE": ("internal/fonts/SCIENTIFICA-LICENSE", "SCIENTIFICA-LICENSE"),
     "misterzine/THIRD-PARTY-NOTICES.txt": ("deploy/THIRD-PARTY-NOTICES.txt", "THIRD-PARTY-NOTICES.txt"),

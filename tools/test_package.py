@@ -66,6 +66,7 @@ class PackageTest(unittest.TestCase):
             self.assertIn("Scripts/MisterZine-Run.sh", paths)
             self.assertIn("Scripts/MisterZine-Setup.sh", paths)
             self.assertIn("Scripts/MisterZine-Uninstall.sh", paths)
+            self.assertIn("misterzine/LICENSE-CATALOGUE", paths)
             self.assertIn("misterzine/SPLEEN-LICENSE", paths)
             self.assertIn("misterzine/SCIENTIFICA-LICENSE", paths)
             self.assertFalse(any(Path(p).name in ("debug.flag", "settings.json", "favorites.json", "state.json") for p in paths))

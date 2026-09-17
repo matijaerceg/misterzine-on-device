@@ -11,9 +11,11 @@ scientifica bitmap font by Akshay Oppiliappan: SIL Open Font License 1.1;
 see SCIENTIFICA-LICENSE. https://github.com/oppiliappan/scientifica
 
 The embedded release catalogue comes from MiSTerZine by Matija Erceg,
-licensed under Creative Commons Attribution 4.0 International.
+under the MiSTerZine Catalogue Licence; see LICENSE-CATALOGUE. It follows
+the Creative Commons Attribution 4.0 terms plus a source neutrality
+condition: anyone reusing the catalogue must not, by default, hide or
+single out entries by database or installed status.
 https://misterzine.fyi
-https://creativecommons.org/licenses/by/4.0/
 
 Downloaded game screenshots and hardware photos remain the property of
 their respective owners. Sources and individual attribution are available
