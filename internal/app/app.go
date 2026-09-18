@@ -176,8 +176,9 @@ type App struct {
 	lay                           Layout
 	rot                           gfx.Rotation
 
-	logical  *gfx.Canvas // what views paint into
-	physical *image.RGBA // rotated frame handed to the display
+	logical     *gfx.Canvas // what views paint into
+	renderAhead bool        // the launch animation renders on its own goroutine
+	physical    *image.RGBA // rotated frame handed to the display
 
 	ds      *data.Dataset
 	mode    data.SortMode
@@ -644,6 +645,7 @@ func (a *App) Notice(s string, d time.Duration) {
 	a.notice = s
 	a.until = a.cfg.TimerNow().Add(d)
 	if a.cab.launched {
+		a.cab.stopAhead()
 		a.cab = launchCab{} // the launch failed: the page comes back with the notice
 	}
 	a.all = true
@@ -1233,6 +1235,12 @@ func (a *App) neighbourhood() {
 func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 	if a.cab.active {
 		a.all = true
+		if a.cab.ahead != nil {
+			if f := a.cab.ahead.frame(a.cab.elapsed); f != nil {
+				a.logical.TakeDirty()
+				return f, []image.Rectangle{f.Rect}
+			}
+		}
 		a.paintLaunchCab(a.logical)
 		return a.rotatePaint()
 	}

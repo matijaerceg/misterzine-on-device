@@ -363,6 +363,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	h.a = app.New(cfg, ds, seen)
 	h.a.StartSplash()
 	h.a.EnablePageTransitions()
+	h.a.EnableRenderAhead()
 	h.dirty = true // persist the new visit even without input
 	h.initUpdates()
 	h.a.SetPrefetch(h.settings.Prefetch)

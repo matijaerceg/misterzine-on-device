@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 	"unsafe"
 
@@ -96,6 +97,7 @@ type launchCab struct {
 	req      ImageReq // the title shot; fetched while the spin runs if not cached
 	tex      *image.RGBA
 	elapsed  time.Duration
+	ahead    *cabAhead // frames rendered ahead of the display (hosts with a real clock)
 }
 
 // startLaunchCab plays the animation before launching path, or launches at
@@ -107,14 +109,7 @@ func (a *App) startLaunchCab(row *data.Row, path string) {
 	}
 	now := a.cfg.TimerNow()
 	a.cab = launchCab{active: true, at: now, next: now, path: path}
-	if key, slot := cabShot(row); key != "" {
-		a.cab.req = ImageReq{Key: key, Slot: slot, W: cabTexW, H: cabTexH, Stretch: slot != "system" && row.ImgW > row.ImgH}
-		a.cab.tex, _ = a.cfg.Images.Get(a.cab.req)
-		if a.cab.tex == nil {
-			a.cfg.Images.Want([]ImageReq{a.cab.req})
-		}
-	}
-	a.all = true
+	a.cabShotAndFrames(row)
 }
 
 // previewLaunchCab plays the animation for the current row without
@@ -124,6 +119,12 @@ func (a *App) previewLaunchCab() {
 	row, _, _ := a.current()
 	now := a.cfg.TimerNow()
 	a.cab = launchCab{active: true, at: now, next: now}
+	a.cabShotAndFrames(row)
+}
+
+// cabShotAndFrames asks for the row's monitor shot and, on a host that
+// renders ahead, starts the frame producer.
+func (a *App) cabShotAndFrames(row *data.Row) {
 	if key, slot := cabShot(row); key != "" {
 		a.cab.req = ImageReq{Key: key, Slot: slot, W: cabTexW, H: cabTexH, Stretch: slot != "system" && row.ImgW > row.ImgH}
 		a.cab.tex, _ = a.cfg.Images.Get(a.cab.req)
@@ -131,8 +132,16 @@ func (a *App) previewLaunchCab() {
 			a.cfg.Images.Want([]ImageReq{a.cab.req})
 		}
 	}
+	if a.renderAhead {
+		a.cab.ahead = startCabAhead(a.logical.W(), a.logical.H(), a.physical.Rect, a.rot, a.cab.tex)
+	}
 	a.all = true
 }
+
+// EnableRenderAhead has the launch animation rendered on its own
+// goroutine, ahead of the display: the host has a real clock and a spare
+// core. Tests and the harness paint each frame as they ask for it.
+func (a *App) EnableRenderAhead() { a.renderAhead = true }
 
 // cabShot picks the picture on the cabinet's monitor: the title screen,
 // else a gameplay shot, else the system photo.
@@ -167,6 +176,7 @@ func (a *App) handleLaunchCab(ev platform.Event) bool {
 	if ev.Pressed && (ev.Key == platform.KeyBack || a.cab.launched) {
 		// Back cancels; any key after a launch that never took the screen
 		// brings the page back
+		a.cab.stopAhead()
 		a.cab = launchCab{}
 		a.all = true
 	}
@@ -184,6 +194,7 @@ func (a *App) tickLaunchCab(now time.Time) bool {
 	}
 	if c.elapsed >= cabSpinDur+cabPushDur {
 		if c.path == "" { // a preview ends where it began
+			c.stopAhead()
 			*c = launchCab{}
 			a.all = true
 			return true
@@ -192,11 +203,16 @@ func (a *App) tickLaunchCab(now time.Time) bool {
 		// page again would flash it for a frame
 		path := c.path
 		c.path, c.launched, c.next = "", true, time.Time{}
+		if c.ahead != nil {
+			c.ahead.finish() // the last frame, black, is the one left on screen
+		}
 		a.cfg.Launch(path)
 		return true
 	}
 	if c.tex == nil && c.req.Key != "" {
-		c.tex, _ = a.cfg.Images.Get(c.req)
+		if c.tex, _ = a.cfg.Images.Get(c.req); c.tex != nil && c.ahead != nil {
+			c.ahead.tex.Store(c.tex)
+		}
 	}
 	c.next = now.Add(frameDur)
 	return true
@@ -437,11 +453,144 @@ const cabCamera = 1.8
 
 // paintLaunchCab draws the frame for the current elapsed time.
 func (a *App) paintLaunchCab(c *gfx.Canvas) {
-	w, h := c.W(), c.H()
 	c.Fill(c.Rect, color.RGBA{0, 0, 0, 255})
-	angle, tilt, focal, bright := cabPose(a.cab.elapsed, w, h)
-	renderCab(c.RGBA, a.cab.tex, angle, tilt, focal, bright)
+	paintCabFrame(c.RGBA, a.cab.tex, a.cab.elapsed)
 	c.DirtyAll()
+}
+
+// paintCabFrame draws the animation at elapsed on a black canvas.
+func paintCabFrame(dst *image.RGBA, tex *image.RGBA, elapsed time.Duration) {
+	angle, tilt, focal, bright := cabPose(elapsed, dst.Rect.Dx(), dst.Rect.Dy())
+	renderCab(dst, tex, angle, tilt, focal, bright)
+}
+
+// The boards paint the last third of the animation, when the monitor
+// fills the frame, in 11-16 ms; with the 5 ms copy to the framebuffer on
+// the same thread those frames miss the vertical blank and the push drops
+// to 30 fps. cabAhead renders on its own goroutine, one frame per 60 Hz
+// step, into a ring of ready-rotated physical frames: the cheap early
+// frames bank a lead that carries the expensive late ones, and the
+// display thread only copies. cabAheadDepth frames of lead is 4 MB at
+// 320x240; the producer averages well under a frame period, so more
+// would only cost memory.
+const cabAheadDepth = 12
+
+type cabAhead struct {
+	frames chan *image.RGBA // rendered frames in order; closed after the last
+	free   chan *image.RGBA // buffers the display is done with
+	stop   chan struct{}
+	done   chan struct{}
+	tex    atomic.Pointer[image.RGBA] // the monitor shot, once it arrives
+	shown  *image.RGBA                // the frame on screen
+	taken  int                        // frames received so far: shown is frame taken-1
+	closed bool
+}
+
+func startCabAhead(w, h int, phys image.Rectangle, rot gfx.Rotation, tex *image.RGBA) *cabAhead {
+	ah := &cabAhead{
+		frames: make(chan *image.RGBA, cabAheadDepth),
+		free:   make(chan *image.RGBA, cabAheadDepth+2),
+		stop:   make(chan struct{}),
+		done:   make(chan struct{}),
+	}
+	if tex != nil {
+		ah.tex.Store(tex)
+	}
+	for i := 0; i < cabAheadDepth+2; i++ {
+		ah.free <- image.NewRGBA(phys)
+	}
+	go ah.run(w, h, rot)
+	return ah
+}
+
+func (ah *cabAhead) run(w, h int, rot gfx.Rotation) {
+	defer close(ah.done)
+	defer close(ah.frames)
+	logical := image.NewRGBA(image.Rect(0, 0, w, h))
+	black := make([]uint8, len(logical.Pix))
+	for i := 3; i < len(black); i += 4 {
+		black[i] = 255
+	}
+	for n := 0; ; n++ {
+		elapsed := time.Duration(n) * frameDur
+		var buf *image.RGBA
+		select {
+		case <-ah.stop:
+			return
+		case buf = <-ah.free:
+		}
+		copy(logical.Pix, black)
+		paintCabFrame(logical, ah.tex.Load(), elapsed)
+		gfx.RotateRect(buf, logical, logical.Rect, rot)
+		select {
+		case <-ah.stop:
+			return
+		case ah.frames <- buf:
+		}
+		if elapsed >= cabSpinDur+cabPushDur { // this frame is black: the end
+			return
+		}
+	}
+}
+
+// frame returns the physical frame for elapsed: the one rendered for that
+// step, or the newest ready when the producer is behind. The first frame
+// is waited for; nothing else blocks the display.
+func (ah *cabAhead) frame(elapsed time.Duration) *image.RGBA {
+	want := int(elapsed / frameDur)
+	for ah.taken <= want && !ah.closed {
+		var f *image.RGBA
+		var ok bool
+		if ah.shown == nil {
+			f, ok = <-ah.frames
+		} else {
+			select {
+			case f, ok = <-ah.frames:
+			default:
+				return ah.shown
+			}
+		}
+		if !ok {
+			ah.closed = true
+			break
+		}
+		ah.recycle()
+		ah.shown = f
+		ah.taken++
+	}
+	return ah.shown
+}
+
+func (ah *cabAhead) recycle() {
+	if ah.shown != nil {
+		select {
+		case ah.free <- ah.shown:
+		default:
+		}
+	}
+}
+
+// finish takes every remaining frame, so the last one rendered (black) is
+// the one on screen when the core loads.
+func (ah *cabAhead) finish() {
+	for f := range ah.frames {
+		ah.recycle()
+		ah.shown = f
+		ah.taken++
+	}
+	ah.closed = true
+	<-ah.done
+}
+
+// stopAhead ends the producer before the cabinet state is dropped, so no
+// goroutine paints into buffers nobody reads.
+func (c *launchCab) stopAhead() {
+	if c.ahead == nil {
+		return
+	}
+	close(c.ahead.stop)
+	<-c.ahead.done
+	c.ahead = nil
 }
 
 type screenVert struct {
