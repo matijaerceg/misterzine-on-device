@@ -23,7 +23,7 @@ const (
 	cabSpinDur = 700 * time.Millisecond // spinning approach
 	cabPushDur = 600 * time.Millisecond // straight push into the monitor
 	cabFadeDur = 400 * time.Millisecond // monitor fade, at the end of the push
-	cabTurns   = 2                      // whole turns during the approach
+	cabTurns   = 1                      // whole turns during the approach
 	cabTexW    = 128                    // title shot texture size
 	cabTexH    = 96
 )
