@@ -646,7 +646,7 @@ func (h *host) frameLoop() {
 			paused = true
 			h.img.SetPaused(true)
 		}
-		wasPage := h.a.PageTransitionRunning()
+		wasPage := h.a.PageTransitionRunning() || h.a.LaunchCabRunning()
 		frame, dirty := h.a.Paint()
 		var paint time.Duration
 		if h.debugEnabled {
@@ -669,7 +669,7 @@ func (h *host) frameLoop() {
 			if h.debugEnabled {
 				cp := time.Since(t)
 				h.stats.add(paint, 0, cp, t)
-				h.recordPageFrame(wasPage || h.a.PageTransitionRunning(), paint, 0, cp, t)
+				h.recordPageFrame(wasPage || h.a.PageTransitionRunning() || h.a.LaunchCabRunning(), paint, 0, cp, t)
 				h.recordDetailFrame(wasDetail, paint, 0, cp, t)
 				if paint+cp > 16*time.Millisecond {
 					late++
@@ -701,7 +701,7 @@ func (h *host) optionSampleLoop() {
 		// Input may have left the preview and armed key repeat. Paint that
 		// selection before the loop condition hands control back to the host.
 		h.a.OptionSampleFrame()
-		wasPage := h.a.PageTransitionRunning()
+		wasPage := h.a.PageTransitionRunning() || h.a.LaunchCabRunning()
 		frame, dirty := h.a.Paint()
 		painted := time.Now()
 		h.fb.WaitVSync()
@@ -711,7 +711,7 @@ func (h *host) optionSampleLoop() {
 		}
 		if h.debugEnabled {
 			h.stats.add(painted.Sub(now), at.Sub(painted), time.Since(at), at)
-			h.recordPageFrame(wasPage || h.a.PageTransitionRunning(), painted.Sub(now), at.Sub(painted), time.Since(at), at)
+			h.recordPageFrame(wasPage || h.a.PageTransitionRunning() || h.a.LaunchCabRunning(), painted.Sub(now), at.Sub(painted), time.Since(at), at)
 			h.recordDetailFrame(wasDetail, painted.Sub(now), at.Sub(painted), time.Since(at), at)
 		}
 		h.autosave(time.Now(), false)
@@ -868,14 +868,14 @@ func (h *host) present() {
 		return
 	}
 	t0 := time.Now()
-	wasPage := h.a.PageTransitionRunning()
+	wasPage := h.a.PageTransitionRunning() || h.a.LaunchCabRunning()
 	wasDetail := h.a.DetailScrollRunning()
 	frame, dirty := h.a.Paint()
 	if dirty != nil {
 		t1 := time.Now()
 		h.fb.Present(frame, dirty)
 		h.stats.add(t1.Sub(t0), h.fb.LastWait, time.Since(t1)-h.fb.LastWait, t1.Add(h.fb.LastWait))
-		h.recordPageFrame(wasPage || h.a.PageTransitionRunning(), t1.Sub(t0), h.fb.LastWait, time.Since(t1)-h.fb.LastWait, t1.Add(h.fb.LastWait))
+		h.recordPageFrame(wasPage || h.a.PageTransitionRunning() || h.a.LaunchCabRunning(), t1.Sub(t0), h.fb.LastWait, time.Since(t1)-h.fb.LastWait, t1.Add(h.fb.LastWait))
 		h.recordDetailFrame(wasDetail, t1.Sub(t0), h.fb.LastWait, time.Since(t1)-h.fb.LastWait, t1.Add(h.fb.LastWait))
 		if d := time.Since(t0); d > 40*time.Millisecond && time.Since(h.slowLog) > 5*time.Second {
 			h.slowLog = time.Now()

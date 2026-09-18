@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unsafe"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
@@ -147,7 +148,7 @@ func (a *App) nextLaunchCabTick() time.Time { return a.cab.next }
 // axis, the focal length (zoom) and the monitor brightness.
 func cabPose(elapsed time.Duration, w, h int) (angle, tilt, focal, bright float64) {
 	fill := float64(h) * cabCamera / (cabBounds.height * 1.15) // the cabinet's height nearly fills the frame
-	end := float64(w) * cabCamera / cabScreenW * 1.3           // the screen overfills it
+	end := float64(w) * cabCamera / cabScreenW * 1.05          // the screen just fills it; more costs 60 fps on the boards
 	if elapsed < cabSpinDur {
 		t := float64(elapsed) / float64(cabSpinDur)
 		angle = 2 * math.Pi * cabTurns * t
@@ -367,7 +368,9 @@ func loadCabSkin(name string) *image.RGBA {
 	return rgba
 }
 
-const cabCamera = 3.0 // camera distance from the monitor centre
+// The camera's distance from the spin axis. Closer means more perspective;
+// the zoom is scaled with it so the cabinet's size on screen stays put.
+const cabCamera = 1.8
 
 // paintLaunchCab draws the frame for the current elapsed time.
 func (a *App) paintLaunchCab(c *gfx.Canvas) {
@@ -400,7 +403,7 @@ func renderCab(dst *image.RGBA, tex *image.RGBA, angle, tilt, focal, bright floa
 		shade float64
 		z     float64
 	}
-	list := make([]drawn, 0, len(cabTris))
+	list := make([]*drawn, 0, len(cabTris))
 	for _, t := range cabTris {
 		var p [3]vec3
 		for i, q := range t.p {
@@ -438,28 +441,131 @@ func renderCab(dst *image.RGBA, tex *image.RGBA, angle, tilt, focal, bright floa
 		if a := (d.v[1].x-d.v[0].x)*(d.v[2].y-d.v[0].y) - (d.v[2].x-d.v[0].x)*(d.v[1].y-d.v[0].y); math.Abs(a) < 1 {
 			continue
 		}
-		list = append(list, d)
+		list = append(list, &d)
 	}
 	sort.SliceStable(list, func(i, j int) bool { return list[i].z < list[j].z })
+	var shotTexels *cabTexels
+	if tex != nil {
+		shotTexels = ditheredTexels(tex, bright)
+	}
 	for _, d := range list {
 		if d.tex && tex != nil {
-			fillTri(dst, d.v, d.col, tex, bright)
+			fillTri(dst, d.v, d.col, shotTexels)
 		} else {
 			if d.tex {
 				d.col = color.RGBA{uint8(40 * bright), uint8(40 * bright), uint8(48 * bright), 255}
 			}
 			if d.skin != nil {
-				fillTri(dst, d.v, d.col, d.skin, d.shade)
+				fillTri(dst, d.v, d.col, skinTexels(d.skin, d.shade))
 			} else {
-				fillTri(dst, d.v, d.col, nil, 1)
+				fillTri(dst, d.v, d.col, nil)
 			}
 		}
 	}
 }
 
 // fillTri scanline-fills a screen triangle, flat or affine textured.
-func fillTri(dst *image.RGBA, v [3]screenVert, col color.RGBA, tex *image.RGBA, bright float64) {
+// cabTexels is a texture as whole pixels: the span writer moves one word
+// per pixel, which the boards do several times faster than four bytes
+// with their bounds checks. The bytes are RGBA in memory either way.
+type cabTexels struct {
+	px     []uint32
+	w, h   int
+	stride int // in pixels
+}
+
+func pixels32(pix []uint8) []uint32 {
+	if len(pix) < 4 {
+		return nil
+	}
+	return unsafe.Slice((*uint32)(unsafe.Pointer(&pix[0])), len(pix)/4)
+}
+
+func rgbaTexels(img *image.RGBA) *cabTexels {
+	return &cabTexels{px: pixels32(img.Pix), w: img.Rect.Dx(), h: img.Rect.Dy(), stride: img.Stride / 4}
+}
+
+// The fade and the flat shades multiply the small texture once a frame
+// instead of every screen pixel. One scratch buffer per distinct level.
+var cabDimCache = map[*image.RGBA]map[int]*cabTexels{}
+
+func dimmedTexels(img *image.RGBA, bright float64) *cabTexels {
+	return shadedTexels(img, bright, false)
+}
+
+// ditheredTexels fades the picture to black by a 4x4 ordered dither: each
+// step blacks out more of the pattern, so the fade is made of the same
+// chunky texels as the picture and costs nothing per screen pixel.
+func ditheredTexels(img *image.RGBA, bright float64) *cabTexels {
+	return shadedTexels(img, bright, true)
+}
+
+// cabNoise is a fixed grain: one threshold per texel, so the fade is
+// random-looking but the same on every run and every frame of a level.
+var cabNoise = func() []uint8 {
+	n := make([]uint8, 512*512)
+	x := uint32(0x9E3779B9)
+	for i := range n {
+		x ^= x << 13
+		x ^= x >> 17
+		x ^= x << 5
+		n[i] = uint8(x >> 24)
+	}
+	return n
+}()
+
+func shadedTexels(img *image.RGBA, bright float64, dither bool) *cabTexels {
+	bf := int(bright * 256)
+	if bf >= 256 {
+		return rgbaTexels(img)
+	}
+	if dither {
+		bf = bf/8*8 + 1 // 32 steps; the key stays distinct from the darkening levels
+	}
+	levels := cabDimCache[img]
+	if levels == nil {
+		levels = map[int]*cabTexels{}
+		cabDimCache[img] = levels
+	}
+	if t := levels[bf]; t != nil {
+		return t
+	}
+	if len(levels) > 96 { // a new texture or a long fade: start over
+		clear(levels)
+	}
+	src := pixels32(img.Pix)
+	dst := make([]uint32, len(src))
+	stride := img.Stride / 4
+	if dither {
+		for i, p := range src {
+			if i < len(cabNoise) && int(cabNoise[i]) < bf {
+				dst[i] = p
+			} else {
+				dst[i] = 255 << 24
+			}
+		}
+	} else {
+		var dim [256]uint32
+		for i := range dim {
+			dim[i] = uint32(i * bf >> 8)
+		}
+		for i, p := range src {
+			dst[i] = dim[p&255] | dim[p>>8&255]<<8 | dim[p>>16&255]<<16 | 255<<24
+		}
+	}
+	t := &cabTexels{px: dst, w: img.Rect.Dx(), h: img.Rect.Dy(), stride: stride}
+	levels[bf] = t
+	return t
+}
+
+// skinTexels shades a painted face: four flat tones, so four cached copies.
+func skinTexels(img *image.RGBA, shade float64) *cabTexels { return dimmedTexels(img, shade) }
+
+func fillTri(dst *image.RGBA, v [3]screenVert, col color.RGBA, tex *cabTexels) {
 	w, h := dst.Rect.Dx(), dst.Rect.Dy()
+	out := pixels32(dst.Pix)
+	dstStride := dst.Stride / 4
+	solid := uint32(col.R) | uint32(col.G)<<8 | uint32(col.B)<<16 | 255<<24
 	if v[0].y > v[1].y {
 		v[0], v[1] = v[1], v[0]
 	}
@@ -479,16 +585,8 @@ func fillTri(dst *image.RGBA, v [3]screenVert, col color.RGBA, tex *image.RGBA, 
 		y2 = h - 1
 	}
 	var tw, th int
-	var bf int
-	var dim [256]uint8 // the fade, as a lookup instead of a multiply a channel
 	if tex != nil {
-		tw, th = tex.Rect.Dx(), tex.Rect.Dy()
-		bf = int(bright * 256)
-		if bf != 256 {
-			for i := range dim {
-				dim[i] = uint8(i * bf >> 8)
-			}
-		}
+		tw, th = tex.w, tex.h
 	}
 	// edge interpolation helpers
 	lerp := func(a, b screenVert, y float64) screenVert {
@@ -519,13 +617,11 @@ func fillTri(dst *image.RGBA, v [3]screenVert, col color.RGBA, tex *image.RGBA, 
 		if x0 > x1 {
 			continue
 		}
-		row := dst.Pix[y*dst.Stride:]
+		row := out[y*dstStride : y*dstStride+w]
 		if tex == nil {
-			// one pixel, then doubling copies across the span
-			span := row[x0*4 : (x1+1)*4]
-			span[0], span[1], span[2], span[3] = col.R, col.G, col.B, 255
-			for n := 4; n < len(span); n *= 2 {
-				copy(span[n:], span[:n])
+			span := row[x0 : x1+1]
+			for i := range span {
+				span[i] = solid
 			}
 			continue
 		}
@@ -546,21 +642,10 @@ func fillTri(dst *image.RGBA, v [3]screenVert, col color.RGBA, tex *image.RGBA, 
 		if n := x1 - x0; n > 0 {
 			du, dv = (u1-u)/n, (v1-vv)/n
 		}
-		pix, stride := tex.Pix, tex.Stride
-		if bf == 256 {
-			for x := x0; x <= x1; x++ {
-				o := (vv>>16)*stride + (u>>16)*4
-				i := x * 4
-				row[i], row[i+1], row[i+2], row[i+3] = pix[o], pix[o+1], pix[o+2], 255
-				u += du
-				vv += dv
-			}
-			continue
-		}
-		for x := x0; x <= x1; x++ {
-			o := (vv>>16)*stride + (u>>16)*4
-			i := x * 4
-			row[i], row[i+1], row[i+2], row[i+3] = dim[pix[o]], dim[pix[o+1]], dim[pix[o+2]], 255
+		px, stride := tex.px, tex.stride
+		out := row[x0 : x1+1]
+		for i := range out {
+			out[i] = px[(vv>>16)*stride+(u>>16)]
 			u += du
 			vv += dv
 		}

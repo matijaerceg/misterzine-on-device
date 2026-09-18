@@ -296,6 +296,10 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 	}
 	body := l.Body
 	body.Min.Y = l.Root.Min.Y // no status bar here: the room goes to the specs
+	if key, slot := cabShot(row); key != "" && a.transition.enabled && a.PageTransitions() {
+		// the launch animation's monitor picture, decoded before Start
+		a.want(ImageReq{Key: key, Slot: slot, W: cabTexW, H: cabTexH, Stretch: slot != "system"})
+	}
 	cols := a.body.Cols(body.Dx())
 	y := body.Min.Y
 	title := d.Title
