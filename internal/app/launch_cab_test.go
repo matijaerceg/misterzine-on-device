@@ -65,6 +65,18 @@ func TestLaunchCabPlaysThenLaunches(t *testing.T) {
 	if len(*launched) != 1 || (*launched)[0] != "_Arcade/Test.mra" {
 		t.Fatalf("launched %v after the animation", *launched)
 	}
+	// the page must not come back while the core loads
+	*clock = clock.Add(frameDur)
+	a.Tick(*clock)
+	frame, _ := a.Paint()
+	for i := 0; i < len(frame.Pix); i += 4 {
+		if frame.Pix[i] != 0 || frame.Pix[i+1] != 0 || frame.Pix[i+2] != 0 {
+			t.Fatal("the page was painted after the launch")
+		}
+	}
+	if !a.NextTick().IsZero() {
+		t.Fatal("nothing should be scheduled after the launch")
+	}
 }
 
 func TestLaunchCabBackCancels(t *testing.T) {

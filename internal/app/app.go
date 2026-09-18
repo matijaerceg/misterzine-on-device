@@ -633,6 +633,9 @@ func (a *App) SetFilters(f data.Filters) {
 func (a *App) Notice(s string, d time.Duration) {
 	a.notice = s
 	a.until = a.cfg.TimerNow().Add(d)
+	if a.cab.launched {
+		a.cab = launchCab{} // the launch failed: the page comes back with the notice
+	}
 	a.all = true
 }
 

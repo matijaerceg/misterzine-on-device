@@ -90,6 +90,7 @@ func (a *App) nextHoldLaunchTick() time.Time {
 
 type launchCab struct {
 	active   bool
+	launched bool // the core is loading: the canvas stays black, no page returns
 	at, next time.Time
 	path     string
 	req      ImageReq // the title shot; fetched while the spin runs if not cached
@@ -154,7 +155,7 @@ func cabShot(r *data.Row) (key, slot string) {
 	return "", ""
 }
 
-func (a *App) LaunchCabRunning() bool { return a.cab.active }
+func (a *App) LaunchCabRunning() bool { return a.cab.active && !a.cab.launched }
 
 // PreviewLaunchCab is the debug API's way to play the animation.
 func (a *App) PreviewLaunchCab() { a.previewLaunchCab() }
@@ -163,7 +164,9 @@ func (a *App) handleLaunchCab(ev platform.Event) bool {
 	if !a.cab.active {
 		return false
 	}
-	if ev.Pressed && ev.Key == platform.KeyBack {
+	if ev.Pressed && (ev.Key == platform.KeyBack || a.cab.launched) {
+		// Back cancels; any key after a launch that never took the screen
+		// brings the page back
 		a.cab = launchCab{}
 		a.all = true
 	}
@@ -176,13 +179,20 @@ func (a *App) tickLaunchCab(now time.Time) bool {
 		return false
 	}
 	c.elapsed = now.Sub(c.at)
+	if c.launched {
+		return false
+	}
 	if c.elapsed >= cabSpinDur+cabPushDur {
-		path := c.path
-		*c = launchCab{}
-		a.all = true
-		if path != "" { // a preview ends where it began
-			a.cfg.Launch(path)
+		if c.path == "" { // a preview ends where it began
+			*c = launchCab{}
+			a.all = true
+			return true
 		}
+		// the screen stays black while MiSTer takes over: painting the
+		// page again would flash it for a frame
+		path := c.path
+		c.path, c.launched, c.next = "", true, time.Time{}
+		a.cfg.Launch(path)
 		return true
 	}
 	if c.tex == nil && c.req.Key != "" {
