@@ -24,6 +24,7 @@ var CoreNames = map[string]string{
 	"Deco16":                   "Data East DECO-16",
 	"Exidy2":                   "Exidy",
 	"IGSPGM":                   "IGS PGM",
+	"ITech32":                  "Incredible Technologies 32-bit",
 	"IkariWarriors":            "SNK (Ikari Warriors)",
 	"IremM107":                 "Irem M107",
 	"IremM72":                  "Irem M72",
@@ -135,5 +136,6 @@ var SrcNames = map[string]string{
 	"jtbindb":                            "Jotego (JTcores)",
 	"meathax":                            "Meathax (MeatCores)",
 	"rmcores":                            "rmCores (rmonic79)",
+	"slopcore":                           "Slop Cores (TheJesusFish)",
 	"theypsilon_unofficial_distribution": "theypsilon Unofficial Distribution",
 }

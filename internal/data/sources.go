@@ -13,6 +13,11 @@ type DB struct {
 // db_url the site's SOURCES table records and the section names update_all
 // has written for it, older ones included. A source missing here is never
 // hidden, so a source the feed gains later stays visible until it is added.
+//
+// Adding a source the site starts tracking: run cmd/mzgen for the full name,
+// then add its short chip to srcShort in labels.go and its db_url and
+// downloader.ini section (lower-case) here. TestSourceTablesComplete fails
+// until all three agree.
 var sourceDBs = map[string]struct {
 	url string
 	ids []string
@@ -23,6 +28,7 @@ var sourceDBs = map[string]struct {
 	"meathax":                            {"https://raw.githubusercontent.com/meathax/meatcores/db/db.json.zip", []string{"meathax/meatcores"}},
 	"theypsilon_unofficial_distribution": {"https://raw.githubusercontent.com/theypsilon/Unofficial_Distribution_MiSTer/main/unofficialdb.json.zip", []string{"theypsilon_unofficial_distribution"}},
 	"rmcores":                            {"https://raw.githubusercontent.com/rmonic79/rmcores/db/db.json.zip", []string{"rmonic79/rmcores"}},
+	"slopcore":                           {"https://raw.githubusercontent.com/TheJesusFish/Slop-Core/db/db.json.zip", []string{"thejesusfish/slop-core"}},
 }
 
 // HiddenSources lists the feed sources whose Downloader database is not

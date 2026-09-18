@@ -98,6 +98,7 @@ var srcShort = map[string]string{
 	"coinop":                             "Coin-Op",
 	"meathax":                            "Meathax",
 	"rmcores":                            "rmCores",
+	"slopcore":                           "Slop",
 	"theypsilon_unofficial_distribution": "theypsilon",
 }
 
