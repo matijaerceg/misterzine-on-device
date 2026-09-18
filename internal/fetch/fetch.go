@@ -25,9 +25,9 @@ var Site = "https://misterzine.fyi"
 
 // SnapService is the base URL of the screenshot service that serves shots
 // by MAME setname for games the catalogue does not list (the "lsnap" slot).
-// Empty until the service is live: such pictures are then simply missing,
-// without a request.
-var SnapService = ""
+// Set it to "" to turn those requests off: such pictures are then simply
+// missing.
+var SnapService = "https://images.misterzine.fyi"
 
 // SlotLocalSnap is the picture slot served by SnapService.
 const SlotLocalSnap = "lsnap"

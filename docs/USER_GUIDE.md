@@ -86,8 +86,9 @@ however many copies are installed; the extra copies are offered as versions.
 Local games carry no release dates, so they sit at the end of the date views
 and never count as new since your last look. To hide them, turn the Local
 source off in Filters -> Source; "Installed only" in Options never hides them.
-Pictures for local games come from the image service by MAME set name once it
-is enabled; until then they show a placeholder.
+Pictures for local games are fetched from images.misterzine.fyi by MAME set
+name, the only thing sent about the game; a game without a known screenshot
+shows a placeholder, and the app asks again after a week.
 Options -> Views -> Remember last view is on by default; turn it off to choose
 a Default view for each new visit (Core updated initially).
 Y cycles Updated, Debut, Year, Alphabetical, Manufacturer, then Favorites; the
