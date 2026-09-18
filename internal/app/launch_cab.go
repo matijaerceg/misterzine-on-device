@@ -200,7 +200,7 @@ func parseCabModel(obj, mtl string) ([]cabTri, cabModel) {
 	var verts []vec3
 	var uvs [][2]float64
 	var tris []cabTri
-	mat := ""
+	mat, group := "", false
 	for _, line := range strings.Split(obj, "\n") {
 		f := strings.Fields(line)
 		if len(f) == 0 {
@@ -224,6 +224,8 @@ func parseCabModel(obj, mtl string) ([]cabTri, cabModel) {
 			if len(f) >= 2 {
 				mat = f[1]
 			}
+		case "o", "g": // an element or group named screen is the monitor too
+			group = len(f) >= 2 && strings.EqualFold(f[1], "screen")
 		case "f":
 			var p []vec3
 			var uv [][2]float64
@@ -242,7 +244,7 @@ func parseCabModel(obj, mtl string) ([]cabTri, cabModel) {
 				}
 				uv = append(uv, t)
 			}
-			tex := strings.EqualFold(mat, "screen")
+			tex := group || strings.EqualFold(mat, "screen")
 			col, ok := colours[mat]
 			if !ok {
 				col = color.RGBA{128, 128, 128, 255}
