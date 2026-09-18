@@ -27,12 +27,13 @@ import (
 // Everything is a pure function of elapsed time, so the harness records it
 // frame by frame with -motion.
 const (
-	cabSpinDur = 700 * time.Millisecond // spinning approach
-	cabPushDur = 600 * time.Millisecond // straight push into the monitor
-	cabFadeDur = 500 * time.Millisecond // monitor fade, at the end of the push
-	cabTurns   = 0                      // whole turns during the approach (0: straight in)
-	cabTilt    = 14.0                   // degrees the cabinet leans toward the viewer by the end of the approach
-	cabTexW    = 128                    // title shot texture size
+	cabSpinDur = 1000 * time.Millisecond // spinning approach
+	cabPushDur = 600 * time.Millisecond  // straight push into the monitor
+	cabFadeDur = 500 * time.Millisecond  // monitor fade, at the end of the push
+	cabTurns   = 1                       // whole turns during the approach (0: straight in)
+	cabFar     = 6.0                     // how many times smaller than frame-filling the approach starts
+	cabTilt    = 14.0                    // degrees the cabinet leans toward the viewer by the end of the approach
+	cabTexW    = 128                     // title shot texture size
 	cabTexH    = 96
 )
 
@@ -104,6 +105,9 @@ func cabShot(r *data.Row) (key, slot string) {
 
 func (a *App) LaunchCabRunning() bool { return a.cab.active }
 
+// PreviewLaunchCab is the debug API's way to play the animation.
+func (a *App) PreviewLaunchCab() { a.previewLaunchCab() }
+
 func (a *App) handleLaunchCab(ev platform.Event) bool {
 	if !a.cab.active {
 		return false
@@ -147,8 +151,8 @@ func cabPose(elapsed time.Duration, w, h int) (angle, tilt, focal, bright float6
 	if elapsed < cabSpinDur {
 		t := float64(elapsed) / float64(cabSpinDur)
 		angle = 2 * math.Pi * cabTurns * t
-		tilt = cabTilt * math.Pi / 180 * t // leans forward as it comes closer
-		focal = fill * math.Pow(4, t-1)    // geometric zoom: constant perceived speed
+		tilt = cabTilt * math.Pi / 180 * t   // leans forward as it comes closer
+		focal = fill * math.Pow(cabFar, t-1) // geometric zoom: constant perceived speed
 		return angle, tilt, focal, 1
 	}
 	t := min(1, float64(elapsed-cabSpinDur)/float64(cabPushDur))
@@ -329,7 +333,9 @@ func parseCabModel(obj, mtl string) ([]cabTri, cabModel) {
 	if sfirst { // no screen: centre on the model
 		slo, shi = lo, hi
 	}
-	centre := vec3{(slo.x + shi.x) / 2, (slo.y + shi.y) / 2, shi.z}
+	// the spin axis stands on the screen's back edge, so the picture swings
+	// round it rather than the picture's own face
+	centre := vec3{(slo.x + shi.x) / 2, (slo.y + shi.y) / 2, slo.z}
 	scale := 1.0
 	if w := shi.x - slo.x; w > 0 {
 		scale = cabScreenW / w

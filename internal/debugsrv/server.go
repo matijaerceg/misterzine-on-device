@@ -36,6 +36,7 @@ type Hooks struct {
 	Quit   func()
 	Goto   func(k string)         // called via Run: put the cursor on a row key
 	Saver  func(q url.Values) any // called via Run: tune the saver ground; nil = unsupported
+	Launch func()                 // called via Run: play the launch animation without launching
 	Log    string                 // log file path
 }
 
@@ -163,6 +164,14 @@ func Serve(addr string, h Hooks, lg *log.Logger) bool {
 		h.Run(func() { h.Goto(k) })
 		w.Write([]byte("ok\n"))
 	})
+	mux.HandleFunc("/api/launchcab", func(w http.ResponseWriter, r *http.Request) {
+		if h.Launch == nil {
+			http.Error(w, "unsupported", 404)
+			return
+		}
+		h.Run(h.Launch)
+		w.Write([]byte("ok\n"))
+	})
 	mux.HandleFunc("/api/saver", func(w http.ResponseWriter, r *http.Request) {
 		// ?knee=&gain=&shade=&div=&passes= set the look (any subset),
 		// ?saver=on|off starts or wakes it; the reply is the look in force
@@ -221,7 +230,7 @@ func guard(next http.Handler, lg *log.Logger, token string) http.Handler {
 			http.Error(w, "authentication required", 401)
 			return
 		}
-		mutating := strings.HasPrefix(r.URL.Path, "/api/key/") || r.URL.Path == "/api/keys" || r.URL.Path == "/api/goto" || r.URL.Path == "/api/quit" || r.URL.Path == "/api/saver"
+		mutating := strings.HasPrefix(r.URL.Path, "/api/key/") || r.URL.Path == "/api/keys" || r.URL.Path == "/api/goto" || r.URL.Path == "/api/quit" || r.URL.Path == "/api/saver" || r.URL.Path == "/api/launchcab"
 		method := "GET"
 		if mutating {
 			method = "POST"

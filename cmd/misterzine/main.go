@@ -414,6 +414,11 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			},
 			Quit: h.stop,
 			Goto: func(k string) { h.a.MoveToKey(k); h.present() },
+			Launch: func() {
+				h.stats.buckets = nil // the cadence now describes this run
+				h.a.PreviewLaunchCab()
+				h.present()
+			},
 			Saver: func(q url.Values) any {
 				l := h.a.SaverLook()
 				for name, p := range map[string]*int{"knee": &l.Knee, "gain": &l.Gain, "shade": &l.Shade, "div": &l.BlurDiv, "passes": &l.Passes, "dither": &l.Dither, "bits": &l.Bits, "cell": &l.Cell} {
@@ -544,7 +549,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			h.frameLoop()
 		} else if h.a.SaverRunning() {
 			h.saverLoop()
-		} else if h.a.OptionSamplesRunning() || h.a.PageTransitionRunning() || h.a.LayoutTransitionRunning() || h.a.DetailScrollRunning() || h.a.ListScrollRunning() {
+		} else if h.a.OptionSamplesRunning() || h.a.PageTransitionRunning() || h.a.LayoutTransitionRunning() || h.a.DetailScrollRunning() || h.a.ListScrollRunning() || h.a.LaunchCabRunning() {
 			h.optionSampleLoop()
 		}
 		h.autosave(time.Now(), false)
@@ -684,7 +689,7 @@ func (h *host) frameLoop() {
 // optionSampleLoop drives previews, page wipes and detail scrolling at vertical blank.
 // Keep servicing events and saves, and allow inactivity to start the screensaver.
 func (h *host) optionSampleLoop() {
-	for (h.a.OptionSamplesRunning() || h.a.PageTransitionRunning() || h.a.LayoutTransitionRunning() || h.a.DetailScrollRunning() || h.a.ListScrollRunning()) && !h.a.Repeating() {
+	for (h.a.OptionSamplesRunning() || h.a.PageTransitionRunning() || h.a.LayoutTransitionRunning() || h.a.DetailScrollRunning() || h.a.ListScrollRunning() || h.a.LaunchCabRunning()) && !h.a.Repeating() {
 		if !h.pump() {
 			return
 		}
