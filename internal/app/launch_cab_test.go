@@ -108,6 +108,25 @@ func TestLaunchCabPreviewDoesNotLaunch(t *testing.T) {
 	}
 }
 
+func TestLaunchCabEndsBlack(t *testing.T) {
+	a, clock, _ := cabApp(true)
+	a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})
+	var last []byte
+	for a.LaunchCabRunning() {
+		a.Tick(*clock)
+		if a.LaunchCabRunning() {
+			frame, _ := a.Paint()
+			last = append(last[:0], frame.Pix...)
+		}
+		*clock = clock.Add(frameDur)
+	}
+	for i := 0; i < len(last); i += 4 {
+		if last[i] != 0 || last[i+1] != 0 || last[i+2] != 0 {
+			t.Fatalf("the last frame is not black at byte %d", i)
+		}
+	}
+}
+
 func TestLaunchCabOffWithoutMotion(t *testing.T) {
 	a, clock, launched := cabApp(false)
 	a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})

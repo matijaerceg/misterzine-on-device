@@ -160,7 +160,9 @@ func cabPose(elapsed time.Duration, w, h int) (angle, tilt, focal, bright float6
 	focal = fill + (end-fill)*t
 	bright = 1
 	if left := cabSpinDur + cabPushDur - elapsed; left < cabFadeDur {
-		bright = float64(left) / float64(cabFadeDur)
+		// full black two frames before the end, so the last frames shown
+		// before the core loads are black and not nearly so
+		bright = max(0, float64(left-2*frameDur)/float64(cabFadeDur-2*frameDur))
 	}
 	return 0, cabTilt * math.Pi / 180, focal, bright
 }
