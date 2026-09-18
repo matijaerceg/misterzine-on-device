@@ -619,7 +619,7 @@ func (a *App) launchRow(row *data.Row, i, pick int) bool {
 			a.rememberPick(row, entries, pick)
 		}
 		a.recordLaunch(row)
-		a.cfg.Launch(e.path)
+		a.startLaunchCab(row, e.path)
 	}
 	return false
 }

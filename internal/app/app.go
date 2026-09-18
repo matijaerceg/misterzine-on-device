@@ -232,6 +232,7 @@ type App struct {
 	all            bool // full repaint pending
 	saver          screensaver
 	marquee        marqueeState
+	cab            launchCab
 
 	arcadeIntroAt  time.Time
 	arcadeIntroBar int
@@ -709,6 +710,9 @@ func (a *App) ensureVisible() {
 // virtual keyboard), and this folds the pair into one.
 func (a *App) Handle(ev platform.Event) bool {
 	ev = a.padEvent(ev) // a pad whose OK button is B trades Enter and back
+	if a.handleLaunchCab(ev) {
+		return true
+	}
 	if a.handleSaverInput(ev) {
 		return true
 	}
@@ -866,6 +870,7 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 // Tick runs due repeats and expires notices; returns true to repaint.
 func (a *App) Tick(now time.Time) bool {
 	changed := a.tickPageTransition(now)
+	changed = a.tickLaunchCab(now) || changed
 	changed = a.tickLayoutMotion(now) || changed
 	changed = a.tickSplash(now) || changed
 	changed = a.tickMenu(now) || changed
@@ -905,6 +910,7 @@ func (a *App) Tick(now time.Time) bool {
 func (a *App) Frame(now time.Time) bool {
 	a.saver.lastInput = now // a held direction is still activity
 	changed := a.tickPageTransition(now)
+	changed = a.tickLaunchCab(now) || changed
 	changed = a.tickLayoutMotion(now) || changed
 	changed = a.tickSplash(now) || changed
 	changed = a.tickMenu(now) || changed
@@ -967,6 +973,9 @@ func (a *App) NextTick() time.Time {
 		t = next
 	}
 	if next := a.transition.next; !next.IsZero() && (t.IsZero() || next.Before(t)) {
+		t = next
+	}
+	if next := a.nextLaunchCabTick(); !next.IsZero() && (t.IsZero() || next.Before(t)) {
 		t = next
 	}
 	return t
@@ -1196,6 +1205,11 @@ func (a *App) neighbourhood() {
 // Paint renders whatever changed and returns the physical frame with the
 // rectangles that need presenting (nil when nothing changed).
 func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
+	if a.cab.active {
+		a.all = true
+		a.paintLaunchCab(a.logical)
+		return a.rotatePaint()
+	}
 	a.validateLayoutMotion()
 	if !a.all && a.LayoutTransitionRunning() && a.layoutMotion.dirty {
 		a.wants = a.wants[:0]
