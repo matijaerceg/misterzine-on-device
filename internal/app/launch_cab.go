@@ -378,6 +378,7 @@ func (a *App) paintLaunchCab(c *gfx.Canvas) {
 	c.Fill(c.Rect, color.RGBA{0, 0, 0, 255})
 	angle, tilt, focal, bright := cabPose(a.cab.elapsed, w, h)
 	renderCab(c.RGBA, a.cab.tex, angle, tilt, focal, bright)
+	ditherFrame(c.RGBA, bright)
 	c.DirtyAll()
 }
 
@@ -446,7 +447,7 @@ func renderCab(dst *image.RGBA, tex *image.RGBA, angle, tilt, focal, bright floa
 	sort.SliceStable(list, func(i, j int) bool { return list[i].z < list[j].z })
 	var shotTexels *cabTexels
 	if tex != nil {
-		shotTexels = ditheredTexels(tex, bright)
+		shotTexels = rgbaTexels(tex) // the fade is the whole frame's, in ditherFrame
 	}
 	for _, d := range list {
 		if d.tex && tex != nil {
@@ -498,6 +499,28 @@ func dimmedTexels(img *image.RGBA, bright float64) *cabTexels {
 // chunky texels as the picture and costs nothing per screen pixel.
 func ditheredTexels(img *image.RGBA, bright float64) *cabTexels {
 	return shadedTexels(img, bright, true)
+}
+
+// ditherFrame fades the whole frame to black by the fixed grain: at
+// bright b, pixels whose threshold is above b go black. One compare and
+// at most one store a pixel.
+func ditherFrame(dst *image.RGBA, bright float64) {
+	bf := int(bright * 256)
+	if bf >= 256 {
+		return
+	}
+	px := pixels32(dst.Pix)
+	stride := dst.Stride / 4
+	w, h := dst.Rect.Dx(), dst.Rect.Dy()
+	for y := 0; y < h; y++ {
+		row := px[y*stride : y*stride+w]
+		noise := cabNoise[y*512 : y*512+w]
+		for x, n := range noise {
+			if int(n) >= bf {
+				row[x] = 255 << 24
+			}
+		}
+	}
 }
 
 // cabNoise is a fixed grain: one threshold per texel, so the fade is
