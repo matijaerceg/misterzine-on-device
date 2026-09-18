@@ -1,10 +1,14 @@
 package app
 
 import (
+	"bytes"
 	"embed"
 	"image"
 	"image/color"
+	"image/draw"
+	_ "image/png"
 	"math"
+	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -138,11 +142,12 @@ func cabPose(elapsed time.Duration, w, h int) (angle, focal, bright float64) {
 type vec3 struct{ x, y, z float64 }
 
 type cabTri struct {
-	p   [3]vec3
-	uv  [3][2]float64
-	col color.RGBA
-	tex bool
-	z   float64 // sort key after transform
+	p    [3]vec3
+	uv   [3][2]float64
+	col  color.RGBA
+	tex  bool        // the screen: shows the title shot
+	skin *image.RGBA // a painted face: its material's map_Kd texture
+	z    float64     // sort key after transform
 }
 
 // The cabinet is cab.obj next to this file, a Wavefront OBJ as Blockbench
@@ -153,7 +158,7 @@ type cabTri struct {
 // The model is moved so the screen's centre is the origin (the push ends
 // there) and scaled so the screen is cabScreenW wide.
 //
-//go:embed cab.obj cab.mtl
+//go:embed cab*
 var cabFiles embed.FS
 
 const cabScreenW = 0.76
@@ -173,6 +178,7 @@ func loadCabModel() ([]cabTri, cabModel) {
 
 func parseCabModel(obj, mtl string) ([]cabTri, cabModel) {
 	colours := map[string]color.RGBA{}
+	skins := map[string]*image.RGBA{}
 	name := ""
 	for _, line := range strings.Split(mtl, "\n") {
 		f := strings.Fields(line)
@@ -185,6 +191,10 @@ func parseCabModel(obj, mtl string) ([]cabTri, cabModel) {
 				c[i], _ = strconv.ParseFloat(f[i+1], 64)
 			}
 			colours[name] = color.RGBA{uint8(c[0] * 255), uint8(c[1] * 255), uint8(c[2] * 255), 255}
+		case len(f) == 2 && f[0] == "map_Kd" && name != "":
+			if img := loadCabSkin(f[1]); img != nil {
+				skins[name] = img
+			}
 		}
 	}
 	var verts []vec3
@@ -237,8 +247,12 @@ func parseCabModel(obj, mtl string) ([]cabTri, cabModel) {
 			if !ok {
 				col = color.RGBA{128, 128, 128, 255}
 			}
+			var skin *image.RGBA
+			if !tex {
+				skin = skins[mat]
+			}
 			for i := 1; i+1 < len(p); i++ { // fan triangulation
-				tris = append(tris, cabTri{p: [3]vec3{p[0], p[i], p[i+1]}, uv: [3][2]float64{uv[0], uv[i], uv[i+1]}, col: col, tex: tex})
+				tris = append(tris, cabTri{p: [3]vec3{p[0], p[i], p[i+1]}, uv: [3][2]float64{uv[0], uv[i], uv[i+1]}, col: col, tex: tex, skin: skin})
 			}
 		}
 	}
@@ -278,6 +292,24 @@ func parseCabModel(obj, mtl string) ([]cabTri, cabModel) {
 	return tris, cabModel{tris: tris, height: (hi.y - lo.y) * scale, width: (hi.x - lo.x) * scale}
 }
 
+// loadCabSkin decodes a texture the mtl names, from the embedded files;
+// nil when it is not there. Blockbench exports the path as written in
+// the project, so only the base name counts.
+func loadCabSkin(name string) *image.RGBA {
+	name = path.Base(strings.ReplaceAll(name, "\\", "/"))
+	b, err := cabFiles.ReadFile(name)
+	if err != nil {
+		return nil
+	}
+	img, _, err := image.Decode(bytes.NewReader(b))
+	if err != nil {
+		return nil
+	}
+	rgba := image.NewRGBA(img.Bounds().Sub(img.Bounds().Min))
+	draw.Draw(rgba, rgba.Rect, img, img.Bounds().Min, draw.Src)
+	return rgba
+}
+
 const cabCamera = 3.0 // camera distance from the monitor centre
 
 // paintLaunchCab draws the frame for the current elapsed time.
@@ -303,10 +335,12 @@ func renderCab(dst *image.RGBA, tex *image.RGBA, angle, focal, bright float64) {
 	ln := math.Sqrt(light.x*light.x + light.y*light.y + light.z*light.z)
 	light = vec3{light.x / ln, light.y / ln, light.z / ln}
 	type drawn struct {
-		v   [3]screenVert
-		col color.RGBA
-		tex bool
-		z   float64
+		v     [3]screenVert
+		col   color.RGBA
+		tex   bool
+		skin  *image.RGBA
+		shade float64
+		z     float64
 	}
 	list := make([]drawn, 0, len(cabTris))
 	for _, t := range cabTris {
@@ -326,10 +360,10 @@ func renderCab(dst *image.RGBA, tex *image.RGBA, angle, focal, bright float64) {
 		shade := 0.3 + 0.7*max(0, (n.x*light.x+n.y*light.y+n.z*light.z)/nl)
 		shade = math.Floor(shade*4+0.5) / 4 // four flat tones
 		col := t.col
-		if !t.tex {
+		if !t.tex && t.skin == nil {
 			col = color.RGBA{uint8(float64(col.R) * shade), uint8(float64(col.G) * shade), uint8(float64(col.B) * shade), 255}
 		}
-		d := drawn{col: col, tex: t.tex}
+		d := drawn{col: col, tex: t.tex, skin: t.skin, shade: shade}
 		for i, q := range p {
 			dz := cabCamera - q.z
 			if dz < 0.05 {
@@ -348,7 +382,11 @@ func renderCab(dst *image.RGBA, tex *image.RGBA, angle, focal, bright float64) {
 			if d.tex {
 				d.col = color.RGBA{uint8(40 * bright), uint8(40 * bright), uint8(48 * bright), 255}
 			}
-			fillTri(dst, d.v, d.col, nil, 1)
+			if d.skin != nil {
+				fillTri(dst, d.v, d.col, d.skin, d.shade)
+			} else {
+				fillTri(dst, d.v, d.col, nil, 1)
+			}
 		}
 	}
 }
