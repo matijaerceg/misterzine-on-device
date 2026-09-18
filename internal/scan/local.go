@@ -140,6 +140,10 @@ func DiscoverLocal(card, cachePath string, catalogue []data.Row, alts []Alt, att
 				continue
 			}
 		}
+		if isBIOS(a) {
+			res.Skipped = append(res.Skipped, Skipped{Path: a.Path, Reason: "BIOS, not a game", Size: a.Size, Mtime: a.Mtime})
+			continue
+		}
 		a.Setname = sn
 		present[sn] = true
 		loose = append(loose, a)
@@ -186,6 +190,22 @@ func DiscoverLocal(card, cachePath string, catalogue []data.Row, alts []Alt, att
 	}
 	sort.Slice(res.Rows, func(i, j int) bool { return res.Rows[i].K < res.Rows[j].K })
 	return res
+}
+
+// isBIOS recognises a system BIOS MRA (MiSTer ships one per platform core,
+// e.g. "PGM (Polygame Master) System BIOS") by the word in its name or file
+// name; it is not a game to list.
+func isBIOS(a Alt) bool {
+	for _, s := range []string{a.Name, path.Base(a.Path)} {
+		for _, w := range strings.FieldsFunc(strings.ToLower(s), func(r rune) bool {
+			return !(r >= 'a' && r <= 'z' || r >= '0' && r <= '9')
+		}) {
+			if w == "bios" {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // AttachedPaths flattens a family resolver result into the set of paths it

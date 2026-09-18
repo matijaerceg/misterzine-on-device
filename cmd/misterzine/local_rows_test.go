@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/matijaerceg/misterzine-on-device/internal/app"
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/fetch"
 )
@@ -110,13 +111,32 @@ func TestSwapKeepsLocals(t *testing.T) {
 		{K: "local:orphan", Title: "Orphan", Base: "Arcade", Src: data.SrcLocal, SN: "orphan", Core: "defender", MRA: "_Arcade/_Extra/Orphan.mra"},
 		{K: "local:soon", Title: "Soon", Base: "Arcade", Src: data.SrcLocal, SN: "soon", Core: "defender", MRA: "_Arcade/_Extra/Soon.mra"},
 	}
-	h.a.SetData(data.Ingest(data.MergeLocal(catalogueRows(), local), "cat", time.Now()), nil)
+	// The local "soon" is starred, has a remembered version and a launch.
+	h.a = app.New(app.Config{PhysW: 320, PhysH: 240,
+		Favorites:      map[string]bool{"local:soon": true},
+		Versions:       map[string]string{"local:soon": "_Arcade/_Extra/Soon (set 2).mra"},
+		RecentLaunches: []data.Recent{{K: "local:soon", At: "2026-09-17T10:00:00Z"}},
+		FavChanged:     func() { h.favDirty = true },
+		VersionChanged: func() { h.dirty = true },
+		RecentsChanged: func() { h.dirty = true },
+	}, data.Ingest(data.MergeLocal(catalogueRows(), local), "cat", time.Now()), nil)
+	h.favDirty, h.dirty = false, false
 	// The new catalogue lists "soon": that local row must go; the other stays.
 	rows := append(catalogueRows(), data.Row{K: "soon", Title: "Soon", Base: "Arcade", Src: "coinop", Core: "defender", SN: "soon", MRA: "_Arcade/_Coin-Op/Soon.mra"})
 	h.swap(fetch.Fresh{Changed: true, Rows: rows, Meta: data.Meta{Hash: "new", Updated: "2026-09-17T00:00Z"}})
 	ds := h.a.Data()
 	if ds.Hash != "new" || ds.NCat != 3 || len(ds.Rows) != 4 || ds.Rows[3].K != "local:orphan" {
 		t.Fatalf("swap: hash=%q ncat=%d rows=%d", ds.Hash, ds.NCat, len(ds.Rows))
+	}
+	// ...and its star, version and launch record follow it to the new row.
+	if f := h.a.FavoriteSet(); !f["soon"] || f["local:soon"] || !h.favDirty {
+		t.Fatalf("favorite not moved: %v dirty=%v", f, h.favDirty)
+	}
+	if v := h.a.Versions(); v["soon"] != "_Arcade/_Extra/Soon (set 2).mra" || v["local:soon"] != "" || !h.dirty {
+		t.Fatalf("version not moved: %v dirty=%v", v, h.dirty)
+	}
+	if r := h.a.Recents(); len(r) != 1 || r[0].K != "soon" {
+		t.Fatalf("recent not moved: %v", r)
 	}
 	if !h.scanRunning {
 		t.Fatal("swap must rescan the card against the new catalogue")

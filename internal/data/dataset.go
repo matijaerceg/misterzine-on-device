@@ -186,6 +186,45 @@ func MergeLocal(catalogue, local []Row) []Row {
 	return append(out, kept...)
 }
 
+// LocalTakeovers maps the K of each local row that a new catalogue now covers
+// (by setname, family root or known clone) to the catalogue row's K, so a
+// favorite, remembered version or launch record follows the game when the
+// catalogue catches up with the card.
+func LocalTakeovers(local, catalogue []Row) map[string]string {
+	if len(local) == 0 {
+		return nil
+	}
+	byID := map[string]string{}
+	for i := range catalogue {
+		r := &catalogue[i]
+		if !r.IsArcade() || r.K == "" {
+			continue
+		}
+		// a row's own setname wins over a family membership
+		if r.SN != "" {
+			byID[LocalKey(r.SN)] = r.K
+		}
+		for _, id := range append([]string{r.Family}, r.FamilySets...) {
+			if id != "" {
+				if _, ok := byID[LocalKey(id)]; !ok {
+					byID[LocalKey(id)] = r.K
+				}
+			}
+		}
+	}
+	out := map[string]string{}
+	for i := range local {
+		r := &local[i]
+		if k, ok := byID[r.K]; ok && r.IsLocal() && k != r.K {
+			out[r.K] = k
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
 // LocalDigest summarises a set of local rows: it changes only when a row is
 // added, removed, or launches a different file or core.
 func LocalDigest(local []Row) string {

@@ -1142,11 +1142,13 @@ func (h *host) check(current string, trusted bool) {
 func (h *host) swap(fr fetch.Fresh) {
 	old := h.a.Data()
 	upd, _ := data.ParseMetaTime(fr.Meta.Updated)
+	moves := data.LocalTakeovers(old.Rows[old.NCat:], fr.Rows)
 	ds := data.Ingest(data.MergeLocal(fr.Rows, old.Rows[old.NCat:]), fr.Meta.Hash, upd)
 	news := h.a.CatalogueNews(old, fr.Rows)
 	// Old status indices belong to the previous row order. Rebuild off the UI.
 	h.status = nil
 	h.a.SetData(ds, nil)
+	h.a.RenameKeys(moves) // a local game the catalogue now lists keeps its star
 	h.requestScan()
 	h.img.SetPrefetch(picsFor(ds), h.settings.Prefetch)
 	h.a.SetNet("")

@@ -36,7 +36,11 @@ parent is on the card too. The copy outside `_alternatives` with the shortest
 path is the row's file; further copies are its alternatives. Title, year,
 manufacturer, rotation, region, players and buttons come from the header;
 the category is shown as a note rather than a genre. Local rows carry no
-release dates and never count as new since the last look.
+release dates and never count as new since the last look. A file whose name
+or header names a BIOS is skipped. When a catalogue refresh names a local
+row's game, the row goes and its favorite, remembered version and launch
+records move to the catalogue row's key (`data.LocalTakeovers`,
+`App.RenameKeys`).
 
 ## Audit an installed card
 

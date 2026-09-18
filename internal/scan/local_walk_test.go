@@ -34,6 +34,8 @@ func localCard(t *testing.T) string {
 	mk("_Arcade/_Extra/Colony Clone.mra", mra("Colony 7 (clone)", "colony7x", "defender", "colony7"))
 	mk("_Arcade/_Extra/Colony Known.mra", mra("Colony 7 (known)", "colony7a", "defender", ""))
 	mk("_Arcade/_Extra/nameless.mra", `<misterromdescription><rbf>defender</rbf><rom index="0" zip="q.zip"><part name="x"/></rom></misterromdescription>`)
+	mk("_Arcade/PGM (Polygame Master) System BIOS.mra", mra("PGM (Polygame Master) System BIOS", "pgm", "igspgm", ""))
+	mk("_Arcade/_Extra/neogeo-bios.mra", mra("Neo Geo", "neogeo", "neogeo", ""))
 	mk("_Arcade/_Extra/broken.mra", "not xml at all")
 	mk("_Arcade/_Extra/.hidden/Ghost.mra", mra("Ghost", "ghost", "defender", "ghost"))
 	mk("_Arcade/_alternatives/_Orphan/Orphan (alt).mra", mra("Orphan alt", "orphana", "defender", "orphan"))
@@ -52,11 +54,13 @@ func TestScanArcadeMRAsSkipsOrganizedAndAlternatives(t *testing.T) {
 	}
 	want := []string{
 		"_Arcade/Galaxian Local (World).mra",
+		"_Arcade/PGM (Polygame Master) System BIOS.mra",
 		"_Arcade/_Extra/Colony Clone.mra",
 		"_Arcade/_Extra/Colony Known.mra",
 		"_Arcade/_Extra/Orphan (set 2).mra",
 		"_Arcade/_Extra/deeper/Orphan.mra",
 		"_Arcade/_Extra/nameless.mra",
+		"_Arcade/_Extra/neogeo-bios.mra",
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("walked %v\nwant   %v", got, want)
@@ -131,8 +135,19 @@ func TestDiscoverLocalMatchesCatalogue(t *testing.T) {
 	if want := []string{"local:galaxloc", "local:nameless", "local:orphan"}; !reflect.DeepEqual(keys, want) {
 		t.Fatalf("rows %v, want %v", keys, want)
 	}
-	if res.Files != 6 {
+	if res.Files != 8 {
 		t.Fatalf("files %d", res.Files)
+	}
+	// The two BIOS files (one named so in the header, one only in the file
+	// name) are skipped with a reason, not listed.
+	bios := 0
+	for _, s := range res.Skipped {
+		if s.Reason == "BIOS, not a game" {
+			bios++
+		}
+	}
+	if bios != 2 {
+		t.Fatalf("BIOS skips %d: %+v", bios, res.Skipped)
 	}
 	o := res.Rows[2]
 	if o.MRA != "_Arcade/_Extra/deeper/Orphan.mra" || o.Title != "Orphan" || o.Core != "defender" || o.SN != "orphan" {

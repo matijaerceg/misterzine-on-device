@@ -88,7 +88,10 @@ and never count as new since your last look. To hide them, turn the Local
 source off in Filters -> Source; "Installed only" in Options never hides them.
 Pictures for local games are fetched from images.misterzine.fyi by MAME set
 name, the only thing sent about the game; a game without a known screenshot
-shows a placeholder, and the app asks again after a week.
+shows a placeholder, and the app asks again after a week. System BIOS files
+are not listed. When the catalogue later lists a game that was local, the row
+becomes the catalogue's and keeps its favorite, chosen version and launch
+history.
 Options -> Views -> Remember last view is on by default; turn it off to choose
 a Default view for each new visit (Core updated initially).
 Y cycles Updated, Debut, Year, Alphabetical, Manufacturer, then Favorites; the
