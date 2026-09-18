@@ -151,8 +151,9 @@ func cabPose(elapsed time.Duration, w, h int) (angle, tilt, focal, bright float6
 	end := float64(w) * cabCamera / cabScreenW * 1.05          // the screen just fills it; more costs 60 fps on the boards
 	if elapsed < cabSpinDur {
 		t := float64(elapsed) / float64(cabSpinDur)
-		angle = 2 * math.Pi * cabTurns * t
-		tilt = cabTilt * math.Pi / 180 * t   // leans forward as it comes closer
+		e := 1 - (1-t)*(1-t)*(1-t) // the turn eases out: fast at first, settling to face front
+		angle = 2 * math.Pi * cabTurns * e
+		tilt = cabTilt * math.Pi / 180 * e   // leans forward as it comes closer
 		focal = fill * math.Pow(cabFar, t-1) // geometric zoom: constant perceived speed
 		return angle, tilt, focal, 1
 	}
