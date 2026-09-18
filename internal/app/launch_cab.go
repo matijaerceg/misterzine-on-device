@@ -38,6 +38,56 @@ const (
 	cabTexH    = 96
 )
 
+// cabHoldStart is how long Start stays down before a launch in the "hold"
+// mode plays the animation; a shorter press launches plainly on release.
+const cabHoldStart = 200 * time.Millisecond
+
+// holdLaunch is a launch waiting on Start: the row and path, and when Start
+// went down.
+type holdLaunch struct {
+	row  *data.Row
+	path string
+	at   time.Time
+}
+
+// LaunchTransition is the saved preference: "always" or "hold".
+func (a *App) LaunchTransition() string {
+	if a.cfg.LaunchTransition == "hold" {
+		return "hold"
+	}
+	return "always"
+}
+
+// releaseHoldLaunch launches plainly when Start comes up before the hold
+// matured; true when it did.
+func (a *App) releaseHoldLaunch() bool {
+	if a.holdLaunch.path == "" {
+		return false
+	}
+	path := a.holdLaunch.path
+	a.holdLaunch = holdLaunch{}
+	a.cfg.Launch(path)
+	return true
+}
+
+func (a *App) tickHoldLaunch(now time.Time) bool {
+	h := &a.holdLaunch
+	if h.path == "" || now.Sub(h.at) < cabHoldStart {
+		return false
+	}
+	row, path := h.row, h.path
+	*h = holdLaunch{}
+	a.startLaunchCab(row, path)
+	return true
+}
+
+func (a *App) nextHoldLaunchTick() time.Time {
+	if a.holdLaunch.path == "" {
+		return time.Time{}
+	}
+	return a.holdLaunch.at.Add(cabHoldStart)
+}
+
 type launchCab struct {
 	active   bool
 	at, next time.Time

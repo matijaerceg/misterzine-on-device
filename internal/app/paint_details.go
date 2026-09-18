@@ -623,6 +623,12 @@ func (a *App) launchRow(row *data.Row, i, pick int) bool {
 			a.rememberPick(row, entries, pick)
 		}
 		a.recordLaunch(row)
+		if a.LaunchTransition() == "hold" && a.transition.enabled && a.PageTransitions() {
+			// the animation waits for Start to stay down; a tap launches
+			// on the release
+			a.holdLaunch = holdLaunch{row: row, path: e.path, at: a.cfg.TimerNow()}
+			return false
+		}
 		a.startLaunchCab(row, e.path)
 	}
 	return false

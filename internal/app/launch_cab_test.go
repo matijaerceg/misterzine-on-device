@@ -127,6 +127,54 @@ func TestLaunchCabEndsBlack(t *testing.T) {
 	}
 }
 
+func TestLaunchCabHoldStart(t *testing.T) {
+	// a tap launches plainly on the release
+	a, clock, launched := cabApp(true)
+	a.cfg.LaunchTransition = "hold"
+	a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})
+	if a.LaunchCabRunning() || len(*launched) != 0 {
+		t.Fatal("a press must wait")
+	}
+	if next := a.NextTick(); !next.Equal(clock.Add(cabHoldStart)) {
+		t.Fatalf("next tick %v, want the hold deadline", next)
+	}
+	*clock = clock.Add(50 * time.Millisecond)
+	a.Tick(*clock)
+	a.Handle(platform.Event{Key: platform.KeyStart, At: *clock})
+	if a.LaunchCabRunning() || len(*launched) != 1 {
+		t.Fatalf("a tap must launch at once: running=%v launched=%v", a.LaunchCabRunning(), *launched)
+	}
+
+	// a hold plays the animation, and the later release does nothing
+	a, clock, launched = cabApp(true)
+	a.cfg.LaunchTransition = "hold"
+	a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})
+	*clock = clock.Add(cabHoldStart)
+	a.Tick(*clock)
+	if !a.LaunchCabRunning() || len(*launched) != 0 {
+		t.Fatal("a held Start must start the animation")
+	}
+	a.Handle(platform.Event{Key: platform.KeyStart, At: *clock})
+	if !a.LaunchCabRunning() || len(*launched) != 0 {
+		t.Fatal("the release after the hold must not launch")
+	}
+	for a.LaunchCabRunning() {
+		a.Tick(*clock)
+		a.Paint()
+		*clock = clock.Add(frameDur)
+	}
+	if len(*launched) != 1 {
+		t.Fatalf("launched %v after the animation", *launched)
+	}
+
+	// "always" is untouched by the hold machinery
+	a, clock, launched = cabApp(true)
+	a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})
+	if !a.LaunchCabRunning() {
+		t.Fatal("always must animate on the press")
+	}
+}
+
 func TestLaunchCabOffWithoutMotion(t *testing.T) {
 	a, clock, launched := cabApp(false)
 	a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})

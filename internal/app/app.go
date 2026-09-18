@@ -99,6 +99,10 @@ type Config struct {
 	Screensaver         string
 	SaverDisabled       bool
 	TransitionsDisabled bool
+	// LaunchTransition: "always" (default) plays the launch animation on
+	// every launch; "hold" only when Start is held past cabHoldStart, a
+	// tap launching at once.
+	LaunchTransition string
 	// SaverStyle is what the saver shows: "word" (default: the lettering)
 	// or "shots" (random arcade screenshots, Start held plays one); with
 	// the shots, SaverBright is "half" (default) or "full" and SaverInfo is
@@ -233,6 +237,7 @@ type App struct {
 	saver          screensaver
 	marquee        marqueeState
 	cab            launchCab
+	holdLaunch     holdLaunch
 
 	arcadeIntroAt  time.Time
 	arcadeIntroBar int
@@ -766,6 +771,9 @@ func (a *App) Handle(ev platform.Event) bool {
 			delete(a.down, ev.Key)
 			a.rep.release(ev.Key)
 		}
+		if ev.Key == platform.KeyStart && a.releaseHoldLaunch() {
+			return true
+		}
 		// letting go of Select puts the ordinary legend back
 		if ev.Key == platform.KeySelect && a.screen == ScreenList {
 			a.all = true
@@ -870,6 +878,7 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 // Tick runs due repeats and expires notices; returns true to repaint.
 func (a *App) Tick(now time.Time) bool {
 	changed := a.tickPageTransition(now)
+	changed = a.tickHoldLaunch(now) || changed
 	changed = a.tickLaunchCab(now) || changed
 	changed = a.tickLayoutMotion(now) || changed
 	changed = a.tickSplash(now) || changed
@@ -910,6 +919,7 @@ func (a *App) Tick(now time.Time) bool {
 func (a *App) Frame(now time.Time) bool {
 	a.saver.lastInput = now // a held direction is still activity
 	changed := a.tickPageTransition(now)
+	changed = a.tickHoldLaunch(now) || changed
 	changed = a.tickLaunchCab(now) || changed
 	changed = a.tickLayoutMotion(now) || changed
 	changed = a.tickSplash(now) || changed
@@ -976,6 +986,9 @@ func (a *App) NextTick() time.Time {
 		t = next
 	}
 	if next := a.nextLaunchCabTick(); !next.IsZero() && (t.IsZero() || next.Before(t)) {
+		t = next
+	}
+	if next := a.nextHoldLaunchTick(); !next.IsZero() && (t.IsZero() || next.Before(t)) {
 		t = next
 	}
 	return t

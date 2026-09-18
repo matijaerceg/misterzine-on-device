@@ -238,6 +238,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		Screensaver:          h.settings.Screensaver,
 		SaverDisabled:        h.settings.SaverDisabled,
 		TransitionsDisabled:  h.settings.TransitionsDisabled,
+		LaunchTransition:     h.settings.LaunchTransition,
 		SmoothScrollDisabled: h.settings.SmoothScrollDisabled,
 		SaverStyle:           h.settings.SaverStyle,
 		SaverBright:          h.settings.SaverBright,
@@ -957,6 +958,7 @@ func (h *host) saveAll(final bool) {
 		h.settings.Screensaver = h.a.Screensaver()
 		h.settings.SaverDisabled = !h.a.SaverEnabled()
 		h.settings.TransitionsDisabled = !h.a.PageTransitions()
+		h.settings.LaunchTransition = h.a.LaunchTransition()
 		h.settings.SaverStyle = h.a.SaverStyle()
 		h.settings.SaverBright = h.a.SaverBright()
 		h.settings.SaverDim = h.a.SaverDim()
