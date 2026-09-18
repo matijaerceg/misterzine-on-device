@@ -194,3 +194,36 @@ func TestLaunchCabOffWithoutMotion(t *testing.T) {
 		t.Fatalf("static hosts must launch at once: running=%v launched=%v", a.LaunchCabRunning(), *launched)
 	}
 }
+
+// A vertical game's shot keeps its 3:4 shape on the monitor: it sits
+// centred on black bars instead of being stretched across the 4:3 screen.
+func TestLaunchCabTateShotIsLetterboxed(t *testing.T) {
+	shot := image.NewRGBA(image.Rect(0, 0, 72, cabTexH))
+	for i := range shot.Pix {
+		shot.Pix[i] = 255
+	}
+	tex := cabScreenImage(shot)
+	if tex.Rect.Dx() != cabTexW || tex.Rect.Dy() != cabTexH {
+		t.Fatalf("texture is %v, want %dx%d", tex.Rect, cabTexW, cabTexH)
+	}
+	bar := (cabTexW - 72) / 2
+	for y := 0; y < cabTexH; y++ {
+		for x := 0; x < cabTexW; x++ {
+			o := tex.PixOffset(x, y)
+			inside := x >= bar && x < bar+72
+			if lit := tex.Pix[o] == 255; lit != inside {
+				t.Fatalf("texel %d,%d lit=%v, want the shot only between the bars", x, y, lit)
+			}
+			if tex.Pix[o+3] != 255 {
+				t.Fatalf("texel %d,%d is not opaque", x, y)
+			}
+		}
+	}
+	if cabScreenImage(shot) != tex {
+		t.Fatal("the letterboxed texture is not cached")
+	}
+	full := image.NewRGBA(image.Rect(0, 0, cabTexW, cabTexH))
+	if cabScreenImage(full) != full {
+		t.Fatal("a full-size shot must be used as it is")
+	}
+}

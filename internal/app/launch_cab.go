@@ -108,7 +108,7 @@ func (a *App) startLaunchCab(row *data.Row, path string) {
 	now := a.cfg.TimerNow()
 	a.cab = launchCab{active: true, at: now, next: now, path: path}
 	if key, slot := cabShot(row); key != "" {
-		a.cab.req = ImageReq{Key: key, Slot: slot, W: cabTexW, H: cabTexH, Stretch: slot != "system"}
+		a.cab.req = ImageReq{Key: key, Slot: slot, W: cabTexW, H: cabTexH, Stretch: slot != "system" && row.ImgW > row.ImgH}
 		a.cab.tex, _ = a.cfg.Images.Get(a.cab.req)
 		if a.cab.tex == nil {
 			a.cfg.Images.Want([]ImageReq{a.cab.req})
@@ -125,7 +125,7 @@ func (a *App) previewLaunchCab() {
 	now := a.cfg.TimerNow()
 	a.cab = launchCab{active: true, at: now, next: now}
 	if key, slot := cabShot(row); key != "" {
-		a.cab.req = ImageReq{Key: key, Slot: slot, W: cabTexW, H: cabTexH, Stretch: slot != "system"}
+		a.cab.req = ImageReq{Key: key, Slot: slot, W: cabTexW, H: cabTexH, Stretch: slot != "system" && row.ImgW > row.ImgH}
 		a.cab.tex, _ = a.cfg.Images.Get(a.cab.req)
 		if a.cab.tex == nil {
 			a.cfg.Images.Want([]ImageReq{a.cab.req})
@@ -509,7 +509,7 @@ func renderCab(dst *image.RGBA, tex *image.RGBA, angle, tilt, focal, bright floa
 	sort.SliceStable(list, func(i, j int) bool { return list[i].z < list[j].z })
 	var shotTexels *cabTexels
 	if tex != nil {
-		shotTexels = dimmedTexels(tex, bright)
+		shotTexels = dimmedTexels(cabScreenImage(tex), bright)
 	}
 	for _, d := range list {
 		if d.tex && tex != nil {
@@ -542,6 +542,36 @@ func pixels32(pix []uint8) []uint32 {
 		return nil
 	}
 	return unsafe.Slice((*uint32)(unsafe.Pointer(&pix[0])), len(pix)/4)
+}
+
+// cabScreenImage letterboxes a shot that does not fill the monitor: a
+// vertical game's picture comes back at its own 3:4 shape, and the screen
+// quad maps the whole texture, so it is centred on black at the texture
+// size instead of being stretched to 4:3.
+var cabScreenCache = map[*image.RGBA]*image.RGBA{}
+
+func cabScreenImage(img *image.RGBA) *image.RGBA {
+	w, h := img.Rect.Dx(), img.Rect.Dy()
+	if w == cabTexW && h == cabTexH {
+		return img
+	}
+	if out := cabScreenCache[img]; out != nil {
+		return out
+	}
+	if len(cabScreenCache) > 8 {
+		clear(cabScreenCache)
+	}
+	out := image.NewRGBA(image.Rect(0, 0, cabTexW, cabTexH))
+	for i := 3; i < len(out.Pix); i += 4 {
+		out.Pix[i] = 255
+	}
+	cw, ch := min(w, cabTexW), min(h, cabTexH)
+	ox, oy := (cabTexW-cw)/2, (cabTexH-ch)/2
+	for y := 0; y < ch; y++ {
+		copy(out.Pix[out.PixOffset(ox, oy+y):out.PixOffset(ox+cw, oy+y)], img.Pix[img.PixOffset(img.Rect.Min.X, img.Rect.Min.Y+y):img.PixOffset(img.Rect.Min.X+cw, img.Rect.Min.Y+y)])
+	}
+	cabScreenCache[img] = out
+	return out
 }
 
 func rgbaTexels(img *image.RGBA) *cabTexels {

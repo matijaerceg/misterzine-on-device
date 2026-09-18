@@ -480,8 +480,18 @@ func (a *App) CursorKey() string {
 	return ""
 }
 
-// MoveToKey puts the cursor on a key if it is in view.
-func (a *App) MoveToKey(k string) { a.moveToKey(k); a.all = true }
+// MoveToKey puts the cursor on a key if it is in view, centred on the
+// page the way a jump lands: the launcher reopens the app on the game
+// that just ran, and a row pinned to the bottom edge looks like a
+// half-restored list.
+func (a *App) MoveToKey(k string) {
+	a.moveToKey(k)
+	if a.cursor < len(a.view) {
+		a.top = centeredTop(a.screenLine(a.cursor), a.totalLines(), a.lay.Lines)
+		a.shortPage = false
+	}
+	a.all = true
+}
 
 // SetSort switches the sort mode; a view turned off in Options -> Views
 // is refused.
