@@ -173,7 +173,16 @@ func (a *App) handleLaunchCab(ev platform.Event) bool {
 	if !a.cab.active {
 		return false
 	}
-	if ev.Pressed && (ev.Key == platform.KeyBack || a.cab.launched) {
+	if !ev.Pressed {
+		// the key that started the animation comes up while it plays:
+		// forget it, or its next press reads as a key still held
+		if a.down[ev.Key] {
+			delete(a.down, ev.Key)
+			a.rep.release(ev.Key)
+		}
+		return true
+	}
+	if ev.Key == platform.KeyBack || a.cab.launched {
 		// Back cancels; any key after a launch that never took the screen
 		// brings the page back
 		a.cab.stopAhead()

@@ -471,7 +471,7 @@ func (a *App) nextSaverTick() time.Time {
 	if a.saver.active {
 		return a.saver.next
 	}
-	if a.update.Active() {
+	if a.update.Active() || a.cab.active { // the launch animation, then the core, own the screen
 		return time.Time{}
 	}
 	if delay := a.saverDelay(); delay > 0 && len(a.down) == 0 && len(a.saver.waking) == 0 {

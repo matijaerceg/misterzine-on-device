@@ -227,3 +227,27 @@ func TestLaunchCabTateShotIsLetterboxed(t *testing.T) {
 		t.Fatal("a full-size shot must be used as it is")
 	}
 }
+
+// The key that starts the animation is released while it plays. The
+// release must still be seen, or the next press of that key reads as a
+// key still held and does nothing: the Preview row needed two presses.
+func TestLaunchCabReleaseDuringAnimationIsSeen(t *testing.T) {
+	a, clock, launched := cabApp(true)
+	a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})
+	if !a.LaunchCabRunning() {
+		t.Fatal("Start did not begin the animation")
+	}
+	a.Handle(platform.Event{Key: platform.KeyStart, At: *clock}) // released mid-animation
+	a.Handle(platform.Event{Key: platform.KeyBack, Pressed: true, At: *clock})
+	a.Handle(platform.Event{Key: platform.KeyBack, At: *clock})
+	if a.LaunchCabRunning() || len(*launched) != 0 {
+		t.Fatal("Back did not cancel")
+	}
+	if a.down[platform.KeyStart] {
+		t.Fatal("Start still counts as held after the animation")
+	}
+	a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})
+	if !a.LaunchCabRunning() {
+		t.Fatal("the next press of Start did nothing")
+	}
+}
