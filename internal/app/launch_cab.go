@@ -378,7 +378,6 @@ func (a *App) paintLaunchCab(c *gfx.Canvas) {
 	c.Fill(c.Rect, color.RGBA{0, 0, 0, 255})
 	angle, tilt, focal, bright := cabPose(a.cab.elapsed, w, h)
 	renderCab(c.RGBA, a.cab.tex, angle, tilt, focal, bright)
-	ditherFrame(c.RGBA, bright)
 	c.DirtyAll()
 }
 
@@ -424,7 +423,7 @@ func renderCab(dst *image.RGBA, tex *image.RGBA, angle, tilt, focal, bright floa
 		shade = math.Floor(shade*4+0.5) / 4 // four flat tones
 		col := t.col
 		if !t.tex && t.skin == nil {
-			col = color.RGBA{uint8(float64(col.R) * shade), uint8(float64(col.G) * shade), uint8(float64(col.B) * shade), 255}
+			col = color.RGBA{uint8(float64(col.R) * shade * bright), uint8(float64(col.G) * shade * bright), uint8(float64(col.B) * shade * bright), 255}
 		}
 		d := drawn{col: col, tex: t.tex, skin: t.skin, shade: shade}
 		for i, q := range p {
@@ -447,7 +446,7 @@ func renderCab(dst *image.RGBA, tex *image.RGBA, angle, tilt, focal, bright floa
 	sort.SliceStable(list, func(i, j int) bool { return list[i].z < list[j].z })
 	var shotTexels *cabTexels
 	if tex != nil {
-		shotTexels = rgbaTexels(tex) // the fade is the whole frame's, in ditherFrame
+		shotTexels = dimmedTexels(tex, bright)
 	}
 	for _, d := range list {
 		if d.tex && tex != nil {
@@ -457,7 +456,7 @@ func renderCab(dst *image.RGBA, tex *image.RGBA, angle, tilt, focal, bright floa
 				d.col = color.RGBA{uint8(40 * bright), uint8(40 * bright), uint8(48 * bright), 255}
 			}
 			if d.skin != nil {
-				fillTri(dst, d.v, d.col, skinTexels(d.skin, d.shade))
+				fillTri(dst, d.v, d.col, skinTexels(d.skin, d.shade*bright)) // the fade darkens the paint too
 			} else {
 				fillTri(dst, d.v, d.col, nil)
 			}
@@ -491,59 +490,9 @@ func rgbaTexels(img *image.RGBA) *cabTexels {
 var cabDimCache = map[*image.RGBA]map[int]*cabTexels{}
 
 func dimmedTexels(img *image.RGBA, bright float64) *cabTexels {
-	return shadedTexels(img, bright, false)
-}
-
-// ditheredTexels fades the picture to black by a 4x4 ordered dither: each
-// step blacks out more of the pattern, so the fade is made of the same
-// chunky texels as the picture and costs nothing per screen pixel.
-func ditheredTexels(img *image.RGBA, bright float64) *cabTexels {
-	return shadedTexels(img, bright, true)
-}
-
-// ditherFrame fades the whole frame to black by the fixed grain: at
-// bright b, pixels whose threshold is above b go black. One compare and
-// at most one store a pixel.
-func ditherFrame(dst *image.RGBA, bright float64) {
-	bf := int(bright * 256)
-	if bf >= 256 {
-		return
-	}
-	px := pixels32(dst.Pix)
-	stride := dst.Stride / 4
-	w, h := dst.Rect.Dx(), dst.Rect.Dy()
-	for y := 0; y < h; y++ {
-		row := px[y*stride : y*stride+w]
-		noise := cabNoise[y*512 : y*512+w]
-		for x, n := range noise {
-			if int(n) >= bf {
-				row[x] = 255 << 24
-			}
-		}
-	}
-}
-
-// cabNoise is a fixed grain: one threshold per texel, so the fade is
-// random-looking but the same on every run and every frame of a level.
-var cabNoise = func() []uint8 {
-	n := make([]uint8, 512*512)
-	x := uint32(0x9E3779B9)
-	for i := range n {
-		x ^= x << 13
-		x ^= x >> 17
-		x ^= x << 5
-		n[i] = uint8(x >> 24)
-	}
-	return n
-}()
-
-func shadedTexels(img *image.RGBA, bright float64, dither bool) *cabTexels {
 	bf := int(bright * 256)
 	if bf >= 256 {
 		return rgbaTexels(img)
-	}
-	if dither {
-		bf = bf/8*8 + 1 // 32 steps; the key stays distinct from the darkening levels
 	}
 	levels := cabDimCache[img]
 	if levels == nil {
@@ -559,22 +508,12 @@ func shadedTexels(img *image.RGBA, bright float64, dither bool) *cabTexels {
 	src := pixels32(img.Pix)
 	dst := make([]uint32, len(src))
 	stride := img.Stride / 4
-	if dither {
-		for i, p := range src {
-			if i < len(cabNoise) && int(cabNoise[i]) < bf {
-				dst[i] = p
-			} else {
-				dst[i] = 255 << 24
-			}
-		}
-	} else {
-		var dim [256]uint32
-		for i := range dim {
-			dim[i] = uint32(i * bf >> 8)
-		}
-		for i, p := range src {
-			dst[i] = dim[p&255] | dim[p>>8&255]<<8 | dim[p>>16&255]<<16 | 255<<24
-		}
+	var dim [256]uint32
+	for i := range dim {
+		dim[i] = uint32(i * bf >> 8)
+	}
+	for i, p := range src {
+		dst[i] = dim[p&255] | dim[p>>8&255]<<8 | dim[p>>16&255]<<16 | 255<<24
 	}
 	t := &cabTexels{px: dst, w: img.Rect.Dx(), h: img.Rect.Dy(), stride: stride}
 	levels[bf] = t
