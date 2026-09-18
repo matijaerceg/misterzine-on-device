@@ -1,12 +1,4 @@
-newmtl body
-Kd 0.2745 0.3059 0.4314
-
-newmtl marquee
-Kd 0.9020 0.7451 0.2745
-
-newmtl panel
-Kd 0.2353 0.2353 0.2745
-
-newmtl screen
-Kd 0.0000 0.0000 0.0000
-
+# Made in Blockbench 5.0.7
+newmtl m_b86f02b0-01a9-3769-c5ca-f4a3cc5922ff
+map_Kd cab-texture.png
+newmtl none

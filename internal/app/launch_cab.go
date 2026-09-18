@@ -245,6 +245,15 @@ func parseCabModel(obj, mtl string) ([]cabTri, cabModel) {
 				uv = append(uv, t)
 			}
 			tex := group || strings.EqualFold(mat, "screen")
+			if tex && len(p) >= 3 {
+				// of a screen box only the face looking out the front is the
+				// picture; its sides and back are ordinary faces
+				e1 := vec3{p[1].x - p[0].x, p[1].y - p[0].y, p[1].z - p[0].z}
+				e2 := vec3{p[2].x - p[0].x, p[2].y - p[0].y, p[2].z - p[0].z}
+				nz := e1.x*e2.y - e1.y*e2.x
+				nl := math.Sqrt(math.Pow(e1.y*e2.z-e1.z*e2.y, 2) + math.Pow(e1.z*e2.x-e1.x*e2.z, 2) + nz*nz)
+				tex = nl > 0 && nz/nl > 0.5
+			}
 			col, ok := colours[mat]
 			if !ok {
 				col = color.RGBA{128, 128, 128, 255}
@@ -255,6 +264,25 @@ func parseCabModel(obj, mtl string) ([]cabTri, cabModel) {
 			}
 			for i := 1; i+1 < len(p); i++ { // fan triangulation
 				tris = append(tris, cabTri{p: [3]vec3{p[0], p[i], p[i+1]}, uv: [3][2]float64{uv[0], uv[i], uv[i+1]}, col: col, tex: tex, skin: skin})
+			}
+		}
+	}
+	// the screen's UVs point at its patch of the atlas; the picture wants
+	// the whole face, so spread them over the screen faces' UV box
+	ulo, uhi := [2]float64{math.Inf(1), math.Inf(1)}, [2]float64{math.Inf(-1), math.Inf(-1)}
+	for _, t := range tris {
+		if t.tex {
+			for _, uv := range t.uv {
+				ulo[0], ulo[1] = min(ulo[0], uv[0]), min(ulo[1], uv[1])
+				uhi[0], uhi[1] = max(uhi[0], uv[0]), max(uhi[1], uv[1])
+			}
+		}
+	}
+	for i := range tris {
+		if tris[i].tex && uhi[0] > ulo[0] && uhi[1] > ulo[1] {
+			for j := range tris[i].uv {
+				uv := &tris[i].uv[j]
+				uv[0], uv[1] = (uv[0]-ulo[0])/(uhi[0]-ulo[0]), (uv[1]-ulo[1])/(uhi[1]-ulo[1])
 			}
 		}
 	}
@@ -374,6 +402,13 @@ func renderCab(dst *image.RGBA, tex *image.RGBA, angle, focal, bright float64) {
 			d.v[i] = screenVert{cx + focal*q.x/dz, cy - focal*q.y/dz, t.uv[i][0], t.uv[i][1]}
 			d.z += q.z / 3
 		}
+		if d.tex {
+			d.z += 100 // the picture paints over whatever the model has behind the glass
+		}
+		// slivers and degenerate faces draw as stray lines: skip them
+		if a := (d.v[1].x-d.v[0].x)*(d.v[2].y-d.v[0].y) - (d.v[2].x-d.v[0].x)*(d.v[1].y-d.v[0].y); math.Abs(a) < 1 {
+			continue
+		}
 		list = append(list, d)
 	}
 	sort.SliceStable(list, func(i, j int) bool { return list[i].z < list[j].z })
@@ -405,7 +440,9 @@ func fillTri(dst *image.RGBA, v [3]screenVert, col color.RGBA, tex *image.RGBA, 
 	if v[0].y > v[1].y {
 		v[0], v[1] = v[1], v[0]
 	}
-	y0, y2 := int(math.Ceil(v[0].y)), int(math.Ceil(v[2].y))-1
+	// rows whose centre lies inside the triangle (top-left rule), so the
+	// edge interpolation never runs past a vertex
+	y0, y2 := int(math.Ceil(v[0].y-0.5)), int(math.Ceil(v[2].y-0.5))-1
 	if y0 < 0 {
 		y0 = 0
 	}
@@ -429,7 +466,7 @@ func fillTri(dst *image.RGBA, v [3]screenVert, col color.RGBA, tex *image.RGBA, 
 		if b.y == a.y {
 			return a
 		}
-		t := (y - a.y) / (b.y - a.y)
+		t := max(0, min(1, (y-a.y)/(b.y-a.y)))
 		return screenVert{a.x + (b.x-a.x)*t, y, a.u + (b.u-a.u)*t, a.v + (b.v-a.v)*t}
 	}
 	for y := y0; y <= y2; y++ {
