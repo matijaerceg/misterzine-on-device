@@ -1,10 +1,13 @@
 package app
 
 import (
+	"embed"
 	"image"
 	"image/color"
 	"math"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
@@ -115,8 +118,8 @@ func (a *App) nextLaunchCabTick() time.Time { return a.cab.next }
 // cabPose is the camera for elapsed: the cabinet's turn about its vertical
 // axis, the focal length (zoom) and the monitor brightness.
 func cabPose(elapsed time.Duration, w, h int) (angle, focal, bright float64) {
-	fill := float64(h) * 3 / 2.2 // focal at which the cabinet's height fills the frame
-	end := float64(w) * (cabCamera - 0.4) / 0.76 * 1.3
+	fill := float64(h) * cabCamera / (cabBounds.height * 1.15) // the cabinet's height nearly fills the frame
+	end := float64(w) * cabCamera / cabScreenW * 1.3           // the screen overfills it
 	if elapsed < cabSpinDur {
 		t := float64(elapsed) / float64(cabSpinDur)
 		angle = 2 * math.Pi * cabTurns * t
@@ -142,48 +145,138 @@ type cabTri struct {
 	z   float64 // sort key after transform
 }
 
-// cabModel is the cabinet: an upright box with a marquee box on top, a
-// control-panel wedge, and the monitor quad on the front. Units are
-// arbitrary; the monitor's centre is the origin so the push ends on it.
-func cabModel() []cabTri {
-	body := color.RGBA{70, 78, 110, 255}
-	marquee := color.RGBA{230, 190, 70, 255}
-	panel := color.RGBA{60, 60, 70, 255}
-	var tris []cabTri
-	quad := func(col color.RGBA, tex bool, a, b, c, d vec3) {
-		// a b c d counter-clockwise seen from outside
-		tris = append(tris,
-			cabTri{p: [3]vec3{a, b, c}, uv: [3][2]float64{{0, 1}, {1, 1}, {1, 0}}, col: col, tex: tex},
-			cabTri{p: [3]vec3{a, c, d}, uv: [3][2]float64{{0, 1}, {1, 0}, {0, 0}}, col: col, tex: tex})
-	}
-	const hw, top, bot, fz, bz = 0.5, 0.65, -1.25, 0.4, -0.4
-	// body box (no bottom)
-	quad(body, false, vec3{-hw, bot, fz}, vec3{hw, bot, fz}, vec3{hw, top, fz}, vec3{-hw, top, fz})   // front
-	quad(body, false, vec3{hw, bot, bz}, vec3{-hw, bot, bz}, vec3{-hw, top, bz}, vec3{hw, top, bz})   // back
-	quad(body, false, vec3{-hw, bot, bz}, vec3{-hw, bot, fz}, vec3{-hw, top, fz}, vec3{-hw, top, bz}) // left
-	quad(body, false, vec3{hw, bot, fz}, vec3{hw, bot, bz}, vec3{hw, top, bz}, vec3{hw, top, fz})     // right
-	quad(body, false, vec3{-hw, top, fz}, vec3{hw, top, fz}, vec3{hw, top, bz}, vec3{-hw, top, bz})   // top
-	// marquee box, protruding
-	const mb, mt, mz = 0.42, top, fz + 0.08
-	quad(marquee, false, vec3{-hw, mb, mz}, vec3{hw, mb, mz}, vec3{hw, mt, mz}, vec3{-hw, mt, mz})
-	quad(body, false, vec3{-hw, mt, mz}, vec3{hw, mt, mz}, vec3{hw, mt, fz}, vec3{-hw, mt, fz})
-	quad(body, false, vec3{-hw, mb, fz}, vec3{hw, mb, fz}, vec3{hw, mb, mz}, vec3{-hw, mb, mz})
-	quad(body, false, vec3{-hw, mb, fz}, vec3{-hw, mb, mz}, vec3{-hw, mt, mz}, vec3{-hw, mt, fz})
-	quad(body, false, vec3{hw, mb, mz}, vec3{hw, mb, fz}, vec3{hw, mt, fz}, vec3{hw, mt, mz})
-	// control panel wedge
-	const pb, pm, pt, pz = -0.55, -0.45, -0.38, fz + 0.22
-	quad(panel, false, vec3{-hw, pb, fz}, vec3{hw, pb, fz}, vec3{hw, pm, pz}, vec3{-hw, pm, pz})
-	quad(panel, false, vec3{-hw, pm, pz}, vec3{hw, pm, pz}, vec3{hw, pt, fz}, vec3{-hw, pt, fz})
-	tris = append(tris,
-		cabTri{p: [3]vec3{{-hw, pb, fz}, {-hw, pm, pz}, {-hw, pt, fz}}, col: body},
-		cabTri{p: [3]vec3{{hw, pm, pz}, {hw, pb, fz}, {hw, pt, fz}}, col: body})
-	// monitor, a hair in front of the face so it sorts on top
-	const sw, sh, sz = 0.38, 0.285, fz + 0.005
-	quad(color.RGBA{0, 0, 0, 255}, true, vec3{-sw, -sh, sz}, vec3{sw, -sh, sz}, vec3{sw, sh, sz}, vec3{-sw, sh, sz})
-	return tris
+// The cabinet is cab.obj next to this file, a Wavefront OBJ as Blockbench
+// exports it (File > Export > OBJ), with cab.mtl for the face colours.
+// The face whose material is "screen" shows the title shot; every other
+// material takes its Kd colour and is flat shaded. Faces are wound
+// counter-clockwise seen from outside, which OBJ and Blockbench both do.
+// The model is moved so the screen's centre is the origin (the push ends
+// there) and scaled so the screen is cabScreenW wide.
+//
+//go:embed cab.obj cab.mtl
+var cabFiles embed.FS
+
+const cabScreenW = 0.76
+
+type cabModel struct {
+	tris          []cabTri
+	height, width float64 // extent after scaling, for the fill focal
 }
 
-var cabTris = cabModel()
+var cabTris, cabBounds = loadCabModel()
+
+func loadCabModel() ([]cabTri, cabModel) {
+	obj, _ := cabFiles.ReadFile("cab.obj")
+	mtl, _ := cabFiles.ReadFile("cab.mtl")
+	return parseCabModel(string(obj), string(mtl))
+}
+
+func parseCabModel(obj, mtl string) ([]cabTri, cabModel) {
+	colours := map[string]color.RGBA{}
+	name := ""
+	for _, line := range strings.Split(mtl, "\n") {
+		f := strings.Fields(line)
+		switch {
+		case len(f) == 2 && f[0] == "newmtl":
+			name = f[1]
+		case len(f) == 4 && f[0] == "Kd" && name != "":
+			var c [3]float64
+			for i := range c {
+				c[i], _ = strconv.ParseFloat(f[i+1], 64)
+			}
+			colours[name] = color.RGBA{uint8(c[0] * 255), uint8(c[1] * 255), uint8(c[2] * 255), 255}
+		}
+	}
+	var verts []vec3
+	var uvs [][2]float64
+	var tris []cabTri
+	mat := ""
+	for _, line := range strings.Split(obj, "\n") {
+		f := strings.Fields(line)
+		if len(f) == 0 {
+			continue
+		}
+		switch f[0] {
+		case "v":
+			if len(f) >= 4 {
+				x, _ := strconv.ParseFloat(f[1], 64)
+				y, _ := strconv.ParseFloat(f[2], 64)
+				z, _ := strconv.ParseFloat(f[3], 64)
+				verts = append(verts, vec3{x, y, z})
+			}
+		case "vt":
+			if len(f) >= 3 {
+				u, _ := strconv.ParseFloat(f[1], 64)
+				v, _ := strconv.ParseFloat(f[2], 64)
+				uvs = append(uvs, [2]float64{u, 1 - v}) // OBJ v runs upward
+			}
+		case "usemtl":
+			if len(f) >= 2 {
+				mat = f[1]
+			}
+		case "f":
+			var p []vec3
+			var uv [][2]float64
+			for _, ref := range f[1:] {
+				parts := strings.Split(ref, "/")
+				vi, _ := strconv.Atoi(parts[0])
+				if vi < 1 || vi > len(verts) {
+					continue
+				}
+				p = append(p, verts[vi-1])
+				t := [2]float64{}
+				if len(parts) > 1 {
+					if ti, _ := strconv.Atoi(parts[1]); ti >= 1 && ti <= len(uvs) {
+						t = uvs[ti-1]
+					}
+				}
+				uv = append(uv, t)
+			}
+			tex := strings.EqualFold(mat, "screen")
+			col, ok := colours[mat]
+			if !ok {
+				col = color.RGBA{128, 128, 128, 255}
+			}
+			for i := 1; i+1 < len(p); i++ { // fan triangulation
+				tris = append(tris, cabTri{p: [3]vec3{p[0], p[i], p[i+1]}, uv: [3][2]float64{uv[0], uv[i], uv[i+1]}, col: col, tex: tex})
+			}
+		}
+	}
+	// centre on the screen and scale it to cabScreenW
+	var lo, hi, slo, shi vec3
+	first, sfirst := true, true
+	grow := func(lo, hi *vec3, first *bool, p vec3) {
+		if *first {
+			*lo, *hi, *first = p, p, false
+			return
+		}
+		lo.x, lo.y, lo.z = min(lo.x, p.x), min(lo.y, p.y), min(lo.z, p.z)
+		hi.x, hi.y, hi.z = max(hi.x, p.x), max(hi.y, p.y), max(hi.z, p.z)
+	}
+	for _, t := range tris {
+		for _, p := range t.p {
+			grow(&lo, &hi, &first, p)
+			if t.tex {
+				grow(&slo, &shi, &sfirst, p)
+			}
+		}
+	}
+	if sfirst { // no screen: centre on the model
+		slo, shi = lo, hi
+	}
+	centre := vec3{(slo.x + shi.x) / 2, (slo.y + shi.y) / 2, shi.z}
+	scale := 1.0
+	if w := shi.x - slo.x; w > 0 {
+		scale = cabScreenW / w
+	}
+	for i := range tris {
+		for j := range tris[i].p {
+			p := tris[i].p[j]
+			tris[i].p[j] = vec3{(p.x - centre.x) * scale, (p.y - centre.y) * scale, (p.z - centre.z) * scale}
+		}
+	}
+	return tris, cabModel{tris: tris, height: (hi.y - lo.y) * scale, width: (hi.x - lo.x) * scale}
+}
 
 const cabCamera = 3.0 // camera distance from the monitor centre
 
@@ -281,9 +374,15 @@ func fillTri(dst *image.RGBA, v [3]screenVert, col color.RGBA, tex *image.RGBA, 
 	}
 	var tw, th int
 	var bf int
+	var dim [256]uint8 // the fade, as a lookup instead of a multiply a channel
 	if tex != nil {
 		tw, th = tex.Rect.Dx(), tex.Rect.Dy()
 		bf = int(bright * 256)
+		if bf != 256 {
+			for i := range dim {
+				dim[i] = uint8(i * bf >> 8)
+			}
+		}
 	}
 	// edge interpolation helpers
 	lerp := func(a, b screenVert, y float64) screenVert {
@@ -316,25 +415,46 @@ func fillTri(dst *image.RGBA, v [3]screenVert, col color.RGBA, tex *image.RGBA, 
 		}
 		row := dst.Pix[y*dst.Stride:]
 		if tex == nil {
-			for x := x0; x <= x1; x++ {
-				i := x * 4
-				row[i], row[i+1], row[i+2], row[i+3] = col.R, col.G, col.B, 255
+			// one pixel, then doubling copies across the span
+			span := row[x0*4 : (x1+1)*4]
+			span[0], span[1], span[2], span[3] = col.R, col.G, col.B, 255
+			for n := 4; n < len(span); n *= 2 {
+				copy(span[n:], span[:n])
 			}
 			continue
 		}
-		span := r.x - l.x
-		du, dv := 0.0, 0.0
-		if span > 0 {
-			du, dv = (r.u-l.u)/span, (r.v-l.v)/span
+		// 16.16 fixed-point texture walk, in texel units
+		// The texel coordinates at both span ends are clamped once, so the
+		// walk between them never leaves the texture and needs no clamp
+		// per pixel (the interpolation is monotonic).
+		span := max(r.x-l.x, 1e-9)
+		at := func(x int) (int, int) {
+			t := (float64(x) + 0.5 - l.x) / span
+			u := (l.u + (r.u-l.u)*t) * float64(tw)
+			v := (l.v + (r.v-l.v)*t) * float64(th)
+			return int(max(0, min(float64(tw)-1, u)) * 65536), int(max(0, min(float64(th)-1, v)) * 65536)
 		}
-		u := l.u + (float64(x0)+0.5-l.x)*du
-		vv := l.v + (float64(x0)+0.5-l.x)*dv
+		u, vv := at(x0)
+		u1, v1 := at(x1)
+		du, dv := 0, 0
+		if n := x1 - x0; n > 0 {
+			du, dv = (u1-u)/n, (v1-vv)/n
+		}
+		pix, stride := tex.Pix, tex.Stride
+		if bf == 256 {
+			for x := x0; x <= x1; x++ {
+				o := (vv>>16)*stride + (u>>16)*4
+				i := x * 4
+				row[i], row[i+1], row[i+2], row[i+3] = pix[o], pix[o+1], pix[o+2], 255
+				u += du
+				vv += dv
+			}
+			continue
+		}
 		for x := x0; x <= x1; x++ {
-			tx, ty := int(u*float64(tw)), int(vv*float64(th))
-			tx, ty = max(0, min(tw-1, tx)), max(0, min(th-1, ty))
-			s := tex.Pix[ty*tex.Stride+tx*4:]
+			o := (vv>>16)*stride + (u>>16)*4
 			i := x * 4
-			row[i], row[i+1], row[i+2], row[i+3] = uint8(int(s[0])*bf>>8), uint8(int(s[1])*bf>>8), uint8(int(s[2])*bf>>8), 255
+			row[i], row[i+1], row[i+2], row[i+3] = dim[pix[o]], dim[pix[o+1]], dim[pix[o+2]], 255
 			u += du
 			vv += dv
 		}

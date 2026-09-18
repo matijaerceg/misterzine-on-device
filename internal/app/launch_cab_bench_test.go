@@ -21,10 +21,23 @@ func BenchmarkLaunchCabFrame(b *testing.B) {
 	}{
 		{"spin-mid", cabSpinDur / 3},
 		{"spin-end", cabSpinDur - time.Millisecond},
+		{"push-lit", cabSpinDur + cabPushDur - cabFadeDur - time.Millisecond},
 		{"push-end", cabSpinDur + cabPushDur - time.Millisecond},
+		{"push-end-lit", -1},
+		{"push-lit-dim", -2},
 	} {
 		b.Run(c.name, func(b *testing.B) {
-			angle, focal, bright := cabPose(c.elapsed, 320, 240)
+			var angle, focal, bright float64
+			switch c.elapsed {
+			case -1:
+				angle, focal, _ = cabPose(cabSpinDur+cabPushDur-time.Millisecond, 320, 240)
+				bright = 1
+			case -2:
+				angle, focal, _ = cabPose(cabSpinDur+cabPushDur-cabFadeDur-time.Millisecond, 320, 240)
+				bright = 0.5
+			default:
+				angle, focal, bright = cabPose(c.elapsed, 320, 240)
+			}
 			for i := 0; i < b.N; i++ {
 				for j := range dst.Pix {
 					dst.Pix[j] = 0

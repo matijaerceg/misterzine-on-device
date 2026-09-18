@@ -1,0 +1,12 @@
+newmtl body
+Kd 0.2745 0.3059 0.4314
+
+newmtl marquee
+Kd 0.9020 0.7451 0.2745
+
+newmtl panel
+Kd 0.2353 0.2353 0.2745
+
+newmtl screen
+Kd 0.0000 0.0000 0.0000
+
