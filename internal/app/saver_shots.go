@@ -760,7 +760,7 @@ func (a *App) saverPool() []saverPick {
 			continue
 		}
 		for _, slot := range r.ImgSlots {
-			if slot == "snap" {
+			if slot == "snap" || slot == SlotLocalSnap { // the gameplay shot, from either service
 				pool = append(pool, saverPick{i, slot})
 			}
 		}

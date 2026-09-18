@@ -105,3 +105,54 @@ func TestFiltersSourceLocal(t *testing.T) {
 		t.Fatalf("installed only hid local rows: %d visible", n)
 	}
 }
+
+// A local game whose core is not installed is greyed and must not be handed
+// to MiSTer: the menu would sit on a load that never completes. Start shows
+// a notice naming the core instead, for the file and its alternatives alike.
+func TestLocalRowMissingCoreDoesNotLaunch(t *testing.T) {
+	var launched []string
+	a := New(Config{PhysW: 320, PhysH: 240,
+		Status: func(int) data.Status { return data.StatusNotFound },
+		Exists: func(string) bool { return true },
+		Launch: func(p string) { launched = append(launched, p) },
+		Alternatives: func(r *data.Row) []string {
+			return []string{"_Arcade/_alternatives/_Orphan Fighter/Orphan Fighter (alt).mra"}
+		},
+	}, data.Ingest(localTestRows(), "h", time.Now()), nil)
+	i := a.ds.Index("local:orphanf")
+	row := &a.ds.Rows[i]
+	entries := a.launchEntries(row, i)
+	if len(entries) != 2 || entries[0].ok || entries[1].ok {
+		t.Fatalf("entries %+v", entries)
+	}
+	for pick := range entries {
+		a.notice = ""
+		if !a.launchRow(row, i, pick) {
+			t.Fatalf("pick %d: launched", pick)
+		}
+		if a.notice != "the defender core is not on the card" {
+			t.Fatalf("pick %d: notice %q", pick, a.notice)
+		}
+	}
+	if len(launched) != 0 {
+		t.Fatalf("launched %v", launched)
+	}
+	// The file missing keeps its own notice.
+	a.cfg.Exists = func(string) bool { return false }
+	a.launchRow(row, i, 0)
+	if a.notice != "that file is not on the card" {
+		t.Fatalf("notice %q", a.notice)
+	}
+}
+
+// Local games join the screensaver with their gameplay shot.
+func TestSaverPoolIncludesLocalRows(t *testing.T) {
+	a := New(Config{PhysW: 320, PhysH: 240, SaverStyle: "shots"}, data.Ingest(localTestRows(), "h", time.Now()), nil)
+	var got []string
+	for _, p := range a.saverPool() {
+		got = append(got, a.ds.Rows[p.row].K+"/"+p.slot)
+	}
+	if strings.Join(got, " ") != "colony7/snap local:locpuz/lsnap" {
+		t.Fatalf("pool %v", got)
+	}
+}

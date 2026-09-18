@@ -139,29 +139,43 @@ func (a *App) tickDetailScroll(now time.Time) bool {
 type launchEntry struct {
 	label string
 	path  string // card-relative, or "core:NAME"
-	ok    bool   // present on the card
+	ok    bool   // launchable: the file and its core are on the card
+	why   string // the notice when not ok
 }
 
 // launchEntries lists the mainline file and installed alternatives, each
-// marked with whether it is actually on the card.
+// marked with whether it can actually be launched. An MRA whose core is
+// not installed is greyed like a missing file and is not launchable
+// either: handed to MiSTer, it leaves the menu stuck on a load that never
+// completes. Its alternatives share the core. Without an Exists hook a
+// not-found status cannot tell the two apart and reads as the file missing.
 func (a *App) launchEntries(row *data.Row, i int) []launchEntry {
 	var out []launchEntry
 	st := a.status(i)
+	coreMissing := ""
+	if row.MRA != "" && row.Core != "" && st == data.StatusNotFound && a.cfg.Status != nil && a.cfg.Exists != nil && a.cfg.Exists(row.MRA) {
+		coreMissing = "the " + row.Core + " core is not on the card"
+	}
 	if row.MRA != "" {
-		ok := true
+		ok, why := true, ""
 		if a.cfg.Exists != nil {
 			ok = a.cfg.Exists(row.MRA)
 		} else if a.cfg.Status != nil {
 			ok = st != data.StatusNotFound
 		}
-		out = append(out, launchEntry{path.Base(row.MRA), row.MRA, ok})
+		if !ok {
+			why = "that file is not on the card"
+		} else if coreMissing != "" {
+			ok, why = false, coreMissing
+		}
+		out = append(out, launchEntry{path.Base(row.MRA), row.MRA, ok, why})
 	} else if row.Core != "" {
 		ok := a.cfg.Status == nil || st != data.StatusNotFound
-		out = append(out, launchEntry{"load the " + row.Core + " core", "core:" + row.Core, ok})
+		out = append(out, launchEntry{"load the " + row.Core + " core", "core:" + row.Core, ok, "the " + row.Core + " core is not on the card"})
 	}
 	if a.cfg.Alternatives != nil {
 		for _, alt := range a.cfg.Alternatives(row) {
-			out = append(out, launchEntry{"alt: " + path.Base(alt), alt, true})
+			out = append(out, launchEntry{"alt: " + path.Base(alt), alt, coreMissing == "", coreMissing})
 		}
 	}
 	return out
@@ -607,7 +621,7 @@ func (a *App) launchRow(row *data.Row, i, pick int) bool {
 		pick = max(0, min(pick, len(entries)-1))
 		e := entries[pick]
 		if !e.ok {
-			a.Notice("that file is not on the card", 3*time.Second)
+			a.Notice(e.why, 3*time.Second)
 			return true
 		}
 		if a.cfg.ROMIssue != nil {
