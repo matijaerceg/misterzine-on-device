@@ -27,22 +27,22 @@ func BenchmarkLaunchCabFrame(b *testing.B) {
 		{"push-lit-dim", -2},
 	} {
 		b.Run(c.name, func(b *testing.B) {
-			var angle, focal, bright float64
+			var angle, tilt, focal, bright float64
 			switch c.elapsed {
 			case -1:
-				angle, focal, _ = cabPose(cabSpinDur+cabPushDur-time.Millisecond, 320, 240)
+				angle, tilt, focal, _ = cabPose(cabSpinDur+cabPushDur-time.Millisecond, 320, 240)
 				bright = 1
 			case -2:
-				angle, focal, _ = cabPose(cabSpinDur+cabPushDur-cabFadeDur-time.Millisecond, 320, 240)
+				angle, tilt, focal, _ = cabPose(cabSpinDur+cabPushDur-cabFadeDur-time.Millisecond, 320, 240)
 				bright = 0.5
 			default:
-				angle, focal, bright = cabPose(c.elapsed, 320, 240)
+				angle, tilt, focal, bright = cabPose(c.elapsed, 320, 240)
 			}
 			for i := 0; i < b.N; i++ {
 				for j := range dst.Pix {
 					dst.Pix[j] = 0
 				}
-				renderCab(dst, tex, angle, focal, bright)
+				renderCab(dst, tex, angle, tilt, focal, bright)
 			}
 		})
 	}

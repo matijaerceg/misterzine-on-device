@@ -29,8 +29,9 @@ import (
 const (
 	cabSpinDur = 700 * time.Millisecond // spinning approach
 	cabPushDur = 600 * time.Millisecond // straight push into the monitor
-	cabFadeDur = 400 * time.Millisecond // monitor fade, at the end of the push
-	cabTurns   = 1                      // whole turns during the approach
+	cabFadeDur = 500 * time.Millisecond // monitor fade, at the end of the push
+	cabTurns   = 0                      // whole turns during the approach (0: straight in)
+	cabTilt    = 14.0                   // degrees the cabinet leans toward the viewer by the end of the approach
 	cabTexW    = 128                    // title shot texture size
 	cabTexH    = 96
 )
@@ -140,14 +141,15 @@ func (a *App) nextLaunchCabTick() time.Time { return a.cab.next }
 
 // cabPose is the camera for elapsed: the cabinet's turn about its vertical
 // axis, the focal length (zoom) and the monitor brightness.
-func cabPose(elapsed time.Duration, w, h int) (angle, focal, bright float64) {
+func cabPose(elapsed time.Duration, w, h int) (angle, tilt, focal, bright float64) {
 	fill := float64(h) * cabCamera / (cabBounds.height * 1.15) // the cabinet's height nearly fills the frame
 	end := float64(w) * cabCamera / cabScreenW * 1.3           // the screen overfills it
 	if elapsed < cabSpinDur {
 		t := float64(elapsed) / float64(cabSpinDur)
 		angle = 2 * math.Pi * cabTurns * t
-		focal = fill * math.Pow(4, t-1) // geometric zoom: constant perceived speed
-		return angle, focal, 1
+		tilt = cabTilt * math.Pi / 180 * t // leans forward as it comes closer
+		focal = fill * math.Pow(4, t-1)    // geometric zoom: constant perceived speed
+		return angle, tilt, focal, 1
 	}
 	t := min(1, float64(elapsed-cabSpinDur)/float64(cabPushDur))
 	focal = fill + (end-fill)*t
@@ -155,7 +157,7 @@ func cabPose(elapsed time.Duration, w, h int) (angle, focal, bright float64) {
 	if left := cabSpinDur + cabPushDur - elapsed; left < cabFadeDur {
 		bright = float64(left) / float64(cabFadeDur)
 	}
-	return 0, focal, bright
+	return 0, cabTilt * math.Pi / 180, focal, bright
 }
 
 type vec3 struct{ x, y, z float64 }
@@ -365,8 +367,8 @@ const cabCamera = 3.0 // camera distance from the monitor centre
 func (a *App) paintLaunchCab(c *gfx.Canvas) {
 	w, h := c.W(), c.H()
 	c.Fill(c.Rect, color.RGBA{0, 0, 0, 255})
-	angle, focal, bright := cabPose(a.cab.elapsed, w, h)
-	renderCab(c.RGBA, a.cab.tex, angle, focal, bright)
+	angle, tilt, focal, bright := cabPose(a.cab.elapsed, w, h)
+	renderCab(c.RGBA, a.cab.tex, angle, tilt, focal, bright)
 	c.DirtyAll()
 }
 
@@ -376,10 +378,11 @@ type screenVert struct {
 
 // renderCab projects and paints the model: back faces culled, the rest
 // painted far to near, flat shaded from a fixed light.
-func renderCab(dst *image.RGBA, tex *image.RGBA, angle, focal, bright float64) {
+func renderCab(dst *image.RGBA, tex *image.RGBA, angle, tilt, focal, bright float64) {
 	w, h := dst.Rect.Dx(), dst.Rect.Dy()
 	cx, cy := float64(w)/2, float64(h)/2
 	sinA, cosA := math.Sin(angle), math.Cos(angle)
+	sinT, cosT := math.Sin(tilt), math.Cos(tilt) // about x: the top comes toward the viewer
 	light := vec3{0.4, 0.7, 1}
 	ln := math.Sqrt(light.x*light.x + light.y*light.y + light.z*light.z)
 	light = vec3{light.x / ln, light.y / ln, light.z / ln}
@@ -395,7 +398,8 @@ func renderCab(dst *image.RGBA, tex *image.RGBA, angle, focal, bright float64) {
 	for _, t := range cabTris {
 		var p [3]vec3
 		for i, q := range t.p {
-			p[i] = vec3{q.x*cosA + q.z*sinA, q.y, -q.x*sinA + q.z*cosA}
+			x, y, z := q.x*cosA+q.z*sinA, q.y, -q.x*sinA+q.z*cosA
+			p[i] = vec3{x, y*cosT - z*sinT, y*sinT + z*cosT}
 		}
 		// outward normal
 		e1 := vec3{p[1].x - p[0].x, p[1].y - p[0].y, p[1].z - p[0].z}
