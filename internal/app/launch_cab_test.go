@@ -1,6 +1,7 @@
 package app
 
 import (
+	"image"
 	"testing"
 	"time"
 
@@ -83,6 +84,27 @@ func TestLaunchCabBackCancels(t *testing.T) {
 	}
 	if _, dirty := a.Paint(); len(dirty) == 0 {
 		t.Fatal("the list was not repainted after the cancel")
+	}
+}
+
+func TestLaunchCabPreviewDoesNotLaunch(t *testing.T) {
+	a, clock, launched := cabApp(false) // works without the animation clock or preference
+	a.cfg.TransitionsDisabled = true
+	a.previewLaunchCab()
+	if !a.LaunchCabRunning() {
+		t.Fatal("preview did not start")
+	}
+	var last []image.Rectangle
+	for a.LaunchCabRunning() {
+		a.Tick(*clock)
+		_, last = a.Paint()
+		*clock = clock.Add(frameDur)
+	}
+	if len(*launched) != 0 {
+		t.Fatalf("preview launched %v", *launched)
+	}
+	if len(last) == 0 {
+		t.Fatal("the screen was not repainted after the preview")
 	}
 }
 

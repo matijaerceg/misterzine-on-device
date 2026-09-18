@@ -63,6 +63,23 @@ func (a *App) startLaunchCab(row *data.Row, path string) {
 	a.all = true
 }
 
+// previewLaunchCab plays the animation for the current row without
+// launching anything (the Options row's Preview), even with the
+// preference off, and returns to the screen it started from.
+func (a *App) previewLaunchCab() {
+	row, _, _ := a.current()
+	now := a.cfg.TimerNow()
+	a.cab = launchCab{active: true, at: now, next: now}
+	if key, slot := cabShot(row); key != "" {
+		a.cab.req = ImageReq{Key: key, Slot: slot, W: cabTexW, H: cabTexH, Stretch: slot != "system"}
+		a.cab.tex, _ = a.cfg.Images.Get(a.cab.req)
+		if a.cab.tex == nil {
+			a.cfg.Images.Want([]ImageReq{a.cab.req})
+		}
+	}
+	a.all = true
+}
+
 // cabShot picks the picture on the cabinet's monitor: the title screen,
 // else a gameplay shot, else the system photo.
 func cabShot(r *data.Row) (key, slot string) {
@@ -107,7 +124,9 @@ func (a *App) tickLaunchCab(now time.Time) bool {
 		path := c.path
 		*c = launchCab{}
 		a.all = true
-		a.cfg.Launch(path)
+		if path != "" { // a preview ends where it began
+			a.cfg.Launch(path)
+		}
 		return true
 	}
 	if c.tex == nil && c.req.Key != "" {
