@@ -533,11 +533,24 @@ func (ah *cabAhead) run(w, h int, rot gfx.Rotation) {
 	}
 }
 
-// frame returns the physical frame for elapsed: the one rendered for that
-// step, or the newest ready when the producer is behind. The first frame
-// is waited for; nothing else blocks the display.
+// frame returns the physical frame to show: the next one in order, since
+// the display asks once per vertical blank. The blanks do not come at
+// exactly the 60 Hz step the frames are rendered for (the Pi's average
+// 16.65 ms, single ones 15-17 ms), so choosing the frame by the clock
+// would show one twice and skip the next wherever the clock sat near a
+// step boundary: a visible stutter. The clock only guards the sequence:
+// a whole frame or more behind (a stall) skips ahead, a whole frame ahead
+// (painted twice in one blank) holds. The newest ready frame stands in
+// when the producer is behind. The first frame is waited for; nothing
+// else blocks the display.
 func (ah *cabAhead) frame(elapsed time.Duration) *image.RGBA {
-	want := int(elapsed / frameDur)
+	clock := int(elapsed / frameDur)
+	want := ah.taken // shown is frame taken-1
+	if clock > ah.taken {
+		want = clock
+	} else if ah.shown != nil && clock < ah.taken-1 {
+		return ah.shown
+	}
 	for ah.taken <= want && !ah.closed {
 		var f *image.RGBA
 		var ok bool

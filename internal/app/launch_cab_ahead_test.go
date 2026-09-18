@@ -2,6 +2,7 @@ package app
 
 import (
 	"testing"
+	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
@@ -74,5 +75,66 @@ func TestLaunchCabBackStopsTheProducer(t *testing.T) {
 	}
 	if len(*launched) != 0 {
 		t.Fatal("Back launched the game")
+	}
+}
+
+// The display's blanks jitter around the 60 Hz step and drift against it.
+// The frames still go out one at a time, in order: no frame shown twice,
+// none skipped.
+func TestLaunchCabFramesFollowTheBlanks(t *testing.T) {
+	a, clock, _ := cabApp(true)
+	a.EnableRenderAhead()
+	a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})
+	a.Handle(platform.Event{Key: platform.KeyStart, At: *clock})
+	// 16.65 ms average, alternating a millisecond either side
+	steps := []time.Duration{15650 * time.Microsecond, 17650 * time.Microsecond}
+	last := -1
+	for n := 0; a.LaunchCabRunning(); n++ {
+		a.Tick(*clock)
+		waitCabFrames(a, 1) // the test clock outruns the renderer; the boards do not
+		a.Paint()
+		if a.LaunchCabRunning() {
+			shown := a.cab.ahead.taken - 1
+			if shown != last+1 {
+				t.Fatalf("paint %d showed frame %d after frame %d", n, shown, last)
+			}
+			last = shown
+		}
+		*clock = clock.Add(steps[n%2])
+	}
+	if last < 150 {
+		t.Fatalf("only %d frames shown", last+1)
+	}
+}
+
+// A stall skips ahead instead of playing the missed frames late.
+func TestLaunchCabStallSkipsAhead(t *testing.T) {
+	a, clock, _ := cabApp(true)
+	a.EnableRenderAhead()
+	a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})
+	a.Handle(platform.Event{Key: platform.KeyStart, At: *clock})
+	for i := 0; i < 5; i++ {
+		a.Tick(*clock)
+		a.Paint()
+		*clock = clock.Add(frameDur)
+	}
+	*clock = clock.Add(10 * frameDur) // the display stalled for ten blanks
+	a.Tick(*clock)
+	waitCabFrames(a, cabAheadDepth)
+	a.Paint()
+	if shown := a.cab.ahead.taken - 1; shown < 10 {
+		t.Fatalf("frame %d shown after a ten-frame stall, want the clock's frame", shown)
+	}
+	a.cab.stopAhead()
+}
+
+// waitCabFrames lets the producer get n frames ahead.
+func waitCabFrames(a *App, n int) {
+	for len(a.cab.ahead.frames) < n && !a.cab.ahead.closed {
+		select {
+		case <-a.cab.ahead.done:
+			return
+		case <-time.After(time.Millisecond):
+		}
 	}
 }
