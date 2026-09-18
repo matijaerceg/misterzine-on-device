@@ -480,9 +480,9 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "HDMI picture", kind: "canvas", vals: []string{"full display", "320x240", "fit 4:3"}, idx: map[string]int{"full": 0, "320x240": 1, "fit": 2}[a.Canvas()],
 			help: "Full display: use both HDMI dimensions. 320x240: classic size. Fit 4:3: keep a 4:3 picture sized to HDMI height. Applies live."},
 		{text: "Page transitions", kind: "page-transitions", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.PageTransitions()],
-			help: "On: softly wipe between pages and play the launch animation. Off: change pages instantly. " + a.btn("A") + " previews the launch animation."},
+			help: "On: softly wipe between pages. Off: change pages instantly. Saved for next time."},
 		{text: "Launch transition", kind: "launch-transition", vals: []string{"always", "hold Start"}, idx: map[string]int{"always": 0, "hold": 1}[a.LaunchTransition()],
-			help: "Always: every launch plays the animation. Hold Start: a tap launches at once; holding Start plays it. Needs page transitions on."},
+			help: "Always: every launch plays the cabinet animation. Hold Start: a tap launches at once; holding Start plays it. " + a.btn("A") + " previews it."},
 		spacer, group(gfx.SectionControls, "Controls"),
 		{text: "Button labels", kind: "button-labels", vals: buttonLabelValues(), idx: map[string]int{"mister": 0, "xbox": 1, "playstation": 2, "numbers": 3}[a.ButtonLabels()],
 			help: "How the legends name the pad buttons, in MiSTer's A B X Y order as set in its define buttons screen. Xbox and PlayStation names go by position."},
@@ -849,7 +849,7 @@ func (a *App) optionsHint() string {
 // value, or it is greyed).
 var optionsActs = map[string]string{
 	"refresh": "Refresh", "update": "Run", "update-result": "Open", "rescan": "Rescan", "clearimg": "Clear",
-	"views": "Open", "saver-options": "Open", "saver-preview": "Preview", "screensaver": "Preview", "page-transitions": "Preview", "saver-style": "Preview", "saver-bright": "Preview", "saver-dim": "Preview", "saver-info": "Preview",
+	"views": "Open", "saver-options": "Open", "saver-preview": "Preview", "screensaver": "Preview", "launch-transition": "Preview", "saver-style": "Preview", "saver-bright": "Preview", "saver-dim": "Preview", "saver-info": "Preview",
 	"inset": "Edit", "troubleshooting": "Open", "credits": "Open", "quit": "Quit",
 }
 
@@ -1195,7 +1195,7 @@ func (a *App) togglePanel() bool {
 	case "screensaver", "saver-style", "saver-bright", "saver-info", "saver-dim", "saver-preview":
 		a.startSaver(a.cfg.TimerNow())
 		return true
-	case "page-transitions":
+	case "launch-transition":
 		a.previewLaunchCab()
 		return true
 	case "update-result":
@@ -1277,7 +1277,7 @@ func (a *App) togglePanel() bool {
 		if !e.header {
 			f.Since = !f.Since
 		}
-	case "launch-transition", "rotation", "follow-rotation", "filter-rotation", "sources", "show-deprecated", "launcher", "scroll", "smooth-scroll", "hold-delay", "remember-sort", "default-view", "prefetch", "title-font", "list-shot", "date-format", "list-layout", "button-labels", "ok-button":
+	case "page-transitions", "rotation", "follow-rotation", "filter-rotation", "sources", "show-deprecated", "launcher", "scroll", "smooth-scroll", "hold-delay", "remember-sort", "default-view", "prefetch", "title-font", "list-shot", "date-format", "list-layout", "button-labels", "ok-button":
 		return true // Left/Right pick these
 	case "inset":
 		a.screen = ScreenCalibrate

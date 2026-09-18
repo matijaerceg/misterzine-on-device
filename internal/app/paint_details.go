@@ -296,7 +296,7 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 	}
 	body := l.Body
 	body.Min.Y = l.Root.Min.Y // no status bar here: the room goes to the specs
-	if key, slot := cabShot(row); key != "" && a.transition.enabled && a.PageTransitions() {
+	if key, slot := cabShot(row); key != "" && a.transition.enabled {
 		// the launch animation's monitor picture, decoded before Start
 		a.want(ImageReq{Key: key, Slot: slot, W: cabTexW, H: cabTexH, Stretch: slot != "system"})
 	}
@@ -623,7 +623,7 @@ func (a *App) launchRow(row *data.Row, i, pick int) bool {
 			a.rememberPick(row, entries, pick)
 		}
 		a.recordLaunch(row)
-		if a.LaunchTransition() == "hold" && a.transition.enabled && a.PageTransitions() {
+		if a.LaunchTransition() == "hold" && a.transition.enabled {
 			// the animation waits for Start to stay down; a tap launches
 			// on the release
 			a.holdLaunch = holdLaunch{row: row, path: e.path, at: a.cfg.TimerNow()}

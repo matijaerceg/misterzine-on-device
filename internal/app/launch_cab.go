@@ -100,7 +100,7 @@ type launchCab struct {
 // startLaunchCab plays the animation before launching path, or launches at
 // once when animations are off (static hosts, tests, the preference).
 func (a *App) startLaunchCab(row *data.Row, path string) {
-	if !a.transition.enabled || !a.PageTransitions() {
+	if !a.transition.enabled { // static hosts and tests without a clock
 		a.cfg.Launch(path)
 		return
 	}
@@ -117,8 +117,8 @@ func (a *App) startLaunchCab(row *data.Row, path string) {
 }
 
 // previewLaunchCab plays the animation for the current row without
-// launching anything (the Options row's Preview), even with the
-// preference off, and returns to the screen it started from.
+// launching anything (the Options row's Preview) and returns to the
+// screen it started from.
 func (a *App) previewLaunchCab() {
 	row, _, _ := a.current()
 	now := a.cfg.TimerNow()
