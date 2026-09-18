@@ -28,9 +28,9 @@ import (
 // Everything is a pure function of elapsed time, so the harness records it
 // frame by frame with -motion.
 const (
-	cabSpinDur = 1000 * time.Millisecond // spinning approach
-	cabPushDur = 600 * time.Millisecond  // straight push into the monitor
-	cabFadeDur = 500 * time.Millisecond  // monitor fade, at the end of the push
+	cabSpinDur = 2000 * time.Millisecond // spinning approach
+	cabPushDur = 1200 * time.Millisecond // straight push into the monitor
+	cabFadeDur = 1000 * time.Millisecond // monitor fade, at the end of the push
 	cabTurns   = 1                       // whole turns during the approach (0: straight in)
 	cabFar     = 6.0                     // how many times smaller than frame-filling the approach starts
 	cabTilt    = 14.0                    // degrees the cabinet leans toward the viewer by the end of the approach

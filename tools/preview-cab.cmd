@@ -17,6 +17,6 @@ copy /y "%MESH%\texture.png" internal\app\cab-texture.png >nul || exit /b 1
 powershell -NoProfile -Command "(Get-Content internal\app\cab.obj) -replace '^mtllib .*','mtllib cab.mtl' | Set-Content -Encoding ascii internal\app\cab.obj; (Get-Content '%MESH%\astrocade-exp1.mtl') -replace '^map_Kd .*','map_Kd cab-texture.png' | Set-Content -Encoding ascii internal\app\cab.mtl"
 if exist out\cab rmdir /s /q out\cab
 mkdir out\cab
-"%GO%" run ./cmd/mzharness -motion -images "%IMG%" -out out\cab -script "shot list; enter; wait 1500; start; frames cab 33 60" >nul || exit /b 1
+"%GO%" run ./cmd/mzharness -motion -images "%IMG%" -out out\cab -script "shot list; enter; wait 1500; start; frames cab 33 100" >nul || exit /b 1
 python "%~dp0preview-cab.py" out\cab "%MESH%"
 start "" "%MESH%\launch-cab.gif"
