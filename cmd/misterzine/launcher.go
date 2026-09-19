@@ -134,6 +134,31 @@ func awaitGameExit(probe func() string, pause func(time.Duration), loadDeadline 
 	}
 }
 
+// followGame waits for the launched game to give way to the menu (see
+// awaitGameExit) while the exit chord, when set, is watched on the pads:
+// held inside the game, it asks Main for its menu, which ends the wait the
+// same way the OSD does. The chord is armed only while the running core is
+// a game, never while Main is between cores or on its menu.
+func followGame(lg *log.Logger, chord string) bool {
+	stop := make(chan struct{})
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		mister.WatchExitChord(stop, chord, func() bool {
+			core := coreName()
+			return core != "" && core != menuCore && core != "misterzine"
+		}, func() {
+			if err := sendMainCmd("load_core /media/fat/menu.rbf"); err != nil {
+				lg.Printf("watch: exit chord: %v", err)
+			}
+		}, lg)
+	}()
+	exited := awaitGameExit(coreName, time.Sleep, 20*time.Second)
+	close(stop)
+	<-done
+	return exited
+}
+
 // launcherCmd handles: launcher start | stop | status | enable | disable
 func launcherCmd(args []string) int {
 	if len(args) == 0 {
@@ -504,9 +529,10 @@ func watch() int {
 			// the app itself loaded a core: leave it alone
 			os.Remove(launchedFile)
 			lg.Printf("watch: the app launched %s; not touching the menu", strings.TrimSpace(string(b)))
-			if enabled && watchSettings().ReturnAfterGame {
-				lg.Printf("watch: return after game: waiting for the game to exit to the menu")
-				if awaitGameExit(coreName, time.Sleep, 20*time.Second) && !launcherUpdateActive() {
+			if ws := watchSettings(); enabled && (ws.ReturnAfterGame || ws.ExitChord != mister.ExitChordOff) {
+				lg.Printf("watch: following the game (return after game %v, exit chord %s)", ws.ReturnAfterGame, mister.ExitChordName(ws.ExitChord))
+				exited := followGame(lg, ws.ExitChord)
+				if exited && ws.ReturnAfterGame && !launcherUpdateActive() {
 					lg.Printf("watch: game exited; reopening MisterZine")
 					resume = true
 					if err := sendMainCmd("load_core " + mglPath); err != nil {
@@ -515,7 +541,9 @@ func watch() int {
 					}
 					continue // the selection arrives as a fresh CORENAME write
 				}
-				lg.Printf("watch: not returning: the game did not load, or another core took over")
+				if !exited {
+					lg.Printf("watch: the game did not load, or another core took over")
+				}
 			}
 		} else if waitForMenuRestore(lg, func() (string, bool) {
 			b, _ := os.ReadFile(corenameFile)

@@ -500,6 +500,8 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "On: once the MiSTer menu is up after power-on or reboot, MisterZine opens as if picked from it. A bootcore in the INI wins. Needs the shortcut."},
 		{text: "Return after game", kind: "return-after-game", child: true, vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ReturnAfterGame], disabled: launcherIdx == 0,
 			help: "On: when a game started here exits to the MiSTer menu, MisterZine reopens on that game. Not after quitting with the Menu button. Needs the shortcut."},
+		{text: "Exit chord", kind: "exit-chord", child: true, vals: []string{"off", "Select+Start", "L+R+Select+Start"}, idx: map[string]int{"": 0, "select-start": 1, "lr-select-start": 2}[a.ExitChord()], disabled: launcherIdx == 0,
+			help: "Hold these MiSTer-defined pad buttons one second in a game started here: it exits to the MiSTer menu, and Return after game reopens MisterZine."},
 		spacer,
 		{text: "Troubleshooting", kind: "troubleshooting",
 			help: "Test your Start button or game launching. Results stay on screen for a photo; no keyboard or log files needed."},
@@ -1051,6 +1053,8 @@ func (a *App) stepValue(d int) bool {
 		a.cfg.OpenAtBoot = i == 1
 	case "return-after-game":
 		a.cfg.ReturnAfterGame = i == 1
+	case "exit-chord":
+		a.cfg.ExitChord = []string{"", "select-start", "lr-select-start"}[i]
 	case "follow-rotation":
 		a.cfg.FollowRotation = i == 1
 		if i == 0 && a.cfg.Action != nil {

@@ -133,6 +133,10 @@ type Config struct {
 	// host's resident launcher acts on; both need the launcher enabled.
 	OpenAtBoot      bool
 	ReturnAfterGame bool
+	// ExitChord is Options -> Exit chord, the pad buttons that leave a
+	// launched game for the menu: "" (off), "select-start" or
+	// "lr-select-start"; the launcher watches for it.
+	ExitChord string
 	// TitleFont draws list titles in "tall" (default: the narrow font at the
 	// body font's height), "narrow" or "normal" (the body font).
 	TitleFont string
@@ -533,6 +537,16 @@ func (a *App) Canvas() string {
 	return "full"
 }
 func (a *App) ReturnAfterGame() bool { return a.cfg.ReturnAfterGame }
+
+// ExitChord is the Options -> Exit chord choice: "" (off), "select-start"
+// or "lr-select-start"; anything else reads as off.
+func (a *App) ExitChord() string {
+	switch a.cfg.ExitChord {
+	case "select-start", "lr-select-start":
+		return a.cfg.ExitChord
+	}
+	return ""
+}
 func (a *App) FollowRotation() bool  { return a.cfg.FollowRotation }
 func (a *App) FilterRotation() bool  { return a.cfg.FilterRotation }
 

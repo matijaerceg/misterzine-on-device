@@ -258,6 +258,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		DefaultSort:          h.settings.DefaultSort,
 		OpenAtBoot:           h.settings.OpenAtBoot,
 		ReturnAfterGame:      h.settings.ReturnAfterGame,
+		ExitChord:            h.settings.ExitChord,
 		TitleFont:            h.settings.TitleFont,
 		ListShot:             h.settings.ListShot,
 		DateFormat:           h.settings.DateFormat,
@@ -977,6 +978,7 @@ func (h *host) saveAll(final bool) {
 		h.settings.DefaultSort = h.a.DefaultView()
 		h.settings.OpenAtBoot = h.a.OpenAtBoot()
 		h.settings.ReturnAfterGame = h.a.ReturnAfterGame()
+		h.settings.ExitChord = h.a.ExitChord()
 		h.settings.TitleFont = h.a.TitleFont()
 		h.settings.ListShot = h.a.ListShot()
 		h.settings.DateFormat = h.a.DateFormat()

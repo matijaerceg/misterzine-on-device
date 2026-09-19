@@ -277,15 +277,15 @@ Art type, Date format, Layout), Display (a monitor: rotation,
 screensaver delay, style, brightness and info, safe zone, HDMI picture), Controls
 (an arcade stick: Button labels, OK button, Menu button, Scroll speed, Hold
 delay) and Operation (sliders: the main menu shortcut, Open at boot, Return
-after game). Troubleshooting, Credits and Quit sit below the sections and
+after game, Exit chord). Troubleshooting, Credits and Quit sit below the sections and
 are never hidden by collapsing one. Only Data starts expanded. Select a
 heading and press A to open or close it, or Right to open and Left to close.
 Several sections can stay open. MisterZine remembers their state during the
 session, including trips through Filters and subpages; restarting restores
 the default. Left/Right on a setting still changes its value.
 A row that only applies given the row above it (Rotation under Follow INI
-rotation, the screensaver's style, brightness and info, Open at boot and Return
-after game under the shortcut) sits a step in behind a small branch mark.
+rotation, the screensaver's style, brightness and info, Open at boot, Return
+after game and Exit chord under the shortcut) sits a step in behind a small branch mark.
 Values line up in one column; a small arrow at the right
 edge of the top or bottom row shows when more options sit above or below the
 visible part of the list. The legend in the bottom bar follows the selected
@@ -497,6 +497,16 @@ screenshots match, lettering runs instead and the Preview help explains why.
   picks the MisterZine entry again and the list opens on that game. Games
   loaded some other way, and quitting through the Menu button, do not bring
   it back. Needs the Main menu shortcut.
+- **Exit chord:** off by default. Select+Start, or L+R+Select+Start, held
+  together for one second inside a game you started from MisterZine leaves the
+  game for the MiSTer menu, as Reset in the OSD would; with Return after game
+  on, MisterZine reopens on that game. The buttons are the ones you defined in
+  MiSTer's define-buttons screen, so the chord is the same on every defined pad
+  (a pad MiSTer has not defined uses the standard Linux gamepad layout). It is
+  read from the pad while the core runs, so it never reaches the game. A quick
+  pass over the buttons does nothing; a wireless pad's own power-off hold is
+  longer. SNAC controllers and pads whose Select or Start sit on an axis are
+  not seen. Needs the Main menu shortcut.
 - **Troubleshooting:** a guided Start-button test, a pad tester, and an
   A/Enter game-launch test, with results you can photograph. The last result
   survives restarting. The pad tester lists every connected pad with the raw
