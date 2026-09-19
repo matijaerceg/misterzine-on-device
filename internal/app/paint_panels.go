@@ -456,7 +456,7 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "Filter by rotation", kind: "filter-rotation", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.FilterRotation()],
 			help: "Show only games made for the current orientation (INI or manual); unknowns hidden. Off restores manual filters."},
 		{text: "Views (" + a.viewsSummary() + ")", kind: "views", opensPage: true,
-			help: "Which views " + a.btn("Y") + " cycles through: core updated, MiSTer debut, original year, A-Z, manufacturer, Favorites, Recents (launches from here). " + a.btn("A") + " opens the list."},
+			help: "Which views " + a.btn("Y") + " cycles through: build date, MiSTer debut, original year, A-Z, manufacturer, Favorites, Recents (launches from here). " + a.btn("A") + " opens the list."},
 		{text: "Remember last view", kind: "remember-sort", child: true, vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.RememberSort()],
 			help: "On: reopen in the last view used. Off: use Default view. Takes effect next time MisterZine opens."},
 		{text: "Title font", kind: "title-font", vals: []string{"normal", "narrow", "narrow tall"}, idx: map[string]int{"normal": 0, "narrow": 1, "tall": 2}[a.TitleFont()],

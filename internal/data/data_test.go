@@ -203,14 +203,16 @@ func TestRelAge(t *testing.T) {
 func TestSeen(t *testing.T) {
 	rows := []Row{{K: "a", Updated: "2026-09-01"}, {K: "b", Updated: "2026-09-02"}, {K: "c", Updated: "2026-09-03"}}
 	ds := Ingest(rows, "", time.Time{})
-	order := ds.Order(SortUpdated) // c, b, a
 
 	first := InitSeen(nil, rows, fixedNow, true)
-	if first.BaseRows != nil || first.MarkerOn(SortUpdated) {
+	if first.BaseRows != nil {
 		t.Fatal("first visit must have no baseline")
 	}
-	if first.SplitAt(ds, order, SortUpdated) != -1 {
-		t.Fatal("no marker on the first visit")
+	if a, u := first.Since(ds, nil); a != 0 || u != 0 {
+		t.Fatal("no counts on the first visit")
+	}
+	if got := first.Status(fixedNow, true, 0, 0); got[0] != "First visit. Next visit, changed rows get a green date." {
+		t.Fatalf("first-visit status = %q", got)
 	}
 
 	// A quick return keeps the (absent) baseline.
@@ -224,39 +226,39 @@ func TestSeen(t *testing.T) {
 	ds2 := Ingest(rows2, "", time.Time{})
 	later := fixedNow.Add(2 * 24 * time.Hour)
 	next := InitSeen(&first.State, rows2, later, true)
-	if next.BaseRows == nil || !next.MarkerOn(SortUpdated) {
+	if next.BaseRows == nil {
 		t.Fatal("second visit must carry a baseline")
 	}
 	if !next.Unseen(&rows2[1]) || !next.Unseen(&rows2[3]) || next.Unseen(&rows2[0]) {
 		t.Fatal("unseen detection wrong")
 	}
 	order2 := ds2.Order(SortUpdated) // n, b, c, a
-	if next.Horizon != "2026-09-03" {
-		t.Fatalf("horizon = %q, want the baseline's newest stamp", next.Horizon)
+	if a, u := next.Since(ds2, nil); a != 1 || u != 1 {
+		t.Fatalf("Since = %d added, %d updated; want 1, 1", a, u)
 	}
-	if got := next.SplitAt(ds2, order2, SortUpdated); got != 1 {
-		t.Fatalf("SplitAt = %d, want 1 (after b)", got)
-	}
-	// A row catalogued late carries an old stamp: unseen, so the view has
-	// news, but the line stays where the dates pass the horizon.
+	// A row catalogued late carries an old stamp: it counts as added like
+	// any other, wherever it sorts.
 	rows3 := append(rows2, Row{K: "old", Updated: "2020-01-01"})
 	ds3 := Ingest(rows3, "", time.Time{})
 	order3 := ds3.Order(SortUpdated) // n, b, c, a, old
-	if got := next.SplitAt(ds3, order3, SortUpdated); got != 1 {
-		t.Fatalf("SplitAt with a backfilled row = %d, want 1", got)
+	if a, u := next.Since(ds3, func(r *Row) bool { return r.K != "c" }); a != 2 || u != 1 {
+		t.Fatalf("Since with a backfilled row = %d added, %d updated; want 2, 1", a, u)
 	}
 	if !next.AnyUnseen(ds3, order3) || next.AnyUnseen(ds2, order2[2:]) {
 		t.Fatal("AnyUnseen must scan the whole order")
 	}
-	if got := next.Label(later, true); got != "your last look, 2 days ago" {
-		t.Fatalf("label = %q", got)
+	if got := next.Status(later, true, 2, 1); got[0] != "2 added, 1 updated since your last visit, 2 days ago" || got[1] != "2 added, 1 updated since visit, 2 days ago" || got[3] != "2 added, 1 updated since your last visit" || got[len(got)-1] != "2 added, 1 updated" {
+		t.Fatalf("status = %q", got)
 	}
-	if next.SplitAt(ds2, ds2.Order(SortDebut), SortDebut) != -1 {
-		t.Fatal("marker must be off under the debut sort")
+	if got := next.Status(later, true, 0, 3); got[0] != "3 updated since your last visit, 2 days ago" {
+		t.Fatalf("status = %q", got)
+	}
+	if got := next.Status(later, true, 0, 0); got[0] != "nothing added or updated since your last visit, 2 days ago" || got[1] != "nothing since your last visit, 2 days ago" || got[len(got)-1] != "nothing since visit" {
+		t.Fatalf("quiet status = %q", got)
 	}
 	// Untrusted clock: baseline kept, no age.
 	nt := InitSeen(&next.State, rows2, time.Time{}, false)
-	if nt.BaseRows == nil || nt.Label(time.Time{}, false) != "your last look" {
+	if nt.BaseRows == nil || nt.Status(time.Time{}, false, 1, 0)[0] != "1 added since your last visit" {
 		t.Fatal("untrusted clock handling wrong")
 	}
 	// Empty snapshot reads as no baseline.

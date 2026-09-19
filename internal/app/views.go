@@ -106,7 +106,7 @@ func (a *App) setViewOn(m data.SortMode, on bool) bool {
 
 // viewLabels name the views on the Views page and in the Views help.
 var viewLabels = map[data.SortMode]string{
-	data.SortUpdated: "Core updated", data.SortDebut: "MiSTer debut", data.SortYear: "Original year",
+	data.SortUpdated: "Build date", data.SortDebut: "MiSTer debut", data.SortYear: "Original year",
 	data.SortAlphabetical: "A-Z", data.SortMaker: "Manufacturer", data.SortFavorites: "Favorites", data.SortRecents: "Recents",
 }
 

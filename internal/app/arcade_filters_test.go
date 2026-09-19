@@ -87,8 +87,8 @@ func TestAlphabeticalSortCyclePreservesSelectionAndFilters(t *testing.T) {
 			if !reflect.DeepEqual(got, []string{"a", "m", "n", "z"}) {
 				t.Fatal(got)
 			}
-			if a.topMark || a.split >= 0 {
-				t.Fatal("chronological marker in alphabetical order")
+			if !a.marker || a.marks[0] != 0 {
+				t.Fatal("status row missing in alphabetical order")
 			}
 		}
 	}

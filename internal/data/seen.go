@@ -1,6 +1,8 @@
 package data
 
 import (
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -22,7 +24,6 @@ type SeenRecord struct {
 type Seen struct {
 	BaseRows map[string]string // nil = first visit, no marker
 	BaseTime string            // ISO clock of the baseline visit
-	Horizon  string            // newest Updated stamp the baseline holds
 	State    SeenRecord        // what to persist
 }
 
@@ -61,11 +62,6 @@ func InitSeen(stored *SeenRecord, rows []Row, now time.Time, clockTrusted bool) 
 		if len(s.BaseRows) == 0 {
 			s.BaseRows = nil
 		}
-		for _, u := range s.BaseRows {
-			if u > s.Horizon {
-				s.Horizon = u
-			}
-		}
 	}
 	t := ""
 	if clockTrusted {
@@ -92,36 +88,26 @@ func (s *Seen) Unseen(r *Row) bool {
 	return !ok || base != r.Updated
 }
 
-// MarkerOn mirrors visitMarkerOn(): only under the updated-desc sort.
-func (s *Seen) MarkerOn(mode SortMode) bool {
-	return s != nil && s.BaseRows != nil && mode == SortUpdated
-}
-
-// SplitAt is the position in order of the LAST unseen row dated on or after
-// the baseline's horizon, -1 for none or when the marker is off. The line
-// after it is a timeline marker: everything above it shipped since the last
-// look. Under the updated-desc sort those rows are a prefix, so the scan
-// stops where the dates pass the horizon. A row with an older date that is
-// nonetheless unseen (a core catalogued late, a renamed key, a corrected
-// stamp) keeps its own mark but never drags the line down to it. Same-day
-// rows interleave seen with unseen (the stamps are day-granular), so the
-// line lands approximately on busy days; that's accepted, it's a hint and
-// not an audit.
-func (s *Seen) SplitAt(ds *Dataset, order []int, mode SortMode) int {
-	if !s.MarkerOn(mode) {
-		return -1
+// Since counts, over the whole catalogue rather than the filtered view, the
+// rows added since the baseline visit and the rows whose build moved. include
+// is the catalogue rule (hidden sources, non-arcade rows); nil takes every
+// row. Nothing without a baseline.
+func (s *Seen) Since(ds *Dataset, include func(*Row) bool) (added, updated int) {
+	if s == nil || s.BaseRows == nil {
+		return 0, 0
 	}
-	last := -1
-	for i, idx := range order {
-		r := &ds.Rows[idx]
-		if r.Updated < s.Horizon {
-			break
+	for i := range ds.Rows {
+		r := &ds.Rows[i]
+		if !s.Unseen(r) || include != nil && !include(r) {
+			continue
 		}
-		if s.Unseen(r) {
-			last = i
+		if _, ok := s.BaseRows[r.K]; ok {
+			updated++
+		} else {
+			added++
 		}
 	}
-	return last
+	return added, updated
 }
 
 // AnyUnseen reports whether any row of order, however deep, is unseen.
@@ -150,11 +136,35 @@ func VisitAgo(now time.Time, iso string, clockTrusted bool) string {
 	return RelAgeAt(now, t)
 }
 
-// Label is the marker text: "your last look, 2 days ago".
-func (s *Seen) Label(now time.Time, clockTrusted bool) string {
-	a := VisitAgo(now, s.BaseTime, clockTrusted)
-	if a == "" {
-		return "your last look"
+// Status mirrors the site's status row, the first line of the list under
+// every sort. The counts run over the whole catalogue, never the filtered
+// view, and the copy never says "new": that word is for a MiSTer debut. The
+// candidates run from the full sentence down to what fits a narrow line,
+// keeping the visit's age as long as possible; the caller takes the first
+// that fits.
+func (s *Seen) Status(now time.Time, clockTrusted bool, added, updated int) []string {
+	if s == nil || s.BaseRows == nil {
+		return []string{"First visit. Next visit, changed rows get a green date.", "First visit. Changes show next time.", "First visit"}
 	}
-	return "your last look, " + a
+	var parts []string
+	if added > 0 {
+		parts = append(parts, strconv.Itoa(added)+" added")
+	}
+	if updated > 0 {
+		parts = append(parts, strconv.Itoa(updated)+" updated")
+	}
+	var forms []string
+	if len(parts) == 0 {
+		forms = []string{"nothing added or updated since your last visit", "nothing since your last visit", "nothing added or updated", "nothing since visit"}
+	} else {
+		counts := strings.Join(parts, ", ")
+		forms = []string{counts + " since your last visit", counts + " since visit", counts}
+	}
+	var out []string
+	if ago := VisitAgo(now, s.BaseTime, clockTrusted); ago != "" {
+		for _, f := range forms {
+			out = append(out, f+", "+ago)
+		}
+	}
+	return append(out, forms...)
 }

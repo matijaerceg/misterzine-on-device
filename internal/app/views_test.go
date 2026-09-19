@@ -142,16 +142,16 @@ func TestMakerHeadersInTheList(t *testing.T) {
 	if got := keys(); !reflect.DeepEqual(got, []string{"b", "a", "c", "d"}) {
 		t.Fatalf("maker order %v", got)
 	}
-	if !reflect.DeepEqual(a.marks, []int{0, 1, 3}) || a.totalLines() != 7 {
+	if !reflect.DeepEqual(a.marks, []int{0, 0, 1, 3}) || a.totalLines() != 8 {
 		t.Fatalf("marks %v, %d lines", a.marks, a.totalLines())
 	}
-	for pos, line := range []int{1, 3, 4, 6} {
+	for pos, line := range []int{2, 4, 5, 7} {
 		if a.screenLine(pos) != line {
 			t.Fatalf("screenLine(%d) = %d, want %d", pos, a.screenLine(pos), line)
 		}
 	}
-	if a.markText(0) != "Capcom" || a.markText(1) != "Sega" || a.markText(2) != "Unknown manufacturer" {
-		t.Fatalf("headers %q %q %q", a.markText(0), a.markText(1), a.markText(2))
+	if a.markText(1) != "Capcom" || a.markText(2) != "Sega" || a.markText(3) != "Unknown manufacturer" {
+		t.Fatalf("headers %q %q %q", a.markText(1), a.markText(2), a.markText(3))
 	}
 	// L/R jump makers, the row centered like a step (no top alignment), no notice
 	centered := func(pos int) int { return centeredTop(a.screenLine(pos), a.totalLines(), a.lay.Lines) }
@@ -172,7 +172,7 @@ func TestMakerHeadersInTheList(t *testing.T) {
 	a.Paint()
 	// a search narrows the groups with the rows
 	a.setSearch("gam")
-	if !reflect.DeepEqual(keys(), []string{"c"}) || !reflect.DeepEqual(a.marks, []int{0}) || a.markText(0) != "Sega" {
+	if !reflect.DeepEqual(keys(), []string{"c"}) || !reflect.DeepEqual(a.marks, []int{0, 0}) || a.markText(1) != "Sega" {
 		t.Fatalf("search: %v marks %v", keys(), a.marks)
 	}
 	a.setSearch("")

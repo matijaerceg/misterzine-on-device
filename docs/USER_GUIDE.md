@@ -71,8 +71,9 @@ checksum or core mapping for the row. It does not mean the build is old. File
 modification times are not used as build dates, since copying or installing a
 file can change them.
 
-Dates highlighted in green and the last-look divider help find changes since
-your previous visit. Visits start at the top of the view you left.
+A date highlighted in green marks an entry added or rebuilt since your previous
+visit, in every view, and the first line of the list counts them. Visits start
+at the top of the view you left.
 
 ### Games only on your card
 
@@ -125,8 +126,8 @@ Favorites shows only your starred entries in alphabetical order, with the same
 letter jumps as A-Z. Star a game with Y in Details or Select + A on the list.
 Search and filters still apply. Remember last view also remembers Favorites.
 Changing sort keeps the selected title, search and filters. Dates in alphabetical
-order still show the latest update; the last-look divider appears only in the
-latest-update order.
+order still show the build date, and the green since-visit marks show in every
+order.
 In alphabetical order, L/R jumps to the first title of the previous/next letter
 in your current search and filters; the title lands centred with its header
 line right above it, as in the Year and Manufacturer orders. Empty letters are
@@ -556,12 +557,13 @@ decade shows `[-]`. Choices are saved and combine with your other filters.
 Unknown or uncertain years have an Unknown choice. System cores are unaffected.
 These are the games' original release years, not their MiSTer debut/update dates.
 
-The latest-update view's last-look line is a timeline marker for your previous
-visit: it sits under the last entry that shipped since then, so everything above
-it is new to you. When nothing in the view is new it sits at the top and says
-**Nothing new since your last look**. An entry the catalogue added late under an
-old date still shows its own unseen mark below the line, and the Since last look
-filter finds it, but it does not move the line.
+The first line of every view is the since-visit status: **2 added, 1 updated
+since your last visit, yesterday**, or **nothing added or updated since your last
+visit** when the catalogue has not changed. It counts the whole enabled
+catalogue, not the current search or filters, and on your first visit it explains
+the marks to come. Each changed entry carries its own green date wherever it
+sorts, so an entry the catalogue added late under an old date is still found,
+and the Since last look filter lists exactly those entries.
 On-card choices include counts across the enabled catalogue, independent of the
 current search and other filters. Favorites mode always shows favorites only;
 use Y in the main view to leave it.

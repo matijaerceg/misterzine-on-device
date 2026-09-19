@@ -92,9 +92,10 @@ func TestThumbSlotPreference(t *testing.T) {
 	}
 }
 
-// titleInk counts lit pixels of a colour inside the first row's title area.
+// titleInk counts lit pixels of a colour inside the first row's title area
+// (the line under the since-visit status row).
 func titleInk(a *App, col rgb) int {
-	r := a.lay.lineRect(0)
+	r := a.lay.lineRect(a.screenLine(0))
 	n := 0
 	for y := r.Min.Y - 1; y < r.Max.Y; y++ {
 		for x := r.Min.X + a.body.W; x < r.Min.X+a.body.W+a.lay.TitleW; x++ {
@@ -439,8 +440,8 @@ func TestYearSortOrderAndJumps(t *testing.T) {
 		t.Fatalf("the newest year leads: %q", a.CursorKey())
 	}
 	// a header line before each year, the unknown years named, and no notice
-	if !reflect.DeepEqual(a.marks, []int{0, 1, 3}) || a.markText(0) != "1990" || a.markText(1) != "1985" || a.markText(2) != "Year unknown" {
-		t.Fatalf("year headers %v: %q %q %q", a.marks, a.markText(0), a.markText(1), a.markText(2))
+	if !reflect.DeepEqual(a.marks, []int{0, 0, 1, 3}) || a.markText(1) != "1990" || a.markText(2) != "1985" || a.markText(3) != "Year unknown" {
+		t.Fatalf("year headers %v: %q %q %q", a.marks, a.markText(1), a.markText(2), a.markText(3))
 	}
 	a.actList(platform.KeyPageDown)
 	if a.CursorKey() != "a" || a.notice != "" || a.top != centeredTop(a.screenLine(a.cursor), a.totalLines(), a.lay.Lines) {
@@ -572,7 +573,7 @@ func TestStatusBarNamesTheOrder(t *testing.T) {
 	rows := []data.Row{{Base: "Arcade", K: "a", Title: "A", Updated: "2026-09-07", Date: "2026-09-01", Year: "1985"}}
 	for _, rot := range []gfx.Rotation{gfx.RotNone, gfx.RotLeft} {
 		a := New(Config{PhysW: 320, PhysH: 240, Rotation: rot, SafeInsetX: 40, SafeInsetY: 40, Favorites: map[string]bool{"a": true}}, data.Ingest(rows, "", time.Now()), nil)
-		for mode, want := range map[data.SortMode]string{data.SortUpdated: "by: core updated", data.SortDebut: "by: MiSTer debut", data.SortYear: "by: original year", data.SortAlphabetical: "by: A-Z", data.SortFavorites: "Favorites A-Z"} {
+		for mode, want := range map[data.SortMode]string{data.SortUpdated: "by: build date", data.SortDebut: "by: MiSTer debut", data.SortYear: "by: original year", data.SortAlphabetical: "by: A-Z", data.SortFavorites: "Favorites A-Z"} {
 			a.SetSort(mode)
 			a.Paint()
 			c := gfx.New(a.lay.W, a.lay.H)

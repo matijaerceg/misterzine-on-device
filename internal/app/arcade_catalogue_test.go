@@ -199,8 +199,8 @@ func TestArcadeLastLookIgnoresHiddenChanges(t *testing.T) {
 	rows := []data.Row{{K: "a", Title: "Arcade", Base: "Arcade", Updated: "2026-09-10"}, {K: "s", Title: "System", Base: "Computer", Updated: "2026-09-14"}}
 	stored := &data.SeenRecord{T: now.Add(-24 * time.Hour).Format(time.RFC3339), Cur: map[string]string{"a": "2026-09-10", "s": "2026-09-10"}}
 	a := New(Config{PhysW: 320, PhysH: 240, ClockTrusted: true, Now: func() time.Time { return now }}, data.Ingest(rows, "", now), stored)
-	if !a.topMark {
-		t.Fatal("hidden update changed the last-look message")
+	if a.sinceAdded != 0 || a.sinceUpdated != 0 {
+		t.Fatal("hidden update changed the since-visit counts")
 	}
 	a.SetFilters(data.Filters{Since: true})
 	if len(a.view) != 0 {
@@ -208,7 +208,7 @@ func TestArcadeLastLookIgnoresHiddenChanges(t *testing.T) {
 	}
 	a.cfg.ShowNonArcade = true
 	a.Refilter()
-	if len(a.view) != 1 || a.CursorKey() != "s" || a.topMark {
+	if len(a.view) != 1 || a.CursorKey() != "s" || a.sinceUpdated != 1 {
 		t.Fatal("opt-in failed to reveal the system update")
 	}
 }

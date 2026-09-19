@@ -86,7 +86,7 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 		c.Text(l.Status.Min.X+2, y, a.sm, "Find: "+query+"_", gen.Eva.Accent)
 		return
 	}
-	left := "by: core updated"
+	left := "by: build date"
 	if a.mode == data.SortDebut {
 		left = "by: MiSTer debut"
 	} else if a.mode == data.SortYear {
@@ -102,7 +102,7 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 	}
 	if a.appUpdate != "" {
 		// Reserve space for a persistent app notice even on narrow tate screens.
-		left = map[data.SortMode]string{data.SortUpdated: "Core updated", data.SortDebut: "MiSTer debut", data.SortYear: "Original year", data.SortAlphabetical: "A-Z", data.SortMaker: "Manufacturer A-Z", data.SortFavorites: "Favorites A-Z", data.SortRecents: "Recents"}[a.mode]
+		left = map[data.SortMode]string{data.SortUpdated: "Build date", data.SortDebut: "MiSTer debut", data.SortYear: "Original year", data.SortAlphabetical: "A-Z", data.SortMaker: "Manufacturer A-Z", data.SortFavorites: "Favorites A-Z", data.SortRecents: "Recents"}[a.mode]
 		c.Text(l.Status.Min.X+2, y, a.sm, left, gen.Eva.Accent)
 		c.TextRight(l.Status.Max.X-2, y, a.sm, "App update", gen.Eva.Accent)
 		return
@@ -239,7 +239,7 @@ func (a *App) emptyListMessage() string {
 }
 
 // paintRows draws the visible list lines: rows and the marker lines
-// between them (the last-look divider, the maker headers).
+// between them (the since-visit status row, the maker headers).
 func (a *App) paintRows(c *gfx.Canvas) {
 	if a.listMotion.offset == 0 {
 		a.paintRowsStill(c)
@@ -411,9 +411,10 @@ func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {
 	} else if a.mode == data.SortRecents {
 		date = a.launchedAt(row.K) // when it was launched last
 	}
-	// rows changed since the last look show their date in the accent
+	// a row added or rebuilt since the last visit shows its date in the
+	// accent under every order: the app's form of the site's per-row dot
 	dateCol := gen.Eva.Muted
-	if a.seen != nil && a.seen.MarkerOn(a.mode) && a.seen.Unseen(row) {
+	if a.seen != nil && a.seen.Unseen(row) {
 		dateCol = gen.Eva.Accent
 	}
 	text := a.dateCol(date)

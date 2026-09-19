@@ -197,9 +197,9 @@ type App struct {
 	hiddenSrc          map[string]bool
 	iniKnown, iniFound bool
 	seen               *data.Seen
-	marker             bool                   // the last-look line is drawn (baseline held, updated sort)
-	split              int                    // the line sits after view[split]; -1 puts it on top
-	topMark            bool                   // no row anywhere in the view is unseen: the line says so
+	marker             bool                   // the since-visit status row heads the list (marks.go)
+	sinceAdded         int                    // rows added since the last visit, over the enabled catalogue
+	sinceUpdated       int                    // rows rebuilt since the last visit, over the enabled catalogue
 	marks              []int                  // every marker line, by the view position it precedes (marks.go)
 	viewsOff           map[data.SortMode]bool // views left out of the Y cycle (views.go)
 
@@ -286,7 +286,7 @@ func New(cfg Config, ds *data.Dataset, stored *data.SeenRecord) *App {
 	if cfg.Versions == nil {
 		cfg.Versions = map[string]string{}
 	}
-	a := &App{cfg: cfg, body: fonts.Body(), sm: fonts.Small(), narrow: fonts.Narrow(), tall: fonts.NarrowTall(), rot: cfg.Rotation, split: -1, down: map[platform.Key]bool{}, released: map[platform.Key]time.Time{}, look: DefaultSaverLook}
+	a := &App{cfg: cfg, body: fonts.Body(), sm: fonts.Small(), narrow: fonts.Narrow(), tall: fonts.NarrowTall(), rot: cfg.Rotation, down: map[platform.Key]bool{}, released: map[platform.Key]time.Time{}, look: DefaultSaverLook}
 	a.viewsOff = parseViewsOff(cfg.ViewsOff)
 	a.mode = a.DefaultView()
 	if cfg.RememberSort && a.viewOn(cfg.LastSort) {
@@ -448,13 +448,8 @@ func (a *App) rebuild() {
 		}
 		a.view = matched
 	}
-	a.marker = a.seen != nil && a.seen.MarkerOn(a.mode)
-	a.split = -1
-	a.topMark = false
-	if a.marker {
-		a.split = a.seen.SplitAt(a.ds, a.view, a.mode)
-		a.topMark = !a.seen.AnyUnseen(a.ds, a.view)
-	}
+	a.marker = a.seen != nil
+	a.sinceAdded, a.sinceUpdated = a.seen.Since(a.ds, a.catalogueIncludes)
 	a.rebuildMarks()
 	if a.cursor >= len(a.view) {
 		a.cursor = len(a.view) - 1

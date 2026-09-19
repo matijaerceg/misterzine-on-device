@@ -1,6 +1,7 @@
 package app
 
 import (
+	"strings"
 	"fmt"
 	"testing"
 	"time"
@@ -83,7 +84,7 @@ func TestLetterJumpsCenterTheGroupUnderItsHeader(t *testing.T) {
 				}
 			}
 			a := New(Config{PhysW: 320, PhysH: 240, Rotation: rot, RememberSort: true, LastSort: data.SortAlphabetical}, data.Ingest(rows, "test", time.Now()), nil)
-			if len(a.marks) != 3 || a.markText(0) != "A" || a.markText(1) != "B" || a.markText(2) != "Z" {
+			if len(a.marks) != 4 || !strings.HasPrefix(a.markText(0), "First visit") || a.markText(1) != "A" || a.markText(2) != "B" || a.markText(3) != "Z" {
 				t.Fatalf("rotation=%v size=%d: letter headers %v", rot, groupSize, a.marks)
 			}
 			jump := func(key platform.Key, want string) {
@@ -141,7 +142,7 @@ func TestLetterJumpUsesVisibleCollationGroups(t *testing.T) {
 	step(platform.KeyPageDown, "Zoo")
 	step(platform.KeyPageDown, "Zoo")
 	step(platform.KeyHome, "!Game")
-	if len(a.marks) != 5 || a.markText(0) != "0-9 and symbols" || a.markText(1) != "A" || a.markText(2) != "B" || a.markText(3) != "E" || a.markText(4) != "Z" {
+	if len(a.marks) != 6 || a.markText(1) != "0-9 and symbols" || a.markText(2) != "A" || a.markText(3) != "B" || a.markText(4) != "E" || a.markText(5) != "Z" {
 		t.Fatalf("letter headers: %v", a.marks)
 	}
 
@@ -182,8 +183,8 @@ func TestMonthJumpsUseSortDateVisibleGroupsAndTopAlignment(t *testing.T) {
 			}
 		}
 		if mode == data.SortUpdated {
-			if a.split < 0 {
-				t.Fatal("fixture must exercise the last-look divider")
+			if !a.marker || a.sinceUpdated != 1 {
+				t.Fatal("fixture must exercise the since-visit status row")
 			}
 			jump(platform.KeyPageDown, "july", "July 2026")
 			jump(platform.KeyPageDown, "older-july", "July 2025")

@@ -17,7 +17,8 @@ func TestMainRowsFollowCenterAndStopAtEnds(t *testing.T) {
 	}
 	a := New(Config{PhysW: 320, PhysH: 240, RememberSort: true, LastSort: data.SortUpdated}, data.Ingest(rows, "", time.Now()), nil)
 	a.lay.Lines = 5
-	want := []int{0, 0, 0, 1, 2, 3, 4, 5, 6, 6, 6}
+	// the since-visit status row is line 0, so row i sits on line i+1
+	want := []int{0, 0, 1, 2, 3, 4, 5, 6, 7, 7, 7}
 	for i := 0; i < len(rows); i++ {
 		if i > 0 {
 			a.actList(platform.KeyDown)
@@ -31,14 +32,6 @@ func TestMainRowsFollowCenterAndStopAtEnds(t *testing.T) {
 		if a.top != want[i] {
 			t.Fatalf("up row %d: top %d want %d", i, a.top, want[i])
 		}
-	}
-	// A last-look divider occupies a real display line.
-	a.marker, a.split = true, 4
-	a.rebuildMarks()
-	a.cursor = 4
-	a.actList(platform.KeyDown)
-	if a.top != 4 {
-		t.Fatal("centering ignored marker line", a.top)
 	}
 }
 
