@@ -40,6 +40,15 @@ list movement, page jumps, and option adjustments remain immediate. Buttons
 keep working during the transition. Options -> Display -> Page transitions
 turns the effect on or off; the choice is remembered.
 
+Starting a game plays a short launch animation: an arcade cabinet with the
+game's screenshot on its screen turns towards you and fades to black, and
+the screen stays black until the core is up. It runs at the display's
+refresh rate. Options -> Display -> Launch transition chooses when it plays:
+Always (the default), or Hold Start, where a tap of Start launches at once
+and only a held Start plays the animation. A on that row previews it. A
+button released during the animation is not treated as held afterwards,
+and the screensaver waits while the animation and the game own the screen.
+
 ## List and search
 
 Each row has a favorite marker, title, on-card status, and date. Titles use a
@@ -324,7 +333,7 @@ and last row. Rows marked ↗ open another screen or editor.
   fills while held. Releasing early resets it.
 - **Sources:** all by default. Installed only shows games from the databases
   listed in the card's `downloader.ini`, the file Update All rewrites on every
-  run, so a source you never enabled (Coin-Op, Meathax, rmCores or Jotego) stays out of
+  run, so a source you never enabled (Coin-Op, Meathax, rmCores, Jotego or Slop Cores) stays out of
   the list, search, Favorites and the Filters panel, and the release count
   leaves it out too. The file is read at every card scan: launch, Rescan card
   and the rescan after Update All. Without database sections Downloader
@@ -458,6 +467,9 @@ screenshots match, lettering runs instead and the Preview help explains why.
   horizontal art. Low-resolution CRT modes retain their existing sizing.
   Unusual video timings that cannot fit a bounded canvas fall back to Fit 4:3.
   If a live switch fails, MisterZine attempts to restore the previous picture.
+- **Launch transition:** Always (default) plays the cabinet animation on
+  every launch. Hold Start launches at once on a tap and plays the animation
+  only while Start is held. A previews it from the row.
   Safe-zone margins still apply.
 - **Button labels:** how the legends name the pad's face buttons, in MiSTer's
   A B X Y order: A B X Y (default), B A Y X for an Xbox-lettered pad mapped by
