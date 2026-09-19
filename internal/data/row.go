@@ -51,7 +51,8 @@ type Row struct {
 	MT           string   `json:"mt"`
 	Spc          string   `json:"spc"`
 	Prov         []string `json:"prov"`
-	Beta         bool     `json:"beta"`
+	Beta         bool     `json:"beta"`           // Patreon-gated early access; Gate names the term
+	Gate         string   `json:"gate,omitempty"` // download-filter term: jtbeta, coinop-collection-beta/-alpha
 	Brot         string   `json:"brot"`
 	Note         string   `json:"note"`
 	Scr          int      `json:"scr"`

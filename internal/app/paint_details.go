@@ -294,7 +294,7 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 		add("Status", "deprecated", gen.Eva.Danger)
 	}
 	if row.Beta {
-		L = append(L, paneLine{"Patreon beta: needs Jotego's jtbeta.zip", mu})
+		L = append(L, paneLine{data.GateLine(row), mu})
 	}
 	add("Note", row.Note, fg)
 	return L

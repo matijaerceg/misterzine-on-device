@@ -1,5 +1,7 @@
 package data
 
+import "strings"
+
 // Status is a row's install state on the card, computed by the scan package.
 type Status uint8
 
@@ -119,12 +121,35 @@ func (f *Filters) Pass(r *Row, d *Derived, st Status, fav, unseen bool) bool {
 }
 
 // BetaKind is an arcade row's sub-type for the Type filter: "beta" for a
-// Patreon beta core, "stable" otherwise.
+// Patreon-gated core (alphas included), "stable" otherwise.
 func BetaKind(r *Row) string {
 	if r.Beta {
 		return "beta"
 	}
 	return "stable"
+}
+
+// GateStage is a gated row's stage word for its chip: "alpha" when the
+// source's filter term ends in alpha, "beta" otherwise.
+func GateStage(r *Row) string {
+	if strings.HasSuffix(strings.ToLower(r.Gate), "alpha") {
+		return "alpha"
+	}
+	return "beta"
+}
+
+// GateLine explains what a gated core needs, per source. A row flagged beta
+// without a gate term comes from an older export and was Jotego's; an
+// unknown term gets the generic wording.
+func GateLine(r *Row) string {
+	stage := GateStage(r)
+	switch g := strings.ToLower(r.Gate); {
+	case g == "" || g == "jtbeta":
+		return "Patreon beta: needs Jotego's jtbeta.zip"
+	case strings.HasPrefix(g, "coinop-collection-"):
+		return "Patreon " + stage + ": needs a Coin-Op licence key for this MiSTer, and their filter overridden in downloader.ini"
+	}
+	return "Patreon " + stage + ": early access, needs a key from the author"
 }
 
 // Apply narrows an order to the rows that pass. status, fav and unseen may be nil.

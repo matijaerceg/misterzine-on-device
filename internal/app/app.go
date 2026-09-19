@@ -1480,7 +1480,7 @@ func statusText(st data.Status, cardDate string) string {
 func chips(r *data.Row, d *data.Derived) []string {
 	var out []string
 	if r.Beta {
-		out = append(out, "beta")
+		out = append(out, data.GateStage(r))
 	}
 	if r.Deprecated {
 		out = append(out, "deprecated")

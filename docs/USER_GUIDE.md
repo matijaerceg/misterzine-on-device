@@ -45,9 +45,11 @@ turns the effect on or off; the choice is remembered.
 Each row has a favorite marker, title, on-card status, and date. Titles use a
 narrow font so more of each name fits, and the status and date columns use
 the same narrow font at the titles' height; Options -> Title font chooses the
-font. A yellow β after a title marks a Patreon beta core, which needs
-Jotego's jtbeta.zip. The date column format is chosen in Options -> Date
-format.
+font. A yellow β after a title marks a Patreon early-access core: Jotego's
+betas need his jtbeta.zip, and Coin-Op Collection's alphas and betas need a
+licence key for your MiSTer from their portal plus their filter overridden in
+downloader.ini. Details says which, and the chip reads alpha or beta. The
+date column format is chosen in Options -> Date format.
 
 | Mark | Meaning |
 |---|---|
@@ -589,7 +591,8 @@ With non-arcade cores enabled, the **Arcade game filters** section contains Rota
 Controls, Buttons and Players. These choices affect arcade games only; Type
 controls whether console, computer and other cores appear. Excluding Arcade
 hides its filter section while retaining your choices for later. Under Type,
-Arcade opens (Right, or X) into Stable and Beta, the Patreon beta cores, like
+Arcade opens (Right, or X) into Stable and Beta, the Patreon early-access
+cores (alphas included), like
 a decade opens into years: A toggles one, Y shows only one, and a mixed choice
 shows `[-]` on Arcade. Turning both off is the same as turning Arcade off.
 
