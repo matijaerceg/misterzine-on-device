@@ -21,6 +21,7 @@ var earlyAdopters = []string{
 	"ItsDanik",
 	"LamerDeluxe",
 	"Malento",
+	"Mclaneinc",
 	"Penetron",
 	"Porieux",
 	"retrofan01",
