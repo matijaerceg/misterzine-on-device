@@ -63,6 +63,7 @@ func main() {
 	motion := flag.Bool("motion", false, "run the page and layout transitions on the scripted clock (off: every shot is an end state); the frames command records them")
 	buttonLabels := flag.String("button-labels", "mister", "legend button names: mister, xbox, playstation or numbers")
 	menuButton := flag.String("menu-button", "options", "what the pad's Menu button does: options or leave")
+	launcher := flag.Bool("launcher", false, "start with the main menu shortcut on, so Open at boot, Return after game and Exit chord are live; the Options row toggles it")
 	canvas := flag.String("canvas", "320x240", "canvas size WxH: 320x240, or a fit-display size such as 360x270 (1080p) or 400x300")
 	rememberAlt := flag.Int("remember-alt", 0, "start with galagamw's alternative N (1 or 2) remembered as its version")
 	recents := flag.Int("recents", 0, "pretend the first N rows were launched, the last one most recently; turns the Recents view on")
@@ -120,6 +121,12 @@ func main() {
 		ListLayout:     *layout,
 		ButtonLabels:   *buttonLabels,
 		MenuButton:     *menuButton,
+		Launcher:       func() bool { return *launcher },
+		Action: func(kind, arg string) {
+			if kind == "launcher" {
+				*launcher = arg == "on"
+			}
+		},
 		Alternatives: func(r *data.Row) []string {
 			if r.SN == "galagamw" {
 				return []string{"_Arcade/_alternatives/_Galaga/Galaga (Namco).mra",
