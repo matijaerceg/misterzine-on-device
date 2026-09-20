@@ -58,6 +58,10 @@ func TestRefreshUsesInstalledHashAndCoalescesRequests(t *testing.T) {
 	var fail atomic.Bool
 	entered, release := make(chan struct{}), make(chan struct{})
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/supporters.json" {
+			http.NotFound(w, r) // the Credits list rides along after a check; not under test here
+			return
+		}
 		if r.URL.Path == "/releases/meta.json" {
 			if fail.Load() {
 				http.Error(w, "temporary failure", 500)
@@ -225,6 +229,10 @@ func TestEmptyRefreshPreservesWorkingDataAndCache(t *testing.T) {
 			}
 			hash := fmt.Sprintf("%x", sha256.Sum256([]byte(raw)))
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path == "/supporters.json" {
+					http.NotFound(w, r)
+					return
+				}
 				if r.URL.Path == "/releases/meta.json" {
 					fmt.Fprintf(w, `{"hash":%q,"updated":"2026-09-08T00:00Z"}`, hash)
 				} else {
