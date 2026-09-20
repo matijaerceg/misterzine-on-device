@@ -139,9 +139,16 @@ func TestStatusCorePrefix(t *testing.T) {
 	}
 	mk("_Arcade/cores/blkheart_mister_20260909.rbf")
 	mk("_Arcade/Black Heart.mra")
+	// kuzecores ships the same game for its own core, Arcade-NMK16_Gunnail;
+	// the feed's core value carries the Arcade- prefix, as the rbf does
+	mk("_Arcade/cores/Arcade-NMK16_Gunnail_20260919.rbf")
+	mk("_Arcade/_kuzecores/Black Heart.mra")
 	idx := ScanCores(card)
 	if c, ok := idx.Lookup("blkheart"); !ok || !strings.HasSuffix(c.Path, "blkheart_mister_20260909.rbf") {
 		t.Fatalf("blkheart = %+v %v", c, ok)
+	}
+	if c, ok := idx.Lookup("Arcade-NMK16_Gunnail"); !ok || !strings.HasSuffix(c.Path, "Arcade-NMK16_Gunnail_20260919.rbf") {
+		t.Fatalf("Arcade-NMK16_Gunnail = %+v %v", c, ok)
 	}
 	cases := []struct {
 		row  data.Row
@@ -151,6 +158,8 @@ func TestStatusCorePrefix(t *testing.T) {
 		{data.Row{Base: "Arcade", MRA: "_Arcade/Black Heart.mra", Core: "blkheart", BD: "2026-09-09", BH: xMD5}, data.StatusCurrent},
 		{data.Row{Base: "Arcade", MRA: "_Arcade/Black Heart.mra", Core: "blkheart_mister", BD: "2026-09-09"}, data.StatusCurrent},
 		{data.Row{Base: "Arcade", MRA: "_Arcade/Black Heart.mra", Core: "blkheart", BD: "2026-09-20"}, data.StatusOutdated},
+		{data.Row{Base: "Arcade", MRA: "_Arcade/_kuzecores/Black Heart.mra", Core: "Arcade-NMK16_Gunnail", Updated: "2026-09-19"}, data.StatusCurrent},
+		{data.Row{Base: "Arcade", MRA: "_Arcade/_kuzecores/Black Heart.mra", Core: "Arcade-NMK16_Gunnail", Updated: "2026-09-25"}, data.StatusOutdated},
 	}
 	for i, c := range cases {
 		if got := Status(card, idx, &c.row); got == data.StatusNotFound || got != c.want {

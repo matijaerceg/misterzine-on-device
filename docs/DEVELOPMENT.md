@@ -139,9 +139,21 @@ Harness `-support-report` fixtures render this flow without opening devices.
 replace the coupled sorting fixtures in `testdata/`; those belong to
 `tools/sort_golden.js`. The regular network client updates the on-device cache.
 
-`cmd/mzgen` imports the site's display names and Unit-01 palette into
-`internal/gen/`. Regenerate those files from the website source rather than
-editing generated values by hand.
+`cmd/mzgen` imports the site's display names, source tables and Unit-01
+palette into `internal/gen/`. Regenerate those files from the website source
+rather than editing generated values by hand:
+
+    go run ./cmd/mzgen -site ../misterzine -out internal/gen
+
+A source the site starts tracking needs nothing else in the app: its display
+name, `downloader.ini` section and, for an opt-in database, its `db_url` all
+arrive with the regeneration, and the short chip derives from the display name
+(`internal/data/labels.go` keeps hand-picked overrides). Only a database that
+Update All has a settings toggle for needs its `db_url` added to
+`sourceExtras` in `internal/data/sources.go`, because the site records URLs
+for the opt-in ones alone. CI clones the public site repository and fails when
+`internal/gen/` is behind it, so a site change that touches these tables shows
+up as a red run rather than a stale device app.
 
 ## Host and updater behavior
 

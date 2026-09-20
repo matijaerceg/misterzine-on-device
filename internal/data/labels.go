@@ -90,7 +90,10 @@ func SrcFull(src string) string {
 // "Local".
 const SrcLocalFull = "Local file (not in the catalogue)"
 
-// srcShort are the device's short source chips (the list is 53 columns wide).
+// srcShort are the device's hand-picked short source chips (the list is 53
+// columns wide). A source without an entry gets one derived from its full
+// name by SrcShort, so a source the site adds needs no line here unless the
+// derived chip reads badly.
 var srcShort = map[string]string{
 	SrcLocal:                             "Local",
 	"distribution_mister":                "MiSTer",
@@ -102,12 +105,26 @@ var srcShort = map[string]string{
 	"theypsilon_unofficial_distribution": "theypsilon",
 }
 
-// SrcShort is the short source chip, falling back to the full name.
+// srcShortMax is the widest chip srcShort hands out ("theypsilon").
+const srcShortMax = 10
+
+// SrcShort is the short source chip: the hand-picked one, else the full
+// name up to its parenthesised author ("kuzecores (kuzearcade)" gives
+// "kuzecores"), cut to the width of the widest hand-picked chip, else the
+// raw source id when the site does not name the source.
 func SrcShort(src string) string {
 	if s, ok := srcShort[src]; ok {
 		return s
 	}
-	return SrcFull(src)
+	full := SrcFull(src)
+	if i := strings.Index(full, " ("); i > 0 {
+		full = full[:i]
+	}
+	full = strings.TrimSpace(full)
+	if rs := []rune(full); len(rs) > srcShortMax {
+		full = string(rs[:srcShortMax])
+	}
+	return full
 }
 
 // ASCII transliterates a string to the printable ASCII the bitmap font has:

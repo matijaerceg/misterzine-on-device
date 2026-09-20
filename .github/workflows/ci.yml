@@ -18,6 +18,11 @@ jobs:
         with:
           go-version-file: go.mod
           cache: false
+      - name: Generated site tables are current
+        run: |
+          git clone --depth 1 https://github.com/matijaerceg/misterzine.git /tmp/misterzine-site
+          go run ./cmd/mzgen -site /tmp/misterzine-site -out internal/gen
+          git diff --exit-code -- internal/gen || { echo "::error::internal/gen is behind the site: run cmd/mzgen and commit"; exit 1; }
       - name: Vet and test
         run: |
           node --test tools/sort_golden.test.js

@@ -7,6 +7,10 @@ package gen
 var CoreNames = map[string]string{
 	"Arcade-DoCastle":          "Universal (Do's Castle HW)",
 	"Arcade-Ikki":              "Sun Electronics (Ikki HW)",
+	"Arcade-NMK16_Afega":       "NMK16 (Afega HW)",
+	"Arcade-NMK16_Gunnail":     "NMK16 (GunNail HW)",
+	"Arcade-NMK16_Macross2":    "NMK16 (Macross II HW)",
+	"Arcade-NMK16_Raphero":     "NMK16 (Rapid Hero HW)",
 	"Arcade-SSV":               "Sammy/Seta/Visco SSV",
 	"Arcade-SegaSystem32":      "Sega System 32",
 	"Arcade-SegaSystem32Multi": "Sega Multi 32",
@@ -134,8 +138,27 @@ var SrcNames = map[string]string{
 	"coinop":                             "Coin-Op Collection",
 	"distribution_mister":                "MiSTer Distribution",
 	"jtbindb":                            "Jotego (JTcores)",
+	"kuzecores":                          "kuzecores (kuzearcade)",
 	"meathax":                            "Meathax (MeatCores)",
 	"rmcores":                            "rmCores (rmonic79)",
 	"slopcore":                           "Slop Cores (TheJesusFish)",
 	"theypsilon_unofficial_distribution": "theypsilon Unofficial Distribution",
+}
+
+// SrcDB is a source's Downloader database as the site records it.
+type SrcDB struct {
+	Section string // downloader.ini section (db_id) as update_all writes it: FT_SECTIONS
+	URL     string // db_url of an opt-in database update_all has no toggle for: OPTIN_DBS, else ""
+}
+
+// SrcDBs mirrors FT_SECTIONS and OPTIN_DBS: pipeline source id to its database.
+var SrcDBs = map[string]SrcDB{
+	"coinop":                             {Section: "Coin-OpCollection/Distribution-MiSTerFPGA", URL: ""},
+	"distribution_mister":                {Section: "distribution_mister", URL: ""},
+	"jtbindb":                            {Section: "jtcores", URL: ""},
+	"kuzecores":                          {Section: "kuzearcade/kuzecores", URL: "https://raw.githubusercontent.com/kuzearcade/kuzecores/db/db.json.zip"},
+	"meathax":                            {Section: "meathax/meatcores", URL: "https://raw.githubusercontent.com/meathax/meatcores/db/db.json.zip"},
+	"rmcores":                            {Section: "rmonic79/rmcores", URL: "https://raw.githubusercontent.com/rmonic79/rmcores/db/db.json.zip"},
+	"slopcore":                           {Section: "TheJesusFish/Slop-Core", URL: "https://raw.githubusercontent.com/TheJesusFish/Slop-Core/db/db.json.zip"},
+	"theypsilon_unofficial_distribution": {Section: "theypsilon_unofficial_distribution", URL: ""},
 }
