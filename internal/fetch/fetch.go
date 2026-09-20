@@ -186,3 +186,9 @@ func (c *Client) Image(ctx context.Context, slot, key string) ([]byte, error) {
 	}
 	return c.get(ctx, url, 8*time.Second)
 }
+
+// Supporters fetches the site's supporters.json (the Patreon supporters
+// the Credits page lists) with a cache-buster, raw, for the cache.
+func (c *Client) Supporters(ctx context.Context) ([]byte, error) {
+	return c.get(ctx, Site+"/supporters.json?t="+strconv.FormatInt(time.Now().UnixMilli(), 10), 6*time.Second)
+}

@@ -234,6 +234,7 @@ type App struct {
 	until          time.Time
 	net            string    // connection failures in the status bar
 	catalogChecked time.Time // last successful catalog check this session
+	supporters     Supporters // Patreon supporters for the Credits page
 	appUpdate      string
 	scanReady      bool
 	scanError      string
@@ -286,7 +287,7 @@ func New(cfg Config, ds *data.Dataset, stored *data.SeenRecord) *App {
 	if cfg.Versions == nil {
 		cfg.Versions = map[string]string{}
 	}
-	a := &App{cfg: cfg, body: fonts.Body(), sm: fonts.Small(), narrow: fonts.Narrow(), tall: fonts.NarrowTall(), rot: cfg.Rotation, down: map[platform.Key]bool{}, released: map[platform.Key]time.Time{}, look: DefaultSaverLook}
+	a := &App{cfg: cfg, body: fonts.Body(), sm: fonts.Small(), narrow: fonts.Narrow(), tall: fonts.NarrowTall(), rot: cfg.Rotation, down: map[platform.Key]bool{}, released: map[platform.Key]time.Time{}, look: DefaultSaverLook, supporters: defaultSupporters()}
 	a.viewsOff = parseViewsOff(cfg.ViewsOff)
 	a.mode = a.DefaultView()
 	if cfg.RememberSort && a.viewOn(cfg.LastSort) {

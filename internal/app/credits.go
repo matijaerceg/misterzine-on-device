@@ -1,7 +1,8 @@
 package app
 
-// Options -> Credits: who made MisterZine, whose work it builds on, and
-// the early adopters who tested it and sent feedback and encouragement.
+// Options -> Credits: who made MisterZine, whose work it builds on, the
+// Patreon supporters (current, then past: see supporters.go) and the
+// early adopters who tested it and sent feedback and encouragement.
 // The page is a panel like Views: Up/Down move through the rows, B goes
 // back to Options on the Credits row, and nothing on it can be changed.
 
@@ -51,6 +52,18 @@ func (a *App) creditsEntries() []panelEntry {
 		E = append(E, row(lines[0]))
 		for _, more := range lines[1:] {
 			E = append(E, panelEntry{text: "  " + more, info: true})
+		}
+	}
+	if len(a.supporters.Current) > 0 {
+		E = append(E, spacer, group("Patreon supporters:"))
+		for _, p := range a.supporters.Current {
+			E = append(E, row(p.Name))
+		}
+	}
+	if len(a.supporters.Past) > 0 {
+		E = append(E, spacer, group("Past supporters:"))
+		for _, p := range a.supporters.Past {
+			E = append(E, row(p.Name))
 		}
 	}
 	E = append(E, spacer, group("Special thanks to the early adopters:"))

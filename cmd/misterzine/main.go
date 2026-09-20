@@ -362,6 +362,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		seen = &h.state.Seen
 	}
 	h.a = app.New(cfg, ds, seen)
+	h.loadSupporters()
 	h.a.StartSplash()
 	h.a.EnablePageTransitions()
 	h.a.EnableRenderAhead()
@@ -1131,6 +1132,7 @@ func (h *host) check(current string, trusted bool) {
 			h.a.SetCatalogChecked(h.now())
 		}
 	})
+	h.checkSupporters()
 	if !fr.Changed {
 		h.lg.Printf("check: current (%.8s)", fr.Meta.Hash)
 		h.sendNet("")
@@ -1144,6 +1146,45 @@ func (h *host) check(current string, trusted bool) {
 	}
 	h.lg.Printf("check: new data %.8s, %d rows", fr.Meta.Hash, len(fr.Rows))
 	h.runOnUI(func() { h.swap(fr) })
+}
+
+// checkSupporters refreshes the Credits page's Patreon supporters after a
+// catalogue check has shown the site reachable: the file is tiny, so it
+// is fetched whole and kept only when its bytes differ from the cache.
+func (h *host) checkSupporters() {
+	b, err := h.client.Supporters(context.Background())
+	if err != nil {
+		h.lg.Printf("supporters: %v", err)
+		return
+	}
+	path := filepath.Join(h.root, "cache", "supporters.json")
+	if old, err := os.ReadFile(path); err == nil && bytes.Equal(old, b) {
+		return
+	}
+	s, err := app.DecodeSupporters(b)
+	if err != nil {
+		h.lg.Printf("supporters: %v", err)
+		return
+	}
+	if err := store.WriteAtomic(path, b); err != nil {
+		h.lg.Printf("supporters: %v", err)
+	}
+	h.lg.Printf("supporters: %d current, %d past", len(s.Current), len(s.Past))
+	h.runOnUI(func() { h.a.SetSupporters(s) })
+}
+
+// loadSupporters installs the cached supporters list at startup; without
+// one the app keeps its embedded snapshot.
+func (h *host) loadSupporters() {
+	b, err := os.ReadFile(filepath.Join(h.root, "cache", "supporters.json"))
+	if err != nil {
+		return
+	}
+	if s, err := app.DecodeSupporters(b); err == nil {
+		h.a.SetSupporters(s)
+	} else {
+		h.lg.Printf("supporters cache: %v", err)
+	}
 }
 
 // swap installs fetched data on the UI goroutine. The local rows the last
