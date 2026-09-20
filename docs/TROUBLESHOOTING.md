@@ -89,6 +89,43 @@ rotation reads the same sections Main does. The section must come after
 `[Menu]`, or `[Menu]` wins. It only applies to launches through the menu entry:
 the Scripts entry runs under the plain menu core and keeps the `[Menu]` output.
 
+### S-Video and composite (Y/C) output
+
+MisterZine cannot be shown through MiSTer's native Y/C output (`vga_mode=svideo`
+or `vga_mode=cvbs`), and no MiSTer.ini setting changes that. The Y/C encoder
+lives in the FPGA framework and is fed from the core's own picture, after the
+OSD. MisterZine draws into Linux's framebuffer, which reaches the analog pins
+only through the scaler path, and the framework's output selector takes that
+path instead of the Y/C one whenever the framebuffer is routed there. The
+direct-video output is wired the same way. Making the framebuffer Y/C-capable
+would be a change to MiSTer's framework, upstream of this project.
+
+What a Y/C configuration shows today:
+
+- With `vga_scaler=0` and `direct_video=0`, the analog-board recipe, the
+  framebuffer never reaches the analog port. MisterZine runs but nothing
+  appears; the log warns and the first run shows the CRT notice.
+- With `direct_video=1`, the direct-video adapter recipe, the pins carry plain
+  RGB while MisterZine is open. The Y/C encoding is off, so the adapter is not
+  fed the signal it expects. What it then displays has not been tested.
+
+Game cores keep their Y/C output either way, as long as `vga_scaler` stays 0
+in the main `[MiSTer]` section. To use MisterZine on the same CRT, give it a
+separate RGB output only while it is open, with a section below `[Menu]`:
+
+```ini
+[MisterZine]
+direct_video=1
+vga_scaler=0
+```
+
+That needs the CRT, or a switch, to accept RGB as well as Y/C; a Y/C-only
+adapter does not become an RGB one. A global `vga_scaler=1` gets a picture too,
+but turns Y/C off for the game cores as well. Read from MiSTer's framework
+source in September 2026 and not yet confirmed on hardware; the MiSTer.ini
+`vga_mode` and `ntsc_mode` values are not read by MisterZine and do not appear
+on its log's `ini:` line.
+
 ### Can HDMI and CRT show MisterZine together?
 
 The current interface cannot provide normal HDMI resolution and native 240p CRT
