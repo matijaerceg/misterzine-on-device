@@ -482,7 +482,7 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "Page transitions", kind: "page-transitions", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.PageTransitions()],
 			help: "On: softly wipe between pages. Off: change pages instantly. Saved for next time."},
 		{text: "Launch transition", kind: "launch-transition", vals: []string{"always", "hold Start"}, idx: map[string]int{"always": 0, "hold": 1}[a.LaunchTransition()],
-			help: "Always: every launch plays the cabinet animation. Hold Start: a tap launches at once; holding Start plays it. " + a.btn("A") + " previews it."},
+			help: "Always: every launch plays the cabinet animation. Hold Start (default): a tap launches at once; holding Start plays it. " + a.btn("A") + " previews it."},
 		spacer, group(gfx.SectionControls, "Controls"),
 		{text: "Button labels", kind: "button-labels", vals: buttonLabelValues(), idx: map[string]int{"mister": 0, "xbox": 1, "playstation": 2, "numbers": 3}[a.ButtonLabels()],
 			help: "How the legends name the pad buttons, in MiSTer's A B X Y order as set in its define buttons screen. Xbox and PlayStation names go by position."},

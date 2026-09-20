@@ -13,6 +13,7 @@ import (
 // stopped by then.
 func TestLaunchCabRendersAhead(t *testing.T) {
 	a, clock, launched := cabApp(true)
+	a.cfg.LaunchTransition = "always"
 	a.EnableRenderAhead()
 	a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})
 	a.Handle(platform.Event{Key: platform.KeyStart, At: *clock})
@@ -58,6 +59,7 @@ func TestLaunchCabRendersAhead(t *testing.T) {
 // Back stops the producer along with the animation.
 func TestLaunchCabBackStopsTheProducer(t *testing.T) {
 	a, clock, launched := cabApp(true)
+	a.cfg.LaunchTransition = "always"
 	a.EnableRenderAhead()
 	a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})
 	a.Handle(platform.Event{Key: platform.KeyStart, At: *clock})
@@ -83,6 +85,7 @@ func TestLaunchCabBackStopsTheProducer(t *testing.T) {
 // none skipped.
 func TestLaunchCabFramesFollowTheBlanks(t *testing.T) {
 	a, clock, _ := cabApp(true)
+	a.cfg.LaunchTransition = "always"
 	a.EnableRenderAhead()
 	a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})
 	a.Handle(platform.Event{Key: platform.KeyStart, At: *clock})
@@ -110,6 +113,7 @@ func TestLaunchCabFramesFollowTheBlanks(t *testing.T) {
 // A stall skips ahead instead of playing the missed frames late.
 func TestLaunchCabStallSkipsAhead(t *testing.T) {
 	a, clock, _ := cabApp(true)
+	a.cfg.LaunchTransition = "always"
 	a.EnableRenderAhead()
 	a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})
 	a.Handle(platform.Event{Key: platform.KeyStart, At: *clock})

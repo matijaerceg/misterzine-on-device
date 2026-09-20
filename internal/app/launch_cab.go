@@ -51,12 +51,13 @@ type holdLaunch struct {
 	at   time.Time
 }
 
-// LaunchTransition is the saved preference: "always" or "hold".
+// LaunchTransition is the saved preference: "hold" (the default) or
+// "always".
 func (a *App) LaunchTransition() string {
-	if a.cfg.LaunchTransition == "hold" {
-		return "hold"
+	if a.cfg.LaunchTransition == "always" {
+		return "always"
 	}
-	return "always"
+	return "hold"
 }
 
 // releaseHoldLaunch launches plainly when Start comes up before the hold

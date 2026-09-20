@@ -99,9 +99,9 @@ type Config struct {
 	Screensaver         string
 	SaverDisabled       bool
 	TransitionsDisabled bool
-	// LaunchTransition: "always" (default) plays the launch animation on
-	// every launch; "hold" only when Start is held past cabHoldStart, a
-	// tap launching at once.
+	// LaunchTransition: "hold" (default) plays the launch animation only
+	// when Start is held past cabHoldStart, a tap launching at once;
+	// "always" plays it on every launch.
 	LaunchTransition string
 	// SaverStyle is what the saver shows: "word" (default: the lettering)
 	// or "shots" (random arcade screenshots, Start held plays one); with

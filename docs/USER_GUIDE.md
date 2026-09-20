@@ -44,7 +44,7 @@ Starting a game plays a short launch animation: an arcade cabinet with the
 game's screenshot on its screen turns towards you and fades to black, and
 the screen stays black until the core is up. It runs at the display's
 refresh rate. Options -> Display -> Launch transition chooses when it plays:
-Always (the default), or Hold Start, where a tap of Start launches at once
+Always, or Hold Start (the default), where a tap of Start launches at once
 and only a held Start plays the animation. A on that row previews it. A
 button released during the animation is not treated as held afterwards,
 and the screensaver waits while the animation and the game own the screen.
@@ -467,9 +467,9 @@ screenshots match, lettering runs instead and the Preview help explains why.
   horizontal art. Low-resolution CRT modes retain their existing sizing.
   Unusual video timings that cannot fit a bounded canvas fall back to Fit 4:3.
   If a live switch fails, MisterZine attempts to restore the previous picture.
-- **Launch transition:** Always (default) plays the cabinet animation on
-  every launch. Hold Start launches at once on a tap and plays the animation
-  only while Start is held. A previews it from the row.
+- **Launch transition:** Always plays the cabinet animation on every launch.
+  Hold Start (default) launches at once on a tap and plays the animation only
+  while Start is held. A previews it from the row.
   Safe-zone margins still apply.
 - **Button labels:** how the legends name the pad's face buttons, in MiSTer's
   A B X Y order: A B X Y (default), B A Y X for an Xbox-lettered pad mapped by

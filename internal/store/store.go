@@ -18,7 +18,7 @@ import (
 type Settings struct {
 	SmoothScrollDisabled bool          `json:"smooth_scroll_disabled,omitempty"`
 	TransitionsDisabled  bool          `json:"transitions_disabled,omitempty"`
-	LaunchTransition     string        `json:"launch_transition,omitempty"` // always (default) or hold: only a held Start plays it
+	LaunchTransition     string        `json:"launch_transition,omitempty"` // hold (default): only a held Start plays it, or always
 	ShowNonArcade        bool          `json:"show_non_arcade"`
 	ArcadeIntroPending   bool          `json:"arcade_intro_pending"`
 	ShowDeprecated       bool          `json:"show_deprecated"`

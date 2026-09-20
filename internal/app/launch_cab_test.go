@@ -25,6 +25,7 @@ func cabApp(motion bool) (*App, *time.Time, *[]string) {
 
 func TestLaunchCabPlaysThenLaunches(t *testing.T) {
 	a, clock, launched := cabApp(true)
+	a.cfg.LaunchTransition = "always"
 	a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})
 	a.Handle(platform.Event{Key: platform.KeyStart, At: *clock})
 	if !a.LaunchCabRunning() || len(*launched) != 0 {
@@ -81,6 +82,7 @@ func TestLaunchCabPlaysThenLaunches(t *testing.T) {
 
 func TestLaunchCabBackCancels(t *testing.T) {
 	a, clock, launched := cabApp(true)
+	a.cfg.LaunchTransition = "always"
 	a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})
 	*clock = clock.Add(300 * time.Millisecond)
 	a.Tick(*clock)
@@ -122,6 +124,7 @@ func TestLaunchCabPreviewDoesNotLaunch(t *testing.T) {
 
 func TestLaunchCabEndsBlack(t *testing.T) {
 	a, clock, _ := cabApp(true)
+	a.cfg.LaunchTransition = "always"
 	a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})
 	var last []byte
 	for a.LaunchCabRunning() {
@@ -140,9 +143,11 @@ func TestLaunchCabEndsBlack(t *testing.T) {
 }
 
 func TestLaunchCabHoldStart(t *testing.T) {
-	// a tap launches plainly on the release
+	// a tap launches plainly on the release; "hold" is the default
 	a, clock, launched := cabApp(true)
-	a.cfg.LaunchTransition = "hold"
+	if got := a.LaunchTransition(); got != "hold" {
+		t.Fatalf("the unset launch transition is %q, want hold", got)
+	}
 	a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})
 	if a.LaunchCabRunning() || len(*launched) != 0 {
 		t.Fatal("a press must wait")
@@ -159,7 +164,6 @@ func TestLaunchCabHoldStart(t *testing.T) {
 
 	// a hold plays the animation, and the later release does nothing
 	a, clock, launched = cabApp(true)
-	a.cfg.LaunchTransition = "hold"
 	a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})
 	*clock = clock.Add(cabHoldStart)
 	a.Tick(*clock)
@@ -181,6 +185,7 @@ func TestLaunchCabHoldStart(t *testing.T) {
 
 	// "always" is untouched by the hold machinery
 	a, clock, launched = cabApp(true)
+	a.cfg.LaunchTransition = "always"
 	a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})
 	if !a.LaunchCabRunning() {
 		t.Fatal("always must animate on the press")
@@ -233,6 +238,7 @@ func TestLaunchCabTateShotIsLetterboxed(t *testing.T) {
 // key still held and does nothing: the Preview row needed two presses.
 func TestLaunchCabReleaseDuringAnimationIsSeen(t *testing.T) {
 	a, clock, launched := cabApp(true)
+	a.cfg.LaunchTransition = "always"
 	a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})
 	if !a.LaunchCabRunning() {
 		t.Fatal("Start did not begin the animation")
