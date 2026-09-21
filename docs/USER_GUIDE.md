@@ -107,6 +107,15 @@ core is missing instead of launching it (MiSTer would otherwise sit on a load
 that never finishes). When the catalogue later lists a game that was local, the row
 becomes the catalogue's and keeps its favorite, chosen version and launch
 history.
+
+Some games are in the catalogue only for a core you have not got: a Patreon
+core in early access, say, or one from a database you do not subscribe to.
+That row is greyed, as it should be. If your card also holds a copy that runs
+on a core you do have, whoever made it, that copy is listed too, as a local
+game beside the greyed row, and its Details say that the catalogue has this
+game only for cores that are not on this card. Install the catalogue's own
+core and the local row steps aside for it, taking its favorite, chosen
+version and launch history along.
 Options -> Views -> Remember last view is on by default; turn it off to choose
 a Default view for each new visit (Core updated initially).
 Y cycles Updated, Debut, Year, Alphabetical, Manufacturer, then Favorites; the

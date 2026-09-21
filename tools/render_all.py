@@ -33,11 +33,13 @@ scenarios = [
     ["-update-state", "testdata/update-running.json", "-rot", "left", "-logical",
      "-out", "out/update-t", "-script", "shot running; press back; wait 1000; shot cancel-hold; release back; hold back 2200; shot cancel"],
     # Games the card scan found outside the catalogue: the "local" chip in the
-    # list and Details, the file line, and the Local source in Filters
+    # list and Details, the file line, and the Local source in Filters. Volfied
+    # is a standin: the catalogue has it only for a core this card has not got,
+    # so both rows are listed and the local one says why it is there.
     ["-local", "testdata/local-rows.json", "-out", "out/local-h", "-script",
-     "type orphan; shot list; enter; shot details; back; back; type local puzzle; enter; shot details-lsnap; back; back; tab; down*3; right; shot source"],
+     "type orphan; shot list; enter; shot details; back; back; type local puzzle; enter; shot details-lsnap; back; back; type volfied; shot standin-list; down; enter; shot standin-details; back; back; tab; down*3; right; shot source"],
     ["-local", "testdata/local-rows.json", "-rot", "left", "-logical", "-out", "out/local-t", "-script",
-     "type orphan; shot list; enter; shot details; back; back; type local puzzle; enter; shot details-lsnap; back; back; tab; down*3; right; shot source"],
+     "type orphan; shot list; enter; shot details; back; back; type local puzzle; enter; shot details-lsnap; back; back; type volfied; shot standin-list; down; enter; shot standin-details; back; back; tab; down*3; right; shot source"],
     ["-out", "out/search-h", "-script", "type 1943; shot matches; type xyz; shot empty"],
     ["-rot", "left", "-logical", "-out", "out/search-t",
      "-script", "type 1943; shot matches; type xyz; shot empty"],

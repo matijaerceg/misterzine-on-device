@@ -149,8 +149,10 @@ func (ds *Dataset) Catalogue() []Row { return ds.Rows[:ds.NCat] }
 
 // MergeLocal appends the local rows to the catalogue rows, dropping any local
 // row whose game the catalogue now names (by K, setname, family root or a
-// known clone setname). The catalogue keeps its order; local rows follow
-// sorted by K, so the merge is deterministic and Generation is stable.
+// known clone setname). A standin row is kept: the catalogue names its game
+// only for cores the card has not got, so dropping it would hide the only
+// copy that runs. The catalogue keeps its order; local rows follow sorted by
+// K, so the merge is deterministic and Generation is stable.
 func MergeLocal(catalogue, local []Row) []Row {
 	if len(local) == 0 {
 		return catalogue
@@ -174,7 +176,7 @@ func MergeLocal(catalogue, local []Row) []Row {
 	seen := map[string]bool{}
 	for i := range local {
 		r := &local[i]
-		if !r.IsLocal() || r.K == "" || known[r.K] || seen[r.K] {
+		if !r.IsLocal() || r.K == "" || seen[r.K] || (known[r.K] && !r.Standin) {
 			continue
 		}
 		seen[r.K] = true
@@ -189,7 +191,9 @@ func MergeLocal(catalogue, local []Row) []Row {
 // LocalTakeovers maps the K of each local row that a new catalogue now covers
 // (by setname, family root or known clone) to the catalogue row's K, so a
 // favorite, remembered version or launch record follows the game when the
-// catalogue catches up with the card.
+// catalogue catches up with the card. Coverage on paper is all this can see,
+// so callers hand it the rows that are actually giving way: a standin row
+// keeps its key until a scan finds the game runnable from the catalogue.
 func LocalTakeovers(local, catalogue []Row) map[string]string {
 	if len(local) == 0 {
 		return nil

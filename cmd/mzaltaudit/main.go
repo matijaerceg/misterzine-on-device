@@ -61,22 +61,26 @@ func main() {
 	if *cache != "" {
 		localCache = *cache + ".local"
 	}
+	// The core index decides which catalogue rows this card can actually
+	// run, and so which files stand in for the ones it cannot.
+	idx := scan.ScanCores(*card)
 	start = time.Now()
-	local := scan.DiscoverLocal(*card, localCache, rows, alts, attached, false)
+	local := scan.DiscoverLocal(*card, localCache, rows, idx, alts, attached, false)
 	localCold := time.Since(start)
 	start = time.Now()
-	scan.DiscoverLocal(*card, localCache, rows, alts, attached, false)
+	scan.DiscoverLocal(*card, localCache, rows, idx, alts, attached, false)
 	localWarm := time.Since(start)
 	type localRow struct {
-		Key   string   `json:"key"`
-		Title string   `json:"title"`
-		Path  string   `json:"path"`
-		Core  string   `json:"core"`
-		Alts  []string `json:"alts,omitempty"`
+		Key     string   `json:"key"`
+		Title   string   `json:"title"`
+		Path    string   `json:"path"`
+		Core    string   `json:"core"`
+		Standin bool     `json:"standin,omitempty"`
+		Alts    []string `json:"alts,omitempty"`
 	}
 	locals := make([]localRow, 0, len(local.Rows))
 	for _, r := range local.Rows {
-		locals = append(locals, localRow{r.K, r.Title, r.MRA, r.Core, local.Alts[r.K]})
+		locals = append(locals, localRow{r.K, r.Title, r.MRA, r.Core, r.Standin, local.Alts[r.K]})
 	}
 	localErr := ""
 	if local.Err != nil {

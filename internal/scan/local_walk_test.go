@@ -121,7 +121,7 @@ func TestDiscoverLocalMatchesCatalogue(t *testing.T) {
 	alts, _, _ := ScanAlternativesWithError(card, "")
 	var fc FamilyCache
 	attached := AttachedPaths(fc.Resolve(card, alts, catalogue))
-	res := DiscoverLocal(card, "", catalogue, alts, attached, false)
+	res := DiscoverLocal(card, "", catalogue, ScanCores(card), alts, attached, false)
 	if res.Err != nil {
 		t.Fatal(res.Err)
 	}
@@ -164,10 +164,64 @@ func TestDiscoverLocalMatchesCatalogue(t *testing.T) {
 		t.Fatal("no image service: no picture requested")
 	}
 
-	with := DiscoverLocal(card, "", catalogue, alts, attached, true)
+	with := DiscoverLocal(card, "", catalogue, ScanCores(card), alts, attached, true)
 	g := with.Rows[0]
 	if g.Img != "galaxloc" || !reflect.DeepEqual(g.ImgSlots, []string{SlotLocalSnap}) || g.ImgW != 3 || g.ImgH != 4 {
 		t.Fatalf("service picture: %+v", g)
+	}
+}
+
+// A game the catalogue knows only through a core the card has not got:
+// the file that does run it stands in, rather than falling between the
+// greyed catalogue row and the setname rule.
+func TestDiscoverLocalStandin(t *testing.T) {
+	card := fakeCard(t)
+	mk := func(rel, content string) {
+		t.Helper()
+		p := filepath.Join(card, filepath.FromSlash(rel))
+		os.MkdirAll(filepath.Dir(p), 0755)
+		if err := os.WriteFile(p, []byte(content), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	mk("_Arcade/cores/taitox_20260904.rbf", "x") // a core no catalogue row names
+	mk("_Arcade/_Extra/Gigandes.mra", mra("Gigandes", "gigandes", "taitox", "gigandes"))
+	mk("_Arcade/_Extra/Superman.mra", mra("Superman", "superman", "nosuch", "superman"))
+	mk("_Arcade/_Extra/Colony 7 (other).mra", mra("Colony 7", "colony7", "taitox", "colony7"))
+	catalogue := []data.Row{
+		{K: "gigandes", Title: "Gigandes", Base: "Arcade", Core: "jttaitox", SN: "gigandes", MRA: "_Arcade/Gigandes.mra"},
+		{K: "superman", Title: "Superman", Base: "Arcade", Core: "jttaitox", SN: "superman", MRA: "_Arcade/Superman.mra"},
+		{K: "colony7", Title: "Colony 7", Base: "Arcade", Core: "defender", SN: "colony7", Family: "colony7", FamilySets: []string{"colony7a"}, MRA: "_Arcade/Colony 7 (Set 1).mra"},
+		{K: "1942", Title: "1942", Base: "Arcade", Core: "jt1942", SN: "1942", FamilySets: []string{"1942a"}, MRA: "_Arcade/1942 (Revision B).mra"},
+	}
+	rows := func(idx *Index) []data.Row {
+		t.Helper()
+		alts, _, _ := ScanAlternativesWithError(card, "")
+		var fc FamilyCache
+		res := DiscoverLocal(card, "", catalogue, idx, alts, AttachedPaths(fc.Resolve(card, alts, catalogue)), false)
+		if res.Err != nil {
+			t.Fatal(res.Err)
+		}
+		return res.Rows
+	}
+	// Gigandes stands in for a core that is not here. Superman's own copy
+	// needs an absent core too, so its greyed catalogue row says it best,
+	// and Colony 7 already runs from the catalogue's own defender build.
+	got := rows(ScanCores(card))
+	if len(got) != 1 {
+		t.Fatalf("rows %+v", got)
+	}
+	if r := got[0]; r.K != "local:gigandes" || !r.Standin || r.Core != "taitox" || r.MRA != "_Arcade/_Extra/Gigandes.mra" {
+		t.Fatalf("standin row: %+v", r)
+	}
+	// Without a core index nothing is on the card, so nothing stands in.
+	if got := rows(nil); len(got) != 0 {
+		t.Fatalf("no index: %+v", got)
+	}
+	// Once the catalogue's own core arrives, the standin gives way to it.
+	mk("_Arcade/cores/jttaitox_20260907.rbf", "x")
+	if got := rows(ScanCores(card)); len(got) != 0 {
+		t.Fatalf("core installed: %+v", got)
 	}
 }
 
@@ -182,7 +236,7 @@ func TestDiscoverLocalDedupeOrder(t *testing.T) {
 	mk("_Arcade/_Long folder name/Same.mra")
 	mk("_Arcade/_S/Same.mra")
 	alts, _, _ := ScanAlternativesWithError(card, "")
-	res := DiscoverLocal(card, "", nil, alts, nil, false)
+	res := DiscoverLocal(card, "", nil, ScanCores(card), alts, nil, false)
 	if len(res.Rows) != 1 || res.Rows[0].MRA != "_Arcade/_S/Same.mra" {
 		t.Fatalf("rows %+v", res.Rows)
 	}

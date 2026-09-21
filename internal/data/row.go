@@ -56,6 +56,11 @@ type Row struct {
 	Brot         string   `json:"brot"`
 	Note         string   `json:"note"`
 	Scr          int      `json:"scr"`
+	// Standin marks a local row whose game the catalogue does list, but only
+	// for cores this card has not got: the file stands in for them, so the
+	// merge keeps the row although the catalogue names the setname. The card
+	// decides it, so the site never emits it.
+	Standin bool `json:"standin,omitempty"`
 }
 
 // Meta is docs/releases/meta.json.

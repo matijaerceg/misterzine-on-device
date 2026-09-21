@@ -99,15 +99,25 @@ func ScanArcadeMRAs(card, cachePath string) ([]Alt, []Skipped, error) {
 // alts are the alternatives already scanned; attached holds every path the
 // family resolver tied to a catalogue row. A file is accounted for when its
 // path is a catalogue MRA or attached, or when its setname or parent is a
-// catalogue release, family root or known clone, whatever core it names:
-// a game the catalogue knows is never listed twice. The rest are grouped by
-// setname; the copy outside any _alternatives folder with the shortest path
-// becomes the row and the others its alternatives. Set snap when the image
-// service is available: such rows then ask it for a shot by setname.
-func DiscoverLocal(card, cachePath string, catalogue []data.Row, alts []Alt, attached map[string]bool, snap bool) LocalResult {
+// catalogue release, family root or known clone that this card can run: a
+// game the catalogue knows is never listed twice.
+//
+// A game the catalogue knows only through cores the card has not got is the
+// exception. Its row is greyed and refuses to launch, so a file that plays
+// it on a core the card does have (another author's, or one from a database
+// the tracker does not follow) would vanish between the two rules. Such a
+// file becomes a standin row instead, and idx is what decides it: without a
+// core index nothing is on the card and the old rule stands.
+//
+// The rest are grouped by setname; the copy outside any _alternatives folder
+// with the shortest path becomes the row and the others its alternatives. Set
+// snap when the image service is available: such rows then ask it for a shot
+// by setname.
+func DiscoverLocal(card, cachePath string, catalogue []data.Row, idx *Index, alts []Alt, attached map[string]bool, snap bool) LocalResult {
 	walked, skipped, err := ScanArcadeMRAs(card, cachePath)
 	res := LocalResult{Alts: map[string][]string{}, Files: len(walked), Skipped: skipped, Err: err}
 	ids := map[string]bool{}
+	runs := map[string]bool{} // ... and one of those rows runs on this card
 	paths := map[string]bool{}
 	for i := range catalogue {
 		r := &catalogue[i]
@@ -117,21 +127,30 @@ func DiscoverLocal(card, cachePath string, catalogue []data.Row, alts []Alt, att
 		if r.MRA != "" {
 			paths[r.MRA] = true
 		}
+		onCard := coreOnCard(idx, r.Core)
 		for _, v := range append([]string{r.SN, r.Family}, r.FamilySets...) {
 			if id := identity(v); id != "" {
 				ids[id] = true
+				runs[id] = runs[id] || onCard
 			}
 		}
 	}
 	var loose []Alt
 	present := map[string]bool{}
+	standins := map[string]bool{} // path -> the catalogue lists this game, unrunnably
 	for _, a := range append(append([]Alt{}, walked...), alts...) {
 		if paths[a.Path] || attached[a.Path] {
 			continue
 		}
 		sn := identity(a.Setname)
 		if (sn != "" && ids[sn]) || (a.Parent != "" && ids[a.Parent]) {
-			continue
+			if (sn != "" && runs[sn]) || (a.Parent != "" && runs[a.Parent]) {
+				continue // the catalogue's own copy runs here
+			}
+			if !coreOnCard(idx, a.RBF) {
+				continue // neither copy runs: the greyed catalogue row says so
+			}
+			standins[a.Path] = true
 		}
 		if sn == "" {
 			sn = identity(strings.TrimSuffix(path.Base(a.Path), path.Ext(a.Path)))
@@ -175,6 +194,9 @@ func DiscoverLocal(card, cachePath string, catalogue []data.Row, alts []Alt, att
 			return g[i].Path < g[j].Path
 		})
 		r := rowFromAlt(g[0])
+		for _, a := range g {
+			r.Standin = r.Standin || standins[a.Path]
+		}
 		if snap {
 			r.Img, r.ImgSlots = sn, []string{SlotLocalSnap}
 			if r.RotGroup() == "v" {
@@ -190,6 +212,17 @@ func DiscoverLocal(card, cachePath string, catalogue []data.Row, alts []Alt, att
 	}
 	sort.Slice(res.Rows, func(i, j int) bool { return res.Rows[i].K < res.Rows[j].K })
 	return res
+}
+
+// coreOnCard reports whether an rbf name resolves to an arcade core the
+// index holds. No index (a card scan that failed, or a caller with none)
+// means nothing is on the card.
+func coreOnCard(idx *Index, core string) bool {
+	if idx == nil || core == "" {
+		return false
+	}
+	_, ok := idx.lookupFor(true, core)
+	return ok
 }
 
 // isBIOS recognises a system BIOS MRA (MiSTer ships one per platform core,

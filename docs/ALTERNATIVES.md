@@ -30,9 +30,22 @@ per directory in `cache/local.json`, versioned like the alternatives cache.
 
 A file is accounted for when its path is a catalogue MRA, when the family
 resolver tied it to a catalogue row, or when its setname or parent names a
-catalogue release, family root or known clone. Everything else becomes a
-"Local" row: one per setname, with clones filed under their parent when the
-parent is on the card too. The copy outside `_alternatives` with the shortest
+catalogue release, family root or known clone that this card can run.
+Everything else becomes a "Local" row: one per setname, with clones filed
+under their parent when the parent is on the card too.
+
+A game the catalogue knows only through cores the card has not got is the
+exception to that rule. Its catalogue row is greyed and refuses to launch, so
+a file that does play it on a core the card does have — another author's, or
+one from a database the tracker does not follow — would fall between the two
+rules and vanish. Such a file becomes a standin row instead (`Row.Standin`),
+listed beside the catalogue row it stands in for, and its Details say why it
+is there. The core index decides it, so the row appears and goes as cores are
+installed or removed: the moment the catalogue's own core lands on the card,
+the standin gives way to it and hands over its favorite, remembered version
+and launch records. `MergeLocal` keeps standin rows although the catalogue
+names their setname; a catalogue refresh alone never takes their keys, since
+only a card scan can tell whether the new rows are any more runnable here. The copy outside `_alternatives` with the shortest
 path is the row's file; further copies are its alternatives. Title, year,
 manufacturer, rotation, region, players and buttons come from the header;
 the category is shown as a note rather than a genre. Local rows carry no

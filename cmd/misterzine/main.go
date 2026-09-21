@@ -1196,7 +1196,16 @@ func (h *host) loadSupporters() {
 func (h *host) swap(fr fetch.Fresh) {
 	old := h.a.Data()
 	upd, _ := data.ParseMetaTime(fr.Meta.Updated)
-	moves := data.LocalTakeovers(old.Rows[old.NCat:], fr.Rows)
+	// A standin row is covered by the catalogue on paper already; whether the
+	// new one is any more runnable here is for the rescan below to find out,
+	// so its key stays put for now.
+	var giving []data.Row
+	for _, r := range old.Rows[old.NCat:] {
+		if !r.Standin {
+			giving = append(giving, r)
+		}
+	}
+	moves := data.LocalTakeovers(giving, fr.Rows)
 	ds := data.Ingest(data.MergeLocal(fr.Rows, old.Rows[old.NCat:]), fr.Meta.Hash, upd)
 	news := h.a.CatalogueNews(old, fr.Rows)
 	// Old status indices belong to the previous row order. Rebuild off the UI.
@@ -1224,6 +1233,10 @@ type scanResult struct {
 	// index into; nextGen is their generation. nil when nothing changed.
 	rows    []data.Row
 	nextGen string
+	// moves are the keys of local rows this scan dropped because the card
+	// now runs their game from the catalogue, mapped to the catalogue row
+	// that took over (data.LocalTakeovers).
+	moves map[string]string
 	// hidden are the sources without a Downloader database in the card's
 	// downloader.ini; iniFound is whether that file was read at all.
 	hidden   map[string]bool
@@ -1292,7 +1305,7 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 	t2 := time.Now()
 	catalogue := rows[:ncat]
 	resolved := h.familyCache.Resolve(h.card, alts, catalogue)
-	local := scan.DiscoverLocal(h.card, filepath.Join(h.root, "cache", "local.json"), catalogue, alts, scan.AttachedPaths(resolved), fetch.SnapService != "")
+	local := scan.DiscoverLocal(h.card, filepath.Join(h.root, "cache", "local.json"), catalogue, idx, alts, scan.AttachedPaths(resolved), fetch.SnapService != "")
 	for _, s := range local.Skipped {
 		if s.Fresh {
 			h.lg.Printf("scan: skipped %s: %s", s.Path, s.Reason)
@@ -1313,8 +1326,29 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 		// The row set changes: statuses must index into the new rows.
 		res.status = scan.Statuses(h.card, idx, merged)
 		res.rows, res.nextGen = merged, nextGen
+		res.moves = data.LocalTakeovers(droppedLocal(rows[ncat:], merged[ncat:]), catalogue)
 	}
 	h.sendScan(res)
+}
+
+// droppedLocal returns the local rows this scan no longer lists. A standin
+// row leaves this way once the card can run the game from the catalogue
+// again, and its star and remembered version should follow it there.
+func droppedLocal(before, now []data.Row) []data.Row {
+	if len(before) == 0 {
+		return nil
+	}
+	keys := make(map[string]bool, len(now))
+	for i := range now {
+		keys[now[i].K] = true
+	}
+	var out []data.Row
+	for i := range before {
+		if !keys[before[i].K] {
+			out = append(out, before[i])
+		}
+	}
+	return out
 }
 
 // screenshot saves the logical canvas (F12 on a keyboard).

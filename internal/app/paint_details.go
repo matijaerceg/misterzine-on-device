@@ -243,7 +243,11 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 		L = append(L, paneLine{"Card:     " + statusText(st, ""), sc})
 	}
 	if row.IsLocal() {
-		L = append(L, paneLine{"Not in the MisterZine catalogue; details read from the MRA file", mu})
+		note := "Not in the MisterZine catalogue; details read from the MRA file"
+		if row.Standin {
+			note = "The catalogue lists this game only for cores that are not on this card; details read from the MRA file"
+		}
+		L = append(L, paneLine{note, mu})
 		add("File", row.MRA, mu)
 	}
 	if row.Rot != "" {

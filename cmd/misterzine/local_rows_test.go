@@ -87,6 +87,79 @@ func TestReceiveScanInstallsLocalRows(t *testing.T) {
 	}
 }
 
+// A game the catalogue lists only for a core this card has not got: the file
+// that does play it becomes a standin row beside the greyed catalogue one,
+// and hands its star over once the catalogue's own core arrives.
+func TestStandinRowFromScan(t *testing.T) {
+	h := backgroundHost(t)
+	cores := filepath.Join(h.card, "_Arcade", "cores")
+	os.MkdirAll(cores, 0755)
+	os.WriteFile(filepath.Join(cores, "taitox_20260904.rbf"), []byte("x"), 0644)
+	writeMRA(t, h.card, "_Arcade/_Extra/Gigandes.mra", "Gigandes", "gigandes", "taitox")
+	cat := append(catalogueRows(), data.Row{K: "gigandes", Title: "Gigandes", Base: "Arcade", Src: "jtbindb",
+		Core: "jttaitox", SN: "gigandes", MRA: "_Arcade/Gigandes.mra", Beta: true, Updated: "2026-09-07"})
+	favs := map[string]bool{"local:gigandes": true} // starred while it was the only copy that runs
+	h.a = app.New(app.Config{PhysW: 320, PhysH: 240,
+		Favorites:  favs,
+		FavChanged: func() { h.favDirty = true },
+	}, data.Ingest(cat, "cat", time.Now()), nil)
+	h.favDirty = false
+	h.requestScan()
+	finishBackground(t, h)
+
+	ds := h.a.Data()
+	if ds.NCat != 3 || len(ds.Rows) != 4 {
+		t.Fatalf("dataset after scan: ncat=%d rows=%d", ds.NCat, len(ds.Rows))
+	}
+	if r := ds.Rows[3]; r.K != "local:gigandes" || !r.Standin || r.Core != "taitox" || r.MRA != "_Arcade/_Extra/Gigandes.mra" {
+		t.Fatalf("standin row: %+v", ds.Rows[3])
+	}
+	// The catalogue's own row stays greyed: its core really is absent.
+	if len(h.status) != 4 || h.status[2] != data.StatusNotFound || h.status[3] != data.StatusFoundUndated {
+		t.Fatalf("statuses: %v", h.status)
+	}
+
+	// The beta core arrives: the catalogue row can run it now, so the standin
+	// gives way and the star follows the game to the catalogue.
+	os.WriteFile(filepath.Join(cores, "jttaitox_20260907.rbf"), []byte("x"), 0644)
+	h.requestScan()
+	finishBackground(t, h)
+	if ds = h.a.Data(); len(ds.Rows) != 3 || ds.Gen != "cat" {
+		t.Fatalf("standin kept after the core arrived: rows=%d gen=%q", len(ds.Rows), ds.Gen)
+	}
+	if f := h.a.FavoriteSet(); !f["gigandes"] || f["local:gigandes"] || !h.favDirty {
+		t.Fatalf("star not handed over: %v dirty=%v", f, h.favDirty)
+	}
+}
+
+// A catalogue refresh alone says nothing about this card's cores, so a
+// standin row keeps its key until a scan finds the game runnable.
+func TestSwapKeepsStandinKey(t *testing.T) {
+	h := backgroundHost(t)
+	stand := data.Row{K: "local:gigandes", Title: "Gigandes", Base: "Arcade", Src: data.SrcLocal, SN: "gigandes",
+		Core: "taitox", MRA: "_Arcade/_Extra/Gigandes.mra", Standin: true}
+	h.a = app.New(app.Config{PhysW: 320, PhysH: 240,
+		Favorites:  map[string]bool{"local:gigandes": true},
+		FavChanged: func() { h.favDirty = true },
+	}, data.Ingest(data.MergeLocal(catalogueRows(), []data.Row{stand}), "cat", time.Now()), nil)
+	h.favDirty = false
+	rows := append(catalogueRows(), data.Row{K: "gigandes", Title: "Gigandes", Base: "Arcade", Src: "jtbindb",
+		Core: "jttaitox", SN: "gigandes", MRA: "_Arcade/Gigandes.mra"})
+	h.swap(fetch.Fresh{Changed: true, Rows: rows, Meta: data.Meta{Hash: "new", Updated: "2026-09-17T00:00Z"}})
+	ds := h.a.Data()
+	if ds.NCat != 3 || len(ds.Rows) != 4 || ds.Rows[3].K != "local:gigandes" {
+		t.Fatalf("swap dropped the standin: ncat=%d rows=%d", ds.NCat, len(ds.Rows))
+	}
+	if f := h.a.FavoriteSet(); !f["local:gigandes"] || f["gigandes"] {
+		t.Fatalf("star moved to a row the card cannot run: %v", f)
+	}
+	finishBackground(t, h)
+	// The rescan of an empty card drops it: the file is not there either.
+	if ds = h.a.Data(); len(ds.Rows) != 3 {
+		t.Fatalf("rescan: rows=%d", len(ds.Rows))
+	}
+}
+
 func TestReceiveScanStaleGenIgnored(t *testing.T) {
 	h := backgroundHost(t)
 	h.a.SetData(data.Ingest(catalogueRows(), "cat", time.Now()), nil)

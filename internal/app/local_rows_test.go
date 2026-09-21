@@ -75,6 +75,44 @@ func TestLocalRowDetails(t *testing.T) {
 	}
 }
 
+// A standin row sits beside the catalogue row whose core the card has not
+// got. Its Details say why it is there, rather than claiming the catalogue
+// has never heard of the game.
+func TestStandinRowDetails(t *testing.T) {
+	cat := []data.Row{{K: "volfied", Title: "Volfied", Base: "Arcade", Src: "jtbindb", Core: "jtvlfied", SN: "volfied",
+		MRA: "_Arcade/Volfied (World, rev 1).mra", Beta: true, Gate: "jtbeta", Date: "2026-08-16", Updated: "2026-09-04"}}
+	stand := data.Row{K: "local:volfied", Title: "Volfied", Base: "Arcade", Src: data.SrcLocal, SN: "volfied",
+		Core: "taitox", MRA: "_Arcade/_Extra/Volfied.mra", Standin: true}
+	rows := data.MergeLocal(cat, []data.Row{stand})
+	if len(rows) != 2 {
+		t.Fatalf("the standin row must survive the merge: %+v", rows)
+	}
+	a := New(Config{PhysW: 320, PhysH: 240, Status: func(int) data.Status { return data.StatusFoundUndated }},
+		data.Ingest(rows, "h", time.Now()), nil)
+	i := a.ds.Index("local:volfied")
+	if i < 0 {
+		t.Fatal("standin row not indexed")
+	}
+	row, d := &a.ds.Rows[i], &a.ds.Der[i]
+	var texts []string
+	for _, l := range a.detailLines(row, d, i) {
+		texts = append(texts, l.text)
+	}
+	joined := strings.Join(texts, "\n")
+	if !strings.Contains(joined, "The catalogue lists this game only for cores that are not on this card") {
+		t.Errorf("details do not say why the row is here:\n%s", joined)
+	}
+	if strings.Contains(joined, "Not in the MisterZine catalogue") {
+		t.Errorf("details deny a catalogue the game is in:\n%s", joined)
+	}
+	if !strings.Contains(joined, "File:     _Arcade/_Extra/Volfied.mra") {
+		t.Errorf("details lack the file line:\n%s", joined)
+	}
+	if ch := chips(row, d); len(ch) != 1 || ch[0] != "local" {
+		t.Fatalf("chips %v", ch)
+	}
+}
+
 func TestFiltersSourceLocal(t *testing.T) {
 	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest(localTestRows(), "h", time.Now()), nil)
 	if a.ds.Facets.Src[data.SrcLocal] != 2 {

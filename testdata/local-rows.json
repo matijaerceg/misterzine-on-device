@@ -6,5 +6,9 @@
   {"title": "Local Puzzle", "base": "Arcade", "src": "local", "k": "local:locpuz", "sn": "locpuz",
    "core": "puzzlecore", "mra": "_Arcade/Local Puzzle.mra", "year": "1991", "manufacturer": "Someone",
    "rot": "Horizontal", "plr": "1", "ctl": "4-way",
-   "img": "locpuz", "img_slots": ["lsnap"], "img_w": 4, "img_h": 3}
+   "img": "locpuz", "img_slots": ["lsnap"], "img_w": 4, "img_h": 3},
+  {"title": "Volfied", "base": "Arcade", "src": "local", "k": "local:volfied", "sn": "volfied", "standin": true,
+   "core": "taitox", "mra": "_Arcade/_Extra/Volfied.mra", "year": "1989", "manufacturer": "Taito",
+   "reg": "World", "rot": "Vertical (CW)", "plr": "2", "ctl": "8-way · 1 button", "buttons": 1,
+   "img": "volfied", "img_slots": ["lsnap"], "img_w": 3, "img_h": 4}
 ]

@@ -49,6 +49,34 @@ func TestMergeLocalDropsCovered(t *testing.T) {
 	}
 }
 
+func TestMergeLocalKeepsStandin(t *testing.T) {
+	cat := []Row{
+		{Title: "Volfied", Base: "Arcade", Src: "jtbindb", K: "volfied", SN: "volfied", Core: "jtvlfied", Family: "volfied", FamilySets: []string{"volfiedu"}},
+	}
+	stand := localRow("volfied", "taitox", "_Arcade/Volfied.mra")
+	stand.Standin = true
+	clone := localRow("volfiedu", "taitox", "_Arcade/Volfied (US).mra")
+	clone.Standin = true
+	dup := localRow("volfied", "taitox", "_Arcade/_Extra/Volfied.mra")
+	dup.Standin = true
+	got := MergeLocal(cat, []Row{stand, clone, dup})
+	want := []string{"volfied", "local:volfied", "local:volfiedu"}
+	if len(got) != len(want) {
+		t.Fatalf("got %d rows, want %d: %+v", len(got), len(want), got)
+	}
+	for i, k := range want {
+		if got[i].K != k {
+			t.Fatalf("row %d = %q, want %q", i, got[i].K, k)
+		}
+	}
+	// The flag is what keeps it: the same file without one is the catalogue's
+	// game and goes, as it always did.
+	stand.Standin = false
+	if got := MergeLocal(cat, []Row{stand}); len(got) != 1 {
+		t.Fatalf("plain local row kept: %+v", got)
+	}
+}
+
 func TestLocalDigestStable(t *testing.T) {
 	a := []Row{localRow("b", "c1", "p1"), localRow("a", "c2", "p2")}
 	b := []Row{localRow("a", "c2", "p2"), localRow("b", "c1", "p1")}

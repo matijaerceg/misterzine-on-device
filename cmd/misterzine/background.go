@@ -67,6 +67,8 @@ func (h *host) receiveScan(r scanResult) {
 		} else {
 			h.status = r.status
 			h.a.SetData(ds, nil)
+			// a standin row the card now runs from the catalogue hands its star over
+			h.a.RenameKeys(r.moves)
 			if h.img != nil {
 				h.img.SetPrefetch(picsFor(ds), h.settings.Prefetch)
 			}
