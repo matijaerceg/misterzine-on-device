@@ -30,7 +30,7 @@ func TestCreditsPage(t *testing.T) {
 		texts = append(texts, e.text)
 	}
 	page := strings.Join(texts, "\n")
-	want := append([]string{"Matija Erceg", "Sorgelig", "theypsilon", "Frederic Cambus", "Akshay Oppiliappan", "Erik Kennedy"}, earlyAdopters...)
+	want := append([]string{"Matija Erceg", "Sorgelig", "theypsilon", "Frederic Cambus", "Akshay Oppiliappan", "Erik Kennedy"}, a.supporters.EarlyAdopters...)
 	for _, w := range want {
 		if !strings.Contains(page, w) {
 			t.Errorf("credits page lacks %q", w)
@@ -57,11 +57,15 @@ func TestCreditsPage(t *testing.T) {
 			break
 		}
 	}
-	ns := len(a.supporters.Current) + len(a.supporters.Past)
-	if seen != 1+len(builtOn)+ns+len(earlyAdopters) {
-		t.Fatalf("%d credited rows, want %d", seen, 1+len(builtOn)+ns+len(earlyAdopters))
+	adopters := a.supporters.EarlyAdopters
+	if len(adopters) == 0 {
+		t.Fatal("the embedded snapshot lists no early adopters")
 	}
-	if e := a.panel.entries[a.panel.cursor]; e.text != earlyAdopters[len(earlyAdopters)-1] {
+	ns := len(a.supporters.Current) + len(a.supporters.Past)
+	if seen != 1+len(builtOn)+ns+len(adopters) {
+		t.Fatalf("%d credited rows, want %d", seen, 1+len(builtOn)+ns+len(adopters))
+	}
+	if e := a.panel.entries[a.panel.cursor]; e.text != adopters[len(adopters)-1] {
 		t.Fatalf("Down ends on %q", e.text)
 	}
 	a.actPanel(platform.KeyBack)
@@ -125,4 +129,43 @@ func TestCreditsSupporters(t *testing.T) {
 	if _, err := DecodeSupporters([]byte("{")); err == nil {
 		t.Error("a broken file decoded")
 	}
+}
+
+// The early adopters come with the site file too, so a name added there
+// reaches the Credits page without a release; a file that lacks them (an
+// older site, an old cache) keeps the snapshot's list rather than
+// emptying the group.
+func TestCreditsEarlyAdoptersFollowTheSiteFile(t *testing.T) {
+	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest(nil, "", time.Now()), nil)
+	snapshot := append([]string(nil), a.supporters.EarlyAdopters...)
+	if len(snapshot) == 0 {
+		t.Fatal("the embedded snapshot lists no early adopters")
+	}
+	s, err := DecodeSupporters([]byte(`{"updated":"2026-10-01","current":[],"past":[],"early_adopters":["ac3"," Newcomer ",""]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	a.SetSupporters(s)
+	a.openOptions()
+	a.openCredits()
+	page := creditsText(a)
+	if !strings.Contains(page, "Newcomer") || strings.Contains(page, snapshot[len(snapshot)-1]) {
+		t.Fatalf("fetched adopters did not replace the snapshot's:\n%s", page)
+	}
+	if strings.Contains(page, "\n\n") && strings.Contains(page, "early adopters:\n\n") {
+		t.Fatalf("a blank name made a row:\n%s", page)
+	}
+	s, _ = DecodeSupporters([]byte(`{"updated":"2026-10-02","current":[],"past":[]}`))
+	a.SetSupporters(s)
+	if page = creditsText(a); !strings.Contains(page, "Newcomer") {
+		t.Fatalf("a file without adopters emptied the group:\n%s", page)
+	}
+}
+
+func creditsText(a *App) string {
+	var texts []string
+	for _, e := range a.panel.entries {
+		texts = append(texts, e.text)
+	}
+	return strings.Join(texts, "\n")
 }

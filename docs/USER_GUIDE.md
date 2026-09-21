@@ -534,8 +534,9 @@ screenshots match, lettering runs instead and the Preview help explains why.
   builds on (MiSTer, Downloader and Update All, the fonts), the Patreon
   supporters (current, and past once anyone has moved on: support ends, the
   thanks do not) and, under Special thanks, the early adopters who tested it
-  and sent feedback. The supporter list comes from misterzine.fyi with the
-  catalogue check, so it stays current without an app update. Up/Down move
+  and sent feedback. Both lists come from misterzine.fyi with the
+  catalogue check, so they stay current without an app update; a device
+  that has never been online shows the lists as of its build. Up/Down move
   through the names; B returns to Options.
 - **Quit MisterZine:** the last row: back to the MiSTer menu (or to the
   frontend that opened MisterZine). The pad's Menu button held for two

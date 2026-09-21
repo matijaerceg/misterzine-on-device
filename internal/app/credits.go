@@ -1,36 +1,12 @@
 package app
 
 // Options -> Credits: who made MisterZine, whose work it builds on, the
-// Patreon supporters (current, then past: see supporters.go) and the
-// early adopters who tested it and sent feedback and encouragement.
-// The page is a panel like Views: Up/Down move through the rows, B goes
-// back to Options on the Credits row, and nothing on it can be changed.
-
-// earlyAdopters lists the people thanked under "Special thanks to the
-// early adopters", A to Z regardless of case. Add a name in its place to
-// add a row.
-var earlyAdopters = []string{
-	"ac3",
-	"akeley",
-	"CobolGuy007",
-	"ctrain_1985",
-	"dh3lix-pooch",
-	"Fallon",
-	"Fender",
-	"gamecat666",
-	"hammercompation",
-	"ItsDanik",
-	"LamerDeluxe",
-	"Malento",
-	"Mclaneinc",
-	"NineteenNinetyEx",
-	"Penetron",
-	"Porieux",
-	"retrofan01",
-	"shad00m",
-	"Virtualplayer",
-	"washaa",
-}
+// Patreon supporters (current, then past) and the early adopters who
+// tested it and sent feedback and encouragement; the last three groups
+// come from the site's supporters.json (see supporters.go), so a name is
+// added on the site, not here. The page is a panel like Views: Up/Down
+// move through the rows, B goes back to Options on the Credits row, and
+// nothing on it can be changed.
 
 // builtOn credits the people whose technology MisterZine runs on, one
 // selectable row each, kept short enough for the tate layout; a following
@@ -68,7 +44,7 @@ func (a *App) creditsEntries() []panelEntry {
 		}
 	}
 	E = append(E, spacer, group("Special thanks to the early adopters:"))
-	for _, name := range earlyAdopters {
+	for _, name := range a.supporters.EarlyAdopters {
 		E = append(E, row(name))
 	}
 	return E
