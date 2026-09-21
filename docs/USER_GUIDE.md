@@ -175,7 +175,7 @@ filter choices are saved.
 | X | Tab | Filters | | | back to the list | |
 | Y | Space | change view | favorite | | only/all | |
 | Start | gamepad Start | launch remembered version | launch selected version | launch selected version | | |
-| Select (held) | | + Y: Layout, + X: Art type, + A: favorite | | | | |
+| Select (held) | | + Y: Layout, + X: Art type, + Left/Right: rotation, + A: favorite | | | | |
 | Menu | | Options; held 2 s: quit MisterZine (or quit at once: Options -> Menu button) | Options | Options | Options | back to the screen it was opened over |
 
 A, B, X and Y are MiSTer's names from its define buttons screen. Options ->
@@ -207,11 +207,16 @@ reads with A and B swapped for that pad. Options -> OK button shows the
 choice for the pad in your hand and can override it, per pad.
 
 Hold Select on the list (the legend's last entry, Select +, is the
-reminder) and the legend changes: Y cycles Layout, X switches Art type, and A stars or unstars
+reminder) and the legend changes: Y cycles Layout, X switches Art type,
+Left/Right turn the display through the Rotation choices (monitor CW,
+horizontal, monitor CCW), and A stars or unstars
 the game under the cursor (in the Favorites view an unstarred row drops
 out and the cursor moves to its neighbour). Select alone does nothing, and
 while it is down every other button waits, so nothing moves or launches by
-accident. Layout and Art type are saved, and both are also in Options. The
+accident. Layout, Art type and Rotation are saved, and all three are also in
+Options. A turn made this way stops the display following the MiSTer INI
+(Options -> Display -> Follow INI rotation goes off) and the notice says so;
+turn Follow INI rotation back on to return to the INI's setting. The
 Text layout shows no pictures, so X is left out of the legend and does
 nothing there; Art type is still in Options, ready for the layouts that do.
 Only a pad defined in MiSTer has a Select.
@@ -398,7 +403,9 @@ and last row. Rows marked ↗ open another screen or editor.
 - **Rotation:** available when Follow INI rotation is off. Left/Right turns the
   image in that direction and the choice is saved. The labels describe the
   monitor's clockwise/counterclockwise turn. While following the INI, the row
-  shows the current rotation in grey and cannot be changed here.
+  shows the current rotation in grey and cannot be changed here. On the
+  list, holding Select and pressing Left/Right makes the same turn (and
+  turns Follow INI rotation off).
 Screensaver settings are under **Options → Screensaver**. Preview starts it immediately, even with delay off; waking returns here.
 
 - **Screensaver delay:** after 1 minute idle by default, blur and dim the picture

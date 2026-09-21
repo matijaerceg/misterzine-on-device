@@ -417,9 +417,9 @@ func (a *App) optionsEntries() []panelEntry {
 	if a.lay.W*9 >= a.lay.H*16 {
 		layoutHelp = "List: full list, small picture. Split: bigger picture. Picture: narrow titles beside full-height art. Text: rows only, room for long titles."
 	}
-	rotationHelp := "Left/Right turn the image; the choice is saved. Labels describe the monitor's turn."
+	rotationHelp := "Left/Right turn the image; the choice is saved. Labels describe the monitor's turn. On the list, Select + Left/Right does the same."
 	if a.FollowRotation() {
-		rotationHelp = "Set by the active MiSTer INI. Turn off Follow INI rotation above to rotate manually."
+		rotationHelp = "Set by the active MiSTer INI. Turn off Follow INI rotation above to rotate manually, or hold Select and press Left/Right on the list."
 	}
 	updateText := "Run Update All"
 	updateHelp := "Update with live output and a stage bar. Hold " + a.btn("B") + " for 2 seconds to cancel; system writes finish first. A restart may be required."
@@ -470,7 +470,7 @@ func (a *App) optionsEntries() []panelEntry {
 		spacer, group(gfx.SectionDisplay, "Display"),
 		{text: "Follow INI rotation", kind: "follow-rotation", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.FollowRotation()],
 			help: "On (default): match osd_rotate in the active MiSTer INI at every startup. Off: rotate manually below. Never edits the INI."},
-		{text: "Rotation", kind: "rotation", child: true, vals: []string{"monitor CW", "horizontal", "monitor CCW"}, idx: rotIdx, disabled: a.FollowRotation(),
+		{text: "Rotation", kind: "rotation", child: true, vals: []string{rotationNames[gfx.RotRight], rotationNames[gfx.RotNone], rotationNames[gfx.RotLeft]}, idx: rotIdx, disabled: a.FollowRotation(),
 			help: rotationHelp},
 		{text: "Screensaver", kind: "saver-options", opensPage: true, help: "Open screensaver settings and preview: delay, style and screenshot filters."},
 	}

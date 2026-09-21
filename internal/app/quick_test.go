@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
 
@@ -132,5 +133,49 @@ func TestSelectShotChordIdleInTextLayout(t *testing.T) {
 	a.panel.cursor = row
 	if !a.stepValue(-1) || a.ListShot() != "gameplay" {
 		t.Fatalf("Options should still set Art type in the text layout, got %q", a.ListShot())
+	}
+}
+
+// Select + Left/Right turn the display through the Options Rotation
+// row's choices and save the turn; a display following the INI stops,
+// and the notice says so.
+func TestSelectLeftRightRotate(t *testing.T) {
+	a, clock, _, _ := menuApp()
+	a.cfg.FollowRotation = true
+	changed, actions := 0, []string{}
+	a.cfg.SettingsChanged = func() { changed++ }
+	a.cfg.Action = func(kind, arg string) { actions = append(actions, kind+"="+arg) }
+	key := func(k platform.Key, down bool) bool {
+		*clock = clock.Add(30 * time.Millisecond)
+		return a.Handle(platform.Event{Key: k, Pressed: down, At: *clock})
+	}
+	tap := func(k platform.Key) { key(k, true); key(k, false) }
+	if a.Rotation() != gfx.RotNone {
+		t.Fatalf("starts %v", a.Rotation())
+	}
+	key(platform.KeySelect, true)
+	if hint := a.listHint(); !strings.Contains(hint, "Rotate") && !strings.Contains(hint, "Rot.") {
+		t.Fatalf("legend with Select held: %q", hint)
+	}
+	tap(platform.KeyRight)
+	if a.Rotation() != gfx.RotLeft || a.FollowRotation() || a.notice != "Rotation: monitor CCW. Follow INI rotation is now off" {
+		t.Fatalf("Select+Right: %v, follow %v, notice %q", a.Rotation(), a.FollowRotation(), a.notice)
+	}
+	tap(platform.KeyRight)
+	if a.Rotation() != gfx.RotRight || a.notice != "Rotation: monitor CW" {
+		t.Fatalf("Select+Right wraps: %v, notice %q", a.Rotation(), a.notice)
+	}
+	tap(platform.KeyLeft)
+	tap(platform.KeyLeft)
+	if a.Rotation() != gfx.RotNone || a.cursor != 0 || a.screen != ScreenList {
+		t.Fatalf("Select+Left twice: %v, cursor %d, screen %v", a.Rotation(), a.cursor, a.screen)
+	}
+	if changed != 4 || strings.Join(actions, " ") != "rotation=left rotation=right rotation=left rotation=off" {
+		t.Fatalf("saved %d times, actions %v", changed, actions)
+	}
+	key(platform.KeySelect, false)
+	tap(platform.KeyRight)
+	if a.Rotation() != gfx.RotNone {
+		t.Fatalf("Right without Select rotated: %v", a.Rotation())
 	}
 }

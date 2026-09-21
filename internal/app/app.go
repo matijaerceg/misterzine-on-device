@@ -1050,6 +1050,9 @@ func (a *App) act(k platform.Key) bool {
 
 func (a *App) actList(k platform.Key) bool {
 	n := len(a.view)
+	if a.quickHeld() && (k == platform.KeyLeft || k == platform.KeyRight) {
+		return a.rotateBy(map[platform.Key]int{platform.KeyLeft: -1, platform.KeyRight: 1}[k])
+	}
 	if a.quickHeld() && k != platform.KeySelect && k != platform.KeySpace && k != platform.KeyTab && k != platform.KeyEnter {
 		return false // Select held: only the chords act (quick.go), nothing moves or launches
 	}
@@ -1078,7 +1081,7 @@ func (a *App) actList(k platform.Key) bool {
 	case platform.KeyEnd:
 		a.shortPage = false
 		a.cursor = n - 1
-	case platform.KeySelect: // held, Y and X become the quick toggles (quick.go)
+	case platform.KeySelect: // held, Y, X and Left/Right become the quick toggles (quick.go)
 		a.all = true // the legend names them
 		return true
 	case platform.KeySpace:
