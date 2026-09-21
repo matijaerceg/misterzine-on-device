@@ -661,10 +661,14 @@ milestones, not a percentage of bytes downloaded.
 
 When a new MisterZine is out, **Update MisterZine only** sits above that row:
 the same screen, but running Downloader for the misterzine database alone
-(`downloader.sh --run-only misterzine`), so nothing else on the card changes
-and the run takes seconds. It needs Downloader's own launcher in Scripts,
-which Update All installs. When it finishes, A restarts MisterZine into the
-new version.
+(`--run-only misterzine`), so nothing else on the card changes and the run
+takes seconds. When it finishes, A restarts MisterZine into the new version.
+
+It uses whichever Downloader the card has: `Scripts/downloader.sh` when
+Downloader is installed as a script in its own right, and otherwise the copy
+Update All keeps in `Scripts/.config/downloader`, which is where that script
+runs Downloader from anyway. A card with neither is not offered the row at
+all; use Update All.
 
 Up/Down scrolls output; L/R pages. Hold either to repeat using your Hold delay and
 Scroll speed settings, during a run or in a saved result. Scrolling back freezes the displayed log

@@ -122,6 +122,9 @@ func main() {
 		ButtonLabels:   *buttonLabels,
 		MenuButton:     *menuButton,
 		Launcher:       func() bool { return *launcher },
+		// a card that can fetch the app by itself, so the -app-update fixture
+		// renders the Update MisterZine only row as a real card would
+		CanUpdateApp:   func() bool { return true },
 		Action: func(kind, arg string) {
 			if kind == "launcher" {
 				*launcher = arg == "on"

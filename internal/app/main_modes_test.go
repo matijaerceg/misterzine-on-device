@@ -62,6 +62,13 @@ func TestManualScanDismissAndUpdateNotice(t *testing.T) {
 	}
 	a.SetAppUpdate("v1.0.6")
 	entries := a.optionsEntries()
+	// no Downloader on this card: the app-only row is not offered, since
+	// pressing it could not start anything
+	if entries[2].kind != "update" || entries[2].text != "Update MisterZine + all" {
+		t.Fatalf("without Downloader the app-only row showed: %q", entries[2].text)
+	}
+	a.cfg.CanUpdateApp = func() bool { return true }
+	entries = a.optionsEntries()
 	if entries[2].kind != "update-app" || entries[2].text != "Update MisterZine only" || entries[3].kind != "update" || entries[3].text != "Update MisterZine + all" {
 		t.Fatalf("update actions with a new version out: %q, %q", entries[2].text, entries[3].text)
 	}
@@ -76,7 +83,8 @@ func TestManualScanDismissAndUpdateNotice(t *testing.T) {
 // host for the app-only run; the ordinary row still asks for Update All.
 func TestUpdateMisterzineOnlyRow(t *testing.T) {
 	now := time.Unix(1788900000, 0)
-	a := New(Config{PhysW: 320, PhysH: 240, Now: func() time.Time { return now }}, data.Ingest(nil, "test", now), nil)
+	a := New(Config{PhysW: 320, PhysH: 240, Now: func() time.Time { return now },
+		CanUpdateApp: func() bool { return true }}, data.Ingest(nil, "test", now), nil)
 	var actions []string
 	a.cfg.Action = func(kind, arg string) { actions = append(actions, kind+"="+arg) }
 	a.SetAppUpdate("v1.0.6")

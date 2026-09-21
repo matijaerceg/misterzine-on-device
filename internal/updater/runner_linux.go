@@ -66,23 +66,78 @@ func lock(root string) (*os.File, error) {
 	return f, nil
 }
 
-// scriptFor is what a mode runs: Update All's script, or Downloader's
-// launcher told to run the misterzine database alone (it passes its
-// arguments through to Downloader, which reads the card's downloader.ini
-// and keeps its usual store, so nothing else on the card is touched).
-func scriptFor(card, mode string) (string, []string, error) {
-	if mode == ModeApp {
-		s := filepath.Join(card, "Scripts", "downloader.sh")
-		if _, err := os.Stat(s); err != nil {
-			return "", nil, fmt.Errorf("Downloader is not installed in Scripts")
+// downloaderDB is the database section MisterZine ships as, the one an
+// app-only update asks Downloader for by name.
+const downloaderDB = "misterzine"
+
+// engine is how a mode is run: the program, its arguments and the
+// environment the official launcher would have exported for it.
+type engine struct {
+	path string
+	args []string
+	env  []string
+}
+
+// engineFor picks what a mode runs. Update All has its one script. An
+// app-only update needs Downloader, which reaches a card two ways: its own
+// launcher in Scripts, present when Downloader was installed as a script in
+// its own right, and the copy Update All keeps under Scripts/.config/
+// downloader, which is where that launcher runs Downloader from anyway.
+// Update All alone is the ordinary card, so the second way is the one most
+// people take. A card with neither cannot update the app by itself, and
+// says so rather than offering the row (see CanUpdateApp).
+func engineFor(card, mode string) (engine, error) {
+	if mode != ModeApp {
+		script := filepath.Join(card, "Scripts", "update_all.sh")
+		if !exists(script) {
+			return engine{}, fmt.Errorf("Update All is not installed in Scripts")
 		}
-		return s, []string{"--run-only", "misterzine"}, nil
+		return engine{path: "/bin/bash", args: []string{script}}, nil
 	}
-	s := filepath.Join(card, "Scripts", "update_all.sh")
-	if _, err := os.Stat(s); err != nil {
-		return "", nil, fmt.Errorf("Update All is not installed in Scripts")
+	// Downloader reads the ini named after the launcher it was started from,
+	// so this points at the card's downloader.ini whether or not that script
+	// is there; without it Downloader would assume /media/fat.
+	env := []string{"DOWNLOADER_LAUNCHER_PATH=" + filepath.Join(card, "Scripts", "downloader.sh"), "PYTHONUTF8=1"}
+	if cert := certFile(card); cert != "" {
+		env = append(env, "SSL_CERT_FILE="+cert)
 	}
-	return s, nil, nil
+	only := []string{"--run-only", downloaderDB}
+	if script := filepath.Join(card, "Scripts", "downloader.sh"); exists(script) {
+		return engine{path: "/bin/bash", args: append([]string{script}, only...), env: env}, nil
+	}
+	config := filepath.Join(card, "Scripts", ".config", "downloader")
+	if bin := filepath.Join(config, "downloader_bin"); exists(bin) {
+		return engine{path: bin, args: only, env: env}, nil
+	}
+	if archive := filepath.Join(config, "downloader_latest.zip"); exists(archive) {
+		if python, err := exec.LookPath("python3"); err == nil {
+			return engine{path: python, args: append([]string{archive}, only...), env: env}, nil
+		}
+	}
+	return engine{}, fmt.Errorf("Downloader is not installed on this card")
+}
+
+// CanUpdateApp reports whether this card can update MisterZine on its own,
+// so the Options row is offered only where pressing it would do something.
+func CanUpdateApp(card string) bool {
+	_, err := engineFor(card, ModeApp)
+	return err == nil
+}
+
+func exists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}
+
+// certFile is the CA bundle Downloader's launcher exports, the card's copy
+// before the system one; "" leaves Go's own default in place.
+func certFile(card string) string {
+	for _, p := range []string{filepath.Join(card, "Scripts", ".config", "downloader", "cacert.pem"), "/etc/ssl/certs/cacert.pem"} {
+		if st, err := os.Stat(p); err == nil && st.Size() > 0 {
+			return p
+		}
+	}
+	return ""
 }
 
 // Start copies the supervisor so a package update cannot replace the executable
@@ -99,7 +154,7 @@ func Start(root, card, mode string) (State, error) {
 	if OtherScript() {
 		return State{}, fmt.Errorf("another updater is running; let it finish first")
 	}
-	if _, _, err := scriptFor(card, mode); err != nil {
+	if _, err := engineFor(card, mode); err != nil {
 		return State{}, err
 	}
 	id := strconv.FormatInt(time.Now().UnixNano(), 36)
@@ -315,14 +370,14 @@ func Worker(root, card, id, mode string) int {
 	defer os.Remove(filepath.Dir(exe))
 	defer os.Remove(exe)
 	syscall.Setpriority(syscall.PRIO_PROCESS, 0, 5)
-	s, args, err := scriptFor(card, mode)
+	e, err := engineFor(card, mode)
 	if err != nil {
 		return 1
 	}
-	return runWorker(root, card, id, mode, s, args)
+	return runWorker(root, card, id, mode, e)
 }
 
-func runWorker(root, card, id, mode, script string, args []string) int {
+func runWorker(root, card, id, mode string, e engine) int {
 	now := time.Now()
 	o := &outputSink{s: State{ID: id, Mode: mode, PID: os.Getpid(), Boot: bootID(), Status: "starting", Started: now, Heartbeat: now, LastOutput: now}}
 	o.s.Label = "Preparing " + o.s.Name()
@@ -338,9 +393,10 @@ func runWorker(root, card, id, mode, script string, args []string) int {
 	if err = save(livePath(root), o.s); err != nil {
 		return 1
 	}
-	cmd := exec.Command("/bin/bash", append([]string{script}, args...)...)
+	cmd := exec.Command(e.path, e.args...)
 	cmd.Dir = filepath.Join(card, "Scripts")
 	cmd.Env = append(os.Environ(), "UPDATE_ALL_NON_INTERACTIVE=true", "PYTHONUNBUFFERED=1", "TERM=dumb", "COLUMNS=80", "LINES=24")
+	cmd.Env = append(cmd.Env, e.env...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	cmd.Stdout, cmd.Stderr = o, o
 	if err = cmd.Start(); err != nil {

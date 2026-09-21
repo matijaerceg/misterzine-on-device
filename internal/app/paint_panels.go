@@ -386,6 +386,10 @@ func (a *App) rawFilterEntries() []panelEntry {
 	return E
 }
 
+// canUpdateApp reports whether this card could fetch a new MisterZine by
+// itself; a card without Downloader is not offered the row.
+func (a *App) canUpdateApp() bool { return a.cfg.CanUpdateApp != nil && a.cfg.CanUpdateApp() }
+
 func (a *App) optionsEntries() []panelEntry {
 	rotIdx := map[gfx.Rotation]int{gfx.RotRight: 0, gfx.RotNone: 1, gfx.RotLeft: 2}[a.rot]
 	scrollIdx := 1
@@ -533,9 +537,10 @@ func (a *App) optionsEntries() []panelEntry {
 			}
 		}
 	}
-	if a.appUpdate != "" {
-		// a new MisterZine is out: the quick way sits first, Downloader for
-		// this one database, above the full Update All that also brings it
+	if a.appUpdate != "" && a.canUpdateApp() {
+		// a new MisterZine is out and this card can fetch it by itself: the
+		// quick way sits first, Downloader for this one database, above the
+		// full Update All that also brings it
 		for i, e := range E {
 			if e.kind == "update" {
 				row := panelEntry{text: "Update MisterZine only", kind: "update-app", opensPage: true,

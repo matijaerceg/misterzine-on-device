@@ -90,6 +90,9 @@ type Config struct {
 	ROMIssue func(rel string, fresh bool) string
 	// Launcher reports whether the main-menu launcher is enabled (nil = unsupported).
 	Launcher func() bool
+	// CanUpdateApp reports whether this card can fetch a new MisterZine on
+	// its own, which needs Downloader (nil = unsupported).
+	CanUpdateApp func() bool
 	// Scroll is the held-scrolling speed in rows per second: 20, 30, 60.
 	Scroll               string
 	SmoothScrollDisabled bool

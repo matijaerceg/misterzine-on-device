@@ -337,8 +337,11 @@ func TestSlowLogFlushDoesNotBlockOutputState(t *testing.T) {
 // card without the launcher refuses to start rather than fail later.
 func TestAppModeRunsDownloaderForMisterzineOnly(t *testing.T) {
 	root, card := fakeCard(t, "echo 'Running Update All'\n")
+	if CanUpdateApp(card) {
+		t.Fatal("a card with no Downloader claims it can update the app")
+	}
 	if _, err := Start(root, card, ModeApp); err == nil || !strings.Contains(err.Error(), "Downloader is not installed") {
-		t.Fatalf("started without downloader.sh: %v", err)
+		t.Fatalf("started without Downloader: %v", err)
 	}
 	// Downloader on its own prints no success line: its summary ends with
 	// the version and the installed files, and the exit code carries the
@@ -373,5 +376,54 @@ func TestAppModeRunsDownloaderForMisterzineOnly(t *testing.T) {
 	}
 	if s = waitState(t, root, func(s State) bool { return !s.Active() }); s.Status != "failed" {
 		t.Fatalf("a failing Downloader reported %+v", s)
+	}
+}
+
+// Update All does not install Scripts/downloader.sh; it keeps Downloader
+// under Scripts/.config/downloader, which is where that launcher runs it
+// from anyway. An ordinary Update All card has only the second, so the run
+// goes straight to that binary, with the environment the launcher exports.
+func TestAppModeFallsBackToUpdateAllsDownloader(t *testing.T) {
+	root, card := fakeCard(t, "echo 'Running Update All'\n")
+	config := filepath.Join(card, "Scripts", ".config", "downloader")
+	if err := os.MkdirAll(config, 0700); err != nil {
+		t.Fatal(err)
+	}
+	report := "#!/bin/bash\necho \"args: $*\"\necho \"ini: $DOWNLOADER_LAUNCHER_PATH\"\necho \"certs: $SSL_CERT_FILE\"\necho 'Downloader 2.7 (abc) by theypsilon. Run time: 3s'\n"
+	if err := os.WriteFile(filepath.Join(config, "downloader_bin"), []byte(report), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(config, "cacert.pem"), []byte("-----BEGIN CERTIFICATE-----\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if !CanUpdateApp(card) {
+		t.Fatal("a card with Update All's Downloader cannot update the app")
+	}
+	if _, err := Start(root, card, ModeApp); err != nil {
+		t.Fatal(err)
+	}
+	s := waitState(t, root, func(s State) bool { return !s.Active() })
+	out := strings.Join(s.Lines, "\n")
+	if s.Status != "completed" {
+		t.Fatalf("%+v", s)
+	}
+	for _, want := range []string{
+		"args: --run-only misterzine",
+		"ini: " + filepath.Join(card, "Scripts", "downloader.sh"),
+		"certs: " + filepath.Join(config, "cacert.pem"),
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("missing %q in:\n%s", want, out)
+		}
+	}
+	// the card's own launcher wins when it is there, since it also fixes
+	// the clock and the certificates before running Downloader
+	script := filepath.Join(card, "Scripts", "downloader.sh")
+	if err := os.WriteFile(script, []byte("#!/bin/bash\necho 'launcher ran'\n"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	e, err := engineFor(card, ModeApp)
+	if err != nil || e.path != "/bin/bash" || e.args[0] != script {
+		t.Fatalf("engine %+v, %v", e, err)
 	}
 }
