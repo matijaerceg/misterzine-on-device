@@ -19,17 +19,17 @@ It follows new releases and updated builds across the enabled catalogue. The int
 uses a 320x240 framebuffer, with horizontal and rotated CRT layouts.
 
 <p>
-  <img src="docs/screenshots/list.png" alt="The release list on a horizontal screen, Mang-Chi selected, its picture and specs beside the titles, under a line counting what arrived since the last visit" width="320" height="240">
-  <img src="docs/screenshots/list-tate.png" alt="The same list on a rotated (tate) screen, Hacha Mecha Fighter selected, the picture under the titles" width="240" height="320">
-  <img src="docs/screenshots/split.png" alt="The Split layout, Ghouls'n Ghosts' screenshot filling the right half of the screen" width="320" height="240">
-  <img src="docs/screenshots/details.png" alt="Street Fighter II's details: three screenshots, core, ROM, year and what the card holds" width="320" height="240">
-  <img src="docs/screenshots/details-tate.png" alt="DoDonPachi's details in tate, with the full information column" width="240" height="320">
-  <img src="docs/screenshots/artwork.png" alt="Strider artwork filling the screen" width="320" height="240">
-  <img src="docs/screenshots/saver.png" alt="The screenshot screensaver: Raiden II full screen with its details typing out over the picture" width="320" height="240">
-  <img src="docs/screenshots/local.png" alt="Rolling Thunder read from the card's own MRA file, marked local, with its scraped screenshots" width="320" height="240">
-  <img src="docs/screenshots/options.png" alt="Options on the Layout row, the four arrangements drawn underneath it" width="320" height="240">
-  <img src="docs/screenshots/filters-tate.png" alt="Filters in tate with the source list open, every source counted" width="240" height="320">
-  <img src="docs/screenshots/safe-zone.png" alt="The safe-zone editor, a green frame nudged inside the screen edge" width="320" height="240">
+  <img src="docs/screenshots/list.png" align="top" alt="The release list on a horizontal screen, Mang-Chi selected, its picture and specs beside the titles, under a line counting what arrived since the last visit" width="320" height="240">
+  <img src="docs/screenshots/list-tate.png" align="top" alt="The same list on a rotated (tate) screen, Hacha Mecha Fighter selected, the picture under the titles" width="240" height="320">
+  <img src="docs/screenshots/split.png" align="top" alt="The Split layout, Ghouls'n Ghosts' screenshot filling the right half of the screen" width="320" height="240">
+  <img src="docs/screenshots/details.png" align="top" alt="Street Fighter II's details: three screenshots, core, ROM, year and what the card holds" width="320" height="240">
+  <img src="docs/screenshots/details-tate.png" align="top" alt="DoDonPachi's details in tate, with the full information column" width="240" height="320">
+  <img src="docs/screenshots/artwork.png" align="top" alt="Strider artwork filling the screen" width="320" height="240">
+  <img src="docs/screenshots/saver.png" align="top" alt="The screenshot screensaver: Raiden II full screen with its details typing out over the picture" width="320" height="240">
+  <img src="docs/screenshots/local.png" align="top" alt="Rolling Thunder read from the card's own MRA file, marked local, with its scraped screenshots" width="320" height="240">
+  <img src="docs/screenshots/options.png" align="top" alt="Options on the Layout row, the four arrangements drawn underneath it" width="320" height="240">
+  <img src="docs/screenshots/filters-tate.png" align="top" alt="Filters in tate with the source list open, every source counted" width="240" height="320">
+  <img src="docs/screenshots/safe-zone.png" align="top" alt="The safe-zone editor, a green frame nudged inside the screen edge" width="320" height="240">
 </p>
 
 ## Install once
