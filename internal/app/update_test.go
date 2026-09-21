@@ -25,7 +25,7 @@ func TestUpdateNoticeExpiryReleasesWakeDeadline(t *testing.T) {
 				a := New(Config{PhysW: 320, PhysH: 240, Now: func() time.Time { return now }}, data.Ingest(nil, "test", now), nil)
 				if inherited {
 					a.Notice("scanning card", time.Second)
-					a.OpenUpdate()
+					a.OpenUpdate(updater.ModeAll)
 				}
 				a.SetUpdate(updater.State{ID: "run", Status: status, Started: now, Heartbeat: now}, true)
 				if !inherited {

@@ -13,14 +13,14 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	if len(os.Args) == 5 && os.Args[1] == "update-worker" {
+	if len(os.Args) == 6 && os.Args[1] == "update-worker" {
 		if delay, err := time.ParseDuration(os.Getenv("MZ_TEST_WORKER_DELAY")); err == nil {
 			time.Sleep(delay)
 		}
-		os.Exit(Worker(os.Args[2], os.Args[3], os.Args[4]))
+		os.Exit(Worker(os.Args[2], os.Args[3], os.Args[4], os.Args[5]))
 	}
 	if len(os.Args) == 4 && os.Args[1] == "test-start" {
-		s, err := Start(os.Args[2], os.Args[3])
+		s, err := Start(os.Args[2], os.Args[3], ModeAll)
 		if err != nil {
 			panic(err)
 		}
@@ -60,7 +60,7 @@ func waitState(t *testing.T, root string, want func(State) bool) State {
 
 func TestRunnerStreamsAndFinishes(t *testing.T) {
 	root, card := fakeCard(t, "echo 'Running MiSTer Downloader'\nsleep .2\nprintf 'Downloading 1\\rDownloading 2\\n'\nsleep .2\necho 'Running Arcade Organizer'\necho 'Success! Log saved.'\n")
-	s, err := Start(root, card)
+	s, err := Start(root, card, ModeAll)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,12 +88,12 @@ func TestRunnerStreamsAndFinishes(t *testing.T) {
 
 func TestCancelAndDuplicateRun(t *testing.T) {
 	root, card := fakeCard(t, "echo 'Running MiSTer Downloader'\ntrap '' TERM\nwhile true; do echo working; sleep .2; done\n")
-	s, err := Start(root, card)
+	s, err := Start(root, card, ModeAll)
 	if err != nil {
 		t.Fatal(err)
 	}
 	waitState(t, root, func(s State) bool { return len(s.Lines) > 0 })
-	other, err := Start(root, card)
+	other, err := Start(root, card, ModeAll)
 	if err != nil || other.ID != s.ID {
 		t.Fatalf("duplicate run: %v %+v", err, other)
 	}
@@ -116,7 +116,7 @@ func TestCancelWaitsForSystemWrite(t *testing.T) {
 	// The warning starts past the display limit, crosses the 4096-byte
 	// buffer flush, and finishes in a later pipe read before cancellation.
 	root, card := fakeCard(t, "printf '%4090sLinux will be up' ''\nsleep .3\nprintf 'dated from distribution_mister:\\n'\nsleep 2\necho 'Linux has been updated!'\nsleep 8\necho 'Success! Log saved.'\n")
-	s, err := Start(root, card)
+	s, err := Start(root, card, ModeAll)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -140,7 +140,7 @@ func TestCancelWaitsForSystemWrite(t *testing.T) {
 
 func TestUnexpectedExitNotSuccess(t *testing.T) {
 	root, card := fakeCard(t, "echo something\nexit 0\n")
-	if _, err := Start(root, card); err != nil {
+	if _, err := Start(root, card, ModeAll); err != nil {
 		t.Fatal(err)
 	}
 	s := waitState(t, root, func(s State) bool { return !s.Active() })
@@ -187,7 +187,7 @@ func TestSystemWriterWithoutStageOutput(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(card, "Scripts", "dd"), []byte("#!/bin/bash\ntrap 'echo writer-resumed' CONT\necho writing\nsleep 2\necho write-finished\n"), 0700); err != nil {
 		t.Fatal(err)
 	}
-	s, err := Start(root, card)
+	s, err := Start(root, card, ModeAll)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -220,7 +220,7 @@ func TestCancelEscalationWaitsForLateSystemWrite(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			s, err := Start(root, card)
+			s, err := Start(root, card, ModeAll)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -252,7 +252,7 @@ func TestCancelEscalationWaitsForLateSystemWrite(t *testing.T) {
 
 func TestReportedPartialFailure(t *testing.T) {
 	root, card := fakeCard(t, "echo 'There were some errors in the Updaters.'\nexit 0\n")
-	if _, err := Start(root, card); err != nil {
+	if _, err := Start(root, card, ModeAll); err != nil {
 		t.Fatal(err)
 	}
 	s := waitState(t, root, func(s State) bool { return !s.Active() })
@@ -276,7 +276,7 @@ func TestRestartRecovery(t *testing.T) {
 func TestSlowWorkerStartupRemainsActive(t *testing.T) {
 	t.Setenv("MZ_TEST_WORKER_DELAY", "4s")
 	root, card := fakeCard(t, "echo 'Success! Log saved.'\n")
-	s, err := Start(root, card)
+	s, err := Start(root, card, ModeAll)
 	if err != nil || !s.Active() || s.ID == "" || s.PID == 0 {
 		t.Fatalf("slow live supervisor mislabeled: %+v, %v", s, err)
 	}
@@ -294,7 +294,7 @@ func TestWorkerExitBeforeStatusIsFailure(t *testing.T) {
 	if err := os.MkdirAll(LogPath(root), 0700); err != nil {
 		t.Fatal(err)
 	}
-	s, err := Start(root, card)
+	s, err := Start(root, card, ModeAll)
 	if err == nil || s.Active() {
 		t.Fatalf("dead supervisor treated as live: %+v, %v", s, err)
 	}
@@ -329,5 +329,49 @@ func TestSlowLogFlushDoesNotBlockOutputState(t *testing.T) {
 	case <-flushed:
 	case <-time.After(time.Second):
 		t.Fatal("flush did not finish after pipe closed")
+	}
+}
+
+// ModeApp runs Downloader's launcher for the misterzine database alone,
+// under the same supervisor: the run is named for what it does, and a
+// card without the launcher refuses to start rather than fail later.
+func TestAppModeRunsDownloaderForMisterzineOnly(t *testing.T) {
+	root, card := fakeCard(t, "echo 'Running Update All'\n")
+	if _, err := Start(root, card, ModeApp); err == nil || !strings.Contains(err.Error(), "Downloader is not installed") {
+		t.Fatalf("started without downloader.sh: %v", err)
+	}
+	// Downloader on its own prints no success line: its summary ends with
+	// the version and the installed files, and the exit code carries the
+	// result. The fake says exactly that much.
+	downloader := filepath.Join(card, "Scripts", "downloader.sh")
+	finishes := "#!/bin/bash\necho \"Running MiSTer Downloader args: $*\"\necho 'Downloading misterzine/misterzine'\necho 'Downloader 2.7 (abc) by theypsilon. Run time: 3s'\necho 'Installed:'\necho ' •misterzine/misterzine'\n"
+	if err := os.WriteFile(downloader, []byte(finishes), 0700); err != nil {
+		t.Fatal(err)
+	}
+	s, err := Start(root, card, ModeApp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// a run this short can already have finished by the time Start returns,
+	// so only what does not change with it is asserted here
+	if s.Mode != ModeApp || s.Name() != "MisterZine update" || s.ID == "" {
+		t.Fatalf("started as %+v", s)
+	}
+	s = waitState(t, root, func(s State) bool { return !s.Active() })
+	if s.Status != "completed" || s.Mode != ModeApp || !strings.Contains(strings.Join(s.Lines, "\n"), "args: --run-only misterzine") {
+		t.Fatalf("%+v", s)
+	}
+	if s.Summary() != "MisterZine update finished successfully" {
+		t.Fatalf("summary %q", s.Summary())
+	}
+	// a Downloader that fails still fails, exit code and all
+	if err := os.WriteFile(downloader, []byte("#!/bin/bash\necho 'Running MiSTer Downloader'\nexit 1\n"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Start(root, card, ModeApp); err != nil {
+		t.Fatal(err)
+	}
+	if s = waitState(t, root, func(s State) bool { return !s.Active() }); s.Status != "failed" {
+		t.Fatalf("a failing Downloader reported %+v", s)
 	}
 }

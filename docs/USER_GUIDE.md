@@ -605,8 +605,10 @@ Unreadable card scans retain the previous inventory and show a failure banner.
 
 MisterZine checks GitHub for a newer stable app release on launch and at most
 every 30 minutes. When available, the main bar shows **App update**, and Options
-shows the version beside the Update All instructions. Run Update All, then quit
-and reopen MisterZine to use the new app. Offline checks stay quiet. This is
+gains **Update MisterZine only**, which fetches just the new MisterZine through
+Downloader in a few seconds and then offers a restart; the row below it, Update
+MisterZine + all, runs Update All as usual and brings the new app with
+everything else. Offline checks stay quiet. This is
 separate from automatically refreshing the games catalogue; prerelease and
 development builds do not advertise stable downgrades.
 By default, **Type** offers Stable and Beta directly and the **Game filters**
@@ -648,6 +650,13 @@ Choose **Run Update All** in Options. Browsing pauses while a dedicated screen
 shows stages, elapsed time, an activity spinner and a live log. Stages are
 milestones, not a percentage of bytes downloaded.
 
+When a new MisterZine is out, **Update MisterZine only** sits above that row:
+the same screen, but running Downloader for the misterzine database alone
+(`downloader.sh --run-only misterzine`), so nothing else on the card changes
+and the run takes seconds. It needs Downloader's own launcher in Scripts,
+which Update All installs. When it finishes, A restarts MisterZine into the
+new version.
+
 Up/Down scrolls output; L/R pages. Hold either to repeat using your Hold delay and
 Scroll speed settings, during a run or in a saved result. Scrolling back freezes the displayed log
 snapshot, and reaching the bottom resumes live output.
@@ -658,8 +667,8 @@ completed updates. Restart messages reflect Update All's saved reboot policy.
 
 The supervised updater continues if the app closes. Reopen MisterZine to see
 its progress. On completion the card is rescanned. Results appear once and B
-acknowledges them; **Last update result** reopens the saved output without
-starting another update. After an interrupted run or restart, the app reports
+acknowledges them; **Last update result** reopens the saved output (of either
+kind of run) without starting another update. After an interrupted run or restart, the app reports
 the last known state rather than assuming success.
 
 For an Update All run started from Scripts or Remote, quit MisterZine first,

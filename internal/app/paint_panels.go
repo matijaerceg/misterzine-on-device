@@ -11,6 +11,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/gen"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
+	"github.com/matijaerceg/misterzine-on-device/internal/updater"
 )
 
 // panelEntry is one line of the Filters or Options screen.
@@ -425,7 +426,7 @@ func (a *App) optionsEntries() []panelEntry {
 	updateHelp := "Update with live output and a stage bar. Hold " + a.btn("B") + " for 2 seconds to cancel; system writes finish first. A restart may be required."
 	if a.appUpdate != "" {
 		updateText = "Update MisterZine + all"
-		updateHelp = "MisterZine " + a.appUpdate + " is available. Run Update All, then quit and reopen MisterZine to use it."
+		updateHelp = "MisterZine " + a.appUpdate + " is available. Run Update All to bring it with everything else, then restart MisterZine to use it."
 	}
 	// the section headers: a mark, the title and a rule to the right, as
 	// the list's group markers; Controls sits before Operation so the rows
@@ -438,8 +439,8 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "Refresh data now", kind: "refresh",
 			help: "Checks on launch and every 30 minutes. Catalog: publication time. Last checked: last successful check this session."},
 		{text: updateText, kind: "update", opensPage: true, help: updateHelp},
-		{text: "Last Update All result", kind: "update-result", child: true, opensPage: true,
-			help: "Review the last Update All result and its saved output. This does not start another update."},
+		{text: "Last update result", kind: "update-result", child: true, opensPage: true,
+			help: "Review the last update's result and its saved output, Update All or MisterZine alone. This does not start another update."},
 		{text: "Rescan card", kind: "rescan", opensPage: true,
 			help: "Refresh on-card status after an external update. The built-in Update All rescans automatically when it finishes."},
 		{text: "Prefetch shots" + a.progressText(), kind: "prefetch", vals: []string{"off", "on"}, idx: prefetchIdx,
@@ -528,6 +529,18 @@ func (a *App) optionsEntries() []panelEntry {
 		for i, e := range E {
 			if e.kind == "remember-sort" {
 				E = append(E[:i+1], append([]panelEntry{a.defaultViewEntry()}, E[i+1:]...)...)
+				break
+			}
+		}
+	}
+	if a.appUpdate != "" {
+		// a new MisterZine is out: the quick way sits first, Downloader for
+		// this one database, above the full Update All that also brings it
+		for i, e := range E {
+			if e.kind == "update" {
+				row := panelEntry{text: "Update MisterZine only", kind: "update-app", opensPage: true,
+					help: "MisterZine " + a.appUpdate + " is available. Fetches just MisterZine through Downloader in seconds, then offers a restart; nothing else changes."}
+				E = append(E[:i], append([]panelEntry{row}, E[i:]...)...)
 				break
 			}
 		}
@@ -850,7 +863,7 @@ func (a *App) optionsHint() string {
 // legend words it; a row missing here ignores A (Left/Right pick its
 // value, or it is greyed).
 var optionsActs = map[string]string{
-	"refresh": "Refresh", "update": "Run", "update-result": "Open", "rescan": "Rescan", "clearimg": "Clear",
+	"refresh": "Refresh", "update": "Run", "update-app": "Run", "update-result": "Open", "rescan": "Rescan", "clearimg": "Clear",
 	"views": "Open", "saver-options": "Open", "saver-preview": "Preview", "screensaver": "Preview", "launch-transition": "Preview", "saver-style": "Preview", "saver-bright": "Preview", "saver-dim": "Preview", "saver-info": "Preview",
 	"inset": "Edit", "troubleshooting": "Open", "credits": "Open", "quit": "Quit",
 }
@@ -1210,7 +1223,10 @@ func (a *App) togglePanel() bool {
 		}
 		return true
 	case "update":
-		a.OpenUpdate()
+		a.OpenUpdate(updater.ModeAll)
+		return true
+	case "update-app":
+		a.OpenUpdate(updater.ModeApp)
 		return true
 	case "clear":
 		if e.disabled {

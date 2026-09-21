@@ -1,4 +1,5 @@
-// Package updater supervises Update All independently of the framebuffer UI.
+// Package updater supervises Update All, or Downloader for the misterzine
+// database alone, independently of the framebuffer UI.
 package updater
 
 import (
@@ -18,8 +19,17 @@ const TailLines = 160
 
 var Stages = []string{"Prepare", "Check", "Update", "Extras", "Finish"}
 
+// The modes a run can take: Update All with the user's saved settings, or
+// Downloader run for the misterzine database alone (--run-only), the
+// quick way to a new MisterZine when one is announced.
+const (
+	ModeAll = "all"
+	ModeApp = "app"
+)
+
 type State struct {
 	ID              string    `json:"id"`
+	Mode            string    `json:"mode,omitempty"` // ModeAll ("" in records from before modes) or ModeApp
 	PID             int       `json:"pid"`
 	Boot            string    `json:"boot"`
 	Status          string    `json:"status"`
@@ -37,6 +47,15 @@ type State struct {
 	SawSuccess      bool      `json:"saw_success"`
 	HadErrors       bool      `json:"had_errors"`
 	Lines           []string  `json:"lines"`
+}
+
+// Name is what the run is called on screen: "Update All", or "MisterZine
+// update" for a run of the misterzine database alone.
+func (s State) Name() string {
+	if s.Mode == ModeApp {
+		return "MisterZine update"
+	}
+	return "Update All"
 }
 
 func (s State) Active() bool {
@@ -100,7 +119,7 @@ func ReconcileWorker(s State) State {
 			s.Reboot = false
 			if s.SawSuccess && !s.HadErrors {
 				s.Status = "restarted"
-				s.Message = "Update All reported success before restart."
+				s.Message = s.Name() + " reported success before restart."
 			} else if s.HadErrors {
 				s.Message = "Restarted after update errors. Review the log."
 			}
@@ -207,10 +226,13 @@ func (s State) Summary() string {
 		return "System update: cancellation waits until safe"
 	}
 	if s.Reboot {
-		return "Update All may restart the system"
+		return s.Name() + " may restart the system"
 	}
 	if s.Status == "completed" {
-		return "Update All finished successfully"
+		return s.Name() + " finished successfully"
+	}
+	if s.Mode == ModeApp {
+		return "Updating MisterZine alone through Downloader"
 	}
 	return "Updating with your saved Update All settings"
 }

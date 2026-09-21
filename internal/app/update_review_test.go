@@ -25,7 +25,7 @@ func TestUpdateHoldAcrossStartup(t *testing.T) {
 					calls = append(calls, id)
 				}
 			}}, data.Ingest(nil, "", now), nil)
-			a.OpenUpdate()
+			a.OpenUpdate(updater.ModeAll)
 			a.Handle(platform.Event{Key: platform.KeyBack, Pressed: true, At: now})
 			if releaseEarly {
 				a.Handle(platform.Event{Key: platform.KeyBack, At: now.Add(time.Second)})

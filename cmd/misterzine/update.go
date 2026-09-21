@@ -46,13 +46,14 @@ func (h *host) initUpdates() {
 	}()
 }
 
-func (h *host) startUpdate() {
+// startUpdate begins a run of the given mode (updater.ModeAll or ModeApp).
+func (h *host) startUpdate(mode string) {
 	if h.updatePending {
 		return
 	}
 	h.updatePending = true
 	go func() {
-		s, err := updater.Start(h.root, h.card)
+		s, err := updater.Start(h.root, h.card, mode)
 		select {
 		case h.updates <- updateResult{state: s, start: true, err: err}:
 		case <-h.quit:
@@ -100,7 +101,7 @@ func (h *host) receiveUpdate(u updateResult) {
 		h.updatePending = false
 	}
 	if u.err != nil {
-		u.state = updater.State{Status: "failed", Label: "Update All did not start", Message: u.err.Error()}
+		u.state = updater.State{Status: "failed", Label: "The update did not start", Message: u.err.Error()}
 	}
 	// Ignore snapshots of a prior run after a new start failed.
 	if !u.start && h.a.UpdateState().ID == "" && !u.state.Active() {

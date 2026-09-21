@@ -1,10 +1,14 @@
 package app
 
 import (
-	"github.com/matijaerceg/misterzine-on-device/internal/data"
-	"github.com/matijaerceg/misterzine-on-device/internal/platform"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/matijaerceg/misterzine-on-device/internal/data"
+	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
+	"github.com/matijaerceg/misterzine-on-device/internal/platform"
+	"github.com/matijaerceg/misterzine-on-device/internal/updater"
 )
 
 func TestFavoritesModeLifecycle(t *testing.T) {
@@ -58,11 +62,51 @@ func TestManualScanDismissAndUpdateNotice(t *testing.T) {
 	}
 	a.SetAppUpdate("v1.0.6")
 	entries := a.optionsEntries()
-	if entries[2].kind != "update" || entries[2].text == "Run Update All" {
-		t.Fatal("missing update action")
+	if entries[2].kind != "update-app" || entries[2].text != "Update MisterZine only" || entries[3].kind != "update" || entries[3].text != "Update MisterZine + all" {
+		t.Fatalf("update actions with a new version out: %q, %q", entries[2].text, entries[3].text)
 	}
 	a.SetAppUpdate("")
-	if a.optionsEntries()[2].text != "Run Update All" {
+	if entries = a.optionsEntries(); entries[2].text != "Run Update All" || entries[3].kind != "update-result" {
 		t.Fatal("stale update notice")
+	}
+}
+
+// With a new MisterZine announced, Options offers to fetch it alone: A on
+// that row opens the update screen for a MisterZine update and asks the
+// host for the app-only run; the ordinary row still asks for Update All.
+func TestUpdateMisterzineOnlyRow(t *testing.T) {
+	now := time.Unix(1788900000, 0)
+	a := New(Config{PhysW: 320, PhysH: 240, Now: func() time.Time { return now }}, data.Ingest(nil, "test", now), nil)
+	var actions []string
+	a.cfg.Action = func(kind, arg string) { actions = append(actions, kind+"="+arg) }
+	a.SetAppUpdate("v1.0.6")
+	a.openOptions()
+	for i, e := range a.panel.entries {
+		if e.kind == "update-app" {
+			a.panel.cursor = i
+		}
+	}
+	a.actPanel(platform.KeyEnter)
+	if a.screen != ScreenUpdate || a.update.Mode != updater.ModeApp || a.update.Label != "Starting MisterZine update" {
+		t.Fatalf("screen %v, run %+v", a.screen, a.update)
+	}
+	if strings.Join(actions, " ") != "update=app" {
+		t.Fatalf("actions %v", actions)
+	}
+	c := gfx.New(320, 240)
+	a.paintUpdate(c)
+	a.SetUpdate(updater.State{ID: "run", Mode: updater.ModeApp, Status: "completed", Started: now, Heartbeat: now}, true)
+	if a.update.Summary() != "MisterZine update finished successfully" {
+		t.Fatalf("summary %q", a.update.Summary())
+	}
+	a.openOptions()
+	for i, e := range a.panel.entries {
+		if e.kind == "update" {
+			a.panel.cursor = i
+		}
+	}
+	a.actPanel(platform.KeyEnter)
+	if a.update.Mode != updater.ModeAll || strings.Join(actions, " ") != "update=app update=all" {
+		t.Fatalf("run %+v, actions %v", a.update, actions)
 	}
 }

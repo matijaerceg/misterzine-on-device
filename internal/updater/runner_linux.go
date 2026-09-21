@@ -61,14 +61,33 @@ func lock(root string) (*os.File, error) {
 	}
 	if err = syscall.Flock(int(f.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
 		f.Close()
-		return nil, fmt.Errorf("Update All is already running")
+		return nil, fmt.Errorf("an update is already running")
 	}
 	return f, nil
 }
 
+// scriptFor is what a mode runs: Update All's script, or Downloader's
+// launcher told to run the misterzine database alone (it passes its
+// arguments through to Downloader, which reads the card's downloader.ini
+// and keeps its usual store, so nothing else on the card is touched).
+func scriptFor(card, mode string) (string, []string, error) {
+	if mode == ModeApp {
+		s := filepath.Join(card, "Scripts", "downloader.sh")
+		if _, err := os.Stat(s); err != nil {
+			return "", nil, fmt.Errorf("Downloader is not installed in Scripts")
+		}
+		return s, []string{"--run-only", "misterzine"}, nil
+	}
+	s := filepath.Join(card, "Scripts", "update_all.sh")
+	if _, err := os.Stat(s); err != nil {
+		return "", nil, fmt.Errorf("Update All is not installed in Scripts")
+	}
+	return s, nil, nil
+}
+
 // Start copies the supervisor so a package update cannot replace the executable
 // from under this run. FD 3 transfers ownership of the run lock to that process.
-func Start(root, card string) (State, error) {
+func Start(root, card, mode string) (State, error) {
 	if s, err := Read(root); err == nil && s.Active() {
 		return s, nil
 	}
@@ -80,9 +99,8 @@ func Start(root, card string) (State, error) {
 	if OtherScript() {
 		return State{}, fmt.Errorf("another updater is running; let it finish first")
 	}
-	script := filepath.Join(card, "Scripts", "update_all.sh")
-	if _, err := os.Stat(script); err != nil {
-		return State{}, fmt.Errorf("Update All is not installed in Scripts")
+	if _, _, err := scriptFor(card, mode); err != nil {
+		return State{}, err
 	}
 	id := strconv.FormatInt(time.Now().UnixNano(), 36)
 	tmp, err := os.MkdirTemp("", "misterzine-update-")
@@ -115,7 +133,7 @@ func Start(root, card string) (State, error) {
 	if closeErr != nil {
 		return State{}, closeErr
 	}
-	cmd := exec.Command(worker, "update-worker", root, card, id)
+	cmd := exec.Command(worker, "update-worker", root, card, id, mode)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 	cmd.ExtraFiles = []*os.File{f}
 	if err = cmd.Start(); err != nil {
@@ -131,7 +149,8 @@ func Start(root, card string) (State, error) {
 			return s, nil
 		}
 	}
-	s := State{ID: id, PID: cmd.Process.Pid, Boot: bootID(), Status: "starting", Label: "Starting Update All", Message: "Supervisor started; waiting for status", Started: time.Now()}
+	s := State{ID: id, Mode: mode, PID: cmd.Process.Pid, Boot: bootID(), Status: "starting", Message: "Supervisor started; waiting for status", Started: time.Now()}
+	s.Label = "Starting " + s.Name()
 	if workerAlive(s) {
 		return s, nil
 	}
@@ -288,7 +307,7 @@ func (o *outputSink) signalGroup(group int, signal syscall.Signal) bool {
 
 // Worker runs in a detached copy of the binary, never on the script console.
 // The entry point owns inherited lock FD 3 until this entire run is finished.
-func Worker(root, card, id string) int {
+func Worker(root, card, id, mode string) int {
 	lockFile := os.NewFile(3, "update-lock")
 	defer lockFile.Close()
 	syscall.CloseOnExec(3)
@@ -296,12 +315,17 @@ func Worker(root, card, id string) int {
 	defer os.Remove(filepath.Dir(exe))
 	defer os.Remove(exe)
 	syscall.Setpriority(syscall.PRIO_PROCESS, 0, 5)
-	return runWorker(root, card, id, filepath.Join(card, "Scripts", "update_all.sh"))
+	s, args, err := scriptFor(card, mode)
+	if err != nil {
+		return 1
+	}
+	return runWorker(root, card, id, mode, s, args)
 }
 
-func runWorker(root, card, id, script string) int {
+func runWorker(root, card, id, mode, script string, args []string) int {
 	now := time.Now()
-	o := &outputSink{s: State{ID: id, PID: os.Getpid(), Boot: bootID(), Status: "starting", Label: "Preparing Update All", Started: now, Heartbeat: now, LastOutput: now}}
+	o := &outputSink{s: State{ID: id, Mode: mode, PID: os.Getpid(), Boot: bootID(), Status: "starting", Started: now, Heartbeat: now, LastOutput: now}}
+	o.s.Label = "Preparing " + o.s.Name()
 	var err error
 	o.log, err = os.OpenFile(LogPath(root), os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
 	if err != nil {
@@ -314,14 +338,14 @@ func runWorker(root, card, id, script string) int {
 	if err = save(livePath(root), o.s); err != nil {
 		return 1
 	}
-	cmd := exec.Command("/bin/bash", script)
+	cmd := exec.Command("/bin/bash", append([]string{script}, args...)...)
 	cmd.Dir = filepath.Join(card, "Scripts")
 	cmd.Env = append(os.Environ(), "UPDATE_ALL_NON_INTERACTIVE=true", "PYTHONUNBUFFERED=1", "TERM=dumb", "COLUMNS=80", "LINES=24")
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	cmd.Stdout, cmd.Stderr = o, o
 	if err = cmd.Start(); err != nil {
 		o.s.Status = "failed"
-		o.s.Message = "Could not start Update All: " + err.Error()
+		o.s.Message = "Could not start " + o.s.Name() + ": " + err.Error()
 		o.s.Finished = time.Now()
 		saveCard(StatePath(root), o.s)
 		save(livePath(root), o.s)
@@ -359,8 +383,10 @@ func runWorker(root, card, id, script string) int {
 			case err != nil:
 				o.s.Status = "failed"
 				o.s.Label = "Update failed"
-				o.s.Message = "Update All failed. Review the output below."
-			case !o.s.SawSuccess:
+				o.s.Message = o.s.Name() + " failed. Review the output below."
+			case !o.s.SawSuccess && o.s.Mode != ModeApp:
+				// Update All announces its success in the output; Downloader
+				// on its own does not, and says so with its exit code.
 				o.s.Status = "failed"
 				o.s.Label = "Update stopped"
 				o.s.Message = "Updater exited without confirming success."
@@ -397,7 +423,7 @@ func runWorker(root, card, id, script string) int {
 				terminateAt = time.Now()
 				o.mu.Lock()
 				o.s.Status = "cancelling"
-				o.s.Message = "Cancelling Update All"
+				o.s.Message = "Cancelling " + o.s.Name()
 				o.mu.Unlock()
 			}
 			if !terminateAt.IsZero() && time.Since(terminateAt) > 3*time.Second {

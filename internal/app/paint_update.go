@@ -39,15 +39,18 @@ func (a *App) UpdateRestartAvailable() bool { return a.updateView.restart && !a.
 
 func (a *App) UpdateState() updater.State { return a.update }
 
-func (a *App) OpenUpdate() {
+// OpenUpdate starts a run of the given mode (updater.ModeAll, or ModeApp
+// for MisterZine alone) and shows its screen.
+func (a *App) OpenUpdate(mode string) {
 	a.rep = repeater{}
 	a.down = map[platform.Key]bool{}
 	a.updateView = updateView{now: a.cfg.TimerNow()}
-	a.update = updater.State{Status: "starting", Label: "Starting Update All", Started: a.cfg.Now()}
+	a.update = updater.State{Mode: mode, Status: "starting", Started: a.cfg.Now()}
+	a.update.Label = "Starting " + a.update.Name()
 	a.screen = ScreenUpdate
 	a.all = true
 	if a.cfg.Action != nil {
-		a.cfg.Action("update", "")
+		a.cfg.Action("update", mode)
 	}
 }
 
@@ -189,7 +192,7 @@ func (a *App) paintUpdate(c *gfx.Canvas) {
 	c.Fill(l.Root, gen.Eva.Bg)
 	c.Fill(l.Status, gen.Eva.Surface)
 	a.paintHoldBar(c)
-	c.Text(l.Status.Min.X+2, l.Status.Min.Y+2, a.sm, "Update All", gen.Eva.Accent)
+	c.Text(l.Status.Min.X+2, l.Status.Min.Y+2, a.sm, s.Name(), gen.Eva.Accent)
 	status := s.Status
 	if s.Active() {
 		spin := []string{"|", "/", "-", "\\"}[int((v.now.UnixMilli()/250)&3)]
@@ -215,7 +218,7 @@ func (a *App) paintUpdate(c *gfx.Canvas) {
 	}
 	label := s.Label
 	if label == "" {
-		label = "Preparing Update All"
+		label = "Preparing " + s.Name()
 	}
 	c.Text(l.Body.Min.X+2, y, a.body, gfx.Fit(label, a.body.Cols(l.Body.Dx()-4)), gen.Eva.Fg)
 	y += a.body.H + 3

@@ -119,8 +119,8 @@ func main() {
 	if len(os.Args) > 1 && os.Args[1] == "launcher" {
 		os.Exit(launcherCmd(os.Args[2:]))
 	}
-	if len(os.Args) == 5 && os.Args[1] == "update-worker" {
-		os.Exit(updater.Worker(os.Args[2], os.Args[3], os.Args[4]))
+	if len(os.Args) == 6 && os.Args[1] == "update-worker" {
+		os.Exit(updater.Worker(os.Args[2], os.Args[3], os.Args[4], os.Args[5]))
 	}
 	root := flag.String("root", "/media/fat/misterzine", "config directory")
 	card := flag.String("card", "/media/fat", "card root")
@@ -308,7 +308,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 				return
 			}
 			if kind == "update" {
-				h.startUpdate()
+				h.startUpdate(arg)
 				return
 			}
 			if kind == "update-cancel" {
