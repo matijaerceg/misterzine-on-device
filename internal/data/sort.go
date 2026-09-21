@@ -57,6 +57,10 @@ func ParseSort(name string) (SortMode, bool) {
 type Recent struct {
 	K  string `json:"k"`
 	At string `json:"at"`
+	// View is the list order the game was launched from (a SortMode name),
+	// so that reopening after the game can land on the row even when the
+	// app starts in another view; "" for launches recorded before it.
+	View string `json:"view,omitempty"`
 }
 
 // OrderRecents returns the row indexes of the launched games in history

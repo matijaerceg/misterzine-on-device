@@ -90,3 +90,50 @@ func TestRecentsViewLifecycle(t *testing.T) {
 		t.Fatal("remembered recents restored while off")
 	}
 }
+
+// Reopened by the launcher after a game (--resume), the app lands on that
+// game: in the view it starts in when that view lists it, otherwise back
+// in the view the launch was made from, which a launch records. A launch
+// from before views were recorded, or one the filters hide, leaves the
+// list at the top.
+func TestResumeLandsOnTheLaunchedGameInItsView(t *testing.T) {
+	rows := []data.Row{{Base: "Arcade", K: "z", Title: "Zulu", MRA: "_Arcade/z.mra", Updated: "2026-01-03"}, {Base: "Arcade", K: "a", Title: "Alpha", MRA: "_Arcade/a.mra", Updated: "2026-01-01"}, {Base: "Arcade", K: "b", Title: "Beta", MRA: "_Arcade/b.mra", Updated: "2026-01-02"}}
+	clock := time.Date(2026, 9, 21, 12, 0, 0, 0, time.UTC)
+	a := New(Config{PhysW: 320, PhysH: 240, Now: func() time.Time { return clock }, Launch: func(string) {},
+		Exists: func(string) bool { return true }, Status: func(int) data.Status { return data.StatusCurrent }},
+		data.Ingest(rows, "", clock), nil)
+	a.SetSort(data.SortAlphabetical)
+	a.moveToKey("b")
+	a.actList(platform.KeyStart)
+	if r := a.Recents()[0]; r.K != "b" || r.View != "alphabetical" {
+		t.Fatalf("launch recorded as %+v", r)
+	}
+	// the Recents view lists only what was launched: b is there, so no view change
+	a.SetSort(data.SortRecents)
+	a.cursor = 0
+	if !a.ResumeAt(a.Recents()[0]) || a.CursorKey() != "b" || a.Sort() != data.SortRecents {
+		t.Fatalf("resume in a view that lists the game: cursor %q, view %v", a.CursorKey(), a.Sort())
+	}
+	// a game in Recents but starting in Favorites (empty): back to the launch view
+	a.SetSort(data.SortFavorites)
+	if !a.ResumeAt(data.Recent{K: "b", View: "alphabetical"}) || a.Sort() != data.SortAlphabetical || a.CursorKey() != "b" {
+		t.Fatalf("resume from an empty view: view %v, cursor %q", a.Sort(), a.CursorKey())
+	}
+	// the launch view since turned off, or unrecorded: the list stays put
+	a.SetSort(data.SortFavorites)
+	if a.ResumeAt(data.Recent{K: "b"}) || a.Sort() != data.SortFavorites {
+		t.Fatalf("an unrecorded launch view moved the list: view %v", a.Sort())
+	}
+	a.cfg.ViewsOff = []string{"alphabetical"}
+	a.viewsOff = parseViewsOff(a.cfg.ViewsOff)
+	if a.ResumeAt(data.Recent{K: "b", View: "alphabetical"}) || a.Sort() != data.SortFavorites {
+		t.Fatalf("a launch view turned off was reopened: view %v", a.Sort())
+	}
+	a.viewsOff = nil
+	// hidden by a filter: found nowhere, the list stays at the top
+	a.SetSort(data.SortAlphabetical)
+	a.SetFilters(data.Filters{FavOnly: true})
+	if a.ResumeAt(data.Recent{K: "b", View: "alphabetical"}) {
+		t.Fatal("a filtered-out game was reported found")
+	}
+}

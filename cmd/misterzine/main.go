@@ -378,8 +378,11 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	}
 	h.a.SetFilters(h.state.Filters)
 	if resume && len(h.state.Recents) > 0 {
-		// Return after game: the launcher reopened us; land on the game.
-		h.a.MoveToKey(h.state.Recents[0].K)
+		// Return after game: the launcher reopened us; land on the game,
+		// in the view it was launched from when the starting view lacks it.
+		if !h.a.ResumeAt(h.state.Recents[0]) {
+			lg.Printf("resume: %s is not in the list; staying at the top", h.state.Recents[0].K)
+		}
 	}
 	h.a.SetNet("")
 	if ini.Found && !ini.AnalogVisible() && !hasState { // first run only: HDMI users need nothing

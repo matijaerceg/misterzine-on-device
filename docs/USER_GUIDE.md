@@ -509,7 +509,11 @@ screenshots match, lettering runs instead and the Preview help explains why.
   Needs the Main menu shortcut.
 - **Return after game:** off by default. On: when a game you started from
   MisterZine exits to the MiSTer menu (Reset or Exit in the OSD), the launcher
-  picks the MisterZine entry again and the list opens on that game. Games
+  picks the MisterZine entry again and the list opens on that game: in the
+  view it starts in when that view lists the game, otherwise in the view you
+  launched it from (with Remember last view off, MisterZine starts in the
+  Default view, which may not hold it). A game the current filters hide is
+  not shown; the list opens at the top. Games
   loaded some other way, and quitting through the Menu button, do not bring
   it back. Needs the Main menu shortcut.
 - **Exit chord:** off by default. Select+Start, or L+R+Select+Start, held
