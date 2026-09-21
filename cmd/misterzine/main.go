@@ -168,7 +168,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		if ini.DirectVideoAuto() {
 			lg.Printf("WARNING: direct_video=2 only reaches the analog port through an HDMI DAC; on a JAMMA cabinet such as a MiSTercade add vga_scaler=1 and video_mode=320,16,32,16,240,4,3,16,6048 under a [Menu] section (see docs/TROUBLESHOOTING.md, JAMMA cabinets)")
 		} else {
-			lg.Printf("WARNING: the framebuffer cannot reach the analog port with this MiSTer.ini; on a CRT-only setup add direct_video=1 (or vga_scaler=1 + a 15 kHz video_mode) under a [Menu] section, or under [MisterZine] to affect MisterZine alone; the framebuffer is never Y/C-encoded, so a vga_mode=svideo or cvbs CRT needs an RGB input for MisterZine (see docs/TROUBLESHOOTING.md, S-Video and composite)")
+			lg.Printf("WARNING: the framebuffer cannot reach the analog port with this MiSTer.ini; on a CRT-only setup add direct_video=1 (or vga_scaler=1 + a 15 kHz video_mode) under a [Menu] section, or under [MisterZine] to affect MisterZine alone; the framebuffer is never Y/C-encoded, so with vga_mode=svideo or cvbs the [MisterZine] direct_video=1 section shows MisterZine in black and white (see docs/TROUBLESHOOTING.md, S-Video and composite)")
 		}
 	}
 	rotation := startupRotation(h.settings, ini)
