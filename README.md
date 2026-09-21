@@ -4,6 +4,11 @@ An arcade-first frontend for MiSTer. Browse games, follow new releases,
 see what's on your card, and launch straight into play from the MiSTer main menu. MisterZine brings the [release tracker](https://misterzine.fyi)
 to your display, with screenshots, favorites, filters, and keyboard search.
 
+<video src="https://github.com/user-attachments/assets/4fb458ba-5adf-4f02-aec2-c5af51a0eaa1" controls muted></video>
+
+Every frame above is the app itself, at 30 fps. The same tour runs at
+[1080p60 on YouTube](https://www.youtube.com/watch?v=vplqOaqzo9A).
+
 Arcade games are shown by default. Enable **Options > List > Show non-arcade
 cores** to include console, computer and other cores for browsing and tracking
 updates. Favorites are kept when their cores are hidden. Arcade games on your
@@ -14,13 +19,17 @@ It follows new releases and updated builds across the enabled catalogue. The int
 uses a 320x240 framebuffer, with horizontal and rotated CRT layouts.
 
 <p>
-  <img src="docs/screenshots/list.png" alt="The release list on a horizontal screen, Line of Fire selected, with its picture and specs beside the titles" width="320" height="240">
-  <img src="docs/screenshots/list-tate.png" alt="The same list on a rotated (tate) screen, Strikers 1945 selected, the picture under the titles" width="240" height="320">
-  <img src="docs/screenshots/details-tate.png" alt="Raiden II's details in tate, showing 41 versions to pick from" width="240" height="320">
-  <img src="docs/screenshots/artwork.png" alt="Robotron: 2084 artwork filling the screen" width="320" height="240">
-  <img src="docs/screenshots/safe-zone.png" alt="Safe-zone adjustment" width="320" height="240">
-  <img src="docs/screenshots/options.png" alt="Options with the screensaver setting selected" width="320" height="240">
-  <img src="docs/screenshots/filters-tate.png" alt="Filters in tate" width="240" height="320">
+  <img src="docs/screenshots/list.png" alt="The release list on a horizontal screen, Mang-Chi selected, its picture and specs beside the titles, under a line counting what arrived since the last visit" width="320" height="240">
+  <img src="docs/screenshots/list-tate.png" alt="The same list on a rotated (tate) screen, Hacha Mecha Fighter selected, the picture under the titles" width="240" height="320">
+  <img src="docs/screenshots/split.png" alt="The Split layout, Ghouls'n Ghosts' screenshot filling the right half of the screen" width="320" height="240">
+  <img src="docs/screenshots/details.png" alt="Street Fighter II's details: three screenshots, core, ROM, year and what the card holds" width="320" height="240">
+  <img src="docs/screenshots/details-tate.png" alt="DoDonPachi's details in tate, with the full information column" width="240" height="320">
+  <img src="docs/screenshots/artwork.png" alt="Strider artwork filling the screen" width="320" height="240">
+  <img src="docs/screenshots/saver.png" alt="The screenshot screensaver: Raiden II full screen with its details typing out over the picture" width="320" height="240">
+  <img src="docs/screenshots/local.png" alt="Rolling Thunder read from the card's own MRA file, marked local, with its scraped screenshots" width="320" height="240">
+  <img src="docs/screenshots/options.png" alt="Options on the Layout row, the four arrangements drawn underneath it" width="320" height="240">
+  <img src="docs/screenshots/filters-tate.png" alt="Filters in tate with the source list open, every source counted" width="240" height="320">
+  <img src="docs/screenshots/safe-zone.png" alt="The safe-zone editor, a green frame nudged inside the screen edge" width="320" height="240">
 </p>
 
 ## Install once

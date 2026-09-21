@@ -73,9 +73,13 @@ go run ./cmd/mzharness -motion -images /path/to/misterzine/docs/images -out moti
   -script "shot start; press select; press space; frames split 33 7; release space; release select"
 ```
 
-README screenshots are individual PNGs enlarged to 2x with nearest-neighbor
-resampling. Their HTML dimensions stay at 320x240 (240x320 in tate), providing
-sharp pixels on 2x displays. Keep the images inline so the gallery wraps with the
+README screenshots are harness end states, captured against the site's
+published export (`docs/releases/data.json` and `meta.json`) with `-now` set to
+the day of the shoot and `-images` pointing at the site's `docs/images`, so
+dates, counts, sources and artwork are the current ones; tate shots add
+`-rot left -logical`. They are individual PNGs enlarged to 2x with
+nearest-neighbor resampling. Their HTML dimensions stay at 320x240 (240x320 in
+tate), providing sharp pixels on 2x displays. Keep the images inline so the gallery wraps with the
 available width; do not combine views into one image or put them in a table.
 
 The startup logo is a paint-only overlay that dithers away over one second from the
