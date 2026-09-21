@@ -1,16 +1,20 @@
-Games only on your card join the list
+Update MisterZine by itself
 
-MisterZine 1.1 finds every arcade game on your card that the catalogue does not know, reads its title, year, maker and core straight from the MRA file, and lists it with everything else, marked local. Hacks, prototypes, homebrew and cores you built yourself show up in every view and in the screensaver, get a screenshot when one exists, and launch the same way. Nothing to set up: the card scan does it.
+When a new MisterZine is out, Options offers **Update MisterZine only** above Run Update All. It fetches the new version alone and offers to restart into it, in about as long as it takes to read this. Update All still brings the whole card along whenever you want it; this is for the two-megabyte app that used to cost you the entire run.
 
-Also in this release:
+**Added**
 
-- Start on a game and an arcade cabinet turns towards you with that game on its screen before it loads. Options -> Display -> Launch transition plays it on every launch or only when Start is held.
-- Exit chord: hold Select+Start for a second inside a game to leave it for the menu, and Return after game brings MisterZine back. Off by default, under Options -> Operation.
-- Every view opens with a line counting what was added or updated since your last look, and those games show a green date wherever they sort.
-- Coin-Op Collection's Patreon alphas and betas say so, and which key they need.
-- Slop Cores (TheJesusFish) is a source.
-- A game whose core is not on the card no longer launches into a blank screen; the message names the core.
+- Hold Select and press Left or Right in the list to turn the display, instead of going into Options for it.
+- Credits names the Patreon supporters, and the early adopters now come from the site, so new names arrive without waiting for a release.
+- kuzecores (kuzearcade) is a source.
+- Troubleshooting explains what MisterZine does and does not do over S-Video and composite, now that it has been through a CRT.
 
-Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v110--2026-09-19).
-Existing installations update through Update All. New installation:
+**Fixed**
+
+- A game the catalogue has only for a core you have not got, like a Patreon beta, now shows your own copy of it as well, if something on your card can play it. It sits beside the greyed row, says why it is there, and steps aside if you ever install the core the catalogue names.
+- Return after game reopens on the game you launched even when the view you start in does not list it.
+- The arcade cabinet no longer turns towards you on every launch: a tap on Start goes straight to the game, and holding Start plays the animation. Options -> Display -> Launch transition still has Always.
+
+Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v111--2026-09-21).
+Existing installations update through Update All, or through Update MisterZine only. New installation:
 [installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once).
