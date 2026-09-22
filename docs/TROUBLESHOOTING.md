@@ -279,7 +279,7 @@ The bundled catalogue is a starting point for a first launch without a connectio
 ### Send a report
 
 Options -> Troubleshooting -> **Send a report** describes your card to the
-developer and gives you a short code, such as `K7Q2`, to post wherever
+developer and gives you a short code, such as `K7M4`, to post wherever
 you asked for help. The report holds:
 
 - the app version, your board, the display settings MisterZine reads from

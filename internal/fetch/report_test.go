@@ -13,7 +13,7 @@ import (
 func TestSendReport(t *testing.T) {
 	var got []byte
 	var gotType, gotUA string
-	status, answer := http.StatusCreated, `{"code":"K7Q2"}`
+	status, answer := http.StatusCreated, `{"code":"K7M4"}`
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" || r.URL.Path != "/reports" {
 			http.NotFound(w, r)
@@ -31,7 +31,7 @@ func TestSendReport(t *testing.T) {
 	c := NewClient("v1.1.2-test")
 
 	code, err := c.SendReport(context.Background(), []byte("MisterZine report v1\nApp: test\n"))
-	if err != nil || code != "K7Q2" {
+	if err != nil || code != "K7M4" {
 		t.Fatalf("code %q, err %v", code, err)
 	}
 	if string(got) != "MisterZine report v1\nApp: test\n" || !strings.HasPrefix(gotType, "text/plain") || gotUA != "misterzine-on-device/v1.1.2-test" {
@@ -42,13 +42,13 @@ func TestSendReport(t *testing.T) {
 	if code, err := c.SendReport(context.Background(), []byte("x")); err != nil || code != "7K2Q9XMB" {
 		t.Fatalf("an eight-character code: %q, %v", code, err)
 	}
-	for _, bad := range []string{`{"code":"K7Q"}`, `{"code":"K7Q2K7Q2K"}`, `{"code":"k7q2"}`} {
+	for _, bad := range []string{`{"code":"K7Q"}`, `{"code":"K7M4K7M4K"}`, `{"code":"k7q2"}`} {
 		answer = bad
 		if _, err := c.SendReport(context.Background(), []byte("x")); err == nil {
 			t.Errorf("accepted %s", bad)
 		}
 	}
-	answer = `{"code":"K7Q2"}`
+	answer = `{"code":"K7M4"}`
 
 	for _, c2 := range []struct {
 		status int

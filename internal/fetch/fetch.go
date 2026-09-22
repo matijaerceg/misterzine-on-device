@@ -46,8 +46,10 @@ var (
 )
 
 // SendReport uploads a report and returns the code the service filed it
-// under, as the service spells it: Crockford base32, four characters (four
-// to eight are accepted, so a change of length never breaks a build).
+// under, as the service spells it: four characters without look-alikes
+// (34679ACEFHJKMNPRTWXY). Any Crockford base32 code of four to eight
+// characters is accepted, so a change of alphabet or length never breaks a
+// build.
 func (c *Client) SendReport(ctx context.Context, body []byte) (string, error) {
 	if ReportService == "" {
 		return "", ErrReportOff

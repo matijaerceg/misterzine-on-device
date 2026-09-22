@@ -33,7 +33,7 @@ func TestSendReportSavesAndUploads(t *testing.T) {
 		got, _ = io.ReadAll(r.Body)
 		w.WriteHeader(status)
 		if status == http.StatusCreated {
-			io.WriteString(w, `{"code":"K7Q2"}`)
+			io.WriteString(w, `{"code":"K7M4"}`)
 		}
 	}))
 	defer srv.Close()
@@ -60,7 +60,7 @@ func TestSendReportSavesAndUploads(t *testing.T) {
 	}
 
 	o := send()
-	if o.Code != "K7Q2" || o.Saved != filepath.Base(h.root)+"/report.txt" || o.Problem != "" {
+	if o.Code != "K7M4" || o.Saved != filepath.Base(h.root)+"/report.txt" || o.Problem != "" {
 		t.Fatalf("outcome %+v", o)
 	}
 	saved, err := os.ReadFile(filepath.Join(h.root, "report.txt"))
