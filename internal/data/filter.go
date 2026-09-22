@@ -71,53 +71,100 @@ func (f *Filters) Active() bool {
 
 // Pass reports whether one row survives the filters.
 func (f *Filters) Pass(r *Row, d *Derived, st Status, fav, unseen bool) bool {
+	return f.Why(r, d, st, fav, unseen) == ""
+}
+
+// Why names the first rule that hides a row, "" when the row survives the
+// filters; Pass is Why == "", so the diagnostic report can never disagree
+// with the list.
+func (f *Filters) Why(r *Row, d *Derived, st Status, fav, unseen bool) string {
 	if f == nil {
-		return true
+		return ""
 	}
 	if f.ArcadeOnly && !r.IsArcade() {
-		return false
+		return "not an arcade game (Options: arcade only)"
 	}
 	if f.MatchRotation != "" && d.RotGroup != f.MatchRotation {
-		return false
+		return "Filter by rotation (the screen shows " + rotWord(f.MatchRotation) + " games; this one is " + rotWord(d.RotGroup) + ")"
 	}
-	if (f.HideDeprecated && r.Deprecated) || f.BaseOff[r.Base] || f.SrcOff[r.Src] || f.SrcHidden[r.Src] {
-		return false
+	if f.HideDeprecated && r.Deprecated {
+		return "a deprecated core (Options: deprecated hidden)"
 	}
-	if r.IsArcade() && f.BetaOff[BetaKind(r)] {
-		return false
+	if f.BaseOff[r.Base] {
+		return "Filters -> Type (" + r.Base + " off)"
 	}
-	if r.IsArcade() && (f.YearOff[d.Year] || f.ResOff[r.Res] || f.RotOff[d.RotGroup] || f.PlrOff[r.Plr] || f.GenreOff[r.Genre] || f.DirectionsOff[d.Directions] || f.ButtonsOff[d.Buttons]) {
-		return false
+	if f.SrcOff[r.Src] {
+		return "Filters -> Source (" + r.Src + " off)"
+	}
+	if f.SrcHidden[r.Src] {
+		return "Options -> Sources: installed only (" + r.Src + " is not in downloader.ini)"
+	}
+	if r.IsArcade() {
+		switch {
+		case f.BetaOff[BetaKind(r)]:
+			return "Filters -> Type (" + BetaKind(r) + " off)"
+		case f.YearOff[d.Year]:
+			return "Filters -> Year (" + orUnknown(d.Year) + " off)"
+		case f.ResOff[r.Res]:
+			return "Filters -> Resolution (" + orUnknown(r.Res) + " off)"
+		case f.RotOff[d.RotGroup]:
+			return "Filters -> Rotation (" + orUnknown(map[string]string{"h": "horizontal", "v": "vertical"}[d.RotGroup]) + " off)"
+		case f.PlrOff[r.Plr]:
+			return "Filters -> Players (" + orUnknown(r.Plr) + " off)"
+		case f.GenreOff[r.Genre]:
+			return "Filters -> Genre (" + orUnknown(r.Genre) + " off)"
+		case f.DirectionsOff[d.Directions]:
+			return "Filters -> Controls (" + orUnknown(d.Directions) + " off)"
+		case f.ButtonsOff[d.Buttons]:
+			return "Filters -> Buttons (" + orUnknown(d.Buttons) + " off)"
+		}
 	}
 	switch f.Install {
 	case InstallFound:
 		if !st.Found() {
-			return false
+			return "Filters: only games on the card"
 		}
 	case InstallCurrent:
 		if st != StatusCurrent {
-			return false
+			return "Filters: only current builds"
 		}
 	case InstallOlder:
 		if !st.Older() {
-			return false
+			return "Filters: only older builds"
 		}
 	case InstallUndated:
 		if st != StatusFoundUndated {
-			return false
+			return "Filters: only builds of unknown date"
 		}
 	case InstallMissing:
 		if st != StatusNotFound {
-			return false
+			return "Filters: only games not on the card"
 		}
 	}
 	if f.FavOnly && !fav {
-		return false
+		return "Filters: favorites only"
 	}
 	if f.Since && !unseen {
-		return false
+		return "Filters: only rows changed since the last look"
 	}
-	return true
+	return ""
+}
+
+func rotWord(g string) string {
+	switch g {
+	case "h":
+		return "horizontal"
+	case "v":
+		return "vertical"
+	}
+	return "of unknown rotation"
+}
+
+func orUnknown(s string) string {
+	if s == "" {
+		return "unknown"
+	}
+	return s
 }
 
 // BetaKind is an arcade row's sub-type for the Type filter: "beta" for a

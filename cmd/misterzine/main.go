@@ -33,6 +33,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/images"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform/mister"
+	"github.com/matijaerceg/misterzine-on-device/internal/report"
 	"github.com/matijaerceg/misterzine-on-device/internal/scan"
 	"github.com/matijaerceg/misterzine-on-device/internal/snapshot"
 	"github.com/matijaerceg/misterzine-on-device/internal/store"
@@ -105,6 +106,9 @@ type host struct {
 	appliedCanvas                 string
 	restartRequested              bool
 	troubleshooting               supportHost
+	iniLine                       string    // the INI summary the log opens with, for the card report
+	scanDiag                      *scanDiag // UI-owned: the latest finished card scan, for the card report
+	reportSending                 atomic.Bool
 }
 
 func main() {
@@ -163,8 +167,9 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		iniPath, iniAlt = mister.ActiveIni(card)
 	}
 	ini := mister.ReadIni(iniPath)
-	lg.Printf("ini: %s alt=%d found=%v osd_rotate=%d direct_video=%d vga_scaler=%d fb_terminal=%d video_mode=%q analog-visible=%v",
+	h.iniLine = fmt.Sprintf("%s alt=%d found=%v osd_rotate=%d direct_video=%d vga_scaler=%d fb_terminal=%d video_mode=%q analog-visible=%v",
 		filepath.Base(iniPath), iniAlt, ini.Found, ini.OSDRotate, ini.DirectVideo, ini.VGAScaler, ini.FBTerminal, ini.VideoMode, ini.AnalogVisible())
+	lg.Printf("ini: %s", h.iniLine)
 	if ini.Found && !ini.AnalogVisible() {
 		if ini.DirectVideoAuto() {
 			lg.Printf("WARNING: direct_video=2 only reaches the analog port through an HDMI DAC; on a JAMMA cabinet such as a MiSTercade add vga_scaler=1 and video_mode=320,16,32,16,240,4,3,16,6048 under a [Menu] section (see docs/TROUBLESHOOTING.md, JAMMA cabinets)")
@@ -1249,6 +1254,16 @@ type scanResult struct {
 	// downloader.ini; iniFound is whether that file was read at all.
 	hidden   map[string]bool
 	iniFound bool
+	// diag is the final pass's account of the card for the report: its
+	// totals and every file or folder that is no row, with the reason.
+	diag *scanDiag
+}
+
+// scanDiag is what a card scan found, kept for Troubleshooting -> Send a
+// report.
+type scanDiag struct {
+	lines []string
+	files []report.File
 }
 
 // scan reads the card off the UI goroutine: cores and MRA stats first (fast),
@@ -1268,11 +1283,15 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 	}
 	h.lg.Printf("scan: %d cores; current %d, outdated %d, likely outdated %d, undated %d, not found %d (%v)", len(idx.Cores),
 		counts[data.StatusCurrent], counts[data.StatusOutdated], counts[data.StatusLikelyOutdated], counts[data.StatusFoundUndated], counts[data.StatusNotFound], time.Since(t0).Round(time.Millisecond))
+	diag := &scanDiag{lines: []string{fmt.Sprintf("cores: %d; current %d, outdated %d, likely outdated %d, undated %d, not found %d (%v)", len(idx.Cores),
+		counts[data.StatusCurrent], counts[data.StatusOutdated], counts[data.StatusLikelyOutdated], counts[data.StatusFoundUndated], counts[data.StatusNotFound], time.Since(t0).Round(time.Millisecond))}}
 	if idx.Err != nil {
 		h.lg.Printf("scan failed: %v", idx.Err)
-		h.sendScan(scanResult{gen: gen, notice: "Card scan failed", final: true})
+		diag.lines = append(diag.lines, "scan failed: "+idx.Err.Error())
+		h.sendScan(scanResult{gen: gen, notice: "Card scan failed", final: true, diag: diag})
 		return
 	}
+	diag.lines = append(diag.lines, fmt.Sprintf("downloader.ini found: %v; databases: %d", iniFound, len(dbs)))
 	if !iniFound {
 		h.lg.Printf("scan: no downloader.ini on the card; Sources: installed hides nothing")
 	} else {
@@ -1329,7 +1348,28 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 	for k, ps := range local.Alts {
 		resolved[k] = ps
 	}
-	res := scanResult{index: idx, status: st, gen: gen, alts: resolved, notice: notice, final: true, hidden: hidden, iniFound: iniFound}
+	diag.lines = append(diag.lines,
+		fmt.Sprintf("alternatives: %d files, %d unreadable (%v)", len(alts), len(skipped), t2.Sub(t1).Round(time.Millisecond)),
+		fmt.Sprintf("local walk: %d MRAs read outside the catalogue's folders; %d local rows; %d catalogue files, %d versions of catalogue games (%v)",
+			local.Files, len(merged)-ncat, local.OwnFiles, local.VersionFiles, time.Since(t2).Round(time.Millisecond)))
+	for _, e := range []error{err, local.Err} {
+		if e != nil {
+			diag.lines = append(diag.lines, "scan problem: "+e.Error())
+		}
+	}
+	for _, d := range local.SkippedDirs {
+		diag.files = append(diag.files, report.File{Path: d.Path + "/", Reason: "folder not read: " + d.Reason})
+	}
+	for _, s := range skipped {
+		diag.files = append(diag.files, report.File{Path: s.Path, Reason: "not readable: " + s.Reason})
+	}
+	for _, s := range local.Skipped {
+		diag.files = append(diag.files, report.File{Path: s.Path, Reason: s.Reason})
+	}
+	for _, a := range local.Accounted {
+		diag.files = append(diag.files, report.File{Path: a.Path, Reason: a.Reason + " (catalogue row " + a.K + ")"})
+	}
+	res := scanResult{index: idx, status: st, gen: gen, alts: resolved, notice: notice, final: true, hidden: hidden, iniFound: iniFound, diag: diag}
 	if nextGen != gen {
 		// The row set changes: statuses must index into the new rows.
 		res.status = scan.Statuses(h.card, idx, merged)

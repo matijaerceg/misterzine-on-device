@@ -30,7 +30,7 @@ type supportHost struct {
 
 func (h *host) supportHooks() *app.SupportHooks {
 	return &app.SupportHooks{Start: h.startSupport, Finish: func() support.Report { return h.finishSupport(false) },
-		Load: h.loadSupport, Launch: h.testSupportLaunch,
+		Load: h.loadSupport, Launch: h.testSupportLaunch, SendReport: h.sendReport,
 		Pads: func() []support.Pad {
 			if h.input == nil {
 				return nil

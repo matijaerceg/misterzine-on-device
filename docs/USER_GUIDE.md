@@ -118,7 +118,9 @@ this game only for cores that are not on this card. It keeps that place in
 every order but Favorites and Recents, dates or no dates, and belongs to the
 greyed row's letter, year or manufacturer group. Install the catalogue's own
 core and the local row steps aside for it, taking its favorite, chosen
-version and launch history along.
+version and launch history along. If a game file on your card is not in the
+list and you cannot see why, Options -> Troubleshooting -> Send a report lists
+every file MisterZine leaves out, with the reason.
 Options -> Views -> Remember last view is on by default; turn it off to choose
 a Default view for each new visit (Core updated initially).
 Y cycles Updated, Debut, Year, Alphabetical, Manufacturer, then Favorites; the
@@ -583,6 +585,11 @@ screenshots match, lettering runs instead and the Preview help explains why.
   what MisterZine does with it, plus the gap since the previous press. Hold
   the back button for two seconds to leave it.
   See [troubleshooting](TROUBLESHOOTING.md#start-does-not-launch-games).
+  **Send a report** describes your card to the developer (settings, filters,
+  local games, every game file left out of the list and why, the card's
+  folders and core files, recent log lines) and shows a code to post where you
+  asked for help; a copy stays on the card as `misterzine/report.txt`. See
+  [Send a report](TROUBLESHOOTING.md#send-a-report).
 - **Credits:** a page naming the developer, the people whose work MisterZine
   builds on (MiSTer, Downloader and Update All, the fonts), the Patreon
   supporters (current, and past once anyone has moved on: support ends, the

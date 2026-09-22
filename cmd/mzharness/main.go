@@ -28,6 +28,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/images"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform/headless"
+	"github.com/matijaerceg/misterzine-on-device/internal/report"
 	"github.com/matijaerceg/misterzine-on-device/internal/support"
 	"github.com/matijaerceg/misterzine-on-device/internal/updater"
 )
@@ -52,6 +53,7 @@ func main() {
 	updatePath := flag.String("update-state", "", "render an Update All state JSON without running an updater")
 	updateRestart := flag.Bool("update-restart", false, "show the updated-program restart prompt")
 	supportPath := flag.String("support-report", "", "controller diagnostic fixture; no devices are opened")
+	reportSend := flag.String("report-send", "", "fake Troubleshooting -> Send a report: sent or failed; nothing is uploaded")
 	appUpdate := flag.String("app-update", "", "available app version fixture")
 	scanResult := flag.Bool("scan-result", false, "show completed card scan fixture")
 	unchanged := flag.Bool("unchanged", false, "previous visit saw every release")
@@ -186,6 +188,16 @@ func main() {
 				}
 			},
 		}
+	}
+	if *reportSend != "" {
+		if cfg.Support == nil {
+			cfg.Support = &app.SupportHooks{Load: func() support.Report { return support.Report{} }}
+		}
+		o := report.Outcome{Code: "7K2Q9XMB", Saved: "misterzine/report.txt"}
+		if *reportSend == "failed" {
+			o = report.Outcome{Problem: "No connection to the report service.", Saved: "misterzine/report.txt"}
+		}
+		cfg.Support.SendReport = func(_ report.AppPart, done func(report.Outcome)) { done(o) }
 	}
 	if *status == "fake" {
 		cfg.Status = func(i int) data.Status { return data.Status(1 + i%4) }

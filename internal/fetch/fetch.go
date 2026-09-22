@@ -9,12 +9,14 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
@@ -31,6 +33,69 @@ var SnapService = "https://images.misterzine.fyi"
 
 // SlotLocalSnap is the picture slot served by SnapService.
 const SlotLocalSnap = "lsnap"
+
+// ReportService is the base URL that takes the card reports a player sends
+// from Options -> Troubleshooting -> Send a report; "" turns sending off.
+var ReportService = "https://api.misterzine.fyi"
+
+// Errors from SendReport that the Troubleshooting screen words for the player.
+var (
+	ErrReportOff      = errors.New("the report service is switched off")
+	ErrReportBusy     = errors.New("too many reports at once; try again in a minute")
+	ErrReportTooLarge = errors.New("the report is too large to send")
+)
+
+// SendReport uploads a report and returns the code the service filed it
+// under, as the service spells it (eight Crockford base32 characters).
+func (c *Client) SendReport(ctx context.Context, body []byte) (string, error) {
+	if ReportService == "" {
+		return "", ErrReportOff
+	}
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, "POST", ReportService+"/reports", bytes.NewReader(body))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("User-Agent", c.UA)
+	req.Header.Set("Content-Type", "text/plain; charset=utf-8")
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("%w: %v", ErrOffline, err)
+	}
+	defer resp.Body.Close()
+	answer, _ := io.ReadAll(io.LimitReader(resp.Body, 4<<10))
+	switch resp.StatusCode {
+	case http.StatusCreated, http.StatusOK:
+	case http.StatusRequestEntityTooLarge:
+		return "", ErrReportTooLarge
+	case http.StatusTooManyRequests:
+		return "", ErrReportBusy
+	case http.StatusServiceUnavailable:
+		return "", ErrReportOff
+	default:
+		return "", fmt.Errorf("the report service answered HTTP %d", resp.StatusCode)
+	}
+	var got struct {
+		Code string `json:"code"`
+	}
+	if err := json.Unmarshal(answer, &got); err != nil || !validReportCode(got.Code) {
+		return "", fmt.Errorf("the report service gave no code: %q", answer)
+	}
+	return got.Code, nil
+}
+
+func validReportCode(c string) bool {
+	if len(c) != 8 {
+		return false
+	}
+	for _, r := range c {
+		if !strings.ContainsRune("0123456789ABCDEFGHJKMNPQRSTVWXYZ", r) {
+			return false
+		}
+	}
+	return true
+}
 
 // validHash accepts a lower-case hex SHA-256.
 func validHash(h string) bool {

@@ -10,6 +10,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/gen"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
+	"github.com/matijaerceg/misterzine-on-device/internal/report"
 	"github.com/matijaerceg/misterzine-on-device/internal/support"
 )
 
@@ -21,10 +22,15 @@ type SupportHooks struct {
 	Load   func() support.Report
 	Launch func(game, target string) support.Report
 	Pads   func() []support.Pad // the gamepads the input reader has open, for the pad tester
+	// SendReport builds the card report from the UI's part plus what the
+	// host knows, saves it on the card and uploads it, off the UI goroutine;
+	// done runs on the UI goroutine with the result.
+	SendReport func(part report.AppPart, done func(report.Outcome))
 }
 
 type supportView struct {
-	mode                   string // menu, capture, result, launch, pad
+	mode                   string // menu, capture, result, launch, pad, report, report-sending, report-done
+	outcome                report.Outcome
 	cursor, page           int
 	from, until, next, now time.Time
 	report                 support.Report
@@ -201,6 +207,25 @@ func (a *App) OpenTroubleshooting() {
 	a.all = true
 }
 
+// sendReport hands the UI's part of the card report to the host, which
+// saves and uploads it; the screen waits until the outcome comes back.
+func (a *App) sendReport() {
+	h := a.cfg.Support
+	if h == nil || h.SendReport == nil {
+		a.Notice("Reports unavailable", 4*time.Second)
+		return
+	}
+	a.support.mode = "report-sending"
+	a.all = true
+	h.SendReport(a.ReportPart(), func(o report.Outcome) {
+		a.support.outcome = o
+		if a.support.mode == "report-sending" {
+			a.support.mode = "report-done"
+		}
+		a.all = true
+	})
+}
+
 func (a *App) supportCapturing() bool {
 	return a.screen == ScreenTroubleshooting && a.support.mode == "capture"
 }
@@ -264,6 +289,9 @@ func (a *App) actSupport(k platform.Key) bool {
 	if v.mode == "capture" {
 		return false
 	}
+	if v.mode == "report-sending" {
+		return true // the upload gives up within 20 seconds; nothing to do until then
+	}
 	if k == platform.KeyBack {
 		if v.mode == "menu" {
 			a.openOptions()
@@ -285,7 +313,7 @@ func (a *App) actSupport(k platform.Key) bool {
 		case platform.KeyUp:
 			v.cursor = max(0, v.cursor-1)
 		case platform.KeyDown:
-			v.cursor = min(3, v.cursor+1)
+			v.cursor = min(4, v.cursor+1)
 		case platform.KeyEnter:
 			switch v.cursor {
 			case 0:
@@ -309,7 +337,13 @@ func (a *App) actSupport(k platform.Key) bool {
 				} else {
 					a.Notice("No troubleshooting result yet", 4*time.Second)
 				}
+			case 4:
+				v.mode = "report"
 			}
+		}
+	case "report":
+		if k == platform.KeyEnter {
+			a.sendReport()
 		}
 	case "launch":
 		if k == platform.KeyEnter && v.target != "" && a.cfg.Support != nil && a.cfg.Support.Launch != nil {
@@ -476,7 +510,7 @@ func (a *App) paintSupport(c *gfx.Canvas) {
 	v := &a.support
 	switch v.mode {
 	case "menu":
-		for i, label := range []string{"Test Start button", "Test pad buttons", "Test game launch", "Last troubleshooting result"} {
+		for i, label := range []string{"Test Start button", "Test pad buttons", "Test game launch", "Last troubleshooting result", "Send a report"} {
 			col := gen.Eva.Fg
 			if i == v.cursor {
 				c.Fill(image.Rect(box.Min.X-1, y, box.Max.X+1, y+a.sm.H+2), gen.Eva.Surface)
@@ -498,7 +532,54 @@ func (a *App) paintSupport(c *gfx.Canvas) {
 		if v.cursor == 3 {
 			write("Review the saved result, including after restarting MisterZine.", gen.Eva.Muted)
 		}
+		if v.cursor == 4 {
+			write("Send the developer a report about this card, with a code to quote when you ask for help.", gen.Eva.Muted)
+		}
 		a.paintHint(c, "Up/Down Choose  A Open  B Back")
+	case "report":
+		write("SEND A REPORT", gen.Eva.Accent)
+		y += 2
+		write("Sends the MisterZine developer a report about this card, so a problem can be looked into:", gen.Eva.Fg)
+		for _, s := range []string{"the app version, settings and filters", "your local games, and each game file left out of the list with the reason",
+			"the card's folders and core file names", "recent log lines"} {
+			write("- "+s, gen.Eva.Fg)
+		}
+		write("", gen.Eva.Fg)
+		write("No passwords, Wi-Fi details or Downloader addresses. Kept 30 days and read only by the developer. A copy is saved on the card.", gen.Eva.Muted)
+		a.paintHint(c, "A Send  B Cancel")
+	case "report-sending":
+		write("SEND A REPORT", gen.Eva.Accent)
+		y += 2
+		write("Sending"+gfx.Ellipsis, gen.Eva.Fg)
+		write("", gen.Eva.Fg)
+		write("This takes a few seconds.", gen.Eva.Muted)
+		a.paintHint(c, "Please wait")
+	case "report-done":
+		o := v.outcome
+		if o.Code != "" {
+			write("REPORT SENT", gen.Eva.Accent)
+			y += 2
+			write("Your code:", gen.Eva.Fg)
+			y += 2
+			code := report.DisplayCode(o.Code)
+			c.Text(box.Min.X, y, a.body, code, gen.Eva.Accent)
+			y += a.body.H + 4
+			write("Post this code where you asked for help.", gen.Eva.Fg)
+			if o.Saved != "" {
+				write("A copy is on the card as "+o.Saved+".", gen.Eva.Muted)
+			}
+		} else {
+			write("REPORT NOT SENT", gen.Eva.Accent)
+			y += 2
+			write(o.Problem, gen.Eva.Fg)
+			write("", gen.Eva.Fg)
+			if o.Saved != "" {
+				write("It is saved on the card as "+o.Saved+": send that file instead.", gen.Eva.Fg)
+			} else {
+				write("It could not be saved on the card either: "+o.SaveErr, gen.Eva.Fg)
+			}
+		}
+		a.paintHint(c, "B Back")
 	case "pad":
 		write("PAD TEST", gen.Eva.Accent)
 		y += 2

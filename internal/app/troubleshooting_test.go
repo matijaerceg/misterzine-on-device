@@ -8,6 +8,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
+	"github.com/matijaerceg/misterzine-on-device/internal/report"
 	"github.com/matijaerceg/misterzine-on-device/internal/support"
 )
 
@@ -115,5 +116,84 @@ func TestSupportReportPaginationPreservesEvidence(t *testing.T) {
 				t.Fatalf("lost %q in %s", want, text)
 			}
 		}
+	}
+}
+
+// Send a report: the menu's fifth entry asks first, waits for the host
+// while it sends (no key leaves), then shows the code or where the card
+// copy is. The UI's part names the rule hiding each local game.
+func TestSendReportFlow(t *testing.T) {
+	a, clock := supportApp()
+	cat := []data.Row{{K: "gigandes", Title: "Gigandes", Base: "Arcade", Src: "jtbindb", Core: "jttaitox", SN: "gigandes", Rot: "Horizontal", Updated: "2026-09-07"}}
+	local := []data.Row{
+		{K: "local:gigandes", Title: "Gigandes (World bazset)", Base: "Arcade", Src: data.SrcLocal, SN: "gigandes", Core: "Gigandes_baz", MRA: "_Arcade/Gigandes (World bazset).mra", Standin: true, Rot: "Horizontal"},
+		{K: "local:volfied", Title: "Volfied (World, rev 1)", Base: "Arcade", Src: data.SrcLocal, SN: "volfied", Core: "Volfied", MRA: "_Arcade/Volfied (World, rev 1) .mra", Rot: "Vertical (CW)"},
+	}
+	a.cfg.FilterRotation = true
+	a.SetData(data.Ingest(data.MergeLocal(cat, local), "fixture", *clock), nil)
+	var part report.AppPart
+	var done func(report.Outcome)
+	a.cfg.Support = &SupportHooks{SendReport: func(p report.AppPart, d func(report.Outcome)) { part, done = p, d }}
+	press := func(k platform.Key) {
+		a.Handle(platform.Event{Key: k, Pressed: true, At: *clock})
+		a.Handle(platform.Event{Key: k, At: *clock})
+		a.Paint()
+	}
+
+	a.OpenTroubleshooting()
+	for i := 0; i < 6; i++ {
+		press(platform.KeyDown) // the cursor stops on the last entry
+	}
+	press(platform.KeyEnter)
+	if a.support.mode != "report" || done != nil {
+		t.Fatalf("mode %q: the report must ask before sending", a.support.mode)
+	}
+	press(platform.KeyEnter)
+	if a.support.mode != "report-sending" || done == nil {
+		t.Fatalf("mode %q after A", a.support.mode)
+	}
+	for _, k := range []platform.Key{platform.KeyBack, platform.KeyEnter, platform.KeyDown} {
+		press(k)
+	}
+	if a.support.mode != "report-sending" || a.Screen() != ScreenTroubleshooting {
+		t.Fatal("a key left the screen while the report was on its way")
+	}
+
+	got := map[string]report.LocalGame{}
+	for _, g := range part.Local {
+		got[g.K] = g
+	}
+	if g := got["local:gigandes"]; g.StandsFor != "gigandes" || g.Hidden != "" || g.Core != "Gigandes_baz" {
+		t.Fatalf("stand-in: %+v", g)
+	}
+	if g := got["local:volfied"]; !strings.Contains(g.Hidden, "Filter by rotation") {
+		t.Fatalf("hidden local game: %+v", g)
+	}
+	if part.Catalogue != 1 || part.Rows != 3 || !strings.Contains(part.Effective, `filter by rotation "h"`) {
+		t.Fatalf("list part: %+v", part)
+	}
+
+	done(report.Outcome{Code: "7K2Q9XMB", Saved: "misterzine/report.txt"})
+	a.Paint()
+	if a.support.mode != "report-done" || a.support.outcome.Code != "7K2Q9XMB" {
+		t.Fatalf("mode %q outcome %+v", a.support.mode, a.support.outcome)
+	}
+	press(platform.KeyBack)
+	if a.support.mode != "menu" {
+		t.Fatalf("B from the result: %q", a.support.mode)
+	}
+
+	// Not sent: the screen says why and where the copy is.
+	press(platform.KeyEnter)
+	press(platform.KeyEnter)
+	done(report.Outcome{Problem: "No connection to the report service.", Saved: "misterzine/report.txt"})
+	a.Paint()
+	if a.support.mode != "report-done" || a.support.outcome.Code != "" {
+		t.Fatalf("failed send: %q %+v", a.support.mode, a.support.outcome)
+	}
+	press(platform.KeyBack)
+	press(platform.KeyBack)
+	if a.Screen() == ScreenTroubleshooting {
+		t.Fatal("B from the menu stays on Troubleshooting")
 	}
 }

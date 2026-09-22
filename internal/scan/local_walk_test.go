@@ -225,6 +225,73 @@ func TestDiscoverLocalStandin(t *testing.T) {
 	}
 }
 
+// The diagnostic report says why a file is not a row: a catalogue game whose
+// own core is here, a catalogue game nobody here can run, a version of a
+// catalogue game (counted), and the folders the walk left out.
+func TestDiscoverLocalReasons(t *testing.T) {
+	card := fakeCard(t)
+	mk := func(rel, content string) {
+		t.Helper()
+		p := filepath.Join(card, filepath.FromSlash(rel))
+		os.MkdirAll(filepath.Dir(p), 0755)
+		if err := os.WriteFile(p, []byte(content), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	mk("_Arcade/cores/taitox_20260904.rbf", "x")
+	mk("_Arcade/_Extra/Gigandes.mra", mra("Gigandes", "gigandes", "taitox", "gigandes"))
+	mk("_Arcade/_Extra/Superman.mra", mra("Superman", "superman", "nosuch", "superman"))
+	mk("_Arcade/_Extra/Colony 7 (other).mra", mra("Colony 7", "colony7", "taitox", "colony7"))
+	mk("_Arcade/_Organized/_A/Organised.mra", mra("Organised", "organised", "defender", ""))
+	mk("_Arcade/.hidden/Hidden.mra", mra("Hidden", "hidden", "defender", ""))
+	mk("_Arcade/a/b/c/d/e/f/g/Deep.mra", mra("Deep", "deep", "defender", ""))
+	linked := os.Symlink(filepath.Join(card, "_Arcade", "_Extra"), filepath.Join(card, "_Arcade", "Linked")) == nil
+	catalogue := []data.Row{
+		{K: "gigandes", Title: "Gigandes", Base: "Arcade", Core: "jttaitox", SN: "gigandes", MRA: "_Arcade/Gigandes.mra"},
+		{K: "superman", Title: "Superman", Base: "Arcade", Core: "jttaitox", SN: "superman", MRA: "_Arcade/Superman.mra"},
+		{K: "colony7", Title: "Colony 7", Base: "Arcade", Core: "defender", SN: "colony7", Family: "colony7", FamilySets: []string{"colony7a"}, MRA: "_Arcade/Colony 7 (Set 1).mra"},
+		{K: "1942", Title: "1942", Base: "Arcade", Core: "jt1942", SN: "1942", FamilySets: []string{"1942a"}, MRA: "_Arcade/1942 (Revision B).mra"},
+	}
+	alts, _, _ := ScanAlternativesWithError(card, "")
+	var fc FamilyCache
+	res := DiscoverLocal(card, "", catalogue, ScanCores(card), alts, AttachedPaths(fc.Resolve(card, alts, catalogue)), false)
+	if res.Err != nil {
+		t.Fatal(res.Err)
+	}
+	if len(res.Rows) != 1 || res.Rows[0].K != "local:gigandes" || !res.Rows[0].Standin {
+		t.Fatalf("rows %+v", res.Rows)
+	}
+	got := map[string]Accounted{}
+	for _, a := range res.Accounted {
+		got[a.Path] = a
+	}
+	if a := got["_Arcade/_Extra/Colony 7 (other).mra"]; a.K != "colony7" || !strings.Contains(a.Reason, "its own core is on the card") || !strings.Contains(a.Reason, "taitox") {
+		t.Fatalf("runnable catalogue game: %+v", a)
+	}
+	if a := got["_Arcade/_Extra/Superman.mra"]; a.K != "superman" || !strings.Contains(a.Reason, "neither") || !strings.Contains(a.Reason, "nosuch") {
+		t.Fatalf("unrunnable catalogue game: %+v", a)
+	}
+	if len(res.Accounted) != 2 || res.VersionFiles != 2 { // Colony 7 (Set 2) and 1942 (set 2)
+		t.Fatalf("accounted %+v, versions %d", res.Accounted, res.VersionFiles)
+	}
+	dirs := map[string]string{}
+	for _, d := range res.SkippedDirs {
+		dirs[d.Path] = d.Reason
+	}
+	want := map[string]string{"_Arcade/_Organized": "organiser", "_Arcade/.hidden": "hidden", "_Arcade/a/b/c/d/e/f/g": "deep"}
+	if linked {
+		want["_Arcade/Linked"] = "symbolic link"
+	}
+	for p, word := range want {
+		if !strings.Contains(dirs[p], word) {
+			t.Fatalf("skipped dir %s: %q (all %v)", p, dirs[p], dirs)
+		}
+	}
+	if len(dirs) != len(want) {
+		t.Fatalf("cores or _alternatives listed as skipped: %v", dirs)
+	}
+}
+
 func TestDiscoverLocalDedupeOrder(t *testing.T) {
 	card := t.TempDir()
 	mk := func(rel string) {

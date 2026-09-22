@@ -68,6 +68,16 @@ scenarios = [
      "back; end; up*2; enter; down*3; enter; shot result; right; shot evidence"],
     ["-support-report", "testdata/support-no-input.json", "-inset", "40", "-rot", "left", "-logical", "-out", "out/support-small-t", "-script",
      "back; end; up*2; enter; down*3; enter; shot result; right; shot evidence"],
+    # Troubleshooting -> Send a report, with the upload faked: the entry,
+    # what the player agrees to, the code, and the card copy when offline
+    ["-report-send", "sent", "-out", "out/report-h", "-script",
+     "back; end; up*2; enter; down*4; shot menu; enter; shot consent; enter; shot sent"],
+    ["-report-send", "sent", "-rot", "left", "-logical", "-out", "out/report-t", "-script",
+     "back; end; up*2; enter; down*4; shot menu; enter; shot consent; enter; shot sent"],
+    ["-report-send", "failed", "-out", "out/report-failed-h", "-script",
+     "back; end; up*2; enter; down*4; enter; enter; shot failed"],
+    ["-report-send", "failed", "-rot", "left", "-logical", "-out", "out/report-failed-t", "-script",
+     "back; end; up*2; enter; down*4; enter; enter; shot failed"],
 ]
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"

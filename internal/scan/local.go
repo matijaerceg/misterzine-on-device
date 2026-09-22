@@ -32,7 +32,26 @@ type LocalResult struct {
 	Alts    map[string][]string // local K -> further copies of the same set
 	Files   int                 // MRAs the walk read, matched or not
 	Skipped []Skipped
-	Err     error
+	// SkippedDirs are the folders under _Arcade the walk did not enter, each
+	// with the rule that kept it out (the cores and _alternatives folders,
+	// read elsewhere, are not listed).
+	SkippedDirs []Skipped
+	// Accounted are the files the walk read that make no row of their own,
+	// each with the reason: the catalogue's file, a version of a catalogue
+	// or local game, or a catalogue game this card cannot run either way.
+	Accounted []Accounted
+	// OwnFiles and VersionFiles count the files that are in the list through
+	// the catalogue: its own MRAs, and the versions tied to its games.
+	OwnFiles, VersionFiles int
+	Err                    error
+}
+
+// Accounted is one card file that is no row of its own, for the diagnostic
+// report: why, and the row it belongs to when there is one.
+type Accounted struct {
+	Path   string
+	Reason string
+	K      string
 }
 
 // skipDir names the folders the walk never enters: cores, anything an
@@ -40,17 +59,35 @@ type LocalResult struct {
 // many times over), the _alternatives folders ScanAlternatives already
 // reads, and hidden folders.
 func skipDir(name string) bool {
+	return skipDirReason(name) != "" || strings.EqualFold(name, "cores") || strings.EqualFold(name, "_alternatives")
+}
+
+// skipDirReason is why skipDir keeps a folder out, for the folders worth
+// telling a player about.
+func skipDirReason(name string) string {
 	l := strings.ToLower(name)
-	return l == "cores" || l == "_alternatives" || strings.Contains(l, "organized") || strings.HasPrefix(l, ".")
+	switch {
+	case strings.Contains(l, "organized"):
+		return "an organiser's folder (names containing \"organized\" are not read)"
+	case strings.HasPrefix(l, "."):
+		return "a hidden folder"
+	}
+	return ""
 }
 
 // ScanArcadeMRAs reads the header of every MRA under _Arcade outside the
 // folders skipDir names, symlinks excluded, through the same per-directory
 // cache scheme as the alternatives scan (cachePath, "" to disable).
 func ScanArcadeMRAs(card, cachePath string) ([]Alt, []Skipped, error) {
+	alts, skipped, _, err := scanArcadeMRAs(card, cachePath)
+	return alts, skipped, err
+}
+
+// scanArcadeMRAs is ScanArcadeMRAs that also names the folders it left out.
+func scanArcadeMRAs(card, cachePath string) ([]Alt, []Skipped, []Skipped, error) {
 	dc := openDirCache(cachePath)
 	var out []Alt
-	var skipped []Skipped
+	var skipped, dirs []Skipped
 	files := 0
 	var walk func(rel string, depth int) bool
 	walk = func(rel string, depth int) bool {
@@ -75,15 +112,30 @@ func ScanArcadeMRAs(card, cachePath string) ([]Alt, []Skipped, error) {
 			dc.problems = append(dc.problems, ErrTooManyMRAs)
 			return false
 		}
-		if depth >= localMaxDepth {
-			return true
-		}
 		for _, e := range entries {
+			sub := path.Join(rel, e.Name())
 			// e.IsDir() is false for a symlink whatever it points at.
-			if !e.IsDir() || skipDir(e.Name()) {
+			if e.Type()&os.ModeSymlink != 0 {
+				if st, err := os.Stat(filepath.Join(abs, e.Name())); err == nil && st.IsDir() {
+					dirs = append(dirs, Skipped{Path: sub, Reason: "a symbolic link (links to folders are not followed)"})
+				}
 				continue
 			}
-			if !walk(path.Join(rel, e.Name()), depth+1) {
+			if !e.IsDir() {
+				continue
+			}
+			if why := skipDirReason(e.Name()); why != "" {
+				dirs = append(dirs, Skipped{Path: sub, Reason: why})
+				continue
+			}
+			if skipDir(e.Name()) {
+				continue
+			}
+			if depth >= localMaxDepth {
+				dirs = append(dirs, Skipped{Path: sub, Reason: fmt.Sprintf("more than %d folders deep", localMaxDepth)})
+				continue
+			}
+			if !walk(sub, depth+1) {
 				return false
 			}
 		}
@@ -92,7 +144,7 @@ func ScanArcadeMRAs(card, cachePath string) ([]Alt, []Skipped, error) {
 	walk("_Arcade", 0)
 	dc.save("local scan cache")
 	sort.Slice(out, func(i, j int) bool { return out[i].Path < out[j].Path })
-	return out, skipped, errors.Join(dc.problems...)
+	return out, skipped, dirs, errors.Join(dc.problems...)
 }
 
 // DiscoverLocal turns the MRAs the catalogue does not account for into rows.
@@ -114,10 +166,10 @@ func ScanArcadeMRAs(card, cachePath string) ([]Alt, []Skipped, error) {
 // snap when the image service is available: such rows then ask it for a shot
 // by setname.
 func DiscoverLocal(card, cachePath string, catalogue []data.Row, idx *Index, alts []Alt, attached map[string]bool, snap bool) LocalResult {
-	walked, skipped, err := ScanArcadeMRAs(card, cachePath)
-	res := LocalResult{Alts: map[string][]string{}, Files: len(walked), Skipped: skipped, Err: err}
-	ids := map[string]bool{}
-	runs := map[string]bool{} // ... and one of those rows runs on this card
+	walked, skipped, dirs, err := scanArcadeMRAs(card, cachePath)
+	res := LocalResult{Alts: map[string][]string{}, Files: len(walked), Skipped: skipped, SkippedDirs: dirs, Err: err}
+	ids := map[string]string{}  // setname, family root or clone -> a catalogue row naming it
+	runs := map[string]string{} // ... and one of those rows that runs on this card
 	paths := map[string]bool{}
 	for i := range catalogue {
 		r := &catalogue[i]
@@ -130,8 +182,12 @@ func DiscoverLocal(card, cachePath string, catalogue []data.Row, idx *Index, alt
 		onCard := coreOnCard(idx, r.Core)
 		for _, v := range append([]string{r.SN, r.Family}, r.FamilySets...) {
 			if id := identity(v); id != "" {
-				ids[id] = true
-				runs[id] = runs[id] || onCard
+				if ids[id] == "" {
+					ids[id] = r.K
+				}
+				if onCard && runs[id] == "" {
+					runs[id] = r.K
+				}
 			}
 		}
 	}
@@ -139,16 +195,28 @@ func DiscoverLocal(card, cachePath string, catalogue []data.Row, idx *Index, alt
 	present := map[string]bool{}
 	standins := map[string]bool{} // path -> the catalogue lists this game, unrunnably
 	for _, a := range append(append([]Alt{}, walked...), alts...) {
-		if paths[a.Path] || attached[a.Path] {
+		// the catalogue's own files and its games' versions are in the list
+		if paths[a.Path] {
+			res.OwnFiles++
+			continue
+		}
+		if attached[a.Path] {
+			res.VersionFiles++
 			continue
 		}
 		sn := identity(a.Setname)
-		if (sn != "" && ids[sn]) || (a.Parent != "" && ids[a.Parent]) {
-			if (sn != "" && runs[sn]) || (a.Parent != "" && runs[a.Parent]) {
-				continue // the catalogue's own copy runs here
+		if k := firstOf(ids, sn, a.Parent); k != "" {
+			if run := firstOf(runs, sn, a.Parent); run != "" {
+				// the catalogue's own copy runs here
+				res.Accounted = append(res.Accounted, Accounted{Path: a.Path, K: run,
+					Reason: "the catalogue lists this game and its own core is on the card; this file's core (" + a.RBF + ") is not offered as a version"})
+				continue
 			}
 			if !coreOnCard(idx, a.RBF) {
-				continue // neither copy runs: the greyed catalogue row says so
+				// neither copy runs: the greyed catalogue row says so
+				res.Accounted = append(res.Accounted, Accounted{Path: a.Path, K: k,
+					Reason: "neither the catalogue's core nor this file's core (" + a.RBF + ") is in _Arcade/cores"})
+				continue
 			}
 			standins[a.Path] = true
 		}
@@ -212,6 +280,16 @@ func DiscoverLocal(card, cachePath string, catalogue []data.Row, idx *Index, alt
 	}
 	sort.Slice(res.Rows, func(i, j int) bool { return res.Rows[i].K < res.Rows[j].K })
 	return res
+}
+
+// firstOf is m's value for the first of ids that has one.
+func firstOf(m map[string]string, ids ...string) string {
+	for _, id := range ids {
+		if v := m[id]; id != "" && v != "" {
+			return v
+		}
+	}
+	return ""
 }
 
 // coreOnCard reports whether an rbf name resolves to an arcade core the

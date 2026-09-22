@@ -95,6 +95,9 @@ func (h *host) receiveScan(r scanResult) {
 		h.a.Notice(app.FavoritesUnavailableNotice, 12*time.Second)
 	}
 	if r.final {
+		if r.diag != nil {
+			h.scanDiag = r.diag
+		}
 		h.scanRunning = false
 		if h.manualScan && !h.scanPending && current {
 			h.manualScan = false

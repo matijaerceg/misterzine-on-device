@@ -215,6 +215,10 @@ every scan repeats the count (`N unreadable MRAs skipped`). A "Card scan
 incomplete" result means a folder or file could not be read at all; the log
 line above it names the path.
 
+When a game you have on the card does not show up and none of this explains
+it, use **Send a report** (below): it lists every game file MisterZine leaves
+out, and why.
+
 ## Start does not launch games
 
 MisterZine uses the Start button saved through MiSTer's main-menu **Define
@@ -271,6 +275,38 @@ Pictures load as you browse and failed downloads retry with increasing delays.
 The bundled catalogue is a starting point for a first launch without a connection.
 
 ## Reporting a problem
+
+### Send a report
+
+Options -> Troubleshooting -> **Send a report** describes your card to the
+developer and gives you a short code, such as `7K2Q-9XMB`, to post wherever
+you asked for help. The report holds:
+
+- the app version, your board, the display settings MisterZine reads from
+  MiSTer.ini, and the screen rotation
+- your settings, the list's order and the filters in force
+- every local game (a game read from your card's own MRA files), and which
+  filter hides it, if one does
+- every game file that is not in the list, with the reason: a file without
+  a set name, a folder MisterZine does not read, a game whose core is not in
+  `_Arcade/cores`, and so on
+- the card's folders: the top level, the `_Arcade` tree with its MRA
+  counts, every file in `_Arcade/cores`, the other core folders' counts, the
+  arcade ROM folder MiSTer uses with its zip count, and MisterZine's own folder
+- the last few hundred lines of MisterZine's log
+
+It holds no passwords, Wi-Fi details or Downloader database addresses, and
+the log lines lose any web address's query part. The screen says what goes
+into it before anything is sent, and nothing is sent until you press A.
+
+A copy is always saved on the card as `misterzine/report.txt`. If the MiSTer
+is offline, or the report service does not take it, the screen says so and you
+can send that file instead. Reports go to `api.misterzine.fyi`, which keeps
+nothing about who sent them, not even the IP address. Only the developer can
+read them, using the code you post, and they are deleted 30 days after they
+arrive.
+
+### Other details
 
 Include the app version and data date from Options, your board, display
 connection, rotation, and the steps that reproduce it. A photo helps for physical

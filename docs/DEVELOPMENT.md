@@ -137,6 +137,19 @@ Readers close at completion or shutdown. The last report is saved atomically as
 enabled. Support launch results distinguish command delivery from game startup.
 Harness `-support-report` fixtures render this flow without opening devices.
 
+**Send a report** is the one upload, and only on the player's A. The UI's part
+(`App.ReportPart`: the view, the filters in force, every local row with the
+`data.Filters.Why` rule that hides it) goes to the host (`cmd/misterzine/report.go`),
+which adds the system lines, the last scan's diagnostics (`scanResult.diag`:
+totals, `LocalResult.SkippedDirs`, `Skipped` and `Accounted`), `scan.CardLayout`
+and the log tail. `report.Build` formats it within 256 KB and `report.Scrub` strips
+query strings and keyed values from log lines. The host always writes
+`report.txt` beside the log, then POSTs it to `fetch.ReportService`
+(`api.misterzine.fyi/reports`, the site repo's `api/src/reports.js`), which answers
+with an eight-character code. The owner reads a report with the site repo's
+`python api/get_report.py CODE` (`--list`, `--delete`); the service keeps reports 30
+days. Harness `-report-send sent|failed` renders the screens without uploading.
+
 ## Data and generated files
 
 `tools/snapshot.sh` refreshes the embedded first-run catalogue. It does not
