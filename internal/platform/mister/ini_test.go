@@ -17,7 +17,15 @@ func TestReadIniAppliesSectionsInFileOrderLikeMain(t *testing.T) {
 		{"menu overrides global", "[MiSTer]\nosd_rotate=1\n[Menu]\nosd_rotate=2\n",
 			IniSettings{OSDRotate: 2, FBTerminal: 1, Found: true}},
 		{"misterzine after menu wins", "[MiSTer]\nvideo_mode=8\n[Menu]\ndirect_video=0\nosd_rotate=0\n[MisterZine]\ndirect_video=1\nosd_rotate=2\n",
-			IniSettings{OSDRotate: 2, DirectVideo: 1, FBTerminal: 1, Found: true}},
+			IniSettings{OSDRotate: 2, DirectVideo: 1, FBTerminal: 1, VideoMode: "8", Found: true}},
+		// Main fixes the video mode in video_init before the MGL's
+		// setname is parsed, so a video_mode under [MisterZine] is not
+		// the running mode whatever this returns. Only the probe in
+		// fb.go decides; this records the precedence, not an effect.
+		{"a later section still wins the value", "[MiSTer]\nvideo_mode=8\n[MisterZine]\nvideo_mode=14\n",
+			IniSettings{FBTerminal: 1, VideoMode: "14", Found: true}},
+		{"a modeline keeps its flags", "[MiSTer]\nvideo_mode=1280,24,16,40,1440,3,5,33,120750,pr ; 1440p\n",
+			IniSettings{FBTerminal: 1, VideoMode: "1280,24,16,40,1440,3,5,33,120750,pr", Found: true}},
 		{"menu after misterzine wins", "[misterzine]\ndirect_video=1\n[Menu]\ndirect_video=0\n",
 			IniSettings{FBTerminal: 1, Found: true}},
 		{"other cores ignored", "[Menu]\ndirect_video=1\n[Genesis]\ndirect_video=0\nosd_rotate=1\n[video=640x480]\nvga_scaler=1\n",

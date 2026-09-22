@@ -72,8 +72,9 @@ func (g Geom) String() string {
 
 // FB is the framebuffer display. The app draws a canvas of CanvasW x
 // CanvasH; Present integer-scales it into whatever geometry the framebuffer
-// ended up with (1:1 after a successful fb_cmd1, 2x1 on a 640x240 mode, 6x4
-// on 1080p) through a shadow copy so the uncached mmap is only written.
+// ended up with (1:1 after a successful fb_cmd1, 1x2 where the display
+// repeats pixels, 2x1 on a 640x240 mode, 6x4 on 1080p) through a shadow
+// copy so the uncached mmap is only written.
 type FB struct {
 	f                *os.File
 	mem              []byte
@@ -81,6 +82,7 @@ type FB struct {
 	orig             Geom
 	CanvasW, CanvasH int
 	sx, sy, ox, oy   int
+	pr               bool   // the display repeats every pixel horizontally
 	row              []byte // one scaled fb row
 	log              *log.Logger
 	requested        bool
@@ -92,7 +94,10 @@ type FB struct {
 // OpenFB opens /dev/fb0, asks Main for the framebuffer choose picks for the
 // native geometry (FitCanvas, or a fixed 320x240) and maps it. An unconfirmed sent request aborts startup after a restore attempt;
 // an asynchronous mode change must never race a newly mapped framebuffer.
-func OpenFB(cmd *Cmd, choose func(nativeW, nativeH int) (int, int), lg *log.Logger) (*FB, error) {
+//
+// videoMode is MiSTer.ini's raw video_mode value. It only decides whether
+// the display is worth probing for pixel repetition; probeFrame answers it.
+func OpenFB(cmd *Cmd, choose func(nativeW, nativeH int) (int, int), videoMode string, lg *log.Logger) (*FB, error) {
 	f, err := os.OpenFile(fbPath, os.O_RDWR|syscall.O_CLOEXEC, 0)
 	if err != nil {
 		return nil, fmt.Errorf("open %s: %w", fbPath, err)
@@ -107,9 +112,20 @@ func OpenFB(cmd *Cmd, choose func(nativeW, nativeH int) (int, int), lg *log.Logg
 	canvasW, canvasH := choose(b.geom.W, b.geom.H)
 	b.CanvasW, b.CanvasH = canvasW, canvasH
 	lg.Printf("fb: canvas %dx%d for a %dx%d display", canvasW, canvasH, b.geom.W, b.geom.H)
-	if b.geom.W != canvasW || b.geom.H != canvasH {
-		if err := b.request(cmd, canvasW, canvasH, 2*time.Second); err != nil {
-			lg.Printf("fb: request %dx%d: %v; restoring native mode before mapping", canvasW, canvasH, err)
+	if MayRepeatPixels(videoMode) {
+		if pw, ph, ok := b.probeFrame(cmd, 4, time.Second); ok {
+			b.pr = repeatsPixels(b.orig.W, b.orig.H, pw, ph)
+			lg.Printf("fb: video_mode %q may repeat pixels: frame probes as %dx%d against a %dx%d framebuffer, repeats=%v",
+				videoMode, pw, ph, b.orig.W, b.orig.H, b.pr)
+		}
+	}
+	reqW, reqH := fbRequest(canvasW, canvasH, b.pr)
+	if b.pr {
+		lg.Printf("fb: the display repeats every pixel horizontally; asking for %dx%d so the canvas keeps square pixels", reqW, reqH)
+	}
+	if b.geom.W != reqW || b.geom.H != reqH {
+		if err := b.request(cmd, reqW, reqH, 2*time.Second); err != nil {
+			lg.Printf("fb: request %dx%d: %v; restoring native mode before mapping", reqW, reqH, err)
 			if b.requested {
 				rollback := b.request(cmd, b.orig.W, b.orig.H, 2*time.Second)
 				f.Close()
@@ -156,6 +172,47 @@ func (b *FB) refresh() error {
 		return fmt.Errorf("unsupported framebuffer depth %d", b.geom.BPP)
 	}
 	return nil
+}
+
+// probeFrame asks Main to fit the framebuffer to the whole video frame and
+// reads the geometry back, which is the only way to see the frame the
+// scaler is really driving: /dev/fb0 describes the framebuffer, and nothing
+// in sysfs names the video mode.
+//
+// fb_cmd0 sizes the framebuffer to the frame divided by div (video.cpp,
+// video_cmd), so a large divisor keeps the momentary framebuffer small; the
+// divisor cancels out of repeatsPixels. Nothing is drawn or mapped while it
+// stands, and the caller's own request replaces it immediately.
+//
+// A frame that divides to the geometry already reported cannot be told from
+// a command that never arrived - video_cmd ignores everything unless the
+// framebuffer is enabled - so both count as a failed probe. That case is a
+// display whose framebuffer is already divided by this much and does not
+// repeat pixels, which is the answer a failed probe produces anyway.
+func (b *FB) probeFrame(cmd *Cmd, div int, timeout time.Duration) (int, int, bool) {
+	if cmd == nil {
+		return 0, 0, false
+	}
+	was := b.geom
+	if err := cmd.Send(fmt.Sprintf("fb_cmd0 8888 1 %d", div)); err != nil {
+		b.log.Printf("fb: frame probe: %v", err)
+		return 0, 0, false
+	}
+	b.requested = true // the frame must be put back even if nothing lands
+	t0 := time.Now()
+	for {
+		time.Sleep(10 * time.Millisecond)
+		if err := b.refresh(); err != nil {
+			return 0, 0, false
+		}
+		if b.geom.W != was.W || b.geom.H != was.H {
+			return b.geom.W, b.geom.H, true
+		}
+		if time.Since(t0) > timeout {
+			b.log.Printf("fb: frame probe: still %s after %v", b.geom, timeout.Round(time.Millisecond))
+			return 0, 0, false
+		}
+	}
 }
 
 // request sends fb_cmd1 and polls until the kernel side reports the size.

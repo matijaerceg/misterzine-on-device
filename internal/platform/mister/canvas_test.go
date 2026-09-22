@@ -9,9 +9,17 @@ func TestFitCanvas(t *testing.T) {
 		{640, 480, 320, 240},   // 480 CRT
 		{1280, 720, 320, 240},  // 720p: x3 fills already
 		{1920, 1080, 360, 270}, // 1080p: x4 = 1440x1080
-		{2560, 1440, 320, 240}, // 1440p: x6 fills already
-		{3840, 2160, 320, 240}, // 4K: x9
-		{1024, 768, 340, 256},  // x3 = 1020x768
+		// No display reaches this function with these two. Main's
+		// widest frame is 2048 wide (1440p and 4K arrive halved, and
+		// repeated on the way out), and it halves the framebuffer
+		// again above 1920x1080, so 1440p asks with 1280x720 and 4K
+		// with 960x540. Both are kept as plain arithmetic cover; the
+		// rows below them are the ones those displays use.
+		{2560, 1440, 320, 240},
+		{3840, 2160, 320, 240},
+		{1280, 720, 320, 240}, // what a 1440p display actually asks
+		{960, 540, 360, 270},  // what a 4K display actually asks
+		{1024, 768, 340, 256}, // x3 = 1020x768
 		{1366, 768, 340, 256},
 		{1600, 900, 400, 300}, // x3 = 1200x900
 		{800, 600, 400, 300},  // x2

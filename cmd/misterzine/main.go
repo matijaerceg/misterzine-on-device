@@ -163,8 +163,8 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		iniPath, iniAlt = mister.ActiveIni(card)
 	}
 	ini := mister.ReadIni(iniPath)
-	lg.Printf("ini: %s alt=%d found=%v osd_rotate=%d direct_video=%d vga_scaler=%d fb_terminal=%d analog-visible=%v",
-		filepath.Base(iniPath), iniAlt, ini.Found, ini.OSDRotate, ini.DirectVideo, ini.VGAScaler, ini.FBTerminal, ini.AnalogVisible())
+	lg.Printf("ini: %s alt=%d found=%v osd_rotate=%d direct_video=%d vga_scaler=%d fb_terminal=%d video_mode=%q analog-visible=%v",
+		filepath.Base(iniPath), iniAlt, ini.Found, ini.OSDRotate, ini.DirectVideo, ini.VGAScaler, ini.FBTerminal, ini.VideoMode, ini.AnalogVisible())
 	if ini.Found && !ini.AnalogVisible() {
 		if ini.DirectVideoAuto() {
 			lg.Printf("WARNING: direct_video=2 only reaches the analog port through an HDMI DAC; on a JAMMA cabinet such as a MiSTercade add vga_scaler=1 and video_mode=320,16,32,16,240,4,3,16,6048 under a [Menu] section (see docs/TROUBLESHOOTING.md, JAMMA cabinets)")
@@ -213,7 +213,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	} else if h.settings.Canvas == "320x240" {
 		choose = func(int, int) (int, int) { return 320, 240 }
 	}
-	if h.fb, err = mister.OpenFB(h.cmd, choose, lg); err != nil {
+	if h.fb, err = mister.OpenFB(h.cmd, choose, ini.VideoMode, lg); err != nil {
 		lg.Printf("fb: %v", err)
 		return 3
 	}

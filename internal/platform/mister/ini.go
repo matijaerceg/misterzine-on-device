@@ -12,11 +12,12 @@ import (
 // (the MGL's setname) all apply, later sections in the file overriding
 // earlier ones.
 type IniSettings struct {
-	OSDRotate   int  // 0 none, 1 right (+90), 2 left (-90)
-	DirectVideo int  // 0/1/2
-	VGAScaler   int  // 0/1
-	FBTerminal  int  // 1 default
-	Found       bool // the file was read
+	OSDRotate   int    // 0 none, 1 right (+90), 2 left (-90)
+	DirectVideo int    // 0/1/2
+	VGAScaler   int    // 0/1
+	FBTerminal  int    // 1 default
+	VideoMode   string // raw value; a preset number, a modeline or empty
+	Found       bool   // the file was read
 }
 
 // iniSectionApplies reports whether Main applies a section of that name
@@ -88,6 +89,7 @@ func ReadIni(path string) IniSettings {
 	s.DirectVideo = get("direct_video", 0)
 	s.VGAScaler = get("vga_scaler", 0)
 	s.FBTerminal = get("fb_terminal", 1)
+	s.VideoMode = values["video_mode"]
 	return s
 }
 

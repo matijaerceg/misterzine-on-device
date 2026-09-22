@@ -25,20 +25,21 @@ func (b *FB) Resize(cmd *Cmd, w, h int) error {
 			}
 			b.mem = nil
 		}
-		if err := b.request(cmd, w, h, 2*time.Second); err != nil {
+		reqW, reqH := fbRequest(w, h, b.pr)
+		if err := b.request(cmd, reqW, reqH, 2*time.Second); err != nil {
 			return err
 		}
 		if err := b.refresh(); err != nil {
 			return err
 		}
-		if b.geom.W != w || b.geom.H != h {
+		if b.geom.W != reqW || b.geom.H != reqH {
 			return fmt.Errorf("framebuffer changed before mapping: %s", b.geom)
 		}
 		if err := b.mapMem(); err != nil {
 			return err
 		}
 		b.CanvasW, b.CanvasH = w, h
-		b.sx, b.sy, b.ox, b.oy = 1, 1, 0, 0
+		b.sx, b.sy, b.ox, b.oy = 1, reqH/h, 0, 0
 		b.row = make([]byte, w*b.geom.BPP/8)
 		b.Clear()
 		return nil
