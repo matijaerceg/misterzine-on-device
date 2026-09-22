@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
+	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
 
 func localTestRows() []data.Row {
@@ -110,6 +111,51 @@ func TestStandinRowDetails(t *testing.T) {
 	}
 	if ch := chips(row, d); len(ch) != 1 || ch[0] != "local" {
 		t.Fatalf("chips %v", ch)
+	}
+}
+
+// A standin belongs to its catalogue row's group: under A-Z a title with
+// another initial opens no header of its own, and in the date orders its
+// missing date does not make the month jump stop on it as "Date unknown".
+func TestStandinGroupsWithItsAnchor(t *testing.T) {
+	now := time.Date(2026, 9, 22, 12, 0, 0, 0, time.UTC)
+	cat := []data.Row{
+		{K: "arkanoid", Title: "Arkanoid", Base: "Arcade", Src: "distribution_mister", SN: "arkanoid", Core: "arkanoid", Updated: "2026-09-10", Date: "2026-09-10"},
+		{K: "kyustrkr", Title: "Last Striker", Base: "Arcade", Src: "jtbindb", SN: "kyustrkr", Core: "jttaitox", Updated: "2026-08-04", Date: "2026-08-04"},
+		{K: "zaxxon", Title: "Zaxxon", Base: "Arcade", Src: "distribution_mister", SN: "zaxxon", Core: "zaxxon", Updated: "2026-07-01", Date: "2026-07-01"},
+	}
+	stand := data.Row{K: "local:kyustrkr", Title: "Kyuukyoku no Striker", Base: "Arcade", Src: data.SrcLocal, SN: "kyustrkr",
+		Core: "taitox", MRA: "_Arcade/Kyuukyoku no Striker.mra", Standin: true}
+	open := func(mode data.SortMode, rows []data.Row) *App {
+		a := New(Config{PhysW: 320, PhysH: 240, RememberSort: true, LastSort: mode, Now: func() time.Time { return now }},
+			data.Ingest(data.MergeLocal(cat, rows), "test", now), nil)
+		a.Paint()
+		return a
+	}
+	jump := func(a *App, from, want string) {
+		t.Helper()
+		a.MoveToKey(from)
+		a.actList(platform.KeyPageDown)
+		a.Paint()
+		if a.CursorKey() != want || strings.Contains(a.notice, "unknown") {
+			t.Fatalf("%v: jump from %s landed on %q (notice %q), want %s", a.mode, from, a.CursorKey(), a.notice, want)
+		}
+	}
+
+	a := open(data.SortAlphabetical, []data.Row{stand})
+	if len(a.marks) != len(open(data.SortAlphabetical, nil).marks) {
+		t.Fatalf("the standin opened a header of its own: %v", a.marks)
+	}
+	if got := a.groupLabel(a.ds.Index("local:kyustrkr")); got != "L" {
+		t.Fatalf("standin header %q, want its catalogue row's L", got)
+	}
+	jump(a, "arkanoid", "kyustrkr")
+	jump(a, "local:kyustrkr", "zaxxon")
+
+	for _, mode := range []data.SortMode{data.SortUpdated, data.SortDebut} {
+		a := open(mode, []data.Row{stand})
+		jump(a, "kyustrkr", "zaxxon")
+		jump(a, "zaxxon", "zaxxon") // the last month: nothing undated below it
 	}
 }
 

@@ -24,6 +24,10 @@ type Derived struct {
 	Maker      string // the manufacturer group's name (maker.go), ASCII-folded; empty = unknown
 	BatchN     int    // rows sharing this core's updated stamp (0 = not a batch stamp)
 
+	// anchor is 1 + the index of the catalogue row a standin sorts under, 0
+	// for every other row (SortRow).
+	anchor int
+
 	titleKey   []elem
 	coreKey    []elem
 	updatedKey []elem
@@ -130,7 +134,35 @@ func Ingest(rows []Row, hash string, updated time.Time) *Dataset {
 		d.updatedKey = Key(r.Updated)
 		d.dateKey = Key(r.Date)
 	}
+	// A standin sorts under the greyed catalogue row it stands in for, which
+	// is where anyone looking for the game finds that row.
+	var covers map[string]string
+	for i := ncat; i < len(rows); i++ {
+		r := &rows[i]
+		if !r.Standin {
+			continue
+		}
+		if covers == nil {
+			covers = coverage(rows[:ncat])
+		}
+		k, ok := covers[r.K]
+		if !ok && r.Family != "" {
+			k, ok = covers[LocalKey(r.Family)]
+		}
+		if j, found := ds.ByKey[k]; ok && found && j < ncat {
+			ds.Der[i].anchor = j + 1
+		}
+	}
 	return ds
+}
+
+// SortRow is the row whose values place row i in the catalogue orders: the
+// catalogue row a standin stands in for, else i itself.
+func (ds *Dataset) SortRow(i int) int {
+	if a := ds.Der[i].anchor; a > 0 {
+		return a - 1
+	}
+	return i
 }
 
 // ClusterN mirrors clusterN(d): 0 for rows with no core, no updated date or
@@ -198,6 +230,23 @@ func LocalTakeovers(local, catalogue []Row) map[string]string {
 	if len(local) == 0 {
 		return nil
 	}
+	byID := coverage(catalogue)
+	out := map[string]string{}
+	for i := range local {
+		r := &local[i]
+		if k, ok := byID[r.K]; ok && r.IsLocal() && k != r.K {
+			out[r.K] = k
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+// coverage maps the local key of every setname, family root and known clone
+// an arcade catalogue row names to that row's K.
+func coverage(catalogue []Row) map[string]string {
 	byID := map[string]string{}
 	for i := range catalogue {
 		r := &catalogue[i]
@@ -216,17 +265,7 @@ func LocalTakeovers(local, catalogue []Row) map[string]string {
 			}
 		}
 	}
-	out := map[string]string{}
-	for i := range local {
-		r := &local[i]
-		if k, ok := byID[r.K]; ok && r.IsLocal() && k != r.K {
-			out[r.K] = k
-		}
-	}
-	if len(out) == 0 {
-		return nil
-	}
-	return out
+	return byID
 }
 
 // LocalDigest summarises a set of local rows: it changes only when a row is

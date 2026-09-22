@@ -177,6 +177,68 @@ func TestSortLocalSinks(t *testing.T) {
 	}
 }
 
+// A standin sorts right under the greyed catalogue row it stands in for in
+// every catalogue order, whatever its own title, maker, year or missing dates
+// say; a clone filed under its parent finds the row through the family. The
+// player's own lists keep it to its own title, and a plain local row, or a
+// standin whose game the catalogue no longer names, still sinks.
+func TestStandinSortsUnderAnchor(t *testing.T) {
+	cat := []Row{
+		{Title: "Arkanoid", Base: "Arcade", Src: "distribution_mister", K: "arkanoid", SN: "arkanoid", Core: "arkanoid",
+			Manufacturer: "Taito Corporation", Year: "1986", Updated: "2026-09-10", Date: "2020-01-01"},
+		{Title: "Volfied", Base: "Arcade", Src: "jtbindb", K: "volfied", SN: "volfied", Core: "jtvlfied", Family: "volfied",
+			FamilySets: []string{"volfiedu"}, Manufacturer: "Taito Corporation Japan", Year: "1989", Updated: "2026-09-04", Date: "2026-08-16"},
+		{Title: "Zaxxon", Base: "Arcade", Src: "distribution_mister", K: "zaxxon", SN: "zaxxon", Core: "zaxxon",
+			Manufacturer: "Sega", Year: "1982", Updated: "2026-01-01", Date: "2019-01-01"},
+		{Title: "Last Striker", Base: "Arcade", Src: "jtbindb", K: "kyustrkr", SN: "kyustrkr", Core: "jttaitox",
+			Manufacturer: "East Technology", Year: "1989", Updated: "2026-09-04", Date: "2026-09-04"},
+	}
+	stand := localRow("volfied", "Volfied", "_Arcade/Volfied (bazset).mra")
+	stand.Title, stand.Manufacturer, stand.Standin = "Volfied (bazset)", "Taito", true
+	clone := localRow("volfiedj2", "Volfied", "_Arcade/Volfied (US, bazset).mra")
+	clone.Title, clone.Family, clone.Standin = "Volfied (US, bazset)", "volfied", true
+	kyu := localRow("kyustrkr", "taitox", "_Arcade/Kyuukyoku no Striker.mra")
+	kyu.Title, kyu.Manufacturer, kyu.Year, kyu.Standin = "Kyuukyoku no Striker", "East Technology", "1989", true
+	plain := localRow("orphan", "defender", "_Arcade/orphan.mra")
+	plain.Title, plain.Year = "Mid Orphan", "1985"
+	gone := localRow("gone", "defender", "_Arcade/gone.mra")
+	gone.Standin = true
+	ds := Ingest(MergeLocal(cat, []Row{stand, clone, kyu, plain, gone}), "h", time.Time{})
+	at := func(o []int, k string) int {
+		for p, i := range o {
+			if ds.Rows[i].K == k {
+				return p
+			}
+		}
+		t.Fatalf("%s not in the order", k)
+		return -1
+	}
+	for _, mode := range []SortMode{SortUpdated, SortDebut, SortYear, SortAlphabetical, SortMaker} {
+		o := ds.Order(mode)
+		p := at(o, "volfied")
+		if at(o, "local:volfied") != p+1 || at(o, "local:volfiedj2") != p+2 {
+			t.Fatalf("%v: standins not under Volfied: %v", mode, o)
+		}
+		if at(o, "local:kyustrkr") != at(o, "kyustrkr")+1 {
+			t.Fatalf("%v: standin not under Last Striker: %v", mode, o)
+		}
+		if mode == SortUpdated || mode == SortDebut {
+			if at(o, "local:gone") < len(o)-2 || at(o, "local:orphan") < len(o)-2 {
+				t.Fatalf("%v: undated rows without an anchor must sink: %v", mode, o)
+			}
+		}
+	}
+	if o := ds.Order(SortFavorites); at(o, "local:kyustrkr") > at(o, "kyustrkr") {
+		t.Fatalf("favorites sorts a standin by its own title: %v", o)
+	}
+	if i := ds.Index("local:gone"); ds.SortRow(i) != i {
+		t.Fatal("a standin the catalogue no longer names has no anchor")
+	}
+	if ds.SortRow(ds.Index("local:volfiedj2")) != ds.Index("volfied") {
+		t.Fatal("a clone standin anchors through its parent")
+	}
+}
+
 func TestHiddenSourcesNeverHidesLocal(t *testing.T) {
 	if h := HiddenSources([]DB{}); h[SrcLocal] {
 		t.Fatal("local hidden with no databases configured")

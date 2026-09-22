@@ -35,11 +35,13 @@ scenarios = [
     # Games the card scan found outside the catalogue: the "local" chip in the
     # list and Details, the file line, and the Local source in Filters. Volfied
     # is a standin: the catalogue has it only for a core this card has not got,
-    # so both rows are listed and the local one says why it is there.
+    # so both rows are listed and the local one says why it is there. Cleared
+    # of the search, the standin sits right under the greyed row in Build date
+    # although it has no date of its own.
     ["-local", "testdata/local-rows.json", "-out", "out/local-h", "-script",
-     "type orphan; shot list; enter; shot details; back; back; type local puzzle; enter; shot details-lsnap; back; back; type volfied; shot standin-list; down; enter; shot standin-details; back; back; tab; down*3; right; shot source"],
+     "type orphan; shot list; enter; shot details; back; back; type local puzzle; enter; shot details-lsnap; back; back; type volfied; shot standin-list; down; enter; shot standin-details; back; back; shot standin-order; tab; down*3; right; shot source"],
     ["-local", "testdata/local-rows.json", "-rot", "left", "-logical", "-out", "out/local-t", "-script",
-     "type orphan; shot list; enter; shot details; back; back; type local puzzle; enter; shot details-lsnap; back; back; type volfied; shot standin-list; down; enter; shot standin-details; back; back; tab; down*3; right; shot source"],
+     "type orphan; shot list; enter; shot details; back; back; type local puzzle; enter; shot details-lsnap; back; back; type volfied; shot standin-list; down; enter; shot standin-details; back; back; shot standin-order; tab; down*3; right; shot source"],
     ["-out", "out/search-h", "-script", "type 1943; shot matches; type xyz; shot empty"],
     ["-rot", "left", "-logical", "-out", "out/search-t",
      "-script", "type 1943; shot matches; type xyz; shot empty"],

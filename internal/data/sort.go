@@ -34,6 +34,12 @@ const (
 // Valid reports whether m is a sort mode the app knows.
 func (m SortMode) Valid() bool { return m >= SortUpdated && m <= SortMaker }
 
+// Anchored reports whether the mode orders the whole catalogue, where a
+// standin row sorts, groups and jumps as part of the row it stands in for
+// (Dataset.SortRow). Favorites and Recents are the player's own lists and
+// keep every row to its own title and launches.
+func (m SortMode) Anchored() bool { return m != SortFavorites && m != SortRecents }
+
 // ViewOrder is every view in the order Y walks them, Recents included.
 var ViewOrder = []SortMode{SortUpdated, SortDebut, SortYear, SortAlphabetical, SortMaker, SortFavorites, SortRecents}
 
@@ -146,7 +152,35 @@ func (ds *Dataset) Order(mode SortMode) []int {
 	return idx
 }
 
+// less places a standin right under the catalogue row it stands in for, by
+// comparing the rows SortRow names; the rows sharing one place follow the
+// catalogue row by title. Ties between different places fall back to index
+// order, which is what the stable sort gave them anyway, so every other row
+// keeps its order and the comparison stays consistent with the standins.
 func (ds *Dataset) less(mode SortMode, a, b int) bool {
+	if !mode.Anchored() {
+		return ds.lessRow(mode, a, b)
+	}
+	pa, pb := ds.SortRow(a), ds.SortRow(b)
+	if pa != pb {
+		if ds.lessRow(mode, pa, pb) {
+			return true
+		}
+		if ds.lessRow(mode, pb, pa) {
+			return false
+		}
+		return pa < pb
+	}
+	if (a == pa) != (b == pb) {
+		return a == pa // the catalogue row, then what stands in for it
+	}
+	if c := CompareKeys(ds.Der[a].titleKey, ds.Der[b].titleKey); c != 0 {
+		return c < 0
+	}
+	return a < b
+}
+
+func (ds *Dataset) lessRow(mode SortMode, a, b int) bool {
 	ra, rb := &ds.Rows[a], &ds.Rows[b]
 	da, db := &ds.Der[a], &ds.Der[b]
 	if mode == SortAlphabetical || mode == SortFavorites || mode == SortRecents {

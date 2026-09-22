@@ -96,7 +96,8 @@ rotation, region, players and buttons come from the file itself; Details shows
 the file's path and the MRA category as a note. One row is shown per game
 however many copies are installed; the extra copies are offered as versions.
 Local games carry no release dates, so they sit at the end of the date views
-and never count as new since your last look. To hide them, turn the Local
+(except a copy standing in for a greyed game, described below) and never count
+as new since your last look. To hide them, turn the Local
 source off in Filters -> Source; "Installed only" in Options never hides them.
 Pictures for local games are fetched from images.misterzine.fyi by MAME set
 name, the only thing sent about the game; a game without a known screenshot
@@ -112,8 +113,10 @@ Some games are in the catalogue only for a core you have not got: a Patreon
 core in early access, say, or one from a database you do not subscribe to.
 That row is greyed, as it should be. If your card also holds a copy that runs
 on a core you do have, whoever made it, that copy is listed too, as a local
-game beside the greyed row, and its Details say that the catalogue has this
-game only for cores that are not on this card. Install the catalogue's own
+game right under the greyed row, and its Details say that the catalogue has
+this game only for cores that are not on this card. It keeps that place in
+every order but Favorites and Recents, dates or no dates, and belongs to the
+greyed row's letter, year or manufacturer group. Install the catalogue's own
 core and the local row steps aside for it, taking its favorite, chosen
 version and launch history along.
 Options -> Views -> Remember last view is on by default; turn it off to choose

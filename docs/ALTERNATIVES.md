@@ -39,8 +39,13 @@ exception to that rule. Its catalogue row is greyed and refuses to launch, so
 a file that does play it on a core the card does have — another author's, or
 one from a database the tracker does not follow — would fall between the two
 rules and vanish. Such a file becomes a standin row instead (`Row.Standin`),
-listed beside the catalogue row it stands in for, and its Details say why it
-is there. The core index decides it, so the row appears and goes as cores are
+listed right under the catalogue row it stands in for, and its Details say why
+it is there. `Ingest` records that row as the standin's anchor through the same
+coverage `LocalTakeovers` uses (setname, then the parent for a clone), and
+every order but Favorites and Recents compares the anchor in its place
+(`Dataset.SortRow`), so the standin follows it whatever its own title, maker,
+year or missing dates would say; group headers and jumps read the anchor too.
+The core index decides it, so the row appears and goes as cores are
 installed or removed: the moment the catalogue's own core lands on the card,
 the standin gives way to it and hands over its favorite, remembered version
 and launch records. `MergeLocal` keeps standin rows although the catalogue

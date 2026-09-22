@@ -24,6 +24,9 @@ func (a *App) groupHeaders() bool {
 // groupLabel is what a header says for the group row i belongs to: the
 // maker, the letter, or the release year, with the unknown group named.
 func (a *App) groupLabel(i int) string {
+	if a.mode.Anchored() {
+		i = a.ds.SortRow(i) // a standin belongs to its catalogue row's group
+	}
 	switch a.mode {
 	case data.SortMaker:
 		if m := a.ds.Der[i].Maker; m != "" {
