@@ -2,6 +2,7 @@ package scan
 
 import (
 	"archive/zip"
+	"crypto/md5"
 	"fmt"
 	"hash/crc32"
 	"os"
@@ -68,6 +69,8 @@ func putZip(t *testing.T, p string, members ...member) {
 
 func crcOf(s string) string { return fmt.Sprintf("%08x", crc32.ChecksumIEEE([]byte(s))) }
 
+func md5Of(s string) string { return fmt.Sprintf("%x", md5.Sum([]byte(s))) }
+
 func TestROMRequirements(t *testing.T) {
 	prog, sound := crcOf("program"), crcOf("sound")
 	for _, tc := range []struct {
@@ -115,6 +118,17 @@ func TestROMRequirements(t *testing.T) {
 		{"wrong version, no md5", `<rom index="0" zip="g.zip"><part name="p1.bin" crc="` + prog + `"/></rom>`,
 			map[string][]member{"g.zip": {{name: "p1.bin", data: "older"}}}, "Wrong ROM version: g.zip (p1.bin)", false},
 		{"wrong version, real md5", `<rom index="0" zip="g.zip" md5="0123456789abcdef0123456789abcdef"><part name="p1.bin" crc="` + prog + `"/></rom>`,
+			map[string][]member{"g.zip": {{name: "p1.bin", data: "older"}}}, "Wrong ROM version: g.zip (p1.bin)", true},
+		// Galaxian (New Invasion) from HBMame: its part CRCs went stale but its
+		// md5 fits the files, so Main sends the ROM and the game plays
+		{"stale crc, md5 fits", `<rom index="0" zip="g.zip" md5="` + strings.ToUpper(md5Of("newer")) + `"><part name="p1.bin" crc="` + prog + `"/></rom>`,
+			map[string][]member{"g.zip": {{name: "p1.bin", data: "newer"}}}, "", false},
+		// the md5 covers inline bytes and each part as read: from offset, cut
+		// to length, repeat times, in document order
+		{"md5 over inline, offset, length, repeat", `<rom index="0" zip="g.zip" md5="` + md5Of("\x01\x02bcbc"+"program") + `"><part>01 02</part>` +
+			`<part name="p1.bin" crc="deadbeef" offset="0x1" length="2" repeat="2"/><interleave output="16"><part name="p2.bin" crc="` + prog + `" map="01"/></interleave></rom>`,
+			map[string][]member{"g.zip": {{name: "p1.bin", data: "abcd"}, {name: "p2", data: "program"}}}, "", false},
+		{"md5 counts a wrong file Main loads", `<rom index="0" zip="g.zip" md5="` + md5Of("program") + `"><part name="p1.bin" crc="` + prog + `"/></rom>`,
 			map[string][]member{"g.zip": {{name: "p1.bin", data: "older"}}}, "Wrong ROM version: g.zip (p1.bin)", true},
 		{"real md5 but no rom zip", `<rom index="0" md5="0123456789abcdef0123456789abcdef"><part name="p1.bin" zip="g.zip" crc="` + prog + `"/></rom>`,
 			map[string][]member{"g.zip": {{name: "p1.bin", data: "older"}}}, "Wrong ROM version: g.zip (p1.bin)", false},
@@ -196,6 +210,21 @@ func TestROMRequirements(t *testing.T) {
 				t.Fatalf("got %q block=%v; want %q block=%v", got.Text, got.Block, tc.want, tc.block)
 			}
 		})
+	}
+}
+
+func TestMainHexAndNumbers(t *testing.T) {
+	for in, want := range map[string]string{
+		"": "", "0a,FF": "\x0a\xff", "12\n34\t56": "\x12\x34\x56", "abc": "\xab\x0c", "0 1": "\x09\x01",
+	} {
+		if got := string(mainHex(in)); got != want {
+			t.Errorf("mainHex(%q) = %q; want %q", in, got, want)
+		}
+	}
+	for in, want := range map[string]int{"": 0, "16": 16, "0x10": 16, "010": 8, " 7z": 7, "09": 0, "-1": -1} {
+		if got := parseCUL(in); got != want {
+			t.Errorf("parseCUL(%q) = %d; want %d", in, got, want)
+		}
 	}
 }
 

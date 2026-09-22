@@ -304,8 +304,10 @@ MiSTer:
 `Wrong ROM version:` means an archive has a file of the right name but
 different content, usually from a different ROM set version. MiSTer loads it
 anyway and the game often runs, so Start still launches it. The exception is
-an MRA that checks the whole ROM against a checksum: MiSTer then refuses the
-mismatch, and so does Start. A Jotego beta key (`jtbeta.zip`) that does not
+an MRA that checks the whole ROM against a checksum: MisterZine rebuilds that
+checksum from the files as MiSTer does. When it fits, only the MRA's note of
+that one file is out of date, and nothing is shown; when it does not, MiSTer
+refuses the ROM, and so does Start. A Jotego beta key (`jtbeta.zip`) that does not
 match the MRAs shows this warning too.
 
 MisterZine cannot promise that a game runs: the card status describes
