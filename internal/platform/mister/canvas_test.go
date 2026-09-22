@@ -35,19 +35,53 @@ func TestFitCanvas(t *testing.T) {
 	}
 }
 
+// Every framebuffer Main can hand us (the output mode, halved above
+// 1920x1080 and halved again in height where the display repeats pixels).
 func TestFullCanvas(t *testing.T) {
 	for _, c := range []struct{ nw, nh, w, h int }{
-		{1920, 1080, 480, 270}, {1280, 720, 640, 360}, {2560, 1440, 512, 288},
-		{3840, 2160, 480, 270}, {1920, 1200, 384, 240}, {1024, 768, 512, 384},
-		{640, 480, 320, 240}, {640, 240, 320, 240}, {768, 288, 384, 288},
-		{1366, 768, 683, 384}, {3440, 1440, 688, 288}, {1919, 1079, 320, 240},
+		{1280, 720, 426, 240},  // 720p, and 1440p repeated
+		{1920, 1080, 480, 270}, // 1080p
+		{1024, 768, 341, 256},  // 1024x768, and 2048x1536 halved
+		{1366, 768, 455, 256},
+		{1600, 900, 533, 300},
+		{1280, 1024, 320, 256},
+		{1680, 1050, 420, 262},
+		{960, 720, 320, 240}, // 1920x1440 halved
+		{960, 540, 480, 270}, // 4K repeated
+		{960, 600, 480, 300}, // 1920x1200 halved
+		{800, 600, 400, 300},
+		{640, 480, 320, 240},
+		{1024, 600, 512, 300},
+		{720, 480, 360, 240},
+		{720, 576, 360, 288},
+		{640, 240, 320, 240},   // 240p CRT: FitCanvas
+		{768, 288, 384, 288},   // 288p CRT: FitCanvas
+		{860, 360, 320, 240},   // 3440x1440 repeated: under 480, so FitCanvas
+		{1919, 1079, 479, 269}, // an odd timing still fills
 	} {
 		w, h := FullCanvas(c.nw, c.nh)
 		if w != c.w || h != c.h {
 			t.Errorf("FullCanvas(%d,%d)=%dx%d want %dx%d", c.nw, c.nh, w, h, c.w, c.h)
+			continue
 		}
-		if c.nh >= 480 && c.nw != 1919 && (c.nw%w != 0 || c.nh%h != 0 || c.nw/w != c.nh/h) {
-			t.Errorf("nonuniform or incomplete fill: %+v", c)
+		// Every display reads at much the same text size.
+		if h < 240 || h > 300 {
+			t.Errorf("FullCanvas(%d,%d)=%dx%d: %d rows is outside 240-300", c.nw, c.nh, w, h, h)
+		}
+		if c.nh < 480 {
+			continue
+		}
+		// One factor for both axes, falling short of the display by
+		// less than one canvas pixel on each.
+		filled := false
+		for k := 1; k <= c.nh; k++ {
+			if c.nw/k == w && c.nh/k == h {
+				filled = true
+				break
+			}
+		}
+		if !filled {
+			t.Errorf("FullCanvas(%d,%d)=%dx%d is not the framebuffer divided by one factor", c.nw, c.nh, w, h)
 		}
 	}
 }

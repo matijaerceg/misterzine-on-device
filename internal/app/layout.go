@@ -57,6 +57,13 @@ const (
 // by Options -> Layout; the first is the default.
 var listLayouts = []string{"list", "split", "picture", "text"}
 
+// widescreen reports whether a canvas is 16:9 or wider. Full display rounds
+// the canvas down to fit the framebuffer, so a 16:9 display can come out up
+// to a column narrower than 16:9 - 426x240 on 720p, where 426*9 is 3834
+// against 3840 - and one column of slack covers any exact 16:9 display.
+// 16:10 and 4:3 canvases stay far outside it.
+func widescreen(w, h int) bool { return (w+1)*9 >= h*16 }
+
 // NewLayout computes the layout for a logical W x H canvas. The insets are
 // the safe-zone margins as the viewer sees the picture: ix at the left and
 // right edges, iy at the top and bottom (the logical canvas is already the
@@ -134,7 +141,7 @@ func NewLayout(w, h, ix, iy int, body *gfx.Font, rowW, dateCols int, style strin
 		tx := l.Pane.Min.X + 3
 		l.Thumb = image.Rect(tx, l.Pane.Min.Y+3, tx+tw, l.Pane.Min.Y+3+th)
 		l.PaneText = image.Rect(tx, l.Thumb.Max.Y+3, l.Pane.Max.X, l.Pane.Max.Y)
-	case !l.Portrait && w*9 >= h*16 && style == "picture":
+	case !l.Portrait && widescreen(w, h) && style == "picture":
 		// Widescreen Picture: full-height artwork between a narrow title list
 		// and fixed metadata. Keep image proportions; spare width is a gutter.
 		th := b.Dy() - 6

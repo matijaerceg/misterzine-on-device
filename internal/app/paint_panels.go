@@ -419,7 +419,7 @@ func (a *App) optionsEntries() []panelEntry {
 		}
 	}
 	layoutHelp := "List (default): full list, small picture. Split: bigger picture. Picture: art across the screen, a few rows. Text: rows only, room for long titles."
-	if a.lay.W*9 >= a.lay.H*16 {
+	if widescreen(a.lay.W, a.lay.H) {
 		layoutHelp = "List: full list, small picture. Split: bigger picture. Picture: narrow titles beside full-height art. Text: rows only, room for long titles."
 	}
 	rotationHelp := "Left/Right turn the image; the choice is saved. Labels describe the monitor's turn. On the list, Select + Left/Right does the same."

@@ -277,12 +277,15 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "back; shot default; enter; shot collapsed; pagedown; shot list-closed; right; shot list-open; "
                           "pagedown; enter; shot display-open; left; shot display-closed; back; back; shot remembered; "
                           "end; shot bottom; up*2; enter; shot troubleshooting; back; shot returned"])
-for rotation in ([], ["-rot", "left", "-logical"], ["-rot", "right", "-logical"]):
-    orientation = rotation[1] if rotation else "horizontal"
-    for layout in ("list", "split", "picture", "text"):
-        scenarios.append([*rotation, "-canvas", "480x270", "-layout", layout,
-                          "-out", f"out/full-display-{orientation}-{layout}", "-script",
-                          "shot list; enter; shot details; back; tab; shot filters; back; back; shot options; home; pagedown*2; right; down*5; left*2; shot full-option; home; pagedown*2; right; down*3; enter; down; enter; wait 12000; shot saver"])
+# Full display on 1080p (480x270), and on 720p or 1440p (426x240, a column
+# short of 16:9 because the canvas is the framebuffer rounded down)
+for canvas, name in (("480x270", "full-display"), ("426x240", "full-426x240")):
+    for rotation in ([], ["-rot", "left", "-logical"], ["-rot", "right", "-logical"]):
+        orientation = rotation[1] if rotation else "horizontal"
+        for layout in ("list", "split", "picture", "text"):
+            scenarios.append([*rotation, "-canvas", canvas, "-layout", layout,
+                              "-out", f"out/{name}-{orientation}-{layout}", "-script",
+                              "shot list; enter; shot details; back; tab; shot filters; back; back; shot options; home; pagedown*2; right; down*5; left*2; shot full-option; home; pagedown*2; right; down*3; enter; down; enter; wait 12000; shot saver"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     scenarios.append([*rotation, "-out", f"out/hdmi-choice-{orientation}", "-script",

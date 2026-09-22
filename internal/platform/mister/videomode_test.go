@@ -130,16 +130,20 @@ func TestScreenGeometry(t *testing.T) {
 		raw        string
 		hact, vact int
 		pr         bool
+		fitFills   bool // FitCanvas finds a height that divides the mode
 	}{
-		{"720p", "0", 1280, 720, false},
-		{"1080p", "8", 1920, 1080, false},
-		{"1024x768", "1", 1024, 768, false},
-		{"1920x1440", "12", 1920, 1440, false},
-		{"2048x1536", "13", 2048, 1536, false},
-		{"1440p", "14", 1280, 1440, true},
-		{"1440p by CVT", "2560,1440,60", 1280, 1440, true},
-		{"4K", "3840,2160,60", 1920, 2160, true},
-		{"3440x1440 ultrawide", "3440,1440,60", 1720, 1440, true},
+		{"720p", "0", 1280, 720, false, true},
+		{"1080p", "8", 1920, 1080, false, true},
+		{"1024x768", "1", 1024, 768, false, true},
+		{"1366x768", "10", 1366, 768, false, true},
+		{"1600x900", "1600,900,60", 1600, 900, false, true},
+		{"1680x1050", "1680,1050,60", 1680, 1050, false, false}, // Fit keeps 320x240
+		{"1920x1440", "12", 1920, 1440, false, true},
+		{"2048x1536", "13", 2048, 1536, false, true},
+		{"1440p", "14", 1280, 1440, true, true},
+		{"1440p by CVT", "2560,1440,60", 1280, 1440, true, true},
+		{"4K", "3840,2160,60", 1920, 2160, true, true},
+		{"3440x1440 ultrawide", "3440,1440,60", 1720, 1440, true, true},
 	} {
 		fbW, fbH := nativeFB(m.hact, m.vact, m.pr)
 
@@ -157,14 +161,20 @@ func TestScreenGeometry(t *testing.T) {
 			t.Errorf("%s: detected repeats=%v, want %v", m.name, pr, m.pr)
 		}
 
+		screenW := m.hact
+		if m.pr {
+			screenW *= 2
+		}
 		for _, choice := range []struct {
-			name  string
-			pick  func(int, int) (int, int)
-			fills bool
+			name           string
+			pick           func(int, int) (int, int)
+			fillsH, fillsW bool
 		}{
-			{"fit", FitCanvas, true},
-			{"full", FullCanvas, true},
-			{"320x240", func(int, int) (int, int) { return 320, 240 }, false},
+			{"fit", FitCanvas, m.fitFills, false},
+			// Full display fills both axes, except where a framebuffer
+			// under 480 lines sends it down the CRT path to FitCanvas.
+			{"full", FullCanvas, true, fbH >= 480},
+			{"320x240", func(int, int) (int, int) { return 320, 240 }, false, false},
 		} {
 			cw, ch := choice.pick(fbW, fbH)
 			rw, rh := fbRequest(cw, ch, pr)
@@ -178,13 +188,20 @@ func TestScreenGeometry(t *testing.T) {
 				t.Errorf("%s/%s: canvas %dx%d shown as %dx%d: pixels are %d:%d, want square",
 					m.name, choice.name, cw, ch, pw, ph, pw/cw, ph/ch)
 			}
-			if ph > m.vact || pw > m.hact*2 {
+			if ph > m.vact || pw > screenW {
 				t.Errorf("%s/%s: %dx%d does not fit the %dx%d mode",
-					m.name, choice.name, pw, ph, m.hact*2, m.vact)
+					m.name, choice.name, pw, ph, screenW, m.vact)
 			}
-			if choice.fills && ph != m.vact {
+			// The canvas is the framebuffer rounded down, so a filling
+			// picture may fall short by less than one canvas pixel.
+			px := ph / ch
+			if choice.fillsH && m.vact-ph >= px {
 				t.Errorf("%s/%s: %d of %d lines used; the picture should reach the full height",
 					m.name, choice.name, ph, m.vact)
+			}
+			if choice.fillsW && screenW-pw >= px {
+				t.Errorf("%s/%s: %d of %d columns used; the picture should reach the full width",
+					m.name, choice.name, pw, screenW)
 			}
 		}
 	}

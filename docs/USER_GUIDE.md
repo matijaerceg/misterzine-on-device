@@ -488,13 +488,19 @@ screenshots match, lettering runs instead and the Preview help explains why.
   Right/Up grows it and Left/Down shrinks it. B saves. Margins can reach 40 px.
 - **HDMI picture:** Full display, 320x240, or Fit 4:3. **Full display** is
   the default for new installations; existing installations keep their saved
-  choice. It uses both HDMI dimensions with square integer-scaled pixels:
-  480x270 on 1080p, or 270x480 as viewed in tate. **320x240** keeps the classic
+  choice. It uses both HDMI dimensions with square integer-scaled pixels, at
+  much the same text size on every display: 480x270 on 1080p, 426x240 on 720p
+  and 1440p, 455x256 on 1366x768, or 270x480 as viewed in tate on 1080p. Where
+  a display's size does not divide evenly, the picture stops a pixel or two
+  short of the edge. **320x240** keeps the classic
   canvas size. **Fit 4:3** keeps a 4:3 picture, sized to the HDMI height:
   360x270 on 1080p, 340x256 on 1024x768, or 400x300 on 1600x900.
   Changes apply live after a brief pause, keeping your place in Options.
-  Full display gives tate more rows and horizontal layouts more width;
-  screensavers use the expanded canvas too. On widescreen horizontal displays,
+  At 1440p and 4K, which MiSTer sends with every pixel doubled across,
+  MisterZine compensates, so each choice keeps its proportions.
+  On widescreen displays Full display gives tate more rows and horizontal
+  layouts more width; on 4:3 displays it matches Fit 4:3. Screensavers use the
+  expanded canvas too. On widescreen horizontal displays,
   Picture puts a narrow title list on the left, full-height artwork in the
   middle and information on the far right. The narrow list keeps favorite
   stars and omits status/date columns. On 4:3 it retains the stacked arrangement.

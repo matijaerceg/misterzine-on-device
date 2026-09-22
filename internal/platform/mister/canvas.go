@@ -42,21 +42,46 @@ func fbRequest(canvasW, canvasH int, pr bool) (int, int) {
 	return canvasW, canvasH
 }
 
-// FullCanvas fills both axes with square, integer-scaled pixels. Keep low
-// resolution CRT modes on the existing path. Bound the canvas for unusual
-// timings rather than allocating a native-resolution UI just to remove bars.
+// fullTargetH is the canvas height Full display aims for. Text keeps its
+// pixel size on every canvas, so the canvas height is what sets how large
+// it looks: 270 rows is 1080p's exact fit, and FitCanvas stays within
+// 240-300 everywhere, so both choices read at much the same size.
+const fullTargetH = 270
+
+// FullCanvas fills both axes with square, integer-scaled pixels at a text
+// size close to every other display's: of the factors that leave at least
+// 240 rows, it takes the one whose height lands nearest fullTargetH.
+//
+// The canvas is the framebuffer divided by that factor and rounded down, so
+// it can fall short by less than one canvas pixel on each axis, and Main
+// centres it: 426x240 covers 1278 of 720p's 1280 columns. Demanding an
+// exact division is what used to let the text size wander, since 1280 has
+// no factor of 3: 720p fell back to 640x360 and 1600x900 to 800x450, text
+// at three quarters of 1080p's size or less, and up to three times the
+// drawing.
+//
+// Low resolution CRT modes keep FitCanvas. The bounds keep an unusual
+// timing from allocating a native-resolution UI just to remove bars.
 func FullCanvas(nativeW, nativeH int) (int, int) {
 	if nativeH < 480 || nativeW <= 0 {
 		return FitCanvas(nativeW, nativeH)
 	}
-	for k := nativeH / 240; k >= 1; k-- {
-		if nativeW%k != 0 || nativeH%k != 0 {
+	bestW, bestH, bestD := 0, 0, -1
+	for k := 1; nativeH/k >= 240; k++ {
+		w, h := nativeW/k, nativeH/k
+		if w < 320 || w > 960 || h > 600 {
 			continue
 		}
-		w, h := nativeW/k, nativeH/k
-		if w >= 320 && w <= 960 && h <= 600 {
-			return w, h
+		d := h - fullTargetH
+		if d < 0 {
+			d = -d
+		}
+		if bestD < 0 || d < bestD { // k rises, so a tie keeps the taller
+			bestW, bestH, bestD = w, h, d
 		}
 	}
-	return FitCanvas(nativeW, nativeH)
+	if bestD < 0 {
+		return FitCanvas(nativeW, nativeH)
+	}
+	return bestW, bestH
 }

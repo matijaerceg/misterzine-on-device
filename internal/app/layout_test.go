@@ -94,7 +94,10 @@ func TestListLayouts(t *testing.T) {
 }
 
 func TestFullDisplayLayouts(t *testing.T) {
-	for _, size := range [][2]int{{480, 270}, {270, 480}, {640, 360}, {360, 640}, {512, 288}, {288, 512}, {683, 384}, {384, 683}, {688, 288}, {288, 688}} {
+	// The canvases Full display now picks (720p and 1440p, 1366x768,
+	// 1600x900, 1680x1050), then the larger ones it used to.
+	for _, size := range [][2]int{{480, 270}, {270, 480}, {426, 240}, {240, 426}, {455, 256}, {256, 455}, {533, 300}, {300, 533}, {420, 262}, {262, 420},
+		{640, 360}, {360, 640}, {512, 288}, {288, 512}, {683, 384}, {384, 683}, {688, 288}, {288, 688}} {
 		for _, inset := range []int{0, 15, 40} {
 			for _, style := range listLayouts {
 				l := NewLayout(size[0], size[1], inset, inset, fonts.Body(), fonts.NarrowTall().W, 5, style)
@@ -117,12 +120,38 @@ func TestFullDisplayLayouts(t *testing.T) {
 	}
 }
 
+func TestWidescreenAllowsOneColumn(t *testing.T) {
+	for _, c := range []struct {
+		w, h int
+		want bool
+	}{
+		{480, 270, true}, {426, 240, true}, {455, 256, true}, {533, 300, true}, {688, 288, true},
+		{425, 240, false}, // two columns short is not a rounded-down 16:9 display
+		{420, 262, false}, {341, 256, false}, {360, 270, false}, {320, 240, false}, {270, 480, false},
+	} {
+		if got := widescreen(c.w, c.h); got != c.want {
+			t.Errorf("widescreen(%d, %d) = %v, want %v", c.w, c.h, got, c.want)
+		}
+	}
+}
+
 func TestPictureColumnsAndTateCaptions(t *testing.T) {
 	for _, inset := range []int{0, 15, 40} {
-		for _, size := range [][2]int{{480, 270}, {640, 360}, {512, 288}, {688, 288}} {
+		// 426x240, 455x256 and 533x300 are 16:9 displays rounded down to
+		// the framebuffer, a column short of 16:9 each.
+		for _, size := range [][2]int{{480, 270}, {426, 240}, {455, 256}, {533, 300}, {640, 360}, {512, 288}, {688, 288}} {
 			l := NewLayout(size[0], size[1], inset, inset, fonts.Body(), fonts.NarrowTall().W, 5, "picture")
-			if !l.PictureColumns || l.PaneTop || l.TextBeside || l.Thumb.Overlaps(l.PaneText) || l.Thumb.Dy() != l.Body.Dy()-6 || l.PaneText.Max.X != l.Body.Max.X || l.TitleW > l.List.Dx()-fonts.Body().W {
+			if !l.PictureColumns || l.PaneTop || l.TextBeside || l.Thumb.Overlaps(l.PaneText) || l.PaneText.Max.X != l.Body.Max.X || l.TitleW > l.List.Dx()-fonts.Body().W {
 				t.Fatalf("columns invalid: %+v", l)
+			}
+			// The art is as large as the columns allow: full height, or
+			// where they leave less width (426x240 with no safe zone),
+			// the whole width between the titles and the metadata. At
+			// the default safe zone every size gets full height.
+			fullH := l.Thumb.Dy() == l.Body.Dy()-6
+			artW := (l.PaneText.Min.X - 4) - (l.Pane.Min.X + 3)
+			if (!fullH && l.Thumb.Dx() != artW) || (inset == 15 && !fullH) {
+				t.Fatalf("%v inset %d: art %v is neither full height nor full width: %+v", size, inset, l.Thumb, l)
 			}
 			for _, style := range []string{"split", "picture"} {
 				portrait := NewLayout(size[1], size[0], inset, inset, fonts.Body(), fonts.NarrowTall().W, 5, style)
@@ -132,8 +161,12 @@ func TestPictureColumnsAndTateCaptions(t *testing.T) {
 			}
 		}
 	}
-	classic := NewLayout(320, 240, 15, 15, fonts.Body(), fonts.NarrowTall().W, 5, "picture")
-	if classic.PictureColumns || !classic.PaneTop {
-		t.Fatal("classic picture must remain stacked")
+	// 4:3 and 16:10 canvases keep the stacked picture: the classic size,
+	// Full display on a 1024x768 display, and on 1680x1050.
+	for _, size := range [][2]int{{320, 240}, {341, 256}, {420, 262}} {
+		l := NewLayout(size[0], size[1], 15, 15, fonts.Body(), fonts.NarrowTall().W, 5, "picture")
+		if l.PictureColumns || !l.PaneTop {
+			t.Fatalf("%v picture must remain stacked", size)
+		}
 	}
 }
