@@ -107,7 +107,7 @@ func main() {
 		ClockTrusted:   true,
 		Favorites:      map[string]bool{},
 		Launch:         func(p string) { fmt.Println("launch:", p); cmd.Send("load_core " + p) },
-		ROMIssue:       func(string, bool) string { return *romIssue },
+		ROMIssue:       func(string, bool) (string, bool) { return *romIssue, *romIssue != "" },
 		Quit:           func() { fmt.Println("quit") },
 		Version:        "harness",
 		RememberSort:   true,

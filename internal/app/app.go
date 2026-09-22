@@ -85,9 +85,11 @@ type Config struct {
 	Progress func() (have, total int)
 	// Exists reports whether a card-relative file is present (launch targets).
 	Exists func(rel string) bool
-	// ROMIssue returns a missing archive warning for the selected MRA.
-	// fresh bypasses cached Details results when the user presses Start.
-	ROMIssue func(rel string, fresh bool) string
+	// ROMIssue reports a problem with the selected MRA's ROM files, and
+	// block when MiSTer could not load the game, so Start refuses it;
+	// otherwise the text is a warning. fresh bypasses cached Details
+	// results when the user presses Start.
+	ROMIssue func(rel string, fresh bool) (text string, block bool)
 	// Launcher reports whether the main-menu launcher is enabled (nil = unsupported).
 	Launcher func() bool
 	// CanUpdateApp reports whether this card can fetch a new MisterZine on

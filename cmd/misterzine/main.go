@@ -80,6 +80,7 @@ type host struct {
 	clock                         platform.Clock
 	client                        *fetch.Client
 	img                           *images.Service
+	roms                          *scan.ROMCheck
 	index                         *scan.Index
 	status                        []data.Status
 	alts                          map[string][]string
@@ -229,6 +230,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	h.client = fetch.NewClient(buildinfo.Version)
 	h.img = images.New(filepath.Join(root, "shots"), h.client, lg, 24<<20)
 	h.img.SetPrefetch(picsFor(ds), h.settings.Prefetch)
+	h.roms = scan.NewROMCheck(card)
 
 	// app
 	favSet := h.favs.Set()
@@ -288,7 +290,10 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			_, err := os.Stat(filepath.Join(card, filepath.FromSlash(rel)))
 			return err == nil
 		},
-		ROMIssue:        scan.NewROMCheck(card),
+		ROMIssue: func(rel string, fresh bool) (string, bool) {
+			r := h.roms.Check(rel, fresh)
+			return r.Text, r.Block
+		},
 		Launch:          h.requestLaunch,
 		Quit:            h.stop,
 		Version:         buildinfo.String(),
@@ -531,6 +536,8 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			h.a.SetNet(s)
 			h.img.SetOffline(s == "no connection")
 		case <-h.img.Ready():
+			h.a.Invalidate()
+		case <-h.roms.Ready():
 			h.a.Invalidate()
 		case <-h.img.ProgressReady():
 			if h.a.Screen() == app.ScreenOptions {

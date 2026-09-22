@@ -288,12 +288,28 @@ selected in Details. Any launch failure appears over the artwork.
 F12 on a keyboard saves a PNG to `/media/fat/misterzine/screenshots/`.
 Screenshots work without remote debugging.
 
-For arcade games, Details shows a warning if a required game ROM archive is
-missing. Start checks again and shows the missing archive name instead of
-handing the game to MiSTer. This follows the selected version's requirements
-and MiSTer's storage search order. It checks archive presence, not the files
-inside it: a present archive can still be incomplete or incompatible. The card
-status describes installation and core version, not a guarantee of playability.
+For arcade games, Details warns when the selected version's ROM files are not
+all there. MisterZine looks inside the zip archives the way MiSTer does: it
+follows MiSTer's storage search order, tries each archive the MRA names in
+turn, and finds every file by its checksum, then by its name. Start checks
+again, and for these it shows the warning instead of handing the game to
+MiSTer:
+
+- `Missing game ROM:` an archive the game needs is not on the card.
+- `Incomplete ROM:` the archives are there, but a file the game needs is in
+  none of them.
+- `Unreadable ROM:` MiSTer cannot read the archive: it is damaged, compressed
+  in a way MiSTer does not support, or an unpacked folder rather than a zip.
+
+`Wrong ROM version:` means an archive has a file of the right name but
+different content, usually from a different ROM set version. MiSTer loads it
+anyway and the game often runs, so Start still launches it. The exception is
+an MRA that checks the whole ROM against a checksum: MiSTer then refuses the
+mismatch, and so does Start. A Jotego beta key (`jtbeta.zip`) that does not
+match the MRAs shows this warning too.
+
+MisterZine cannot promise that a game runs: the card status describes
+installation and core version, not a guarantee of playability.
 
 ## Options
 

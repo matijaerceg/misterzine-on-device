@@ -14,6 +14,11 @@ scenarios = [
      "enter; shot details; start; shot blocked"],
     ["-data", "testdata/rom-warning.json", "-rom-issue", "Missing game ROM: jpark.zip", "-rot", "left", "-logical", "-out", "out/missing-rom-t", "-script",
      "enter; shot details; start; shot blocked"],
+    # the longest wording, and tate at the widest inset: the zip must survive the notice's cut
+    ["-data", "testdata/rom-warning.json", "-rom-issue", "Incomplete ROM: jpark.zip (no jp_ic1.bin)", "-out", "out/missing-rom-long-h", "-script",
+     "enter; shot details; start; shot blocked"],
+    ["-data", "testdata/rom-warning.json", "-rom-issue", "Incomplete ROM: jpark.zip (no jp_ic1.bin)", "-rot", "left", "-logical", "-inset", "40", "-out", "out/missing-rom-long-t", "-script",
+     "enter; shot details; start; shot blocked"],
     ["-out", "out/saver-dim-h", "-script",
      "back; home; pagedown*2; right; down*3; enter; down*2; right*2; down; shot brightness-33; enter; wait 1500; shot preview-33; back; right; shot brightness-66; enter; wait 1500; shot preview-66"],
     ["-rot", "left", "-logical", "-out", "out/saver-dim-t", "-script",

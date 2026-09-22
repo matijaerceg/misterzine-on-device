@@ -213,7 +213,7 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 		if len(entries) > 0 {
 			e := entries[max(0, min(a.detail.pick, len(entries)-1))]
 			if e.ok {
-				if issue := a.cfg.ROMIssue(e.path, false); issue != "" {
+				if issue, _ := a.cfg.ROMIssue(e.path, false); issue != "" {
 					L = append(L, paneLine{issue, gen.Eva.Warn})
 				}
 			}
@@ -629,7 +629,9 @@ func (a *App) launchRow(row *data.Row, i, pick int) bool {
 			return true
 		}
 		if a.cfg.ROMIssue != nil {
-			if issue := a.cfg.ROMIssue(e.path, true); issue != "" {
+			// a warning alone launches: the app closes on the way to the
+			// game, and MiSTer may well run it
+			if issue, block := a.cfg.ROMIssue(e.path, true); block {
 				a.Notice(issue, 6*time.Second)
 				return true
 			}
