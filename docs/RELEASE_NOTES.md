@@ -1,20 +1,18 @@
-Update MisterZine by itself
+Every version your card can play
 
-When a new MisterZine is out, Options offers **Update MisterZine only** above Run Update All. It fetches the new version alone and offers to restart into it, in about as long as it takes to read this. Update All still brings the whole card along whenever you want it; this is for the two-megabyte app that used to cost you the entire run.
+Open a game's details and every version of it on your card is there to pick: the regional sets and bootlegs, copies kept in other folders, and now the sets that run on a different core from the game itself. Pleiads plays on the Phoenix core, so its Centuri and bootleg sets, which need the Pleiads core, used to be out of reach; now they sit in the same list, each marked with the core it runs on. Press Left and Right to choose, Start to play, and MisterZine opens on your choice next time.
 
 **Added**
 
-- Hold Select and press Left or Right in the list to turn the display, instead of going into Options for it.
-- Credits names the Patreon supporters, and the early adopters now come from the site, so new names arrive without waiting for a release.
-- kuzecores (kuzearcade) is a source.
-- Troubleshooting explains what MisterZine does and does not do over S-Video and composite, now that it has been through a CRT.
+- Send a report, in Options -> Troubleshooting: when a game is missing or something looks wrong, it sends the developer a description of your card and gives you a short code to post where you asked for help.
 
 **Fixed**
 
-- A game the catalogue has only for a core you have not got, like a Patreon beta, now shows your own copy of it as well, if something on your card can play it. It sits beside the greyed row, says why it is there, and steps aside if you ever install the core the catalogue names.
-- Return after game reopens on the game you launched even when the view you start in does not list it.
-- The arcade cabinet no longer turns towards you on every launch: a tap on Start goes straight to the game, and holding Start plays the animation. Options -> Display -> Launch transition still has Always.
+- On 1440p and 4K screens MisterZine fills the display instead of a stretched band across the middle.
+- Full display keeps text at about the same size on every screen, so 720p gets fewer, larger rows.
+- The missing-ROM warning looks inside your zips the way MiSTer does, and spots a mame folder at the top of the SD card that stops every arcade game.
+- A playable copy of a game the catalogue has only for a core you don't own sits right under its greyed row in every order. Thanks to Mclaneinc for reporting it.
 
-Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v111--2026-09-21).
+Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v112--2026-09-22).
 Existing installations update through Update All, or through Update MisterZine only. New installation:
 [installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once).
