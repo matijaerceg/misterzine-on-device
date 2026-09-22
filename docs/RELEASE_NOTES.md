@@ -1,6 +1,8 @@
-Every version your card can play
+**Better local file handling**
 
-Open a game's details and every version of it on your card is there to pick: the regional sets and bootlegs, copies kept in other folders, and now the sets that run on a different core from the game itself. Pleiads plays on the Phoenix core, so its Centuri and bootleg sets, which need the Pleiads core, used to be out of reach; now they sit in the same list, each marked with the core it runs on. Press Left and Right to choose, Start to play, and MisterZine opens on your choice next time.
+Open a game's details and every version of it on your card is there to pick: the regional sets and bootlegs, copies kept in other folders, and now the sets that run on a different core from the game itself.
+
+For example: Pleiads plays on the Phoenix core, so its Centuri and bootleg sets, which need the Pleiads core, used to be out of reach; now they sit in the same list, each marked with the core it runs on.
 
 **Added**
 

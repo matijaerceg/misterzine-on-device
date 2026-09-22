@@ -55,7 +55,8 @@ MiSTer user scanning that feed, often one who has never installed
 MisterZine, deciding in a few lines whether this is worth having. The card
 is a pitch and a short success story, not a ledger of changes: it says what
 they get and why they would want it, in the words they would use
-themselves. It stays short, about 150 words with the footer.
+themselves. The opening stays short, and the lists below it carry the rest
+in one line each.
 
 - **Words:** everyday ones. Screensaver, slide, game, card, Options, the
   bottom bar. Never the code's or the guide's internal names: saver, pane,
@@ -63,15 +64,22 @@ themselves. It stays short, about 150 words with the footer.
   front of you to make sense ("the pane's lines") is left out or replaced
   by what it means to the reader ("game details"). Never a term a new
   reader has no context for.
-- **Headline:** a short title naming the feature as a benefit, the way a
-  product update is announced: "More info on Screenshots Screensaver". Not
-  a sentence of mechanics, and never a fix. A release without a feature
-  names its most visible fix and skips the paragraph.
-- **The paragraph:** three or four sentences that sell the feature. What it
-  looks like in use, what it does for them, how to reach it and how to set
-  it, with the choices in plain words ("full details, the title only, or
-  nothing but the picture"). Paint the scene ("leave MisterZine idle and it
-  becomes a tour of the arcade catalogue"); do not list mechanisms.
+- **Headline:** in bold, a plain name for what got better, the way a
+  product update is announced: "Better local file handling", "Update
+  MisterZine by itself". Not a slogan or a sweeping promise ("Every version
+  your card can play" became "Better local file handling"), not a sentence
+  of mechanics, and never a fix. A release without a feature names its most
+  visible fix and skips the opening. No release name or tagline.
+- **The opening:** one or two sentences saying what is new and what it
+  does for them. A concrete case goes in its own short paragraph starting
+  "For example:" ("For example: Pleiads plays on the Phoenix core, so its
+  Centuri and bootleg sets ... used to be out of reach"). Say how to reach
+  something new and how to set it, with the choices in plain words ("full
+  details, the title only, or nothing but the picture"); do not re-explain
+  controls that already worked that way before (v1.1.2 dropped "Press Left
+  and Right to choose, Start to play", which the version picker already
+  did). On-screen labels named here are all bold alike: **Update MisterZine
+  only** above **Run Update All**. Do not list mechanisms.
 - **What counts as a feature:** something a user could not do or see
   before and would update for on its own: a new view, screen, control,
   option, source, or a new visual. A control that now works in one view as
@@ -79,38 +87,51 @@ themselves. It stays short, about 150 words with the footer.
   help text, spacing, colours, timings, defaults and any tuning or reshaping
   of something that already existed are adjustments. When in doubt it is an
   adjustment.
-- **`Also in this release:`** everything else, one plain line each:
-  bugfixes, behaviour tweaks, consistency across views, label and copy
-  changes. Copy changes collapse to a single line unless one changes what a
-  setting does. Omit the list when empty.
+- **Added and Fixed:** everything besides the headline feature, one plain
+  line each, under the bold labels `**Added**` and `**Fixed**`. Added holds
+  what a user can now do or see that they could not before: other features,
+  new controls, sources, help screens.
+  Fixed holds bugfixes, behaviour tweaks, consistency across views, and
+  label and copy changes. Copy changes collapse to a single line unless one
+  changes what a setting does. Leave out a heading whose list is empty.
 - **Not on the card:** credits and early adopter names, timings and pixel
   sizes, internal mechanisms, test changes, catalogue refreshes, board
   measurements. They belong in the changelog. The one exception is a thanks
-  to whoever reported a fix, one short sentence closing the paragraph
-  ("Thanks to ItsDanik for reporting it.").
+  to whoever reported a fix, one short sentence closing the line it belongs
+  to ("Thanks to Mclaneinc for reporting it.").
 - **Footer, always the same three lines:** a link to the changelog section
-  (anchor `#v1028--2026-09-13` for `## v1.0.28 — 2026-09-13`, lowercase with
-  dots and the dash removed), the Update All line, and the installation guide
+  (anchor `#v112--2026-09-22` for `## v1.1.2 — 2026-09-22`, lowercase with
+  dots and the dash removed), the update line, and the installation guide
   link. Add a sentence about stored data only when the release migrates it.
 
-The v1.0.28 body is the reference shape. Its first version was rejected as
+The v1.1.2 body, as published, is the reference shape. Its draft had the
+headline "Every version your card can play", the example folded into the
+first paragraph, and a sentence on the controls the version picker already
+had. Earlier, the first v1.0.28 card was rejected as
 "too LLMy": it opened with "The screenshots saver types the pane's details
 about the game onto each shot", listed the Options L and R section jump as a
 feature, and read as facts rather than a reason to update.
 
 ```markdown
-More info on Screenshots Screensaver
+**Better local file handling**
 
-The screenshots screensaver now types out game details onto each slide, one character at a time behind a blinking cursor: the title, whether the game is on your card, the core, the year and maker, the controls. Leave MisterZine idle and it becomes a tour of the arcade catalogue, a new game sliding in every few seconds with its details written underneath. Hold Start on any slide to play that game. Choose how much it says in Options: full details, the title only, or nothing but the picture.
+Open a game's details and every version of it on your card is there to pick: the regional sets and bootlegs, copies kept in other folders, and now the sets that run on a different core from the game itself.
 
-Also in this release:
+For example: Pleiads plays on the Phoenix core, so its Centuri and bootleg sets, which need the Pleiads core, used to be out of reach; now they sit in the same list, each marked with the core it runs on.
 
-- The lettering screensaver has a retro low-colour look, dithered like an old display, and it draws faster.
-- L and R jump between sections in Options, as they already do in the list and in Filters.
-- Options rows carry their full names, dependent rows sit indented under their parent, and the bottom bar says what each button does on the selected row.
+**Added**
 
-Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1028--2026-09-13).
-Existing installations update through Update All. New installation:
+- Send a report, in Options -> Troubleshooting: when a game is missing or something looks wrong, it sends the developer a description of your card and gives you a short code to post where you asked for help.
+
+**Fixed**
+
+- On 1440p and 4K screens MisterZine fills the display instead of a stretched band across the middle.
+- Full display keeps text at about the same size on every screen, so 720p gets fewer, larger rows.
+- The missing-ROM warning looks inside your zips the way MiSTer does, and spots a mame folder at the top of the SD card that stops every arcade game.
+- A playable copy of a game the catalogue has only for a core you don't own sits right under its greyed row in every order. Thanks to Mclaneinc for reporting it.
+
+Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v112--2026-09-22).
+Existing installations update through Update All, or through Update MisterZine only. New installation:
 [installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once).
 ```
 
