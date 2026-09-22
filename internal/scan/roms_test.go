@@ -154,6 +154,28 @@ func TestROMRequirements(t *testing.T) {
 		{"index-0 warning layout beats a blocked one", `<rom index="0" zip="absent.zip"><part name="a"/></rom><rom index="0" zip="w.zip"><part name="p" crc="` + prog + `"/></rom>`,
 			map[string][]member{"w.zip": {{name: "p", data: "older"}}}, "Wrong ROM version: w.zip (p)", false},
 
+		// md5 over a range: streamed, and past the end reads nothing
+		{"md5 reads only the part's range", `<rom index="0" zip="g.zip" md5="` + md5Of("c") + `"><part name="big" crc="deadbeef" offset="2" length="1"/></rom>`,
+			map[string][]member{"g.zip": {{name: "big", data: "abcdef"}}}, "", false},
+		{"md5 offset past the end", `<rom index="0" zip="g.zip" md5="` + md5Of("") + `"><part name="big" crc="deadbeef" offset="100"/></rom>`,
+			map[string][]member{"g.zip": {{name: "big", data: "abcdef"}}}, "", false},
+
+		// index-0 sections in Main's order
+		{"index 00 is index 0", `<rom index="00" zip="absent.zip"><part name="a"/></rom><rom index="0" zip="present.zip"><part name="b"/></rom>`,
+			map[string][]member{"present.zip": {{name: "b", data: "b"}}}, "", false},
+		{"missing index is index 0", `<rom zip="absent.zip"><part name="a"/></rom><rom index="0" zip="present.zip"><part name="b"/></rom>`,
+			map[string][]member{"present.zip": {{name: "b", data: "b"}}}, "", false},
+		{"the core keeps the last section sent", `<rom index="0"><part>00</part></rom><rom index="0" zip="game.zip"><part name="p"/></rom>`,
+			nil, "Missing game ROM: game.zip", true},
+		{"a section passing its md5 ends the list", `<rom index="0" zip="good.zip" md5="` + md5Of("a") + `"><part name="a" crc="` + crcOf("a") + `"/></rom>` +
+			`<rom index="0" zip="absent.zip"><part name="b"/></rom>`,
+			map[string][]member{"good.zip": {{name: "a", data: "a"}}}, "", false},
+		{"a section failing its md5 is discarded", `<rom index="0" zip="absent.zip" md5="0123456789abcdef0123456789abcdef"><part name="a"/></rom>` +
+			`<rom index="0" zip="good.zip"><part name="b"/></rom>`,
+			map[string][]member{"good.zip": {{name: "b", data: "b"}}}, "", false},
+		{"only discarded sections", `<rom index="0" zip="absent.zip" md5="0123456789abcdef0123456789abcdef"><part name="a"/></rom>`,
+			nil, "Missing game ROM: absent.zip", true},
+
 		// what Main cannot read
 		{"folder named like a zip", `<rom index="0" zip="g.zip"><part name="p1.bin"/></rom>`, nil, "Unreadable ROM: g.zip", true},
 		{"junk named like a zip", `<rom index="0" zip="junk.zip"><part name="p1.bin"/></rom>`, nil, "Unreadable ROM: junk.zip", true},
@@ -254,6 +276,56 @@ func TestROMStorageAndFreshCheck(t *testing.T) {
 	putZip(t, filepath.Join(media, "usb0/games/mame/jpark.zip"), member{name: "a", data: "a"})
 	if got := check.Check("game.mra", true); got.Text != "" {
 		t.Fatalf("fresh Start check must see new archive: %s", got.Text)
+	}
+}
+
+// A mame folder at the card's root stops Main finding any zip, even one
+// inside it (tried on a DE10): every MRA that needs a zip says so, and
+// removing the folder clears it.
+func TestROMRootMameFolder(t *testing.T) {
+	card := filepath.Join(t.TempDir(), "fat")
+	putFile(t, filepath.Join(card, "_Arcade/game.mra"), `<misterromdescription><rom index="0" zip="g.zip"><part name="p"/></rom></misterromdescription>`)
+	putFile(t, filepath.Join(card, "_Arcade/inline.mra"), `<misterromdescription><rom index="0"><part>00</part></rom></misterromdescription>`)
+	putZip(t, filepath.Join(card, "games/mame/g.zip"), member{name: "p", data: "p"})
+	putZip(t, filepath.Join(card, "mame/g.zip"), member{name: "p", data: "p"})
+	c := NewROMCheck(card)
+	want := "MiSTer can't load ROMs while " + filepath.ToSlash(filepath.Join(card, "mame")) + " exists"
+	if got := c.Check("_Arcade/game.mra", true); got.Text != want || !got.Block {
+		t.Fatalf("root mame: got %+v; want %q blocking", got, want)
+	}
+	if got := c.Check("_Arcade/inline.mra", true); got.Text != "" {
+		t.Fatalf("an MRA without zips is unaffected: %q", got.Text)
+	}
+	if err := os.RemoveAll(filepath.Join(card, "mame")); err != nil {
+		t.Fatal(err)
+	}
+	if got := c.Check("_Arcade/game.mra", true); got.Text != "" {
+		t.Fatalf("games/mame used once the root folder is gone: %q", got.Text)
+	}
+}
+
+// Start reads a zip again even when its replacement has the same size and
+// time, which Details' cache would not notice.
+func TestROMFreshRereadsZip(t *testing.T) {
+	card := filepath.Join(t.TempDir(), "fat")
+	zp := filepath.Join(card, "games/mame/g.zip")
+	putFile(t, filepath.Join(card, "_Arcade/game.mra"), `<misterromdescription><rom index="0" zip="g.zip"><part name="aaaa"/></rom></misterromdescription>`)
+	putZip(t, zp, member{name: "aaaa", data: "x"})
+	c := NewROMCheck(card)
+	if got := c.Check("_Arcade/game.mra", true); got.Text != "" {
+		t.Fatalf("present part reported: %q", got.Text)
+	}
+	before, err := os.Stat(zp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	putZip(t, zp, member{name: "bbbb", data: "x"})
+	os.Chtimes(zp, before.ModTime(), before.ModTime())
+	if after, err := os.Stat(zp); err != nil || after.Size() != before.Size() || !after.ModTime().Equal(before.ModTime()) {
+		t.Fatalf("replacement not the same size and time: %v", err)
+	}
+	if got := c.Check("_Arcade/game.mra", true); got.Text != "Incomplete ROM: g.zip (no aaaa)" {
+		t.Fatalf("Start kept the old zip: %q", got.Text)
 	}
 }
 

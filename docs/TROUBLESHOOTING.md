@@ -243,6 +243,12 @@ this release's direct Start reader.
 the controller has necessarily failed. The test also observes devices that
 the normal reader skips.
 
+If every arcade game starts to a black screen, look for a folder named `mame`
+at the top of the SD card (`/media/fat/mame`). MiSTer uses it in place of
+`games/mame` and then finds no ROM zip at all, even the ones inside it.
+MisterZine says so in Details and at Start. Move the folder's contents into
+`games/mame` and delete the empty folder.
+
 To check launching separately, highlight an installed game in the list, then
 open **Options -> Troubleshooting -> Test game launch**. Press **A / Enter**
 again to launch its main version. This uses the normal launch path without

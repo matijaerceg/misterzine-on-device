@@ -1,6 +1,7 @@
 package scan
 
 import (
+	"cmp"
 	"fmt"
 	"io/fs"
 	"os"
@@ -75,7 +76,7 @@ func TestROMCheckCard(t *testing.T) {
 	for i := range order {
 		order[i] = i
 	}
-	slices.SortFunc(order, func(a, b int) int { return int(cold[b] - cold[a]) })
+	slices.SortFunc(order, func(a, b int) int { return cmp.Compare(cold[b], cold[a]) })
 	for _, i := range order[:min(10, len(order))] {
 		t.Logf("slow %v %s", cold[i].Round(time.Microsecond), mras[i])
 	}
@@ -92,7 +93,7 @@ func presenceOnly(card, rel string) string {
 	if issue != "" {
 		return issue
 	}
-	root := arcadeROMRoot(card)
+	root, _ := arcadeROMRoot(card)
 	missing := func(s romSection) string {
 		for _, p := range s.parts {
 			found := false
@@ -118,7 +119,7 @@ func presenceOnly(card, rel string) string {
 	zeroSeen, zeroOK, zeroIssue := false, false, ""
 	for _, s := range sections {
 		issue := missing(s)
-		if s.index == "0" {
+		if s.index == 0 {
 			zeroSeen = true
 			if issue == "" {
 				zeroOK = true

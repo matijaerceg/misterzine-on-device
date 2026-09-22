@@ -310,6 +310,12 @@ that one file is out of date, and nothing is shown; when it does not, MiSTer
 refuses the ROM, and so does Start. A Jotego beta key (`jtbeta.zip`) that does not
 match the MRAs shows this warning too.
 
+`MiSTer can't load ROMs while /media/fat/mame exists` appears on every arcade
+game that needs a zip when the SD card has a folder named `mame` at its top.
+MiSTer uses that folder in place of `games/mame` and then finds no zip at all,
+not even the ones inside it. Move its contents into `games/mame` and delete the
+empty folder.
+
 MisterZine cannot promise that a game runs: the card status describes
 installation and core version, not a guarantee of playability.
 

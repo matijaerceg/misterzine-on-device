@@ -89,8 +89,13 @@ func (c *ROMCheck) Check(rel string, fresh bool) ROMResult {
 	}
 	if fresh {
 		c.work.Lock()
+		defer c.work.Unlock()
+		// A zip replaced by another of the same size and time is rare, but
+		// Start's answer has to hold, and its directory is quick to read
+		// again. The parsed MRAs stay: some take a second to read.
+		clear(c.zips)
+		clear(c.md5s)
 		res := c.run(rel)
-		c.work.Unlock()
 		c.mu.Lock()
 		c.results[rel] = romEntry{time.Now(), res}
 		c.mu.Unlock()
@@ -126,9 +131,10 @@ func (c *ROMCheck) Check(rel string, fresh bool) ROMResult {
 }
 
 func (c *ROMCheck) refresh(rel string, p *romPending) {
+	// published before Start may run, so an older answer never replaces
+	// the one a Start check has just stored
 	c.work.Lock()
 	res := c.run(rel)
-	c.work.Unlock()
 	c.mu.Lock()
 	prev, known := c.results[rel]
 	c.results[rel] = romEntry{time.Now(), res}
@@ -136,6 +142,7 @@ func (c *ROMCheck) refresh(rel string, p *romPending) {
 	close(p.done)
 	changed := known && prev.res != res || !known && p.late && res != ROMResult{}
 	c.mu.Unlock()
+	c.work.Unlock()
 	if changed {
 		select {
 		case c.ready <- struct{}{}:
@@ -157,7 +164,7 @@ type romPart struct {
 }
 
 type romSection struct {
-	index string
+	index int // as Main reads it, with atoi: 0 when absent
 	// realMD5: Main checks the assembled ROM against md5 and discards it on
 	// a mismatch. With md5 None, none at all, or no zip on the <rom>, it
 	// sends whatever it assembled, so a wrong file may still play.
@@ -178,43 +185,58 @@ func (c *ROMCheck) check(rel string) ROMResult {
 	if issue != "" {
 		return ROMResult{issue, true}
 	}
-	root := arcadeROMRoot(c.card)
+	root, rootMame := arcadeROMRoot(c.card)
+	if rootMame {
+		// Main takes a mame folder at the card's root before games/mame,
+		// then loses the folder's path and looks for every zip under /mame
+		// at the root of the filesystem: no zip is found, whatever the
+		// folder holds (tried on a DE10). Say so once, not per zip.
+		for _, s := range sections {
+			for _, p := range s.parts {
+				if p.name != "" {
+					return ROMResult{"MiSTer can't load ROMs while " + filepath.ToSlash(filepath.Join(c.card, "mame")) + " exists", true}
+				}
+			}
+		}
+		return ROMResult{}
+	}
 	type found struct {
 		pos int
 		ROMResult
 	}
 	var issues []found
-	// Multiple index-0 sections are alternative ROM layouts in Main. One
-	// that resolves cleanly suffices, then one with only a warning;
-	// otherwise the first layout's problem stands.
-	zeroPos, zeroClean := -1, false
-	var zeroWarn, zeroBlock *ROMResult
+	// Main sends the index-0 sections in turn until one passes a real md5
+	// check, which ends the list: one that fails its md5 is discarded, one
+	// without an md5 is sent whatever it holds, and the core keeps the last
+	// one sent. That one's problem is the game's; with none sent, the
+	// first discarded one's.
+	var last, discarded *found
+	zeroDone := false
 	for i, s := range sections {
-		res := c.sectionIssue(root, rel, i, s)
-		if s.index != "0" {
-			if res.Text != "" {
+		if s.index != 0 {
+			if res := c.sectionIssue(root, rel, i, s); res.Text != "" {
 				issues = append(issues, found{i, res})
 			}
 			continue
 		}
-		if zeroPos < 0 {
-			zeroPos = i
+		if zeroDone {
+			continue
 		}
+		res := c.sectionIssue(root, rel, i, s)
 		switch {
-		case res.Text == "":
-			zeroClean = true
-		case !res.Block && zeroWarn == nil:
-			zeroWarn = &res
-		case res.Block && zeroBlock == nil:
-			zeroBlock = &res
+		case !s.realMD5:
+			last = &found{i, res}
+		case !res.Block:
+			last, zeroDone = &found{i, res}, true
+		case discarded == nil:
+			discarded = &found{i, res}
 		}
 	}
-	if !zeroClean {
-		if zeroWarn != nil {
-			issues = append(issues, found{zeroPos, *zeroWarn})
-		} else if zeroBlock != nil {
-			issues = append(issues, found{zeroPos, *zeroBlock})
-		}
+	if last == nil {
+		last = discarded
+	}
+	if last != nil && last.Text != "" {
+		issues = append(issues, *last)
 	}
 	// what stops the game first, then warnings, each in document order
 	var pick *found
@@ -376,18 +398,20 @@ func (c *ROMCheck) md5Fits(root, rel string, i int, s romSection) bool {
 		}
 	}()
 	for _, p := range full[i].parts {
-		data := p.data
-		if p.name != "" {
-			data = c.readPart(root, p, open)
-			if p.offset > 0 {
-				data = data[min(p.offset, len(data)):]
+		if p.name == "" {
+			for range p.repeat {
+				h.Write(p.data)
 			}
-			if p.length > 0 && p.length < len(data) {
-				data = data[:p.length]
-			}
+			continue
+		}
+		f := c.partEntry(root, p, open)
+		if f == nil {
+			continue
 		}
 		for range p.repeat {
-			h.Write(data)
+			if !hashRange(h, f, p.offset, p.length) {
+				break
+			}
 		}
 	}
 	fits := strings.EqualFold(s.md5, hex.EncodeToString(h.Sum(nil)))
@@ -395,10 +419,32 @@ func (c *ROMCheck) md5Fits(root, rel string, i int, s romSection) bool {
 	return fits
 }
 
-// readPart returns the bytes of the entry Main would load for p: in the
-// first zip that has it, the first entry with its CRC, else its name.
-// Nothing when no zip has it; the part is reported missing then anyway.
-func (c *ROMCheck) readPart(root string, p romPart, open map[string]*zip.ReadCloser) []byte {
+// hashRange feeds the part's bytes to h as Main's rom_file reads them:
+// from offset, at most length bytes when length is set, streamed rather
+// than held, since a member can be many megabytes.
+func hashRange(h io.Writer, f *zip.File, offset, length int) bool {
+	rc, err := f.Open()
+	if err != nil {
+		return false
+	}
+	defer rc.Close()
+	if offset > 0 {
+		if _, err := io.CopyN(io.Discard, rc, int64(offset)); err != nil {
+			return true // past the end: nothing left to read
+		}
+	}
+	if length > 0 {
+		io.CopyN(h, rc, int64(length))
+	} else {
+		io.Copy(h, rc)
+	}
+	return true
+}
+
+// partEntry returns the entry Main would load p from: in the first zip
+// that has it, the first entry with its CRC, else its name. Nil when no
+// zip has it; the part is reported missing then anyway.
+func (c *ROMCheck) partEntry(root string, p romPart, open map[string]*zip.ReadCloser) *zip.File {
 	for _, z := range p.zips {
 		archive, member, ok := zipPath(root, z, p.name)
 		if !ok {
@@ -430,15 +476,7 @@ func (c *ROMCheck) readPart(root string, p romPart, open map[string]*zip.ReadClo
 		if entry == nil || entry.Flags&(0x1|0x20|0x40) != 0 || entry.Method != zip.Store && entry.Method != zip.Deflate {
 			continue
 		}
-		rc, err := entry.Open()
-		if err != nil {
-			continue
-		}
-		b, err := io.ReadAll(rc)
-		rc.Close()
-		if err == nil {
-			return b
-		}
+		return entry
 	}
 	return nil
 }
@@ -496,7 +534,8 @@ func parseROMSections(p string, inline bool) ([]romSection, string) {
 		case xml.StartElement:
 			switch strings.ToLower(el.Name.Local) {
 			case "rom":
-				index, _ := attr(el, "index")
+				v, _ := attr(el, "index")
+				index := mainAtoi(v)
 				zipList, _ = attr(el, "zip")
 				sum, _ := attr(el, "md5")
 				real := zipList != "" && sum != "" && !strings.EqualFold(sum, "none")
@@ -587,6 +626,26 @@ func mainHex(s string) []byte {
 		i++
 	}
 	return out
+}
+
+// mainAtoi reads a <rom> index as Main does, with atoi: leading space, a
+// sign, decimal digits up to the first that is not one, 0 for none, so
+// "00" and a missing index are both 0.
+func mainAtoi(v string) int {
+	s := strings.TrimLeft(v, " \t\n\v\f\r")
+	neg := false
+	if s != "" && (s[0] == '+' || s[0] == '-') {
+		neg = s[0] == '-'
+		s = s[1:]
+	}
+	n := 0
+	for i := 0; i < len(s) && s[i] >= '0' && s[i] <= '9' && n < 1<<20; i++ {
+		n = n*10 + int(s[i]-'0')
+	}
+	if neg {
+		return -n
+	}
+	return n
 }
 
 // parseCUL reads offset, length and repeat as Main does, with strtoul(v,
@@ -732,7 +791,9 @@ func (c *ROMCheck) zipIndex(path string) *zipIndex {
 
 // arcadeROMRoot follows Main's findGamesDir precedence. Main selects one
 // directory; it does not combine archives from different storage devices.
-func arcadeROMRoot(card string) string {
+// rootMame reports a mame folder at the card's root, which Main takes and
+// then cannot read from (see check).
+func arcadeROMRoot(card string) (root string, rootMame bool) {
 	var roots []string
 	for i := 0; i < 6; i++ {
 		roots = append(roots, filepath.Join(filepath.Dir(card), fmt.Sprintf("usb%d", i)))
@@ -741,9 +802,9 @@ func arcadeROMRoot(card string) string {
 	for _, root := range roots {
 		for _, p := range []string{root, filepath.Join(root, "games")} {
 			if st, err := os.Stat(filepath.Join(p, "mame")); err == nil && st.IsDir() {
-				return p
+				return p, p == card
 			}
 		}
 	}
-	return filepath.Join(card, "_Arcade")
+	return filepath.Join(card, "_Arcade"), false
 }
