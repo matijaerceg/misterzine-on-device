@@ -118,6 +118,12 @@ func (idx *Index) Lookup(core string) (Core, bool) {
 	return lookup(idx.Cores, core)
 }
 
+// HasArcadeCore reports whether an MRA naming this core would find it in
+// _Arcade/cores. A nil index has nothing.
+func (idx *Index) HasArcadeCore(core string) bool {
+	return coreOnCard(idx, core)
+}
+
 // lookupFor is Lookup restricted to the folders a row's kind loads from.
 func (idx *Index) lookupFor(arcade bool, core string) (Core, bool) {
 	if idx == nil {

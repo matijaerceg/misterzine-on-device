@@ -43,7 +43,16 @@ type LocalResult struct {
 	// OwnFiles and VersionFiles count the files that are in the list through
 	// the catalogue: its own MRAs, and the versions tied to its games.
 	OwnFiles, VersionFiles int
-	Err                    error
+	// Versions are further card files a catalogue game that runs here
+	// offers as versions, by catalogue key: its own sets outside the
+	// _alternatives folders, and sets for another core that is on the card.
+	// MergeVersions adds them to the family resolver's result.
+	Versions map[string][]string
+	// VersionCores names each of those files' own core, so the picker can
+	// drop one whose core leaves the card; VersionOwner is the first row
+	// that offers it, where a stand-in that gives way hands its records.
+	VersionCores, VersionOwner map[string]string
+	Err                        error
 }
 
 // Accounted is one card file that is no row of its own, for the diagnostic
@@ -149,10 +158,13 @@ func scanArcadeMRAs(card, cachePath string) ([]Alt, []Skipped, []Skipped, error)
 
 // DiscoverLocal turns the MRAs the catalogue does not account for into rows.
 // alts are the alternatives already scanned; attached holds every path the
-// family resolver tied to a catalogue row. A file is accounted for when its
-// path is a catalogue MRA or attached, or when its setname or parent is a
-// catalogue release, family root or known clone that this card can run: a
-// game the catalogue knows is never listed twice.
+// family resolver tied to a catalogue row; status is what the list shows for
+// each catalogue row (nil: a row runs when its core is on the card). A file
+// is accounted for when its path is a catalogue MRA or attached, or when it
+// belongs to a catalogue game that runs here (owners.of): a game the
+// catalogue knows is never listed twice. Such a file whose own core is on the
+// card, another core or the row's own, is one more version of every owner
+// that runs (Versions), which MergeVersions adds to the resolver's lists.
 //
 // A game the catalogue knows only through cores the card has not got is the
 // exception. Its row is greyed and refuses to launch, so a file that plays
@@ -165,54 +177,92 @@ func scanArcadeMRAs(card, cachePath string) ([]Alt, []Skipped, []Skipped, error)
 // with the shortest path becomes the row and the others its alternatives. Set
 // snap when the image service is available: such rows then ask it for a shot
 // by setname.
-func DiscoverLocal(card, cachePath string, catalogue []data.Row, idx *Index, alts []Alt, attached map[string]bool, snap bool) LocalResult {
+func DiscoverLocal(card, cachePath string, catalogue []data.Row, idx *Index, status []data.Status, alts []Alt, attached map[string]bool, snap bool) LocalResult {
 	walked, skipped, dirs, err := scanArcadeMRAs(card, cachePath)
-	res := LocalResult{Alts: map[string][]string{}, Files: len(walked), Skipped: skipped, SkippedDirs: dirs, Err: err}
-	ids := map[string]string{}  // setname, family root or clone -> a catalogue row naming it
-	runs := map[string]string{} // ... and one of those rows that runs on this card
-	paths := map[string]bool{}
-	for i := range catalogue {
-		r := &catalogue[i]
-		if !r.IsArcade() {
-			continue
+	res := LocalResult{Alts: map[string][]string{}, Files: len(walked), Skipped: skipped, SkippedDirs: dirs, Err: err,
+		Versions: map[string][]string{}, VersionCores: map[string]string{}, VersionOwner: map[string]string{}}
+	own := catalogueOwners(catalogue)
+	cores := map[string]bool{}
+	has := func(core string) bool { // coreOnCard, remembered per name: a miss scans the index
+		v, ok := cores[core]
+		if !ok {
+			v = coreOnCard(idx, core)
+			cores[core] = v
 		}
-		if r.MRA != "" {
-			paths[r.MRA] = true
+		return v
+	}
+	// A row runs when the list shows it on the card: its core and its own
+	// MRA are there. Without statuses, its core alone decides.
+	runs := func(i int) bool {
+		if status != nil {
+			return i < len(status) && status[i].Found()
 		}
-		onCard := coreOnCard(idx, r.Core)
-		for _, v := range append([]string{r.SN, r.Family}, r.FamilySets...) {
-			if id := identity(v); id != "" {
-				if ids[id] == "" {
-					ids[id] = r.K
-				}
-				if onCard && runs[id] == "" {
-					runs[id] = r.K
-				}
+		return has(catalogue[i].Core)
+	}
+	// version offers file a to every row among rows that runs here; a file
+	// the family resolver already attached skips the rows on its own core,
+	// which that resolver has covered. It reports whether any row took it.
+	version := func(a Alt, rows []int, attached bool) bool {
+		took := false
+		for _, i := range rows {
+			if !runs(i) || attached && sameCore(a.RBF, catalogue[i].Core) {
+				continue
 			}
+			k := catalogue[i].K
+			res.Versions[k] = append(res.Versions[k], a.Path)
+			res.VersionCores[a.Path] = a.RBF
+			if res.VersionOwner[a.Path] == "" {
+				res.VersionOwner[a.Path] = k
+			}
+			took = true
 		}
+		return took
 	}
 	var loose []Alt
 	present := map[string]bool{}
 	standins := map[string]bool{} // path -> the catalogue lists this game, unrunnably
 	for _, a := range append(append([]Alt{}, walked...), alts...) {
-		// the catalogue's own files and its games' versions are in the list
-		if paths[a.Path] {
+		// the catalogue's own files are its rows
+		if own.paths[a.Path] {
 			res.OwnFiles++
 			continue
 		}
+		bios := isBIOS(a)
+		rows, ambiguous := own.of(a)
 		if attached[a.Path] {
+			// already a version of a catalogue game; another row of the same
+			// game that runs here on another core offers it too
 			res.VersionFiles++
+			if !bios && !ambiguous && has(a.RBF) {
+				version(a, rows, true)
+			}
 			continue
 		}
-		sn := identity(a.Setname)
-		if k := firstOf(ids, sn, a.Parent); k != "" {
-			if run := firstOf(runs, sn, a.Parent); run != "" {
-				// the catalogue's own copy runs here
-				res.Accounted = append(res.Accounted, Accounted{Path: a.Path, K: run,
-					Reason: "the catalogue lists this game and its own core is on the card; this file's core (" + a.RBF + ") is not offered as a version"})
-				continue
+		if bios {
+			res.Skipped = append(res.Skipped, Skipped{Path: a.Path, Reason: "BIOS, not a game", Size: a.Size, Mtime: a.Mtime})
+			continue
+		}
+		if len(rows) > 0 {
+			runnable := false
+			for _, i := range rows {
+				runnable = runnable || runs(i)
 			}
-			if !coreOnCard(idx, a.RBF) {
+			k := catalogue[rows[0]].K
+			switch {
+			case runnable && ambiguous:
+				// several catalogue games share this family: offering the
+				// file under any of them could be the wrong title
+				res.Accounted = append(res.Accounted, Accounted{Path: a.Path, K: k,
+					Reason: "several catalogue games share this set's family, so it is not offered as a version of any"})
+				continue
+			case runnable && has(a.RBF):
+				version(a, rows, false)
+				continue
+			case runnable:
+				res.Accounted = append(res.Accounted, Accounted{Path: a.Path, K: k,
+					Reason: "the catalogue runs this game here; this file's core (" + a.RBF + ") is not in _Arcade/cores"})
+				continue
+			case !has(a.RBF):
 				// neither copy runs: the greyed catalogue row says so
 				res.Accounted = append(res.Accounted, Accounted{Path: a.Path, K: k,
 					Reason: "neither the catalogue's core nor this file's core (" + a.RBF + ") is in _Arcade/cores"})
@@ -220,16 +270,13 @@ func DiscoverLocal(card, cachePath string, catalogue []data.Row, idx *Index, alt
 			}
 			standins[a.Path] = true
 		}
+		sn := identity(a.Setname)
 		if sn == "" {
 			sn = identity(strings.TrimSuffix(path.Base(a.Path), path.Ext(a.Path)))
 			if sn == "" {
 				res.Skipped = append(res.Skipped, Skipped{Path: a.Path, Reason: "no setname", Size: a.Size, Mtime: a.Mtime})
 				continue
 			}
-		}
-		if isBIOS(a) {
-			res.Skipped = append(res.Skipped, Skipped{Path: a.Path, Reason: "BIOS, not a game", Size: a.Size, Mtime: a.Mtime})
-			continue
 		}
 		a.Setname = sn
 		present[sn] = true
@@ -282,14 +329,99 @@ func DiscoverLocal(card, cachePath string, catalogue []data.Row, idx *Index, alt
 	return res
 }
 
-// firstOf is m's value for the first of ids that has one.
-func firstOf(m map[string]string, ids ...string) string {
-	for _, id := range ids {
-		if v := m[id]; id != "" && v != "" {
-			return v
+// owners indexes which catalogue rows a card file belongs to.
+type owners struct {
+	catalogue []data.Row
+	paths     map[string]bool  // the catalogue's own MRA paths
+	bySN      map[string][]int // exact release: the rows whose setname it is
+	byFamily  map[string][]int // the rows naming it as family root or known clone
+}
+
+func catalogueOwners(catalogue []data.Row) owners {
+	o := owners{catalogue: catalogue, paths: map[string]bool{}, bySN: map[string][]int{}, byFamily: map[string][]int{}}
+	for i := range catalogue {
+		r := &catalogue[i]
+		if !r.IsArcade() {
+			continue
+		}
+		if r.MRA != "" {
+			o.paths[r.MRA] = true
+		}
+		if id := identity(r.SN); id != "" {
+			o.bySN[id] = append(o.bySN[id], i)
+		}
+		seen := map[string]bool{}
+		for _, v := range append([]string{r.Family}, r.FamilySets...) {
+			if id := identity(v); id != "" && !seen[id] {
+				seen[id] = true
+				o.byFamily[id] = append(o.byFamily[id], i)
+			}
 		}
 	}
-	return ""
+	return o
+}
+
+// of names the catalogue rows a file belongs to. The rows whose own setname
+// it is own it outright. Otherwise the rows claiming it through its parent or
+// a family own it, but only when they are one release (the same setname in
+// several implementations or variants): families in the catalogue span
+// different titles (Sprint 1 and 2, River Patrol and Silver Land), and a
+// family sibling must never stand in for the wrong game. ambiguous reports
+// claimants of different releases; rows then lists them all.
+func (o owners) of(a Alt) (rows []int, ambiguous bool) {
+	sn, parent := identity(a.Setname), identity(a.Parent)
+	if sn != "" && len(o.bySN[sn]) > 0 {
+		return o.bySN[sn], false
+	}
+	seen := map[int]bool{}
+	add := func(list []int) {
+		for _, i := range list {
+			if !seen[i] {
+				seen[i] = true
+				rows = append(rows, i)
+			}
+		}
+	}
+	if sn != "" {
+		add(o.byFamily[sn])
+	}
+	if parent != "" {
+		add(o.bySN[parent])
+		add(o.byFamily[parent])
+	}
+	sort.Ints(rows)
+	for _, i := range rows {
+		if identity(o.catalogue[i].SN) != identity(o.catalogue[rows[0]].SN) {
+			return rows, true
+		}
+	}
+	return rows, false
+}
+
+// MergeVersions adds the extra versions DiscoverLocal found (catalogue key ->
+// card paths) to a family resolver result, each list sorted and without
+// duplicates. It returns how many row-to-file offers were new and how many
+// distinct files they came from.
+func MergeVersions(resolved map[string][]string, extra map[string][]string) (offers, files int) {
+	fileSet := map[string]bool{}
+	for k, ps := range extra {
+		have := map[string]bool{}
+		for _, p := range resolved[k] {
+			have[p] = true
+		}
+		merged := append([]string(nil), resolved[k]...)
+		for _, p := range ps {
+			if !have[p] {
+				have[p] = true
+				merged = append(merged, p)
+				offers++
+				fileSet[p] = true
+			}
+		}
+		sort.Strings(merged)
+		resolved[k] = merged
+	}
+	return offers, len(fileSet)
 }
 
 // coreOnCard reports whether an rbf name resolves to an arcade core the

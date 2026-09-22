@@ -60,7 +60,8 @@ type Outcome struct {
 	SaveErr string // why the card copy could not be written
 }
 
-// DisplayCode is a code as the player reads it out: 7K2Q-9XMB.
+// DisplayCode is a code as the player reads it out: K7Q2 as it is, and an
+// eight-character one in two halves, 7K2Q-9XMB.
 func DisplayCode(code string) string {
 	if len(code) != 8 {
 		return code

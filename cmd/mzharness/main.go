@@ -193,7 +193,7 @@ func main() {
 		if cfg.Support == nil {
 			cfg.Support = &app.SupportHooks{Load: func() support.Report { return support.Report{} }}
 		}
-		o := report.Outcome{Code: "7K2Q9XMB", Saved: "misterzine/report.txt"}
+		o := report.Outcome{Code: "K7Q2", Saved: "misterzine/report.txt"}
 		if *reportSend == "failed" {
 			o = report.Outcome{Problem: "No connection to the report service.", Saved: "misterzine/report.txt"}
 		}

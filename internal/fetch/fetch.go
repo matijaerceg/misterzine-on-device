@@ -46,7 +46,8 @@ var (
 )
 
 // SendReport uploads a report and returns the code the service filed it
-// under, as the service spells it (eight Crockford base32 characters).
+// under, as the service spells it: Crockford base32, four characters (four
+// to eight are accepted, so a change of length never breaks a build).
 func (c *Client) SendReport(ctx context.Context, body []byte) (string, error) {
 	if ReportService == "" {
 		return "", ErrReportOff
@@ -86,7 +87,7 @@ func (c *Client) SendReport(ctx context.Context, body []byte) (string, error) {
 }
 
 func validReportCode(c string) bool {
-	if len(c) != 8 {
+	if len(c) < 4 || len(c) > 8 {
 		return false
 	}
 	for _, r := range c {

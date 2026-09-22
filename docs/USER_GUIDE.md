@@ -274,7 +274,14 @@ The version chosen is remembered for that game, across restarts: Details
 opens on it next time and Start launches it from the list and from artwork.
 Alternatives are read from `_Arcade/_alternatives` and from the
 `_alternatives` folder inside a database's own folder, such as
-`_Arcade/_MeatCores` and `_Arcade/_rmCores`.
+`_Arcade/_MeatCores` and `_Arcade/_rmCores`. A game that runs on your card
+also offers its other sets found anywhere under `_Arcade`, including sets for
+another core, when that core is on the card too: Pleiads, say, runs on the
+Phoenix core, and its Centuri and bootleg sets on the Pleiads core. Such an
+entry names its core in brackets, and leaves the list as soon as its core
+leaves the card. A set is offered only under the game it belongs to by name,
+so a family of MAME sets shared by two different games (Sprint 1 and Sprint
+2) offers its uncertain sets under neither.
 Choosing the main version again forgets the choice, and an alternative that
 has since left the card falls back to the main version.
 A green scrollbar thumb shows when more information is available. Long values

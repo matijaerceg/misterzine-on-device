@@ -5,12 +5,14 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/app"
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/fetch"
+	"github.com/matijaerceg/misterzine-on-device/internal/scan"
 )
 
 func writeMRA(t *testing.T, card, rel, name, setname, rbf string) {
@@ -119,16 +121,95 @@ func TestStandinRowFromScan(t *testing.T) {
 		t.Fatalf("statuses: %v", h.status)
 	}
 
-	// The beta core arrives: the catalogue row can run it now, so the standin
-	// gives way and the star follows the game to the catalogue.
+	// The core alone does not make the game run: the list still shows the
+	// catalogue row greyed while its own MRA is missing, so the copy that
+	// runs keeps standing in.
 	os.WriteFile(filepath.Join(cores, "jttaitox_20260907.rbf"), []byte("x"), 0644)
 	h.requestScan()
 	finishBackground(t, h)
+	if ds = h.a.Data(); len(ds.Rows) != 4 || !ds.Rows[3].Standin {
+		t.Fatalf("the standin left while the catalogue row is still not on the card: rows=%d", len(ds.Rows))
+	}
+
+	// The beta arrives whole, core and MRA: the catalogue row runs now, so
+	// the standin gives way, its file becomes one more version of the game,
+	// and the star follows the game to the catalogue.
+	writeMRA(t, h.card, "_Arcade/Gigandes.mra", "Gigandes", "gigandes", "jttaitox")
+	h.requestScan()
+	finishBackground(t, h)
 	if ds = h.a.Data(); len(ds.Rows) != 3 || ds.Gen != "cat" {
-		t.Fatalf("standin kept after the core arrived: rows=%d gen=%q", len(ds.Rows), ds.Gen)
+		t.Fatalf("standin kept after the game arrived: rows=%d gen=%q", len(ds.Rows), ds.Gen)
 	}
 	if f := h.a.FavoriteSet(); !f["gigandes"] || f["local:gigandes"] || !h.favDirty {
 		t.Fatalf("star not handed over: %v dirty=%v", f, h.favDirty)
+	}
+	if vs := h.alternatives(&ds.Rows[2]); len(vs) != 1 || vs[0] != "_Arcade/_Extra/Gigandes.mra" {
+		t.Fatalf("the former standin's file is not a version of the game: %v", vs)
+	}
+}
+
+// A catalogue game that runs here offers the card's sets of it on another
+// core that is on the card, labelled with that core, and drops one the
+// moment its core leaves: the first pass of a rescan updates the index.
+func TestExtraVersionsFromScan(t *testing.T) {
+	h := backgroundHost(t)
+	cores := filepath.Join(h.card, "_Arcade", "cores")
+	os.MkdirAll(cores, 0755)
+	os.WriteFile(filepath.Join(cores, "phoenix_20240601.rbf"), []byte("x"), 0644)
+	os.WriteFile(filepath.Join(cores, "pleiads_20240601.rbf"), []byte("x"), 0644)
+	writeMRA(t, h.card, "_Arcade/Pleiads (Tehkan).mra", "Pleiads (Tehkan)", "pleiads", "phoenix")
+	centuri := "_Arcade/_alternatives/_Pleiads/Pleiads (Centuri).mra"
+	writeMRA(t, h.card, centuri, "Pleiads (Centuri)", "pleiadce", "pleiads")
+	cat := []data.Row{{K: "pleiads", Title: "Pleiads", Base: "Arcade", Src: "distribution_mister", Core: "phoenix", SN: "pleiads",
+		Family: "pleiads", FamilySets: []string{"pleiadce"}, MRA: "_Arcade/Pleiads (Tehkan).mra", Updated: "2026-06-01"}}
+	h.a = app.New(app.Config{PhysW: 320, PhysH: 240}, data.Ingest(cat, "cat", time.Now()), nil)
+	h.requestScan()
+	finishBackground(t, h)
+	row := &h.a.Data().Rows[0]
+	if vs := h.alternatives(row); len(vs) != 1 || vs[0] != centuri || h.altCores[centuri] != "pleiads" {
+		t.Fatalf("versions %v, cores %v", vs, h.altCores)
+	}
+	if d := h.scanDiag; d == nil || !strings.Contains(strings.Join(d.lines, "\n"), "1 extra versions from 1 files") {
+		t.Fatalf("scan line: %+v", d)
+	}
+	os.Remove(filepath.Join(cores, "pleiads_20240601.rbf"))
+	h.index = scan.ScanCores(h.card)
+	if vs := h.alternatives(row); len(vs) != 0 {
+		t.Fatalf("a version whose core left is still offered: %v", vs)
+	}
+}
+
+// One game in two catalogue implementations: a standin that gives way when
+// one of them arrives hands its star to that one, which offers its file,
+// not to whichever row the setname points at on paper.
+func TestStandinHandsOverToTheRowThatRuns(t *testing.T) {
+	h := backgroundHost(t)
+	cores := filepath.Join(h.card, "_Arcade", "cores")
+	os.MkdirAll(cores, 0755)
+	os.WriteFile(filepath.Join(cores, "otherbh_20260101.rbf"), []byte("x"), 0644)
+	writeMRA(t, h.card, "_Arcade/_Extra/Black Heart (other).mra", "Black Heart", "blkheart", "otherbh")
+	cat := []data.Row{
+		{K: "blkheart", Title: "Black Heart (Coin-Op Collection)", Base: "Arcade", Src: "coinop", Core: "blkheart_mister", SN: "blkheart", MRA: "_Arcade/Black Heart (Coin-Op).mra", Updated: "2026-09-09"},
+		{K: "black-heart", Title: "Black Heart", Base: "Arcade", Src: "distribution_mister", Core: "Arcade-NMK16_Gunnail", SN: "blkheart", MRA: "_Arcade/Black Heart.mra", Updated: "2026-09-19"},
+	}
+	h.a = app.New(app.Config{PhysW: 320, PhysH: 240, Favorites: map[string]bool{"local:blkheart": true}, FavChanged: func() { h.favDirty = true }},
+		data.Ingest(cat, "cat", time.Now()), nil)
+	h.requestScan()
+	finishBackground(t, h)
+	if ds := h.a.Data(); len(ds.Rows) != 3 || !ds.Rows[2].Standin {
+		t.Fatalf("no standin while neither implementation is here: %d rows", len(ds.Rows))
+	}
+	// Coin-Op's release arrives; the NMK one, later in the catalogue and
+	// the setname's owner on paper, does not
+	os.WriteFile(filepath.Join(cores, "blkheart_mister_20260909.rbf"), []byte("x"), 0644)
+	writeMRA(t, h.card, "_Arcade/Black Heart (Coin-Op).mra", "Black Heart", "blkheart", "blkheart_mister")
+	h.requestScan()
+	finishBackground(t, h)
+	if f := h.a.FavoriteSet(); !f["blkheart"] || f["black-heart"] || f["local:blkheart"] {
+		t.Fatalf("the star went to %v, not the implementation that runs", f)
+	}
+	if vs := h.alternatives(&h.a.Data().Rows[0]); len(vs) != 1 || vs[0] != "_Arcade/_Extra/Black Heart (other).mra" {
+		t.Fatalf("Coin-Op's row does not offer the former standin: %v", vs)
 	}
 }
 

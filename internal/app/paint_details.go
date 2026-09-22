@@ -175,7 +175,24 @@ func (a *App) launchEntries(row *data.Row, i int) []launchEntry {
 	}
 	if a.cfg.Alternatives != nil {
 		for _, alt := range a.cfg.Alternatives(row) {
-			out = append(out, launchEntry{"alt: " + path.Base(alt), alt, coreMissing == "", coreMissing})
+			label := "alt: " + path.Base(alt)
+			// a version on another core than the game's says which
+			if a.cfg.AltCore != nil {
+				if c := a.cfg.AltCore(alt); c != "" && !strings.EqualFold(c, row.Core) {
+					label += " [" + c + "]"
+				}
+			}
+			out = append(out, launchEntry{label, alt, coreMissing == "", coreMissing})
+		}
+	}
+	// two files of one name, in different folders, are told apart by folder
+	names := map[string]int{}
+	for _, e := range out {
+		names[path.Base(e.path)]++
+	}
+	for n := range out {
+		if b := path.Base(out[n].path); names[b] > 1 && strings.Contains(out[n].path, "/") {
+			out[n].label = strings.Replace(out[n].label, b, path.Base(path.Dir(out[n].path))+"/"+b, 1)
 		}
 	}
 	return out
@@ -211,7 +228,7 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 	if a.cfg.ROMIssue != nil {
 		entries := a.launchEntries(row, i)
 		if len(entries) > 0 {
-			e := entries[max(0, min(a.detail.pick, len(entries)-1))]
+			e := entries[a.pickIn(entries)]
 			if e.ok {
 				if issue, _ := a.cfg.ROMIssue(e.path, false); issue != "" {
 					L = append(L, paneLine{issue, gen.Eva.Warn})
@@ -409,12 +426,7 @@ func (a *App) paintDetailVersion(c *gfx.Canvas) {
 	}
 	c.Fill(image.Rect(body.Min.X, y-1, body.Max.X, y+a.detailLine()), gen.Eva.Bg)
 	c.HLine(body.Min.X, body.Max.X-1, y-1, gen.Eva.Line)
-	if a.detail.pick >= len(entries) {
-		a.detail.pick = len(entries) - 1
-	}
-	if a.detail.pick < 0 {
-		a.detail.pick = 0
-	}
+	a.detail.pick = a.pickIn(entries)
 	if len(entries) == 0 {
 		c.Text(body.Min.X, y, a.sm, "No version available", gen.Eva.Muted)
 	} else {
@@ -567,11 +579,14 @@ func (a *App) actDetails(k platform.Key) bool {
 		a.slot = 0
 	case platform.KeyLeft, platform.KeyRight:
 		entries := a.launchEntries(row, i)
-		prev := a.detail.pick
+		prev := a.pickIn(entries)
 		if k == platform.KeyLeft {
-			a.detail.pick = max(0, a.detail.pick-1)
+			a.detail.pick = max(0, prev-1)
 		} else {
-			a.detail.pick = min(a.detail.pick+1, max(0, len(entries)-1))
+			a.detail.pick = min(prev+1, max(0, len(entries)-1))
+		}
+		if len(entries) > 0 {
+			a.detail.pickPath = entries[a.detail.pick].path
 		}
 		if a.detail.pick != prev { // only a change of choice is recorded
 			a.rememberPick(row, entries, a.detail.pick)
@@ -613,6 +628,9 @@ func (a *App) launchPick(pick int) bool {
 	row, _, i := a.current()
 	if row == nil {
 		return false
+	}
+	if a.detail.pickPath != "" {
+		pick = a.pickIn(a.launchEntries(row, i)) // the chosen file, wherever a rescan put it
 	}
 	return a.launchRow(row, i, pick)
 }

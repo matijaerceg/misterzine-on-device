@@ -85,7 +85,8 @@ type host struct {
 	index                         *scan.Index
 	status                        []data.Status
 	alts                          map[string][]string
-	altGen                        string // the dataset generation alts belongs to
+	altCores                      map[string]string // version path -> its own core, for versions on other cores (scanResult.altCores)
+	altGen                        string            // the dataset generation alts belongs to
 	familyCache                   scan.FamilyCache
 	scanCh                        chan scanResult
 	timeSample                    atomic.Pointer[serverClockSample]
@@ -284,13 +285,9 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			}
 			return data.StatusUnknown
 		},
-		Alternatives: func(r *data.Row) []string {
-			if h.altGen != h.a.Data().Gen {
-				return nil
-			}
-			return h.alts[r.K]
-		},
-		Versions: h.state.Versions,
+		Alternatives: h.alternatives,
+		AltCore:      func(p string) string { return h.altCores[p] },
+		Versions:     h.state.Versions,
 		Exists: func(rel string) bool {
 			_, err := os.Stat(filepath.Join(card, filepath.FromSlash(rel)))
 			return err == nil
@@ -1257,6 +1254,9 @@ type scanResult struct {
 	// diag is the final pass's account of the card for the report: its
 	// totals and every file or folder that is no row, with the reason.
 	diag *scanDiag
+	// altCores are the own cores of the versions that run on another core
+	// than their row's, or sit outside the _alternatives folders
+	altCores map[string]string
 }
 
 // scanDiag is what a card scan found, kept for Troubleshooting -> Send a
@@ -1332,7 +1332,9 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 	t2 := time.Now()
 	catalogue := rows[:ncat]
 	resolved := h.familyCache.Resolve(h.card, alts, catalogue)
-	local := scan.DiscoverLocal(h.card, filepath.Join(h.root, "cache", "local.json"), catalogue, idx, alts, scan.AttachedPaths(resolved), fetch.SnapService != "")
+	// st[:ncat] is what the list shows for the catalogue: a row runs when
+	// its core and its own MRA are on the card
+	local := scan.DiscoverLocal(h.card, filepath.Join(h.root, "cache", "local.json"), catalogue, idx, st[:ncat], alts, scan.AttachedPaths(resolved), fetch.SnapService != "")
 	for _, s := range local.Skipped {
 		if s.Fresh {
 			h.lg.Printf("scan: skipped %s: %s", s.Path, s.Reason)
@@ -1348,10 +1350,13 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 	for k, ps := range local.Alts {
 		resolved[k] = ps
 	}
+	// the catalogue games that run here offer their sets on other cores,
+	// and their own sets outside the _alternatives folders, too
+	offers, extra := scan.MergeVersions(resolved, local.Versions)
 	diag.lines = append(diag.lines,
 		fmt.Sprintf("alternatives: %d files, %d unreadable (%v)", len(alts), len(skipped), t2.Sub(t1).Round(time.Millisecond)),
-		fmt.Sprintf("local walk: %d MRAs read outside the catalogue's folders; %d local rows; %d catalogue files, %d versions of catalogue games (%v)",
-			local.Files, len(merged)-ncat, local.OwnFiles, local.VersionFiles, time.Since(t2).Round(time.Millisecond)))
+		fmt.Sprintf("local walk: %d MRAs read outside the catalogue's folders; %d local rows; %d catalogue files, %d versions of catalogue games; %d extra versions from %d files (%v)",
+			local.Files, len(merged)-ncat, local.OwnFiles, local.VersionFiles, offers, extra, time.Since(t2).Round(time.Millisecond)))
 	for _, e := range []error{err, local.Err} {
 		if e != nil {
 			diag.lines = append(diag.lines, "scan problem: "+e.Error())
@@ -1369,14 +1374,47 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 	for _, a := range local.Accounted {
 		diag.files = append(diag.files, report.File{Path: a.Path, Reason: a.Reason + " (catalogue row " + a.K + ")"})
 	}
-	res := scanResult{index: idx, status: st, gen: gen, alts: resolved, notice: notice, final: true, hidden: hidden, iniFound: iniFound, diag: diag}
+	res := scanResult{index: idx, status: st, gen: gen, alts: resolved, altCores: local.VersionCores, notice: notice, final: true, hidden: hidden, iniFound: iniFound, diag: diag}
 	if nextGen != gen {
 		// The row set changes: statuses must index into the new rows.
 		res.status = scan.Statuses(h.card, idx, merged)
 		res.rows, res.nextGen = merged, nextGen
-		res.moves = data.LocalTakeovers(droppedLocal(rows[ncat:], merged[ncat:]), catalogue)
+		dropped := droppedLocal(rows[ncat:], merged[ncat:])
+		res.moves = data.LocalTakeovers(dropped, catalogue)
+		// A stand-in whose file is now a version of a game that runs here
+		// hands its star and remembered version to that game, which offers
+		// the file, rather than to whichever row covers the setname on paper.
+		for _, r := range dropped {
+			if k := local.VersionOwner[r.MRA]; k != "" {
+				if res.moves == nil {
+					res.moves = map[string]string{}
+				}
+				res.moves[r.K] = k
+			}
+		}
 	}
 	h.sendScan(res)
+}
+
+// alternatives are row r's versions from the last complete scan of this
+// dataset. A version on its own core leaves as soon as that core does: the
+// first pass of a rescan updates the index before the lists come back.
+func (h *host) alternatives(r *data.Row) []string {
+	if h.altGen != h.a.Data().Gen {
+		return nil
+	}
+	ps := h.alts[r.K]
+	if len(h.altCores) == 0 {
+		return ps
+	}
+	out := make([]string, 0, len(ps))
+	for _, p := range ps {
+		if core, ok := h.altCores[p]; ok && !h.index.HasArcadeCore(core) {
+			continue
+		}
+		out = append(out, p)
+	}
+	return out
 }
 
 // droppedLocal returns the local rows this scan no longer lists. A standin

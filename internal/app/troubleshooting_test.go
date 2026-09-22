@@ -173,9 +173,9 @@ func TestSendReportFlow(t *testing.T) {
 		t.Fatalf("list part: %+v", part)
 	}
 
-	done(report.Outcome{Code: "7K2Q9XMB", Saved: "misterzine/report.txt"})
+	done(report.Outcome{Code: "K7Q2", Saved: "misterzine/report.txt"})
 	a.Paint()
-	if a.support.mode != "report-done" || a.support.outcome.Code != "7K2Q9XMB" {
+	if a.support.mode != "report-done" || a.support.outcome.Code != "K7Q2" {
 		t.Fatalf("mode %q outcome %+v", a.support.mode, a.support.outcome)
 	}
 	press(platform.KeyBack)

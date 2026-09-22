@@ -13,6 +13,22 @@ func (a *App) rememberedPick() int {
 	return a.rememberedPickOf(row, i)
 }
 
+// pickIn is the chosen version's index among entries. A choice made by file
+// follows the file when a rescan reorders the list, and falls back to the
+// main version when the file has gone rather than onto whatever took its
+// place; without one, the cursor position counts.
+func (a *App) pickIn(entries []launchEntry) int {
+	if p := a.detail.pickPath; p != "" {
+		for n, e := range entries {
+			if e.path == p {
+				return n
+			}
+		}
+		return 0
+	}
+	return max(0, min(a.detail.pick, len(entries)-1))
+}
+
 // rememberedPickOf is the remembered version's launch entry for row i,
 // 0 (the main one) when none is remembered or it is gone.
 func (a *App) rememberedPickOf(row *data.Row, i int) int {

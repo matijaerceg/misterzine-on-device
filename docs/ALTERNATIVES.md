@@ -19,6 +19,42 @@ failed reads are retried. Version 4 of the alternatives cache includes parent
 metadata and file stamps, so old caches rebuild once and in-place edits are
 noticed. Resolved lists are applied only to the catalog snapshot they describe.
 
+## Versions on other cores, and outside `_alternatives`
+
+The compatible-core matcher above never sees two kinds of set a player can run
+from MiSTer's menu: a set for another core (Pleiads' own `_alternatives` run on
+the Pleiads core while the catalogue row uses Phoenix; Shinobi's System 16B sets
+on jts16b beside the jts16 row) and a set of the row's own core outside the
+`_alternatives` folders (`_Arcade/Jungle Hunt US.mra` beside Jungle King).
+`DiscoverLocal` offers them as further versions, and `scan.MergeVersions` adds
+them to the resolver's lists:
+
+- **Ownership is strict, without ROM zip names.** The rows whose `sn` is the
+  file's setname own it outright. Otherwise the rows claiming it through its
+  parent or a family own it only when they are one release (the same `sn`, as
+  with Black Heart in two implementations or Asteroids Deluxe in two colours).
+  Families span different titles in the catalogue (Sprint 1 and 2, River
+  Patrol and Silver Land, Gradius and Nemesis), so claimants of different
+  releases make the file ambiguous, and it is offered nowhere. A family sibling
+  never stands in for an exact owner that cannot run.
+- **Only rows that run here offer it**, meaning the rows the list shows on the
+  card (their scan status is Found: core and main MRA). The file's own core
+  must be in `_Arcade/cores` too. Otherwise the stand-in rules below decide, so
+  a game whose core is present but whose main MRA is missing shows greyed, and
+  a copy that runs stands in for it.
+- **Already-attached files** go only to the other runnable owners, on another
+  core, with no duplicates. BIOS files are never versions.
+- **The picker keeps up with the cores.** `LocalResult.VersionCores` carries
+  each file's own core; the host drops a version whose core has left
+  `_Arcade/cores` as soon as a rescan's first pass updates the core index, and
+  labels one on another core with it. Details keeps the chosen version by
+  path, so a rescan that reorders the list never switches the choice.
+- **A stand-in that gives way** hands its favorite, remembered version and
+  launch records to the row that now offers its file (`VersionOwner`), rather
+  than to whichever row covers the setname on paper.
+
+`mzaltaudit` reports these as `ExtraOffers`, `ExtraFiles` and `Extras`.
+
 ## Games the catalogue does not list
 
 The same background scan also walks the rest of `_Arcade` (every subfolder
@@ -29,10 +65,11 @@ levels down and after 20,000 files). Each MRA's header is read once and cached
 per directory in `cache/local.json`, versioned like the alternatives cache.
 
 A file is accounted for when its path is a catalogue MRA, when the family
-resolver tied it to a catalogue row, or when its setname or parent names a
-catalogue release, family root or known clone that this card can run.
-Everything else becomes a "Local" row: one per setname, with clones filed
-under their parent when the parent is on the card too.
+resolver tied it to a catalogue row, or when it belongs to a catalogue game
+that runs on this card (the ownership rules above): then it is one more version
+of that game when its own core is on the card, and otherwise the report says
+why it is left out. Everything else becomes a "Local" row: one per setname,
+with clones filed under their parent when the parent is on the card too.
 
 A game the catalogue knows only through cores the card has not got is the
 exception to that rule. Its catalogue row is greyed and refuses to launch, so

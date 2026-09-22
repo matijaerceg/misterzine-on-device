@@ -64,12 +64,35 @@ func main() {
 	// The core index decides which catalogue rows this card can actually
 	// run, and so which files stand in for the ones it cannot.
 	idx := scan.ScanCores(*card)
+	// what the list would show: a row runs when its core and its own MRA
+	// are on the card, as in the app
+	status := scan.Statuses(*card, idx, rows)
 	start = time.Now()
-	local := scan.DiscoverLocal(*card, localCache, rows, idx, alts, attached, false)
+	local := scan.DiscoverLocal(*card, localCache, rows, idx, status, alts, attached, false)
 	localCold := time.Since(start)
 	start = time.Now()
-	scan.DiscoverLocal(*card, localCache, rows, idx, alts, attached, false)
+	scan.DiscoverLocal(*card, localCache, rows, idx, status, alts, attached, false)
 	localWarm := time.Since(start)
+	// the games that run here also offer their sets on other cores and
+	// outside the _alternatives folders, as the app merges them
+	extraOffers, extraFiles := scan.MergeVersions(resolved, local.Versions)
+	type extraVersion struct {
+		Key  string `json:"key"`
+		Path string `json:"path"`
+		Core string `json:"core"`
+	}
+	extras := []extraVersion{}
+	for k, ps := range local.Versions {
+		for _, p := range ps {
+			extras = append(extras, extraVersion{k, p, local.VersionCores[p]})
+		}
+	}
+	sort.Slice(extras, func(i, j int) bool {
+		if extras[i].Key != extras[j].Key {
+			return extras[i].Key < extras[j].Key
+		}
+		return extras[i].Path < extras[j].Path
+	})
 	type localRow struct {
 		Key     string   `json:"key"`
 		Title   string   `json:"title"`
@@ -171,8 +194,12 @@ func main() {
 		LocalWarm    string // discovery walk, from the cache
 		LocalError   string `json:",omitempty"`
 		Locals       []localRow
+		ExtraOffers  int // row-to-file offers the merge added: sets on other cores or outside _alternatives
+		ExtraFiles   int // the distinct files behind them
+		Extras       []extraVersion
 	}{len(alts), len(skipped), cold.String(), warm.String(), changed, added, changes, findings,
-		local.Files, len(local.Rows), len(local.Skipped), localCold.String(), localWarm.String(), localErr, locals}
+		local.Files, len(local.Rows), len(local.Skipped), localCold.String(), localWarm.String(), localErr, locals,
+		extraOffers, extraFiles, extras}
 	b, err := json.MarshalIndent(result, "", "  ")
 	if err != nil {
 		panic(err)

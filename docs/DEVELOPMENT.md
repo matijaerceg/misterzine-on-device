@@ -146,7 +146,7 @@ and the log tail. `report.Build` formats it within 256 KB and `report.Scrub` str
 query strings and keyed values from log lines. The host always writes
 `report.txt` beside the log, then POSTs it to `fetch.ReportService`
 (`api.misterzine.fyi/reports`, the site repo's `api/src/reports.js`), which answers
-with an eight-character code. The owner reads a report with the site repo's
+with a four-character code. The owner reads a report with the site repo's
 `python api/get_report.py CODE` (`--list`, `--delete`); the service keeps reports 30
 days. Harness `-report-send sent|failed` renders the screens without uploading.
 

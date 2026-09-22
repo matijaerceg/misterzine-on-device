@@ -62,6 +62,9 @@ type Config struct {
 
 	// Alternatives lists installed alternative MRAs for a row (card-relative paths).
 	Alternatives func(r *data.Row) []string
+	// AltCore names the core of a version that may run on another core than
+	// its row's ("" when unknown), for its label in the version picker.
+	AltCore func(path string) string
 	// Versions remembers each row's last chosen version by row key (a
 	// card-relative launch path): Details opens on it and Start launches it
 	// from anywhere. The main version is not recorded.
@@ -271,7 +274,10 @@ type detailState struct {
 	carry  time.Duration // fractional pixel travel between frames
 	lines  int           // visible information lines, used for paging
 	pick   int           // launch entry cursor
-	from   Screen        // where B returns to
+	// pickPath is the path of the chosen entry: a rescan can reorder the
+	// versions, and the choice follows the file rather than the position.
+	pickPath string
+	from     Screen // where B returns to
 }
 
 // New builds an app around a dataset. stored is the persisted last-look
@@ -1109,6 +1115,9 @@ func (a *App) actList(k platform.Key) bool {
 		if n > 0 {
 			a.screen = ScreenDetails
 			a.detail = detailState{from: ScreenList, pick: a.rememberedPick()}
+			if row, _, _ := a.current(); row != nil && a.detail.pick > 0 {
+				a.detail.pickPath = a.cfg.Versions[row.K]
+			}
 			a.all = true
 		}
 		return true

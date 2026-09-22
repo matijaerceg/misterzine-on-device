@@ -82,7 +82,7 @@ func (h *host) receiveScan(r scanResult) {
 	}
 	// A nil alternatives result means genuinely empty only on the final pass.
 	if r.final && r.index != nil && current {
-		h.alts = r.alts
+		h.alts, h.altCores = r.alts, r.altCores
 		h.altGen = h.a.Data().Gen
 	}
 	if r.index != nil {
