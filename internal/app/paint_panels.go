@@ -306,7 +306,7 @@ func (a *App) rawFilterEntries() []panelEntry {
 		for _, v := range []struct {
 			val, text string
 			n         int
-		}{{data.ROMAll, "everything", a.total}, {data.ROMLaunch, "problem in the version to launch", romCounts[data.ROMLaunchIssue]},
+		}{{data.ROMAll, "everything", a.total}, {data.ROMLaunch, "problem in launch version", romCounts[data.ROMLaunchIssue]},
 			{data.ROMAny, "problem in any version", romCounts[data.ROMLaunchIssue] + romCounts[data.ROMOtherIssue]}, {data.ROMNone, "no problems found", romCounts[data.ROMClean]}} {
 			E = append(E, panelEntry{text: v.text, kind: "rom", value: v.val, checked: cur == v.val, count: v.n, showCount: checked > 0})
 		}
