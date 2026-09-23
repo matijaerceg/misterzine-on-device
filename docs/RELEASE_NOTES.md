@@ -1,20 +1,13 @@
-**Better local file handling**
+**ROM problems marked in the list**
 
-Open a game's details and every version of it on your card is there to pick: the regional sets and bootlegs, copies kept in other folders, and now the sets that run on a different core from the game itself.
+A game whose ROMs will not load now shows `!` in the list instead of its card mark, so you see the problem before you open it or press Start. The mark follows the version you chose in Details, and Details counts the other versions with problems ("ROM problems in 2 of 12 versions"). Thanks to ac3 for asking for it.
 
-For example: Pleiads plays on the Phoenix core, so its Centuri and bootleg sets, which need the Pleiads core, used to be out of reach; now they sit in the same list, each marked with the core it runs on.
+For example: after Update All adds a core you have no ROM set for yet, or a set of the wrong version, those games are the ones with a `!`.
 
 **Added**
 
-- Send a report, in Options -> Troubleshooting: when a game is missing or something looks wrong, it sends the developer a description of your card and gives you a short code to post where you asked for help.
+- Filters -> ROM check: only games with a problem in the version to launch, in any version, or only games whose ROMs all checked clean. The check runs in the background after each card scan, without slowing the list.
 
-**Fixed**
-
-- On 1440p and 4K screens MisterZine fills the display instead of a stretched band across the middle.
-- Full display keeps text at about the same size on every screen, so 720p gets fewer, larger rows.
-- The missing-ROM warning looks inside your zips the way MiSTer does, and spots a mame folder at the top of the SD card that stops every arcade game.
-- A playable copy of a game the catalogue has only for a core you don't own sits right under its greyed row in every order. Thanks to Mclaneinc for reporting it.
-
-Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v112--2026-09-22).
+Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v113--2026-09-23).
 Existing installations update through Update All, or through Update MisterZine only. New installation:
 [installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once).
