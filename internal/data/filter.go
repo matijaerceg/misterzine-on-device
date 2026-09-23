@@ -38,6 +38,26 @@ const (
 	InstallMissing = "missing" // not found on the card
 )
 
+// ROMState is what the ROM check knows about one row: nothing yet, all its
+// versions clean, a problem with the version Start would launch, or one
+// with another version only.
+type ROMState uint8
+
+const (
+	ROMUnknown ROMState = iota
+	ROMClean
+	ROMLaunchIssue
+	ROMOtherIssue
+)
+
+// ROM filter values.
+const (
+	ROMAll    = "all"
+	ROMLaunch = "launch" // the version Start launches has a problem
+	ROMAny    = "any"    // any version has one
+	ROMNone   = "none"   // every version checked and clean
+)
+
 // Filters follow the site's all-checked model: a value listed in an Off set
 // is hidden, so a value the data gains later defaults to visible.
 type Filters struct {
@@ -58,6 +78,7 @@ type Filters struct {
 	Install        string          `json:"install,omitempty"`  // InstallAll (default) or one of the Install* values
 	FavOnly        bool            `json:"fav_only,omitempty"`
 	Since          bool            `json:"since,omitempty"` // only rows changed since the last look
+	ROM            string          `json:"rom,omitempty"`   // ROMAll (default) or one of the ROM* values
 }
 
 // Active reports whether any narrowing is in effect.
@@ -66,18 +87,23 @@ func (f *Filters) Active() bool {
 		return false
 	}
 	return f.ArcadeOnly || f.HideDeprecated || f.MatchRotation != "" || len(f.SrcHidden) > 0 || len(f.YearOff) > 0 || len(f.BaseOff) > 0 || len(f.BetaOff) > 0 || len(f.SrcOff) > 0 || len(f.RotOff) > 0 || len(f.PlrOff) > 0 ||
-		len(f.ResOff) > 0 || len(f.GenreOff) > 0 || len(f.DirectionsOff) > 0 || len(f.ButtonsOff) > 0 || (f.Install != "" && f.Install != InstallAll) || f.FavOnly || f.Since
+		len(f.ResOff) > 0 || len(f.GenreOff) > 0 || len(f.DirectionsOff) > 0 || len(f.ButtonsOff) > 0 || (f.Install != "" && f.Install != InstallAll) || f.FavOnly || f.Since || f.ROMActive()
+}
+
+// ROMActive reports whether the ROM check narrows the list.
+func (f *Filters) ROMActive() bool {
+	return f != nil && f.ROM != "" && f.ROM != ROMAll
 }
 
 // Pass reports whether one row survives the filters.
-func (f *Filters) Pass(r *Row, d *Derived, st Status, fav, unseen bool) bool {
-	return f.Why(r, d, st, fav, unseen) == ""
+func (f *Filters) Pass(r *Row, d *Derived, st Status, fav, unseen bool, rom ROMState) bool {
+	return f.Why(r, d, st, fav, unseen, rom) == ""
 }
 
 // Why names the first rule that hides a row, "" when the row survives the
 // filters; Pass is Why == "", so the diagnostic report can never disagree
 // with the list.
-func (f *Filters) Why(r *Row, d *Derived, st Status, fav, unseen bool) string {
+func (f *Filters) Why(r *Row, d *Derived, st Status, fav, unseen bool, rom ROMState) string {
 	if f == nil {
 		return ""
 	}
@@ -147,6 +173,20 @@ func (f *Filters) Why(r *Row, d *Derived, st Status, fav, unseen bool) string {
 	if f.Since && !unseen {
 		return "Filters: only rows changed since the last look"
 	}
+	switch f.ROM {
+	case ROMLaunch:
+		if rom != ROMLaunchIssue {
+			return "Filters: only games whose version to launch has a ROM problem"
+		}
+	case ROMAny:
+		if rom != ROMLaunchIssue && rom != ROMOtherIssue {
+			return "Filters: only games with a ROM problem in any version"
+		}
+	case ROMNone:
+		if rom != ROMClean {
+			return "Filters: only games whose ROMs all checked clean"
+		}
+	}
 	return ""
 }
 
@@ -199,8 +239,8 @@ func GateLine(r *Row) string {
 	return "Patreon " + stage + ": early access, needs a key from the author"
 }
 
-// Apply narrows an order to the rows that pass. status, fav and unseen may be nil.
-func Apply(ds *Dataset, order []int, f *Filters, status func(i int) Status, fav func(k string) bool, unseen func(i int) bool) []int {
+// Apply narrows an order to the rows that pass. status, fav, unseen and rom may be nil.
+func Apply(ds *Dataset, order []int, f *Filters, status func(i int) Status, fav func(k string) bool, unseen func(i int) bool, rom func(i int) ROMState) []int {
 	if !f.Active() {
 		out := make([]int, len(order))
 		copy(out, order)
@@ -220,7 +260,11 @@ func Apply(ds *Dataset, order []int, f *Filters, status func(i int) Status, fav 
 		if unseen != nil {
 			uns = unseen(i)
 		}
-		if f.Pass(&ds.Rows[i], &ds.Der[i], st, isFav, uns) {
+		rs := ROMUnknown
+		if rom != nil && f.ROMActive() {
+			rs = rom(i) // asked only when it decides something: it may read the card's answers
+		}
+		if f.Pass(&ds.Rows[i], &ds.Der[i], st, isFav, uns, rs) {
 			out = append(out, i)
 		}
 	}

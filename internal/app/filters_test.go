@@ -126,7 +126,7 @@ func TestResolutionFilterSelectionAndRestore(t *testing.T) {
 	}
 	// A resolution added by a later catalogue remains visible by default.
 	row := data.Row{Base: "Arcade", Res: "24kHz"}
-	if !restored.Pass(&row, &data.Derived{}, data.StatusUnknown, false, false) {
+	if !restored.Pass(&row, &data.Derived{}, data.StatusUnknown, false, false, data.ROMUnknown) {
 		t.Fatal("new resolution hidden")
 	}
 	choose("res", "", false)

@@ -32,7 +32,7 @@ func (a *App) canOnlyFilter() bool {
 		return false
 	}
 	e := a.panel.entries[a.panel.cursor]
-	return !e.header && !e.info && (e.kind == "year" || e.kind == "decade" || e.kind == "beta" || a.onlyFacet(e.kind) != nil || e.kind == "install" || e.kind == "fav" || e.kind == "since")
+	return !e.header && !e.info && (e.kind == "year" || e.kind == "decade" || e.kind == "beta" || a.onlyFacet(e.kind) != nil || e.kind == "install" || e.kind == "rom" || e.kind == "fav" || e.kind == "since")
 }
 
 func (a *App) onlyFilter() bool {
@@ -72,6 +72,8 @@ func (a *App) onlyFilter() bool {
 		f.ButtonsOff = off
 	case "install":
 		f.Install = e.value
+	case "rom":
+		f.ROM = e.value
 	case "fav":
 		f.FavOnly = true
 	case "since":
@@ -108,6 +110,8 @@ func copySection(kind string, to *data.Filters, from data.Filters) {
 		to.ButtonsOff = from.ButtonsOff
 	case "install":
 		to.Install = from.Install
+	case "rom":
+		to.ROM = from.ROM
 	case "fav":
 		to.FavOnly = from.FavOnly
 	case "since":

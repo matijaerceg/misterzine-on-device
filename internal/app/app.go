@@ -93,6 +93,12 @@ type Config struct {
 	// otherwise the text is a warning. fresh bypasses cached Details
 	// results when the user presses Start.
 	ROMIssue func(rel string, fresh bool) (text string, block bool)
+	// ROMKnown is the ROM check's stored answer for a file, if it has one,
+	// without touching the card: the list asks it for every row. nil = no
+	// background check, so the list never marks ROMs.
+	ROMKnown func(rel string) (text string, block, known bool)
+	// ROMProgress is how far the background ROM check has got (nil = none).
+	ROMProgress func() (done, total int)
 	// Launcher reports whether the main-menu launcher is enabled (nil = unsupported).
 	Launcher func() bool
 	// CanUpdateApp reports whether this card can fetch a new MisterZine on
@@ -204,6 +210,7 @@ type App struct {
 	// report found a downloader.ini at all.
 	hiddenSrc          map[string]bool
 	iniKnown, iniFound bool
+	romMemo            map[int]data.ROMState // per row, cleared when the check or a choice changes (rom.go)
 	seen               *data.Seen
 	marker             bool                   // the since-visit status row heads the list (marks.go)
 	sinceAdded         int                    // rows added since the last visit, over the enabled catalogue
@@ -240,8 +247,8 @@ type App struct {
 	filterHeld     *panelState
 	notice         string
 	until          time.Time
-	net            string    // connection failures in the status bar
-	catalogChecked time.Time // last successful catalog check this session
+	net            string     // connection failures in the status bar
+	catalogChecked time.Time  // last successful catalog check this session
 	supporters     Supporters // Patreon supporters for the Credits page
 	appUpdate      string
 	scanReady      bool
@@ -450,7 +457,7 @@ func (a *App) rebuild() {
 			}
 		}
 	}
-	a.view = data.Apply(a.ds, a.order, &filters, a.cfg.Status, fav, unseen)
+	a.view = data.Apply(a.ds, a.order, &filters, a.cfg.Status, fav, unseen, a.romState)
 	if q := searchText(a.query); q != "" {
 		matched := a.view[:0]
 		for _, i := range a.view {
@@ -554,8 +561,8 @@ func (a *App) ExitChord() string {
 	}
 	return ""
 }
-func (a *App) FollowRotation() bool  { return a.cfg.FollowRotation }
-func (a *App) FilterRotation() bool  { return a.cfg.FilterRotation }
+func (a *App) FollowRotation() bool { return a.cfg.FollowRotation }
+func (a *App) FilterRotation() bool { return a.cfg.FilterRotation }
 
 // InstalledOnly reports Options -> Sources: installed only.
 func (a *App) InstalledOnly() bool { return a.cfg.InstalledOnly }

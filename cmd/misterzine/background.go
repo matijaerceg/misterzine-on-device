@@ -84,6 +84,10 @@ func (h *host) receiveScan(r scanResult) {
 	if r.final && r.index != nil && current {
 		h.alts, h.altCores = r.alts, r.altCores
 		h.altGen = h.a.Data().Gen
+		// the sweep starts on a later tick: set up in the same frame as the
+		// new row set's first repaint, it stretched that frame to 150-200 ms
+		// on a Pi
+		h.sweepDue = time.Now().Add(500 * time.Millisecond)
 	}
 	if r.index != nil {
 		h.a.SetHiddenSources(r.hidden, r.iniFound)
@@ -109,6 +113,40 @@ func (h *host) receiveScan(r scanResult) {
 			h.requestScan()
 		}
 	}
+}
+
+// sweepROMs hands the ROM check every file the list may mark, after a
+// complete scan: each row's main MRA when the card has it, then the
+// versions the card offers. The answers arrive over roms.Ready.
+func (h *host) sweepROMs() {
+	if h.roms == nil {
+		return
+	}
+	ds := h.a.Data()
+	paths := make([]string, 0, len(ds.Rows))
+	seen := map[string]bool{}
+	add := func(p string) {
+		if p != "" && !seen[p] {
+			seen[p] = true
+			paths = append(paths, p)
+		}
+	}
+	for i := range ds.Rows {
+		r := &ds.Rows[i]
+		if r.MRA == "" {
+			continue
+		}
+		if i < len(h.status) && h.status[i].Found() {
+			add(r.MRA)
+		}
+		for _, alt := range h.alternatives(r) {
+			add(alt)
+		}
+	}
+	h.lg.Printf("rom sweep: %d files to check", len(paths))
+	h.roms.Sweep(paths, func(n int, d time.Duration) {
+		h.lg.Printf("rom sweep: %d MRAs checked (%v)", n, d.Round(time.Millisecond))
+	})
 }
 
 func (h *host) sendScan(r scanResult) bool {

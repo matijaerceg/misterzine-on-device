@@ -66,6 +66,7 @@ date column format is chosen in Options -> Date format.
 | ^ | Older build on the card, or an undated core that differs from the shipped build |
 | ~ | On the card, build date unknown |
 | - | Not found on the card |
+| ! | The version Start would launch has a ROM problem (see Details); in the warning colour when MiSTer could not load it, greyed when the game may still run |
 
 The scan compares each core file on the card with the build the catalogue
 ships. Dated core filenames are compared by build date. Undated cores (Jotego's,
@@ -324,6 +325,18 @@ game that needs a zip when the SD card has a folder named `mame` at its top.
 MiSTer uses that folder in place of `games/mame` and then finds no zip at all,
 not even the ones inside it. Move its contents into `games/mame` and delete the
 empty folder.
+
+After every card scan, a background pass runs the same check over every
+arcade game on the card and every version it offers, so problems show
+before you open anything: the list marks a game with `!` in place of its
+card mark when the version Start would launch has one, the version picker
+in Details prefixes such a version with `!`, and Details counts the other
+versions with problems ("ROM problems in 2 of 12 versions"). Filters ->
+ROM check narrows the list to games with a problem in the version to
+launch, in any version, or to games whose versions all checked clean;
+while the pass is still running the section says how far it has got. The
+pass takes about 40 seconds for 3,000 files on a MiSTer Pi and does not
+slow the list. Choosing another version in Details moves the mark with it.
 
 MisterZine cannot promise that a game runs: the card status describes
 installation and core version, not a guarantee of playability.
@@ -610,7 +623,7 @@ screenshots match, lettering runs instead and the Preview help explains why.
   seconds does the same.
 
 Filters start with Clear all filters, greyed out until a filter is active,
-then On the card, Since last look, Type and Source. Pressing Clear all filters
+then On the card, ROM check, Since last look, Type and Source. Pressing Clear all filters
 moves the selection to the first heading. The same edge arrows as in Options
 show when the list continues above or below.
 Favorites is a main-view mode and still respects all these filters.

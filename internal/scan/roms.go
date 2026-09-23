@@ -51,6 +51,115 @@ type ROMCheck struct {
 	mras map[string]mraEntry
 	zips map[string]*zipIndex
 	md5s map[string]bool // md5Fits answers by section and zip stamps
+
+	// a sweep checks every MRA the list may mark, in the background
+	sweepStop  chan struct{} // closed to end the running sweep; guarded by mu
+	sweepDone  int           // paths the running sweep has answered
+	sweepTotal int           // paths it was given; 0 when none ran
+	pace       time.Duration // rest between two sweep checks
+	// Slow, when set, hears of a sweep check that took over 80 ms, for
+	// the log: on a Pi most take under 10 ms, a few Atari and Universal
+	// sets with many inline parts take half a second or more.
+	Slow func(rel string, d time.Duration)
+}
+
+// Sweep checks every path, one after another on a goroutine, so the list
+// can mark a game whose ROMs stop it before anyone opens its Details. A
+// new Sweep ends the one before. Answers land in the same store Details
+// reads, Ready fires at most every quarter second while they change what
+// the list shows, and once at the end; done is called then with how many
+// paths were checked and how long it took. Files other than MRAs are
+// skipped without a check.
+func (c *ROMCheck) Sweep(paths []string, done func(n int, d time.Duration)) {
+	c.mu.Lock()
+	if c.sweepStop != nil {
+		close(c.sweepStop)
+	}
+	stop := make(chan struct{})
+	c.sweepStop = stop
+	c.sweepDone, c.sweepTotal = 0, len(paths)
+	c.mu.Unlock()
+	go c.sweep(paths, stop, done)
+}
+
+func (c *ROMCheck) sweep(paths []string, stop <-chan struct{}, done func(int, time.Duration)) {
+	start := time.Now()
+	signalled := start
+	changed := false
+	signal := func(force bool) {
+		if !changed || !force && time.Since(signalled) < 250*time.Millisecond {
+			return
+		}
+		changed, signalled = false, time.Now()
+		select {
+		case c.ready <- struct{}{}:
+		default:
+		}
+	}
+	n := 0
+	for _, rel := range paths {
+		select {
+		case <-stop:
+			return
+		default:
+		}
+		if strings.EqualFold(filepath.Ext(rel), ".mra") {
+			// Start (fresh) and Details (refresh) hold work while they
+			// store, so an answer of theirs is never overwritten by an
+			// older one from here.
+			c.work.Lock()
+			t := time.Now()
+			res := c.run(rel)
+			if d := time.Since(t); d > 80*time.Millisecond && c.Slow != nil {
+				c.Slow(rel, d)
+			}
+			c.mu.Lock()
+			prev, known := c.results[rel]
+			if _, busy := c.pending[rel]; !busy {
+				c.results[rel] = romEntry{time.Now(), res}
+			}
+			c.mu.Unlock()
+			c.work.Unlock()
+			if !known || prev.res != res {
+				changed = true
+			}
+			n++
+		}
+		c.mu.Lock()
+		c.sweepDone++
+		c.mu.Unlock()
+		signal(false)
+		if c.pace > 0 {
+			time.Sleep(c.pace)
+		}
+	}
+	signal(true)
+	if done != nil {
+		done(n, time.Since(start))
+	}
+}
+
+// Progress is how far the last sweep got: paths answered and paths given.
+// A nil checker, or one that never swept, reports 0 of 0.
+func (c *ROMCheck) Progress() (done, total int) {
+	if c == nil {
+		return 0, 0
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.sweepDone, c.sweepTotal
+}
+
+// Known is the stored answer for rel, whatever its age, and whether there
+// is one. It never touches the card, so the list can ask for every row.
+func (c *ROMCheck) Known(rel string) (ROMResult, bool) {
+	if c == nil {
+		return ROMResult{}, false
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	e, ok := c.results[rel]
+	return e.res, ok
 }
 
 type romEntry struct {
@@ -65,7 +174,7 @@ type romPending struct {
 
 // NewROMCheck returns the checker for one card.
 func NewROMCheck(card string) *ROMCheck {
-	c := &ROMCheck{card: card, ready: make(chan struct{}, 1), wait: 8 * time.Millisecond,
+	c := &ROMCheck{card: card, ready: make(chan struct{}, 1), wait: 8 * time.Millisecond, pace: 3 * time.Millisecond,
 		results: map[string]romEntry{}, pending: map[string]*romPending{},
 		mras: map[string]mraEntry{}, zips: map[string]*zipIndex{}, md5s: map[string]bool{}}
 	c.run = c.check

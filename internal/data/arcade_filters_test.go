@@ -38,7 +38,7 @@ func TestArcadeFiltersLeaveSystemCoresAndProvisionalValues(t *testing.T) {
 		{K: "console", Base: "Console"}, {K: "computer", Base: "Computer"}, {K: "other", Base: "Other"},
 	}, "", time.Time{})
 	f := Filters{RotOff: map[string]bool{"": true}, ResOff: map[string]bool{"": true}, PlrOff: map[string]bool{"": true}, GenreOff: map[string]bool{"": true}, DirectionsOff: map[string]bool{"": true}, ButtonsOff: map[string]bool{"": true}}
-	if got := keysOf(ds, Apply(ds, []int{0, 1, 2, 3, 4}, &f, nil, nil, nil)); !reflect.DeepEqual(got, []string{"vertical", "console", "computer", "other"}) {
+	if got := keysOf(ds, Apply(ds, []int{0, 1, 2, 3, 4}, &f, nil, nil, nil, nil)); !reflect.DeepEqual(got, []string{"vertical", "console", "computer", "other"}) {
 		t.Fatal(got)
 	}
 	for _, facet := range []map[string]int{ds.Facets.Rot, ds.Facets.Res, ds.Facets.Plr, ds.Facets.Genre, ds.Facets.Directions, ds.Facets.Buttons} {
@@ -47,7 +47,7 @@ func TestArcadeFiltersLeaveSystemCoresAndProvisionalValues(t *testing.T) {
 		}
 	}
 	f.BaseOff = map[string]bool{"Console": true, "Computer": true, "Other": true}
-	if got := keysOf(ds, Apply(ds, []int{0, 1, 2, 3, 4}, &f, nil, nil, nil)); !reflect.DeepEqual(got, []string{"vertical"}) {
+	if got := keysOf(ds, Apply(ds, []int{0, 1, 2, 3, 4}, &f, nil, nil, nil, nil)); !reflect.DeepEqual(got, []string{"vertical"}) {
 		t.Fatal(got)
 	}
 }

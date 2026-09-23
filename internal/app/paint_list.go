@@ -400,6 +400,11 @@ func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {
 	}
 	x += tw + rf.W
 	g, gc := statusGlyph(st)
+	// a ROM problem with the version Start launches outranks the build
+	// status: the game will not start, whatever the core's date
+	if m, mc, ok := a.romMark(i); ok {
+		g, gc = m, mc
+	}
 	c.Text(x, y-1, rf, g, gc)
 	if a.mode == data.SortYear {
 		return

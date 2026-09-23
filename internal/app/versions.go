@@ -63,6 +63,7 @@ func (a *App) rememberPick(row *data.Row, entries []launchEntry, pick int) {
 	} else {
 		a.cfg.Versions[row.K] = p
 	}
+	a.romMemo = nil // the list's ROM mark follows the version to launch
 	if a.cfg.VersionChanged != nil {
 		a.cfg.VersionChanged()
 	}

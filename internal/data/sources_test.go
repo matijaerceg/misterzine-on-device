@@ -46,7 +46,7 @@ func TestHiddenSourcesFilter(t *testing.T) {
 	if !f.Active() {
 		t.Fatal("hidden sources must count as narrowing")
 	}
-	if got := Apply(ds, []int{0, 1, 2}, f, nil, nil, nil); !reflect.DeepEqual(got, []int{1, 2}) {
+	if got := Apply(ds, []int{0, 1, 2}, f, nil, nil, nil, nil); !reflect.DeepEqual(got, []int{1, 2}) {
 		t.Fatalf("hidden sources filter = %v", got)
 	}
 }

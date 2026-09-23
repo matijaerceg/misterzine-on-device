@@ -41,11 +41,11 @@ func TestControlFiltersCombineAndKeepUnspecified(t *testing.T) {
 	if !f.Active() {
 		t.Fatal("controls alone must activate filtering")
 	}
-	if got := Apply(ds, []int{0, 1, 2, 3}, f, nil, nil, nil); !reflect.DeepEqual(got, []int{0, 3}) {
+	if got := Apply(ds, []int{0, 1, 2, 3}, f, nil, nil, nil, nil); !reflect.DeepEqual(got, []int{0, 3}) {
 		t.Fatal(got)
 	}
 	f.ButtonsOff[""] = true
-	if got := Apply(ds, []int{0, 1, 2, 3}, f, nil, nil, nil); !reflect.DeepEqual(got, []int{0}) {
+	if got := Apply(ds, []int{0, 1, 2, 3}, f, nil, nil, nil, nil); !reflect.DeepEqual(got, []int{0}) {
 		t.Fatal(got)
 	}
 	if ds.Facets.Directions["8-way"] != 2 || ds.Facets.Buttons["2"] != 2 || ds.Facets.Buttons[""] != 1 {

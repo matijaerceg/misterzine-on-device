@@ -126,7 +126,7 @@ func main() {
 		Launcher:       func() bool { return *launcher },
 		// a card that can fetch the app by itself, so the -app-update fixture
 		// renders the Update MisterZine only row as a real card would
-		CanUpdateApp:   func() bool { return true },
+		CanUpdateApp: func() bool { return true },
 		Action: func(kind, arg string) {
 			if kind == "launcher" {
 				*launcher = arg == "on"
@@ -142,6 +142,11 @@ func main() {
 			}
 			return nil
 		},
+	}
+	if *romIssue != "" {
+		// the background check knows every file, and finds the same fault
+		cfg.ROMKnown = func(string) (string, bool, bool) { return *romIssue, true, true }
+		cfg.ROMProgress = func() (int, int) { return 3, 3 }
 	}
 	if *imgDir != "" {
 		if _, err := os.Stat(*imgDir); err == nil {

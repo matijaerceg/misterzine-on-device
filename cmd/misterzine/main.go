@@ -104,6 +104,7 @@ type host struct {
 	updateReadError               string // UI-owned; suppress repeated status-read diagnostics
 	updateRunning                 bool
 	canvasDue                     time.Time
+	sweepDue                      time.Time // when the ROM sweep a scan asked for starts; zero = none due
 	appliedCanvas                 string
 	restartRequested              bool
 	troubleshooting               supportHost
@@ -237,6 +238,9 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	h.img = images.New(filepath.Join(root, "shots"), h.client, lg, 24<<20)
 	h.img.SetPrefetch(picsFor(ds), h.settings.Prefetch)
 	h.roms = scan.NewROMCheck(card)
+	h.roms.Slow = func(rel string, d time.Duration) {
+		lg.Printf("rom sweep: slow check %s (%v)", rel, d.Round(time.Millisecond))
+	}
 
 	// app
 	favSet := h.favs.Set()
@@ -296,6 +300,11 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			r := h.roms.Check(rel, fresh)
 			return r.Text, r.Block
 		},
+		ROMKnown: func(rel string) (string, bool, bool) {
+			r, ok := h.roms.Known(rel)
+			return r.Text, r.Block, ok
+		},
+		ROMProgress:     h.roms.Progress,
 		Launch:          h.requestLaunch,
 		Quit:            h.stop,
 		Version:         buildinfo.String(),
@@ -540,7 +549,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		case <-h.img.Ready():
 			h.a.Invalidate()
 		case <-h.roms.Ready():
-			h.a.Invalidate()
+			h.a.ROMChanged()
 		case <-h.img.ProgressReady():
 			if h.a.Screen() == app.ScreenOptions {
 				h.a.Invalidate()
@@ -557,6 +566,10 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			if !h.applyCanvasChange() {
 				return 3
 			}
+		}
+		if !h.sweepDue.IsZero() && !time.Now().Before(h.sweepDue) {
+			h.sweepDue = time.Time{}
+			h.sweepROMs()
 		}
 		h.a.Tick(time.Now())
 		h.present()
@@ -1400,7 +1413,7 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 // dataset. A version on its own core leaves as soon as that core does: the
 // first pass of a rescan updates the index before the lists come back.
 func (h *host) alternatives(r *data.Row) []string {
-	if h.altGen != h.a.Data().Gen {
+	if h.a == nil || h.altGen != h.a.Data().Gen {
 		return nil
 	}
 	ps := h.alts[r.K]

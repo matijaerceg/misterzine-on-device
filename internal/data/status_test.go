@@ -20,12 +20,12 @@ func TestLikelyOutdatedCountsAsOlder(t *testing.T) {
 	d := &Derived{}
 	older := &Filters{Install: InstallOlder}
 	for _, st := range []Status{StatusOutdated, StatusLikelyOutdated} {
-		if !older.Pass(&row, d, st, false, false) {
+		if !older.Pass(&row, d, st, false, false, ROMUnknown) {
 			t.Errorf("older filter must include %v", st)
 		}
 	}
 	undated := &Filters{Install: InstallUndated}
-	if undated.Pass(&row, d, StatusLikelyOutdated, false, false) {
+	if undated.Pass(&row, d, StatusLikelyOutdated, false, false, ROMUnknown) {
 		t.Error("undated filter must exclude likely outdated")
 	}
 }
@@ -55,20 +55,20 @@ func TestFiltersWhy(t *testing.T) {
 		{Filters{FavOnly: true}, StatusCurrent, false, "favorites only"},
 		{Filters{FavOnly: true}, StatusCurrent, true, ""},
 	} {
-		got := c.f.Why(&r, &d, c.st, c.fav, false)
+		got := c.f.Why(&r, &d, c.st, c.fav, false, ROMUnknown)
 		if (c.want == "") != (got == "") || !strings.Contains(got, c.want) {
 			t.Errorf("%+v: Why %q, want %q", c.f, got, c.want)
 		}
-		if c.f.Pass(&r, &d, c.st, c.fav, false) != (got == "") {
+		if c.f.Pass(&r, &d, c.st, c.fav, false, ROMUnknown) != (got == "") {
 			t.Errorf("%+v: Pass disagrees with Why %q", c.f, got)
 		}
 	}
 	var none *Filters
-	if none.Why(&r, &d, StatusNotFound, false, false) != "" || !none.Pass(&r, &d, StatusNotFound, false, false) {
+	if none.Why(&r, &d, StatusNotFound, false, false, ROMUnknown) != "" || !none.Pass(&r, &d, StatusNotFound, false, false, ROMUnknown) {
 		t.Fatal("nil filters hide nothing")
 	}
 	unknown := Derived{}
-	if got := (&Filters{MatchRotation: "h"}).Why(&r, &unknown, StatusCurrent, false, false); !strings.Contains(got, "unknown rotation") {
+	if got := (&Filters{MatchRotation: "h"}).Why(&r, &unknown, StatusCurrent, false, false, ROMUnknown); !strings.Contains(got, "unknown rotation") {
 		t.Fatalf("a row without a rotation: %q", got)
 	}
 }

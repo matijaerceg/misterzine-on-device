@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -412,5 +413,82 @@ func TestROMCheckQuickNoSignal(t *testing.T) {
 	case <-c.Ready():
 		t.Fatal("Ready fired for an answer Details already drew")
 	default:
+	}
+}
+
+// A sweep answers every MRA given, skips other files, leaves its answers
+// where Known and Details read them, reports progress and signals once at
+// the end; a second sweep ends the first.
+func TestROMSweep(t *testing.T) {
+	c := NewROMCheck(t.TempDir())
+	var mu sync.Mutex
+	var checked []string
+	c.run = func(rel string) ROMResult {
+		mu.Lock()
+		checked = append(checked, rel)
+		mu.Unlock()
+		if rel == "bad.mra" {
+			return ROMResult{"Missing game ROM: x.zip", true}
+		}
+		return ROMResult{}
+	}
+	finished := make(chan int, 1)
+	c.Sweep([]string{"ok.mra", "bad.mra", "core.rbf"}, func(n int, _ time.Duration) { finished <- n })
+	select {
+	case n := <-finished:
+		if n != 2 {
+			t.Fatalf("checked %d, want 2", n)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("sweep never finished")
+	}
+	select {
+	case <-c.Ready():
+	case <-time.After(time.Second):
+		t.Fatal("no Ready signal at the end of the sweep")
+	}
+	if r, ok := c.Known("bad.mra"); !ok || !r.Block {
+		t.Fatalf("bad.mra known %v %+v", ok, r)
+	}
+	if r, ok := c.Known("ok.mra"); !ok || r != (ROMResult{}) {
+		t.Fatalf("ok.mra known %v %+v", ok, r)
+	}
+	if _, ok := c.Known("core.rbf"); ok {
+		t.Fatal("a core file got a ROM answer")
+	}
+	if done, total := c.Progress(); done != 3 || total != 3 {
+		t.Fatalf("progress %d/%d", done, total)
+	}
+	// Details reads the sweep's answer without waiting
+	c.wait = 0
+	if got := c.Check("bad.mra", false); !got.Block {
+		t.Fatalf("Details did not get the swept answer: %+v", got)
+	}
+
+	// a slow sweep gives way to the next one
+	c.pace = 50 * time.Millisecond
+	c.run = func(string) ROMResult { return ROMResult{} }
+	first := make(chan int, 1)
+	c.Sweep([]string{"a.mra", "b.mra", "c.mra", "d.mra"}, func(n int, _ time.Duration) { first <- n })
+	time.Sleep(10 * time.Millisecond)
+	c.pace = 0
+	second := make(chan int, 1)
+	c.Sweep([]string{"e.mra"}, func(n int, _ time.Duration) { second <- n })
+	select {
+	case <-second:
+	case <-time.After(5 * time.Second):
+		t.Fatal("second sweep never finished")
+	}
+	select {
+	case n := <-first:
+		t.Fatalf("the first sweep ran to the end (%d) after a second began", n)
+	case <-time.After(300 * time.Millisecond):
+	}
+	if done, total := c.Progress(); done != 1 || total != 1 {
+		t.Fatalf("progress after the second sweep %d/%d", done, total)
+	}
+	var nilc *ROMCheck
+	if _, ok := nilc.Known("x.mra"); ok {
+		t.Fatal("nil checker knows something")
 	}
 }

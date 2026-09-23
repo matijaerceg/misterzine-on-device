@@ -230,7 +230,7 @@ func (a *App) facetCounts(kind string) map[string]int {
 			continue
 		}
 		unseen := a.seen != nil && a.seen.Unseen(r)
-		if f.Pass(r, d, a.status(i), a.cfg.Favorites[r.K], unseen) {
+		if f.Pass(r, d, a.status(i), a.cfg.Favorites[r.K], unseen, a.romState(i)) {
 			counts[value(r, d)]++
 		}
 	}
@@ -289,6 +289,34 @@ func (a *App) rawFilterEntries() []panelEntry {
 			cur = data.InstallAll
 		}
 		E = append(E, panelEntry{text: v.text, kind: "install", value: v.val, checked: cur == v.val, count: installCounts[v.val], showCount: counts[data.StatusUnknown] < a.total})
+	}
+	if a.cfg.ROMKnown != nil {
+		E = append(E, panelEntry{text: "ROM check", header: true, kind: "rom"})
+		romCounts := map[data.ROMState]int{}
+		for i := range a.ds.Rows {
+			if a.catalogueIncludes(&a.ds.Rows[i]) {
+				romCounts[a.romState(i)]++
+			}
+		}
+		checked := romCounts[data.ROMClean] + romCounts[data.ROMLaunchIssue] + romCounts[data.ROMOtherIssue]
+		cur := f.ROM
+		if cur == "" {
+			cur = data.ROMAll
+		}
+		for _, v := range []struct {
+			val, text string
+			n         int
+		}{{data.ROMAll, "everything", a.total}, {data.ROMLaunch, "problem in the version to launch", romCounts[data.ROMLaunchIssue]},
+			{data.ROMAny, "problem in any version", romCounts[data.ROMLaunchIssue] + romCounts[data.ROMOtherIssue]}, {data.ROMNone, "no problems found", romCounts[data.ROMClean]}} {
+			E = append(E, panelEntry{text: v.text, kind: "rom", value: v.val, checked: cur == v.val, count: v.n, showCount: checked > 0})
+		}
+		if a.cfg.ROMProgress != nil {
+			if done, total := a.cfg.ROMProgress(); done < total {
+				E = append(E, panelEntry{text: "checking " + itoa(done) + " of " + itoa(total) + " files" + gfx.Ellipsis, info: true})
+			} else if total == 0 {
+				E = append(E, panelEntry{text: "checked after the card scan", info: true})
+			}
+		}
 	}
 	E = append(E, panelEntry{text: "Since last look", header: true, kind: "since"})
 	if a.seen == nil || a.seen.BaseRows == nil {
@@ -704,7 +732,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, cols), gen.Eva.Muted)
 		case e.header:
 			c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, cols), gen.Eva.Accent)
-		case e.kind == "year" || e.kind == "decade" || e.kind == "res" || e.kind == "base" || e.kind == "beta" || e.kind == "src" || e.kind == "rot" || e.kind == "plr" || e.kind == "genre" || e.kind == "directions" || e.kind == "buttons" || e.kind == "install" || e.kind == "fav" || e.kind == "since" || e.kind == "view":
+		case e.kind == "year" || e.kind == "decade" || e.kind == "res" || e.kind == "base" || e.kind == "beta" || e.kind == "src" || e.kind == "rot" || e.kind == "plr" || e.kind == "genre" || e.kind == "directions" || e.kind == "buttons" || e.kind == "install" || e.kind == "rom" || e.kind == "fav" || e.kind == "since" || e.kind == "view":
 			mark := "[ ] "
 			if e.checked {
 				mark = "[x] "
@@ -1290,6 +1318,10 @@ func (a *App) togglePanel() bool {
 	case "install":
 		if !e.header {
 			f.Install = e.value
+		}
+	case "rom":
+		if !e.header {
+			f.ROM = e.value
 		}
 	case "fav":
 		if !e.header {

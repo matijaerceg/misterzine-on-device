@@ -234,6 +234,10 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 					L = append(L, paneLine{issue, gen.Eva.Warn})
 				}
 			}
+			// the other versions' problems, found by the background check
+			if bad, total := a.romVersions(row, entries); bad > 0 && total > 1 {
+				L = append(L, paneLine{"ROM problems in " + itoa(bad) + " of " + itoa(total) + " versions", gen.Eva.Warn})
+			}
 		}
 	}
 	prov := func(f string) rgb {
@@ -442,6 +446,11 @@ func (a *App) paintDetailVersion(c *gfx.Canvas) {
 		if !e.ok {
 			prefix = "- " + prefix
 			col = gen.Eva.Muted
+		} else if a.cfg.ROMKnown != nil {
+			// a version the background check found wanting says so
+			if text, _, known := a.cfg.ROMKnown(e.path); known && text != "" {
+				prefix = "! " + prefix
+			}
 		}
 		labelW := body.Dx() - a.sm.Width(count) - a.sm.W
 		text := prefix + label

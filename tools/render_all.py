@@ -10,10 +10,11 @@ scenarios = [
     ["-update-state", "testdata/update-completed.json", "-update-restart", "-rot", "left", "-logical", "-out", "out/update-restart-t", "-script", "shot restart"],
     ["-update-state", "testdata/update-completed.json", "-out", "out/update-completed-h", "-script", "shot completed"],
     ["-update-state", "testdata/update-completed.json", "-rot", "left", "-logical", "-out", "out/update-completed-t", "-script", "shot completed"],
+    # the list marks the row, Details counts the versions, Filters gains the ROM check section
     ["-data", "testdata/rom-warning.json", "-rom-issue", "Missing game ROM: jpark.zip", "-out", "out/missing-rom-h", "-script",
-     "enter; shot details; start; shot blocked"],
+     "shot list; enter; shot details; start; shot blocked; back; tab; down; right; shot filters; down*2; enter; shot rom-launch; back; shot rom-filtered"],
     ["-data", "testdata/rom-warning.json", "-rom-issue", "Missing game ROM: jpark.zip", "-rot", "left", "-logical", "-out", "out/missing-rom-t", "-script",
-     "enter; shot details; start; shot blocked"],
+     "shot list; enter; shot details; start; shot blocked; back; tab; down; right; shot filters; down*2; enter; shot rom-launch; back; shot rom-filtered"],
     # the longest wording, and tate at the widest inset: the zip must survive the notice's cut
     ["-data", "testdata/rom-warning.json", "-rom-issue", "Incomplete ROM: jpark.zip (no jp_ic1.bin)", "-out", "out/missing-rom-long-h", "-script",
      "enter; shot details; start; shot blocked"],
