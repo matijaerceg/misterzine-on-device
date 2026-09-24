@@ -28,6 +28,14 @@ direct_video=1
 vga_scaler=0
 ```
 
+Direct video ignores `video_mode` for the menu core and runs it at 240 lines,
+or 288 lines at 50 Hz with `menu_pal=1`. MisterZine fills either mode, at
+320x240 or 320x288, doubled across the line. Before v1.1.4 the 288-line mode
+got a 384-wide canvas that MiSTer could only place once, so the picture sat
+centred at 60% of the screen's width; on that version, `menu_pal=0` was the
+workaround for a TV that holds 60 Hz. The report's `INI:` line shows
+`menu_pal`.
+
 A CRT connected through a supported HDMI-to-VGA direct-video adapter already
 receives the direct-video output. Power off before changing between that adapter
 and a normal HDMI display. Keep the sync and RGB/YPbPr settings your CRT needs.

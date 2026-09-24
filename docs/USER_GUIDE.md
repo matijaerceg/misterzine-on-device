@@ -535,7 +535,9 @@ screenshots match, lettering runs instead and the Preview help explains why.
   middle and information on the far right. The narrow list keeps favorite
   stars and omits status/date columns. On 4:3 it retains the stacked arrangement.
   Tall tate Split and Picture layouts reserve the full caption area below
-  horizontal art. Low-resolution CRT modes retain their existing sizing.
+  horizontal art. Low-resolution CRT modes retain their existing sizing:
+  320x240 on a 240-line direct-video mode, 320x288 on the 288-line mode a
+  50 Hz menu (`menu_pal=1`) gives, each doubled across to fill the line.
   Unusual video timings that cannot fit a bounded canvas fall back to Fit 4:3.
   If a live switch fails, MisterZine attempts to restore the previous picture.
 - **Launch transition:** Always plays the cabinet animation on every launch.

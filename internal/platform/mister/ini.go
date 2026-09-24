@@ -17,6 +17,7 @@ type IniSettings struct {
 	VGAScaler   int    // 0/1
 	FBTerminal  int    // 1 default
 	VideoMode   string // raw value; a preset number, a modeline or empty
+	MenuPal     int    // 0/1: direct video runs the menu core at 50 Hz, 288 lines
 	Found       bool   // the file was read
 }
 
@@ -90,6 +91,7 @@ func ReadIni(path string) IniSettings {
 	s.VGAScaler = get("vga_scaler", 0)
 	s.FBTerminal = get("fb_terminal", 1)
 	s.VideoMode = values["video_mode"]
+	s.MenuPal = get("menu_pal", 0)
 	return s
 }
 

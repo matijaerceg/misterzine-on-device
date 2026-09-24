@@ -24,6 +24,28 @@ func FitCanvas(nativeW, nativeH int) (int, int) {
 	return 320, 240
 }
 
+// DirectVideoCanvas picks the canvas for a direct-video mode under 300
+// lines, where Main scales the framebuffer with a separate integer factor
+// per axis (video.cpp, fb_cmd1: divx and divy) instead of the one factor
+// FitCanvas assumes. The canvas keeps the mode's full height and takes the
+// widest width from 320 up to 400 that Main can multiply into the mode's
+// width: 320x288 on the 640x288 mode menu_pal=1 gives, doubled across to
+// fill the line. FitCanvas chose 384x288 there, which only fits 640 once and
+// left the picture centred at 60% of the width (report 9CPF, September
+// 2026). The 640x240 mode keeps 320x240, as before. A mode outside 240-300
+// lines, or too narrow for a 320-wide canvas, keeps FitCanvas.
+func DirectVideoCanvas(nativeW, nativeH int) (int, int) {
+	if nativeH < 240 || nativeH > 300 {
+		return FitCanvas(nativeW, nativeH)
+	}
+	for k := 1; nativeW/k >= 320; k++ {
+		if w := nativeW / k; w <= 400 {
+			return w &^ 3, nativeH
+		}
+	}
+	return FitCanvas(nativeW, nativeH)
+}
+
 // fbRequest is the framebuffer to ask Main for so that a canvas of
 // canvasW x canvasH keeps square pixels on the screen.
 //

@@ -5,7 +5,7 @@ import "testing"
 func TestFitCanvas(t *testing.T) {
 	for _, c := range []struct{ nw, nh, w, h int }{
 		{640, 240, 320, 240},   // 240p CRT (direct video)
-		{768, 288, 384, 288},   // 288p CRT
+		{640, 288, 384, 288},   // 288p CRT: one factor leaves 128 px bars; DirectVideoCanvas handles direct video
 		{640, 480, 320, 240},   // 480 CRT
 		{1280, 720, 320, 240},  // 720p: x3 fills already
 		{1920, 1080, 360, 270}, // 1080p: x4 = 1440x1080
@@ -35,6 +35,27 @@ func TestFitCanvas(t *testing.T) {
 	}
 }
 
+// Main's direct-video modes (video.cpp tvmodes): 640x240 at 60 Hz, 640x288
+// with menu_pal=1, and their scandoubled 480 and 576 line forms, which
+// Main scales with one factor and so keep FitCanvas.
+func TestDirectVideoCanvas(t *testing.T) {
+	for _, c := range []struct{ nw, nh, w, h int }{
+		{640, 240, 320, 240}, // x2 across, x1 down
+		{640, 288, 320, 288}, // x2 across fills the line; FitCanvas's 384 fits only once
+		{768, 288, 384, 288}, // x2 across
+		{720, 240, 360, 240},
+		{1024, 288, 340, 288}, // x3 = 1020
+		{640, 480, 320, 240},  // scandoubled: FitCanvas
+		{640, 576, 320, 240},  // scandoubled PAL: FitCanvas
+		{320, 240, 320, 240},
+		{300, 240, 320, 240}, // too narrow: FitCanvas
+	} {
+		if w, h := DirectVideoCanvas(c.nw, c.nh); w != c.w || h != c.h {
+			t.Errorf("DirectVideoCanvas(%d, %d) = %dx%d, want %dx%d", c.nw, c.nh, w, h, c.w, c.h)
+		}
+	}
+}
+
 // Every framebuffer Main can hand us (the output mode, halved above
 // 1920x1080 and halved again in height where the display repeats pixels).
 func TestFullCanvas(t *testing.T) {
@@ -55,7 +76,7 @@ func TestFullCanvas(t *testing.T) {
 		{720, 480, 360, 240},
 		{720, 576, 360, 288},
 		{640, 240, 320, 240},   // 240p CRT: FitCanvas
-		{768, 288, 384, 288},   // 288p CRT: FitCanvas
+		{640, 288, 384, 288},   // 288p CRT: FitCanvas (the host uses DirectVideoCanvas under direct video)
 		{860, 360, 320, 240},   // 3440x1440 repeated: under 480, so FitCanvas
 		{1919, 1079, 479, 269}, // an odd timing still fills
 	} {

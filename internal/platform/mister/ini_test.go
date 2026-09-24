@@ -24,6 +24,8 @@ func TestReadIniAppliesSectionsInFileOrderLikeMain(t *testing.T) {
 		// fb.go decides; this records the precedence, not an effect.
 		{"a later section still wins the value", "[MiSTer]\nvideo_mode=8\n[MisterZine]\nvideo_mode=14\n",
 			IniSettings{FBTerminal: 1, VideoMode: "14", Found: true}},
+		{"menu_pal is read", "[MiSTer]\ndirect_video=1\nmenu_pal=1\n",
+			IniSettings{DirectVideo: 1, MenuPal: 1, FBTerminal: 1, Found: true}},
 		{"a modeline keeps its flags", "[MiSTer]\nvideo_mode=1280,24,16,40,1440,3,5,33,120750,pr ; 1440p\n",
 			IniSettings{FBTerminal: 1, VideoMode: "1280,24,16,40,1440,3,5,33,120750,pr", Found: true}},
 		{"menu after misterzine wins", "[misterzine]\ndirect_video=1\n[Menu]\ndirect_video=0\n",

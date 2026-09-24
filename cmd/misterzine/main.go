@@ -47,6 +47,7 @@ type host struct {
 	pageLastAt                    time.Time
 	pageLastScreen                string
 	root, card                    string
+	directVideo                   bool // MiSTer.ini direct_video=1: Main scales a low-line framebuffer per axis
 	lg                            *log.Logger
 	console                       *mister.Console
 	cmd                           *mister.Cmd
@@ -169,8 +170,9 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		iniPath, iniAlt = mister.ActiveIni(card)
 	}
 	ini := mister.ReadIni(iniPath)
-	h.iniLine = fmt.Sprintf("%s alt=%d found=%v osd_rotate=%d direct_video=%d vga_scaler=%d fb_terminal=%d video_mode=%q analog-visible=%v",
-		filepath.Base(iniPath), iniAlt, ini.Found, ini.OSDRotate, ini.DirectVideo, ini.VGAScaler, ini.FBTerminal, ini.VideoMode, ini.AnalogVisible())
+	h.iniLine = fmt.Sprintf("%s alt=%d found=%v osd_rotate=%d direct_video=%d vga_scaler=%d fb_terminal=%d video_mode=%q menu_pal=%d analog-visible=%v",
+		filepath.Base(iniPath), iniAlt, ini.Found, ini.OSDRotate, ini.DirectVideo, ini.VGAScaler, ini.FBTerminal, ini.VideoMode, ini.MenuPal, ini.AnalogVisible())
+	h.directVideo = ini.DirectVideo == 1
 	lg.Printf("ini: %s", h.iniLine)
 	if ini.Found && !ini.AnalogVisible() {
 		if ini.DirectVideoAuto() {
@@ -214,13 +216,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	if h.appliedCanvas != "full" && h.appliedCanvas != "320x240" {
 		h.appliedCanvas = "fit"
 	}
-	choose := mister.FitCanvas
-	if h.settings.Canvas == "full" {
-		choose = mister.FullCanvas
-	} else if h.settings.Canvas == "320x240" {
-		choose = func(int, int) (int, int) { return 320, 240 }
-	}
-	if h.fb, err = mister.OpenFB(h.cmd, choose, ini.VideoMode, lg); err != nil {
+	if h.fb, err = mister.OpenFB(h.cmd, h.canvasChooser(h.appliedCanvas), ini.VideoMode, lg); err != nil {
 		lg.Printf("fb: %v", err)
 		return 3
 	}
