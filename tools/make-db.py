@@ -30,7 +30,6 @@ ASSETS = {
     "Scripts/MisterZine-Run.sh": ("deploy/Scripts/MisterZine-Run.sh", "MisterZine-Run.sh"),
     "Scripts/MisterZine-Setup.sh": ("deploy/Scripts/MisterZine-Setup.sh", "MisterZine-Setup.sh"),
     "Scripts/MisterZine-Uninstall.sh": ("deploy/Scripts/MisterZine-Uninstall.sh", "MisterZine-Uninstall.sh"),
-    "MisterZine.mgl": ("deploy/MisterZine.mgl", "MisterZine.mgl"),
     "misterzine/LICENSE": ("LICENSE", "LICENSE"),
     "misterzine/LICENSE-CATALOGUE": ("LICENSE-CATALOGUE", "LICENSE-CATALOGUE"),
     "misterzine/SPLEEN-LICENSE": ("internal/fonts/SPLEEN-LICENSE", "SPLEEN-LICENSE"),

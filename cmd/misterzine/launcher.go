@@ -443,6 +443,13 @@ func watch() int {
 	os.WriteFile(pidFile, []byte(strconv.Itoa(os.Getpid())), 0644)
 	defer removeWatcherPID(pidFile, os.Getpid())
 	lg.Printf("watch: started, pid %d", os.Getpid())
+	// The menu entry is Setup's to create, not the database's, so a card
+	// that has not run Setup shows no entry rather than one that loads the
+	// menu core over nothing. An update run removes the copy the database
+	// used to track, and the watcher that follows it puts the entry back.
+	if launcherEnabled() {
+		ensureMGL()
+	}
 	exe, _ := os.Executable()
 	runningBinary, _ := os.Stat("/proc/self/exe")
 	nextBinaryCheck := time.Now()

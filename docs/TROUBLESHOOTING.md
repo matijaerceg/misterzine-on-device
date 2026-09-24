@@ -174,8 +174,10 @@ Scripts launcher does not handle. Updating replaces them with the hyphenated nam
 ## Main-menu entry missing or not opening
 
 Run **MisterZine-Setup** in Scripts. It creates the menu entry and enables the
-startup helper. Setup is repeatable. If files are missing, run Downloader first.
-After a successful setup, return to the main menu and select MisterZine.
+startup helper. Downloader alone installs the files and no menu entry: a card
+that shows none has not run Setup yet, whichever installer put the files there.
+Setup is repeatable. If files are missing, run Downloader first. After a
+successful setup, return to the main menu and select MisterZine.
 
 An external updater can temporarily prevent the launcher from opening. Let it
 finish before trying again. Errors from the app wrapper show recent log lines
