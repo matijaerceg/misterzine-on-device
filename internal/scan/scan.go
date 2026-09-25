@@ -552,7 +552,7 @@ var headerText = map[string]bool{
 // <rom> is reported as unreadable, as before.
 func parseMRAResult(r io.Reader) (Alt, bool, error) {
 	var a Alt
-	dec := xml.NewDecoder(&commentStripper{br: bufio.NewReader(r)})
+	dec := xml.NewDecoder(&mraReader{br: bufio.NewReader(r)})
 	dec.Strict = false
 	dec.CharsetReader = func(charset string, input io.Reader) (io.Reader, error) { return input, nil }
 	depth := 0
@@ -686,17 +686,22 @@ func splitNames(s string) []string {
 	return parts
 }
 
-// commentStripper drops <!-- ... --> spans before the XML decoder sees them.
-// Go's decoder rejects "--" inside a comment whatever its Strict setting,
-// and some MRA sets (Seibu SPI) write comments that way; MiSTer loads them
-// fine. Newlines inside a comment pass through so line numbers in a later
-// syntax error still point at the file.
-type commentStripper struct {
-	br *bufio.Reader
-	in bool
+// mraReader hands an MRA to Go's XML decoder the way MiSTer's Main reads it.
+//
+// It drops <!-- ... --> spans: Go's decoder rejects "--" inside a comment
+// whatever its Strict setting, and some MRA sets (Seibu SPI) write comments
+// that way; MiSTer loads them fine. Newlines inside a comment pass through
+// so line numbers in a later syntax error still point at the file.
+//
+// Everything it hands on passes through fold, which lowercases element
+// names.
+type mraReader struct {
+	br   *bufio.Reader
+	in   bool
+	fold nameFolder
 }
 
-func (c *commentStripper) Read(p []byte) (int, error) {
+func (c *mraReader) Read(p []byte) (int, error) {
 	n := 0
 	for n < len(p) {
 		b, err := c.br.ReadByte()
@@ -705,7 +710,7 @@ func (c *commentStripper) Read(p []byte) (int, error) {
 		}
 		if c.in {
 			if b == '\n' {
-				p[n] = b
+				p[n] = c.fold.next(b)
 				n++
 			} else if b == '-' {
 				if peek, _ := c.br.Peek(2); string(peek) == "->" {
@@ -722,10 +727,121 @@ func (c *commentStripper) Read(p []byte) (int, error) {
 				continue
 			}
 		}
-		p[n] = b
+		p[n] = c.fold.next(b)
 		n++
 	}
 	return n, nil
+}
+
+// nameFolder lowercases the element names in a stream of XML, a byte at a
+// time and without looking ahead, so behind mraReader it sees exactly what
+// the decoder sees. Main compares element names without case, so a <rom>
+// closed by </ROM> loads on MiSTer (Space Demon and Space Firebird ship
+// that way), while Go's decoder, Strict or not, stops at an end tag that
+// differs from its start. What follows <! and <? is told apart and read
+// as Go's decoder reads it, and passes through as written, as do
+// attributes and text.
+type nameFolder struct {
+	state  int     // one of the fold states below
+	last   [2]byte // the two bytes before this one, latest first
+	dashes int     // in a comment: the dashes just seen, -1 before the second of <!--
+	quote  byte    // in a declaration: the open quote, or 0
+	depth  int     // in a declaration: its unclosed <
+}
+
+const (
+	foldText    = iota
+	foldOpen    // just after < or </
+	foldName    // in an element name, lowercased
+	foldBang    // just after <!
+	foldComment // <!-- -->, only ever formed by joining the text around a dropped one
+	foldCDATA   // <![CDATA[ ]]>
+	foldPI      // <? ?>
+	foldDecl    // <!DOCTYPE and the like
+)
+
+// next returns b as the decoder should see it. Text, the bulk of an MRA
+// with inline ROM data, takes the short way.
+func (f *nameFolder) next(b byte) byte {
+	if f.state == foldText && b != '<' {
+		return b
+	}
+	return f.step(b)
+}
+
+func (f *nameFolder) step(b byte) byte {
+	switch f.state {
+	case foldText:
+		if b == '<' {
+			f.state = foldOpen
+		}
+	case foldOpen:
+		switch b {
+		case '/':
+		case '?':
+			f.state = foldPI
+		case '!':
+			f.state = foldBang
+		default:
+			f.state = foldName
+		}
+	case foldBang:
+		// Go's decoder opens a comment or CDATA on this byte, or else
+		// takes it into the declaration unexamined. A <![ other than
+		// <![CDATA[, or <!- other than <!--, stops the decoder anyway.
+		switch b {
+		case '-':
+			f.state, f.dashes = foldComment, -1
+		case '[':
+			f.state = foldCDATA
+		default:
+			f.state, f.quote, f.depth = foldDecl, 0, 0
+		}
+	case foldComment:
+		switch {
+		case f.dashes < 0:
+			f.dashes = 0
+		case b == '-':
+			f.dashes++
+		case b == '>' && f.dashes >= 2:
+			f.state = foldText
+		default:
+			f.dashes = 0
+		}
+	case foldCDATA:
+		if b == '>' && f.last == [2]byte{']', ']'} {
+			f.state = foldText
+		}
+	case foldPI:
+		if b == '>' && f.last[0] == '?' {
+			f.state = foldText
+		}
+	case foldDecl:
+		switch {
+		case f.quote != 0:
+			if b == f.quote {
+				f.quote = 0
+			}
+		case b == '"' || b == '\'':
+			f.quote = b
+		case b == '<':
+			f.depth++
+		case b == '>' && f.depth == 0:
+			f.state = foldText
+		case b == '>':
+			f.depth--
+		}
+	}
+	if f.state == foldName {
+		switch {
+		case 'A' <= b && b <= 'Z':
+			b += 'a' - 'A'
+		case b == ' ' || b == '\t' || b == '\r' || b == '\n' || b == '>' || b == '/':
+			f.state = foldText
+		}
+	}
+	f.last = [2]byte{b, f.last[0]}
+	return b
 }
 
 // coreStem is a core name as it compares: lowercase, without its own

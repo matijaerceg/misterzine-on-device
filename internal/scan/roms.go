@@ -615,7 +615,7 @@ func parseROMSections(p string, inline bool) ([]romSection, string) {
 		return nil, "Cannot read game menu file"
 	}
 	defer f.Close()
-	dec := xml.NewDecoder(&commentStripper{br: bufio.NewReader(f)})
+	dec := xml.NewDecoder(&mraReader{br: bufio.NewReader(f)})
 	dec.Strict = false
 	dec.CharsetReader = func(_ string, r io.Reader) (io.Reader, error) { return r, nil }
 	var sections []romSection

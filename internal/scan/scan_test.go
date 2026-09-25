@@ -1,10 +1,13 @@
 package scan
 
 import (
+	"bufio"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"testing/iotest"
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
@@ -395,5 +398,43 @@ func TestParseMRAHeaderTolerantOfDashesInComments(t *testing.T) {
 	_, _, err := parseMRAResult(strings.NewReader("<misterromdescription>\n<!--\n\n-->\n<rbf>x</rbf><bad"))
 	if err == nil || !strings.Contains(err.Error(), "line 5") {
 		t.Fatalf("line number after comment: %v", err)
+	}
+}
+
+// Main compares element names without case, so an end tag in another case
+// than its start (Space Demon's </ROM>) must not end the header early.
+func TestParseMRAHeaderEndTagInOtherCase(t *testing.T) {
+	src := `<misterromdescription><Name>Space Demon</NAME><RBF>SpaceFirebird</rbf>
+<rom index="5"><PART>14 31 000000 028E9B</PART></ROM>
+<rom index="0" zip="spacedem.zip|spacefb.zip"><part name="sdm-c-5e"/></rom>
+<Year>1980</year></MISTERROMDESCRIPTION>`
+	a, ok := parseMRA(strings.NewReader(src))
+	if !ok || a.Name != "Space Demon" || a.RBF != "spacefirebird" || a.Year != "1980" ||
+		strings.Join(a.Zips, "|") != "spacedem.zip|spacefb.zip" {
+		t.Fatalf("parse = %+v %v", a, ok)
+	}
+}
+
+// The reader drops comments as it always has and then lowercases element
+// names only: attributes, text, CDATA, processing instructions and
+// declarations pass through as written, markup quoted inside them does not
+// fold, and names are found in what is left once comments are gone.
+func TestMRAReaderFoldsElementNames(t *testing.T) {
+	src := "<?XML version=\"1.0\"?><!DOCTYPE MRA [<!ENTITY E \"<X>\"><!-- <Y> -- -->]><A Zip=\"G.ZIP\">EF <B/><![CDATA[<C>]]></a\n>" +
+		"<!-- <D> -- --></Rom\t><?p <UPPER> <![CDATA[ ?><!-- -- --><E/>" +
+		"<Rom<!--\n-->zip=\"G.ZIP\"><?p ?<!-- -->><PART/>" +
+		"<!<!-- -->-- > <UPPER> --> <F/><!><UPPER/>> <G/>"
+	want := "<?XML version=\"1.0\"?><!DOCTYPE MRA [<!ENTITY E \"<X>\">]><a Zip=\"G.ZIP\">EF <b/><![CDATA[<C>]]></a\n>" +
+		"</rom\t><?p <UPPER> <![CDATA[ ?><e/>" +
+		"<rom\nzip=\"G.ZIP\"><?p ?><part/>" +
+		"<!-- > <UPPER> --> <f/><!><UPPER/>> <g/>"
+	// one byte per Read, and every alignment against the 16-byte buffer
+	for pad := 0; pad < 16; pad++ {
+		lead := strings.Repeat(" ", pad)
+		r := &mraReader{br: bufio.NewReaderSize(strings.NewReader(lead+src), 16)}
+		got, err := io.ReadAll(iotest.OneByteReader(r))
+		if err != nil || string(got) != lead+want {
+			t.Fatalf("pad %d: read %q, %v\nwant %q", pad, got, err, lead+want)
+		}
 	}
 }

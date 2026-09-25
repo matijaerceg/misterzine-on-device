@@ -95,6 +95,14 @@ func TestROMRequirements(t *testing.T) {
 			nil, "Missing game ROM: sound.zip", true},
 		{"comments", `<!-- invalid XML -- comment --><rom index="4" zip="jpark.zip"><part name="program"/></rom>`,
 			nil, "Missing game ROM: jpark.zip", true},
+		// Space Demon closes its sample sections with </ROM>; Main does not mind
+		{"end tag in other case", `<rom index="0" zip="g.zip"><part name="p1.bin"/></rom><rom index="5"><PART>00</PART></ROM><rom index="6"><PART>00</PART></ROM>`,
+			map[string][]member{"g.zip": {{name: "p1.bin", data: "x"}}}, "", false},
+		{"requirement after an end tag in other case", `<rom index="5"><PART>00</PART></ROM><Rom index="0" zip="g.zip"><Part name="p1.bin"/></rOM>`,
+			nil, "Missing game ROM: g.zip", true},
+		// the decoder's end tag still closes a part left open
+		{"unclosed part", `<ROM index="0" zip="g.zip"><Part name="p1.bin"></rom>`,
+			map[string][]member{"g.zip": {{name: "p1.bin", data: "x"}}}, "", false},
 
 		// looking inside
 		{"found by crc under another name", `<rom index="0" zip="g.zip"><part name="p1.bin" crc="` + prog + `"/></rom>`,
