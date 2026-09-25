@@ -55,6 +55,13 @@ var CoreNames = map[string]string{
 	"bagman":                   "Stern (Bagman HW)",
 	"bankpanic":                "Sega (Bank Panic)",
 	"blackwidow":               "Atari (Black Widow HW)",
+	"blahm1d_exidy440":         "Exidy 440",
+	"blahm1d_gladiator":        "Gladiator",
+	"blahm1d_tunit":            "Midway T Unit",
+	"blahm1d_tunitdcs":         "Midway T Unit (DCS)",
+	"blahm1d_wolfunit":         "Midway Wolf Unit",
+	"blahm1d_yunit":            "Midway Y Unit",
+	"blahm1d_yunitadpcm":       "Midway Y Unit (ADPCM)",
 	"blockade":                 "Gremlin (Blockade HW)",
 	"cave":                     "Cave 68000",
 	"cosmic":                   "Universal (Cosmic HW)",
@@ -135,6 +142,7 @@ var CoreNames = map[string]string{
 
 // SrcNames mirrors SRC_NAMES: pipeline source id to display name.
 var SrcNames = map[string]string{
+	"blahm1d":                            "blahm1d",
 	"coinop":                             "Coin-Op Collection",
 	"distribution_mister":                "MiSTer Distribution",
 	"jtbindb":                            "Jotego (JTcores)",
@@ -153,6 +161,7 @@ type SrcDB struct {
 
 // SrcDBs mirrors FT_SECTIONS and OPTIN_DBS: pipeline source id to its database.
 var SrcDBs = map[string]SrcDB{
+	"blahm1d":                            {Section: "blahm1d", URL: "https://mister.blahm1d.com/db.json.zip"},
 	"coinop":                             {Section: "Coin-OpCollection/Distribution-MiSTerFPGA", URL: ""},
 	"distribution_mister":                {Section: "distribution_mister", URL: ""},
 	"jtbindb":                            {Section: "jtcores", URL: ""},

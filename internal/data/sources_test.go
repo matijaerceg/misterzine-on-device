@@ -18,7 +18,7 @@ func TestHiddenSourcesFollowDownloaderDatabases(t *testing.T) {
 		{ID: "jtcores"},
 		{ID: "other/db", URL: "https://example.com/db.json.zip"},
 	})
-	if want := map[string]bool{"coinop": true, "kuzecores": true, "meathax": true, "rmcores": true, "slopcore": true, "theypsilon_unofficial_distribution": true}; !reflect.DeepEqual(got, want) {
+	if want := map[string]bool{"blahm1d": true, "coinop": true, "kuzecores": true, "meathax": true, "rmcores": true, "slopcore": true, "theypsilon_unofficial_distribution": true}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("hidden = %v, want %v", got, want)
 	}
 	// the db_url identifies a renamed section; the old Coin-Op name still counts
@@ -26,10 +26,10 @@ func TestHiddenSourcesFollowDownloaderDatabases(t *testing.T) {
 		{ID: "mine", URL: "https://raw.githubusercontent.com/meathax/meatcores/db/db.json.zip"},
 		{ID: "atrac17/coin-op_collection"},
 	})
-	if want := map[string]bool{"distribution_mister": true, "jtbindb": true, "kuzecores": true, "rmcores": true, "slopcore": true, "theypsilon_unofficial_distribution": true}; !reflect.DeepEqual(got, want) {
+	if want := map[string]bool{"blahm1d": true, "distribution_mister": true, "jtbindb": true, "kuzecores": true, "rmcores": true, "slopcore": true, "theypsilon_unofficial_distribution": true}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("hidden = %v, want %v", got, want)
 	}
-	got = HiddenSources([]DB{{ID: "distribution_mister"}, {ID: "jtcores"}, {ID: "coin-opcollection/distribution-misterfpga"}, {ID: "meathax/meatcores"}, {ID: "rmonic79/rmcores"}, {ID: "TheJesusFish/Slop-Core"}, {ID: "kuzearcade/kuzecores"}, {ID: "theypsilon_unofficial_distribution"}})
+	got = HiddenSources([]DB{{ID: "distribution_mister"}, {ID: "jtcores"}, {ID: "coin-opcollection/distribution-misterfpga"}, {ID: "meathax/meatcores"}, {ID: "rmonic79/rmcores"}, {ID: "TheJesusFish/Slop-Core"}, {ID: "kuzearcade/kuzecores"}, {ID: "blahm1d"}, {ID: "theypsilon_unofficial_distribution"}})
 	if got == nil || len(got) != 0 {
 		t.Fatalf("every database present must hide nothing: %v", got)
 	}
@@ -173,6 +173,32 @@ func TestKuzecoresSource(t *testing.T) {
 		t.Fatalf("source labels: %q %q", SrcShort(src), SrcFull(src))
 	}
 	for _, core := range []string{"Arcade-NMK16_Gunnail", "Arcade-NMK16_Macross2", "Arcade-NMK16_Raphero", "Arcade-NMK16_Afega"} {
+		if _, ok := gen.CoreNames[core]; !ok {
+			t.Errorf("%s: no core name from the site", core)
+		}
+	}
+}
+
+// blahm1d: the one database not hosted on GitHub; his downloader_blahm1d.ini
+// names the section [blahm1d] and the db_url below.
+func TestBlahm1dSource(t *testing.T) {
+	const src = "blahm1d"
+	for _, db := range []DB{
+		{ID: "blahm1d"},
+		{ID: "Blahm1d"},
+		{ID: "custom", URL: "https://mister.blahm1d.com/db.json.zip"},
+	} {
+		if HiddenSources([]DB{db})[src] {
+			t.Fatalf("installed source hidden: %+v", db)
+		}
+	}
+	if !HiddenSources([]DB{{ID: "distribution_mister"}})[src] {
+		t.Fatal("absent source must be hidden")
+	}
+	if SrcShort(src) != "blahm1d" || SrcFull(src) != "blahm1d" {
+		t.Fatalf("source labels: %q %q", SrcShort(src), SrcFull(src))
+	}
+	for _, core := range []string{"blahm1d_yunit", "blahm1d_tunit", "blahm1d_wolfunit", "blahm1d_exidy440"} {
 		if _, ok := gen.CoreNames[core]; !ok {
 			t.Errorf("%s: no core name from the site", core)
 		}

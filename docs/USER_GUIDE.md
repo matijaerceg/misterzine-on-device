@@ -396,7 +396,7 @@ and last row. Rows marked ↗ open another screen or editor.
   fills while held. Releasing early resets it.
 - **Sources:** all by default. Installed only shows games from the databases
   listed in the card's `downloader.ini`, the file Update All rewrites on every
-  run, so a source you never enabled (Coin-Op, Meathax, rmCores, Jotego, Slop Cores or kuzecores) stays out of
+  run, so a source you never enabled (Coin-Op, Meathax, rmCores, Jotego, Slop Cores, kuzecores or blahm1d) stays out of
   the list, search, Favorites and the Filters panel, and the release count
   leaves it out too. The file is read at every card scan: launch, Rescan card
   and the rescan after Update All. Without database sections Downloader
