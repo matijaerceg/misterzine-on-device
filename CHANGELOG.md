@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## v1.1.5 — 2026-09-25
+
+- Add blahm1d as a source. The site now tracks his database: Midway's Y, T, X and Wolf Unit boards (Smash T.V., Total Carnage, the Mortal Kombat games, NBA Jam, NBA Hangtime, Revolution X and more), Cruis'n USA, NARC, eleven Exidy 440 games, Gladiator, a bootleg of The Legend of Kage and Night Slashers, 38 games. They reach every version with the catalogue; this release adds the source to the generated tables. Its name, its `[blahm1d]` section and its db_url (`https://mister.blahm1d.com/db.json.zip`, the one tracked database not hosted on GitHub) let Installed only tell whether a card has it, where it used to leave his games visible on every card, and seven board names make Details read Midway Y Unit instead of Blahm1d_yunit. Confirmed on a DE10: with his database in place the 38 games show as current, and NARC (blahm1d) launched on his NARC core.
+- Count the databases in Downloader's drop-in files for Installed only. Downloader also reads every `downloader_*.ini` beside `downloader.ini` and every `.ini` in a `downloader` folder there, and blahm1d publishes his database as `downloader_blahm1d.ini` to copy to the card root, so a card that installed it that way would have had his games hidden under Installed only while they sat on the card. The drop-ins are read in Downloader's order, dotfiles skipped and `[mister]` ignored; a `downloader.ini` without database sections still stands for MiSTer Distribution beside them, and a drop-in without any `downloader.ini` leaves nothing hidden. Confirmed on a DE10 with his file in place.
+- Credits: Andrew Nolte, DecoyBacon, Leg E and The Shoe join the Patreon supporters.
+- Embedded catalogue snapshot refreshed (1,348 rows, 2026-09-25).
+
 ## v1.1.4 — 2026-09-24
 
 - Fill the width of a 50 Hz direct-video CRT. With `menu_pal=1` MiSTer runs the menu core at 288 lines and hands MisterZine a 640x288 framebuffer, and under direct video below 300 lines it scales that framebuffer with a separate whole-number factor per axis. The Fit rule chose a 384x288 canvas there, which fits the line only once, so the picture sat centred at 60% of the screen's width with black at both sides; a report from a DE10 on RGB SCART showed the mode. A direct-video mode from 240 to 300 lines now keeps its height and takes the widest canvas from 320 to 400 that MiSTer can multiply into the line: 320x288 at 50 Hz, doubled across, and the same 320x240 as before at 60 Hz. Full display follows the same rule on those modes. The INI summary in the log and in Send a report now includes `menu_pal`, and Troubleshooting names `menu_pal=0` as the workaround on earlier versions for a TV that holds 60 Hz. Confirmed on a MiSTer Pi at 50 Hz. Thanks to fandenivoldsk for reporting it.
