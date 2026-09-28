@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/app"
+	"github.com/matijaerceg/misterzine-on-device/internal/beta"
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/images"
@@ -75,7 +76,9 @@ func main() {
 	arcadeIntro := flag.Bool("arcade-intro", false, "show upgrade explanation")
 	splash := flag.Bool("splash", false, "show the startup logo fade")
 	localPath := flag.String("local", "", "local rows fixture (a data.json-shaped array of rows the card scan would add)")
+	betaBuild := flag.Bool("beta", false, "render the Patreon beta build (MisterZine Arcade) instead of the free one")
 	flag.Parse()
+	beta.Set(*betaBuild)
 
 	rows, meta := load(*dataPath, *metaPath)
 	if *localPath != "" {
