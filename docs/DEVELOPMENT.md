@@ -12,6 +12,7 @@ GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go vet ./...
 GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o dist/misterzine ./cmd/misterzine
 python3 tools/test_maintenance.py
 python3 tools/test_package.py
+python3 tools/test_channel.py
 python3 tools/test_wrapper.py
 python3 tools/test_snapshot.py
 node --test tools/sort_golden.test.js
@@ -32,6 +33,15 @@ python3 tools/test_downloader_integration.py /path/to/downloader_latest.zip dist
 This uses temporary card directories. Only HTTP transport is replaced with
 fixture bytes; Downloader's URL validation, hash checks, file operations and
 local registration/removal run normally. It does not run a real system update.
+
+`tools/test_channel.py` runs the move between the free MisterZine and
+MisterZine Arcade, the Patreon beta, on fixture cards: `deploy/channel.py`,
+which repoints the `misterzine` Downloader entry, and the generated
+MisterZine-Install-Beta and MisterZine-Switch-To-Free scripts that carry it.
+A beta release directory as a third argument to the integration test above
+also moves a card from the free package to the beta and back through the real
+Downloader. Beta releases are described in
+[RELEASING.md](RELEASING.md#beta-releases).
 
 ## Visual checks
 
