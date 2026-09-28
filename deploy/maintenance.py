@@ -11,7 +11,9 @@ import time
 import zipfile
 
 STARTUP_LINE = "[[ -e /media/fat/misterzine/misterzine ]] && /media/fat/misterzine/misterzine launcher start"
-SAVED_FILES = ("favorites.json", "settings.json", "state.json")
+# Kept with "Keep favorites and preferences"; beta-unlocks holds the Patreon
+# beta's saved unlocks, so a reinstalled beta does not ask for its code again.
+SAVED_FILES = ("favorites.json", "settings.json", "state.json", "beta-unlocks")
 UPDATERS = {
     "update.sh", "update_all.sh", "update_all.pyz", "downloader.sh",
     "downloader_bin", "downloader_latest.zip", "ua_downloader_bin",
@@ -140,9 +142,10 @@ def uninstall(card, keep, run=subprocess.run, proc_root=Path("/proc")):
     if result.returncode:
         raise RuntimeError("Downloader did not finish removal. Local saved data was kept. Fix the reported problem and retry; Setup can restore the menu entry.")
     clean_local_files(card, keep)
-    # Also remove pre-release/manual launcher entries, which might not be in
+    # Also remove the main-menu entries (the free build's and the Patreon
+    # beta's) and pre-release/manual launcher entries, which might not be in
     # Downloader's store. These exact paths belong to MisterZine.
-    for relative in ("MisterZine.mgl", "misterzine.mgl", "Scripts/misterzine.sh",
+    for relative in ("MisterZine.mgl", "misterzine.mgl", "MisterZine Arcade.mgl", "Scripts/misterzine.sh",
                      "Scripts/MisterZine-Run.sh", "Scripts/MisterZine-Setup.sh", "Scripts/MisterZine-Uninstall.sh",
                      "Scripts/MisterZine Setup.sh", "Scripts/MisterZine Uninstall.sh"):
         path = card / relative

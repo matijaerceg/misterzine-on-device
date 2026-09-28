@@ -32,8 +32,13 @@ class RemovalTest(unittest.TestCase):
             (self.app / name).write_bytes(("original " + name).encode())
         (self.app / "shots").mkdir()
         (self.app / "shots/a.png").write_bytes(b"cached picture")
+        (self.app / "beta-unlocks").mkdir()
+        (self.app / "beta-unlocks/arcade-1-0123.receipt").write_bytes(b"unlocked\n")
         (self.app / "misterzine").write_bytes(b"binary")
         (self.card / "unrelated.txt").write_bytes(b"keep")
+        # the main-menu entries of both builds
+        for name in ("MisterZine.mgl", "MisterZine Arcade.mgl"):
+            (self.card / name).write_bytes(b"<mistergamedescription/>")
         self.calls = []
 
     def downloader(self, args, **kwargs):
@@ -46,7 +51,8 @@ class RemovalTest(unittest.TestCase):
     def test_keep_preserves_originals_and_recovery_files(self):
         maintenance.uninstall(self.card, True, run=self.downloader, proc_root=self.proc)
         self.assertEqual(sorted(p.name for p in self.app.iterdir()),
-                         ["favorites.json", "favorites.json.bad", "settings.json", "state.json"])
+                         ["beta-unlocks", "favorites.json", "favorites.json.bad", "settings.json", "state.json"])
+        self.assertEqual((self.app / "beta-unlocks/arcade-1-0123.receipt").read_bytes(), b"unlocked\n")
         self.assertEqual((self.app / "favorites.json").read_bytes(), b"original favorites.json")
         self.assertEqual((self.app / "state.json").read_bytes(), b"original state.json")
         self.assertEqual(self.startup.read_bytes(), self.other_hook)
@@ -56,6 +62,8 @@ class RemovalTest(unittest.TestCase):
     def test_remove_everything_stays_inside_app_directory(self):
         maintenance.uninstall(self.card, False, run=self.downloader, proc_root=self.proc)
         self.assertFalse(self.app.exists())
+        self.assertFalse((self.card / "MisterZine.mgl").exists())
+        self.assertFalse((self.card / "MisterZine Arcade.mgl").exists())
         self.assertTrue(self.archive.exists())
         self.assertEqual((self.card / "unrelated.txt").read_bytes(), b"keep")
 

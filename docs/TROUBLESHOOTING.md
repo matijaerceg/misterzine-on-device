@@ -89,8 +89,9 @@ direct_video=1
 vga_scaler=0
 ```
 
-MisterZine.mgl loads the menu core under the name `misterzine`, and Main applies
-every section matching either name in file order, so `[MisterZine]` overrides
+MisterZine.mgl (MisterZine Arcade.mgl in the Patreon beta) loads the menu core
+under the name `misterzine`, and Main applies every section matching either
+name in file order, so `[MisterZine]` overrides
 `[Menu]` only while MisterZine is open; quitting restores the menu on HDMI. Put
 `osd_rotate` there as well if only MisterZine runs on a rotated CRT: Follow INI
 rotation reads the same sections Main does. The section must come after
