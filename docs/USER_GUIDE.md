@@ -2,6 +2,10 @@
 
 ## Installation
 
+First, [set up your display](DISPLAY_SETUP.md) for your connection and restart
+MiSTer if you change MiSTer.ini. Games displaying correctly does not always
+mean MisterZine's screen output is configured.
+
 The recommended installation uses the downloadable `downloader_misterzine.ini`
 file. Keep it beside `downloader.ini` on the card, run Update All/Downloader,
 then run **MisterZine-Setup** from Scripts once. Setup enables the **MisterZine**
