@@ -1,15 +1,21 @@
-**Clearer ROM warnings**
+**Browse by core**
+
+Press Y until the top bar reads **by: core**, and the list groups your games under the core that runs them: Capcom CPS-1, Sega System 16B, Mitchell (Pang) and so on, with L and R jumping from one core to the next. Cores that only run one game share a single group at the end.
+
+MisterZine now appears in the MiSTer main menu as **MisterZine Arcade**. The entry renames itself after the update. An NFC tag or `bootcore` setting that pointed at `MisterZine.mgl` needs the new name.
+
+**Added**
+
+- A 10 Hz scroll speed, in Options -> Controls -> Scroll speed.
+- Rescan card, and the card scan at the end of Update All, say how many releases just became up to date.
 
 **Fixed**
 
-- A wrong ROM version warning shows the file's checksum and the one the game expects, and says when MiSTer never reaches the right file because an earlier zip has one of the same name. Thanks to ac3 for reporting it.
-- A game file MisterZine cannot fully read now only gets a warning instead of being refused, since MiSTer may well load it.
-- Space Demon and Space Firebird start again. Thanks to dh3lix for reporting it.
-- Coin-Op's beta Black Heart no longer shows as installed when the Black Heart on your card is Kuze's free one: game details say whose version is there. The same goes for Wardner.
-- Filters -> On the card and ROM check counts now follow your search and other filters.
-- A game named like another one in the list, such as Midway's cocktail Space Invaders Part II, shows what sets it apart.
-- A damaged or vanished file on the card no longer marks every card scan incomplete.
+- Changing the layout with Select+Y moves evenly and lands without a jump.
+- In the Picture layout, the game details stay put as you scroll between horizontal and vertical games.
+- The top bar shows the new view straight away when you press Y right after changing the layout.
+- Arcade Offset's Street Fighter III 3rd Strike hacks count as beta games, and its The Simpsons (2 Players Free Play) starts without Jotego's beta key.
 
-Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v116--2026-09-28).
+Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v120--2026-09-28).
 Existing installations update through Update All, or through Update MisterZine only. New installation:
 [installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once).

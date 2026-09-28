@@ -5,7 +5,7 @@ import "github.com/matijaerceg/misterzine-on-device/internal/beta"
 
 // Set with -ldflags "-X .../buildinfo.Version=v0.1.0 -X .../buildinfo.Commit=abc -X .../buildinfo.Date=2026-09-08".
 var (
-	Version = "v1.1.6"
+	Version = "v1.2.0"
 	Commit  = ""
 	Date    = ""
 )
