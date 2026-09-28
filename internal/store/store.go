@@ -29,7 +29,7 @@ type Settings struct {
 	InstalledOnly        bool          `json:"installed_sources_only"` // Options -> Sources: installed only
 	Inset                int           `json:"inset"`
 	Prefetch             bool          `json:"prefetch"`
-	Scroll               string        `json:"scroll"` // rows per second: 20, 30, 60
+	Scroll               string        `json:"scroll"` // rows per second: 20, 30, 60, or the beta's 10
 	HoldDelay            int           `json:"hold_delay_ms"`
 	SaverDisabled        bool          `json:"screensaver_disabled"`
 	Screensaver          string        `json:"screensaver_minutes"`
@@ -112,7 +112,7 @@ func LoadSettings(path string) (Settings, error) {
 
 // Migrate brings an older settings file up to date: the single inset
 // becomes two (when legacy says the file predates the split), and the
-// speed adjectives become rows per second.
+// speed adjectives become rows per second (an unknown speed the default).
 func (s *Settings) Migrate(legacy bool) {
 	if s.Canvas != "full" && s.Canvas != "320x240" {
 		s.Canvas = "fit" // includes old empty/invalid saved values
@@ -164,12 +164,14 @@ func (s *Settings) Migrate(legacy bool) {
 		s.InsetX, s.InsetY = s.Inset, s.Inset
 	}
 	switch s.Scroll {
+	case "10", "20", "30", "60":
+		// 10 is the beta's; the free build reads it as its nearest speed, 20
 	case "normal":
 		s.Scroll = "20"
-	case "fast", "":
-		s.Scroll = "30"
 	case "turbo":
 		s.Scroll = "60"
+	default: // "fast", empty or unknown
+		s.Scroll = "30"
 	}
 }
 

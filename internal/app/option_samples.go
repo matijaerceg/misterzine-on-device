@@ -88,8 +88,10 @@ func (a *App) paintOptionSamples(c *gfx.Canvas, area image.Rectangle, e panelEnt
 	if e.kind != "title-font" && a.optionSamples.kind != e.kind {
 		a.tickOptionSamples()
 	}
-	for i := 0; i < 3; i++ {
-		cell := image.Rect(area.Min.X+3+i*(area.Dx()-6)/3, area.Min.Y+3, area.Min.X+3+(i+1)*(area.Dx()-6)/3-2, area.Max.Y-3)
+	// a cell per choice: three, or the beta's four scroll speeds
+	n := len(e.vals)
+	for i := 0; i < n; i++ {
+		cell := image.Rect(area.Min.X+3+i*(area.Dx()-6)/n, area.Min.Y+3, area.Min.X+3+(i+1)*(area.Dx()-6)/n-2, area.Max.Y-3)
 		if e.kind != "title-font" {
 			c.Fill(cell, gen.Eva.Bg)
 		}
@@ -110,7 +112,7 @@ func (a *App) paintOptionSamples(c *gfx.Canvas, area image.Rectangle, e panelEnt
 			}
 			continue
 		}
-		pace, delay := scrollPace(ScrollValues[i]), time.Duration(0)
+		pace, delay := scrollPace(ScrollValues()[i]), time.Duration(0)
 		if e.kind == "hold-delay" {
 			pace = scrollPace(a.ScrollSpeed())
 			delay = time.Duration([]int{200, 300, 500}[i]) * time.Millisecond
