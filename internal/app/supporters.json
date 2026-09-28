@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-25",
+  "updated": "2026-09-28",
   "current": [
     {
       "name": "Adam Hepton",
@@ -22,6 +22,10 @@
       "since": "2026-09"
     },
     {
+      "name": "Ben",
+      "since": "2026-09"
+    },
+    {
       "name": "Bob",
       "since": "2026-09"
     },
@@ -34,6 +38,10 @@
       "since": "2026-09"
     },
     {
+      "name": "Christopher Green",
+      "since": "2026-09"
+    },
+    {
       "name": "Christopher K Sands",
       "since": "2026-09"
     },
@@ -42,7 +50,15 @@
       "since": "2026-09"
     },
     {
+      "name": "Ethan Dahlstrom",
+      "since": "2026-09"
+    },
+    {
       "name": "fandenivoldsk",
+      "since": "2026-09"
+    },
+    {
+      "name": "Infamous",
       "since": "2026-09"
     },
     {
@@ -54,11 +70,27 @@
       "since": "2026-09"
     },
     {
+      "name": "Jeremy Zeleke",
+      "since": "2026-09"
+    },
+    {
+      "name": "John Stromme",
+      "since": "2026-09"
+    },
+    {
       "name": "kobiyashi",
       "since": "2026-09"
     },
     {
       "name": "Leg E",
+      "since": "2026-09"
+    },
+    {
+      "name": "Lemonardo",
+      "since": "2026-09"
+    },
+    {
+      "name": "Luke Boyce",
       "since": "2026-09"
     },
     {
@@ -102,6 +134,14 @@
       "since": "2026-09"
     },
     {
+      "name": "Sky B",
+      "since": "2026-09"
+    },
+    {
+      "name": "ThatsaVidyaGame",
+      "since": "2026-09"
+    },
+    {
       "name": "The Shoe",
       "since": "2026-09"
     },
@@ -111,6 +151,10 @@
     },
     {
       "name": "Tom Quarterman",
+      "since": "2026-09"
+    },
+    {
+      "name": "Wolfgang Wolfgang",
       "since": "2026-09"
     }
   ],
