@@ -261,6 +261,8 @@ type App struct {
 	filterHeld     *panelState
 	notice         string
 	until          time.Time
+	noticeOver     noticeBar  // what the notice covers, as it reads without it (notice.go)
+	noticeRead     bool       // noticeOver is read: the notice has been up on its bar
 	net            string     // connection failures in the status bar
 	catalogChecked time.Time  // last successful catalog check this session
 	supporters     Supporters // Patreon supporters for the Credits page
@@ -689,10 +691,12 @@ func (a *App) SetFilters(f data.Filters) {
 	}
 }
 
-// Notice shows a short message in the status bar.
+// Notice shows a short message in the status bar, until it expires or a
+// press changes what the bar would say without it (notice.go).
 func (a *App) Notice(s string, d time.Duration) {
 	a.notice = s
 	a.until = a.cfg.TimerNow().Add(d)
+	a.noticeRead = false // its bar is read once whatever set it is done (notice.go)
 	if a.cab.launched {
 		a.cab.stopAhead()
 		a.cab = launchCab{} // the launch failed: the page comes back with the notice
@@ -776,8 +780,11 @@ func (a *App) ensureVisible() {
 // Handle applies one key event and returns true when a repaint is needed.
 // A press for a key that is already down is ignored: a keyboard encoder
 // that Main also translates delivers every press twice (raw and through the
-// virtual keyboard), and this folds the pair into one.
-func (a *App) Handle(ev platform.Event) bool {
+// virtual keyboard), and this folds the pair into one. A notice gives
+// way once the event changes what its bar would say (notice.go).
+func (a *App) Handle(ev platform.Event) (repaint bool) {
+	a.readNoticeBar()
+	defer func() { repaint = a.settleNotice() || repaint }()
 	ev = a.padEvent(ev) // a pad whose OK button is B trades Enter and back
 	if a.handleLaunchCab(ev) {
 		return true
@@ -952,8 +959,10 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 }
 
 // Tick runs due repeats and expires notices; returns true to repaint.
-func (a *App) Tick(now time.Time) bool {
-	changed := a.tickPageTransition(now)
+func (a *App) Tick(now time.Time) (changed bool) {
+	a.readNoticeBar()
+	defer func() { changed = a.settleNotice() || changed }() // a held key's repeats count as presses
+	changed = a.tickPageTransition(now)
 	changed = a.tickHoldLaunch(now) || changed
 	changed = a.tickLaunchCab(now) || changed
 	changed = a.tickLayoutMotion(now) || changed
@@ -992,9 +1001,11 @@ func (a *App) Tick(now time.Time) bool {
 
 // Frame is Tick for the vsync-driven loop the host runs while a key is
 // held: called once per frame, it moves at most one step.
-func (a *App) Frame(now time.Time) bool {
+func (a *App) Frame(now time.Time) (changed bool) {
+	a.readNoticeBar()
+	defer func() { changed = a.settleNotice() || changed }()
 	a.saver.lastInput = now // a held direction is still activity
-	changed := a.tickPageTransition(now)
+	changed = a.tickPageTransition(now)
 	changed = a.tickHoldLaunch(now) || changed
 	changed = a.tickLaunchCab(now) || changed
 	changed = a.tickLayoutMotion(now) || changed

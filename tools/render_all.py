@@ -243,6 +243,12 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                       "-out", f"out/quick-{orientation}", "-script",
                       "press select; shot chord-legend; space; shot layout-split; space; shot layout-picture; space; shot layout-text; space; "
                       "tab; shot shots-title; enter; shot favorite-added; release select; shot released; space; shot sorted"])
+    # a notice gives way as soon as a press changes the bar under it: Y
+    # right after Select+Y names the new view, a letter typed over a jump's
+    # month shows the search
+    scenarios.append([*rotation,
+                      "-out", f"out/notice-yield-{orientation}", "-script",
+                      "press select; space; release select; shot layout; space; shot view; pagedown; shot month; type g; shot find"])
     # MisterZine Arcade (beta): the layout motion steps once per displayed
     # frame, so 100 ms after Select+Y is exactly halfway (step 6 of 12), and
     # its last frame is the settled layout

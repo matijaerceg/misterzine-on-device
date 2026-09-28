@@ -75,63 +75,88 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 	}
 	y := st.Min.Y + 2
 	if a.notice != "" {
-		// Notices (including the month/year after a jump) remain visible while
-		// searching; the query/count comes back when the notice expires.
+		// A notice covers the bar until it expires or a press changes what
+		// the bar says under it (notice.go): typing a search brings the
+		// query and its count back at once, even over a jump's month.
 		c.Text(st.Min.X+2, y, a.sm, gfx.Fit(a.notice, a.sm.Cols(st.Dx()-4)), gen.Eva.Fg)
 		return
 	}
-	if a.query != "" {
-		count := itoa(len(a.view)) + " matches"
+	s := a.statusBar()
+	if s.query != "" {
+		count := itoa(s.shown) + " matches"
 		c.TextRight(st.Max.X-2, y, a.sm, count, gen.Eva.Muted)
 		cols := a.sm.Cols(st.Dx()-8-a.sm.Width(count)) - len("Find: ") - 1
-		query := a.query
+		query := s.query
 		if len(query) > cols {
 			query = query[len(query)-max(0, cols):]
 		}
 		c.Text(st.Min.X+2, y, a.sm, "Find: "+query+"_", gen.Eva.Accent)
 		return
 	}
-	left := "by: build date"
-	if a.mode == data.SortDebut {
-		left = "by: MiSTer debut"
-	} else if a.mode == data.SortYear {
-		left = "by: original year"
-	} else if a.mode == data.SortAlphabetical {
-		left = "by: A-Z"
-	} else if a.mode == data.SortMaker {
-		left = "by: manufacturer"
-	} else if a.mode == data.SortCore {
-		left = "by: core"
-	} else if a.mode == data.SortFavorites {
-		left = "Favorites A-Z"
-	} else if a.mode == data.SortRecents {
-		left = "Recents"
-	}
-	if a.appUpdate != "" {
-		// Reserve space for a persistent app notice even on narrow tate screens.
-		left = map[data.SortMode]string{data.SortUpdated: "Build date", data.SortDebut: "MiSTer debut", data.SortYear: "Original year", data.SortAlphabetical: "A-Z", data.SortMaker: "Manufacturer A-Z", data.SortCore: "Core A-Z", data.SortFavorites: "Favorites A-Z", data.SortRecents: "Recents"}[a.mode]
+	left := s.view
+	if s.update {
 		c.Text(st.Min.X+2, y, a.sm, left, gen.Eva.Accent)
 		c.TextRight(st.Max.X-2, y, a.sm, "App update", gen.Eva.Accent)
 		return
 	}
-	count := itoa(a.total) + " releases"
-	if a.filtersActive() || a.mode == data.SortFavorites || a.mode == data.SortRecents {
-		count = itoa(len(a.view)) + " of " + itoa(a.total) + " releases"
+	count := itoa(s.total) + " releases"
+	if s.narrow {
+		count = itoa(s.shown) + " of " + itoa(s.total) + " releases"
 	}
 	c.Text(st.Min.X+2, y, a.sm, left, gen.Eva.Accent)
 	x := st.Min.X + 2 + a.sm.Width(left) + a.sm.W*2
 	if a.sm.Width(count) > st.Max.X-2-x {
-		count = itoa(a.total)
-		if a.filtersActive() || a.mode == data.SortFavorites || a.mode == data.SortRecents {
-			count = itoa(len(a.view)) + "/" + count
+		count = itoa(s.total)
+		if s.narrow {
+			count = itoa(s.shown) + "/" + count
 		}
 	}
 	count = gfx.Fit(count, a.sm.Cols(st.Max.X-2-x))
 	c.Text(x, y, a.sm, count, gen.Eva.Muted)
 	left += "  " + count
-	if a.net != "" {
-		c.TextRight(st.Max.X-2, y, a.sm, gfx.Fit(a.net, a.sm.Cols(st.Dx()-a.sm.Width(left)-8)), gen.Eva.Fg)
+	if s.net != "" {
+		c.TextRight(st.Max.X-2, y, a.sm, gfx.Fit(s.net, a.sm.Cols(st.Dx()-a.sm.Width(left)-8)), gen.Eva.Fg)
 	}
+}
+
+// statusBar is what the list's status bar says when no notice covers it:
+// a search and its match count; or the view's name with the release count
+// and the connection text; or, with an app update waiting, the view's
+// short name and App update. It holds only what shows, fitted to the bar
+// by paintStatus, so a notice can tell when that changes (notice.go).
+type statusBar struct {
+	query  string // the search, "" when none
+	view   string // the view's name
+	shown  int    // a search's matches, or the rows a narrowed view shows
+	total  int    // the releases
+	narrow bool   // the count reads shown of total
+	update bool   // App update on the right
+	net    string // the connection text on the right
+}
+
+// statusViews name the views in the status bar; the build date view is
+// the one missing. statusViewsShort are the names beside App update:
+// they leave it room even on narrow tate screens.
+var (
+	statusViews      = map[data.SortMode]string{data.SortDebut: "by: MiSTer debut", data.SortYear: "by: original year", data.SortAlphabetical: "by: A-Z", data.SortMaker: "by: manufacturer", data.SortCore: "by: core", data.SortFavorites: "Favorites A-Z", data.SortRecents: "Recents"}
+	statusViewsShort = map[data.SortMode]string{data.SortUpdated: "Build date", data.SortDebut: "MiSTer debut", data.SortYear: "Original year", data.SortAlphabetical: "A-Z", data.SortMaker: "Manufacturer A-Z", data.SortCore: "Core A-Z", data.SortFavorites: "Favorites A-Z", data.SortRecents: "Recents"}
+)
+
+func (a *App) statusBar() statusBar {
+	if a.query != "" {
+		return statusBar{query: a.query, shown: len(a.view)}
+	}
+	if a.appUpdate != "" {
+		return statusBar{view: statusViewsShort[a.mode], update: true}
+	}
+	s := statusBar{view: "by: build date", total: a.total, net: a.net}
+	if v, ok := statusViews[a.mode]; ok {
+		s.view = v
+	}
+	if a.filtersActive() || a.mode == data.SortFavorites || a.mode == data.SortRecents {
+		s.shown, s.narrow = len(a.view), true
+	}
+	return s
 }
 
 // paintHint draws the bottom hint bar. Chunks are separated by two spaces;

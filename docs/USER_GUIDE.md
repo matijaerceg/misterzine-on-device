@@ -244,7 +244,10 @@ while it is down every other button waits, so nothing moves or launches by
 accident. Layout, Art type and Rotation are saved, and all three are also in
 Options. A turn made this way stops the display following the MiSTer INI
 (Options -> Display -> Follow INI rotation goes off) and the notice says so;
-turn Follow INI rotation back on to return to the INI's setting. The
+turn Follow INI rotation back on to return to the INI's setting. A chord
+names its new setting in the top bar for a moment; that notice, like any
+other there, gives way at once to a press that changes what the bar shows,
+such as Y changing the view or a letter typed for a search. The
 Text layout shows no pictures, so X is left out of the legend and does
 nothing there; Art type is still in Options, ready for the layouts that do.
 Only a pad defined in MiSTer has a Select.
