@@ -990,6 +990,7 @@ func (a *App) Frame(now time.Time) bool {
 	changed = a.tickHoldLaunch(now) || changed
 	changed = a.tickLaunchCab(now) || changed
 	changed = a.tickLayoutMotion(now) || changed
+	changed = a.LayoutMotionFrame() || changed
 	changed = a.tickSplash(now) || changed
 	changed = a.tickMenu(now) || changed
 	changed = a.tickArcadeIntro(now) || changed
@@ -1236,6 +1237,12 @@ func (a *App) Invalidate() {
 		a.transition.pending = true
 		return
 	}
+	if m := &a.layoutMotion; m.active && m.framed {
+		// mid-motion a full repaint would cost a frame: the motion takes a
+		// picture that landed on its next frame, and its end repaints all
+		m.landed = true
+		return
+	}
 	a.all = true
 	if a.screen == ScreenOptions || a.screen == ScreenSaverOptions {
 		a.buildPanel() // the prefetch tally and screenshot availability
@@ -1277,6 +1284,9 @@ func (a *App) neighbourhood() {
 	box := a.lay.Thumb
 	if box.Empty() {
 		return // the text layout shows no pictures
+	}
+	if m := &a.layoutMotion; m.active && m.framed {
+		return // the decoder takes the destination picture alone while the layout moves
 	}
 	for d := 1; d <= 16; d++ {
 		for _, pos := range []int{a.cursor + d, a.cursor - d} {

@@ -192,6 +192,14 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "-out", f"out/beta-mark-{orientation}-{layout}", "-script", "shot list"])
     scenarios.append([*rotation, "-beta", "-inset", "40", "-app-update", "v1.0.6",
                       "-out", f"out/beta-mark-{orientation}-40", "-script", "shot update; type 1943; shot find"])
+    for name, size in (("", []), ("-40", ["-inset", "40"]), ("-400x300", ["-canvas", "400x300"])):
+        # MisterZine Arcade (beta): the picture layout's text keeps one column
+        # whether the shot is horizontal, vertical (centred in its box) or
+        # still loading; tate keeps the free layout. testdata/images holds
+        # synthetic stand-ins for defender and 1942 only.
+        scenarios.append([*rotation, *size, "-beta", "-layout", "picture", "-images", "testdata/images", "-images-loading",
+                          "-out", f"out/beta-picture-column-{orientation}{name}", "-script",
+                          "shot loading; type defender; back; shot horizontal; type 1942; back; shot vertical"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     # Options -> Button labels: PlayStation symbols on the list, Details and
@@ -235,6 +243,14 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                       "-out", f"out/quick-{orientation}", "-script",
                       "press select; shot chord-legend; space; shot layout-split; space; shot layout-picture; space; shot layout-text; space; "
                       "tab; shot shots-title; enter; shot favorite-added; release select; shot released; space; shot sorted"])
+    # MisterZine Arcade (beta): the layout motion steps once per displayed
+    # frame, so 100 ms after Select+Y is exactly halfway (step 6 of 12), and
+    # its last frame is the settled layout
+    game = "1942" if rotation else "defender"
+    steps = "; ".join(f"press select; press space; wait 100; shot to-{layout}-mid; release space; release select; wait 400; shot {layout}"
+                      for layout in ("split", "picture", "text", "list"))
+    scenarios.append([*rotation, "-beta", "-motion", "-images", "testdata/images",
+                      "-out", f"out/beta-layout-motion-{orientation}", "-script", f"type {game}; back; {steps}"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     # the pad's Menu button: Options from the list, closed again, Options

@@ -72,6 +72,8 @@ type host struct {
 	slowLog                       time.Time
 	detailFrames                  []pageFrameTiming
 	detailLastAt                  time.Time
+	layoutFrames                  []layoutFrameTiming
+	layoutLastAt                  time.Time
 	stats                         frameStats
 	saverMisses, saverBlankFrames int // the saver loop's frames and the ones that missed their blank (debug)
 	sig                           chan os.Signal
@@ -430,6 +432,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			State: func() any {
 				return map[string]any{
 					"detail_frames": h.detailFrames,
+					"layout_frames": h.layoutFrames,
 					"page_frames":   h.pageFrames, "page_transitions": h.a.PageTransitions(),
 					"version": buildinfo.String(), "screen": h.a.Screen().String(), "locked": h.a.Locked(), "cursor": h.a.CursorKey(),
 					"canvas": h.a.Canvas(), "applied_canvas": h.appliedCanvas,
@@ -747,8 +750,10 @@ func (h *host) optionSampleLoop() {
 		}
 		now := time.Now()
 		wasDetail := h.a.DetailScrollRunning()
+		wasLayout := h.a.LayoutTransitionRunning()
 		h.a.ListScrollFrame(now)
 		h.a.DetailScrollFrame(now)
+		h.a.LayoutMotionFrame() // the beta's layout motion: one step per blank
 		h.a.Tick(now)
 		// Input may have left the preview and armed key repeat. Paint that
 		// selection before the loop condition hands control back to the host.
@@ -765,6 +770,9 @@ func (h *host) optionSampleLoop() {
 			h.stats.add(painted.Sub(now), at.Sub(painted), time.Since(at), at)
 			h.recordPageFrame(wasPage || h.a.PageTransitionRunning() || h.a.LaunchCabRunning(), painted.Sub(now), at.Sub(painted), time.Since(at), at)
 			h.recordDetailFrame(wasDetail, painted.Sub(now), at.Sub(painted), time.Since(at), at)
+			if dirty != nil {
+				h.recordLayoutFrame(wasLayout || h.a.LayoutTransitionRunning(), painted.Sub(now), at.Sub(painted), time.Since(at), at)
+			}
 		}
 		h.autosave(time.Now(), false)
 	}
@@ -922,6 +930,7 @@ func (h *host) present() {
 	t0 := time.Now()
 	wasPage := h.a.PageTransitionRunning() || h.a.LaunchCabRunning()
 	wasDetail := h.a.DetailScrollRunning()
+	wasLayout := h.a.LayoutTransitionRunning()
 	frame, dirty := h.a.Paint()
 	if dirty != nil {
 		t1 := time.Now()
@@ -929,6 +938,7 @@ func (h *host) present() {
 		h.stats.add(t1.Sub(t0), h.fb.LastWait, time.Since(t1)-h.fb.LastWait, t1.Add(h.fb.LastWait))
 		h.recordPageFrame(wasPage || h.a.PageTransitionRunning() || h.a.LaunchCabRunning(), t1.Sub(t0), h.fb.LastWait, time.Since(t1)-h.fb.LastWait, t1.Add(h.fb.LastWait))
 		h.recordDetailFrame(wasDetail, t1.Sub(t0), h.fb.LastWait, time.Since(t1)-h.fb.LastWait, t1.Add(h.fb.LastWait))
+		h.recordLayoutFrame(wasLayout || h.a.LayoutTransitionRunning(), t1.Sub(t0), h.fb.LastWait, time.Since(t1)-h.fb.LastWait, t1.Add(h.fb.LastWait))
 		if d := time.Since(t0); d > 40*time.Millisecond && time.Since(h.slowLog) > 5*time.Second {
 			h.slowLog = time.Now()
 			h.lg.Printf("slow frame: paint %s, present %s", t1.Sub(t0).Round(time.Millisecond), time.Since(t1).Round(time.Millisecond))

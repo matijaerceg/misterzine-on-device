@@ -73,6 +73,11 @@ go run ./cmd/mzharness -canvas 360x270 -out preview-1080p   # the fit-display si
 go run ./cmd/mzharness -launcher -out preview-launcher   # the main menu shortcut on: its child rows are live
 ```
 
+The render goldens cannot use the site's artwork, so `testdata/images` holds
+synthetic stand-ins for two games, Defender (horizontal) and 1942
+(vertical); with `-images testdata/images -images-loading` every other
+picture stays loading, as on a card still fetching it.
+
 The harness leaves page and layout transitions off, so every scripted shot
 is an end state. `-motion` runs them on the scripted clock, and the script
 command `frames NAME MS COUNT` saves COUNT shots NAME-00, NAME-01, ... MS
@@ -82,6 +87,13 @@ apart, for frame-by-frame review or an animated preview:
 go run ./cmd/mzharness -motion -images /path/to/misterzine/docs/images -out motion \
   -script "shot start; press select; press space; frames split 33 7; release space; release select"
 ```
+
+With `-beta` a layout change steps once per displayed frame instead of by
+the clock: 12 steps at 60 Hz, the last one the settled layout. The harness
+displays a frame every 16.7 ms of its clock, so `frames split 17 14` saves
+every step. On a board, the debug state's `layout_frames` lists each
+presented frame of a layout change: its paint, vsync wait and copy times,
+the interval since the previous one and how far the motion had got.
 
 README screenshots are harness end states, captured against the site's
 published export (`docs/releases/data.json` and `meta.json`) with `-now` set to

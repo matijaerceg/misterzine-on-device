@@ -112,7 +112,7 @@ func (a *App) pinnedHeader() string {
 // forms where the line would lose its tail to the ellipsis.
 func (a *App) markText(k int) string {
 	if a.marker && k == 0 {
-		cols := a.sm.Cols(a.lay.lineRect(0).Dx()) - 2
+		cols := a.sm.Cols(a.restLayout().lineRect(0).Dx()) - 2
 		forms := a.seen.Status(a.cfg.Now(), a.cfg.ClockTrusted, a.sinceAdded, a.sinceUpdated)
 		for _, f := range forms {
 			if len(f) <= cols {

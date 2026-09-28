@@ -5,11 +5,15 @@ import (
 	"math"
 	"time"
 
+	"github.com/matijaerceg/misterzine-on-device/internal/beta"
 	"github.com/matijaerceg/misterzine-on-device/internal/gen"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 )
 
 const layoutMotionDuration = 200 * time.Millisecond
+
+// layoutMotionSteps is the motion in displayed frames at 60 Hz: 12.
+const layoutMotionSteps = int((layoutMotionDuration + frameDur/2) / frameDur)
 
 // Only geometry moves. Artwork uses a frozen bitmap; text retains its pixel size.
 // The real layout is always the destination, so input never waits for animation.
@@ -28,9 +32,84 @@ type layoutMotion struct {
 	view                             pageIdentity
 	artX                             []int
 	fromDivider, currentDivider      paneDivider
+
+	// framed (layoutMotionFramed): the motion advances one step per
+	// displayed frame (step), fits the list's words to the layout at rest
+	// (rest), stops the rows where whole lines stop (fromEnd, currentEnd)
+	// and takes a picture that lands on its next frame (landed, restArt).
+	framed              bool
+	step                int
+	rest                Layout
+	fromEnd, currentEnd int
+	landed, restArt     bool
 }
 
+// layoutMotionFramed chooses how a Select+Y layout change moves. In
+// MisterZine Arcade every displayed frame advances the motion by exactly one
+// of layoutMotionSteps steps, however late the frame comes, so a slow frame
+// delays the motion instead of skipping part of it; the picture pipeline
+// works on the destination picture alone and its news waits for the motion
+// to end; titles and headers are fitted once to the layout at rest; and the
+// last frame is the settled layout itself. The free build steps by the wall
+// clock (tickLayoutMotion).
+func layoutMotionFramed() bool { return beta.On() }
+
 func (a *App) LayoutTransitionRunning() bool { return a.layoutMotion.active }
+
+// LayoutMotionProgress is how far the layout motion on screen has got, from
+// 0 to 1, and 1 once the layout has settled (the debug frame timing).
+func (a *App) LayoutMotionProgress() float64 {
+	if !a.layoutMotion.active {
+		return 1
+	}
+	return a.layoutMotion.progress
+}
+
+// restLayout is the layout the list's words are fitted to: during a framed
+// layout motion the one it is heading for, whose moving column edges then
+// clip them, so no title or header is shortened again frame after frame.
+func (a *App) restLayout() *Layout {
+	if m := &a.layoutMotion; m.active && m.framed {
+		return &m.rest
+	}
+	return &a.lay
+}
+
+// linesEnd is where a layout's whole list lines end: the rows stop there at
+// rest, and a framed motion clips them there so no part-row shows.
+func linesEnd(l Layout) int { return l.List.Min.Y + l.Lines*l.Line }
+
+// LayoutMotionFrame advances a framed layout motion by one displayed frame.
+// The host calls it once per vertical blank while the motion runs (Frame
+// does it under a held key); a step waits until the previous one has been
+// painted, so none is ever skipped. The last step ends the motion and the
+// frame shows the settled layout.
+func (a *App) LayoutMotionFrame() bool {
+	a.validateLayoutMotion()
+	m := &a.layoutMotion
+	if !m.active || !m.framed || m.dirty {
+		return false
+	}
+	if m.landed {
+		m.landed = false
+		// the destination picture came in: the rest of the motion scales
+		// the bitmap the settled layout will show
+		if !m.restArt && m.request.Key != "" && m.request.Slot != "system" {
+			if img, _ := a.cfg.Images.Get(m.request); img != nil {
+				m.art, m.restArt = img, true
+			}
+		}
+	}
+	m.step++
+	if m.step >= layoutMotionSteps {
+		a.layoutMotion = layoutMotion{}
+		a.all = true
+		return true
+	}
+	m.progress = float64(m.step) / float64(layoutMotionSteps)
+	m.dirty = true
+	return true
+}
 
 func copyLayoutPixels(src *image.RGBA, r image.Rectangle) *image.RGBA {
 	r = r.Intersect(src.Rect)
@@ -50,12 +129,14 @@ func (a *App) captureLayoutMotion() layoutMotion {
 		return layoutMotion{}
 	}
 	m := layoutMotion{active: true, from: a.lay, fromY: a.lay.List.Min.Y + (a.screenLine(a.cursor)-a.top)*a.lay.Line + a.listMotion.offset,
-		fromDivider: dividerForLayout(a.lay), fromThumb: a.paintedThumb, fromText: a.paintedPaneText, key: a.CursorKey(), shot: a.ListShot(), view: a.pageIdentity()}
+		fromDivider: dividerForLayout(a.lay), fromThumb: a.paintedThumb, fromText: a.paintedPaneText, key: a.CursorKey(), shot: a.ListShot(), view: a.pageIdentity(),
+		framed: layoutMotionFramed(), fromEnd: linesEnd(a.lay)}
 	if a.LayoutTransitionRunning() {
 		old := &a.layoutMotion
 		m.from, m.fromY, m.fromThumb, m.fromText = old.current, old.currentY, old.currentThumb, old.currentText
 		m.art = old.art
 		m.fromDivider = old.currentDivider
+		m.fromEnd = old.currentEnd
 	} else if a.paintedThumbImage != nil {
 		m.art = copyLayoutPixels(a.logical.RGBA, m.fromThumb)
 	}
@@ -88,6 +169,13 @@ func (a *App) startLayoutMotion(m layoutMotion) {
 		key, slot := thumbSlot(row, a.ListShot())
 		m.request = ImageReq{Key: key, Slot: slot, W: a.lay.Thumb.Dx(), H: a.lay.Thumb.Dy(), Stretch: slot != "system" && row.ImgW > row.ImgH}
 	}
+	if m.framed && m.request.Key != "" && m.request.Slot != "system" {
+		// the picture the settled layout shows, when it is ready: scaled
+		// down from it every frame ends on exactly the settled pixels
+		if img, _ := images.Get(m.request); img != nil {
+			m.art, m.restArt = img, true
+		}
+	}
 	if m.art == nil && a.paintedThumbImage != nil {
 		m.art = copyLayoutPixels(c.RGBA, m.toThumb)
 	}
@@ -104,6 +192,7 @@ func (a *App) startLayoutMotion(m layoutMotion) {
 	}
 	m.current, m.currentY, m.currentThumb, m.currentText = m.from, m.fromY, m.fromThumb, m.fromText
 	m.currentDivider = m.fromDivider
+	m.rest, m.currentEnd = a.lay, m.fromEnd
 	m.artX = make([]int, a.lay.W)
 	m.at = a.cfg.TimerNow()
 	a.layoutMotion = m
@@ -120,8 +209,8 @@ func (a *App) validateLayoutMotion() {
 func (a *App) tickLayoutMotion(now time.Time) bool {
 	a.validateLayoutMotion()
 	m := &a.layoutMotion
-	if !m.active {
-		return false
+	if !m.active || m.framed {
+		return false // a framed motion steps in LayoutMotionFrame
 	}
 	m.progress = min(1, max(0, float64(now.Sub(m.at))/float64(layoutMotionDuration)))
 	m.dirty = true
@@ -173,7 +262,14 @@ func (a *App) paintLayoutMotion(c *gfx.Canvas) {
 	defer func() { a.lay = final }()
 	// Draw the same selected row at its interpolated position, revealing rows at
 	// the edges. Clipping prevents partial rows painting over the fixed bars.
-	rows := &gfx.Canvas{RGBA: c.Sub(l.List)}
+	rowsClip := l.List
+	if m.framed {
+		// the rows stop where whole lines stop, travelling from where they
+		// stopped to where they will: the settled list shows no part-row
+		rowsClip.Max.Y = min(rowsClip.Max.Y, layoutMix(m.fromEnd, linesEnd(final), p))
+		m.currentEnd = rowsClip.Max.Y
+	}
+	rows := &gfx.Canvas{RGBA: c.Sub(rowsClip)}
 	offset := y - (l.List.Min.Y + (a.screenLine(a.cursor)-a.top)*l.Line)
 	first := max(0, a.top-offset/l.Line-1)
 	pos, mk := 0, 0
@@ -185,7 +281,7 @@ func (a *App) paintLayoutMotion(c *gfx.Canvas) {
 	}
 	for line := first; ; line++ {
 		r := l.lineRect(line - a.top).Add(image.Pt(0, offset))
-		if r.Min.Y >= l.List.Max.Y {
+		if r.Min.Y >= rowsClip.Max.Y {
 			break
 		}
 		if mk < len(a.marks) && a.marks[mk] == pos {
@@ -198,6 +294,18 @@ func (a *App) paintLayoutMotion(c *gfx.Canvas) {
 		}
 		a.paintRow(rows, r, pos)
 		pos++
+	}
+	if m.framed {
+		// what the settled list adds over its rows, so the last frame
+		// does not bring it in at once
+		if len(a.view) == 0 {
+			rows.Text(l.List.Min.X+a.body.W, l.List.Min.Y+l.Line, a.body, gfx.Fit(a.emptyListMessage(), m.rest.Cols-1), gen.Eva.Muted)
+		}
+		if h := a.pinnedHeader(); h != "" {
+			r := l.lineRect(0)
+			rows.Fill(r, gen.Eva.Bg)
+			a.paintMarker(rows, r, h)
+		}
 	}
 	a.paintScrollbar(c)
 	// Keep the pane opaque while its contents move with it; nothing of it
