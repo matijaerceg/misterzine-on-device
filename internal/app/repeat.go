@@ -3,6 +3,7 @@ package app
 import (
 	"time"
 
+	"github.com/matijaerceg/misterzine-on-device/internal/beta"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
 
@@ -100,17 +101,37 @@ func (r *repeater) nextAt() time.Time {
 }
 
 // Scroll speeds for a held Up/Down in lists, keyed by rows per second:
-// every third frame, every second frame, every frame.
-var scrollSpeeds = map[string]time.Duration{"20": 3 * frameDur, "30": 2 * frameDur, "60": frameDur}
+// every sixth frame, every third, every second, every frame.
+var scrollSpeeds = map[string]time.Duration{"10": 6 * frameDur, "20": 3 * frameDur, "30": 2 * frameDur, "60": frameDur}
 
-// ScrollValues are the setting's choices in order.
-var ScrollValues = []string{"20", "30", "60"}
+// ScrollValues are the speeds Options offers, in order. 10 rows a second
+// is the beta's (MisterZine Arcade); the free build offers 20, 30 and 60.
+func ScrollValues() []string {
+	if beta.On() {
+		return []string{"10", "20", "30", "60"}
+	}
+	return []string{"20", "30", "60"}
+}
+
+// offeredScroll is a saved speed as this build offers it: one it does not
+// offer (the beta's 10 in the free build, after a member goes back) reads
+// as the nearest it does, and anything unknown as the default 30.
+func offeredScroll(speed string) string {
+	pace, ok := scrollSpeeds[speed]
+	if !ok {
+		return "30"
+	}
+	offered := ScrollValues()
+	near := offered[0]
+	for _, v := range offered[1:] {
+		if (scrollSpeeds[v] - pace).Abs() < (scrollSpeeds[near] - pace).Abs() {
+			near = v
+		}
+	}
+	return near
+}
 
 // scrollPace applies the chosen speed from the first repeat.
 func scrollPace(speed string) time.Duration {
-	d, ok := scrollSpeeds[speed]
-	if !ok {
-		d = scrollSpeeds["30"]
-	}
-	return d
+	return scrollSpeeds[offeredScroll(speed)]
 }

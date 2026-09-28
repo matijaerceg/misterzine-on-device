@@ -159,6 +159,38 @@ func TestHoldDelayMigrationAndSave(t *testing.T) {
 	}
 }
 
+// Scroll speeds load as rows per second: the beta's 10 is kept for either
+// build to read (the free one takes it as 20), the old adjectives map on,
+// and anything else, missing included, is the default 30.
+func TestScrollMigrationAndSave(t *testing.T) {
+	for _, tc := range []struct{ body, want string }{
+		{`{"scroll":"10"}`, "10"},
+		{`{"scroll":"20"}`, "20"},
+		{`{"scroll":"30"}`, "30"},
+		{`{"scroll":"60"}`, "60"},
+		{`{"scroll":"normal"}`, "20"},
+		{`{"scroll":"fast"}`, "30"},
+		{`{"scroll":"turbo"}`, "60"},
+		{`{"scroll":""}`, "30"},
+		{`{"scroll":"warp"}`, "30"},
+		{`{"scroll":"15"}`, "30"},
+		{`{"scroll":"10 Hz"}`, "30"},
+		{`{"rotation":"left"}`, "30"},
+	} {
+		path := writeSettings(t, tc.body)
+		s, err := LoadSettings(path)
+		if err != nil || s.Scroll != tc.want {
+			t.Fatalf("load %s: scroll=%q err=%v", tc.body, s.Scroll, err)
+		}
+		if err := Save(path, s); err != nil {
+			t.Fatal(err)
+		}
+		if reloaded, err := LoadSettings(path); err != nil || reloaded.Scroll != tc.want {
+			t.Fatalf("%s did not survive restart: %q err=%v", tc.body, reloaded.Scroll, err)
+		}
+	}
+}
+
 func TestScreensaverMigrationAndSave(t *testing.T) {
 	for _, tc := range []struct{ body, want string }{
 		{`{"rotation":"left","inset":15}`, "1"},

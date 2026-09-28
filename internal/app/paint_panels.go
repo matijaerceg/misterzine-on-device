@@ -450,8 +450,9 @@ func (a *App) canUpdateApp() bool { return a.cfg.CanUpdateApp != nil && a.cfg.Ca
 
 func (a *App) optionsEntries() []panelEntry {
 	rotIdx := map[gfx.Rotation]int{gfx.RotRight: 0, gfx.RotNone: 1, gfx.RotLeft: 2}[a.rot]
-	scrollIdx := 1
-	for i, v := range ScrollValues {
+	scrollIdx, scrollVals := 0, []string{}
+	for i, v := range ScrollValues() {
+		scrollVals = append(scrollVals, v+" Hz")
 		if v == a.scrollText() {
 			scrollIdx = i
 		}
@@ -552,7 +553,7 @@ func (a *App) optionsEntries() []panelEntry {
 		a.okButtonRow(),
 		{text: "Menu button", kind: "menu-button", vals: []string{"Options", "quit MisterZine"}, idx: map[bool]int{false: 0, true: 1}[a.MenuButton() == "leave"],
 			help: "What the pad button defined as MiSTer's menu (OSD) button does here: Options (default; held 2 s it quits) or quit at once. Keyboard F12 still quits."},
-		{text: "Scroll speed", kind: "scroll", vals: []string{"20 Hz", "30 Hz", "60 Hz"}, idx: scrollIdx,
+		{text: "Scroll speed", kind: "scroll", vals: scrollVals, idx: scrollIdx,
 			help: "How many rows (or pages, with Left/Right) a held direction moves per second. 60 Hz is one row every frame."},
 		{text: "Hold delay", kind: "hold-delay", vals: []string{"short", "normal", "long"}, idx: map[int]int{200: 0, 300: 1, 500: 2}[a.HoldDelay()],
 			help: "Wait before held navigation repeats: short 200 ms, normal 300 ms, long 500 ms. Scroll speed sets the pace after this delay."},
@@ -621,12 +622,9 @@ func (a *App) dateFormatHelp() string {
 	return "How list dates read. Today is " + example + ". Rows from earlier years show the year instead."
 }
 
-func (a *App) scrollText() string {
-	if a.cfg.Scroll == "" {
-		return "30"
-	}
-	return a.cfg.Scroll
-}
+// scrollText is the held-scrolling speed as the Options row shows it, and
+// as it is saved back: always one of this build's ScrollValues.
+func (a *App) scrollText() string { return offeredScroll(a.cfg.Scroll) }
 
 func (a *App) progressText() string {
 	if a.cfg.Progress == nil {
@@ -1116,7 +1114,7 @@ func (a *App) stepValue(d int) bool {
 			a.cfg.Action("rotation", []string{"right", "off", "left"}[i])
 		}
 	case "scroll":
-		a.cfg.Scroll = ScrollValues[i]
+		a.cfg.Scroll = ScrollValues()[i]
 	case "smooth-scroll":
 		a.cfg.SmoothScrollDisabled = i == 0
 	case "hold-delay":

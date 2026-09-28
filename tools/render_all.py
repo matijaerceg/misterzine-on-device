@@ -253,6 +253,11 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "back; home; pagedown; right; down*7; shot font; left; shot font-narrow; left; shot font-normal; "
                           "home; pagedown*3; right; down*4; shot speed; wait 200; shot speed-moving; down; shot smooth-on; wait 17; shot smooth-moving; left; shot smooth-off; down; shot delay; "
                           "wait 250; shot delay-short; wait 400; shot delay-reverse; down; shot dismissed"])
+        # the beta's 10 Hz scroll speed: a fourth sample, and the smooth and
+        # hold-delay samples at its pace
+        scenarios.append([*rotation, "-beta", "-inset", str(inset), "-out", f"out/beta-scroll-{orientation}-{inset}", "-script",
+                          "back; home; pagedown*3; right; down*4; shot speed; left*2; shot speed-10; wait 200; shot speed-10-moving; "
+                          "down; wait 50; shot smooth-moving; down; wait 400; shot delay-moving"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):

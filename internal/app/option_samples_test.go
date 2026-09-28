@@ -8,7 +8,7 @@ import (
 
 func TestSampleListTiming(t *testing.T) {
 	for _, rows := range []int{3, 4} {
-		for _, speed := range ScrollValues {
+		for _, speed := range ScrollValues() {
 			pace := scrollPace(speed)
 			for step := 0; step < rows*3; step++ {
 				if got := sampleListSelection(time.Duration(step)*pace, pace, 0, rows); got != step%rows {
@@ -55,7 +55,7 @@ func TestOptionSampleScheduling(t *testing.T) {
 			t.Fatal("timer moved selection")
 		}
 		a.OptionSampleFrame()
-		for i, speed := range ScrollValues {
+		for i, speed := range ScrollValues() {
 			got := sampleListSelection(a.optionSamples.elapsed, scrollPace(speed), 0, 3)
 			every := []int{3, 2, 1}[i]
 			if got != (frame/every)%3 {
