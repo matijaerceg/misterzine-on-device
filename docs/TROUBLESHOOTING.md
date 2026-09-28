@@ -221,9 +221,19 @@ An alternative whose MRA file holds no readable header (an empty file, one
 cut short, or one without an `<rbf>` element) is left out of the picker, as
 MiSTer could not load it either. The scan still completes. The log names
 each such file the first time its folder is read (`scan: skipped ...`) and
-every scan repeats the count (`N unreadable MRAs skipped`). A "Card scan
-incomplete" result means a folder or file could not be read at all; the log
-line above it names the path.
+every scan repeats the count (`N unreadable MRAs skipped`).
+
+A file or folder that its folder lists but that cannot be opened is left out
+the same way, and the scan still completes. It was deleted while the scan
+ran, is a broken link, or is a damaged entry on the SD card. Every scan logs
+it (`scan: skipped ...: listed in its folder, but the path no longer
+resolves`), and a card report lists it under CARD SCAN. If the same entry
+keeps coming back after a rescan, the card's file system probably needs
+repair: a disk check on a PC (Windows: the drive's Properties -> Tools ->
+Check) may clear it. Back up the card first.
+
+A "Card scan incomplete" result means a folder or file could not be read,
+for example a read error on the card; the log line above it names the path.
 
 When a game you have on the card does not show up and none of this explains
 it, use **Send a report** (below): it lists every game file MisterZine leaves

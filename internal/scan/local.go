@@ -3,6 +3,7 @@ package scan
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
@@ -34,7 +35,7 @@ type LocalResult struct {
 	Skipped []Skipped
 	// SkippedDirs are the folders under _Arcade the walk did not enter, each
 	// with the rule that kept it out (the cores and _alternatives folders,
-	// read elsewhere, are not listed).
+	// read elsewhere, are not listed), or Gone when listed but not there.
 	SkippedDirs []Skipped
 	// Accounted are the files the walk read that make no row of their own,
 	// each with the reason: the catalogue's file, a version of a catalogue
@@ -101,16 +102,27 @@ func scanArcadeMRAs(card, cachePath string) ([]Alt, []Skipped, []Skipped, error)
 	var walk func(rel string, depth int) bool
 	walk = func(rel string, depth int) bool {
 		abs := filepath.Join(card, filepath.FromSlash(rel))
+		// A subfolder its parent listed that is gone by now is skipped, not
+		// a failure: deleted since, or an entry the card cannot open.
+		gone := func(err error) bool {
+			if rel == "_Arcade" || !errors.Is(err, fs.ErrNotExist) {
+				return false
+			}
+			dirs = append(dirs, Skipped{Path: rel, Reason: GoneReason, Fresh: true, Gone: true})
+			return true
+		}
 		st, err := os.Stat(abs)
 		if err != nil {
-			if rel != "_Arcade" || !os.IsNotExist(err) {
+			if !gone(err) && (rel != "_Arcade" || !os.IsNotExist(err)) {
 				dc.problems = append(dc.problems, err)
 			}
 			return true
 		}
-		entries, err := os.ReadDir(abs)
+		entries, err := readDir(abs)
 		if err != nil {
-			dc.problems = append(dc.problems, err)
+			if !gone(err) {
+				dc.problems = append(dc.problems, err)
+			}
 			return true
 		}
 		alts, skips := dc.dir(card, rel, rel, st.ModTime().UnixNano(), entries)

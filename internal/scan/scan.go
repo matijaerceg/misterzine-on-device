@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
@@ -289,7 +290,28 @@ type Skipped struct {
 	Size   int64  `json:"size"`
 	Mtime  int64  `json:"mtime"`
 	Fresh  bool   `json:"-"` // parsed on this run rather than read back from the cache
+	// Gone marks an entry its folder's listing named that turned out not to
+	// exist when opened (GoneReason). Such entries are never cached.
+	Gone bool `json:"-"`
 }
+
+// GoneReason is why an entry is skipped when its folder lists it but opening
+// it finds nothing: deleted while the scan ran, a broken link, or a damaged
+// file system entry (exFAT lists a name whose stored hash no longer matches,
+// and lookup then fails). MiSTer cannot load it either, so it is no scan
+// failure.
+const GoneReason = "listed in its folder, but the path no longer resolves"
+
+// openGone reports whether err is an open that found nothing, as opposed to a
+// stat or read failure on a file that exists.
+func openGone(err error) bool {
+	var pe *fs.PathError
+	return errors.As(err, &pe) && pe.Op == "open" && errors.Is(pe.Err, fs.ErrNotExist)
+}
+
+// readDir lists the folders both walks descend into; a variable so a test can
+// make one vanish between its parent's listing and its own.
+var readDir = os.ReadDir
 
 type altDir struct {
 	Version int       `json:"version"`
@@ -313,17 +335,30 @@ func ScanAlternatives(card, cachePath string) []Alt {
 // ScanAlternativesWithError returns usable entries even if some reads or the
 // optional cache write fail. MRAs that open but hold no usable header are
 // skipped, not failures: they are listed, cached with their directory, and
-// re-read only when the file itself changes. The error covers directory
-// reads, opens and reads that failed, and the cache; a directory with such a
-// failure is never cached as complete.
+// re-read only when the file itself changes. So is an MRA the listing names
+// that does not exist when opened (Gone), which is never cached. The error
+// covers directory reads, opens and reads that failed, and the cache; a
+// directory with such a failure is never cached as complete.
 func ScanAlternativesWithError(card, cachePath string) ([]Alt, []Skipped, error) {
+	alts, skipped, _, err := scanAlternatives(card, cachePath)
+	return alts, skipped, err
+}
+
+// ScanAlternativesWithDirs is ScanAlternativesWithError that also names the
+// game folders an _alternatives folder listed but that did not exist when
+// read (Gone).
+func ScanAlternativesWithDirs(card, cachePath string) ([]Alt, []Skipped, []Skipped, error) {
+	return scanAlternatives(card, cachePath)
+}
+
+func scanAlternatives(card, cachePath string) ([]Alt, []Skipped, []Skipped, error) {
 	roots := altRoots(card)
 	if len(roots) == 0 {
-		return nil, nil, nil
+		return nil, nil, nil, nil
 	}
 	dc := openDirCache(cachePath)
 	var out []Alt
-	var skipped []Skipped
+	var skipped, gone []Skipped
 	for _, root := range roots {
 		dirs, err := os.ReadDir(filepath.Join(card, filepath.FromSlash(root.rel)))
 		if err != nil {
@@ -334,24 +369,28 @@ func ScanAlternativesWithError(card, cachePath string) ([]Alt, []Skipped, error)
 			if !d.IsDir() {
 				continue
 			}
+			rel := path.Join(root.rel, d.Name())
 			info, err := d.Info()
+			var files []os.DirEntry
+			if err == nil {
+				files, err = readDir(filepath.Join(card, filepath.FromSlash(rel)))
+			}
+			if errors.Is(err, fs.ErrNotExist) {
+				gone = append(gone, Skipped{Path: rel, Reason: GoneReason, Fresh: true, Gone: true})
+				continue
+			}
 			if err != nil {
 				dc.problems = append(dc.problems, err)
 				continue
 			}
-			files, err := os.ReadDir(filepath.Join(card, filepath.FromSlash(root.rel), d.Name()))
-			if err != nil {
-				dc.problems = append(dc.problems, err)
-				continue
-			}
-			alts, skips := dc.dir(card, root.key+d.Name(), path.Join(root.rel, d.Name()), info.ModTime().UnixNano(), files)
+			alts, skips := dc.dir(card, root.key+d.Name(), rel, info.ModTime().UnixNano(), files)
 			out = append(out, alts...)
 			skipped = append(skipped, skips...)
 		}
 	}
 	dc.save("alternatives cache")
 	sort.Slice(out, func(i, j int) bool { return out[i].Path < out[j].Path })
-	return out, skipped, errors.Join(dc.problems...)
+	return out, skipped, gone, errors.Join(dc.problems...)
 }
 
 // dirCache is the per-directory header cache both walks share: an entry is
@@ -385,7 +424,9 @@ func openDirCache(cachePath string) *dirCache {
 
 // dir returns the headers of the MRAs directly inside one directory (rel,
 // card-relative; files is its listing), from the cache when it still holds.
-// A directory with a failed read is never cached as complete.
+// A directory with a failed read is never cached as complete, nor is one
+// whose listing names an MRA that is gone when opened: that skip is no
+// failure, but only a fresh listing may repeat it.
 func (dc *dirCache) dir(card, key, rel string, mtime int64, files []os.DirEntry) ([]Alt, []Skipped) {
 	if c, ok := dc.cache[key]; ok && c.Version == altCacheVersion && c.Mtime == mtime && alternativesUnchanged(card, c.Alts) && skippedUnchanged(card, c.Skipped) {
 		dc.fresh[key] = c
@@ -400,6 +441,11 @@ func (dc *dirCache) dir(card, key, rel string, mtime int64, files []os.DirEntry)
 		}
 		p := path.Join(rel, f.Name())
 		a, s, readErr := parseMRAHeader(filepath.Join(card, filepath.FromSlash(p)))
+		if openGone(readErr) {
+			complete = false
+			skips = append(skips, Skipped{Path: p, Reason: GoneReason, Fresh: true, Gone: true})
+			continue
+		}
 		if readErr != nil {
 			complete = false
 			dc.problems = append(dc.problems, fmt.Errorf("%s: %w", p, readErr))

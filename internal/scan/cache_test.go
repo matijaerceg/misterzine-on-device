@@ -2,6 +2,7 @@ package scan
 
 import (
 	"bytes"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -135,5 +136,90 @@ func TestAlternativeCacheSkipsUnchangedWritesAndPreservesOnFailure(t *testing.T)
 	after, err := os.ReadFile(cache)
 	if err != nil || !bytes.Equal(after, original) {
 		t.Fatal("failed cache write damaged previous file")
+	}
+}
+
+// An MRA its folder lists that is gone when opened is skipped, not a scan
+// failure, and never cached, so a later scan reads it once it is there. A
+// dangling link stands in for what a card produces: a file deleted while the
+// scan runs, or a damaged exFAT entry that lists but cannot be opened.
+func TestAlternativeSkipsGoneMRA(t *testing.T) {
+	card := t.TempDir()
+	dir := filepath.Join(card, "_Arcade", "_alternatives", "_Game")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	good := `<misterromdescription><rbf>game</rbf><setname>gamea</setname><rom index="0" zip="game.zip"><part name="x"/></rom></misterromdescription>`
+	if err := os.WriteFile(filepath.Join(dir, "good.mra"), []byte(good), 0644); err != nil {
+		t.Fatal(err)
+	}
+	target := filepath.Join(card, "elsewhere.mra")
+	if err := os.Symlink(target, filepath.Join(dir, "gone.mra")); err != nil {
+		t.Skipf("no symlinks here: %v", err)
+	}
+	cache := filepath.Join(card, "cache", "alts.json")
+	for _, run := range []string{"cold", "warm"} {
+		got, skipped, err := ScanAlternativesWithError(card, cache)
+		if err != nil || len(got) != 1 || len(skipped) != 1 || !skipped[0].Gone || !skipped[0].Fresh ||
+			skipped[0].Reason != GoneReason || skipped[0].Path != "_Arcade/_alternatives/_Game/gone.mra" {
+			t.Fatalf("%s run: alts=%v skipped=%+v err=%v", run, got, skipped, err)
+		}
+	}
+	if raw, err := os.ReadFile(cache); err != nil || strings.Contains(string(raw), "gone.mra") {
+		t.Fatalf("gone entry cached: %s %v", raw, err)
+	}
+	// The file turns up (a repaired card) without the folder's mtime moving.
+	if err := os.WriteFile(target, []byte(strings.Replace(good, "gamea", "gameb", 1)), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if got, skipped, err := ScanAlternativesWithError(card, cache); err != nil || len(got) != 2 || len(skipped) != 0 {
+		t.Fatalf("repaired: alts=%v skipped=%+v err=%v", got, skipped, err)
+	}
+}
+
+// Only a missing file is gone: a link loop still fails the scan.
+func TestAlternativeLinkLoopStaysAProblem(t *testing.T) {
+	card := t.TempDir()
+	dir := filepath.Join(card, "_Arcade", "_alternatives", "_Game")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	a, b := filepath.Join(dir, "a.mra"), filepath.Join(dir, "b.mra")
+	if err := os.Symlink(b, a); err != nil {
+		t.Skipf("no symlinks here: %v", err)
+	}
+	if err := os.Symlink(a, b); err != nil {
+		t.Fatal(err)
+	}
+	if _, skipped, err := ScanAlternativesWithError(card, ""); err == nil || len(skipped) != 0 {
+		t.Fatalf("link loop: skipped=%+v err=%v", skipped, err)
+	}
+}
+
+// A game folder listed but gone by the time it is read is named, not a scan
+// failure, and the other folders still scan; any other failure reading it
+// still is one.
+func TestAlternativeSkipsGoneFolder(t *testing.T) {
+	card := fakeCard(t)
+	gone := filepath.Join(card, "_Arcade", "_alternatives", "_Colony 7")
+	orig := readDir
+	t.Cleanup(func() { readDir = orig })
+	fail := func(err error) {
+		readDir = func(name string) ([]os.DirEntry, error) {
+			if name == gone {
+				return nil, &fs.PathError{Op: "open", Path: name, Err: err}
+			}
+			return orig(name)
+		}
+	}
+	fail(fs.ErrNotExist)
+	alts, _, dirs, err := ScanAlternativesWithDirs(card, "")
+	if err != nil || len(alts) != 1 || len(dirs) != 1 || !dirs[0].Gone || dirs[0].Reason != GoneReason ||
+		dirs[0].Path != "_Arcade/_alternatives/_Colony 7" {
+		t.Fatalf("gone folder: alts=%v dirs=%+v err=%v", alts, dirs, err)
+	}
+	fail(fs.ErrPermission)
+	if alts, _, dirs, err := ScanAlternativesWithDirs(card, ""); err == nil || len(alts) != 1 || len(dirs) != 0 {
+		t.Fatalf("unreadable folder: alts=%v dirs=%+v err=%v", alts, dirs, err)
 	}
 }

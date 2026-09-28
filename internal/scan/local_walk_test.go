@@ -2,6 +2,7 @@ package scan
 
 import (
 	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -534,5 +535,64 @@ func TestScanArcadeMRAsCap(t *testing.T) {
 	_, _, err := ScanArcadeMRAs(card, "")
 	if !errors.Is(err, ErrTooManyMRAs) {
 		t.Fatalf("cap not reported: %v", err)
+	}
+}
+
+// The local walk treats a listed MRA that is gone when opened the way the
+// alternatives scan does: skipped and named, and the walk still complete.
+func TestLocalWalkSkipsGoneMRA(t *testing.T) {
+	card := localCard(t)
+	if err := os.Symlink(filepath.Join(card, "nowhere.mra"), filepath.Join(card, "_Arcade", "_Extra", "Gone.mra")); err != nil {
+		t.Skipf("no symlinks here: %v", err)
+	}
+	_, skipped, err := ScanArcadeMRAs(card, filepath.Join(card, "cache", "local.json"))
+	var gone []Skipped
+	for _, s := range skipped {
+		if s.Gone {
+			gone = append(gone, s)
+		}
+	}
+	if err != nil || len(gone) != 1 || gone[0].Path != "_Arcade/_Extra/Gone.mra" || gone[0].Reason != GoneReason {
+		t.Fatalf("gone MRA: skipped=%+v err=%v", skipped, err)
+	}
+	if res := DiscoverLocal(card, "", nil, nil, nil, nil, nil, false); res.Err != nil {
+		t.Fatalf("discover: %v", res.Err)
+	}
+}
+
+// A subfolder listed but gone by the time the walk reads it is named among
+// the skipped folders, not a failure; another failure reading it still is.
+func TestLocalWalkSkipsGoneFolder(t *testing.T) {
+	card := localCard(t)
+	gone := filepath.Join(card, "_Arcade", "_Extra", "deeper")
+	orig := readDir
+	t.Cleanup(func() { readDir = orig })
+	fail := func(err error) {
+		readDir = func(name string) ([]os.DirEntry, error) {
+			if name == gone {
+				return nil, &fs.PathError{Op: "open", Path: name, Err: err}
+			}
+			return orig(name)
+		}
+	}
+	fail(fs.ErrNotExist)
+	alts, _, dirs, err := scanArcadeMRAs(card, "")
+	var goneDirs []Skipped
+	for _, d := range dirs {
+		if d.Gone {
+			goneDirs = append(goneDirs, d)
+		}
+	}
+	if err != nil || len(goneDirs) != 1 || goneDirs[0].Path != "_Arcade/_Extra/deeper" || goneDirs[0].Reason != GoneReason {
+		t.Fatalf("gone folder: dirs=%+v err=%v", dirs, err)
+	}
+	for _, a := range alts {
+		if strings.HasPrefix(a.Path, "_Arcade/_Extra/deeper/") {
+			t.Fatalf("read a gone folder: %s", a.Path)
+		}
+	}
+	fail(fs.ErrPermission)
+	if _, _, dirs, err := scanArcadeMRAs(card, ""); err == nil {
+		t.Fatalf("unreadable folder passed: dirs=%+v", dirs)
 	}
 }

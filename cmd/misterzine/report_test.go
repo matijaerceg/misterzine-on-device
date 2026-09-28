@@ -3,6 +3,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/matijaerceg/misterzine-on-device/internal/fetch"
 	"github.com/matijaerceg/misterzine-on-device/internal/report"
+	"github.com/matijaerceg/misterzine-on-device/internal/scan"
 )
 
 // Send a report writes the card copy whatever happens, uploads it, and
@@ -92,5 +94,34 @@ func TestSendReportSavesAndUploads(t *testing.T) {
 	o = send()
 	if o.Code != "" || o.Problem != "No connection to the report service." || o.Saved == "" {
 		t.Fatalf("offline outcome %+v", o)
+	}
+}
+
+// The report's card scan section names what the scan found listed but gone,
+// folders with a slash, other skips left out, and a long run cut short.
+func TestGoneLines(t *testing.T) {
+	files := []scan.Skipped{
+		{Path: "_Arcade/_alternatives/_Ibara/Ibara.mra", Reason: scan.GoneReason, Gone: true},
+		{Path: "_Arcade/_alternatives/_Game/empty.mra", Reason: "no XML content"},
+	}
+	dirs := []scan.Skipped{
+		{Path: "_Arcade/_Extra/deeper", Reason: scan.GoneReason, Gone: true},
+		{Path: "_Arcade/_Organized", Reason: "an organiser's folder"},
+	}
+	got := goneLines(files, dirs)
+	want := []string{"listed but gone: _Arcade/_alternatives/_Ibara/Ibara.mra", "listed but gone: _Arcade/_Extra/deeper/"}
+	if strings.Join(got, "\n") != strings.Join(want, "\n") {
+		t.Fatalf("lines %q", got)
+	}
+	if got := goneLines(nil, nil); len(got) != 0 {
+		t.Fatalf("nothing gone: %q", got)
+	}
+	var many []scan.Skipped
+	for i := 0; i < maxGoneLines+5; i++ {
+		many = append(many, scan.Skipped{Path: fmt.Sprintf("_Arcade/g%02d.mra", i), Gone: true})
+	}
+	got = goneLines(many, nil)
+	if len(got) != maxGoneLines+1 || got[maxGoneLines] != "... and 5 more listed but gone" {
+		t.Fatalf("long run: %d lines, last %q", len(got), got[len(got)-1])
 	}
 }

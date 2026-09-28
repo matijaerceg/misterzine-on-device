@@ -1275,6 +1275,35 @@ type scanDiag struct {
 	files []report.File
 }
 
+// maxGoneLines caps goneLines: a folder deleted during the scan can leave
+// many entries behind, and one line per entry says little after the first.
+const maxGoneLines = 20
+
+// goneLines names the files and folders a scan found listed but gone (see
+// scan.GoneReason), for the report's card scan section.
+func goneLines(files, dirs []scan.Skipped) []string {
+	var paths []string
+	for _, s := range files {
+		if s.Gone {
+			paths = append(paths, s.Path)
+		}
+	}
+	for _, d := range dirs {
+		if d.Gone {
+			paths = append(paths, d.Path+"/")
+		}
+	}
+	var lines []string
+	for i, p := range paths {
+		if i == maxGoneLines {
+			lines = append(lines, fmt.Sprintf("... and %d more listed but gone", len(paths)-i))
+			break
+		}
+		lines = append(lines, "listed but gone: "+p)
+	}
+	return lines
+}
+
 // scan reads the card off the UI goroutine: cores and MRA stats first (fast),
 // alternatives and the local walk after (slow the first time). rows are the
 // dataset's rows, local rows included; ncat of them are the catalogue's.
@@ -1315,19 +1344,29 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 		return
 	}
 	t1 := time.Now()
-	alts, skipped, err := scan.ScanAlternativesWithError(h.card, filepath.Join(h.root, "cache", "alts.json"))
+	alts, skipped, goneDirs, err := scan.ScanAlternativesWithDirs(h.card, filepath.Join(h.root, "cache", "alts.json"))
 	// A skipped MRA is logged the first time its folder is read; later scans
-	// reuse the cache and only repeat the count.
+	// reuse the cache and only repeat the count. An entry listed but gone is
+	// never cached, so every scan names it again.
 	for _, s := range skipped {
 		if s.Fresh {
 			h.lg.Printf("scan: skipped %s: %s", s.Path, s.Reason)
 		}
 	}
+	for _, d := range goneDirs {
+		h.lg.Printf("scan: skipped %s/: %s", d.Path, d.Reason)
+	}
 	if err != nil {
 		h.lg.Printf("scan: %v", err)
 	}
-	if len(skipped) > 0 {
-		h.lg.Printf("scan: %d alternatives; %d unreadable MRAs skipped (%v)", len(alts), len(skipped), time.Since(t1).Round(time.Millisecond))
+	unreadable := 0
+	for _, s := range skipped {
+		if !s.Gone {
+			unreadable++
+		}
+	}
+	if unreadable > 0 {
+		h.lg.Printf("scan: %d alternatives; %d unreadable MRAs skipped (%v)", len(alts), unreadable, time.Since(t1).Round(time.Millisecond))
 	} else {
 		h.lg.Printf("scan: %d alternatives (%v)", len(alts), time.Since(t1).Round(time.Millisecond))
 	}
@@ -1349,6 +1388,11 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 			h.lg.Printf("scan: skipped %s: %s", s.Path, s.Reason)
 		}
 	}
+	for _, d := range local.SkippedDirs {
+		if d.Gone {
+			h.lg.Printf("scan: skipped %s/: %s", d.Path, d.Reason)
+		}
+	}
 	if local.Err != nil {
 		h.lg.Printf("scan: local: %v", local.Err)
 		notice = "Card scan incomplete"
@@ -1363,15 +1407,20 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 	// and their own sets outside the _alternatives folders, too
 	offers, extra := scan.MergeVersions(resolved, local.Versions)
 	diag.lines = append(diag.lines,
-		fmt.Sprintf("alternatives: %d files, %d unreadable (%v)", len(alts), len(skipped), t2.Sub(t1).Round(time.Millisecond)),
+		fmt.Sprintf("alternatives: %d files, %d unreadable (%v)", len(alts), unreadable, t2.Sub(t1).Round(time.Millisecond)),
 		fmt.Sprintf("local walk: %d MRAs read outside the catalogue's folders; %d local rows; %d catalogue files, %d versions of catalogue games; %d extra versions from %d files (%v)",
 			local.Files, len(merged)-ncat, local.OwnFiles, local.VersionFiles, offers, extra, time.Since(t2).Round(time.Millisecond)))
+	skippedFiles := append(append([]scan.Skipped{}, skipped...), local.Skipped...)
+	skippedDirs := append(append([]scan.Skipped{}, goneDirs...), local.SkippedDirs...)
+	// Named here as well as in the file list, which a card full of
+	// unreadable MRAs can push them past the end of.
+	diag.lines = append(diag.lines, goneLines(skippedFiles, skippedDirs)...)
 	for _, e := range []error{err, local.Err} {
 		if e != nil {
 			diag.lines = append(diag.lines, "scan problem: "+e.Error())
 		}
 	}
-	for _, d := range local.SkippedDirs {
+	for _, d := range skippedDirs {
 		diag.files = append(diag.files, report.File{Path: d.Path + "/", Reason: "folder not read: " + d.Reason})
 	}
 	for _, s := range skipped {
