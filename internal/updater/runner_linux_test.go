@@ -379,6 +379,61 @@ func TestAppModeRunsDownloaderForMisterzineOnly(t *testing.T) {
 	}
 }
 
+// ModeFree runs the switch MisterZine Arcade installs, misterzine/channel.py,
+// which repoints the entry and runs Downloader itself; like ModeApp its exit
+// code carries the result.
+func TestFreeModeRunsTheBetasSwitch(t *testing.T) {
+	if _, err := exec.LookPath("python3"); err != nil {
+		t.Skip("python3 is not installed")
+	}
+	root, card := fakeCard(t, "echo 'Running Update All'\n")
+	downloader := filepath.Join(card, "Scripts", "downloader.sh")
+	if err := os.WriteFile(downloader, []byte("#!/bin/bash\n"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if CanSwitchToFree(card) {
+		t.Fatal("a free install, without channel.py, offers the switch to free")
+	}
+	if _, err := Start(root, card, ModeFree); err == nil || !strings.Contains(err.Error(), "not on this card") {
+		t.Fatalf("started without channel.py: %v", err)
+	}
+	os.MkdirAll(root, 0700)
+	switcher := "import sys\nprint('channel', ' '.join(sys.argv[1:]))\nsys.exit(int(open(sys.argv[0] + '.status').read()))\n"
+	if err := os.WriteFile(filepath.Join(root, "channel.py"), []byte(switcher), 0600); err != nil {
+		t.Fatal(err)
+	}
+	os.WriteFile(filepath.Join(root, "channel.py.status"), []byte("0"), 0600)
+	if !CanSwitchToFree(card) {
+		t.Fatal("a beta install with Downloader cannot switch to free")
+	}
+	s, err := Start(root, card, ModeFree)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s.Mode != ModeFree || s.Name() != "Switch to free" {
+		t.Fatalf("started as %+v", s)
+	}
+	s = waitState(t, root, func(s State) bool { return !s.Active() })
+	if s.Status != "completed" || !strings.Contains(strings.Join(s.Lines, "\n"), "channel free --card "+card) {
+		t.Fatalf("%+v", s)
+	}
+	if s.Summary() != "Switch to free finished successfully" {
+		t.Fatalf("summary %q", s.Summary())
+	}
+	os.WriteFile(filepath.Join(root, "channel.py.status"), []byte("1"), 0600)
+	if _, err := Start(root, card, ModeFree); err != nil {
+		t.Fatal(err)
+	}
+	if s = waitState(t, root, func(s State) bool { return !s.Active() }); s.Status != "failed" {
+		t.Fatalf("a failed switch reported %+v", s)
+	}
+	// without Downloader there is no switch, as there is no app update
+	os.Remove(downloader)
+	if CanSwitchToFree(card) {
+		t.Fatal("a card without Downloader offers the switch to free")
+	}
+}
+
 // Update All does not install Scripts/downloader.sh; it keeps Downloader
 // under Scripts/.config/downloader, which is where that launcher runs it
 // from anyway. An ordinary Update All card has only the second, so the run

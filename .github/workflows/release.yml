@@ -23,19 +23,40 @@ jobs:
           cache: false
       - name: Validate release version
         run: |
-          [[ "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]] || {
-            echo "Use vX.Y.Z or vX.Y.Z-rc.N"; exit 1;
+          [[ "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+|-beta\.[0-9]+)?$ ]] || {
+            echo "Use vX.Y.Z, vX.Y.Z-rc.N or vX.Y.Z-beta.N"; exit 1;
           }
+      - name: Beta access batch
+        if: contains(github.ref_name, '-beta.')
+        run: |
+          # MisterZine Arcade, the Patreon members' beta. deploy/beta-batch.json
+          # holds the batch and its code's SHA-256, never the code; a missing
+          # or partial batch stops the release here.
+          FLAGS="$(python3 tools/beta_batch.py ldflags)"
+          echo "BETA_LDFLAGS=$FLAGS" >> "$GITHUB_ENV"
       - name: Build device binary
         run: |
+          if [[ "$GITHUB_REF_NAME" == *-beta.* && -z "${BETA_LDFLAGS:-}" ]]; then
+            echo "::error::A beta needs its batch and code hash"; exit 1
+          fi
           SHA="$(git rev-parse --short HEAD)"
           DATE="$(date -u +%Y-%m-%d)"
           M=github.com/matijaerceg/misterzine-on-device/internal/buildinfo
           GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go build -trimpath \
-            -ldflags "-s -w -X $M.Version=$GITHUB_REF_NAME -X $M.Commit=$SHA -X $M.Date=$DATE" \
+            -ldflags "-s -w -X $M.Version=$GITHUB_REF_NAME -X $M.Commit=$SHA -X $M.Date=$DATE${BETA_LDFLAGS:+ $BETA_LDFLAGS}" \
             -o dist/misterzine ./cmd/misterzine
           file dist/misterzine | grep -q "ELF 32-bit LSB executable, ARM"
           file dist/misterzine | grep -q "statically linked"
+      - name: Beta build carries its batch
+        if: contains(github.ref_name, '-beta.')
+        run: |
+          python3 tools/beta_batch.py verify dist/misterzine
+          # the same build for this runner: -version refuses beta values that
+          # do not belong together
+          M=github.com/matijaerceg/misterzine-on-device/internal/buildinfo
+          GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath \
+            -ldflags "-s -w -X $M.Version=$GITHUB_REF_NAME $BETA_LDFLAGS" -o "$RUNNER_TEMP/misterzine" ./cmd/misterzine
+          "$RUNNER_TEMP/misterzine" -version
       - name: Package and verify local assets
         run: |
           python3 tools/make-db.py "$GITHUB_REF_NAME" dist/misterzine dist/release/misterzine.json.zip
@@ -44,11 +65,11 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           draft: true
-          prerelease: ${{ contains(github.ref_name, '-rc.') }}
+          prerelease: ${{ contains(github.ref_name, '-rc.') || contains(github.ref_name, '-beta.') }}
           make_latest: "false"
           files: dist/release/*
           fail_on_unmatched_files: true
-          body_path: docs/RELEASE_NOTES.md
+          body_path: ${{ contains(github.ref_name, '-beta.') && 'docs/BETA_RELEASE_NOTES.md' || 'docs/RELEASE_NOTES.md' }}
   publish:
     needs: build
     runs-on: ubuntu-latest
@@ -62,8 +83,30 @@ jobs:
           python3 tools/verify_package.py downloaded "$GITHUB_REF_NAME"
       - name: Publish verified release
         run: |
-          if [[ "$GITHUB_REF_NAME" == *-rc.* ]]; then
+          if [[ "$GITHUB_REF_NAME" == *-rc.* || "$GITHUB_REF_NAME" == *-beta.* ]]; then
             gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease --latest=false
           else
             gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease=false --latest
           fi
+      - name: Point the beta database at this beta
+        if: contains(github.ref_name, '-beta.')
+        run: |
+          # releases/latest never serves a prerelease, so the beta database
+          # lives at a fixed address on the distribution branch, with the
+          # catalogue beta builds check. The first beta creates the branch.
+          # No force push: a lost race fails here and is simply rerun.
+          dist="$RUNNER_TEMP/distribution"
+          git init -q -b distribution "$dist"
+          git -C "$dist" remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git -C "$dist" ls-remote --exit-code --heads origin distribution >/dev/null; then
+            git -C "$dist" fetch -q --depth=1 origin distribution
+            git -C "$dist" reset -q --hard FETCH_HEAD
+          fi
+          python3 tools/make-db.py --distribution "$GITHUB_REF_NAME" downloaded "$dist"
+          git -C "$dist" add -A
+          if git -C "$dist" diff --cached --quiet; then
+            echo "The distribution branch already serves $GITHUB_REF_NAME"; exit 0
+          fi
+          git -C "$dist" -c user.name="MisterZine release" -c user.email="release@users.noreply.github.com" \
+            commit -q -m "Publish $GITHUB_REF_NAME"
+          git -C "$dist" push -q origin HEAD:distribution

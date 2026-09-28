@@ -1,8 +1,10 @@
 """Install, upgrade, remove and reinstall a package using an installed Downloader.
 
-Usage: python3 tools/test_downloader_integration.py DOWNLOADER.zip PACKAGE_DIR
+Usage: python3 tools/test_downloader_integration.py DOWNLOADER.zip PACKAGE_DIR [BETA_PACKAGE_DIR]
 Only HTTP transport is replaced with byte fixtures. Downloader's URL validation,
 hash checks, installation, local store and removal run against a temporary card.
+With a beta package (a vX.Y.Z-beta.N release directory) it also moves a card
+from the free package to MisterZine Arcade and back through deploy/channel.py.
 """
 import hashlib
 import importlib.util
@@ -164,5 +166,102 @@ def exercise(archive, package):
         print("PASS: packaged install with global filters, legacy/space-name upgrade, keep-data removal, same-version reinstall, full removal")
 
 
+# Serves the exact URLs a release and the distribution branch publish.
+ROUTED_RUNNER = r'''
+import contextlib
+import io
+from pathlib import Path
+import runpy
+import sys
+
+archive, table = sys.argv[1:3]
+sys.path.insert(0, archive)
+from downloader.http_gateway import HttpGateway
+routes = dict(line.split(" ", 1) for line in Path(table).read_text().splitlines())
+
+class Response(io.BytesIO):
+    status = 200
+    def getheader(self, name, default=None):
+        return str(len(self.getvalue())) if name.lower() == "content-length" else default
+
+@contextlib.contextmanager
+def fixture_http(self, url, *args, **kwargs):
+    if url not in routes:
+        raise RuntimeError("Unexpected network request in fixture: " + url)
+    with Response(Path(routes[url]).read_bytes()) as response:
+        yield url, response
+
+HttpGateway.open = fixture_http
+sys.argv = [archive] + sys.argv[3:]
+runpy.run_path(archive, run_name="__main__")
+'''
+
+
+def exercise_switch(archive, free, beta):
+    """Free, then MisterZine Arcade, then free again, on one card: the files
+    are replaced in place, saved data stays, and the beta-only files and menu
+    entry leave with the beta."""
+    archive, free, beta = Path(archive).resolve(), Path(free).resolve(), Path(beta).resolve()
+    spec = importlib.util.spec_from_file_location("fixture_channel", Path(__file__).resolve().parents[1] / "deploy/channel.py")
+    channel = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(channel)
+    routes = {channel.URLS["free"]: free / "misterzine.json.zip", channel.URLS["beta"]: beta / "misterzine.json.zip"}
+    for package in (free, beta):
+        with zipfile.ZipFile(package / "misterzine.json.zip") as z:
+            for entry in json.loads(z.read("misterzine.json"))["files"].values():
+                routes[entry["url"]] = package / entry["url"].rsplit("/", 1)[-1]
+    with tempfile.TemporaryDirectory(prefix="mz-downloader-switch-") as tmp:
+        root = Path(tmp).resolve()
+        card, proc = root / "card", root / "proc"
+        proc.mkdir()
+        table = root / "routes.txt"
+        table.write_text("\n".join(url + " " + str(path) for url, path in routes.items()))
+        runner = root / "runner.py"
+        runner.write_text(ROUTED_RUNNER)
+        installed = card / "Scripts/.config/downloader/downloader_latest.zip"
+        installed.parent.mkdir(parents=True)
+        shutil.copyfile(archive, installed)
+        config = card / "downloader.ini"
+        config.write_text("[MiSTer]\nupdate_linux=false\nallow_reboot=0\nstorage_priority=off\nfilter=arcade console\n")
+
+        def run(args, env=None, cwd=None):
+            if args[1:] == ["launcher", "enable"]:
+                return subprocess.CompletedProcess(args, 0)
+            env = dict(env, FORCED_BASE_PATH=str(card), DEFAULT_BASE_PATH=str(card), EXTRA_DROP_IN_DATABASE_FILES="",
+                       UPDATE_LINUX="false", ALLOW_REBOOT="0", LOGFILE=str(card / "downloader.log"),
+                       SKIP_FREE_SPACE_CHECKS="true", DEBUG="true", CURL_SSL="", SSL_CERT_FILE="", FAIL_ON_FILE_ERROR="true")
+            env.pop("PC_LAUNCHER", None)
+            result = subprocess.run([sys.executable, str(runner), args[1], str(table), *args[2:]],
+                                    env=env, cwd=cwd, text=True, capture_output=True, timeout=120)
+            if result.returncode:
+                print(result.stdout, result.stderr)
+            return result
+
+        def binary(package):
+            return (package / "misterzine").read_bytes()
+
+        app = card / "misterzine"
+        channel.switch(card, "free", run=run, proc_root=proc)
+        assert (app / "misterzine").read_bytes() == binary(free)
+        saved = {"favorites.json": b"favorite fixture", "settings.json": b"preference fixture"}
+        for name, data in saved.items():
+            (app / name).write_bytes(data)
+        channel.switch(card, "beta", run=run, proc_root=proc)
+        assert (app / "misterzine").read_bytes() == binary(beta)
+        assert (app / "channel.py").exists() and (card / "Scripts/MisterZine-Switch-To-Free.sh").exists()
+        (card / "MisterZine Arcade.mgl").write_text("beta menu entry fixture")
+        channel.switch(card, "free", run=run, proc_root=proc)
+        assert (app / "misterzine").read_bytes() == binary(free)
+        assert not (app / "channel.py").exists(), "the beta's channel.py stayed"
+        assert not (card / "Scripts/MisterZine-Switch-To-Free.sh").exists(), "the beta's switch script stayed"
+        assert not (card / "MisterZine Arcade.mgl").exists()
+        for name, data in saved.items():
+            assert (app / name).read_bytes() == data
+        assert (card / "downloader_misterzine.ini").read_text() == channel.DROP_IN_TEXT.replace("@URL@", channel.URLS["free"])
+        print("PASS: free to MisterZine Arcade and back in place, saved data kept, beta files and menu entry removed")
+
+
 if __name__ == "__main__":
     exercise(sys.argv[1], sys.argv[2])
+    if len(sys.argv) > 3:
+        exercise_switch(sys.argv[1], sys.argv[2], sys.argv[3])

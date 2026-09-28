@@ -6,7 +6,8 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 )
 
-// SetAppUpdate receives an already validated stable version from the host.
+// SetAppUpdate receives an already validated version from the host: a
+// stable release, or in the beta build the newest beta.
 func (a *App) SetAppUpdate(version string) {
 	if a.appUpdate == version {
 		return

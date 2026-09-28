@@ -42,6 +42,99 @@ To test a candidate through Downloader, temporarily point the single existing
 MisterZine database entry at that candidate's versioned database URL. Do not add
 a duplicate database. Restore the stable URL afterward.
 
+## Beta releases
+
+MisterZine Arcade, the Patreon members' beta, is this source built with
+`internal/beta.Channel=beta`; every beta-only feature shows itself only when
+`beta.On()` is true. It installs as the same Downloader database, `misterzine`,
+so it replaces the free files in place and Update All keeps working. Members'
+entries point at a database with a fixed address, because GitHub's latest
+release is never a prerelease:
+
+- `https://raw.githubusercontent.com/matijaerceg/misterzine-on-device/distribution/beta.json.zip`,
+  the newest beta's database;
+- `.../distribution/catalogue.json`, its version and batch, which beta builds
+  read for their **App update** notice;
+- `.../distribution/MisterZine-Install-Beta.sh` and `MisterZine-Switch-To-Free.sh`.
+
+The release workflow writes these on the `distribution` branch for every beta
+tag. Free releases never touch it, and a free build never reads it.
+
+### Access batches
+
+The beta opens with a six-digit code. A batch is a name and the SHA-256 of
+its code, kept in `deploy/beta-batch.json`; the code itself never enters the
+repository or the workflow. Six digits are recoverable from their hash, so
+this is a convenience gate, not protection.
+
+```sh
+python tools/beta_batch.py new arcade-1
+```
+
+This writes the code to `~/.misterzine-beta/arcade-1.code` (`--private DIR`
+chooses another folder), prints only that path and refuses to overwrite a
+code. Keep a copy in the private notes. Commit `deploy/beta-batch.json`.
+
+To rotate the code for a new batch of features, run the same command with a new
+name, commit, and cut the next beta. Builds from that commit on accept only the
+new code; its members' post carries it. A new version alone keeps the code.
+
+### One-time setup
+
+Create and commit the first batch as above. That is the only manual step: the
+first beta tag creates the `distribution` branch, pushing as the workflow's
+`GITHUB_TOKEN`. If a repository ruleset covers every branch, let that token
+push to `distribution`, and protect it against force pushes and deletion.
+
+### Cutting a beta
+
+1. Merge the beta features to main with the usual checks, including their
+   `-beta` goldens.
+2. Rewrite `docs/BETA_RELEASE_NOTES.md`, the prerelease's body, for this beta.
+   The code goes in the members' post, never in the notes.
+3. Tag `vX.Y.Z-beta.N`, where `vX.Y.Z` is the free release it leads to. A free
+   release follows its betas (`v1.2.0` comes after `v1.2.0-beta.3`), so after
+   `v1.2.0` the next beta is `v1.2.1-beta.1` or `v1.3.0-beta.1`.
+
+The workflow runs CI, refuses a beta without a complete batch, builds with the
+channel, batch and hash, and checks the binary carries them (the linker skips
+`-X` for a missing variable without a word). The package adds
+`misterzine/channel.py` and `Scripts/MisterZine-Switch-To-Free.sh` to the
+database, with `MisterZine-Install-Beta.sh` and a drop-in pointed at the beta as
+release assets only. It publishes a prerelease, never marked latest, then
+commits `beta.json.zip`, `catalogue.json` and both scripts to `distribution`
+("Publish vX.Y.Z-beta.N"). Rerunning the same tag changes nothing; a tag older
+than the beta already served is refused, so fix a bad beta with the next one.
+
+Members get it with their next Update All; running beta builds show
+**App update** within 30 minutes. Test a beta binary on the boards before
+tagging it, since the tag reaches members at once. For the post, link the
+installer on `distribution` or in the prerelease.
+
+### After a free release
+
+A beta build offers only newer betas. A newer free release is not offered to
+members: their entry follows the beta database, and taking the free one would
+drop the beta features. So after each free release, cut a beta from the same
+commit or later, so members are never behind. To offer free releases to beta
+builds instead, change `buildinfo.CheckBetaUpdate`.
+
+### Promoting a feature to free
+
+Delete the feature's `beta.On()` check, render its free goldens and inspect
+them, remove the `-beta` scenarios that only covered it, and ship it in the next
+free release. The beta keeps it. Then cut the next beta from that release or
+later.
+
+### Going back to free
+
+`MisterZine-Switch-To-Free` (and the app, through `updater.ModeFree`) runs
+`channel.py free`: it points the `misterzine` entry back at the latest free
+release, runs Downloader for it, which removes the beta-only files, and deletes
+`MisterZine Arcade.mgl`. `MisterZine-Install-Beta` runs `channel.py beta`. Both
+edit only the entry's `db_url`, wherever it is: the drop-in, another drop-in or
+a `downloader.ini` section; a card with no entry gets the standard drop-in.
+
 ## The changelog and the release card
 
 The changelog is the complete record: every change, the reason for a fix and
@@ -142,6 +235,11 @@ one-time Setup and Uninstall Scripts entries, removal helper, MGL and licenses
 alongside the binary. It also writes `SHA256SUMS`. The drop-in INI is supplied
 as a release asset for users to copy; Downloader does not install its own
 root-level configuration.
+
+A beta tag also packages `channel.py` and `MisterZine-Switch-To-Free.sh`, and
+stages `MisterZine-Install-Beta.sh` and a drop-in pointed at the beta database
+as release assets. `tools/verify_package.py` refuses a beta database under a
+free tag and the reverse.
 
 Favorites, preferences, filters, logs, tokens and debug flags are never package
 contents. Developer test binaries and render outputs are also excluded.

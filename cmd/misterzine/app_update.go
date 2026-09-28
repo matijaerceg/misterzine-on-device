@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/matijaerceg/misterzine-on-device/internal/beta"
 	"github.com/matijaerceg/misterzine-on-device/internal/buildinfo"
 )
 
@@ -16,10 +17,15 @@ func (h *host) requestAppCheck() {
 	}
 	h.appCheckRunning = true
 	h.nextAppCheck = time.Now().Add(30 * time.Minute)
+	// the beta follows its own track: the newest beta, never a free release
+	check, url := buildinfo.CheckUpdate, buildinfo.LatestReleaseURL
+	if beta.On() {
+		check, url = buildinfo.CheckBetaUpdate, buildinfo.BetaCatalogueURL
+	}
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		version, err := buildinfo.CheckUpdate(ctx, http.DefaultClient, buildinfo.LatestReleaseURL, buildinfo.Version)
+		version, err := check(ctx, http.DefaultClient, url, buildinfo.Version)
 		h.runOnUI(func() {
 			h.appCheckRunning = false
 			if err != nil {
