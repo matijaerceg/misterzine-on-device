@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/matijaerceg/misterzine-on-device/internal/beta"
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
@@ -43,8 +42,7 @@ func viewsRow(t *testing.T, a *App, tap func(platform.Key)) panelEntry {
 	return panelEntry{}
 }
 
-func TestCoreViewInTheBeta(t *testing.T) {
-	defer beta.Set(true)()
+func TestCoreView(t *testing.T) {
 	a, tap := coreViewApp(Config{ViewsOff: []string{"recents"}})
 	var seen []data.SortMode
 	for i := 0; i < 7; i++ {
@@ -105,48 +103,6 @@ func TestCoreViewInTheBeta(t *testing.T) {
 		t.Fatalf("remembered Core view opens in %v", b.mode)
 	}
 	if b, _ := coreViewApp(Config{DefaultSort: data.SortCore}); b.mode != data.SortCore || b.DefaultView() != data.SortCore {
-		t.Fatalf("default Core view opens in %v", b.mode)
-	}
-}
-
-// The free build has no Core view: not in the cycle, not on the Views page,
-// and a saved choice of it falls back as a view that is off would.
-func TestCoreViewAbsentFromTheFreeBuild(t *testing.T) {
-	defer beta.Set(false)()
-	a, tap := coreViewApp(Config{ViewsOff: []string{"core", "recents"}})
-	var seen []data.SortMode
-	for i := 0; i < 6; i++ {
-		seen = append(seen, a.mode)
-		tap(platform.KeySpace)
-	}
-	want := []data.SortMode{data.SortUpdated, data.SortDebut, data.SortYear, data.SortAlphabetical, data.SortMaker, data.SortFavorites}
-	if !reflect.DeepEqual(seen, want) || a.mode != data.SortUpdated {
-		t.Fatalf("Y walks %v then %v", seen, a.mode)
-	}
-	if a.SetSort(data.SortCore); a.mode != data.SortUpdated {
-		t.Fatal("the free build switched to the Core view")
-	}
-	if !reflect.DeepEqual(a.ViewsOff(), []string{"recents"}) {
-		t.Fatalf("views off %v", a.ViewsOff())
-	}
-	e := viewsRow(t, a, tap)
-	if e.text != "Views (6 of 7)" || strings.Contains(e.help, "core") {
-		t.Fatalf("Views row %q, help %q", e.text, e.help)
-	}
-	a.openViews()
-	for _, e := range a.panel.entries {
-		if e.value == "core" {
-			t.Fatal("the free Views page lists the Core view")
-		}
-	}
-	if len(a.panel.entries) != 7 {
-		t.Fatalf("Views page %d entries", len(a.panel.entries))
-	}
-	// left in the beta while remembered or chosen as the default
-	if b, _ := coreViewApp(Config{RememberSort: true, LastSort: data.SortCore}); b.mode != data.SortUpdated {
-		t.Fatalf("remembered Core view opens in %v", b.mode)
-	}
-	if b, _ := coreViewApp(Config{DefaultSort: data.SortCore, ViewsOff: []string{"updated"}}); b.mode != data.SortDebut || b.DefaultView() != data.SortDebut {
 		t.Fatalf("default Core view opens in %v", b.mode)
 	}
 }

@@ -1,10 +1,6 @@
 package data
 
-import (
-	"sort"
-
-	"github.com/matijaerceg/misterzine-on-device/internal/beta"
-)
+import "sort"
 
 // SortMode selects the device's list order.
 type SortMode int
@@ -36,21 +32,14 @@ const (
 	// SortCore groups the games by the core that runs them
 	// (Derived.CoreGroup, coregroup.go): the multi-game arcade cores A-Z by
 	// label, then the arcade cores with one game gathered in one group, then
-	// the console, computer and other cores; titles A-Z inside. It belongs
-	// to the Patreon beta for now (Valid). Last in value because the value is
-	// saved; it sits after Maker in the browsing cycle.
+	// the console, computer and other cores; titles A-Z inside. Last in
+	// value because the value is saved; it sits after Maker in the browsing
+	// cycle.
 	SortCore
 )
 
-// Valid reports whether m is a sort mode this build knows. The Core view is
-// the beta's, so a free build treats a saved Core view like any unknown
-// value and falls back from it.
-func (m SortMode) Valid() bool {
-	if m == SortCore {
-		return beta.On() // delete to make the Core view public
-	}
-	return m >= SortUpdated && m <= SortCore
-}
+// Valid reports whether m is a sort mode the app knows.
+func (m SortMode) Valid() bool { return m >= SortUpdated && m <= SortCore }
 
 // Anchored reports whether the mode orders the whole catalogue, where a
 // standin row sorts, groups and jumps as part of the row it stands in for
@@ -58,19 +47,8 @@ func (m SortMode) Valid() bool {
 // keep every row to its own title and launches.
 func (m SortMode) Anchored() bool { return m != SortFavorites && m != SortRecents }
 
-var viewOrder = []SortMode{SortUpdated, SortDebut, SortYear, SortAlphabetical, SortMaker, SortCore, SortFavorites, SortRecents}
-
-// ViewOrder is every view this build has, in the order Y walks them,
-// Recents included.
-func ViewOrder() []SortMode {
-	out := make([]SortMode, 0, len(viewOrder))
-	for _, m := range viewOrder {
-		if m.Valid() {
-			out = append(out, m)
-		}
-	}
-	return out
-}
+// ViewOrder is every view in the order Y walks them, Recents included.
+var ViewOrder = []SortMode{SortUpdated, SortDebut, SortYear, SortAlphabetical, SortMaker, SortCore, SortFavorites, SortRecents}
 
 var sortNames = map[SortMode]string{SortUpdated: "updated", SortDebut: "debut", SortYear: "year", SortAlphabetical: "alphabetical", SortMaker: "maker", SortCore: "core", SortFavorites: "favorites", SortRecents: "recents"}
 
@@ -78,10 +56,10 @@ var sortNames = map[SortMode]string{SortUpdated: "updated", SortDebut: "debut", 
 // out of the cycle by name).
 func (m SortMode) Name() string { return sortNames[m] }
 
-// ParseSort is the inverse of Name, for the views this build has.
+// ParseSort is the inverse of Name.
 func ParseSort(name string) (SortMode, bool) {
 	for m, n := range sortNames {
-		if n == name && m.Valid() {
+		if n == name {
 			return m, true
 		}
 	}

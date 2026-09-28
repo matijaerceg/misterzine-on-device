@@ -36,8 +36,8 @@ func TestListLayouts(t *testing.T) {
 				if l.Lines < 4 {
 					t.Fatalf("%dx%d inset %d %s: only %d rows", size[0], size[1], inset, style, l.Lines)
 				}
-				if l.Style != style || l.TextBeside != (style == "picture" || (style == "split" && l.Portrait)) || l.PaneTop != (style == "picture" && !l.Portrait) {
-					t.Fatalf("%dx%d %s: flags style %q beside %v top %v", size[0], size[1], style, l.Style, l.TextBeside, l.PaneTop)
+				if l.Style != style || l.TextBeside != ((style == "picture" || style == "split") && l.Portrait) || l.PaneTop != (style == "picture" && !l.Portrait) || l.ArtCentered != (style == "picture" && !l.Portrait) {
+					t.Fatalf("%dx%d %s: flags style %q beside %v top %v centred %v", size[0], size[1], style, l.Style, l.TextBeside, l.PaneTop, l.ArtCentered)
 				}
 			}
 		}

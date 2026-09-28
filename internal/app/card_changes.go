@@ -1,15 +1,13 @@
 package app
 
 import (
-	"github.com/matijaerceg/misterzine-on-device/internal/beta"
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/updater"
 )
 
-// cardWatch is a card scan whose outcome the player is told (MisterZine
-// Arcade, the beta): Options -> Rescan card, and the scan an Update All run
-// ends with. It holds the statuses the scan started from, by row key, and
+// cardWatch is a card scan whose outcome the player is told: Options ->
+// Rescan card, and the scan an Update All run ends with. It holds the statuses the scan started from, by row key, and
 // once the scan has finished, what it changed.
 type cardWatch struct {
 	before map[string]data.Status // every status known when the scan started
@@ -25,15 +23,10 @@ type cardChange struct {
 	lost      int // up to date before; older, of unknown date or not found now
 }
 
-// watchCard notes the statuses a scan starts from. It is this report's one
-// beta check: the free build watches nothing, so its scan and update screens
-// read as they always have. Nil too while no status is known at all: a first
-// scan has nothing to compare with, and every release it finds would
-// otherwise read as just installed.
+// watchCard notes the statuses a scan starts from. Nil while no status is
+// known at all: a first scan has nothing to compare with, and every release
+// it finds would otherwise read as just installed.
 func (a *App) watchCard() *cardWatch {
-	if !beta.On() {
-		return nil
-	}
 	before := map[string]data.Status{}
 	for i := range a.ds.Rows {
 		if st := a.status(i); st != data.StatusUnknown {

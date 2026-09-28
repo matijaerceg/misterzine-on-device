@@ -25,7 +25,7 @@ type updateView struct {
 	log        []string // last painted log; held still while scrolled back
 	error      string
 	restart    bool
-	card       *cardWatch // what the rescan after the run changed (beta)
+	card       *cardWatch // what the rescan after the run changed
 }
 
 // SetUpdateRestart applies a background check only to the finished run it belongs to.

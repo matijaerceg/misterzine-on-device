@@ -29,7 +29,7 @@ type Settings struct {
 	InstalledOnly        bool          `json:"installed_sources_only"` // Options -> Sources: installed only
 	Inset                int           `json:"inset"`
 	Prefetch             bool          `json:"prefetch"`
-	Scroll               string        `json:"scroll"` // rows per second: 20, 30, 60, or the beta's 10
+	Scroll               string        `json:"scroll"` // rows per second: 10, 20, 30, 60
 	HoldDelay            int           `json:"hold_delay_ms"`
 	SaverDisabled        bool          `json:"screensaver_disabled"`
 	Screensaver          string        `json:"screensaver_minutes"`
@@ -129,7 +129,7 @@ func (s *Settings) Migrate(legacy bool) {
 			views = append(views, n)
 		}
 	}
-	if len(views) >= len(data.ViewOrder()) {
+	if len(views) >= len(data.ViewOrder) {
 		views = []string{} // nothing left on: back to every view
 	}
 	s.ViewsOff = views
@@ -165,7 +165,6 @@ func (s *Settings) Migrate(legacy bool) {
 	}
 	switch s.Scroll {
 	case "10", "20", "30", "60":
-		// 10 is the beta's; the free build reads it as its nearest speed, 20
 	case "normal":
 		s.Scroll = "20"
 	case "turbo":

@@ -754,7 +754,7 @@ func (h *host) optionSampleLoop() {
 		wasLayout := h.a.LayoutTransitionRunning()
 		h.a.ListScrollFrame(now)
 		h.a.DetailScrollFrame(now)
-		h.a.LayoutMotionFrame() // the beta's layout motion: one step per blank
+		h.a.LayoutMotionFrame() // the layout motion: one step per blank
 		h.a.Tick(now)
 		// Input may have left the preview and armed key repeat. Paint that
 		// selection before the loop condition hands control back to the host.

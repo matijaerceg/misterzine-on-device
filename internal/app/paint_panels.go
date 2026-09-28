@@ -451,7 +451,7 @@ func (a *App) canUpdateApp() bool { return a.cfg.CanUpdateApp != nil && a.cfg.Ca
 func (a *App) optionsEntries() []panelEntry {
 	rotIdx := map[gfx.Rotation]int{gfx.RotRight: 0, gfx.RotNone: 1, gfx.RotLeft: 2}[a.rot]
 	scrollIdx, scrollVals := 0, []string{}
-	for i, v := range ScrollValues() {
+	for i, v := range ScrollValues {
 		scrollVals = append(scrollVals, v+" Hz")
 		if v == a.scrollText() {
 			scrollIdx = i
@@ -520,7 +520,7 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "Filter by rotation", kind: "filter-rotation", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.FilterRotation()],
 			help: "Show only games made for the current orientation (INI or manual); unknowns hidden. Off restores manual filters."},
 		{text: "Views (" + a.viewsSummary() + ")", kind: "views", opensPage: true,
-			help: a.viewsHelp()},
+			help: "Which views " + a.btn("Y") + " cycles through: build date, MiSTer debut, original year, A-Z, manufacturer, core, Favorites, Recents (launches from here). " + a.btn("A") + " opens the list."},
 		{text: "Remember last view", kind: "remember-sort", child: true, vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.RememberSort()],
 			help: "On: reopen in the last view used. Off: use Default view. Takes effect next time MisterZine opens."},
 		{text: "Title font", kind: "title-font", vals: []string{"normal", "narrow", "narrow tall"}, idx: map[string]int{"normal": 0, "narrow": 1, "tall": 2}[a.TitleFont()],
@@ -623,7 +623,7 @@ func (a *App) dateFormatHelp() string {
 }
 
 // scrollText is the held-scrolling speed as the Options row shows it, and
-// as it is saved back: always one of this build's ScrollValues.
+// as it is saved back: always one of ScrollValues.
 func (a *App) scrollText() string { return offeredScroll(a.cfg.Scroll) }
 
 func (a *App) progressText() string {
@@ -1114,7 +1114,7 @@ func (a *App) stepValue(d int) bool {
 			a.cfg.Action("rotation", []string{"right", "off", "left"}[i])
 		}
 	case "scroll":
-		a.cfg.Scroll = ScrollValues()[i]
+		a.cfg.Scroll = ScrollValues[i]
 	case "smooth-scroll":
 		a.cfg.SmoothScrollDisabled = i == 0
 	case "hold-delay":

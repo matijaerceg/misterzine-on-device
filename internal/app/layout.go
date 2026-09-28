@@ -3,7 +3,6 @@ package app
 import (
 	"image"
 
-	"github.com/matijaerceg/misterzine-on-device/internal/beta"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 )
 
@@ -175,9 +174,9 @@ func NewLayout(w, h, ix, iy int, body *gfx.Font, rowW, dateCols int, style strin
 		l.Thumb = image.Rect(l.Pane.Min.X+3, l.Pane.Min.Y+3, l.Pane.Min.X+3+tw, l.Pane.Min.Y+3+th)
 		l.PaneText = image.Rect(l.Thumb.Max.X+4, l.Pane.Min.Y+3, l.Pane.Max.X, l.Pane.Max.Y)
 		l.TextBeside = true
-		if beta.On() && l.PaneText.Dx() >= 60 {
-			// MisterZine Arcade: the text keeps its column at the box's edge
-			// whatever the shot's drawn width, and a vertical shot centres
+		if l.PaneText.Dx() >= 60 {
+			// the text keeps its column at the box's edge whatever the
+			// shot's drawn width, and a vertical shot centres
 			l.TextBeside, l.ArtCentered = false, true
 		}
 	case l.Portrait:

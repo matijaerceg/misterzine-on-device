@@ -270,7 +270,7 @@ type App struct {
 	scanReady      bool
 	scanError      string
 	scanCounts     bool       // the finished scan delivered statuses worth showing
-	scanWatch      *cardWatch // what Rescan card changed (beta)
+	scanWatch      *cardWatch // what Rescan card changed
 	all            bool       // full repaint pending
 	saver          screensaver
 	marquee        marqueeState
@@ -965,7 +965,7 @@ func (a *App) Tick(now time.Time) (changed bool) {
 	changed = a.tickPageTransition(now)
 	changed = a.tickHoldLaunch(now) || changed
 	changed = a.tickLaunchCab(now) || changed
-	changed = a.tickLayoutMotion(now) || changed
+	a.validateLayoutMotion() // the motion itself steps once per displayed frame (LayoutMotionFrame)
 	changed = a.tickSplash(now) || changed
 	changed = a.tickMenu(now) || changed
 	changed = a.tickArcadeIntro(now) || changed
@@ -1008,7 +1008,6 @@ func (a *App) Frame(now time.Time) (changed bool) {
 	changed = a.tickPageTransition(now)
 	changed = a.tickHoldLaunch(now) || changed
 	changed = a.tickLaunchCab(now) || changed
-	changed = a.tickLayoutMotion(now) || changed
 	changed = a.LayoutMotionFrame() || changed
 	changed = a.tickSplash(now) || changed
 	changed = a.tickMenu(now) || changed
@@ -1256,7 +1255,7 @@ func (a *App) Invalidate() {
 		a.transition.pending = true
 		return
 	}
-	if m := &a.layoutMotion; m.active && m.framed {
+	if m := &a.layoutMotion; m.active {
 		// mid-motion a full repaint would cost a frame: the motion takes a
 		// picture that landed on its next frame, and its end repaints all
 		m.landed = true
@@ -1304,7 +1303,7 @@ func (a *App) neighbourhood() {
 	if box.Empty() {
 		return // the text layout shows no pictures
 	}
-	if m := &a.layoutMotion; m.active && m.framed {
+	if a.layoutMotion.active {
 		return // the decoder takes the destination picture alone while the layout moves
 	}
 	for d := 1; d <= 16; d++ {

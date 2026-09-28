@@ -28,15 +28,15 @@ func viewsApp(off ...string) (*App, func(platform.Key)) {
 func TestViewsCycleSkipsTheOnesOff(t *testing.T) {
 	a, tap := viewsApp("recents")
 	var seen []data.SortMode
-	for i := 0; i < 6; i++ {
+	for i := 0; i < 7; i++ {
 		seen = append(seen, a.mode)
 		tap(platform.KeySpace)
 	}
-	want := []data.SortMode{data.SortUpdated, data.SortDebut, data.SortYear, data.SortAlphabetical, data.SortMaker, data.SortFavorites}
+	want := []data.SortMode{data.SortUpdated, data.SortDebut, data.SortYear, data.SortAlphabetical, data.SortMaker, data.SortCore, data.SortFavorites}
 	if !reflect.DeepEqual(seen, want) || a.mode != data.SortUpdated {
 		t.Fatalf("cycle %v then %v", seen, a.mode)
 	}
-	a, tap = viewsApp("recents", "debut", "year", "favorites")
+	a, tap = viewsApp("recents", "debut", "year", "core", "favorites")
 	seen = nil
 	for i := 0; i < 3; i++ {
 		seen = append(seen, a.mode)
@@ -55,8 +55,8 @@ func TestViewsCycleSkipsTheOnesOff(t *testing.T) {
 		t.Fatal("a view that is off must be refused")
 	}
 	// leaving nothing on is ignored
-	a, _ = viewsApp("updated", "debut", "year", "alphabetical", "maker", "favorites", "recents")
-	if a.viewsOnCount() != 7 || a.mode != data.SortUpdated {
+	a, _ = viewsApp("updated", "debut", "year", "alphabetical", "maker", "core", "favorites", "recents")
+	if a.viewsOnCount() != 8 || a.mode != data.SortUpdated {
 		t.Fatalf("every view off: %d on, mode %v", a.viewsOnCount(), a.mode)
 	}
 }
@@ -71,12 +71,12 @@ func TestViewsPageTogglesAndKeepsTheLastOne(t *testing.T) {
 			row = i
 		}
 	}
-	if row < 0 || a.panel.entries[row].text != "Views (6 of 7)" {
+	if row < 0 || a.panel.entries[row].text != "Views (7 of 8)" {
 		t.Fatalf("Options row: %+v", a.panel.entries)
 	}
 	a.panel.cursor = row
 	tap(platform.KeyEnter)
-	if a.screen != ScreenViews || len(a.panel.entries) != len(data.ViewOrder()) {
+	if a.screen != ScreenViews || len(a.panel.entries) != len(data.ViewOrder) {
 		t.Fatalf("Views page: screen %v entries %d", a.screen, len(a.panel.entries))
 	}
 	if e := a.panel.entries[a.panel.cursor]; e.kind != "view" || e.value != "updated" || !e.checked {
@@ -88,7 +88,7 @@ func TestViewsPageTogglesAndKeepsTheLastOne(t *testing.T) {
 		t.Fatalf("after Updated off: on %v mode %v off %v", a.viewOn(data.SortUpdated), a.mode, a.ViewsOff())
 	}
 	// switch everything else off: the last one on is greyed and stays
-	for _, m := range []data.SortMode{data.SortDebut, data.SortYear, data.SortAlphabetical, data.SortMaker} {
+	for _, m := range []data.SortMode{data.SortDebut, data.SortYear, data.SortAlphabetical, data.SortMaker, data.SortCore} {
 		tap(platform.KeyDown)
 		if e := a.panel.entries[a.panel.cursor]; e.value != m.Name() {
 			t.Fatalf("cursor on %q, want %v", e.value, m)
@@ -114,7 +114,7 @@ func TestViewsPageTogglesAndKeepsTheLastOne(t *testing.T) {
 		t.Fatal("Recents back on")
 	}
 	tap(platform.KeyBack)
-	if a.screen != ScreenOptions || a.panel.entries[a.panel.cursor].kind != "views" || a.panel.entries[a.panel.cursor].text != "Views (2 of 7)" {
+	if a.screen != ScreenOptions || a.panel.entries[a.panel.cursor].kind != "views" || a.panel.entries[a.panel.cursor].text != "Views (2 of 8)" {
 		t.Fatalf("back to Options: screen %v row %+v", a.screen, a.panel.entries[a.panel.cursor])
 	}
 	tap(platform.KeyBack)

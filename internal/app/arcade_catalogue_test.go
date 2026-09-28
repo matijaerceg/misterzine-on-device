@@ -23,7 +23,7 @@ func TestArcadeCatalogueScope(t *testing.T) {
 	if len(a.view) != 2 || a.total != 2 || a.filtersActive() || a.cardCounts()[data.StatusCurrent] != 2 {
 		t.Fatal("default catalogue or counts")
 	}
-	for _, mode := range data.ViewOrder() {
+	for _, mode := range data.ViewOrder {
 		a.SetSort(mode)
 		for _, i := range a.view {
 			if !a.ds.Rows[i].IsArcade() {

@@ -137,9 +137,10 @@ list and you cannot see why, Options -> Troubleshooting -> Send a report lists
 every file MisterZine leaves out, with the reason.
 Options -> Views -> Remember last view is on by default; turn it off to choose
 a Default view for each new visit (Core updated initially).
-Y cycles Updated, Debut, Year, Alphabetical, Manufacturer, then Favorites; the
-top bar names the order as core updated, MiSTer debut, original year, A-Z,
-manufacturer or Favorites A-Z. Options -> Views can leave any of them out of the cycle.
+Y cycles Updated, Debut, Year, Alphabetical, Manufacturer, Core, then
+Favorites; the top bar names the order as core updated, MiSTer debut, original
+year, A-Z, manufacturer, core or Favorites A-Z. Options -> Views can leave any
+of them out of the cycle.
 With Recents on there, Recents follows Favorites: the games launched from
 MisterZine, latest launch first, with the launch date in the date column
 and L/R jumping between launch months.
@@ -158,7 +159,14 @@ first company named and corporate or regional suffixes are ignored, so Taito
 Corporation Japan and Taito America Corporation sit under Taito and Data East
 USA under Data East; Details still shows the full credit. Games without a
 manufacturer come last under Unknown manufacturer.
-In the three grouped orders (Year, A-Z, Manufacturer) a group whose header has
+Core groups the games by the core that runs them, a header line naming each
+core the way Details does (Capcom CPS-1, Sega System 16B). The arcade cores
+with more than one game come first, A-Z, so a maker's boards sit together;
+every arcade core with a single game is gathered under Single-game cores after
+them, and with non-arcade cores shown, Console cores, Computer cores and
+Other cores follow. Titles run A-Z within a group, the date column shows the
+original year, and L/R jump from core to core.
+In the grouped orders (Year, A-Z, Manufacturer, Core) a group whose header has
 scrolled off the top keeps its name pinned on the top line until its last
 row has gone.
 Favorites shows only your starred entries in alphabetical order, with the same
@@ -197,7 +205,7 @@ filter choices are saved.
 |---|---|---|---|---|---|---|
 | Up/Down | arrows | move | page information | | move | move |
 | Left/Right | arrows | page, keeping the row centered | choose version | change shot | collapse/expand section or years | change value |
-| L/R | PageUp/PageDown | previous/next letter in A-Z; newer/older month in date sorts; previous/next year or manufacturer | | | previous/next section | previous/next section |
+| L/R | PageUp/PageDown | previous/next letter in A-Z; newer/older month in date sorts; previous/next year, manufacturer or core | | | previous/next section | previous/next section |
 | A | Enter | details | artwork | | toggle a value; open/close a heading | run action |
 | B | Esc | Options / clear search | back | back | back | back |
 | X | Tab | Filters | | | back to the list | |
@@ -255,16 +263,18 @@ Only a pad defined in MiSTer has a Select.
 **Layouts:** List is the default: the full list with the small pane beside
 it (or below it in tate). Split widens the pane to under half the screen
 with a picture to match, leaving shorter rows. Picture runs the picture
-across the screen, in horizontal above a few full-width rows with the
-details beside it, in tate below the rows; a vertical shot keeps its shape
-and the details sit beside it when there is room, otherwise below in three
-lines. Text drops the pane: the rows alone fill the screen, so long titles
+across the screen. In horizontal it sits above a few full-width rows with
+the details in a column beside it that stays put as you scroll, and a
+vertical shot is centred in the picture's box. In tate it sits below the
+rows; a vertical shot keeps its shape and the details sit beside it when
+there is room, otherwise below in three lines. Text drops the pane: the rows alone fill the screen, so long titles
 have more room in horizontal and tate shows more of them; A still opens the
 details. Every layout keeps at least four rows, even with a wide safe zone.
 Hold Select and press Y on the list to cycle the layout there, or pick one
 in Options -> List -> Layout, where the help box draws all four.
-The list and artwork move into place in a short animation; pressing again
-redirects it immediately. Display -> Page transitions also turns this motion
+The list and artwork move into place in a short animation, the same step on
+every displayed frame, so a slow frame delays it rather than making it jump;
+pressing again redirects it immediately. Display -> Page transitions also turns this motion
 off. The screenshot stays visible while resizing when it is already loaded.
 
 MisterZine holds a defined pad exclusively while it runs, so MiSTer sees
@@ -467,11 +477,12 @@ and last row. Rows marked ↗ open another screen or editor.
   waking the screensaver, and rescanning keep the current view. Return after
   game also tries to select the game just played within the starting view.
 - **Views:** which list orders Y cycles through, as a checkbox page: core
-  updated, MiSTer debut, original year, A-Z, Manufacturer, Favorites and Recents.
+  updated, MiSTer debut, original year, A-Z, Manufacturer, Core, Favorites and
+  Recents.
   Everything is on except Recents by default. A toggles a view; the last one
   on cannot be turned off (it is greyed, and A there says so), and turning off
   the view you are in moves the list to the next one on. The Options row
-  counts them, such as "Views (6 of 7)".
+  counts them, such as "Views (7 of 8)".
   Recents lists the games launched from MisterZine, latest first, each once
   with its last launch date, up to 100; search and filters apply. That history
   is MisterZine's own, kept in its state.json whether the view is on or off,
@@ -609,8 +620,8 @@ screenshots match, lettering runs instead and the Preview help explains why.
   for the MiSTer menu, as earlier versions did. With Options chosen, holding
   the button for two seconds quits as well, so the way out is always there.
   Keyboard F12 and the board's button still quit.
-- **Scroll speed:** 20, 30 or 60 rows/pages per second once a hold repeats.
-- **Smooth scrolling:** shown beneath Scroll speed at 20 or 30 Hz. On (default)
+- **Scroll speed:** 10, 20, 30 or 60 rows/pages per second once a hold repeats.
+- **Smooth scrolling:** shown beneath Scroll speed at 10, 20 or 30 Hz. On (default)
   adds intermediate list movement; off moves whole rows. Both choices animate
   in the preview. Releasing finishes the current step. The choice is saved
   even when 60 Hz hides it.
@@ -717,7 +728,12 @@ use Y in the main view to leave it.
 
 Card scans run quietly on launch. Options -> Rescan card shows a result screen
 with up-to-date, older, undated, missing and unknown totals for the enabled
-catalogue. B closes it even
+catalogue. Under its heading it says how many releases became up to date
+since the statuses on show, such as "Newly up to date: 12 (9 updated, 3
+installed)": updated means the card had an older copy or one of unknown
+date, installed that it had none. "No longer up to date" follows when a
+release went missing or fell behind. A rescan made before any status was
+known, while the scan at launch is still running, says neither. B closes it even
 while scanning; completion does not interrupt the screen you moved to.
 Unreadable card scans retain the previous inventory and show a failure banner.
 
@@ -788,7 +804,10 @@ detected, cancellation waits for it to finish. Cancelling does not undo
 completed updates. Restart messages reflect Update All's saved reboot policy.
 
 The supervised updater continues if the app closes. Reopen MisterZine to see
-its progress. On completion the card is rescanned. Results appear once and B
+its progress. On completion the card is rescanned, and the result says what
+that rescan changed in the same words ("Checking card..." until it has
+finished); a MisterZine-only update leaves the games alone and says
+nothing. Results appear once and B
 acknowledges them; **Last update result** reopens the saved output (of either
 kind of run) without starting another update. After an interrupted run or restart, the app reports
 the last known state rather than assuming success.

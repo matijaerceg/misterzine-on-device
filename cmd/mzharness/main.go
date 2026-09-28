@@ -63,7 +63,7 @@ func main() {
 	reportSend := flag.String("report-send", "", "fake Troubleshooting -> Send a report: sent or failed; nothing is uploaded")
 	appUpdate := flag.String("app-update", "", "available app version fixture")
 	scanResult := flag.Bool("scan-result", false, "show completed card scan fixture")
-	scanChanges := flag.Bool("scan-changes", false, "with -scan-result or -update-state: the card changed since the statuses on show (9 releases older and 3 not found are up to date now, 1 up to date is gone), and the scan finishes; the beta says what it changed")
+	scanChanges := flag.Bool("scan-changes", false, "with -scan-result or -update-state: the card changed since the statuses on show (9 releases older and 3 not found are up to date now, 1 up to date is gone), and the scan finishes, which says what it changed")
 	unchanged := flag.Bool("unchanged", false, "previous visit saw every release")
 	filterRotation := flag.Bool("filter-rotation", false, "start with the strict current-rotation filter on")
 	titleFont := flag.String("title-font", "tall", "list title font: tall, narrow or normal")
@@ -77,7 +77,7 @@ func main() {
 	canvas := flag.String("canvas", "320x240", "canvas size WxH: 320x240, or a fit-display size such as 360x270 (1080p) or 400x300")
 	rememberAlt := flag.Int("remember-alt", 0, "start with galagamw's alternative N (1 or 2) remembered as its version")
 	recents := flag.Int("recents", 0, "pretend the first N rows were launched, the last one most recently; turns the Recents view on")
-	viewsOff := flag.String("views-off", "", "views left out of the Y cycle, comma separated names (updated, debut, year, alphabetical, maker, favorites, recents, and core with -beta); Recents is off unless -recents is given")
+	viewsOff := flag.String("views-off", "", "views left out of the Y cycle, comma separated names (updated, debut, year, alphabetical, maker, core, favorites, recents); Recents is off unless -recents is given")
 	installed := flag.String("installed", "", "Downloader database ids the card has, comma separated (e.g. distribution_mister,jtcores): Sources starts on installed only and the other sources are hidden")
 	showNonArcade := flag.Bool("show-non-arcade", false, "include console, computer and other cores")
 	arcadeIntro := flag.Bool("arcade-intro", false, "show upgrade explanation")
@@ -458,7 +458,7 @@ func advance(a *app.App, clock time.Time, d time.Duration, present func()) time.
 				changed = a.OptionSampleFrame() || changed
 			}
 			if a.LayoutTransitionRunning() {
-				// the beta's layout motion steps once per displayed frame
+				// the layout motion steps once per displayed frame
 				if a.LayoutMotionFrame() {
 					changed = true
 					present()

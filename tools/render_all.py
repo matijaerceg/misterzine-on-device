@@ -10,9 +10,9 @@ scenarios = [
     ["-update-state", "testdata/update-completed.json", "-update-restart", "-rot", "left", "-logical", "-out", "out/update-restart-t", "-script", "shot restart"],
     ["-update-state", "testdata/update-completed.json", "-out", "out/update-completed-h", "-script", "shot completed"],
     ["-update-state", "testdata/update-completed.json", "-rot", "left", "-logical", "-out", "out/update-completed-t", "-script", "shot completed"],
-    # the beta: what the rescan the run ends with changed
-    ["-beta", "-update-state", "testdata/update-completed.json", "-scan-changes", "-out", "out/update-rescan-beta-h", "-script", "shot rescanned"],
-    ["-beta", "-update-state", "testdata/update-completed.json", "-scan-changes", "-rot", "left", "-logical", "-out", "out/update-rescan-beta-t", "-script", "shot rescanned"],
+    # what the rescan the run ends with changed
+    ["-update-state", "testdata/update-completed.json", "-scan-changes", "-out", "out/update-rescan-h", "-script", "shot rescanned"],
+    ["-update-state", "testdata/update-completed.json", "-scan-changes", "-rot", "left", "-logical", "-out", "out/update-rescan-t", "-script", "shot rescanned"],
     # the list marks the row, Details counts the versions, Filters gains the ROM check section
     ["-data", "testdata/rom-warning.json", "-rom-issue", "Missing game ROM: jpark.zip", "-out", "out/missing-rom-h", "-script",
      "shot list; enter; shot details; start; shot blocked; back; tab; down; right; shot filters; down*2; enter; shot rom-launch; back; shot rom-filtered"],
@@ -91,7 +91,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "back; home; pagedown; right; down*6; shot remember-on; left; shot remember-off; back; "
                           "space*3; home; pagedown; shot letter-jump; enter; enter; start; shot launch-failure; "
                           "back; back; wait 3200; end; pageup; pagedown; shot last-letter; "
-                          "space*3; home; pagedown; shot updated-month; wait 2200; shot updated-month-settled; "
+                          "space*4; home; pagedown; shot updated-month; wait 2200; shot updated-month-settled; "
                           "space; home; pagedown; shot debut-month; wait 2200; shot debut-month-settled; "
                           "space; home; shot year-top; pagedown; shot year-jump; wait 2200; shot year-settled"])
 for rotation in ([], ["-rot", "left", "-logical"]):
@@ -100,14 +100,12 @@ for rotation in ([], ["-rot", "left", "-logical"]):
         scenarios.append([*rotation, "-inset", str(inset), "-app-update", "v1.0.6",
                           "-out", f"out/new-modes-{orientation}-{inset}", "-script",
                           "shot update-notice; back; down*2; shot update-option; back; "
-                          "enter; space; back; space*5; wait 2200; shot favorites; tab; shot counts"])
+                          "enter; space; back; space*6; wait 2200; shot favorites; tab; shot counts"])
+        # Rescan card: a rescan that changed nothing, and what one changed
         scenarios.append([*rotation, "-inset", str(inset), "-scan-result",
                           "-out", f"out/card-scan-{orientation}-{inset}", "-script", "shot result"])
-        # the beta: what Rescan card changed, and a rescan that changed nothing
-        scenarios.append([*rotation, "-inset", str(inset), "-beta", "-scan-result", "-scan-changes",
-                          "-out", f"out/card-scan-beta-{orientation}-{inset}", "-script", "shot changes"])
-        scenarios.append([*rotation, "-inset", str(inset), "-beta", "-scan-result",
-                          "-out", f"out/card-scan-beta-{orientation}-{inset}", "-script", "shot unchanged"])
+        scenarios.append([*rotation, "-inset", str(inset), "-scan-result", "-scan-changes",
+                          "-out", f"out/card-scan-{orientation}-{inset}", "-script", "shot changes"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):
@@ -171,7 +169,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     # from the Views page while the list is in it
     scenarios.append([*rotation, "-recents", "9",
                       "-out", f"out/recents-{orientation}", "-script",
-                      "space*6; shot recents; home; pagedown; shot month-jump; wait 2200; "
+                      "space*7; shot recents; home; pagedown; shot month-jump; wait 2200; "
                       "back; home; pagedown; right; down*5; shot option; enter; end; shot views-on; enter; back; back; shot off"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
@@ -184,6 +182,16 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "shot text; type 1942; shot text-vertical"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
+    for name, size in (("", []), ("-40", ["-inset", "40"]), ("-400x300", ["-canvas", "400x300"])):
+        # the picture layout's text keeps one column whether the shot is
+        # horizontal, vertical (centred in its box) or still loading; tate
+        # keeps its layout. testdata/images holds synthetic stand-ins for
+        # defender and 1942 only.
+        scenarios.append([*rotation, *size, "-layout", "picture", "-images", "testdata/images", "-images-loading",
+                          "-out", f"out/picture-column-{orientation}{name}", "-script",
+                          "shot loading; type defender; back; shot horizontal; type 1942; back; shot vertical"])
+for rotation in ([], ["-rot", "left", "-logical"]):
+    orientation = "t" if rotation else "h"
     # the Patreon beta: the BETA mark at the right end of the status bar in
     # each layout, and beside the app update notice and a search at the
     # widest inset
@@ -192,14 +200,6 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "-out", f"out/beta-mark-{orientation}-{layout}", "-script", "shot list"])
     scenarios.append([*rotation, "-beta", "-inset", "40", "-app-update", "v1.0.6",
                       "-out", f"out/beta-mark-{orientation}-40", "-script", "shot update; type 1943; shot find"])
-    for name, size in (("", []), ("-40", ["-inset", "40"]), ("-400x300", ["-canvas", "400x300"])):
-        # MisterZine Arcade (beta): the picture layout's text keeps one column
-        # whether the shot is horizontal, vertical (centred in its box) or
-        # still loading; tate keeps the free layout. testdata/images holds
-        # synthetic stand-ins for defender and 1942 only.
-        scenarios.append([*rotation, *size, "-beta", "-layout", "picture", "-images", "testdata/images", "-images-loading",
-                          "-out", f"out/beta-picture-column-{orientation}{name}", "-script",
-                          "shot loading; type defender; back; shot horizontal; type 1942; back; shot vertical"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     # Options -> Button labels: PlayStation symbols on the list, Details and
@@ -249,14 +249,14 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     scenarios.append([*rotation,
                       "-out", f"out/notice-yield-{orientation}", "-script",
                       "press select; space; release select; shot layout; space; shot view; pagedown; shot month; type g; shot find"])
-    # MisterZine Arcade (beta): the layout motion steps once per displayed
-    # frame, so 100 ms after Select+Y is exactly halfway (step 6 of 12), and
-    # its last frame is the settled layout
+    # the layout motion steps once per displayed frame, so 100 ms after
+    # Select+Y is exactly halfway (step 6 of 12), and its last frame is the
+    # settled layout
     game = "1942" if rotation else "defender"
     steps = "; ".join(f"press select; press space; wait 100; shot to-{layout}-mid; release space; release select; wait 400; shot {layout}"
                       for layout in ("split", "picture", "text", "list"))
-    scenarios.append([*rotation, "-beta", "-motion", "-images", "testdata/images",
-                      "-out", f"out/beta-layout-motion-{orientation}", "-script", f"type {game}; back; {steps}"])
+    scenarios.append([*rotation, "-motion", "-images", "testdata/images",
+                      "-out", f"out/layout-motion-{orientation}", "-script", f"type {game}; back; {steps}"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     # the pad's Menu button: Options from the list, closed again, Options
@@ -265,18 +265,18 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                       "-out", f"out/maker-{orientation}", "-script",
                       "space*4; shot maker; pagedown*3; shot maker-jump; down*2; shot maker-rows; home; down*48; shot maker-pinned; "
                       "back; home; pagedown; right; down*5; shot options-views; enter; shot views; down*4; enter; shot views-off; "
-                      "up*4; enter; down; enter; down; enter; down; enter; down*2; enter; shot views-last; "
+                      "up*4; enter; down; enter; down; enter; down; enter; down*2; enter; down; enter; shot views-last; "
                       "enter; back; back"])
-    # the beta's Core view: a header per core, a core jump, a core name
-    # pinned over its rows, the single-game cores gathered at the end, then
-    # the view on the Views page and as the default view
-    scenarios.append([*rotation, "-beta",
-                      "-out", f"out/beta-core-{orientation}", "-script",
+    # the Core view: a header per core, a core jump, a core name pinned over
+    # its rows, the single-game cores gathered at the end, then the view on
+    # the Views page and as the default view
+    scenarios.append([*rotation,
+                      "-out", f"out/core-{orientation}", "-script",
                       "space*5; shot core; pagedown*3; shot core-jump; home; down*12; shot core-pinned; end; shot single-game; "
                       "back; home; pagedown; right; down*5; shot options-views; enter; shot views; back; down; left; down; right*5; shot default-core"])
     # with the non-arcade cores grouped by kind, in the picture and text layouts
-    scenarios.append([*rotation, "-beta", "-show-non-arcade", "-layout", "picture",
-                      "-out", f"out/beta-core-layouts-{orientation}", "-script",
+    scenarios.append([*rotation, "-show-non-arcade", "-layout", "picture",
+                      "-out", f"out/core-layouts-{orientation}", "-script",
                       "space*5; shot picture; end; pageup*2; shot picture-console; "
                       "press select; space; release select; wait 2200; shot text-console"])
     # Options -> Credits: the row, the page from its top, its end and the way back
@@ -288,7 +288,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     scenarios.append([*rotation,
                       "-out", f"out/headers-{orientation}", "-script",
                       "space*3; home; down*30; shot letter-pinned; pagedown*2; shot letter-jump; "
-                      "space*5; home; down*30; shot year-pinned; end; up*2; shot year-unknown"])
+                      "space*6; home; down*30; shot year-pinned; end; up*2; shot year-unknown"])
     # over Details, the Menu button option row itself, closing Options back
     # onto Details and Filters, and the held-Menu hint over Filters (the
     # screen stays put once the hold engages) with its progress line
@@ -305,10 +305,9 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "back; home; pagedown; right; down*7; shot font; left; shot font-narrow; left; shot font-normal; "
                           "home; pagedown*3; right; down*4; shot speed; wait 200; shot speed-moving; down; shot smooth-on; wait 17; shot smooth-moving; left; shot smooth-off; down; shot delay; "
                           "wait 250; shot delay-short; wait 400; shot delay-reverse; down; shot dismissed"])
-        # the beta's 10 Hz scroll speed: a fourth sample, and the smooth and
-        # hold-delay samples at its pace
-        scenarios.append([*rotation, "-beta", "-inset", str(inset), "-out", f"out/beta-scroll-{orientation}-{inset}", "-script",
-                          "back; home; pagedown*3; right; down*4; shot speed; left*2; shot speed-10; wait 200; shot speed-10-moving; "
+        # the 10 Hz scroll speed, and the smooth and hold-delay samples at its pace
+        scenarios.append([*rotation, "-inset", str(inset), "-out", f"out/scroll-{orientation}-{inset}", "-script",
+                          "back; home; pagedown*3; right; down*4; left*2; shot speed-10; wait 200; shot speed-10-moving; "
                           "down; wait 50; shot smooth-moving; down; wait 400; shot delay-moving"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"

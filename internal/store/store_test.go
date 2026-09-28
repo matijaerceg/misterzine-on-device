@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/matijaerceg/misterzine-on-device/internal/beta"
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 )
 
@@ -160,9 +159,8 @@ func TestHoldDelayMigrationAndSave(t *testing.T) {
 	}
 }
 
-// Scroll speeds load as rows per second: the beta's 10 is kept for either
-// build to read (the free one takes it as 20), the old adjectives map on,
-// and anything else, missing included, is the default 30.
+// Scroll speeds load as rows per second (10, 20, 30 or 60), the old
+// adjectives map on, and anything else, missing included, is the default 30.
 func TestScrollMigrationAndSave(t *testing.T) {
 	for _, tc := range []struct{ body, want string }{
 		{`{"scroll":"10"}`, "10"},
@@ -302,9 +300,9 @@ func TestViewsOffMigrationAndSave(t *testing.T) {
 		{`{"views_off":null}`, []string{}},              // every view on, as older builds saved it; not a pre-Views file
 		{`{"views_off":null,"recents_view":false}`, []string{}},
 		{`{"views_off":["year","maker"]}`, []string{"year", "maker"}},
-		{`{"views_off":["year","bogus"]}`, []string{"year"}},                                                  // unknown names dropped
-		{`{"views_off":["updated","debut","year","alphabetical","maker","favorites","recents"]}`, []string{}}, // nothing on: back to all
-		{`{"views_off":[],"recents_view":false}`, []string{}},                                                 // views_off wins over the old flag
+		{`{"views_off":["year","bogus"]}`, []string{"year"}},                                                         // unknown names dropped
+		{`{"views_off":["updated","debut","year","alphabetical","maker","core","favorites","recents"]}`, []string{}}, // nothing on: back to all
+		{`{"views_off":[],"recents_view":false}`, []string{}},                                                        // views_off wins over the old flag
 	} {
 		s, err := LoadSettings(writeSettings(t, tc.body))
 		if err != nil || !reflect.DeepEqual(s.ViewsOff, tc.off) {
@@ -385,28 +383,22 @@ func TestDefaultSortMigration(t *testing.T) {
 	}
 }
 
-// A member going back from the beta to the free build brings a settings
-// file that may start in, default to or leave out the beta's Core view. The
-// free build falls back as from any unknown view and keeps the rest.
-func TestCoreViewSettingsAcrossBuilds(t *testing.T) {
+// The Core view is saved like any other: as the last or default view and
+// among the views left out. A settings file from before it has it on, so it
+// joins the Y cycle after Manufacturer.
+func TestCoreViewSettings(t *testing.T) {
 	core := `{"last_sort":7,"default_sort":7,"remember_sort":true,"views_off":["core","year"]}`
 	s, err := LoadSettings(writeSettings(t, core))
-	if err != nil || s.LastSort != data.SortUpdated || s.DefaultSort != data.SortUpdated || !reflect.DeepEqual(s.ViewsOff, []string{"year"}) {
-		t.Fatalf("free build: last %v default %v off %v (%v)", s.LastSort, s.DefaultSort, s.ViewsOff, err)
+	if err != nil || s.LastSort != data.SortCore || s.DefaultSort != data.SortCore || !reflect.DeepEqual(s.ViewsOff, []string{"core", "year"}) {
+		t.Fatalf("last %v default %v off %v (%v)", s.LastSort, s.DefaultSort, s.ViewsOff, err)
 	}
-	// only Core was on in the beta: nothing the free build has is left on,
-	// so every view comes back
 	onlyCore := `{"views_off":["updated","debut","year","alphabetical","maker","favorites","recents"]}`
-	if s, err = LoadSettings(writeSettings(t, onlyCore)); err != nil || !reflect.DeepEqual(s.ViewsOff, []string{}) {
-		t.Fatalf("free build, only Core on: off %v (%v)", s.ViewsOff, err)
-	}
-	restore := beta.Set(true)
-	defer restore()
-	if s, err = LoadSettings(writeSettings(t, core)); err != nil || s.LastSort != data.SortCore || s.DefaultSort != data.SortCore || !reflect.DeepEqual(s.ViewsOff, []string{"core", "year"}) {
-		t.Fatalf("beta: last %v default %v off %v (%v)", s.LastSort, s.DefaultSort, s.ViewsOff, err)
-	}
 	if s, err = LoadSettings(writeSettings(t, onlyCore)); err != nil || len(s.ViewsOff) != 7 {
-		t.Fatalf("beta, only Core on: off %v (%v)", s.ViewsOff, err)
+		t.Fatalf("only Core on: off %v (%v)", s.ViewsOff, err)
+	}
+	before := `{"last_sort":6,"views_off":["year"]}`
+	if s, err = LoadSettings(writeSettings(t, before)); err != nil || s.LastSort != data.SortMaker || !reflect.DeepEqual(s.ViewsOff, []string{"year"}) {
+		t.Fatalf("from before the Core view: last %v off %v (%v)", s.LastSort, s.ViewsOff, err)
 	}
 }
 

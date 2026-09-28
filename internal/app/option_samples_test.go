@@ -8,7 +8,7 @@ import (
 
 func TestSampleListTiming(t *testing.T) {
 	for _, rows := range []int{3, 4} {
-		for _, speed := range ScrollValues() {
+		for _, speed := range ScrollValues {
 			pace := scrollPace(speed)
 			for step := 0; step < rows*3; step++ {
 				if got := sampleListSelection(time.Duration(step)*pace, pace, 0, rows); got != step%rows {
@@ -55,9 +55,9 @@ func TestOptionSampleScheduling(t *testing.T) {
 			t.Fatal("timer moved selection")
 		}
 		a.OptionSampleFrame()
-		for i, speed := range ScrollValues() {
+		for i, speed := range ScrollValues {
 			got := sampleListSelection(a.optionSamples.elapsed, scrollPace(speed), 0, 3)
-			every := []int{3, 2, 1}[i]
+			every := []int{6, 3, 2, 1}[i]
 			if got != (frame/every)%3 {
 				t.Fatalf("frame %d speed %s selection %d", frame, speed, got)
 			}
@@ -75,7 +75,7 @@ func TestOptionSampleScheduling(t *testing.T) {
 func TestSmoothScrollOption(t *testing.T) {
 	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest(nil, "", time.Now()), nil)
 	a.screen = ScreenOptions
-	for _, speed := range []string{"20", "30", "60", "30"} {
+	for _, speed := range []string{"10", "20", "30", "60", "30"} {
 		a.cfg.Scroll = speed
 		a.buildPanel()
 		expandOptionsForTest(a)
@@ -107,7 +107,7 @@ func TestSmoothScrollOption(t *testing.T) {
 }
 
 func TestSmoothSampleFrames(t *testing.T) {
-	for _, speed := range []string{"20", "30"} {
+	for _, speed := range []string{"10", "20", "30"} {
 		pace := scrollPace(speed)
 		every := int(pace / frameDur)
 		for frame := 0; frame < 12; frame++ {

@@ -95,7 +95,7 @@ func (a *App) scanLines(cols, fit int) []string {
 	} else if a.scanError != "" {
 		lines = append(lines, "", a.scanError+".", "See the device log for details.")
 	}
-	// what the scan changed (beta) goes under the heading, in the rows the
+	// what the scan changed goes under the heading, in the rows the
 	// rest leaves: it never pushes a problem off the box
 	if change := a.scanWatch.lines(cols, fit-textRows(lines, cols)); len(change) > 0 {
 		lines = append(lines[:1], append(change, lines[1:]...)...)

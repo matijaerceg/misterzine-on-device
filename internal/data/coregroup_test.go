@@ -4,8 +4,6 @@ import (
 	"reflect"
 	"testing"
 	"time"
-
-	"github.com/matijaerceg/misterzine-on-device/internal/beta"
 )
 
 func TestCoreGroupsAndOrder(t *testing.T) {
@@ -54,28 +52,19 @@ func TestCoreGroupsAndOrder(t *testing.T) {
 	}
 }
 
-// The Core view is the Patreon beta's: a free build does not know it by
-// value or by name, so a saved one falls back like any unknown view.
-func TestCoreViewIsTheBetasOnly(t *testing.T) {
-	free := []SortMode{SortUpdated, SortDebut, SortYear, SortAlphabetical, SortMaker, SortFavorites, SortRecents}
-	if SortCore.Valid() || !reflect.DeepEqual(ViewOrder(), free) {
-		t.Fatalf("free build: core valid %v, views %v", SortCore.Valid(), ViewOrder())
-	}
-	if m, ok := ParseSort("core"); ok || m != SortUpdated {
-		t.Fatalf("free build parses core as %v %v", m, ok)
-	}
-	restore := beta.Set(true)
-	defer restore()
+// The Core view follows Manufacturer in the cycle and is known by value and
+// by name.
+func TestCoreViewIsAView(t *testing.T) {
 	want := []SortMode{SortUpdated, SortDebut, SortYear, SortAlphabetical, SortMaker, SortCore, SortFavorites, SortRecents}
-	if !SortCore.Valid() || !reflect.DeepEqual(ViewOrder(), want) {
-		t.Fatalf("beta: core valid %v, views %v", SortCore.Valid(), ViewOrder())
+	if !SortCore.Valid() || !reflect.DeepEqual(ViewOrder, want) {
+		t.Fatalf("core valid %v, views %v", SortCore.Valid(), ViewOrder)
 	}
-	for _, m := range ViewOrder() {
+	for _, m := range ViewOrder {
 		if back, ok := ParseSort(m.Name()); !ok || back != m {
-			t.Errorf("beta: %v named %q parses to %v %v", m, m.Name(), back, ok)
+			t.Errorf("%v named %q parses to %v %v", m, m.Name(), back, ok)
 		}
 	}
 	if SortMode(SortCore+1).Valid() || SortCore.String() != "Core" {
-		t.Fatal("beta: nothing past Core, and Core is its name")
+		t.Fatal("nothing past Core, and Core is its name")
 	}
 }
