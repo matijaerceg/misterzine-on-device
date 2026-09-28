@@ -18,11 +18,13 @@ func sample() Input {
 				{K: "local:gigandes", Title: "Gigandes (World bazset)", Core: "Gigandes_baz", File: "_Arcade/Gigandes (World bazset).mra", StandsFor: "gigandes"},
 				{K: "local:volfied", Title: "Volfied (World, rev 1)", Core: "Volfied", File: "_Arcade/Volfied (World, rev 1) .mra", Hidden: "Filter by rotation (the screen shows horizontal games; this one is vertical)"},
 			}},
-		Scan:     []string{"cores: 212", "MRAs read outside the catalogue's folders: 1061"},
-		Layout:   []string{"Card top level: _Arcade/ (1172), games/ (12)", "_Arcade/: 1166 MRAs, 5 folders"},
-		Files:    []File{{"_Arcade/_Organized", "an organiser's folder"}, {"_Arcade/Odd.mra", "no setname"}},
-		Settings: `{"filter_ini_rotation":true}`,
-		Log:      []string{"12:00:00 scan: 10 local rows", "12:00:01 fetch https://misterzine.fyi/data.json?t=123 ok"},
+		Scan:      []string{"cores: 212", "MRAs read outside the catalogue's folders: 1061"},
+		Layout:    []string{"Card top level: _Arcade/ (1172), games/ (12)", "_Arcade/: 1166 MRAs, 5 folders"},
+		Files:     []File{{"_Arcade/_Organized", "an organiser's folder"}, {"_Arcade/Odd.mra", "no setname"}},
+		Settings:  `{"filter_ini_rotation":true}`,
+		Log:       []string{"12:00:00 scan: 10 local rows", "12:00:01 fetch https://misterzine.fyi/data.json?t=123 ok"},
+		MenuEntry: []string{"Entry: MisterZine Arcade.mgl present", "Helper: not running"},
+		WatchLog:  []string{"11:59:00 watch: started, pid 812", "11:59:05 watch: misterzine selected in the menu"},
 	}
 }
 
@@ -32,7 +34,8 @@ func TestBuildSections(t *testing.T) {
 		t.Fatalf("header:\n%s", s[:120])
 	}
 	at := -1
-	for _, h := range []string{"== SYSTEM", "== LIST", "== LOCAL GAMES (2)", "== GAME FILES NOT IN THE LIST (2)", "== CARD SCAN", "== CARD LAYOUT", "== SETTINGS", "== LOG (last 2 lines)"} {
+	for _, h := range []string{"== SYSTEM", "== MENU ENTRY", "== LIST", "== LOCAL GAMES (2)", "== GAME FILES NOT IN THE LIST (2)", "== CARD SCAN", "== CARD LAYOUT", "== SETTINGS",
+		"== WATCH LOG (last 2 lines)", "== LOG (last 2 lines)"} {
 		i := strings.Index(s, h)
 		if i <= at {
 			t.Fatalf("section %q missing or out of order:\n%s", h, s)
@@ -46,6 +49,8 @@ func TestBuildSections(t *testing.T) {
 		"| HIDDEN: Filter by rotation",
 		"_Arcade/_Organized | an organiser's folder",
 		"https://misterzine.fyi/data.json?... ok",
+		"== MENU ENTRY\nEntry: MisterZine Arcade.mgl present\nHelper: not running\n",
+		"11:59:05 watch: misterzine selected in the menu\n",
 	} {
 		if !strings.Contains(s, want) {
 			t.Errorf("missing %q", want)
@@ -66,12 +71,19 @@ func TestBuildCaps(t *testing.T) {
 	for i := 0; i < MaxLogLines+100; i++ {
 		in.Log = append(in.Log, fmt.Sprintf("line %04d", i))
 	}
+	in.WatchLog = nil
+	for i := 0; i < MaxWatchLines+10; i++ {
+		in.WatchLog = append(in.WatchLog, fmt.Sprintf("watch %04d", i))
+	}
 	s := string(Build(in))
 	if !strings.Contains(s, "== GAME FILES NOT IN THE LIST (540)") || !strings.Contains(s, "... and 40 more") {
 		t.Fatal("the file list is not capped with a count")
 	}
 	if strings.Contains(s, "line 0099") || !strings.Contains(s, "line 0100") || !strings.Contains(s, "line 0399") {
 		t.Fatal("the log must keep its newest lines")
+	}
+	if strings.Contains(s, "watch 0009") || !strings.Contains(s, "== WATCH LOG (last 100 lines)\nwatch 0010\n") || !strings.Contains(s, "watch 0109") {
+		t.Fatal("the watch log must keep its newest lines")
 	}
 	// A report past MaxBytes loses log first, then files, and still fits.
 	in.Log = nil

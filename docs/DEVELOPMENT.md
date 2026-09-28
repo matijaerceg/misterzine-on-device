@@ -190,8 +190,11 @@ Harness `-support-report` fixtures render this flow without opening devices.
 (`App.ReportPart`: the view, the filters in force, every local row with the
 `data.Filters.Why` rule that hides it) goes to the host (`cmd/misterzine/report.go`),
 which adds the system lines, the last scan's diagnostics (`scanResult.diag`:
-totals, `LocalResult.SkippedDirs`, `Skipped` and `Accounted`), `scan.CardLayout`
-and the log tail. `report.Build` formats it within 256 KB and `report.Scrub` strips
+totals, `LocalResult.SkippedDirs`, `Skipped` and `Accounted`), `scan.CardLayout`,
+the log tail, and `menuEntryStatus` with the tail of `watch.log`: the entry, the
+startup line, whether the helper's `watch.pid` is alive, the INI's `main=` and
+CORENAME, which together explain an entry that opens only a text console.
+`report.Build` formats it within 256 KB and `report.Scrub` strips
 query strings and keyed values from log lines. The host always writes
 `report.txt` beside the log, then POSTs it to `fetch.ReportService`
 (`api.misterzine.fyi/reports`, the site repo's `api/src/reports.js`), which answers

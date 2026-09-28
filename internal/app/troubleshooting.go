@@ -543,7 +543,7 @@ func (a *App) paintSupport(c *gfx.Canvas) {
 		y += 2
 		write("Sends the MisterZine developer a report about this card, so a problem can be looked into:", gen.Eva.Fg)
 		for _, s := range []string{"the app version, settings and filters", "your local games, and each game file left out of the list with the reason",
-			"the card's folders and core file names", "recent log lines"} {
+			"the card's folders and core file names", "how the main-menu entry is set up", "recent log lines"} {
 			write("- "+s, gen.Eva.Fg)
 		}
 		write("", gen.Eva.Fg)

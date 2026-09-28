@@ -8,7 +8,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"slices"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -26,7 +29,10 @@ func TestSendReportSavesAndUploads(t *testing.T) {
 	os.MkdirAll(filepath.Join(h.card, "_Arcade", "cores"), 0755)
 	os.WriteFile(filepath.Join(h.card, "_Arcade", "cores", "Gigandes_baz.rbf"), []byte("x"), 0644)
 	os.WriteFile(filepath.Join(h.root, "log.txt"), []byte("12:00:00 fetch https://misterzine.fyi/meta.json?t=9 ok\n12:00:01 scan: 1 local rows\n"), 0644)
+	os.WriteFile(filepath.Join(h.root, "watch.log"), []byte("11:58:00 watch: started, pid 812\n11:59:00 watch: could not open the console (F9 pressed 20 times, active tty3)\n"), 0644)
+	os.WriteFile(filepath.Join(h.card, "MisterZine Arcade.mgl"), []byte(mglBody), 0644)
 	h.iniLine = "MiSTer.ini alt=0 found=true"
+	h.iniMain = "ConsoleMode/MiSTer_ConsoleMode"
 	h.scanDiag = &scanDiag{lines: []string{"cores: 1"}, files: []report.File{{Path: "_Arcade/Odd.mra", Reason: "no setname"}}}
 
 	var got []byte
@@ -71,7 +77,9 @@ func TestSendReportSavesAndUploads(t *testing.T) {
 	}
 	text := string(got)
 	for _, want := range []string{report.Magic, "INI: MiSTer.ini alt=0 found=true", "local:gigandes | Gigandes (World bazset)",
-		"_Arcade/Odd.mra | no setname", "Gigandes_baz.rbf", "scan: 1 local rows", "meta.json?..."} {
+		"_Arcade/Odd.mra | no setname", "Gigandes_baz.rbf", "scan: 1 local rows", "meta.json?...",
+		"== MENU ENTRY\nEntry: MisterZine Arcade.mgl present\n", "Main: ConsoleMode/MiSTer_ConsoleMode (main= in MiSTer.ini)",
+		"== WATCH LOG (last 2 lines)\n11:58:00 watch: started, pid 812\n11:59:00 watch: could not open the console"} {
 		if !strings.Contains(text, want) {
 			t.Errorf("report lacks %q", want)
 		}
@@ -94,6 +102,59 @@ func TestSendReportSavesAndUploads(t *testing.T) {
 	o = send()
 	if o.Code != "" || o.Problem != "No connection to the report service." || o.Saved == "" {
 		t.Fatalf("offline outcome %+v", o)
+	}
+}
+
+// The report's MENU ENTRY section: a card that never ran Setup, then one
+// with the entry under both names, a startup script saved with Windows line
+// endings, a helper that left its pid behind and a replacement Main, and
+// last a helper that is running.
+func TestMenuEntryStatus(t *testing.T) {
+	card, root := t.TempDir(), t.TempDir()
+	got := strings.Join(menuEntryStatus(card, root, "", ""), "\n")
+	want := "Entry: MisterZine Arcade.mgl missing (MisterZine-Setup writes it)\nStartup line: no linux/user-startup.sh\n" +
+		"Helper: not running\nMain: the stock MiSTer\nCore name now: none"
+	if got != want {
+		t.Fatalf("fresh card:\n%s", got)
+	}
+
+	os.WriteFile(filepath.Join(card, "MisterZine Arcade.mgl"), []byte(mglBody), 0644)
+	os.WriteFile(filepath.Join(card, "MisterZine.mgl"), []byte(mglBody), 0644)
+	os.MkdirAll(filepath.Join(card, "linux"), 0755)
+	os.WriteFile(filepath.Join(card, "linux", "user-startup.sh"), []byte("#!/bin/sh\r\n\r\n"+startupMark+"\r\n"+startupLine+"\r\n"), 0755)
+	os.WriteFile(filepath.Join(root, "watch.pid"), []byte("999999\n"), 0644)
+	got = strings.Join(menuEntryStatus(card, root, "misterzine", "ConsoleMode/MiSTer_ConsoleMode"), "\n")
+	want = "Entry: MisterZine Arcade.mgl present\nOld entry: MisterZine.mgl still present\n" +
+		"Startup line: in linux/user-startup.sh (the file has Windows line endings)\n" +
+		"Helper: not running (watch.pid names pid 999999)\nMain: ConsoleMode/MiSTer_ConsoleMode (main= in MiSTer.ini)\nCore name now: misterzine"
+	if got != want {
+		t.Fatalf("set-up card:\n%s", got)
+	}
+
+	// the helper is known by "watch" on its command line; the trailing
+	// true keeps sh from exec'ing sleep in its place
+	helper := exec.Command("sh", "-c", "sleep 30; true", "watch")
+	if err := helper.Start(); err != nil {
+		t.Fatal(err)
+	}
+	defer func() { helper.Process.Kill(); helper.Wait() }()
+	os.WriteFile(filepath.Join(root, "watch.pid"), []byte(strconv.Itoa(helper.Process.Pid)), 0644)
+	if lines := menuEntryStatus(card, root, "MENU", ""); !slices.Contains(lines, fmt.Sprintf("Helper: running, pid %d", helper.Process.Pid)) {
+		t.Fatalf("running helper:\n%s", strings.Join(lines, "\n"))
+	}
+}
+
+// The watch log tail reads the rotated file first and skips empty files.
+func TestWatchLogTail(t *testing.T) {
+	root := t.TempDir()
+	os.WriteFile(filepath.Join(root, "watch.1.log"), []byte("a\nb\n"), 0644)
+	os.WriteFile(filepath.Join(root, "watch.log"), []byte("c\nd\n"), 0644)
+	if got := strings.Join(watchLogTail(root, 3), ","); got != "b,c,d" {
+		t.Fatalf("tail %q", got)
+	}
+	os.WriteFile(filepath.Join(root, "watch.log"), nil, 0644)
+	if got := strings.Join(watchLogTail(root, 3), ","); got != "a,b" {
+		t.Fatalf("empty current file: %q", got)
 	}
 }
 

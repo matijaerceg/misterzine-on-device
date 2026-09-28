@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -41,13 +42,15 @@ func (h *host) sendReport(part report.AppPart, done func(report.Outcome)) {
 	} else {
 		in.Scan = []string{"no card scan has finished yet"}
 	}
-	card, root, client := h.card, h.root, h.client
+	card, root, client, mainProgram := h.card, h.root, h.client, h.iniMain
 	go func() {
 		if model := boardModel(); model != "" {
 			in.System = append([]string{"Board: " + model}, in.System...)
 		}
+		in.MenuEntry = menuEntryStatus(card, root, coreName(), mainProgram)
 		in.Layout = scan.CardLayout(card, root)
 		in.Log = logTail(root, report.MaxLogLines)
+		in.WatchLog = watchLogTail(root, report.MaxWatchLines)
 		body := report.Build(in)
 
 		var o report.Outcome
@@ -96,11 +99,20 @@ func boardModel() string {
 
 // logTail is the last n lines of the app's log, reaching into the rotated
 // file when the current one is short.
-func logTail(root string, n int) []string {
+func logTail(root string, n int) []string { return tailLines(n, root, "log.1.txt", "log.txt") }
+
+// watchLogTail is the same for the helper's log, watch.log.
+func watchLogTail(root string, n int) []string {
+	return tailLines(n, root, "watch.1.log", filepath.Base(watchLog))
+}
+
+// tailLines is the last n lines of the named files in dir, read in order:
+// the rotated file, then the current one.
+func tailLines(n int, dir string, names ...string) []string {
 	var lines []string
-	for _, name := range []string{"log.1.txt", "log.txt"} {
-		b, err := os.ReadFile(filepath.Join(root, name))
-		if err != nil {
+	for _, name := range names {
+		b, err := os.ReadFile(filepath.Join(dir, name))
+		if err != nil || len(b) == 0 {
 			continue
 		}
 		lines = append(lines, strings.Split(strings.TrimRight(string(b), "\n"), "\n")...)
@@ -109,4 +121,56 @@ func logTail(root string, n int) []string {
 		lines = lines[len(lines)-n:]
 	}
 	return lines
+}
+
+// menuEntryStatus is the report's MENU ENTRY section. Choosing the entry
+// only loads the menu core; the helper watching for that load opens the
+// app, started by the startup line at boot or by Setup, under whichever
+// Main MiSTer.ini names. When a player's entry leaves a bare text console,
+// these lines and the helper's log beside them say which link failed: a
+// replacement Main such as Degauss or Console Mode can take the menu load
+// for its own frontend. coreName is Main's CORENAME as the report is made:
+// misterzine when this session came from the entry, MENU from Scripts.
+func menuEntryStatus(card, root, coreName, mainProgram string) []string {
+	present := func(name string) bool { return fileExists(filepath.Join(card, name)) }
+	var lines []string
+	if name := filepath.Base(menuMGL); present(name) {
+		lines = append(lines, "Entry: "+name+" present")
+	} else {
+		lines = append(lines, "Entry: "+name+" missing (MisterZine-Setup writes it)")
+	}
+	if name := filepath.Base(legacyMGL); present(name) {
+		lines = append(lines, "Old entry: "+name+" still present")
+	}
+	startup := "Startup line: "
+	if b, err := os.ReadFile(filepath.Join(card, "linux", filepath.Base(startupScript))); err != nil {
+		startup += "no linux/user-startup.sh"
+	} else {
+		if hasStartupHook(string(b)) {
+			startup += "in linux/user-startup.sh"
+		} else {
+			startup += "not in linux/user-startup.sh"
+		}
+		if bytes.Contains(b, []byte("\r\n")) {
+			startup += " (the file has Windows line endings)"
+		}
+	}
+	lines = append(lines, startup)
+	pidPath := filepath.Join(root, filepath.Base(pidFile))
+	if pid := watcherPIDFrom(pidPath); pid > 0 {
+		lines = append(lines, fmt.Sprintf("Helper: running, pid %d", pid))
+	} else if b, err := os.ReadFile(pidPath); err == nil {
+		lines = append(lines, fmt.Sprintf("Helper: not running (%s names pid %s)", filepath.Base(pidPath), strings.TrimSpace(string(b))))
+	} else {
+		lines = append(lines, "Helper: not running")
+	}
+	if mainProgram == "" {
+		lines = append(lines, "Main: the stock MiSTer")
+	} else {
+		lines = append(lines, "Main: "+mainProgram+" (main= in MiSTer.ini)")
+	}
+	if coreName == "" {
+		coreName = "none"
+	}
+	return append(lines, "Core name now: "+coreName)
 }

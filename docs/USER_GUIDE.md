@@ -674,7 +674,8 @@ screenshots match, lettering runs instead and the Preview help explains why.
   See [troubleshooting](TROUBLESHOOTING.md#start-does-not-launch-games).
   **Send a report** describes your card to the developer (settings, filters,
   local games, every game file left out of the list and why, the card's
-  folders and core files, recent log lines) and shows a code to post where you
+  folders and core files, how the main-menu entry is set up, recent log
+  lines) and shows a code to post where you
   asked for help; a copy stays on the card as `misterzine/report.txt`. See
   [Send a report](TROUBLESHOOTING.md#send-a-report).
 - **Credits:** a page naming the developer, the people whose work MisterZine

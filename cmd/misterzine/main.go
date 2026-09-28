@@ -114,6 +114,7 @@ type host struct {
 	restartRequested              bool
 	troubleshooting               supportHost
 	iniLine                       string    // the INI summary the log opens with, for the card report
+	iniMain                       string    // the INI's main=, "" for the stock Main, for the card report
 	scanDiag                      *scanDiag // UI-owned: the latest finished card scan, for the card report
 	reportSending                 atomic.Bool
 }
@@ -182,6 +183,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	h.iniLine = fmt.Sprintf("%s alt=%d found=%v osd_rotate=%d direct_video=%d vga_scaler=%d fb_terminal=%d video_mode=%q menu_pal=%d analog-visible=%v",
 		filepath.Base(iniPath), iniAlt, ini.Found, ini.OSDRotate, ini.DirectVideo, ini.VGAScaler, ini.FBTerminal, ini.VideoMode, ini.MenuPal, ini.AnalogVisible())
 	h.directVideo = ini.DirectVideo == 1
+	h.iniMain = ini.Main
 	lg.Printf("ini: %s", h.iniLine)
 	if ini.Found && !ini.AnalogVisible() {
 		if ini.DirectVideoAuto() {

@@ -198,7 +198,12 @@ you asked for help. The report holds:
 - the card's folders: the top level, the `_Arcade` tree with its MRA
   counts, every file in `_Arcade/cores`, the other core folders' counts, the
   arcade ROM folder MiSTer uses with its zip count, and MisterZine's own folder
-- the last few hundred lines of MisterZine's log
+- how the MisterZine Arcade menu entry is set up: whether the entry, its
+  startup line and the helper that opens MisterZine are in place, and which
+  program MiSTer.ini names as its `main=`, if any (Degauss and Console Mode
+  replace MiSTer's own)
+- the last few hundred lines of MisterZine's log, and the helper's latest
+  lines (`misterzine/watch.log`)
 
 It holds no passwords, Wi-Fi details or Downloader database addresses, and
 the log lines lose any web address's query part. The screen says what goes

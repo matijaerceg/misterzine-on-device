@@ -2,8 +2,8 @@
 // Troubleshooting -> Send a report uploads and keeps on the card, so a
 // developer can see why a player's list looks the way it does: the app and
 // its settings, the list's filters, every local game, every game file that
-// is not a row of its own and why, the card scan's totals and the recent
-// log. It holds no passwords, Wi-Fi details or Downloader database addresses:
+// is not a row of its own and why, the card scan's totals, the recent log,
+// and how the main-menu entry is set up with its helper's log. It holds no passwords, Wi-Fi details or Downloader database addresses:
 // the host never passes them in, and Scrub strips query strings and keys
 // from the log lines that do go in.
 package report
@@ -21,9 +21,10 @@ const Magic = "MisterZine report v1"
 
 // Limits keep a report small enough to send from a MiSTer and to read.
 const (
-	MaxBytes    = 256 << 10
-	MaxFiles    = 500
-	MaxLogLines = 300
+	MaxBytes      = 256 << 10
+	MaxFiles      = 500
+	MaxLogLines   = 300
+	MaxWatchLines = 100 // watch.log writes a handful of lines per opening
 )
 
 // AppPart is what only the UI knows: the list as the player sees it.
@@ -80,6 +81,10 @@ type Input struct {
 	Files    []File   // game files and folders not in the list
 	Settings string   // settings.json, JSON
 	Log      []string // the latest log lines, oldest first
+	// MenuEntry is what opening MisterZine from the main menu depends on:
+	// the entry, the startup line, the helper and the Main that runs it.
+	MenuEntry []string
+	WatchLog  []string // the helper's latest log lines (watch.log), oldest first
 }
 
 // Build formats the report, within MaxBytes: the log is cut from its oldest
@@ -117,6 +122,14 @@ func format(in Input, files []File, logLines []string) []byte {
 	head("SYSTEM")
 	for _, s := range in.System {
 		line("%s", Scrub(s))
+	}
+
+	head("MENU ENTRY")
+	for _, s := range in.MenuEntry {
+		line("%s", s)
+	}
+	if len(in.MenuEntry) == 0 {
+		line("none")
 	}
 
 	a := in.App
@@ -178,6 +191,15 @@ func format(in Input, files []File, logLines []string) []byte {
 
 	head("SETTINGS")
 	line("%s", orNone(in.Settings))
+
+	watch := in.WatchLog
+	if len(watch) > MaxWatchLines {
+		watch = watch[len(watch)-MaxWatchLines:]
+	}
+	head(fmt.Sprintf("WATCH LOG (last %d lines)", len(watch)))
+	for _, s := range watch {
+		line("%s", Scrub(s))
+	}
 
 	head(fmt.Sprintf("LOG (last %d lines)", len(logLines)))
 	for _, s := range logLines {

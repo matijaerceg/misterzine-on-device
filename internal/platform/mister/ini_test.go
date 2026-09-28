@@ -38,6 +38,9 @@ func TestReadIniAppliesSectionsInFileOrderLikeMain(t *testing.T) {
 			IniSettings{FBTerminal: 0, Found: true}},
 		{"headerless values are global", "osd_rotate=2\n",
 			IniSettings{OSDRotate: 2, FBTerminal: 1, Found: true}},
+		// Console Mode's shipped MiSTer.ini; another core's main= is not ours
+		{"a replacement Main", "[MiSTer]\nmain=ConsoleMode/MiSTer_ConsoleMode\n[Genesis]\nmain=other\n",
+			IniSettings{FBTerminal: 1, Main: "ConsoleMode/MiSTer_ConsoleMode", Found: true}},
 	} {
 		if err := os.WriteFile(p, []byte(tc.content), 0600); err != nil {
 			t.Fatal(err)

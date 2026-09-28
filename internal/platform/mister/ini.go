@@ -18,6 +18,7 @@ type IniSettings struct {
 	FBTerminal  int    // 1 default
 	VideoMode   string // raw value; a preset number, a modeline or empty
 	MenuPal     int    // 0/1: direct video runs the menu core at 50 Hz, 288 lines
+	Main        string // main=: a replacement for Main (Degauss, Console Mode), "" for the stock one
 	Found       bool   // the file was read
 }
 
@@ -92,6 +93,7 @@ func ReadIni(path string) IniSettings {
 	s.FBTerminal = get("fb_terminal", 1)
 	s.VideoMode = values["video_mode"]
 	s.MenuPal = get("menu_pal", 0)
+	s.Main = values["main"]
 	return s
 }
 
