@@ -87,6 +87,9 @@ type engine struct {
 // people take. A card with neither cannot update the app by itself, and
 // says so rather than offering the row (see CanUpdateApp).
 func engineFor(card, mode string) (engine, error) {
+	if mode == ModeFree {
+		return freeEngine(card)
+	}
 	if mode != ModeApp {
 		script := filepath.Join(card, "Scripts", "update_all.sh")
 		if !exists(script) {
@@ -121,6 +124,31 @@ func engineFor(card, mode string) (engine, error) {
 // so the Options row is offered only where pressing it would do something.
 func CanUpdateApp(card string) bool {
 	_, err := engineFor(card, ModeApp)
+	return err == nil
+}
+
+// freeEngine runs the beta's way back to free, misterzine/channel.py, the
+// same code as the MisterZine-Switch-To-Free script. It repoints the entry
+// and runs Downloader itself, so it needs what ModeApp needs and Python.
+func freeEngine(card string) (engine, error) {
+	if _, err := engineFor(card, ModeApp); err != nil {
+		return engine{}, err
+	}
+	script := filepath.Join(card, "misterzine", "channel.py")
+	if !exists(script) {
+		return engine{}, fmt.Errorf("the switch to the free version is not on this card")
+	}
+	python, err := exec.LookPath("python3")
+	if err != nil {
+		return engine{}, fmt.Errorf("the switch to the free version needs Python 3")
+	}
+	return engine{path: python, args: []string{script, "free", "--card", card}, env: []string{"PYTHONUTF8=1"}}, nil
+}
+
+// CanSwitchToFree reports whether this card can go back to the free
+// MisterZine by itself: a beta install with Downloader on the card.
+func CanSwitchToFree(card string) bool {
+	_, err := engineFor(card, ModeFree)
 	return err == nil
 }
 
@@ -440,7 +468,7 @@ func runWorker(root, card, id, mode string, e engine) int {
 				o.s.Status = "failed"
 				o.s.Label = "Update failed"
 				o.s.Message = o.s.Name() + " failed. Review the output below."
-			case !o.s.SawSuccess && o.s.Mode != ModeApp:
+			case !o.s.SawSuccess && o.s.Mode != ModeApp && o.s.Mode != ModeFree:
 				// Update All announces its success in the output; Downloader
 				// on its own does not, and says so with its exit code.
 				o.s.Status = "failed"

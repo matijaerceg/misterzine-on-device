@@ -21,15 +21,19 @@ var Stages = []string{"Prepare", "Check", "Update", "Extras", "Finish"}
 
 // The modes a run can take: Update All with the user's saved settings, or
 // Downloader run for the misterzine database alone (--run-only), the
-// quick way to a new MisterZine when one is announced.
+// quick way to a new MisterZine when one is announced. ModeFree takes a
+// MisterZine Arcade card back to the free release: misterzine/channel.py,
+// which only the beta installs, points the misterzine entry at the free
+// database and runs Downloader for it the way ModeApp does.
 const (
-	ModeAll = "all"
-	ModeApp = "app"
+	ModeAll  = "all"
+	ModeApp  = "app"
+	ModeFree = "free"
 )
 
 type State struct {
 	ID              string    `json:"id"`
-	Mode            string    `json:"mode,omitempty"` // ModeAll ("" in records from before modes) or ModeApp
+	Mode            string    `json:"mode,omitempty"` // ModeAll ("" in records from before modes), ModeApp or ModeFree
 	PID             int       `json:"pid"`
 	Boot            string    `json:"boot"`
 	Status          string    `json:"status"`
@@ -49,11 +53,14 @@ type State struct {
 	Lines           []string  `json:"lines"`
 }
 
-// Name is what the run is called on screen: "Update All", or "MisterZine
-// update" for a run of the misterzine database alone.
+// Name is what the run is called on screen: "Update All", "MisterZine
+// update" for a run of the misterzine database alone, or "Switch to free".
 func (s State) Name() string {
-	if s.Mode == ModeApp {
+	switch s.Mode {
+	case ModeApp:
 		return "MisterZine update"
+	case ModeFree:
+		return "Switch to free"
 	}
 	return "Update All"
 }
@@ -233,6 +240,9 @@ func (s State) Summary() string {
 	}
 	if s.Mode == ModeApp {
 		return "Updating MisterZine alone through Downloader"
+	}
+	if s.Mode == ModeFree {
+		return "Installing the free MisterZine through Downloader"
 	}
 	return "Updating with your saved Update All settings"
 }
