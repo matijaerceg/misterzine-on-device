@@ -41,9 +41,10 @@ in Options fetches just the new beta in a few seconds.
 ## Back to the free version
 
 Run **MisterZine-Switch-To-Free** from Scripts. It points the `misterzine`
-entry back at the free releases, installs the free MisterZine in the beta's
-place and removes the MisterZine Arcade menu entry; **MisterZine** returns.
-Favorites and settings stay. Settings that only the beta has are left behind.
+entry back at the free releases and installs the free MisterZine in the
+beta's place. The main-menu entry stays **MisterZine Arcade**, the name the
+free version uses too. Favorites and settings stay. Settings that only the
+beta has are left behind.
 
 The code screen offers the same switch: press X twice there. The app shows
 the switch as it runs, and when it has finished, A restarts into the free

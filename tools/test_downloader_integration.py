@@ -199,8 +199,8 @@ runpy.run_path(archive, run_name="__main__")
 
 def exercise_switch(archive, free, beta):
     """Free, then MisterZine Arcade, then free again, on one card: the files
-    are replaced in place, saved data stays, and the beta-only files and menu
-    entry leave with the beta."""
+    are replaced in place, saved data stays, the beta-only files leave with
+    the beta, and the main-menu entry, the same in both, stays."""
     archive, free, beta = Path(archive).resolve(), Path(free).resolve(), Path(beta).resolve()
     spec = importlib.util.spec_from_file_location("fixture_channel", Path(__file__).resolve().parents[1] / "deploy/channel.py")
     channel = importlib.util.module_from_spec(spec)
@@ -249,16 +249,16 @@ def exercise_switch(archive, free, beta):
         channel.switch(card, "beta", run=run, proc_root=proc)
         assert (app / "misterzine").read_bytes() == binary(beta)
         assert (app / "channel.py").exists() and (card / "Scripts/MisterZine-Switch-To-Free.sh").exists()
-        (card / "MisterZine Arcade.mgl").write_text("beta menu entry fixture")
+        (card / "MisterZine Arcade.mgl").write_text("menu entry fixture")
         channel.switch(card, "free", run=run, proc_root=proc)
         assert (app / "misterzine").read_bytes() == binary(free)
         assert not (app / "channel.py").exists(), "the beta's channel.py stayed"
         assert not (card / "Scripts/MisterZine-Switch-To-Free.sh").exists(), "the beta's switch script stayed"
-        assert not (card / "MisterZine Arcade.mgl").exists()
+        assert (card / "MisterZine Arcade.mgl").read_text() == "menu entry fixture", "the menu entry left with the beta"
         for name, data in saved.items():
             assert (app / name).read_bytes() == data
         assert (card / "downloader_misterzine.ini").read_text() == channel.DROP_IN_TEXT.replace("@URL@", channel.URLS["free"])
-        print("PASS: free to MisterZine Arcade and back in place, saved data kept, beta files and menu entry removed")
+        print("PASS: free to MisterZine Arcade and back in place, saved data and menu entry kept, beta files removed")
 
 
 if __name__ == "__main__":

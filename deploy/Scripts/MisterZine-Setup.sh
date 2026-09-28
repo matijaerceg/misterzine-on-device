@@ -8,7 +8,7 @@ if [ ! -x "$BIN" ]; then
 fi
 if "$BIN" launcher enable; then
   echo "MisterZine is ready."
-  echo "Return to the MiSTer main menu and choose MisterZine."
+  echo "Return to the MiSTer main menu and choose MisterZine Arcade."
   echo "Setup is only needed once; the menu entry starts automatically at boot."
 else
   echo "Setup could not enable the main-menu entry. See the message above."

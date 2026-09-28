@@ -142,10 +142,10 @@ def uninstall(card, keep, run=subprocess.run, proc_root=Path("/proc")):
     if result.returncode:
         raise RuntimeError("Downloader did not finish removal. Local saved data was kept. Fix the reported problem and retry; Setup can restore the menu entry.")
     clean_local_files(card, keep)
-    # Also remove the main-menu entries (the free build's and the Patreon
-    # beta's) and pre-release/manual launcher entries, which might not be in
-    # Downloader's store. These exact paths belong to MisterZine.
-    for relative in ("MisterZine.mgl", "misterzine.mgl", "MisterZine Arcade.mgl", "Scripts/misterzine.sh",
+    # Also remove the main-menu entry (MisterZine Arcade, and MisterZine from
+    # before the rename) and pre-release/manual launcher entries, which might
+    # not be in Downloader's store. These exact paths belong to MisterZine.
+    for relative in ("MisterZine Arcade.mgl", "MisterZine.mgl", "misterzine.mgl", "Scripts/misterzine.sh",
                      "Scripts/MisterZine-Run.sh", "Scripts/MisterZine-Setup.sh", "Scripts/MisterZine-Uninstall.sh",
                      "Scripts/MisterZine Setup.sh", "Scripts/MisterZine Uninstall.sh"):
         path = card / relative

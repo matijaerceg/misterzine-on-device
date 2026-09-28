@@ -18,7 +18,7 @@ import (
 
 func TestDisableLauncherPreservesOtherBootHooks(t *testing.T) {
 	dir := t.TempDir()
-	startup, mgl := filepath.Join(dir, "user-startup.sh"), filepath.Join(dir, "MisterZine.mgl")
+	startup, mgl := filepath.Join(dir, "user-startup.sh"), filepath.Join(dir, "MisterZine Arcade.mgl")
 	others := "#!/bin/sh\n# fan control\n/usr/bin/fan start\n"
 	if err := os.WriteFile(startup, []byte(others+startupMark+"\n"+startupLine+"\n"), 0751); err != nil {
 		t.Fatal(err)
@@ -51,7 +51,7 @@ func TestDisableLauncherPreservesOtherBootHooks(t *testing.T) {
 
 func TestDisableLauncherWithoutBootScript(t *testing.T) {
 	dir := t.TempDir()
-	mgl := filepath.Join(dir, "MisterZine.mgl")
+	mgl := filepath.Join(dir, "MisterZine Arcade.mgl")
 	if err := os.WriteFile(mgl, []byte(mglBody), 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +65,7 @@ func TestDisableLauncherWithoutBootScript(t *testing.T) {
 
 func TestDisableLauncherReportsUnreadableBootScript(t *testing.T) {
 	dir := t.TempDir()
-	mgl := filepath.Join(dir, "MisterZine.mgl")
+	mgl := filepath.Join(dir, "MisterZine Arcade.mgl")
 	if err := os.WriteFile(mgl, []byte(mglBody), 0644); err != nil {
 		t.Fatal(err)
 	}

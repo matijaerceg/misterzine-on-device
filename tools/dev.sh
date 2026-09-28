@@ -1,8 +1,9 @@
 #!/bin/bash
 # Device development loop. Usage: PI=<address> tools/dev.sh <cmd> [args]
 #   build      cross-compile dist/misterzine
-#   deploy     scp the binary + wrapper to the Pi (never over a running binary)
-#   launch     select MisterZine through the MiSTer command interface
+#   deploy     scp the binary + wrapper to the Pi (never over a running binary),
+#              and put the main-menu entry in place of its old name
+#   launch     select MisterZine Arcade through the MiSTer command interface
 #   menu       return the Pi to the menu core
 #   shot NAME  save the live canvas from the debug server to NAME.png
 #   key NAME   inject one key (also: hold=ms count=n via env HOLD/COUNT)
@@ -38,10 +39,11 @@ case "$1" in
     $SSH "mkdir -p /media/fat/misterzine"
     scp -q dist/misterzine root@$PI:/media/fat/misterzine/misterzine.new
     scp -q deploy/launch.sh root@$PI:/media/fat/misterzine/launch.sh
-    scp -q deploy/MisterZine.mgl root@$PI:/media/fat/MisterZine.mgl
+    # the entry's name has a space: through ssh's stdin rather than an scp path
+    $SSH "cat > '/media/fat/MisterZine Arcade.mgl'; rm -f /media/fat/MisterZine.mgl" < "deploy/MisterZine Arcade.mgl"
     $SSH "mv /media/fat/misterzine/misterzine.new /media/fat/misterzine/misterzine; chmod +x /media/fat/misterzine/misterzine /media/fat/misterzine/launch.sh; sync; /media/fat/misterzine/misterzine --version" ;;
   launch)
-    $SSH "timeout 3 sh -c 'echo load_core /media/fat/MisterZine.mgl > /dev/MiSTer_cmd'" ;;
+    $SSH "timeout 3 sh -c 'echo load_core /media/fat/MisterZine Arcade.mgl > /dev/MiSTer_cmd'" ;;
   menu) curl -s -o /dev/null -w "menu: HTTP %{http_code}\n" -X POST "$REMOTE/api/launch/menu" ;;
   shot) debug_curl -sf -o "${2:-shot}.png" "$DBG/api/shot.png" && echo "wrote ${2:-shot}.png" ;;
   key) debug_curl -sf -X POST "$DBG/api/key/$2?hold=${HOLD:-40}&count=${COUNT:-1}" ;;
@@ -53,5 +55,5 @@ case "$1" in
   quit|kill) debug_curl -sf -X POST "$DBG/api/quit" ;;
   restore) $SSH "/media/fat/misterzine/misterzine console-restore; echo restored" ;;
   anykey) curl -s -o /dev/null -w "anykey: HTTP %{http_code}\n" -X POST "$REMOTE/api/controls/keyboard-raw/28" ;;
-  *) sed -n 2,16p "$0" ;;
+  *) sed -n 2,17p "$0" ;;
 esac

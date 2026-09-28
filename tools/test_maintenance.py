@@ -36,8 +36,8 @@ class RemovalTest(unittest.TestCase):
         (self.app / "beta-unlocks/arcade-1-0123.receipt").write_bytes(b"unlocked\n")
         (self.app / "misterzine").write_bytes(b"binary")
         (self.card / "unrelated.txt").write_bytes(b"keep")
-        # the main-menu entries of both builds
-        for name in ("MisterZine.mgl", "MisterZine Arcade.mgl"):
+        # the main-menu entry, and one still under its old name
+        for name in ("MisterZine Arcade.mgl", "MisterZine.mgl"):
             (self.card / name).write_bytes(b"<mistergamedescription/>")
         self.calls = []
 

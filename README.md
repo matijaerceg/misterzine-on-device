@@ -51,16 +51,19 @@ other JAMMA cabinet needs one extra INI section, described under
 2. Copy it to the root of your SD card, beside `downloader.ini`.
 3. Run Update All or Downloader.
 4. Run **MisterZine-Setup** from Scripts once.
-5. Return to the main menu and choose **MisterZine**.
+5. Return to the main menu and choose **MisterZine Arcade**.
 
 **After setup, open MisterZine directly from the main menu.** Its launcher
 starts automatically at boot. You do not need to visit Scripts each time.
 Updates arrive through your normal Update All/Downloader runs.
 
 If you already enabled the launcher in an earlier version, it stays enabled.
+Its main-menu entry, called MisterZine until now, becomes **MisterZine Arcade**
+by itself; see [the new entry name](docs/TROUBLESHOOTING.md#the-menu-entry-is-now-misterzine-arcade)
+if a tag or script opened the old one.
 
 If another frontend is your main menu (Degauss), choose **MisterZine-Run** in
-its Scripts list, or exit to the MiSTer menu and choose MisterZine there.
+its Scripts list, or exit to the MiSTer menu and choose MisterZine Arcade there.
 For configuration by hand, see [installation details](docs/USER_GUIDE.md#installation).
 
 ## Everyday controls

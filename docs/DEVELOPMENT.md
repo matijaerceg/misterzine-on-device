@@ -126,9 +126,10 @@ channel and batch and exits 2 when the build's beta values do not belong
 together. The gate is a convenience for members, not protection: a six-digit
 code can be found from its hash, and a modified build skips the check.
 
-The beta's main-menu entry is `MisterZine Arcade.mgl`; it loads the same
-`misterzine` setname as the free build's `MisterZine.mgl`, and each build
-removes the other's entry when it writes its own. The harness renders the
+The main-menu entry is `MisterZine Arcade.mgl` in both builds. It loads the
+`misterzine` setname, which the watcher, `/tmp/CORENAME` and the INI's
+`[MisterZine]` section go by, and the launcher removes the entry's old name,
+`MisterZine.mgl`, wherever it writes the entry. The harness renders the
 beta with `-beta` (unlocked, with the BETA mark) and its lock screen with
 `-beta-locked`, whose code is 123456. On a card where
 `updater.CanSwitchToFree` holds, the lock screen also offers the way back

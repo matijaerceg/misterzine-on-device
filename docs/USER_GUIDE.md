@@ -4,14 +4,14 @@
 
 The recommended installation uses the downloadable `downloader_misterzine.ini`
 file. Keep it beside `downloader.ini` on the card, run Update All/Downloader,
-then run **MisterZine-Setup** from Scripts once. Setup enables the **MisterZine**
-main-menu entry and its automatic startup helper.
+then run **MisterZine-Setup** from Scripts once. Setup enables the **MisterZine
+Arcade** main-menu entry and its automatic startup helper.
 
 If another frontend is your main menu (Degauss), its Scripts list has
 **MisterZine-Run**, which opens MisterZine directly; the frontend returns when
 MisterZine quits. Opened that way, leave through Options -> Quit MisterZine or
 the pad's Menu button (set to leave), as keyboard F12 stays with the frontend's
-script session. Choosing MisterZine from the MiSTer menu itself works too.
+script session. Choosing MisterZine Arcade from the MiSTer menu itself works too.
 
 Alternatively, add this section to `/media/fat/downloader.ini`:
 
@@ -31,6 +31,11 @@ from excluding the app's files; your other databases keep their existing filters
 Existing launcher settings and saved favorites/preferences survive an update.
 Earlier versions' Scripts launch entry is replaced by the one-time Setup entry.
 If the main-menu launcher was previously off, run Setup to enable it.
+The main-menu entry was called MisterZine before; the launcher gives it its
+new name, MisterZine Arcade, by itself after the update. An NFC tag, INI
+line or script that opened the old entry needs the new file name, as
+[troubleshooting](TROUBLESHOOTING.md#the-menu-entry-is-now-misterzine-arcade)
+explains.
 
 ## Page navigation
 
@@ -627,17 +632,18 @@ screenshots match, lettering runs instead and the Preview help explains why.
   even when 60 Hz hides it.
 - **Hold delay:** short 200 ms, normal 300 ms (default), or long 500 ms before
   navigation repeats. Artwork and calibration retain their own timing.
-- **Main menu shortcut:** off removes the menu entry and boot hook. If the
+- **Main menu shortcut:** the MisterZine Arcade entry in the MiSTer main
+  menu. Off removes the menu entry and boot hook. If the
   launcher opened this session, it returns to Menu before stopping. Turning
   the option back on puts both back. With it off, open MisterZine through
   Scripts -> MisterZine-Run (or run Setup again).
 - **Open at boot:** off by default. On: once the MiSTer menu is up after a
-  power-on or reboot, the launcher picks the MisterZine entry for you, the same
+  power-on or reboot, the launcher picks the MisterZine Arcade entry for you, the same
   way you would. A `bootcore` in the INI takes precedence and nothing happens.
   Needs the Main menu shortcut.
 - **Return after game:** off by default. On: when a game you started from
   MisterZine exits to the MiSTer menu (Reset or Exit in the OSD), the launcher
-  picks the MisterZine entry again and the list opens on that game: in the
+  picks the MisterZine Arcade entry again and the list opens on that game: in the
   view it starts in when that view lists the game, otherwise in the view you
   launched it from (with Remember last view off, MisterZine starts in the
   Default view, which may not hold it). A game the current filters hide is

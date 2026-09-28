@@ -71,7 +71,7 @@ func TestStartupHookRecognitionMatchesRemoval(t *testing.T) {
 		}
 		root := t.TempDir()
 		startup := filepath.Join(root, "startup.sh")
-		mgl := filepath.Join(root, "MisterZine.mgl")
+		mgl := filepath.Join(root, "MisterZine Arcade.mgl")
 		os.WriteFile(startup, []byte("#!/bin/sh\n"+line+"\necho preserved\n"), 0755)
 		if err := disableLauncherFiles(startup, mgl); err != nil {
 			t.Fatal(err)

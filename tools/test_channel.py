@@ -100,10 +100,26 @@ class CardTest(unittest.TestCase):
         self.assertFalse((self.card / "downloader_misterzine.ini").exists())
         self.assertEqual((self.app / "misterzine").read_text(), "beta")
         self.assertEqual((self.app / "favorites.json").read_text(), "kept")
-        self.assertTrue((self.card / "MisterZine.mgl").exists())
+        # the entry under its old name takes the new one
+        self.assertEqual(self.entries(), ["MisterZine Arcade.mgl"])
+        self.assertEqual((self.card / "MisterZine Arcade.mgl").read_text(), "free entry")
         self.assertEqual(len(self.calls), 1, "Setup ran on a card that already had MisterZine")
 
-    def test_free_over_beta_everywhere_the_entry_is_and_removes_the_arcade_entry(self):
+    def entries(self):
+        return sorted(p.name for p in self.card.glob("*.mgl"))
+
+    def test_the_old_entry_goes_beside_the_new_one_either_way(self):
+        self.give_downloader()
+        for build in ("free", "beta"):
+            self.install(build)
+            (self.card / "MisterZine Arcade.mgl").write_text("entry")
+            (self.card / "misterzine.mgl").write_text("old entry")
+            (self.card / "MisterZine Tools.mgl").write_text("someone else's")
+            channel.switch(self.card, build, run=self.downloader, proc_root=self.proc)
+            self.assertEqual(self.entries(), ["MisterZine Arcade.mgl", "MisterZine Tools.mgl"], build)
+            self.assertEqual((self.card / "MisterZine Arcade.mgl").read_text(), "entry", build)
+
+    def test_free_over_beta_everywhere_the_entry_is_and_keeps_the_arcade_entry(self):
         config = self.card / "Scripts/.config/downloader"
         config.mkdir(parents=True)
         (config / "downloader_bin").write_text("#!/bin/bash\n")
@@ -120,7 +136,8 @@ class CardTest(unittest.TestCase):
             self.assertIn("db_url = " + FREE, text, path)
             self.assertNotIn(BETA, text, path)
         self.assertEqual((self.card / "downloader_misterzine.ini").read_text(), (ROOT / "deploy/downloader_misterzine.ini").read_text())
-        self.assertFalse((self.card / "MisterZine Arcade.mgl").exists())
+        # both builds show MisterZine Arcade in the main menu
+        self.assertEqual(self.entries(), ["MisterZine Arcade.mgl"])
         self.assertEqual((self.app / "misterzine").read_text(), "free")
 
     def test_rerunning_changes_nothing_more(self):
@@ -232,9 +249,9 @@ class ScriptTest(unittest.TestCase):
 
         result = self.run_script(make_db.SWITCH_TO_FREE)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn("The free MisterZine is back", result.stdout)
+        self.assertIn("The free MisterZine is back. Choose MisterZine Arcade in the main menu.", result.stdout)
         self.assertEqual((self.card / "installed").read_text(), "free\n")
-        self.assertFalse((self.card / "MisterZine Arcade.mgl").exists())
+        self.assertTrue((self.card / "MisterZine Arcade.mgl").exists())
         self.assertEqual((self.card / "downloader_misterzine.ini").read_text(),
                          (ROOT / "deploy/downloader_misterzine.ini").read_text())
         self.assertEqual((self.card / "misterzine/favorites.json").read_text(), "kept")

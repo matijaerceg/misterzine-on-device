@@ -16,7 +16,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/matijaerceg/misterzine-on-device/internal/beta"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform/mister"
 	"github.com/matijaerceg/misterzine-on-device/internal/store"
 	"github.com/matijaerceg/misterzine-on-device/internal/updater"
@@ -24,17 +23,17 @@ import (
 
 // Main lists cores and MGL files. The resident launcher watches for our MGL's
 // setname, opens the script console, and restores Menu when the app exits.
-// The free build's entry is MisterZine.mgl and the Patreon beta's is
-// "MisterZine Arcade.mgl", the name the menu shows; both load the same
-// setname, so CORENAME, the INI's [MisterZine] section and pidof misterzine
-// work alike for either.
+// The entry is "MisterZine Arcade.mgl", the name the menu shows; releases
+// before it wrote MisterZine.mgl, which is removed wherever the entry is
+// written. The setname stays misterzine, so CORENAME, the INI's [MisterZine]
+// section and pidof misterzine work as they always have.
 
 const (
 	startupScript = "/media/fat/linux/user-startup.sh"
 	startupMark   = "# misterzine"
 	startupLine   = "[[ -e /media/fat/misterzine/misterzine ]] && /media/fat/misterzine/misterzine launcher start"
-	freeMGL       = "/media/fat/MisterZine.mgl"
-	betaMGL       = "/media/fat/MisterZine Arcade.mgl"
+	menuMGL       = "/media/fat/MisterZine Arcade.mgl"
+	legacyMGL     = "/media/fat/MisterZine.mgl" // the entry's old name
 	mglBody       = "<mistergamedescription>\n\t<rbf>menu</rbf>\n\t<setname>misterzine</setname>\n</mistergamedescription>\n"
 	pidFile       = "/media/fat/misterzine/watch.pid"
 	watchLog      = "/media/fat/misterzine/watch.log"
@@ -44,23 +43,6 @@ const (
 	bootMark      = "/tmp/misterzine-boot" // /tmp empties at boot: the first watcher of a boot creates it
 	menuCore      = "MENU"                 // what Main writes to CORENAME for its own menu
 )
-
-// mglPath is this build's main-menu entry; otherMGL is the other build's,
-// which this one removes when it writes its own, so switching between the
-// free version and the beta never leaves two entries.
-func mglPath() string {
-	if beta.On() {
-		return betaMGL
-	}
-	return freeMGL
-}
-
-func otherMGL() string {
-	if beta.On() {
-		return freeMGL
-	}
-	return betaMGL
-}
 
 // watchSettings reads the Options the watcher carries out (Open at boot,
 // Return after game); the app saves settings.json on every change.
@@ -74,6 +56,9 @@ func coreName() string {
 	return strings.TrimSpace(string(b))
 }
 
+// mainCmdFIFO is Main's command FIFO (a test points it elsewhere).
+var mainCmdFIFO = "/dev/MiSTer_cmd"
+
 // sendMainCmd writes one line to Main's command FIFO. Main recreates the
 // FIFO each time it restarts (every core load) and opens it a moment after
 // it has written CORENAME, so right after a core change the write can find
@@ -82,7 +67,7 @@ func sendMainCmd(line string) error {
 	var err error
 	for i := 0; i < 40; i++ {
 		var f *os.File
-		if f, err = os.OpenFile("/dev/MiSTer_cmd", os.O_WRONLY|syscall.O_NONBLOCK, 0); err == nil {
+		if f, err = os.OpenFile(mainCmdFIFO, os.O_WRONLY|syscall.O_NONBLOCK, 0); err == nil {
 			_, err = f.WriteString(line + "\n")
 			f.Close()
 			return err
@@ -94,6 +79,12 @@ func sendMainCmd(line string) error {
 	}
 	return err
 }
+
+// openMenuEntry asks Main to load the main-menu entry, as choosing it in the
+// menu does (Open at boot, Return after game). The path goes out whole and
+// unquoted although it has a space: Main takes the rest of the line after
+// load_core as the path, the way the app's own launches pass MRA names.
+func openMenuEntry(send func(string) error) error { return send("load_core " + menuMGL) }
 
 // firstWatcherSinceBoot is true once per boot: the mark lives in /tmp, which
 // is empty after power-on, and the watcher a Downloader update restarts or a
@@ -195,7 +186,7 @@ func launcherCmd(args []string) int {
 		launcherStop()
 		return 0
 	case "status":
-		fmt.Printf("enabled=%v running=%v mgl=%v\n", launcherEnabled(), watcherPID() > 0, fileExists(mglPath()))
+		fmt.Printf("enabled=%v running=%v mgl=%v\n", launcherEnabled(), watcherPID() > 0, fileExists(menuMGL))
 		return 0
 	case "enable":
 		if err := launcherEnable(); err != nil {
@@ -258,12 +249,13 @@ func hasStartupHook(script string) bool {
 // case-insensitive, so an older lowercase file answers to the new name too
 // and would keep the menu entry lowercase; it is renamed. Downloader may
 // also have removed the old path after installing the new one (same file on
-// this filesystem), in which case the MGL is written back. The other
-// build's entry goes first; failing that, this build's is still written.
-func ensureMGL() error { return ensureMGLAt(mglPath(), otherMGL()) }
+// this filesystem), in which case the MGL is written back. The entry under
+// its old name goes first, so an updated card shows one entry; failing
+// that, the new one is still written.
+func ensureMGL() error { return ensureMGLAt(menuMGL, legacyMGL) }
 
-func ensureMGLAt(mglPath, other string) error {
-	removeMGL(other)
+func ensureMGLAt(mglPath, legacy string) error {
+	removeMGL(legacy)
 	dir, base := filepath.Split(mglPath)
 	if ents, err := os.ReadDir(dir); err == nil {
 		exact := false
@@ -365,9 +357,9 @@ func removeMGL(path string) error {
 	return nil
 }
 
-// launcherDisable removes the boot block and the main-menu entry, the free
-// build's and the beta's alike.
-func launcherDisable() error { return disableLauncherFiles(startupScript, freeMGL, betaMGL) }
+// launcherDisable removes the boot block and the main-menu entry, under its
+// old name too.
+func launcherDisable() error { return disableLauncherFiles(startupScript, menuMGL, legacyMGL) }
 
 func disableLauncherFiles(startup string, mgls ...string) error {
 	b, err := os.ReadFile(startup)
@@ -508,7 +500,7 @@ func watch() int {
 		lg.Printf("watch: open at boot: waiting for the menu")
 		if awaitMenuAtBoot(coreName, time.Sleep, 2*time.Minute) {
 			ensureMGL()
-			if err := sendMainCmd("load_core " + mglPath()); err != nil {
+			if err := openMenuEntry(sendMainCmd); err != nil {
 				lg.Printf("watch: open at boot: %v", err)
 			}
 		} else {
@@ -592,7 +584,7 @@ func watch() int {
 				if exited && ws.ReturnAfterGame && !launcherUpdateActive() {
 					lg.Printf("watch: game exited; reopening MisterZine")
 					resume = true
-					if err := sendMainCmd("load_core " + mglPath()); err != nil {
+					if err := openMenuEntry(sendMainCmd); err != nil {
 						lg.Printf("watch: return after game: %v", err)
 						resume = false
 					}

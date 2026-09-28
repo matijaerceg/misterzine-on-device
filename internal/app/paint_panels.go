@@ -559,7 +559,7 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Wait before held navigation repeats: short 200 ms, normal 300 ms, long 500 ms. Scroll speed sets the pace after this delay."},
 		spacer, group(gfx.SectionOperation, "Operation"),
 		{text: "Main menu shortcut", kind: "launcher", vals: []string{"off", "on"}, idx: launcherIdx,
-			help: "Show MisterZine in the MiSTer main menu. Off removes the entry when you leave; on puts it back. With it off, Scripts -> MisterZine-Run opens MisterZine."},
+			help: "Show MisterZine Arcade in the MiSTer main menu. Off removes the entry when you leave; on puts it back. Scripts -> MisterZine-Run works either way."},
 		{text: "Open at boot", kind: "open-at-boot", child: true, vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.OpenAtBoot], disabled: launcherIdx == 0,
 			help: "On: once the MiSTer menu is up after power-on or reboot, MisterZine opens as if picked from it. A bootcore in the INI wins. Needs the shortcut."},
 		{text: "Return after game", kind: "return-after-game", child: true, vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ReturnAfterGame], disabled: launcherIdx == 0,

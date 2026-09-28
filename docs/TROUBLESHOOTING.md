@@ -89,11 +89,11 @@ direct_video=1
 vga_scaler=0
 ```
 
-MisterZine.mgl (MisterZine Arcade.mgl in the Patreon beta) loads the menu core
-under the name `misterzine`, and Main applies every section matching either
-name in file order, so `[MisterZine]` overrides
-`[Menu]` only while MisterZine is open; quitting restores the menu on HDMI. Put
-`osd_rotate` there as well if only MisterZine runs on a rotated CRT: Follow INI
+The main-menu entry, `MisterZine Arcade.mgl`, loads the menu core under the
+name `misterzine` (the section follows that name, not the entry's file name),
+and Main applies every section matching either name in file order, so
+`[MisterZine]` overrides `[Menu]` only while MisterZine is open; quitting
+restores the menu on HDMI. Put `osd_rotate` there as well if only MisterZine runs on a rotated CRT: Follow INI
 rotation reads the same sections Main does. The section must come after
 `[Menu]`, or `[Menu]` wins. It only applies to launches through the menu entry:
 the Scripts entry runs under the plain menu core and keeps the `[Menu]` output.
@@ -186,11 +186,25 @@ Run **MisterZine-Setup** in Scripts. It creates the menu entry and enables the
 startup helper. Downloader alone installs the files and no menu entry: a card
 that shows none has not run Setup yet, whichever installer put the files there.
 Setup is repeatable. If files are missing, run Downloader first. After a
-successful setup, return to the main menu and select MisterZine.
+successful setup, return to the main menu and select MisterZine Arcade.
 
 An external updater can temporarily prevent the launcher from opening. Let it
 finish before trying again. Errors from the app wrapper show recent log lines
 before returning; the logs are `misterzine/log.txt` and `misterzine/watch.log`.
+
+### The menu entry is now MisterZine Arcade
+
+The entry was called MisterZine (`MisterZine.mgl`) in earlier versions. After
+the update, the launcher writes `/media/fat/MisterZine Arcade.mgl` and removes
+the old file when it restarts: within seconds of the update finishing with
+MisterZine closed, or at the next boot. Nothing needs doing. If the menu
+still shows MisterZine, open another folder and come back, or reboot. Your
+settings, favorites and the `[MisterZine]` INI section stay as they were.
+
+Anything outside MisterZine that names the old file stops working: an NFC or
+Zaparoo tag, a `bootcore` line in MiSTer.ini, a favorite or shortcut in
+another frontend, or a script of your own. Point it at
+`/media/fat/MisterZine Arcade.mgl` instead; the space is part of the name.
 
 ### Degauss opens instead
 

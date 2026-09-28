@@ -7,10 +7,10 @@ import (
 )
 
 // IniSettings are the MiSTer.ini values the app cares about, read the way
-// Main reads them for the menu core loaded through MisterZine.mgl: the
-// global [MiSTer] section, [Menu] (the core's own name) and [MisterZine]
-// (the MGL's setname) all apply, later sections in the file overriding
-// earlier ones.
+// Main reads them for the menu core loaded through the main-menu entry,
+// "MisterZine Arcade.mgl": the global [MiSTer] section, [Menu] (the core's
+// own name) and [MisterZine] (the MGL's setname, misterzine, not its file
+// name) all apply, later sections in the file overriding earlier ones.
 type IniSettings struct {
 	OSDRotate   int    // 0 none, 1 right (+90), 2 left (-90)
 	DirectVideo int    // 0/1/2
@@ -22,7 +22,7 @@ type IniSettings struct {
 }
 
 // iniSectionApplies reports whether Main applies a section of that name
-// while MisterZine.mgl is loaded. Main matches [MiSTer], the original core
+// while the main-menu entry's MGL is loaded. Main matches [MiSTer], the original core
 // name (Menu) and the setname override (misterzine), case-insensitively; a
 // trailing * matches a prefix of either name. Values above the first section
 // header are accepted as global.

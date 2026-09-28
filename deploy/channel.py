@@ -12,11 +12,12 @@ the drop-in the free release ships, pointed at the chosen build. Downloader
 then runs for that database alone and replaces the files in place, so
 favorites and settings stay and Update All keeps updating the chosen build.
 
-Leaving the beta also removes its main-menu entry, MisterZine Arcade.mgl;
-the free launcher puts MisterZine.mgl back. On a card that never had
-MisterZine the menu entry is enabled as MisterZine-Setup would. Safe to run
-again. MisterZine-Install-Beta.sh and MisterZine-Switch-To-Free.sh carry a
-copy of this file, so they work on any card; the beta also installs it as
+Both builds show the same main-menu entry, MisterZine Arcade.mgl, which a
+switch leaves in place; an entry still under its old name, MisterZine.mgl,
+takes the new one. On a card that never had MisterZine the menu entry is
+enabled as MisterZine-Setup would. Safe to run again.
+MisterZine-Install-Beta.sh and MisterZine-Switch-To-Free.sh carry a copy of
+this file, so they work on any card; the beta also installs it as
 misterzine/channel.py, which the app runs to switch back to free.
 """
 import argparse
@@ -44,7 +45,8 @@ db_url = @URL@
 ; Install the whole app even when global filters select only particular cores.
 filter =
 """
-BETA_MGL = "MisterZine Arcade.mgl"
+MGL = "MisterZine Arcade.mgl"
+LEGACY_MGL = "MisterZine.mgl"  # the entry's name before the rename
 UPDATERS = {
     "update.sh", "update_all.sh", "update_all.pyz", "downloader.sh",
     "downloader_bin", "downloader_latest.zip", "ua_downloader_bin",
@@ -189,6 +191,20 @@ def busy(proc_root):
             raise RuntimeError("An updater is running. Let it finish, then try again.")
 
 
+def rename_entry(card):
+    """Give a menu entry still under its old name the new one, the way the
+    launcher does when it starts, so the menu never lists both."""
+    legacy = [p for p in card.iterdir() if p.name.lower() == LEGACY_MGL.lower() and (p.is_symlink() or p.is_file())]
+    if not legacy:
+        return
+    entry = card / MGL
+    if not (entry.is_symlink() or entry.exists()):
+        os.replace(legacy[0], entry)
+        legacy = legacy[1:]
+    for path in legacy:
+        path.unlink()
+
+
 def downloader(card):
     """How to run Downloader for this database alone, the way the app does:
     the card's own launcher first, since it also fixes the clock and the
@@ -231,10 +247,7 @@ def switch(card, channel, run=subprocess.run, proc_root=Path("/proc")):
                            + "). Run this again, or run Update All, which finishes the switch.")
     if not binary.is_file():
         raise RuntimeError("Downloader finished without installing MisterZine. Check the misterzine entry's filter.")
-    if channel == "free":
-        mgl = card / BETA_MGL
-        if mgl.is_symlink() or mgl.is_file():
-            mgl.unlink()
+    rename_entry(card)
     if fresh:
         if run([str(binary), "launcher", "enable"]).returncode:
             print("Run MisterZine-Setup from Scripts once to add the main-menu entry.")
@@ -258,7 +271,7 @@ def main():
         print("\nMisterZine Arcade is installed. Choose it in the main menu and enter the code")
         print("from the Patreon members' post. Favorites and settings came along.")
     else:
-        print("\nThe free MisterZine is back. Choose MisterZine in the main menu.")
+        print("\nThe free MisterZine is back. Choose MisterZine Arcade in the main menu.")
         print("Favorites and settings came along.")
     return 0
 
