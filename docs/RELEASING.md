@@ -128,7 +128,8 @@ later.
 
 ### Going back to free
 
-`MisterZine-Switch-To-Free` (and the app, through `updater.ModeFree`) runs
+`MisterZine-Switch-To-Free` (and the app's lock screen, through
+`updater.ModeFree`, on a card where `updater.CanSwitchToFree` holds) runs
 `channel.py free`: it points the `misterzine` entry back at the latest free
 release, runs Downloader for it, which removes the beta-only files, and deletes
 `MisterZine Arcade.mgl`. `MisterZine-Install-Beta` runs `channel.py beta`. Both

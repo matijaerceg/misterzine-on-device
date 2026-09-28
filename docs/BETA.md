@@ -45,6 +45,10 @@ entry back at the free releases, installs the free MisterZine in the beta's
 place and removes the MisterZine Arcade menu entry; **MisterZine** returns.
 Favorites and settings stay. Settings that only the beta has are left behind.
 
+The code screen offers the same switch: press X twice there. The app shows
+the switch as it runs, and when it has finished, A restarts into the free
+MisterZine.
+
 Keep **MisterZine-Install-Beta** in Scripts to come back later.
 
 ## If something goes wrong

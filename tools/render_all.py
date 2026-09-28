@@ -342,6 +342,15 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "-out", f"out/beta-lock-{orientation}-{inset}", "-script",
                           "shot empty; type 12; up; right; down; shot part; type 999; enter; shot wrong; "
                           "back; start; shot incomplete; type 123456; enter; shot unlocked"])
+        # on a card that can go back to the free version: the offer, the
+        # question the first X puts, and the switch's run under way
+        scenarios.append([*rotation, "-inset", str(inset), "-beta-locked", "-switch-free", "-update-state", "testdata/update-free-running.json",
+                          "-out", f"out/beta-lock-free-{orientation}-{inset}", "-script",
+                          "shot offer; tab; shot ask; tab; shot running"])
+    # the switch done: the restart into the free version, and B back to the lock
+    scenarios.append([*rotation, "-beta-locked", "-switch-free", "-update-state", "testdata/update-free-completed.json", "-update-restart",
+                      "-out", f"out/beta-lock-free-{orientation}-done", "-script",
+                      "type 12; tab; tab; shot restart; back; shot returned"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):

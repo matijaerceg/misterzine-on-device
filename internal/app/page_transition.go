@@ -15,7 +15,7 @@ type pageIdentity struct {
 	screen  Screen
 	view    data.SortMode
 	support string
-	locked  bool // the beta's lock screen, whatever screen is under it
+	locked  bool // the beta's lock screen, whatever screen is under it (screen is ScreenUpdate during its switch to free)
 }
 
 type pageTransition struct {
@@ -38,6 +38,9 @@ func (a *App) PageTransitions() bool { return !a.cfg.TransitionsDisabled }
 func (a *App) EnablePageTransitions() { a.transition.enabled = true }
 
 func (a *App) pageIdentity() pageIdentity {
+	if a.lock != nil && a.lock.switching {
+		return pageIdentity{locked: true, screen: ScreenUpdate}
+	}
 	if a.lock != nil {
 		return pageIdentity{locked: true}
 	}
@@ -52,8 +55,8 @@ func (a *App) pageIdentity() pageIdentity {
 }
 
 func (p pageIdentity) depth() int {
-	if p.locked {
-		return -1 // unlocking moves forward into the list
+	if p.locked && p.screen != ScreenUpdate {
+		return -1 // unlocking moves forward into the list, as does the switch to free
 	}
 	switch p.screen {
 	case ScreenList:

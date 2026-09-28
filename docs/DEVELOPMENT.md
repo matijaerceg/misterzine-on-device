@@ -130,7 +130,11 @@ The beta's main-menu entry is `MisterZine Arcade.mgl`; it loads the same
 `misterzine` setname as the free build's `MisterZine.mgl`, and each build
 removes the other's entry when it writes its own. The harness renders the
 beta with `-beta` (unlocked, with the BETA mark) and its lock screen with
-`-beta-locked`, whose code is 123456.
+`-beta-locked`, whose code is 123456. On a card where
+`updater.CanSwitchToFree` holds, the lock screen also offers the way back
+to the free version: X twice starts an `updater.ModeFree` run and shows its
+update screen, still locked. The harness offers it with `-switch-free`, and
+`-update-state` then gives the state that switch reports.
 
 ## Device tools and debugging
 

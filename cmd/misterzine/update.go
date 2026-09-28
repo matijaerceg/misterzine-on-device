@@ -46,7 +46,8 @@ func (h *host) initUpdates() {
 	}()
 }
 
-// startUpdate begins a run of the given mode (updater.ModeAll or ModeApp).
+// startUpdate begins a run of the given mode (updater.ModeAll, ModeApp, or
+// ModeFree from the beta's lock screen).
 func (h *host) startUpdate(mode string) {
 	if h.updatePending {
 		return

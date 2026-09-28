@@ -40,8 +40,9 @@ func (a *App) UpdateRestartAvailable() bool { return a.updateView.restart && !a.
 
 func (a *App) UpdateState() updater.State { return a.update }
 
-// OpenUpdate starts a run of the given mode (updater.ModeAll, or ModeApp
-// for MisterZine alone) and shows its screen.
+// OpenUpdate starts a run of the given mode (updater.ModeAll, ModeApp for
+// MisterZine alone, or ModeFree from the beta's lock screen) and shows its
+// screen.
 func (a *App) OpenUpdate(mode string) {
 	a.rep = repeater{}
 	a.down = map[platform.Key]bool{}
@@ -268,7 +269,11 @@ func (a *App) paintUpdate(c *gfx.Canvas) {
 		y += a.sm.H + 1
 	}
 	if a.UpdateRestartAvailable() {
-		for _, line := range gfx.Wrap("MisterZine updated. Restart to use the new version.", a.sm.Cols(l.Body.Dx()-4), 3) {
+		restart := "MisterZine updated. Restart to use the new version."
+		if s.Mode == updater.ModeFree {
+			restart = "The free MisterZine is installed. Restart to use it."
+		}
+		for _, line := range gfx.Wrap(restart, a.sm.Cols(l.Body.Dx()-4), 3) {
 			c.Text(l.Body.Min.X+2, y, a.sm, line, gen.Eva.Accent)
 			y += a.sm.H + 1
 		}

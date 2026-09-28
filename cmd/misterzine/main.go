@@ -288,6 +288,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		Progress:             func() (int, int) { return h.img.Progress() },
 		Launcher:             launcherEnabled,
 		CanUpdateApp:         func() bool { return updater.CanUpdateApp(card) },
+		CanSwitchToFree:      func() bool { return updater.CanSwitchToFree(card) },
 		Status: func(i int) data.Status {
 			if i < len(h.status) {
 				return h.status[i]

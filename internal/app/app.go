@@ -109,6 +109,10 @@ type Config struct {
 	// CanUpdateApp reports whether this card can fetch a new MisterZine on
 	// its own, which needs Downloader (nil = unsupported).
 	CanUpdateApp func() bool
+	// CanSwitchToFree reports whether this card can take the beta back to
+	// the free MisterZine by itself (updater.CanSwitchToFree); the lock
+	// screen then offers it (nil = unsupported).
+	CanSwitchToFree func() bool
 	// Scroll is the held-scrolling speed in rows per second: 20, 30, 60.
 	Scroll               string
 	SmoothScrollDisabled bool
@@ -330,6 +334,7 @@ func New(cfg Config, ds *data.Dataset, stored *data.SeenRecord) *App {
 	a.saver.lastInput = cfg.TimerNow()
 	if cfg.BetaUnlock != nil {
 		a.lock = newBetaLock()
+		a.lock.free = cfg.CanSwitchToFree != nil && cfg.CanSwitchToFree()
 	}
 	return a
 }
@@ -780,6 +785,9 @@ func (a *App) Handle(ev platform.Event) bool {
 	if a.handleSaverInput(ev) {
 		return true
 	}
+	if a.lock != nil && a.lock.switching {
+		return a.handleLockSwitch(ev)
+	}
 	if a.lock != nil {
 		return a.handleLock(ev)
 	}
@@ -896,7 +904,7 @@ func (a *App) bounced(ev platform.Event) bool {
 // repeatStep says whether a held key repeats on the current screen and how
 // fast; 0 means it does not.
 func (a *App) repeatStep(k platform.Key, count int) time.Duration {
-	if a.lock != nil {
+	if a.lock != nil && !a.lock.switching {
 		if a.lockRepeats(k) {
 			return repeatStep
 		}
@@ -960,7 +968,7 @@ func (a *App) Tick(now time.Time) bool {
 		a.all = true
 		changed = true
 	}
-	if a.screen == ScreenUpdate && a.lock == nil {
+	if a.screen == ScreenUpdate && (a.lock == nil || a.lock.switching) {
 		// Stay in the host's normal event loop so update progress and cancellation
 		// keep arriving while the log scrolls. NextTick schedules these repeats.
 		if k := a.rep.due(now, a.repeatStep); k != platform.KeyNone {
@@ -1069,7 +1077,7 @@ func (a *App) act(k platform.Key) bool {
 		a.all = true
 	}
 	a.listMotion = listMotion{}
-	if a.lock != nil {
+	if a.lock != nil && !a.lock.switching {
 		return a.actLock(k)
 	}
 	switch a.screen {
@@ -1366,9 +1374,14 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 		a.paintSaver(c)
 	} else if a.lock != nil {
 		// the lock screen instead of every other screen: nothing under it
-		// is painted or asks for pictures
+		// is painted or asks for pictures; its switch to the free version
+		// shows that run's update screen
 		c.Fill(c.Rect, gen.Eva.Bg)
-		a.paintLock(c)
+		if a.lock.switching {
+			a.paintUpdate(c)
+		} else {
+			a.paintLock(c)
+		}
 		if a.saver.active {
 			a.paintSaver(c)
 		}

@@ -1,0 +1,17 @@
+{
+  "id": "switch-free",
+  "mode": "free",
+  "status": "completed",
+  "stage": 5,
+  "label": "Update complete",
+  "started": "2026-09-08T11:59:20Z",
+  "elapsed": 52,
+  "lines": [
+    "MisterZine's Downloader entry in downloader_misterzine.ini now points at the free MisterZine.",
+    "Running MiSTer Downloader",
+    "Installing misterzine/misterzine",
+    "Removing Scripts/MisterZine-Switch-To-Free.sh",
+    "The free MisterZine is back. Choose MisterZine in the main menu.",
+    "Favorites and settings came along."
+  ]
+}
