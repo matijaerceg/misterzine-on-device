@@ -25,6 +25,7 @@ type updateView struct {
 	log        []string // last painted log; held still while scrolled back
 	error      string
 	restart    bool
+	card       *cardWatch // what the rescan after the run changed (beta)
 }
 
 // SetUpdateRestart applies a background check only to the finished run it belongs to.
@@ -269,6 +270,13 @@ func (a *App) paintUpdate(c *gfx.Canvas) {
 	if a.UpdateRestartAvailable() {
 		for _, line := range gfx.Wrap("MisterZine updated. Restart to use the new version.", a.sm.Cols(l.Body.Dx()-4), 3) {
 			c.Text(l.Body.Min.X+2, y, a.sm, line, gen.Eva.Accent)
+			y += a.sm.H + 1
+		}
+	}
+	cols := a.sm.Cols(l.Body.Dx() - 4)
+	for _, line := range v.card.lines(cols, 3) {
+		for _, part := range gfx.Wrap(line, cols, 2) {
+			c.Text(l.Body.Min.X+2, y, a.sm, part, gen.Eva.Fg)
 			y += a.sm.H + 1
 		}
 	}

@@ -20,6 +20,7 @@ func (a *App) SetAppUpdate(version string) {
 
 func (a *App) OpenScan() {
 	a.scanReady, a.scanError = false, ""
+	a.scanWatch = a.watchCard()
 	a.screen = ScreenScan
 	a.rep = repeater{}
 	a.all = true
@@ -34,6 +35,7 @@ func (a *App) OpenScan() {
 // scan that produced nothing shows the problem alone.
 func (a *App) FinishScan(message string, counts bool) {
 	a.scanReady, a.scanError, a.scanCounts = true, message, counts
+	a.scanWatch = a.scanWatch.settle(a, counts)
 	a.all = true
 }
 
@@ -54,25 +56,8 @@ func (a *App) paintScan(c *gfx.Canvas) {
 	c.Box(box, gen.Eva.Line)
 	x, y := box.Min.X+4, box.Min.Y+4
 	cols := a.sm.Cols(box.Dx() - 8)
-	lines := []string{"Checking card...", "", a.btn("B") + " returns while the scan continues."}
-	if a.scanReady {
-		counts := a.cardCounts()
-		lines = []string{"Card scan complete", "", "Up to date: " + itoa(counts[data.StatusCurrent]),
-			"Older installed: " + itoa(counts[data.StatusOutdated]+counts[data.StatusLikelyOutdated]),
-			"Build date unknown: " + itoa(counts[data.StatusFoundUndated]),
-			"Not found on card: " + itoa(counts[data.StatusNotFound]),
-			"Status unknown: " + itoa(counts[data.StatusUnknown]),
-			"", "Compared with the enabled catalogue."}
-		if n := a.ds.Facets.Src[data.SrcLocal]; n > 0 {
-			lines = append(lines, "Local games not in the catalogue: "+itoa(n))
-		}
-		if a.scanError != "" && !a.scanCounts {
-			lines = []string{a.scanError, "", "Could not finish every scan step.", "See the device log for details."}
-		} else if a.scanError != "" {
-			lines = append(lines, "", a.scanError+".", "See the device log for details.")
-		}
-	}
-	for _, line := range lines {
+	fit := (box.Max.Y-3-a.sm.H-y)/(a.sm.H+2) + 1 // the rows the box holds
+	for _, line := range a.scanLines(cols, fit) {
 		if line == "" {
 			y += a.sm.H + 2
 			continue
@@ -86,4 +71,33 @@ func (a *App) paintScan(c *gfx.Canvas) {
 		}
 	}
 	a.paintHint(c, "B Back")
+}
+
+// scanLines is the scan screen's text for a box cols characters wide that
+// holds fit rows; "" is a blank row.
+func (a *App) scanLines(cols, fit int) []string {
+	if !a.scanReady {
+		return []string{"Checking card...", "", a.btn("B") + " returns while the scan continues."}
+	}
+	counts := a.cardCounts()
+	lines := []string{"Card scan complete", "", "Up to date: " + itoa(counts[data.StatusCurrent]),
+		"Older installed: " + itoa(counts[data.StatusOutdated]+counts[data.StatusLikelyOutdated]),
+		"Build date unknown: " + itoa(counts[data.StatusFoundUndated]),
+		"Not found on card: " + itoa(counts[data.StatusNotFound]),
+		"Status unknown: " + itoa(counts[data.StatusUnknown]),
+		"", "Compared with the enabled catalogue."}
+	if n := a.ds.Facets.Src[data.SrcLocal]; n > 0 {
+		lines = append(lines, "Local games not in the catalogue: "+itoa(n))
+	}
+	if a.scanError != "" && !a.scanCounts {
+		lines = []string{a.scanError, "", "Could not finish every scan step.", "See the device log for details."}
+	} else if a.scanError != "" {
+		lines = append(lines, "", a.scanError+".", "See the device log for details.")
+	}
+	// what the scan changed (beta) goes under the heading, in the rows the
+	// rest leaves: it never pushes a problem off the box
+	if change := a.scanWatch.lines(cols, fit-textRows(lines, cols)); len(change) > 0 {
+		lines = append(lines[:1], append(change, lines[1:]...)...)
+	}
+	return lines
 }
