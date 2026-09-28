@@ -65,7 +65,7 @@ func (h *host) receiveScan(r scanResult) {
 			h.scanPending = true
 			current = false
 		} else {
-			h.status = r.status
+			h.status, h.owners = r.status, r.owners
 			h.a.SetData(ds, nil)
 			// a standin row the card now runs from the catalogue hands its star over
 			h.a.RenameKeys(r.moves)
@@ -74,7 +74,7 @@ func (h *host) receiveScan(r scanResult) {
 			}
 		}
 	} else if current && r.index != nil {
-		h.status = r.status
+		h.status, h.owners = r.status, r.owners
 	} else if !current {
 		// Reordered/new rows cannot use old positional statuses. Queue one scan
 		// of the latest data rather than doing filesystem work during painting.

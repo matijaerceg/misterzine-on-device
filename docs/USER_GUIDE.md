@@ -77,6 +77,12 @@ as current. A core file is matched by name the way MiSTer itself loads it: the
 exact name, or any file whose name starts with that name followed by an
 underscore (Coin-Op ships `blkheart_mister_20260909.rbf` for `blkheart`).
 
+Two sources sometimes ship the same MRA file name for different cores:
+Coin-Op's and Kuze's Black Heart are both `_Arcade/Black Heart.mra`, and only
+one of them can be on the card. MisterZine reads which core the file there
+loads and marks the other game not found; its Details says whose version the
+file is.
+
 “On card, date unknown” means the scan found the files but cannot compare them
 with the catalogue: the filename carries no date and the catalogue has no
 checksum or core mapping for the row. It does not mean the build is old. File

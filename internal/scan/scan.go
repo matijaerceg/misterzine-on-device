@@ -58,6 +58,9 @@ type Index struct {
 	// memory only.
 	HashCache string
 	hashes    hashes
+	// rbfs is every file in _Arcade/cores: the maps keep one file per name,
+	// and Main's own choice (mainRBF) can be one they dropped
+	rbfs []Core
 }
 
 // ScanCores lists the core folders. Missing folders are fine (an arcade-only
@@ -91,6 +94,9 @@ func ScanCores(card string) *Index {
 				base, date = strings.ToLower(m[1]), m[2]
 			}
 			rel := path.Join(dir, name)
+			if dir == "_Arcade/cores" {
+				idx.rbfs = append(idx.rbfs, Core{Date: date, Path: rel})
+			}
 			for _, m := range []map[string]Core{idx.Cores, kind} {
 				if cur, ok := m[base]; !ok || date > cur.Date {
 					m[base] = Core{Date: date, Path: rel}
@@ -242,14 +248,108 @@ func Status(card string, idx *Index, r *data.Row) data.Status {
 }
 
 // Statuses computes every row's status and persists any md5s it had to
-// compute itself.
-func Statuses(card string, idx *Index, rows []data.Row) []data.Status {
+// compute itself. A card file that several rows name belongs to one of
+// them (see claimShared): the others read not found, and owners maps each
+// such row's key to the key of the row whose file sits at its path.
+func Statuses(card string, idx *Index, rows []data.Row) (st []data.Status, owners map[string]string) {
 	out := make([]data.Status, len(rows))
 	for i := range rows {
 		out[i] = Status(card, idx, &rows[i])
 	}
 	idx.hashes.save()
-	return out
+	return out, claimShared(card, idx, rows, out)
+}
+
+// claimShared settles the MRA paths more than one arcade row names: Coin-Op
+// and Kuze both ship _Arcade/Black Heart.mra, for different cores, and Status
+// alone gives the one file to every row whose core is installed, so a beta
+// read as installed while Start ran the free game. The row whose core the
+// file's <rbf> loads keeps it; the others become not found. With no such
+// row, or several, nothing changes: the file still runs, and no row can be
+// told apart as its owner.
+func claimShared(card string, idx *Index, rows []data.Row, st []data.Status) map[string]string {
+	byPath := map[string][]int{}
+	for i := range rows {
+		if r := &rows[i]; r.IsArcade() && r.MRA != "" {
+			k := strings.ToLower(r.MRA) // one file on the card's FAT or exFAT
+			byPath[k] = append(byPath[k], i)
+		}
+	}
+	var owners map[string]string
+	for _, group := range byPath {
+		if len(group) < 2 {
+			continue
+		}
+		a, _, err := parseMRAHeader(filepath.Join(card, filepath.FromSlash(rows[group[0]].MRA)))
+		if err != nil || a.RBF == "" {
+			continue
+		}
+		owner := -1
+		for _, i := range group {
+			if loadsCore(idx, a.RBF, rows[i].Core) {
+				if owner >= 0 {
+					owner = -1
+					break
+				}
+				owner = i
+			}
+		}
+		if owner < 0 {
+			continue
+		}
+		for _, i := range group {
+			// a row already not found lacks its own core: that is what it
+			// says, and its versions on that core stay shut
+			if i != owner && st[i] != data.StatusNotFound {
+				st[i] = data.StatusNotFound
+				if owners == nil {
+					owners = map[string]string{}
+				}
+				owners[rows[i].K] = rows[owner].K
+			}
+		}
+	}
+	return owners
+}
+
+// loadsCore reports whether an MRA naming rbf loads the row's core: the file
+// Main picks for rbf is the one the row's core finds on the card or, when
+// either finds none, they name the same core.
+func loadsCore(idx *Index, rbf, core string) bool {
+	if core == "" {
+		return false
+	}
+	c1, ok1 := idx.mainRBF(rbf)
+	c2, ok2 := idx.lookupFor(true, core)
+	if ok1 && ok2 {
+		return c1.Path == c2.Path
+	}
+	return sameCore(rbf, core)
+}
+
+// mainRBF is the arcade core an MRA naming name loads, picked as Main's
+// get_rbf_path does: of the files whose name starts, in any case, with name
+// or "Arcade-"+name followed by "." or "_", the greatest name. lookupFor
+// prefers an exact name, so with foo_20260101.rbf and foo_mister_20260101.rbf
+// both there it finds the first where Main loads the second.
+func (idx *Index) mainRBF(name string) (Core, bool) {
+	if idx == nil || name == "" {
+		return Core{}, false
+	}
+	var best Core
+	bestName := ""
+	for _, c := range idx.rbfs {
+		file := path.Base(c.Path)
+		if (rbfFor(file, name) || rbfFor(file, "Arcade-"+name)) && file > bestName {
+			best, bestName = c, file
+		}
+	}
+	return best, bestName != ""
+}
+
+// rbfFor is Main's test of one file name against an MRA's core name.
+func rbfFor(file, name string) bool {
+	return len(file) > len(name) && strings.EqualFold(file[:len(name)], name) && (file[len(name)] == '.' || file[len(name)] == '_')
 }
 
 // Alt is one MRA's header: an alternative under an _alternatives folder, or

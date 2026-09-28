@@ -135,6 +135,23 @@ func (a *App) tickDetailScroll(now time.Time) bool {
 	return a.DetailScrollFrame(now)
 }
 
+// otherVersion words whose game sits at row's MRA path when two sources
+// ship one file name and the file on the card is the other's ("the
+// kuzecores (kuzearcade) version"), "" when it is the row's own.
+func (a *App) otherVersion(row *data.Row) string {
+	if a.cfg.FileOwner == nil || row.MRA == "" {
+		return ""
+	}
+	k := a.cfg.FileOwner(row.K)
+	if k == "" {
+		return ""
+	}
+	if j := a.ds.Index(k); j >= 0 {
+		return "the " + data.SrcFull(a.ds.Rows[j].Src) + " version"
+	}
+	return "another source's version"
+}
+
 // launchEntry is one thing the details view can launch.
 type launchEntry struct {
 	label string
@@ -152,8 +169,11 @@ type launchEntry struct {
 func (a *App) launchEntries(row *data.Row, i int) []launchEntry {
 	var out []launchEntry
 	st := a.status(i)
+	// another source's game at the row's path is no missing core, and
+	// leaves the row's own alternatives launchable
+	other := a.otherVersion(row)
 	coreMissing := ""
-	if row.MRA != "" && row.Core != "" && st == data.StatusNotFound && a.cfg.Status != nil && a.cfg.Exists != nil && a.cfg.Exists(row.MRA) {
+	if other == "" && row.MRA != "" && row.Core != "" && st == data.StatusNotFound && a.cfg.Status != nil && a.cfg.Exists != nil && a.cfg.Exists(row.MRA) {
 		coreMissing = "the " + row.Core + " core is not on the card"
 	}
 	if row.MRA != "" {
@@ -165,6 +185,8 @@ func (a *App) launchEntries(row *data.Row, i int) []launchEntry {
 		}
 		if !ok {
 			why = "that file is not on the card"
+		} else if other != "" {
+			ok, why = false, "that file on the card is "+other
 		} else if coreMissing != "" {
 			ok, why = false, coreMissing
 		}
@@ -262,6 +284,9 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 		st := a.status(i)
 		_, sc := statusGlyph(st)
 		L = append(L, paneLine{"Card:     " + statusText(st, ""), sc})
+		if other := a.otherVersion(row); other != "" {
+			L = append(L, paneLine{"On the card, " + path.Base(row.MRA) + " is " + other, mu})
+		}
 	}
 	if row.IsLocal() {
 		note := "Not in the MisterZine catalogue; details read from the MRA file"

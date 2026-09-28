@@ -10,11 +10,14 @@ import (
 // launchPath is the file Start launches for row i without asking the
 // card: the remembered version when the card still offers it, else the
 // main MRA. "" for a row without one (a core, or a game not on the card).
+// A row whose path holds another source's file keeps its own versions, so
+// a remembered one is still what Start launches.
 func (a *App) launchPath(row *data.Row, i int) string {
 	if row.MRA == "" {
 		return ""
 	}
-	if a.cfg.Status != nil && a.status(i) == data.StatusNotFound {
+	notFound := a.cfg.Status != nil && a.status(i) == data.StatusNotFound
+	if notFound && a.otherVersion(row) == "" {
 		return ""
 	}
 	if want := a.cfg.Versions[row.K]; want != "" && want != row.MRA && a.cfg.Alternatives != nil {
@@ -23,6 +26,9 @@ func (a *App) launchPath(row *data.Row, i int) string {
 				return want
 			}
 		}
+	}
+	if notFound {
+		return ""
 	}
 	return row.MRA
 }
@@ -50,9 +56,10 @@ func (a *App) romState(i int) data.ROMState {
 			default:
 				s = data.ROMClean
 				var others []string
-				if p != row.MRA {
+				if p != row.MRA && a.otherVersion(row) == "" {
 					// a remembered alternative launches: the main MRA is
-					// still a version, and Alternatives never lists it
+					// still a version, and Alternatives never lists it,
+					// unless the file there is another source's game
 					others = append(others, row.MRA)
 				}
 				if a.cfg.Alternatives != nil {

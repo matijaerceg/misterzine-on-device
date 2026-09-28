@@ -66,7 +66,7 @@ func main() {
 	idx := scan.ScanCores(*card)
 	// what the list would show: a row runs when its core and its own MRA
 	// are on the card, as in the app
-	status := scan.Statuses(*card, idx, rows)
+	status, _ := scan.Statuses(*card, idx, rows)
 	start = time.Now()
 	local := scan.DiscoverLocal(*card, localCache, rows, idx, status, alts, attached, false)
 	localCold := time.Since(start)

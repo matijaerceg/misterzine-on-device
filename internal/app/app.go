@@ -88,6 +88,11 @@ type Config struct {
 	Progress func() (have, total int)
 	// Exists reports whether a card-relative file is present (launch targets).
 	Exists func(rel string) bool
+	// FileOwner names, by row key, the row whose file sits at this row's MRA
+	// path when two sources ship one file name, "" otherwise: Coin-Op's and
+	// Kuze's Black Heart are both _Arcade/Black Heart.mra. The row itself
+	// then reads not found (scan.Statuses).
+	FileOwner func(k string) string
 	// ROMIssue reports a problem with the selected MRA's ROM files, and
 	// block when MiSTer could not load the game, so Start refuses it;
 	// otherwise the text is a warning. fresh bypasses cached Details

@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"testing/iotest"
@@ -168,6 +170,113 @@ func TestStatusCorePrefix(t *testing.T) {
 		if got := Status(card, idx, &c.row); got == data.StatusNotFound || got != c.want {
 			t.Errorf("case %d: status %v, want %v", i, got, c.want)
 		}
+	}
+}
+
+// Coin-Op's beta Black Heart and Kuze's free one both ship
+// _Arcade/Black Heart.mra; the file on the card belongs to the row whose
+// core its <rbf> loads, and the other row reads not found (reported on
+// Discord: the Coin-Op beta read as installed, and Start ran Kuze's game).
+func TestStatusSharedFile(t *testing.T) {
+	card := fakeCard(t)
+	put := func(rel, content string) {
+		p := filepath.Join(card, filepath.FromSlash(rel))
+		os.MkdirAll(filepath.Dir(p), 0755)
+		if err := os.WriteFile(p, []byte(content), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	put("_Arcade/cores/blkheart_mister_20260909.rbf", "x")
+	put("_Arcade/cores/Arcade-NMK16_Gunnail_20260919.rbf", "x")
+	rows := []data.Row{
+		{K: "blkheart", Src: "coinop", Base: "Arcade", MRA: "_Arcade/Black Heart.mra", Core: "blkheart_mister", Updated: "2026-09-09", Beta: true},
+		{K: "black-heart", Src: "kuzecores", Base: "Arcade", MRA: "_Arcade/Black Heart.mra", Core: "Arcade-NMK16_Gunnail", Updated: "2026-09-19"},
+		{K: "other", Base: "Arcade", MRA: "_Arcade/Other.mra", Core: "blkheart_mister", Updated: "2026-09-09"},
+	}
+	put("_Arcade/Other.mra", "<misterromdescription><rbf>NMK16_Gunnail</rbf></misterromdescription>")
+	mra := func(rbf string) string {
+		return "<misterromdescription><name>Black Heart</name><rbf>" + rbf + "</rbf></misterromdescription>"
+	}
+	kuze, coinop := "_Arcade/cores/Arcade-NMK16_Gunnail_20260919.rbf", "_Arcade/cores/blkheart_mister_20260909.rbf"
+	for _, tc := range []struct {
+		name, file string
+		gone       string // a core taken off the card for the case
+		want       [3]data.Status
+		owners     map[string]string
+	}{
+		{"Kuze's file", mra("NMK16_Gunnail"), "",
+			[3]data.Status{data.StatusNotFound, data.StatusCurrent, data.StatusCurrent}, map[string]string{"blkheart": "black-heart"}},
+		{"Coin-Op's file", mra("blkheart"), "",
+			[3]data.Status{data.StatusCurrent, data.StatusNotFound, data.StatusCurrent}, map[string]string{"black-heart": "blkheart"}},
+		// no header or a third core: no owner can be told, so both keep it
+		{"no header", "x", "", [3]data.Status{data.StatusCurrent, data.StatusCurrent, data.StatusCurrent}, nil},
+		{"third core", mra("somethingelse"), "", [3]data.Status{data.StatusCurrent, data.StatusCurrent, data.StatusCurrent}, nil},
+		// Kuze's core is not installed: its row lacks the core, and the
+		// file is still not Coin-Op's
+		{"owner's core missing", mra("NMK16_Gunnail"), kuze,
+			[3]data.Status{data.StatusNotFound, data.StatusNotFound, data.StatusCurrent}, map[string]string{"blkheart": "black-heart"}},
+		// Coin-Op's core is not installed: that is what its row says, and
+		// its versions on that core stay shut
+		{"other row's core missing", mra("NMK16_Gunnail"), coinop,
+			[3]data.Status{data.StatusNotFound, data.StatusCurrent, data.StatusNotFound}, nil},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			put("_Arcade/Black Heart.mra", tc.file)
+			if tc.gone != "" {
+				os.Remove(filepath.Join(card, filepath.FromSlash(tc.gone)))
+				defer put(tc.gone, "x")
+			}
+			st, owners := Statuses(card, ScanCores(card), rows)
+			if [3]data.Status(st) != tc.want {
+				t.Errorf("statuses %v, want %v", st, tc.want)
+			}
+			if !reflect.DeepEqual(owners, tc.owners) {
+				t.Errorf("owners %v, want %v", owners, tc.owners)
+			}
+		})
+	}
+}
+
+// The owner of a shared file is the row whose core the file loads the way
+// Main picks it, the greatest name starting with <rbf> and "_" or ".",
+// even where the card index would take an exact name for <rbf> alone.
+func TestSharedFileFollowsMainsCoreChoice(t *testing.T) {
+	card := fakeCard(t)
+	for _, rel := range []string{"_Arcade/cores/foo_20260101.rbf", "_Arcade/cores/foo_mister_20260101.rbf", "_Arcade/cores/Arcade-bar_20260101.rbf"} {
+		p := filepath.Join(card, filepath.FromSlash(rel))
+		os.MkdirAll(filepath.Dir(p), 0755)
+		os.WriteFile(p, []byte("x"), 0644)
+	}
+	os.WriteFile(filepath.Join(card, "_Arcade/Foo.mra"), []byte("<misterromdescription><rbf>foo</rbf></misterromdescription>"), 0644)
+	idx := ScanCores(card)
+	if c, ok := idx.mainRBF("FOO"); !ok || path.Base(c.Path) != "foo_mister_20260101.rbf" {
+		t.Fatalf("mainRBF(FOO) = %+v %v", c, ok)
+	}
+	if c, ok := idx.mainRBF("bar"); !ok || path.Base(c.Path) != "Arcade-bar_20260101.rbf" {
+		t.Fatalf("mainRBF(bar) = %+v %v", c, ok)
+	}
+	if _, ok := idx.mainRBF("fo"); ok {
+		t.Fatal("a shorter name matched")
+	}
+	// Main compares the real names, case and all: an undated foo.rbf beats
+	// Foo_mister_20260101.rbf, though the index keeps only the dated Foo
+	// under "foo"
+	other := fakeCard(t)
+	for _, name := range []string{"foo.rbf", "Foo_20260101.rbf", "Foo_mister_20260101.rbf"} {
+		p := filepath.Join(other, "_Arcade", "cores", name)
+		os.MkdirAll(filepath.Dir(p), 0755)
+		os.WriteFile(p, []byte("x"), 0644)
+	}
+	if c, ok := ScanCores(other).mainRBF("foo"); !ok || path.Base(c.Path) != "foo.rbf" {
+		t.Fatalf("mainRBF(foo) with an undated foo.rbf = %+v %v", c, ok)
+	}
+	rows := []data.Row{
+		{K: "foo", Base: "Arcade", MRA: "_Arcade/Foo.mra", Core: "foo", Updated: "2026-01-01"},
+		{K: "foo-mister", Base: "Arcade", MRA: "_Arcade/Foo.mra", Core: "foo_mister", Updated: "2026-01-01"},
+	}
+	st, owners := Statuses(card, idx, rows)
+	if st[0] != data.StatusNotFound || !st[1].Found() || !reflect.DeepEqual(owners, map[string]string{"foo": "foo-mister"}) {
+		t.Fatalf("statuses %v, owners %v", st, owners)
 	}
 }
 

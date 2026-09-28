@@ -229,6 +229,73 @@ func TestLocalRowMissingCoreDoesNotLaunch(t *testing.T) {
 	}
 }
 
+// Coin-Op's and Kuze's Black Heart ship one file name. When the file on the
+// card is Kuze's, the Coin-Op row reads not found; Start and Details name
+// whose file it is rather than a missing core, and the row's own versions
+// stay launchable.
+func TestFileOfAnotherSourceDoesNotLaunch(t *testing.T) {
+	var launched []string
+	rows := []data.Row{
+		{K: "blkheart", Title: "Black Heart (Coin-Op Collection)", Base: "Arcade", Src: "coinop", MRA: "_Arcade/Black Heart.mra", Core: "blkheart_mister"},
+		{K: "black-heart", Title: "Black Heart", Base: "Arcade", Src: "kuzecores", MRA: "_Arcade/Black Heart.mra", Core: "Arcade-NMK16_Gunnail"},
+	}
+	alt := "_Arcade/_alternatives/_Black Heart/Black Heart (Coin-Op alt).mra"
+	a := New(Config{PhysW: 320, PhysH: 240,
+		Status: func(i int) data.Status {
+			if i == 0 {
+				return data.StatusNotFound
+			}
+			return data.StatusCurrent
+		},
+		Exists:    func(string) bool { return true },
+		Launch:    func(p string) { launched = append(launched, p) },
+		FileOwner: func(k string) string { return map[string]string{"blkheart": "black-heart"}[k] },
+		Alternatives: func(r *data.Row) []string {
+			if r.K == "blkheart" {
+				return []string{alt}
+			}
+			return nil
+		},
+	}, data.Ingest(rows, "h", time.Now()), nil)
+	i := a.ds.Index("blkheart")
+	row := &a.ds.Rows[i]
+	entries := a.launchEntries(row, i)
+	want := "that file on the card is the kuzecores (kuzearcade) version"
+	if len(entries) != 2 || entries[0].ok || entries[0].why != want || !entries[1].ok {
+		t.Fatalf("entries %+v", entries)
+	}
+	a.launchRow(row, i, 0)
+	if a.notice != want || len(launched) != 0 {
+		t.Fatalf("notice %q, launched %v", a.notice, launched)
+	}
+	found := false
+	for _, l := range a.detailLines(row, &a.ds.Der[i], i) {
+		found = found || l.text == "On the card, Black Heart.mra is the kuzecores (kuzearcade) version"
+	}
+	if !found {
+		t.Fatal("Details does not say whose file it is")
+	}
+	// the owner is untouched
+	j := a.ds.Index("black-heart")
+	if e := a.launchEntries(&a.ds.Rows[j], j); len(e) != 1 || !e[0].ok {
+		t.Fatalf("owner entries %+v", e)
+	}
+	// a remembered version of the row's own is what Start launches, and
+	// it carries the ROM mark; the other source's file is no version of it
+	a.cfg.Versions = map[string]string{"blkheart": alt}
+	a.cfg.ROMKnown = func(rel string) (string, bool, bool) {
+		text, ok := map[string]string{alt: "", "_Arcade/Black Heart.mra": "Missing game ROM: kuze.zip"}[rel]
+		return text, text != "", ok
+	}
+	a.ROMChanged()
+	if p := a.launchPath(row, i); p != alt {
+		t.Fatalf("launch path %q", p)
+	}
+	if s := a.romState(i); s != data.ROMClean {
+		t.Fatalf("ROM state %d, want clean", s)
+	}
+}
+
 // Local games join the screensaver with their gameplay shot.
 func TestSaverPoolIncludesLocalRows(t *testing.T) {
 	a := New(Config{PhysW: 320, PhysH: 240, SaverStyle: "shots"}, data.Ingest(localTestRows(), "h", time.Now()), nil)

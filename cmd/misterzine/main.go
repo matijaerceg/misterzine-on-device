@@ -85,6 +85,7 @@ type host struct {
 	roms                          *scan.ROMCheck
 	index                         *scan.Index
 	status                        []data.Status
+	owners                        map[string]string // row key -> the row whose file sits at its MRA path (scan.Statuses)
 	alts                          map[string][]string
 	altCores                      map[string]string // version path -> its own core, for versions on other cores (scanResult.altCores)
 	altGen                        string            // the dataset generation alts belongs to
@@ -292,6 +293,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			_, err := os.Stat(filepath.Join(card, filepath.FromSlash(rel)))
 			return err == nil
 		},
+		FileOwner: func(k string) string { return h.owners[k] },
 		ROMIssue: func(rel string, fresh bool) (string, bool) {
 			r := h.roms.Check(rel, fresh)
 			return r.Text, r.Block
@@ -1228,7 +1230,7 @@ func (h *host) swap(fr fetch.Fresh) {
 	ds := data.Ingest(data.MergeLocal(fr.Rows, old.Rows[old.NCat:]), fr.Meta.Hash, upd)
 	news := h.a.CatalogueNews(old, fr.Rows)
 	// Old status indices belong to the previous row order. Rebuild off the UI.
-	h.status = nil
+	h.status, h.owners = nil, nil
 	h.a.SetData(ds, nil)
 	h.a.RenameKeys(moves) // a local game the catalogue now lists keeps its star
 	h.requestScan()
@@ -1243,7 +1245,8 @@ func (h *host) swap(fr fetch.Fresh) {
 type scanResult struct {
 	index  *scan.Index
 	status []data.Status
-	gen    string // the dataset generation the statuses index into
+	owners map[string]string // rows whose MRA path holds another row's file (scan.Statuses)
+	gen    string            // the dataset generation the statuses index into
 	alts   map[string][]string
 	notice string
 	final  bool // alternatives pass finished, including an empty result
@@ -1312,7 +1315,7 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 	idx := scan.ScanCores(h.card)
 	idx.FeedAt = feedAt
 	idx.HashCache = filepath.Join(h.root, "cache", "hashes.json")
-	st := scan.Statuses(h.card, idx, rows)
+	st, owners := scan.Statuses(h.card, idx, rows)
 	dbs, iniFound := scan.DownloaderDBs(h.card)
 	hidden := data.HiddenSources(dbs)
 	counts := map[data.Status]int{}
@@ -1329,6 +1332,15 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 		h.sendScan(scanResult{gen: gen, notice: "Card scan failed", final: true, diag: diag})
 		return
 	}
+	// two sources ship one file name: the report says whose file it is
+	shared := make([]string, 0, len(owners))
+	for k := range owners {
+		shared = append(shared, k)
+	}
+	sort.Strings(shared)
+	for _, k := range shared {
+		diag.lines = append(diag.lines, fmt.Sprintf("shared MRA path: %s holds %s's file", k, owners[k]))
+	}
 	diag.lines = append(diag.lines, fmt.Sprintf("downloader.ini found: %v; databases: %d", iniFound, len(dbs)))
 	if !iniFound {
 		h.lg.Printf("scan: no downloader.ini on the card; Sources: installed hides nothing")
@@ -1340,7 +1352,7 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 		sort.Strings(names)
 		h.lg.Printf("scan: downloader.ini lists %d databases; sources without one: %v", len(dbs), names)
 	}
-	if !h.sendScan(scanResult{index: idx, status: st, gen: gen, hidden: hidden, iniFound: iniFound}) {
+	if !h.sendScan(scanResult{index: idx, status: st, owners: owners, gen: gen, hidden: hidden, iniFound: iniFound}) {
 		return
 	}
 	t1 := time.Now()
@@ -1432,10 +1444,10 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 	for _, a := range local.Accounted {
 		diag.files = append(diag.files, report.File{Path: a.Path, Reason: a.Reason + " (catalogue row " + a.K + ")"})
 	}
-	res := scanResult{index: idx, status: st, gen: gen, alts: resolved, altCores: local.VersionCores, notice: notice, final: true, hidden: hidden, iniFound: iniFound, diag: diag}
+	res := scanResult{index: idx, status: st, owners: owners, gen: gen, alts: resolved, altCores: local.VersionCores, notice: notice, final: true, hidden: hidden, iniFound: iniFound, diag: diag}
 	if nextGen != gen {
 		// The row set changes: statuses must index into the new rows.
-		res.status = scan.Statuses(h.card, idx, merged)
+		res.status, res.owners = scan.Statuses(h.card, idx, merged)
 		res.rows, res.nextGen = merged, nextGen
 		dropped := droppedLocal(rows[ncat:], merged[ncat:])
 		res.moves = data.LocalTakeovers(dropped, catalogue)

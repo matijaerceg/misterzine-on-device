@@ -325,8 +325,10 @@ func (a *App) actSupport(k platform.Key) bool {
 				v.game, v.target = "", ""
 				if row != nil {
 					v.game = d.Title
+					// only a main version Start could launch: not a missing
+					// file or core, nor another source's game at its path
 					entries := a.launchEntries(row, i)
-					if len(entries) > 0 {
+					if len(entries) > 0 && entries[0].ok {
 						v.target = entries[0].path
 					}
 				}
