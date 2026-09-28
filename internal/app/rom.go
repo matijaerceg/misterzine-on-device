@@ -49,20 +49,27 @@ func (a *App) romState(i int) data.ROMState {
 				s = data.ROMLaunchIssue
 			default:
 				s = data.ROMClean
+				var others []string
+				if p != row.MRA {
+					// a remembered alternative launches: the main MRA is
+					// still a version, and Alternatives never lists it
+					others = append(others, row.MRA)
+				}
 				if a.cfg.Alternatives != nil {
-					for _, alt := range a.cfg.Alternatives(row) {
-						if alt == p {
-							continue
-						}
-						t, _, k := a.cfg.ROMKnown(alt)
-						if !k {
-							s = data.ROMUnknown
-							break
-						}
-						if t != "" {
-							s = data.ROMOtherIssue
-							break
-						}
+					others = append(others, a.cfg.Alternatives(row)...)
+				}
+				for _, alt := range others {
+					if alt == p {
+						continue
+					}
+					t, _, k := a.cfg.ROMKnown(alt)
+					if !k {
+						s = data.ROMUnknown
+						break
+					}
+					if t != "" {
+						s = data.ROMOtherIssue
+						break
 					}
 				}
 			}

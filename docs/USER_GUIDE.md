@@ -317,13 +317,27 @@ MiSTer:
   in a way MiSTer does not support, or an unpacked folder rather than a zip.
 
 `Wrong ROM version:` means an archive has a file of the right name but
-different content, usually from a different ROM set version. MiSTer loads it
+different content, usually from a different ROM set version. The warning
+gives the file's CRC and the one the MRA expects, for example
+`Wrong ROM version: bagman.zip (p3.bin) is 2a855523, the MRA expects 47504204`.
+MiSTer loads the file
 anyway and the game often runs, so Start still launches it. The exception is
 an MRA that checks the whole ROM against a checksum: MisterZine rebuilds that
 checksum from the files as MiSTer does. When it fits, only the MRA's note of
 that one file is out of date, and nothing is shown; when it does not, MiSTer
 refuses the ROM, and so does Start. A Jotego beta key (`jtbeta.zip`) that does not
 match the MRAs shows this warning too.
+
+MiSTer takes each file from the first archive in the MRA's list that has it,
+by CRC or else by name, and looks no further. When a later archive holds the
+expected file, the warning ends with `MiSTer never reaches the one in` that
+archive: Bagman (Stern Electronics, set 2) lists `bagman.zip` before
+`bagmans4.zip`, so the parent's `p3.bin` is the one loaded. Putting the
+clone's archive first in the MRA, or using a merged set, fixes it.
+
+`ROM check incomplete: couldn't read the MRA's ROM list` means MisterZine's
+reader could not make sense of the MRA. MiSTer reads MRAs more forgivingly,
+so Start still launches the game.
 
 `MiSTer can't load ROMs while /media/fat/mame exists` appears on every arcade
 game that needs a zip when the SD card has a folder named `mame` at its top.
@@ -673,8 +687,9 @@ catalogue, not the current search or filters, and on your first visit it explain
 the marks to come. Each changed entry carries its own green date wherever it
 sorts, so an entry the catalogue added late under an old date is still found,
 and the Since last look filter lists exactly those entries.
-On-card choices include counts across the enabled catalogue, independent of the
-current search and other filters. Favorites mode always shows favorites only;
+The On the card and ROM check choices count within your search and the other
+filters, like every other section: with Beta off, a beta game missing its key
+no longer counts as a ROM problem. Favorites mode always shows favorites only;
 use Y in the main view to leave it.
 
 Card scans run quietly on launch. Options -> Rescan card shows a result screen

@@ -69,6 +69,82 @@ func TestFacetCountsRespectOtherFiltersAndSearch(t *testing.T) {
 	}
 }
 
+// The On the card and ROM check sections count within the other filters and
+// the search, as the facet sections do: with beta games hidden, a beta game
+// missing jtbeta.zip no longer counts as a ROM problem (reported on Discord).
+func TestCardAndROMCountsFollowOtherFilters(t *testing.T) {
+	rows := []data.Row{
+		{K: "ok", Title: "Stable OK", Base: "Arcade", MRA: "_Arcade/ok.mra", Core: "ok"},
+		{K: "bad", Title: "Stable Bad", Base: "Arcade", MRA: "_Arcade/bad.mra", Core: "bad"},
+		{K: "beta", Title: "Beta Game", Base: "Arcade", MRA: "_Arcade/beta.mra", Core: "beta", Beta: true},
+		{K: "gone", Title: "Stable Gone", Base: "Arcade", MRA: "_Arcade/gone.mra", Core: "gone"},
+	}
+	answers := map[string]string{"_Arcade/ok.mra": "", "_Arcade/bad.mra": "Missing game ROM: bad.zip", "_Arcade/beta.mra": "Missing game ROM: jtbeta.zip"}
+	ds := data.Ingest(rows, "", time.Now())
+	a := New(Config{PhysW: 320, PhysH: 240,
+		Status: func(i int) data.Status {
+			if ds.Rows[i].K == "gone" {
+				return data.StatusNotFound
+			}
+			return data.StatusCurrent
+		},
+		ROMKnown: func(rel string) (string, bool, bool) {
+			text, ok := answers[rel]
+			return text, text != "", ok
+		},
+	}, ds, nil)
+	// a count shows once the scan and the check have answered, zeros
+	// included: an empty subset reads (0) rather than no number
+	count := func(kind, value string) int {
+		t.Helper()
+		openExpandedFilters(a)
+		for _, e := range a.panel.entries {
+			if !e.header && e.kind == kind && e.value == value {
+				if !e.showCount {
+					t.Errorf("%s/%s: count hidden", kind, value)
+				}
+				return e.count
+			}
+		}
+		t.Fatalf("no %s/%s entry", kind, value)
+		return -1
+	}
+	check := func(when string, want map[[2]string]int) {
+		t.Helper()
+		for k, n := range want {
+			if got := count(k[0], k[1]); got != n {
+				t.Errorf("%s: %s/%s = %d, want %d", when, k[0], k[1], got, n)
+			}
+		}
+	}
+	check("no filters", map[[2]string]int{
+		{"install", data.InstallAll}: 4, {"install", data.InstallFound}: 3, {"install", data.InstallMissing}: 1,
+		{"rom", data.ROMAll}: 4, {"rom", data.ROMLaunch}: 2, {"rom", data.ROMNone}: 1,
+	})
+	a.SetFilters(data.Filters{BetaOff: map[string]bool{"beta": true}})
+	check("beta off", map[[2]string]int{
+		{"install", data.InstallAll}: 3, {"install", data.InstallFound}: 2,
+		{"rom", data.ROMAll}: 3, {"rom", data.ROMLaunch}: 1, {"rom", data.ROMAny}: 1,
+	})
+	// a section's own choice does not narrow its counts, the other's does:
+	// ROM launch leaves Stable Bad for On the card, not found leaves Stable
+	// Gone (never checked) for ROM check
+	a.SetFilters(data.Filters{BetaOff: map[string]bool{"beta": true}, Install: data.InstallMissing, ROM: data.ROMLaunch})
+	check("own choices", map[[2]string]int{
+		{"install", data.InstallAll}: 1, {"install", data.InstallFound}: 1, {"install", data.InstallMissing}: 0,
+		{"rom", data.ROMAll}: 1, {"rom", data.ROMLaunch}: 0,
+	})
+	a.SetFilters(data.Filters{})
+	a.setSearch("stable")
+	check("search", map[[2]string]int{
+		{"install", data.InstallAll}: 3, {"rom", data.ROMAll}: 3, {"rom", data.ROMLaunch}: 1,
+	})
+	a.setSearch("nothing like it")
+	check("search matching nothing", map[[2]string]int{
+		{"install", data.InstallAll}: 0, {"rom", data.ROMAll}: 0, {"rom", data.ROMLaunch}: 0,
+	})
+}
+
 func TestAlphabeticalSortCyclePreservesSelectionAndFilters(t *testing.T) {
 	rows := []data.Row{{Base: "Arcade", K: "z", Title: "Zulu", Updated: "2026-09-09", Date: "2026-09-07"}, {Base: "Arcade", K: "a", Title: "alpha", Updated: "2026-09-08", Date: "2026-09-09"}, {Base: "Arcade", K: "n", Title: "Game 10"}, {Base: "Arcade", K: "m", Title: "Game 2"}}
 	a := New(Config{ShowNonArcade: true, PhysW: 320, PhysH: 240, ViewsOff: []string{"recents"}, Favorites: map[string]bool{"z": true, "a": true, "n": true, "m": true}}, data.Ingest(rows, "", time.Now()), &data.SeenRecord{Cur: map[string]string{}})

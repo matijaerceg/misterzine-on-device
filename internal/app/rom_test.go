@@ -114,3 +114,36 @@ func TestROMStateMarkAndFilter(t *testing.T) {
 		t.Errorf("no hook: state %d", got)
 	}
 }
+
+// With a clean alternative remembered, a broken main MRA is still one of the
+// game's versions: Alternatives never lists it, and the row must not read
+// "no problems found".
+func TestROMStateCountsTheMainBehindARememberedVersion(t *testing.T) {
+	alt := "_Arcade/_alternatives/Flip (alt).mra"
+	answers := map[string]string{"_Arcade/Flip.mra": "Missing game ROM: flip.zip", alt: ""}
+	rows := []data.Row{{K: "flip", Title: "Flip", Base: "Arcade", MRA: "_Arcade/Flip.mra", Core: "flip"}}
+	clock := time.Date(2026, 9, 27, 12, 0, 0, 0, time.UTC)
+	a := New(Config{PhysW: 320, PhysH: 240, Now: func() time.Time { return clock }, TimerNow: func() time.Time { return clock },
+		Versions:     map[string]string{"flip": alt},
+		Status:       func(int) data.Status { return data.StatusCurrent },
+		Exists:       func(string) bool { return true },
+		Alternatives: func(*data.Row) []string { return []string{alt} },
+		ROMKnown: func(rel string) (string, bool, bool) {
+			text, ok := answers[rel]
+			return text, text != "", ok
+		},
+	}, data.Ingest(rows, "test", clock), nil)
+	if got := a.romState(0); got != data.ROMOtherIssue {
+		t.Fatalf("state %d, want the other-version problem", got)
+	}
+	a.filters.ROM = data.ROMNone
+	a.Refilter()
+	if len(a.view) != 0 {
+		t.Error("listed under no problems found")
+	}
+	a.filters.ROM = data.ROMAny
+	a.Refilter()
+	if len(a.view) != 1 {
+		t.Error("missing under problem in any version")
+	}
+}

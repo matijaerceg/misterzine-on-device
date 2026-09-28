@@ -74,6 +74,10 @@ func md5Of(s string) string { return fmt.Sprintf("%x", md5.Sum([]byte(s))) }
 
 func TestROMRequirements(t *testing.T) {
 	prog, sound := crcOf("program"), crcOf("sound")
+	// a part found only by its name, holding data instead of "program"
+	wrong := func(zip, name, data string) string {
+		return "Wrong ROM version: " + zip + " (" + name + ") is " + crcOf(data) + ", the MRA expects " + prog
+	}
 	for _, tc := range []struct {
 		name, mra string
 		zips      map[string][]member
@@ -103,6 +107,10 @@ func TestROMRequirements(t *testing.T) {
 		// the decoder's end tag still closes a part left open
 		{"unclosed part", `<ROM index="0" zip="g.zip"><Part name="p1.bin"></rom>`,
 			map[string][]member{"g.zip": {{name: "p1.bin", data: "x"}}}, "", false},
+		// XML only Go rejects: Main's parser may well load it, so Start goes ahead
+		{"malformed XML", `<rom index="0" zip="g.zip"><part name="p1.bin"/></rom><rom index="1" zip=g.zip"></rom>`,
+			nil, "ROM check incomplete: couldn't read the MRA's ROM list", false},
+		{"menu file is a folder", "", nil, "Cannot read game menu file", true},
 
 		// looking inside
 		{"found by crc under another name", `<rom index="0" zip="g.zip"><part name="p1.bin" crc="` + prog + `"/></rom>`,
@@ -123,11 +131,11 @@ func TestROMRequirements(t *testing.T) {
 
 		// wrong version: blocks only when a real md5 makes Main discard the ROM
 		{"wrong version, md5 None", `<rom index="0" zip="g.zip" md5="None"><part name="p1.bin" crc="` + prog + `"/></rom>`,
-			map[string][]member{"g.zip": {{name: "p1.bin", data: "older"}}}, "Wrong ROM version: g.zip (p1.bin)", false},
+			map[string][]member{"g.zip": {{name: "p1.bin", data: "older"}}}, wrong("g.zip", "p1.bin", "older"), false},
 		{"wrong version, no md5", `<rom index="0" zip="g.zip"><part name="p1.bin" crc="` + prog + `"/></rom>`,
-			map[string][]member{"g.zip": {{name: "p1.bin", data: "older"}}}, "Wrong ROM version: g.zip (p1.bin)", false},
+			map[string][]member{"g.zip": {{name: "p1.bin", data: "older"}}}, wrong("g.zip", "p1.bin", "older"), false},
 		{"wrong version, real md5", `<rom index="0" zip="g.zip" md5="0123456789abcdef0123456789abcdef"><part name="p1.bin" crc="` + prog + `"/></rom>`,
-			map[string][]member{"g.zip": {{name: "p1.bin", data: "older"}}}, "Wrong ROM version: g.zip (p1.bin)", true},
+			map[string][]member{"g.zip": {{name: "p1.bin", data: "older"}}}, wrong("g.zip", "p1.bin", "older"), true},
 		// Galaxian (New Invasion) from HBMame: its part CRCs went stale but its
 		// md5 fits the files, so Main sends the ROM and the game plays
 		{"stale crc, md5 fits", `<rom index="0" zip="g.zip" md5="` + strings.ToUpper(md5Of("newer")) + `"><part name="p1.bin" crc="` + prog + `"/></rom>`,
@@ -138,30 +146,34 @@ func TestROMRequirements(t *testing.T) {
 			`<part name="p1.bin" crc="deadbeef" offset="0x1" length="2" repeat="2"/><interleave output="16"><part name="p2.bin" crc="` + prog + `" map="01"/></interleave></rom>`,
 			map[string][]member{"g.zip": {{name: "p1.bin", data: "abcd"}, {name: "p2", data: "program"}}}, "", false},
 		{"md5 counts a wrong file Main loads", `<rom index="0" zip="g.zip" md5="` + md5Of("program") + `"><part name="p1.bin" crc="` + prog + `"/></rom>`,
-			map[string][]member{"g.zip": {{name: "p1.bin", data: "older"}}}, "Wrong ROM version: g.zip (p1.bin)", true},
+			map[string][]member{"g.zip": {{name: "p1.bin", data: "older"}}}, wrong("g.zip", "p1.bin", "older"), true},
 		{"real md5 but no rom zip", `<rom index="0" md5="0123456789abcdef0123456789abcdef"><part name="p1.bin" zip="g.zip" crc="` + prog + `"/></rom>`,
-			map[string][]member{"g.zip": {{name: "p1.bin", data: "older"}}}, "Wrong ROM version: g.zip (p1.bin)", false},
+			map[string][]member{"g.zip": {{name: "p1.bin", data: "older"}}}, wrong("g.zip", "p1.bin", "older"), false},
 		// Bagman (set 2): the parent's same-named file comes first and Main
 		// loads it; the game plays, so this only warns
 		{"parent first with same name", `<rom index="0" zip="bagman.zip|bagmans4.zip" md5="none"><part name="p3.bin" crc="` + prog + `"/></rom>`,
 			map[string][]member{"bagman.zip": {{name: "p3.bin", data: "parent colours"}}, "bagmans4.zip": {{name: "bagman_color_3pa2.3p", data: "program"}}},
-			"Wrong ROM version: bagman.zip (p3.bin)", false},
+			wrong("bagman.zip", "p3.bin", "parent colours") + "; MiSTer never reaches the one in bagmans4.zip", false},
 		{"clone absent, parent has another version", `<rom index="0" zip="clone.zip|parent.zip" md5="none"><part name="p1.bin" crc="` + prog + `"/></rom>`,
-			map[string][]member{"parent.zip": {{name: "p1.bin", data: "parent"}}}, "Missing game ROM: clone.zip", false},
+			map[string][]member{"parent.zip": {{name: "p1.bin", data: "parent"}}},
+			"Missing game ROM: clone.zip; MiSTer loads p1.bin from parent.zip instead (" + crcOf("parent") + ", the MRA expects " + prog + ")", false},
+		{"the expected crc in a later zip Main cannot extract", `<rom index="0" zip="a.zip|b.zip" md5="none"><part name="p1.bin" crc="` + prog + `"/></rom>`,
+			map[string][]member{"a.zip": {{name: "p1.bin", data: "other"}}, "b.zip": {{name: "p1.bin", data: "program", raw: true, method: 9, crc: crc32.ChecksumIEEE([]byte("program"))}}},
+			wrong("a.zip", "p1.bin", "other"), false},
 		{"right crc in a later zip loses to an earlier name", `<rom index="0" zip="a.zip|b.zip" md5="none"><part name="p1.bin" crc="` + prog + `"/></rom>`,
 			map[string][]member{"a.zip": {{name: "p1.bin", data: "other"}}, "b.zip": {{name: "p1.bin", data: "program"}}},
-			"Wrong ROM version: a.zip (p1.bin)", false},
+			wrong("a.zip", "p1.bin", "other") + "; MiSTer never reaches the one in b.zip", false},
 		{"clone split set, clone absent", `<rom index="0" zip="clone.zip|parent.zip"><part name="c1.bin" crc="` + prog + `"/><part name="shared.bin"/></rom>`,
 			map[string][]member{"parent.zip": {{name: "shared.bin", data: "s"}}}, "Missing game ROM: clone.zip", true},
 		{"jtbeta older key", `<rom index="0" zip="game.zip"><part name="p"/></rom><rom index="17" zip="jtbeta.zip" md5="None"><part name="beta.bin" crc="` + prog + `"/></rom>`,
 			map[string][]member{"game.zip": {{name: "p", data: "p"}}, "jtbeta.zip": {{name: "beta.bin", data: "older key"}}},
-			"Wrong ROM version: jtbeta.zip (beta.bin)", false},
+			wrong("jtbeta.zip", "beta.bin", "older key"), false},
 		{"jtbeta absent", `<rom index="0" zip="game.zip"><part name="p"/></rom><rom index="17" zip="jtbeta.zip" md5="None"><part name="beta.bin" crc="` + prog + `"/></rom>`,
 			map[string][]member{"game.zip": {{name: "p", data: "p"}}}, "Missing game ROM: jtbeta.zip", true},
 		{"a block outranks an earlier warning", `<rom index="1" zip="w.zip"><part name="p" crc="` + prog + `"/></rom><rom index="2" zip="gone.zip"><part name="q"/></rom>`,
 			map[string][]member{"w.zip": {{name: "p", data: "older"}}}, "Missing game ROM: gone.zip", true},
 		{"index-0 warning layout beats a blocked one", `<rom index="0" zip="absent.zip"><part name="a"/></rom><rom index="0" zip="w.zip"><part name="p" crc="` + prog + `"/></rom>`,
-			map[string][]member{"w.zip": {{name: "p", data: "older"}}}, "Wrong ROM version: w.zip (p)", false},
+			map[string][]member{"w.zip": {{name: "p", data: "older"}}}, wrong("w.zip", "p", "older"), false},
 
 		// md5 over a range: streamed, and past the end reads nothing
 		{"md5 reads only the part's range", `<rom index="0" zip="g.zip" md5="` + md5Of("c") + `"><part name="big" crc="deadbeef" offset="2" length="1"/></rom>`,
@@ -235,6 +247,15 @@ func TestROMRequirements(t *testing.T) {
 				putFile(t, filepath.Join(mame, "g.zip"), "not a zip")
 			case "no .zip in the name":
 				putFile(t, filepath.Join(mame, "roms"), "a file")
+			case "menu file is a folder":
+				// it opens, and then fails to read
+				mra := filepath.Join(card, "_Arcade/game.mra")
+				if err := os.Remove(mra); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.Mkdir(mra, 0755); err != nil {
+					t.Fatal(err)
+				}
 			}
 			got := NewROMCheck(card).Check("_Arcade/game.mra", true)
 			if got.Text != tc.want || got.Block != tc.block {

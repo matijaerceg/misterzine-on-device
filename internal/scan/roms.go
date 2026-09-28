@@ -289,10 +289,19 @@ type mraEntry struct {
 	issue    string
 }
 
+// What check answers when the MRA itself is the trouble. A file that cannot
+// be opened or read stops Main too. One that only Go's decoder rejects may
+// well load: Main's SAX parser pairs no end tags and forgives far more, so
+// that one warns and Start still hands the game over.
+const (
+	menuUnreadable    = "Cannot read game menu file"
+	romListUnreadable = "ROM check incomplete: couldn't read the MRA's ROM list"
+)
+
 func (c *ROMCheck) check(rel string) ROMResult {
 	sections, issue := c.requirements(rel)
 	if issue != "" {
-		return ROMResult{issue, true}
+		return ROMResult{issue, issue != romListUnreadable}
 	}
 	root, rootMame := arcadeROMRoot(c.card)
 	if rootMame {
@@ -418,10 +427,17 @@ func zipPath(root, z, name string) (archive, member string, ok bool) {
 // wrong reports that the part was found only by a name whose CRC differs:
 // Main loads it, and whether that stops the game is the section's md5 to
 // say. Anything else with Text set means Main cannot load the part.
+//
+// For a file found by name, the text gives its CRC and the one the MRA
+// expects, and names a later zip in the list that holds the expected one:
+// Main stops at the first zip that yields the part, so it never gets there.
+// Bagman (set 2) lists bagman.zip before bagmans4.zip, and the parent's
+// p3.bin is the one it loads.
 func (c *ROMCheck) partIssue(root string, p romPart) (res ROMResult, wrong bool) {
-	var absent, unreadable, tried []string
+	var absent, unreadable, tried, rest []string
 	at := ""
-	for _, z := range p.zips {
+	var found uint32
+	for n, z := range p.zips {
 		label := strings.TrimSpace(z)
 		tried = append(tried, label)
 		archive, member, ok := zipPath(root, z, p.name)
@@ -449,18 +465,28 @@ func (c *ROMCheck) partIssue(root string, p romPart) (res ROMResult, wrong bool)
 				continue
 			}
 		}
-		if ok, hit := ix.names[asciiLower(member)]; hit {
-			if !ok {
+		if e, hit := ix.names[asciiLower(member)]; hit {
+			if !e.ok {
 				unreadable = append(unreadable, label)
 				continue
 			}
 			if p.crc == 0 {
 				return ROMResult{}, false
 			}
-			at = label
+			at, found, rest = label, e.crc, p.zips[n+1:]
 			break
 		}
 	}
+	later := ""
+	for _, z := range rest {
+		if archive, _, ok := zipPath(root, z, p.name); ok {
+			if ok, hit := c.zipIndex(archive).crcs[p.crc]; hit && ok {
+				later = strings.TrimSpace(z)
+				break
+			}
+		}
+	}
+	crcs := fmt.Sprintf("%08x, the MRA expects %08x", found, p.crc)
 	res = ROMResult{Block: at == ""}
 	switch {
 	case len(absent) > 0:
@@ -468,9 +494,16 @@ func (c *ROMCheck) partIssue(root string, p romPart) (res ROMResult, wrong bool)
 	case len(unreadable) > 0:
 		res.Text = "Unreadable ROM: " + strings.Join(unreadable, " or ")
 	case at != "":
-		res.Text = "Wrong ROM version: " + at + " (" + p.name + ")"
+		res.Text = "Wrong ROM version: " + at + " (" + p.name + ") is " + crcs
 	default:
 		res.Text = "Incomplete ROM: " + strings.Join(tried, " or ") + " (no " + p.name + ")"
+	}
+	if at != "" && len(absent)+len(unreadable) > 0 {
+		// the zip Main passed over leads; what it loads instead follows
+		res.Text += "; MiSTer loads " + p.name + " from " + at + " instead (" + crcs + ")"
+	}
+	if later != "" {
+		res.Text += "; MiSTer never reaches the one in " + later
 	}
 	return res, at != ""
 }
@@ -596,7 +629,7 @@ func (c *ROMCheck) requirements(rel string) ([]romSection, string) {
 	p := filepath.Join(c.card, filepath.FromSlash(rel))
 	st, err := os.Stat(p)
 	if err != nil {
-		return nil, "Cannot read game menu file"
+		return nil, menuUnreadable
 	}
 	if e, ok := c.mras[rel]; ok && e.size == st.Size() && e.mtime.Equal(st.ModTime()) {
 		return e.sections, e.issue
@@ -612,7 +645,7 @@ func (c *ROMCheck) requirements(rel string) ([]romSection, string) {
 func parseROMSections(p string, inline bool) ([]romSection, string) {
 	f, err := os.Open(p)
 	if err != nil {
-		return nil, "Cannot read game menu file"
+		return nil, menuUnreadable
 	}
 	defer f.Close()
 	dec := xml.NewDecoder(&mraReader{br: bufio.NewReader(f)})
@@ -637,7 +670,13 @@ func parseROMSections(p string, inline bool) ([]romSection, string) {
 			break
 		}
 		if err != nil {
-			return nil, "Cannot read game ROM requirements"
+			// XML Go's decoder rejects only warns (see check); a file
+			// that fails to read stops Main as well
+			var syntax *xml.SyntaxError
+			if errors.As(err, &syntax) {
+				return nil, romListUnreadable
+			}
+			return nil, menuUnreadable
 		}
 		switch el := tok.(type) {
 		case xml.StartElement:
@@ -844,15 +883,20 @@ func asciiLower(s string) string {
 
 // zipIndex is what Main can see of one archive: for each CRC, whether the
 // first entry carrying it can be extracted, and the same for each name
-// (folded to lower case). Main extracts stored and deflated entries only,
-// and none that are encrypted or patched.
+// (folded to lower case), with that entry's CRC. Main extracts stored and
+// deflated entries only, and none that are encrypted or patched.
 type zipIndex struct {
 	size       int64
 	mtime      time.Time
 	absent     bool
 	unreadable bool
 	crcs       map[uint32]bool
-	names      map[string]bool
+	names      map[string]zipName
+}
+
+type zipName struct {
+	ok  bool
+	crc uint32
 }
 
 // zipIndex returns the archive's index, read again only when its size or
@@ -881,7 +925,7 @@ func (c *ROMCheck) zipIndex(path string) *zipIndex {
 	}
 	defer r.Close()
 	ix.crcs = make(map[uint32]bool, len(r.File))
-	ix.names = make(map[string]bool, len(r.File))
+	ix.names = make(map[string]zipName, len(r.File))
 	for _, f := range r.File {
 		if strings.HasSuffix(f.Name, "/") {
 			continue
@@ -892,7 +936,7 @@ func (c *ROMCheck) zipIndex(path string) *zipIndex {
 		}
 		name := asciiLower(f.Name)
 		if _, seen := ix.names[name]; !seen {
-			ix.names[name] = ok
+			ix.names[name] = zipName{ok, f.CRC32}
 		}
 	}
 	return ix

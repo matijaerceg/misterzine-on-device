@@ -176,9 +176,6 @@ func sortedFacet(m map[string]int) []string {
 // counted. Unchecked choices keep their potential counts and remain selectable.
 func (a *App) facetCounts(kind string) map[string]int {
 	f := a.effectiveFilters()
-	if a.mode == data.SortFavorites {
-		f.FavOnly = true
-	}
 	value := func(r *data.Row, d *data.Derived) string { return "" }
 	switch kind {
 	case "base":
@@ -220,10 +217,34 @@ func (a *App) facetCounts(kind string) map[string]int {
 		value = func(r *data.Row, d *data.Derived) string { return d.Year }
 	}
 	counts := map[string]int{}
+	a.facetRows(f, kind != "base" && kind != "src", func(i int) { counts[value(&a.ds.Rows[i], &a.ds.Der[i])]++ })
+	return counts
+}
+
+// anyRow reports whether some row in the enabled catalogue satisfies known:
+// a section's counts show once the card scan or the ROM check has answered
+// for anything, whatever subset the other filters leave.
+func (a *App) anyRow(known func(i int) bool) bool {
+	for i := range a.ds.Rows {
+		if a.catalogueIncludes(&a.ds.Rows[i]) && known(i) {
+			return true
+		}
+	}
+	return false
+}
+
+// facetRows calls fn for every row the list would show under f, the
+// effective filters with the counted section's own choice cleared: the
+// search and the favourites view apply as in the list. arcade leaves out
+// the rows that are not arcade games.
+func (a *App) facetRows(f data.Filters, arcade bool, fn func(i int)) {
+	if a.mode == data.SortFavorites {
+		f.FavOnly = true
+	}
 	query := searchText(a.query)
 	for i := range a.ds.Rows {
 		r, d := &a.ds.Rows[i], &a.ds.Der[i]
-		if kind != "base" && kind != "src" && !r.IsArcade() {
+		if arcade && !r.IsArcade() {
 			continue
 		}
 		if query != "" && !strings.Contains(searchText(d.Title), query) {
@@ -231,10 +252,9 @@ func (a *App) facetCounts(kind string) map[string]int {
 		}
 		unseen := a.seen != nil && a.seen.Unseen(r)
 		if f.Pass(r, d, a.status(i), a.cfg.Favorites[r.K], unseen, a.romState(i)) {
-			counts[value(r, d)]++
+			fn(i)
 		}
 	}
-	return counts
 }
 
 func (a *App) filterEntries() []panelEntry {
@@ -275,10 +295,19 @@ func (a *App) rawFilterEntries() []panelEntry {
 		E = append(E, panelEntry{text: a.rotationFilterLabel(), info: true},
 			panelEntry{text: "Change in Options", info: true})
 	}
+	// These two sections count within the other filters and the search, as
+	// the facet sections below do: with beta games hidden, their missing
+	// jtbeta.zip no longer counts. The card scan screen keeps whole-catalogue
+	// numbers (cardCounts).
 	E = append(E, panelEntry{text: "On the card", header: true, kind: "install"})
-	counts := a.cardCounts()
+	counts := map[data.Status]int{}
+	all := 0
+	fi := a.effectiveFilters()
+	fi.Install = ""
+	a.facetRows(fi, false, func(i int) { counts[a.status(i)]++; all++ })
+	scanned := a.anyRow(func(i int) bool { return a.status(i) != data.StatusUnknown })
 	installCounts := map[string]int{
-		data.InstallAll:     a.total,
+		data.InstallAll:     all,
 		data.InstallFound:   counts[data.StatusCurrent] + counts[data.StatusOutdated] + counts[data.StatusLikelyOutdated] + counts[data.StatusFoundUndated],
 		data.InstallCurrent: counts[data.StatusCurrent], data.InstallOlder: counts[data.StatusOutdated] + counts[data.StatusLikelyOutdated],
 		data.InstallUndated: counts[data.StatusFoundUndated], data.InstallMissing: counts[data.StatusNotFound],
@@ -288,17 +317,18 @@ func (a *App) rawFilterEntries() []panelEntry {
 		if cur == "" {
 			cur = data.InstallAll
 		}
-		E = append(E, panelEntry{text: v.text, kind: "install", value: v.val, checked: cur == v.val, count: installCounts[v.val], showCount: counts[data.StatusUnknown] < a.total})
+		E = append(E, panelEntry{text: v.text, kind: "install", value: v.val, checked: cur == v.val, count: installCounts[v.val], showCount: scanned})
 	}
 	if a.cfg.ROMKnown != nil {
 		E = append(E, panelEntry{text: "ROM check", header: true, kind: "rom"})
 		romCounts := map[data.ROMState]int{}
-		for i := range a.ds.Rows {
-			if a.catalogueIncludes(&a.ds.Rows[i]) {
-				romCounts[a.romState(i)]++
-			}
-		}
-		checked := romCounts[data.ROMClean] + romCounts[data.ROMLaunchIssue] + romCounts[data.ROMOtherIssue]
+		all := 0
+		fr := a.effectiveFilters()
+		fr.ROM = ""
+		a.facetRows(fr, false, func(i int) { romCounts[a.romState(i)]++; all++ })
+		// numbers once the check has answered anything, zeros included: a
+		// search that matches nothing, or only games off the card, reads (0)
+		checked := a.anyRow(func(i int) bool { return a.romState(i) != data.ROMUnknown })
 		cur := f.ROM
 		if cur == "" {
 			cur = data.ROMAll
@@ -306,9 +336,9 @@ func (a *App) rawFilterEntries() []panelEntry {
 		for _, v := range []struct {
 			val, text string
 			n         int
-		}{{data.ROMAll, "everything", a.total}, {data.ROMLaunch, "problem in launch version", romCounts[data.ROMLaunchIssue]},
+		}{{data.ROMAll, "everything", all}, {data.ROMLaunch, "problem in launch version", romCounts[data.ROMLaunchIssue]},
 			{data.ROMAny, "problem in any version", romCounts[data.ROMLaunchIssue] + romCounts[data.ROMOtherIssue]}, {data.ROMNone, "no problems found", romCounts[data.ROMClean]}} {
-			E = append(E, panelEntry{text: v.text, kind: "rom", value: v.val, checked: cur == v.val, count: v.n, showCount: checked > 0})
+			E = append(E, panelEntry{text: v.text, kind: "rom", value: v.val, checked: cur == v.val, count: v.n, showCount: checked})
 		}
 		if a.cfg.ROMProgress != nil {
 			if done, total := a.cfg.ROMProgress(); done < total {
