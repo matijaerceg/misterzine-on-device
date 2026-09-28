@@ -22,17 +22,21 @@ type Derived struct {
 	Buttons    string // numeric count including zero; empty = unknown
 	Year       string // exact original release year; empty = unknown/ambiguous
 	Maker      string // the manufacturer group's name (maker.go), ASCII-folded; empty = unknown
+	CoreGroup  string // the Core view's group (coregroup.go): the core label, or a gathering such as "Single-game cores"
 	BatchN     int    // rows sharing this core's updated stamp (0 = not a batch stamp)
 
 	// anchor is 1 + the index of the catalogue row a standin sorts under, 0
 	// for every other row (SortRow).
 	anchor int
+	// coreRank orders the Core view's kinds of group (coreGroupOf).
+	coreRank int
 
-	titleKey   []elem
-	coreKey    []elem
-	updatedKey []elem
-	dateKey    []elem
-	makerKey   []elem
+	titleKey     []elem
+	coreKey      []elem
+	updatedKey   []elem
+	dateKey      []elem
+	makerKey     []elem
+	coreGroupKey []elem
 }
 
 // Facets are the distinct filterable values with row counts.
@@ -153,6 +157,7 @@ func Ingest(rows []Row, hash string, updated time.Time) *Dataset {
 			ds.Der[i].anchor = j + 1
 		}
 	}
+	ds.coreGroups()
 	return ds
 }
 

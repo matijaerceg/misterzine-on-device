@@ -129,7 +129,7 @@ func (s *Settings) Migrate(legacy bool) {
 			views = append(views, n)
 		}
 	}
-	if len(views) >= len(data.ViewOrder) {
+	if len(views) >= len(data.ViewOrder()) {
 		views = []string{} // nothing left on: back to every view
 	}
 	s.ViewsOff = views

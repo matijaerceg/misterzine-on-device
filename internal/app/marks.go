@@ -9,20 +9,22 @@ import (
 
 // The list can carry marker lines between its rows: the since-visit status
 // row on top under every order, and a header before every group under the
-// grouped orders (a maker, a letter, a release year). marks holds, in
+// grouped orders (a maker, a core, a letter, a release year). marks holds, in
 // ascending order, the view positions each marker line precedes (len(view) =
 // after the last row; the status row and the first header share position 0),
 // so screen lines are view positions plus the markers before them.
 
 // groupHeaders reports whether the order shows a header line before each
-// of its groups: Maker, A-Z and Year. The date orders keep the month notice
-// on a jump instead, and Favorites is short enough to read without them.
+// of its groups: Maker, Core, A-Z and Year. The date orders keep the month
+// notice on a jump instead, and Favorites is short enough to read without
+// them.
 func (a *App) groupHeaders() bool {
-	return a.mode == data.SortMaker || a.mode == data.SortAlphabetical || a.mode == data.SortYear
+	return a.mode == data.SortMaker || a.mode == data.SortCore || a.mode == data.SortAlphabetical || a.mode == data.SortYear
 }
 
 // groupLabel is what a header says for the group row i belongs to: the
-// maker, the letter, or the release year, with the unknown group named.
+// maker, the core, the letter, or the release year, with the unknown group
+// named.
 func (a *App) groupLabel(i int) string {
 	if a.mode.Anchored() {
 		i = a.ds.SortRow(i) // a standin belongs to its catalogue row's group
@@ -33,6 +35,8 @@ func (a *App) groupLabel(i int) string {
 			return m
 		}
 		return "Unknown manufacturer"
+	case data.SortCore:
+		return a.ds.Der[i].CoreGroup // names its gatherings itself
 	case data.SortAlphabetical:
 		if c := a.ds.Der[i].TitleInitial(); c != '#' {
 			return string(unicode.ToUpper(c))

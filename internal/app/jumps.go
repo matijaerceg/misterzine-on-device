@@ -7,7 +7,7 @@ import (
 )
 
 // jumpGroup moves to the first visible title of the next/previous group: a
-// letter, a maker, a release year or a month. Only filtered/search results
+// letter, a maker, a core, a release year or a month. Only filtered/search results
 // count; empty groups are skipped and ends stop. Under an order with group
 // headers the row lands centered like a step, its header right above it;
 // the date orders put the row on the top line and name the month.
@@ -55,6 +55,9 @@ func (a *App) jumpGroupKey(pos int) string {
 	}
 	if a.mode == data.SortMaker {
 		return a.ds.Der[i].Maker // "" gathers the unknown maker at the end
+	}
+	if a.mode == data.SortCore {
+		return a.ds.Der[i].CoreGroup
 	}
 	if a.mode == data.SortYear {
 		return data.ReleaseYear(a.ds.Rows[i].Year) // "" gathers the unknown years at the end

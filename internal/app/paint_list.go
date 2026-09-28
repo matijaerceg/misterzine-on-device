@@ -100,6 +100,8 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 		left = "by: A-Z"
 	} else if a.mode == data.SortMaker {
 		left = "by: manufacturer"
+	} else if a.mode == data.SortCore {
+		left = "by: core"
 	} else if a.mode == data.SortFavorites {
 		left = "Favorites A-Z"
 	} else if a.mode == data.SortRecents {
@@ -107,7 +109,7 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 	}
 	if a.appUpdate != "" {
 		// Reserve space for a persistent app notice even on narrow tate screens.
-		left = map[data.SortMode]string{data.SortUpdated: "Build date", data.SortDebut: "MiSTer debut", data.SortYear: "Original year", data.SortAlphabetical: "A-Z", data.SortMaker: "Manufacturer A-Z", data.SortFavorites: "Favorites A-Z", data.SortRecents: "Recents"}[a.mode]
+		left = map[data.SortMode]string{data.SortUpdated: "Build date", data.SortDebut: "MiSTer debut", data.SortYear: "Original year", data.SortAlphabetical: "A-Z", data.SortMaker: "Manufacturer A-Z", data.SortCore: "Core A-Z", data.SortFavorites: "Favorites A-Z", data.SortRecents: "Recents"}[a.mode]
 		c.Text(st.Min.X+2, y, a.sm, left, gen.Eva.Accent)
 		c.TextRight(st.Max.X-2, y, a.sm, "App update", gen.Eva.Accent)
 		return
@@ -428,8 +430,10 @@ func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {
 		dateCol = gen.Eva.Accent
 	}
 	text := a.dateCol(date)
-	if a.mode == data.SortMaker {
+	if a.mode == data.SortMaker || a.mode == data.SortCore {
 		// the original release year as the catalogue has it, "198?" included
+		// (a core's games mostly share one build date, which would only
+		// repeat down its group)
 		text = gfx.Fit(strings.TrimSpace(row.Year), a.dateCols())
 		for len(text) < a.dateCols() {
 			text = " " + text

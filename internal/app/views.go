@@ -1,6 +1,8 @@
 package app
 
 import (
+	"strings"
+
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 )
 
@@ -16,7 +18,7 @@ func (a *App) viewOn(m data.SortMode) bool { return m.Valid() && !a.viewsOff[m] 
 // the host to persist.
 func (a *App) ViewsOff() []string {
 	out := []string{} // never nil, so every view on saves as [] rather than null
-	for _, m := range data.ViewOrder {
+	for _, m := range data.ViewOrder() {
 		if a.viewsOff[m] {
 			out = append(out, m.Name())
 		}
@@ -33,7 +35,7 @@ func parseViewsOff(names []string) map[data.SortMode]bool {
 			off[m] = true
 		}
 	}
-	if len(off) >= len(data.ViewOrder) {
+	if len(off) >= len(data.ViewOrder()) {
 		return map[data.SortMode]bool{}
 	}
 	return off
@@ -42,7 +44,7 @@ func parseViewsOff(names []string) map[data.SortMode]bool {
 // viewsOnCount is how many views the cycle has.
 func (a *App) viewsOnCount() int {
 	n := 0
-	for _, m := range data.ViewOrder {
+	for _, m := range data.ViewOrder() {
 		if a.viewOn(m) {
 			n++
 		}
@@ -53,7 +55,7 @@ func (a *App) viewsOnCount() int {
 // firstView is the first view in the cycle that is on: where a visit
 // starts when the remembered order is off or turned off.
 func (a *App) firstView() data.SortMode {
-	for _, m := range data.ViewOrder {
+	for _, m := range data.ViewOrder() {
 		if a.viewOn(m) {
 			return m
 		}
@@ -63,7 +65,7 @@ func (a *App) firstView() data.SortMode {
 
 // nextSort is the view Y moves to: the next one on in ViewOrder, wrapping.
 func (a *App) nextSort() data.SortMode {
-	order := data.ViewOrder
+	order := data.ViewOrder()
 	at := -1
 	for i, m := range order {
 		if m == a.mode {
@@ -107,15 +109,31 @@ func (a *App) setViewOn(m data.SortMode, on bool) bool {
 // viewLabels name the views on the Views page and in the Views help.
 var viewLabels = map[data.SortMode]string{
 	data.SortUpdated: "Build date", data.SortDebut: "MiSTer debut", data.SortYear: "Original year",
-	data.SortAlphabetical: "A-Z", data.SortMaker: "Manufacturer", data.SortFavorites: "Favorites", data.SortRecents: "Recents",
+	data.SortAlphabetical: "A-Z", data.SortMaker: "Manufacturer", data.SortCore: "Core", data.SortFavorites: "Favorites", data.SortRecents: "Recents",
+}
+
+// viewHelpNames name the views in the help of the Options row.
+var viewHelpNames = map[data.SortMode]string{
+	data.SortUpdated: "build date", data.SortDebut: "MiSTer debut", data.SortYear: "original year",
+	data.SortAlphabetical: "A-Z", data.SortMaker: "manufacturer", data.SortCore: "core", data.SortFavorites: "Favorites", data.SortRecents: "Recents (launches from here)",
+}
+
+// viewsHelp is the Options row's help: the views this build has, in cycle
+// order.
+func (a *App) viewsHelp() string {
+	names := make([]string, 0, len(viewHelpNames))
+	for _, m := range data.ViewOrder() {
+		names = append(names, viewHelpNames[m])
+	}
+	return "Which views " + a.btn("Y") + " cycles through: " + strings.Join(names, ", ") + ". " + a.btn("A") + " opens the list."
 }
 
 // viewsEntries builds the Views page: one checkbox per view in cycle order,
 // nothing else; the Options row already says what the page is for.
 func (a *App) viewsEntries() []panelEntry {
-	E := make([]panelEntry, 0, len(data.ViewOrder))
+	E := make([]panelEntry, 0, len(data.ViewOrder()))
 	only := a.viewsOnCount() <= 1
-	for _, m := range data.ViewOrder {
+	for _, m := range data.ViewOrder() {
 		on := a.viewOn(m)
 		E = append(E, panelEntry{text: viewLabels[m], kind: "view", value: m.Name(), checked: on, disabled: on && only})
 	}
@@ -124,7 +142,7 @@ func (a *App) viewsEntries() []panelEntry {
 
 // viewsSummary is the Options row's tally, "6 of 7".
 func (a *App) viewsSummary() string {
-	return itoa(a.viewsOnCount()) + " of " + itoa(len(data.ViewOrder))
+	return itoa(a.viewsOnCount()) + " of " + itoa(len(data.ViewOrder()))
 }
 
 // openViews opens the Views page from Options.
@@ -158,7 +176,7 @@ func (a *App) DefaultView() data.SortMode {
 }
 func (a *App) enabledViews() []data.SortMode {
 	var modes []data.SortMode
-	for _, m := range data.ViewOrder {
+	for _, m := range data.ViewOrder() {
 		if a.viewOn(m) {
 			modes = append(modes, m)
 		}

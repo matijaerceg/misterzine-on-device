@@ -225,7 +225,7 @@ func TestStandinSortsUnderAnchor(t *testing.T) {
 		t.Fatalf("%s not in the order", k)
 		return -1
 	}
-	for _, mode := range []SortMode{SortUpdated, SortDebut, SortYear, SortAlphabetical, SortMaker} {
+	for _, mode := range []SortMode{SortUpdated, SortDebut, SortYear, SortAlphabetical, SortMaker, SortCore} {
 		o := ds.Order(mode)
 		p := at(o, "volfied")
 		if at(o, "local:volfied") != p+1 || at(o, "local:volfiedj2") != p+2 {

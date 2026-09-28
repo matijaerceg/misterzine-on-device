@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/matijaerceg/misterzine-on-device/internal/beta"
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 )
 
@@ -381,6 +382,31 @@ func TestDefaultSortMigration(t *testing.T) {
 		if err != nil || got.DefaultSort != c.want {
 			t.Fatal("default lost on save")
 		}
+	}
+}
+
+// A member going back from the beta to the free build brings a settings
+// file that may start in, default to or leave out the beta's Core view. The
+// free build falls back as from any unknown view and keeps the rest.
+func TestCoreViewSettingsAcrossBuilds(t *testing.T) {
+	core := `{"last_sort":7,"default_sort":7,"remember_sort":true,"views_off":["core","year"]}`
+	s, err := LoadSettings(writeSettings(t, core))
+	if err != nil || s.LastSort != data.SortUpdated || s.DefaultSort != data.SortUpdated || !reflect.DeepEqual(s.ViewsOff, []string{"year"}) {
+		t.Fatalf("free build: last %v default %v off %v (%v)", s.LastSort, s.DefaultSort, s.ViewsOff, err)
+	}
+	// only Core was on in the beta: nothing the free build has is left on,
+	// so every view comes back
+	onlyCore := `{"views_off":["updated","debut","year","alphabetical","maker","favorites","recents"]}`
+	if s, err = LoadSettings(writeSettings(t, onlyCore)); err != nil || !reflect.DeepEqual(s.ViewsOff, []string{}) {
+		t.Fatalf("free build, only Core on: off %v (%v)", s.ViewsOff, err)
+	}
+	restore := beta.Set(true)
+	defer restore()
+	if s, err = LoadSettings(writeSettings(t, core)); err != nil || s.LastSort != data.SortCore || s.DefaultSort != data.SortCore || !reflect.DeepEqual(s.ViewsOff, []string{"core", "year"}) {
+		t.Fatalf("beta: last %v default %v off %v (%v)", s.LastSort, s.DefaultSort, s.ViewsOff, err)
+	}
+	if s, err = LoadSettings(writeSettings(t, onlyCore)); err != nil || len(s.ViewsOff) != 7 {
+		t.Fatalf("beta, only Core on: off %v (%v)", s.ViewsOff, err)
 	}
 }
 

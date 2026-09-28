@@ -237,6 +237,18 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                       "back; home; pagedown; right; down*5; shot options-views; enter; shot views; down*4; enter; shot views-off; "
                       "up*4; enter; down; enter; down; enter; down; enter; down*2; enter; shot views-last; "
                       "enter; back; back"])
+    # the beta's Core view: a header per core, a core jump, a core name
+    # pinned over its rows, the single-game cores gathered at the end, then
+    # the view on the Views page and as the default view
+    scenarios.append([*rotation, "-beta",
+                      "-out", f"out/beta-core-{orientation}", "-script",
+                      "space*5; shot core; pagedown*3; shot core-jump; home; down*12; shot core-pinned; end; shot single-game; "
+                      "back; home; pagedown; right; down*5; shot options-views; enter; shot views; back; down; left; down; right*5; shot default-core"])
+    # with the non-arcade cores grouped by kind, in the picture and text layouts
+    scenarios.append([*rotation, "-beta", "-show-non-arcade", "-layout", "picture",
+                      "-out", f"out/beta-core-layouts-{orientation}", "-script",
+                      "space*5; shot picture; end; pageup*2; shot picture-console; "
+                      "press select; space; release select; wait 2200; shot text-console"])
     # Options -> Credits: the row, the page from its top, its end and the way back
     scenarios.append([*rotation,
                       "-out", f"out/credits-{orientation}", "-script",

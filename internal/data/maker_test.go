@@ -78,7 +78,7 @@ func TestMakerOrderGroupsAndLabels(t *testing.T) {
 }
 
 func TestSortNamesRoundTrip(t *testing.T) {
-	for _, m := range ViewOrder {
+	for _, m := range ViewOrder() {
 		back, ok := ParseSort(m.Name())
 		if !ok || back != m || !m.Valid() {
 			t.Errorf("%v: name %q parses to %v %v", m, m.Name(), back, ok)
