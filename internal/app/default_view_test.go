@@ -8,7 +8,7 @@ import (
 
 func TestDefaultViewStartupAndChoices(t *testing.T) {
 	ds := data.Ingest(nil, "", time.Now())
-	for _, m := range data.ViewOrder {
+	for _, m := range data.ViewOrder() {
 		a := New(Config{PhysW: 320, PhysH: 240, DefaultSort: m, LastSort: data.SortDebut}, ds, nil)
 		if a.Sort() != m {
 			t.Fatalf("default %v: got %v", m, a.Sort())
@@ -23,7 +23,7 @@ func TestDefaultViewStartupAndChoices(t *testing.T) {
 		t.Fatal("disabled default did not fall back")
 	}
 	e := a.defaultViewEntry()
-	if len(e.vals) != len(data.ViewOrder)-2 || e.depth != 1 || !e.child {
+	if len(e.vals) != len(data.ViewOrder())-2 || e.depth != 1 || !e.child {
 		t.Fatal("default choices or indentation")
 	}
 	a.cfg.RememberSort = true

@@ -1,6 +1,10 @@
 package data
 
-import "sort"
+import (
+	"sort"
+
+	"github.com/matijaerceg/misterzine-on-device/internal/beta"
+)
 
 // SortMode selects the device's list order.
 type SortMode int
@@ -26,13 +30,27 @@ const (
 	SortRecents
 	// SortMaker groups the games by manufacturer (Derived.Maker: the first
 	// company of the credit, corporate suffixes dropped), makers A-Z with
-	// titles A-Z inside and the unknown maker last. Last in value because
-	// the value is saved; it sits after A-Z in the browsing cycle.
+	// titles A-Z inside and the unknown maker last. After Recents in value
+	// because the value is saved; it sits after A-Z in the browsing cycle.
 	SortMaker
+	// SortCore groups the games by the core that runs them
+	// (Derived.CoreGroup, coregroup.go): the multi-game arcade cores A-Z by
+	// label, then the arcade cores with one game gathered in one group, then
+	// the console, computer and other cores; titles A-Z inside. It belongs
+	// to the Patreon beta for now (Valid). Last in value because the value is
+	// saved; it sits after Maker in the browsing cycle.
+	SortCore
 )
 
-// Valid reports whether m is a sort mode the app knows.
-func (m SortMode) Valid() bool { return m >= SortUpdated && m <= SortMaker }
+// Valid reports whether m is a sort mode this build knows. The Core view is
+// the beta's, so a free build treats a saved Core view like any unknown
+// value and falls back from it.
+func (m SortMode) Valid() bool {
+	if m == SortCore {
+		return beta.On() // delete to make the Core view public
+	}
+	return m >= SortUpdated && m <= SortCore
+}
 
 // Anchored reports whether the mode orders the whole catalogue, where a
 // standin row sorts, groups and jumps as part of the row it stands in for
@@ -40,19 +58,30 @@ func (m SortMode) Valid() bool { return m >= SortUpdated && m <= SortMaker }
 // keep every row to its own title and launches.
 func (m SortMode) Anchored() bool { return m != SortFavorites && m != SortRecents }
 
-// ViewOrder is every view in the order Y walks them, Recents included.
-var ViewOrder = []SortMode{SortUpdated, SortDebut, SortYear, SortAlphabetical, SortMaker, SortFavorites, SortRecents}
+var viewOrder = []SortMode{SortUpdated, SortDebut, SortYear, SortAlphabetical, SortMaker, SortCore, SortFavorites, SortRecents}
 
-var sortNames = map[SortMode]string{SortUpdated: "updated", SortDebut: "debut", SortYear: "year", SortAlphabetical: "alphabetical", SortMaker: "maker", SortFavorites: "favorites", SortRecents: "recents"}
+// ViewOrder is every view this build has, in the order Y walks them,
+// Recents included.
+func ViewOrder() []SortMode {
+	out := make([]SortMode, 0, len(viewOrder))
+	for _, m := range viewOrder {
+		if m.Valid() {
+			out = append(out, m)
+		}
+	}
+	return out
+}
+
+var sortNames = map[SortMode]string{SortUpdated: "updated", SortDebut: "debut", SortYear: "year", SortAlphabetical: "alphabetical", SortMaker: "maker", SortCore: "core", SortFavorites: "favorites", SortRecents: "recents"}
 
 // Name is the mode's settings name (Options -> Views keeps the ones left
 // out of the cycle by name).
 func (m SortMode) Name() string { return sortNames[m] }
 
-// ParseSort is the inverse of Name.
+// ParseSort is the inverse of Name, for the views this build has.
 func ParseSort(name string) (SortMode, bool) {
 	for m, n := range sortNames {
-		if n == name {
+		if n == name && m.Valid() {
 			return m, true
 		}
 	}
@@ -116,6 +145,8 @@ func (m SortMode) String() string {
 		return "Recents"
 	case SortMaker:
 		return "Manufacturer"
+	case SortCore:
+		return "Core"
 	}
 	return "Updated"
 }
@@ -195,6 +226,18 @@ func (ds *Dataset) lessRow(mode SortMode, a, b int) bool {
 		}
 		if da.Maker != db.Maker {
 			return da.Maker < db.Maker // labels that collate alike stay separate groups
+		}
+		return CompareKeys(da.titleKey, db.titleKey) < 0
+	}
+	if mode == SortCore {
+		if da.coreRank != db.coreRank {
+			return da.coreRank < db.coreRank
+		}
+		if c := CompareKeys(da.coreGroupKey, db.coreGroupKey); c != 0 {
+			return c < 0
+		}
+		if da.CoreGroup != db.CoreGroup {
+			return da.CoreGroup < db.CoreGroup // labels that collate alike stay separate groups
 		}
 		return CompareKeys(da.titleKey, db.titleKey) < 0
 	}

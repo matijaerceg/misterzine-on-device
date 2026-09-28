@@ -519,7 +519,7 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "Filter by rotation", kind: "filter-rotation", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.FilterRotation()],
 			help: "Show only games made for the current orientation (INI or manual); unknowns hidden. Off restores manual filters."},
 		{text: "Views (" + a.viewsSummary() + ")", kind: "views", opensPage: true,
-			help: "Which views " + a.btn("Y") + " cycles through: build date, MiSTer debut, original year, A-Z, manufacturer, Favorites, Recents (launches from here). " + a.btn("A") + " opens the list."},
+			help: a.viewsHelp()},
 		{text: "Remember last view", kind: "remember-sort", child: true, vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.RememberSort()],
 			help: "On: reopen in the last view used. Off: use Default view. Takes effect next time MisterZine opens."},
 		{text: "Title font", kind: "title-font", vals: []string{"normal", "narrow", "narrow tall"}, idx: map[string]int{"normal": 0, "narrow": 1, "tall": 2}[a.TitleFont()],
@@ -801,7 +801,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			}
 			value := e.vals[e.idx]
 			if e.kind == "default-view" && font.Width(e.label()+" "+la+" "+value+" "+ra) > edge-inner.Min.X-2 {
-				value = map[data.SortMode]string{data.SortUpdated: "Updated", data.SortDebut: "Debut", data.SortYear: "Year", data.SortAlphabetical: "A-Z", data.SortMaker: "Maker", data.SortFavorites: "Favorites", data.SortRecents: "Recents"}[a.DefaultView()]
+				value = map[data.SortMode]string{data.SortUpdated: "Updated", data.SortDebut: "Debut", data.SortYear: "Year", data.SortAlphabetical: "A-Z", data.SortMaker: "Maker", data.SortCore: "Core", data.SortFavorites: "Favorites", data.SortRecents: "Recents"}[a.DefaultView()]
 			}
 
 			cells := 0

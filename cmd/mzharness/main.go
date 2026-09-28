@@ -70,7 +70,7 @@ func main() {
 	canvas := flag.String("canvas", "320x240", "canvas size WxH: 320x240, or a fit-display size such as 360x270 (1080p) or 400x300")
 	rememberAlt := flag.Int("remember-alt", 0, "start with galagamw's alternative N (1 or 2) remembered as its version")
 	recents := flag.Int("recents", 0, "pretend the first N rows were launched, the last one most recently; turns the Recents view on")
-	viewsOff := flag.String("views-off", "", "views left out of the Y cycle, comma separated names (updated, debut, year, alphabetical, maker, favorites, recents); Recents is off unless -recents is given")
+	viewsOff := flag.String("views-off", "", "views left out of the Y cycle, comma separated names (updated, debut, year, alphabetical, maker, favorites, recents, and core with -beta); Recents is off unless -recents is given")
 	installed := flag.String("installed", "", "Downloader database ids the card has, comma separated (e.g. distribution_mister,jtcores): Sources starts on installed only and the other sources are hidden")
 	showNonArcade := flag.Bool("show-non-arcade", false, "include console, computer and other cores")
 	arcadeIntro := flag.Bool("arcade-intro", false, "show upgrade explanation")
