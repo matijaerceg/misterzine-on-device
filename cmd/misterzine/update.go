@@ -150,6 +150,10 @@ func (h *host) applyUpdate(s updater.State, open bool) {
 			}
 		}(s.ID)
 	}
+	if finished {
+		// the run's screen says what the scan below changes
+		h.a.RescanAfterUpdate()
+	}
 	if finished || (!active && h.scanPending) {
 		h.requestScan()
 	}

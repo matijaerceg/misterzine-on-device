@@ -62,6 +62,7 @@ func main() {
 	reportSend := flag.String("report-send", "", "fake Troubleshooting -> Send a report: sent or failed; nothing is uploaded")
 	appUpdate := flag.String("app-update", "", "available app version fixture")
 	scanResult := flag.Bool("scan-result", false, "show completed card scan fixture")
+	scanChanges := flag.Bool("scan-changes", false, "with -scan-result or -update-state: the card changed since the statuses on show (9 releases older and 3 not found are up to date now, 1 up to date is gone), and the scan finishes; the beta says what it changed")
 	unchanged := flag.Bool("unchanged", false, "previous visit saw every release")
 	filterRotation := flag.Bool("filter-rotation", false, "start with the strict current-rotation filter on")
 	titleFont := flag.String("title-font", "tall", "list title font: tall, narrow or normal")
@@ -233,6 +234,33 @@ func main() {
 	} else if *status == "missing" {
 		cfg.Status = func(int) data.Status { return data.StatusNotFound }
 	}
+	// -scan-changes: the statuses before the scan, where they differ from the
+	// ones it finds; scanned turns to the found ones
+	scanned := false
+	if *scanChanges && cfg.Status != nil {
+		found := cfg.Status
+		before := map[int]data.Status{}
+		older, missing, gone := 9, 3, 1
+		for i := range ds.Rows {
+			if r := &ds.Rows[i]; !r.IsArcade() || r.Deprecated {
+				continue // outside the enabled catalogue the scan screen counts
+			}
+			switch st := found(i); {
+			case st == data.StatusCurrent && older > 0:
+				before[i], older = data.StatusOutdated, older-1
+			case st == data.StatusCurrent && missing > 0:
+				before[i], missing = data.StatusNotFound, missing-1
+			case st == data.StatusNotFound && gone > 0:
+				before[i], gone = data.StatusCurrent, gone-1
+			}
+		}
+		cfg.Status = func(i int) data.Status {
+			if st, ok := before[i]; ok && !scanned {
+				return st
+			}
+			return found(i)
+		}
+	}
 	// favorite a few rows so the star shows
 	for i := 0; i < len(rows) && i < 40; i += 7 {
 		cfg.Favorites[rows[i].K] = true
@@ -269,6 +297,7 @@ func main() {
 	a.SetAppUpdate(*appUpdate)
 	if *scanResult {
 		a.OpenScan()
+		scanned = true
 		a.FinishScan("", true)
 	}
 	a.SetCatalogChecked(now)
@@ -281,7 +310,19 @@ func main() {
 		if err := json.Unmarshal(b, &state); err != nil {
 			die(err)
 		}
-		a.SetUpdate(state, true)
+		if *scanChanges && !state.Active() {
+			// the run's last running snapshot first, so its end asks for
+			// the rescan, as the host does
+			run := state
+			run.Status = "running"
+			a.SetUpdate(run, true)
+			a.SetUpdate(state, true)
+			a.RescanAfterUpdate()
+			scanned = true
+			a.CardScanned(true)
+		} else {
+			a.SetUpdate(state, true)
+		}
 		a.SetUpdateRestart(state.ID, *updateRestart)
 	}
 

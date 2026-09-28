@@ -10,6 +10,9 @@ scenarios = [
     ["-update-state", "testdata/update-completed.json", "-update-restart", "-rot", "left", "-logical", "-out", "out/update-restart-t", "-script", "shot restart"],
     ["-update-state", "testdata/update-completed.json", "-out", "out/update-completed-h", "-script", "shot completed"],
     ["-update-state", "testdata/update-completed.json", "-rot", "left", "-logical", "-out", "out/update-completed-t", "-script", "shot completed"],
+    # the beta: what the rescan the run ends with changed
+    ["-beta", "-update-state", "testdata/update-completed.json", "-scan-changes", "-out", "out/update-rescan-beta-h", "-script", "shot rescanned"],
+    ["-beta", "-update-state", "testdata/update-completed.json", "-scan-changes", "-rot", "left", "-logical", "-out", "out/update-rescan-beta-t", "-script", "shot rescanned"],
     # the list marks the row, Details counts the versions, Filters gains the ROM check section
     ["-data", "testdata/rom-warning.json", "-rom-issue", "Missing game ROM: jpark.zip", "-out", "out/missing-rom-h", "-script",
      "shot list; enter; shot details; start; shot blocked; back; tab; down; right; shot filters; down*2; enter; shot rom-launch; back; shot rom-filtered"],
@@ -100,6 +103,11 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "enter; space; back; space*5; wait 2200; shot favorites; tab; shot counts"])
         scenarios.append([*rotation, "-inset", str(inset), "-scan-result",
                           "-out", f"out/card-scan-{orientation}-{inset}", "-script", "shot result"])
+        # the beta: what Rescan card changed, and a rescan that changed nothing
+        scenarios.append([*rotation, "-inset", str(inset), "-beta", "-scan-result", "-scan-changes",
+                          "-out", f"out/card-scan-beta-{orientation}-{inset}", "-script", "shot changes"])
+        scenarios.append([*rotation, "-inset", str(inset), "-beta", "-scan-result",
+                          "-out", f"out/card-scan-beta-{orientation}-{inset}", "-script", "shot unchanged"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):

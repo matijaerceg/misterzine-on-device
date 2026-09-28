@@ -263,8 +263,9 @@ type App struct {
 	appUpdate      string
 	scanReady      bool
 	scanError      string
-	scanCounts     bool // the finished scan delivered statuses worth showing
-	all            bool // full repaint pending
+	scanCounts     bool       // the finished scan delivered statuses worth showing
+	scanWatch      *cardWatch // what Rescan card changed (beta)
+	all            bool       // full repaint pending
 	saver          screensaver
 	marquee        marqueeState
 	cab            launchCab

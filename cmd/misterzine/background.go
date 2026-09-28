@@ -105,6 +105,9 @@ func (h *host) receiveScan(r scanResult) {
 			h.scanDiag = r.diag
 		}
 		h.scanRunning = false
+		if current && !h.scanPending {
+			h.a.CardScanned(r.index != nil)
+		}
 		if h.manualScan && !h.scanPending && current {
 			h.manualScan = false
 			// A failed core index sends no index: nothing to count. An
