@@ -176,6 +176,16 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "shot text; type 1942; shot text-vertical"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
+    # the Patreon beta: the BETA mark at the right end of the status bar in
+    # each layout, and beside the app update notice and a search at the
+    # widest inset
+    for layout in ("list", "split", "picture", "text"):
+        scenarios.append([*rotation, "-beta", "-layout", layout,
+                          "-out", f"out/beta-mark-{orientation}-{layout}", "-script", "shot list"])
+    scenarios.append([*rotation, "-beta", "-inset", "40", "-app-update", "v1.0.6",
+                      "-out", f"out/beta-mark-{orientation}-40", "-script", "shot update; type 1943; shot find"])
+for rotation in ([], ["-rot", "left", "-logical"]):
+    orientation = "t" if rotation else "h"
     # Options -> Button labels: PlayStation symbols on the list, Details and
     # Filters legends, the option row, then numbers on the list and a search
     # miss, and the Xbox set's swapped letters
@@ -281,6 +291,16 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "back; shot mixed; tab; pagedown*2; right; shot mixed-types; back; back; left; back; "
                           "tab; pagedown*2; right; shot arcade-types; down; space; shot stable-only; space; shot restored; "
                           "home; shot clear; back; shot arcade-restored"])
+for rotation in ([], ["-rot", "left", "-logical"]):
+    orientation = "t" if rotation else "h"
+    for inset in (15, 40):
+        # the Patreon beta's lock screen: empty, part-typed on the pad and the
+        # keyboard, a wrong code, an incomplete one, then the code (123456)
+        # and the list it opens onto
+        scenarios.append([*rotation, "-inset", str(inset), "-beta-locked",
+                          "-out", f"out/beta-lock-{orientation}-{inset}", "-script",
+                          "shot empty; type 12; up; right; down; shot part; type 999; enter; shot wrong; "
+                          "back; start; shot incomplete; type 123456; enter; shot unlocked"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):

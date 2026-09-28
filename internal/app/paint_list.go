@@ -68,22 +68,27 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 	if !a.cfg.ArcadeIntro {
 		a.paintHoldBar(c)
 	}
-	y := l.Status.Min.Y + 2
+	// the text's room: the bar, less the beta's BETA mark on the list
+	st := l.Status
+	if a.screen == ScreenList {
+		st.Max.X = a.paintBetaMark(c)
+	}
+	y := st.Min.Y + 2
 	if a.notice != "" {
 		// Notices (including the month/year after a jump) remain visible while
 		// searching; the query/count comes back when the notice expires.
-		c.Text(l.Status.Min.X+2, y, a.sm, gfx.Fit(a.notice, a.sm.Cols(l.Status.Dx()-4)), gen.Eva.Fg)
+		c.Text(st.Min.X+2, y, a.sm, gfx.Fit(a.notice, a.sm.Cols(st.Dx()-4)), gen.Eva.Fg)
 		return
 	}
 	if a.query != "" {
 		count := itoa(len(a.view)) + " matches"
-		c.TextRight(l.Status.Max.X-2, y, a.sm, count, gen.Eva.Muted)
-		cols := a.sm.Cols(l.Status.Dx()-8-a.sm.Width(count)) - len("Find: ") - 1
+		c.TextRight(st.Max.X-2, y, a.sm, count, gen.Eva.Muted)
+		cols := a.sm.Cols(st.Dx()-8-a.sm.Width(count)) - len("Find: ") - 1
 		query := a.query
 		if len(query) > cols {
 			query = query[len(query)-max(0, cols):]
 		}
-		c.Text(l.Status.Min.X+2, y, a.sm, "Find: "+query+"_", gen.Eva.Accent)
+		c.Text(st.Min.X+2, y, a.sm, "Find: "+query+"_", gen.Eva.Accent)
 		return
 	}
 	left := "by: build date"
@@ -103,27 +108,27 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 	if a.appUpdate != "" {
 		// Reserve space for a persistent app notice even on narrow tate screens.
 		left = map[data.SortMode]string{data.SortUpdated: "Build date", data.SortDebut: "MiSTer debut", data.SortYear: "Original year", data.SortAlphabetical: "A-Z", data.SortMaker: "Manufacturer A-Z", data.SortFavorites: "Favorites A-Z", data.SortRecents: "Recents"}[a.mode]
-		c.Text(l.Status.Min.X+2, y, a.sm, left, gen.Eva.Accent)
-		c.TextRight(l.Status.Max.X-2, y, a.sm, "App update", gen.Eva.Accent)
+		c.Text(st.Min.X+2, y, a.sm, left, gen.Eva.Accent)
+		c.TextRight(st.Max.X-2, y, a.sm, "App update", gen.Eva.Accent)
 		return
 	}
 	count := itoa(a.total) + " releases"
 	if a.filtersActive() || a.mode == data.SortFavorites || a.mode == data.SortRecents {
 		count = itoa(len(a.view)) + " of " + itoa(a.total) + " releases"
 	}
-	c.Text(l.Status.Min.X+2, y, a.sm, left, gen.Eva.Accent)
-	x := l.Status.Min.X + 2 + a.sm.Width(left) + a.sm.W*2
-	if a.sm.Width(count) > l.Status.Max.X-2-x {
+	c.Text(st.Min.X+2, y, a.sm, left, gen.Eva.Accent)
+	x := st.Min.X + 2 + a.sm.Width(left) + a.sm.W*2
+	if a.sm.Width(count) > st.Max.X-2-x {
 		count = itoa(a.total)
 		if a.filtersActive() || a.mode == data.SortFavorites || a.mode == data.SortRecents {
 			count = itoa(len(a.view)) + "/" + count
 		}
 	}
-	count = gfx.Fit(count, a.sm.Cols(l.Status.Max.X-2-x))
+	count = gfx.Fit(count, a.sm.Cols(st.Max.X-2-x))
 	c.Text(x, y, a.sm, count, gen.Eva.Muted)
 	left += "  " + count
 	if a.net != "" {
-		c.TextRight(l.Status.Max.X-2, y, a.sm, gfx.Fit(a.net, a.sm.Cols(l.Status.Dx()-a.sm.Width(left)-8)), gen.Eva.Fg)
+		c.TextRight(st.Max.X-2, y, a.sm, gfx.Fit(a.net, a.sm.Cols(st.Dx()-a.sm.Width(left)-8)), gen.Eva.Fg)
 	}
 }
 

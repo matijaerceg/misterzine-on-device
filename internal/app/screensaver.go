@@ -411,6 +411,9 @@ func (a *App) startSaver(now time.Time) {
 	s.ticks = 0
 	s.sharp, s.ground, s.dark = nil, nil, nil
 	s.style, s.shots = a.SaverStyle(), nil
+	if s.style == "shots" && a.lock != nil {
+		s.style = "word" // a held Start plays a shot's game: not from the lock screen
+	}
 	if s.style == "shots" {
 		a.saverShotsStart(now)
 	}
