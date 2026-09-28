@@ -176,6 +176,16 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "shot text; type 1942; shot text-vertical"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
+    for name, size in (("", []), ("-40", ["-inset", "40"]), ("-400x300", ["-canvas", "400x300"])):
+        # MisterZine Arcade (beta): the picture layout's text keeps one column
+        # whether the shot is horizontal, vertical (centred in its box) or
+        # still loading; tate keeps the free layout. testdata/images holds
+        # synthetic stand-ins for defender and 1942 only.
+        scenarios.append([*rotation, *size, "-beta", "-layout", "picture", "-images", "testdata/images", "-images-loading",
+                          "-out", f"out/beta-picture-column-{orientation}{name}", "-script",
+                          "shot loading; type defender; back; shot horizontal; type 1942; back; shot vertical"])
+for rotation in ([], ["-rot", "left", "-logical"]):
+    orientation = "t" if rotation else "h"
     # Options -> Button labels: PlayStation symbols on the list, Details and
     # Filters legends, the option row, then numbers on the list and a search
     # miss, and the Xbox set's swapped letters

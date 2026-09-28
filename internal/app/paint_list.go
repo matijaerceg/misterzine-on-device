@@ -592,9 +592,10 @@ func (a *App) paintThumb(c *gfx.Canvas, box image.Rectangle, row *data.Row) imag
 	a.paintedThumbImage = img
 	// horizontal: on the left edge, in line with the text below; the
 	// classic tate pane centres it in the box beside the text; the wider
-	// layouts keep it left so the text can sit beside it
+	// layouts keep it left so the text can sit beside it, unless the text
+	// keeps a column of its own
 	p := image.Pt(box.Min.X, box.Min.Y+(box.Dy()-img.Rect.Dy())/2)
-	if (a.lay.Portrait && !a.lay.TextBeside) || a.lay.PictureColumns {
+	if (a.lay.Portrait && !a.lay.TextBeside) || a.lay.PictureColumns || a.lay.ArtCentered {
 		p.X = box.Min.X + (box.Dx()-img.Rect.Dx())/2
 	}
 	if slot == "system" {

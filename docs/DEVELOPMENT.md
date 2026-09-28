@@ -63,6 +63,11 @@ go run ./cmd/mzharness -canvas 360x270 -out preview-1080p   # the fit-display si
 go run ./cmd/mzharness -launcher -out preview-launcher   # the main menu shortcut on: its child rows are live
 ```
 
+The render goldens cannot use the site's artwork, so `testdata/images` holds
+synthetic stand-ins for two games, Defender (horizontal) and 1942
+(vertical); with `-images testdata/images -images-loading` every other
+picture stays loading, as on a card still fetching it.
+
 The harness leaves page and layout transitions off, so every scripted shot
 is an end state. `-motion` runs them on the scripted clock, and the script
 command `frames NAME MS COUNT` saves COUNT shots NAME-00, NAME-01, ... MS

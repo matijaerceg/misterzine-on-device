@@ -51,6 +51,7 @@ func main() {
 	seenAge := flag.Duration("seen", 48*time.Hour, "pretend the last look was this long ago (0 = first run)")
 	logical := flag.Bool("logical", false, "save the unrotated logical canvas instead of the physical frame")
 	imgDir := flag.String("images", "../misterzine/docs/images", "directory laid out like the site's docs/images; empty = placeholders")
+	imgLoading := flag.Bool("images-loading", false, "pictures the -images directory lacks stay loading, as on a card still fetching them, instead of missing")
 	updatePath := flag.String("update-state", "", "render an Update All state JSON without running an updater")
 	updateRestart := flag.Bool("update-restart", false, "show the updated-program restart prompt")
 	supportPath := flag.String("support-report", "", "controller diagnostic fixture; no devices are opened")
@@ -155,6 +156,9 @@ func main() {
 		if _, err := os.Stat(*imgDir); err == nil {
 			cfg.Images = images.NewLocal(*imgDir)
 		}
+	}
+	if *imgLoading {
+		cfg.Images = loadingImages{cfg.Images}
 	}
 	for i := min(*recents, len(rows)) - 1; i >= 0; i-- {
 		// launches a day apart, the newest one yesterday
@@ -385,6 +389,30 @@ func advance(a *app.App, clock time.Time, d time.Duration, present func()) time.
 		}
 	}
 	return clock
+}
+
+// loadingImages reports every picture its directory lacks as still loading.
+type loadingImages struct{ app.Images }
+
+func (l loadingImages) Get(req app.ImageReq) (*image.RGBA, app.ImageState) {
+	if l.Images != nil {
+		if img, st := l.Images.Get(req); img != nil {
+			return img, st
+		}
+	}
+	return nil, app.ImageLoading
+}
+
+func (l loadingImages) Want(reqs []app.ImageReq) {
+	if l.Images != nil {
+		l.Images.Want(reqs)
+	}
+}
+
+func (l loadingImages) SetPaused(p bool) {
+	if l.Images != nil {
+		l.Images.SetPaused(p)
+	}
 }
 
 func load(dataPath, metaPath string) ([]data.Row, data.Meta) {

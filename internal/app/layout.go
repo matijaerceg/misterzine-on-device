@@ -3,6 +3,7 @@ package app
 import (
 	"image"
 
+	"github.com/matijaerceg/misterzine-on-device/internal/beta"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 )
 
@@ -39,6 +40,10 @@ type Layout struct {
 	TextBeside bool
 	// PictureColumns keeps a compact title list, centered artwork and fixed right metadata.
 	PictureColumns bool
+	// ArtCentered keeps the pane text in PaneText and centres a narrower
+	// picture in Thumb, so scrolling between horizontal and vertical games
+	// or past a loading one never moves the text (picture layout, horizontal).
+	ArtCentered bool
 }
 
 const (
@@ -170,6 +175,11 @@ func NewLayout(w, h, ix, iy int, body *gfx.Font, rowW, dateCols int, style strin
 		l.Thumb = image.Rect(l.Pane.Min.X+3, l.Pane.Min.Y+3, l.Pane.Min.X+3+tw, l.Pane.Min.Y+3+th)
 		l.PaneText = image.Rect(l.Thumb.Max.X+4, l.Pane.Min.Y+3, l.Pane.Max.X, l.Pane.Max.Y)
 		l.TextBeside = true
+		if beta.On() && l.PaneText.Dx() >= 60 {
+			// MisterZine Arcade: the text keeps its column at the box's edge
+			// whatever the shot's drawn width, and a vertical shot centres
+			l.TextBeside, l.ArtCentered = false, true
+		}
 	case l.Portrait:
 		l.Pane = image.Rect(l.Body.Min.X, l.Body.Max.Y-paneH, l.Body.Max.X, l.Body.Max.Y)
 		l.List = image.Rect(l.Body.Min.X, l.Body.Min.Y, l.Body.Max.X, l.Pane.Min.Y-1)
