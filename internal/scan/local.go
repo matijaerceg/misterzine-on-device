@@ -174,9 +174,10 @@ func scanArcadeMRAs(card, cachePath string) ([]Alt, []Skipped, []Skipped, error)
 // core index nothing is on the card and the old rule stands.
 //
 // The rest are grouped by setname; the copy outside any _alternatives folder
-// with the shortest path becomes the row and the others its alternatives. Set
-// snap when the image service is available: such rows then ask it for a shot
-// by setname.
+// with the shortest path becomes the row and the others its alternatives. A
+// row named like another row gets its version after the name (distinguish).
+// Set snap when the image service is available: such rows then ask it for a
+// shot by setname.
 func DiscoverLocal(card, cachePath string, catalogue []data.Row, idx *Index, status []data.Status, alts []Alt, attached map[string]bool, snap bool) LocalResult {
 	walked, skipped, dirs, err := scanArcadeMRAs(card, cachePath)
 	res := LocalResult{Alts: map[string][]string{}, Files: len(walked), Skipped: skipped, SkippedDirs: dirs, Err: err,
@@ -292,6 +293,7 @@ func DiscoverLocal(card, cachePath string, catalogue []data.Row, idx *Index, sta
 		}
 		groups[key] = append(groups[key], a)
 	}
+	var heads []Alt // the file each row was read from, by row
 	for sn, g := range groups {
 		sort.Slice(g, func(i, j int) bool {
 			// the parent set itself, then main folders, then short paths
@@ -321,12 +323,66 @@ func DiscoverLocal(card, cachePath string, catalogue []data.Row, idx *Index, sta
 			}
 		}
 		res.Rows = append(res.Rows, r)
+		heads = append(heads, g[0])
 		for _, a := range g[1:] {
 			res.Alts[r.K] = append(res.Alts[r.K], a.Path)
 		}
 	}
+	distinguish(res.Rows, heads, catalogue)
 	sort.Slice(res.Rows, func(i, j int) bool { return res.Rows[i].K < res.Rows[j].K })
 	return res
+}
+
+// distinguish tells a local game apart from the other rows of its name by
+// adding its MRA's <version> to the title, else its maker and year, else its
+// setname. Midway's cocktail Space Invaders Part II is a set of its own, not
+// a version of Taito's catalogue game, yet both MRAs call it by one name, so
+// the list read as one game listed twice with only one of them in the
+// catalogue. A stand-in keeps its name: it is the catalogue's game, placed
+// under its greyed row on purpose. heads holds each row's file.
+func distinguish(rows []data.Row, heads []Alt, catalogue []data.Row) {
+	named := map[string]int{}
+	for _, r := range catalogue {
+		named[titleKey(r.Title)]++
+	}
+	for _, r := range rows {
+		if !r.Standin {
+			named[titleKey(r.Title)]++
+		}
+	}
+	for i := range rows {
+		r := &rows[i]
+		if r.Standin || named[titleKey(r.Title)] < 2 {
+			continue
+		}
+		if l := versionLabel(heads[i], r.Title); l != "" {
+			r.Title += " (" + l + ")"
+		}
+	}
+}
+
+// titleKey is the form two titles are compared in: case, spacing and the
+// characters the list shows as ASCII do not tell games apart.
+func titleKey(s string) string {
+	return strings.Join(strings.Fields(strings.ToLower(data.ASCII(s))), " ")
+}
+
+// versionLabel is the first of a's version, maker and year, and setname that
+// the title does not already carry, or "".
+func versionLabel(a Alt, title string) string {
+	var made []string
+	for _, s := range []string{a.Manufacturer, a.Year} {
+		if s = strings.TrimSpace(s); s != "" {
+			made = append(made, s)
+		}
+	}
+	have := titleKey(title)
+	for _, l := range []string{strings.TrimSpace(a.Version), strings.Join(made, ", "), identity(a.Setname)} {
+		if l != "" && !strings.Contains(have, titleKey(l)) {
+			return l
+		}
+	}
+	return ""
 }
 
 // owners indexes which catalogue rows a card file belongs to.

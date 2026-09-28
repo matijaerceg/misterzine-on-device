@@ -10,6 +10,7 @@ import (
 
 var fullHeader = `<misterromdescription>
 	<name>Grobda</name>
+	<version>New Ver.</version>
 	<region>World</region>
 	<homebrew>no</homebrew>
 	<bootleg>yes</bootleg>
@@ -35,7 +36,7 @@ func TestParseMRAHeaderFull(t *testing.T) {
 		t.Fatal("full header rejected")
 	}
 	want := Alt{RBF: "druaga", Setname: "grobda", Parent: "grobda", Zips: []string{"grobda.zip", "namco.zip"},
-		Name: "Grobda", Year: "1984", Manufacturer: "Namco", Category: "Shooter - Multidirectional",
+		Name: "Grobda", Version: "New Ver.", Year: "1984", Manufacturer: "Namco", Category: "Shooter - Multidirectional",
 		Rotation: "vertical (cw)", Region: "World", Players: "2 (alternating)", Joystick: "8-way",
 		NumButtons: 2, ButtonNames: []string{"Cannon Beam", "Sealed", "Start 1P", "Start 2P", "Coin"}, Bootleg: true}
 	if !reflect.DeepEqual(a, want) {

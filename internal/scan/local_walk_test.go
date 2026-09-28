@@ -96,7 +96,7 @@ func TestLocalCacheWarm(t *testing.T) {
 		t.Fatalf("warm run differs: %v", err)
 	}
 	b, _ := os.ReadFile(cache)
-	if !strings.Contains(string(b), `"version":5`) || !strings.Contains(string(b), `"_Arcade/_Extra/deeper"`) {
+	if !strings.Contains(string(b), `"version":6`) || !strings.Contains(string(b), `"_Arcade/_Extra/deeper"`) {
 		t.Fatalf("cache: %s", b)
 	}
 	// A new file in an existing folder is noticed (the folder's mtime moves).
@@ -462,6 +462,61 @@ func TestDiscoverLocalDedupeOrder(t *testing.T) {
 	}
 	if want := []string{"_Arcade/_Long folder name/Same.mra", "_Arcade/_alternatives/_Same/a.mra"}; !reflect.DeepEqual(res.Alts["local:same"], want) {
 		t.Fatalf("alts %v", res.Alts["local:same"])
+	}
+}
+
+// A local game named like a catalogue game or another local game shows what
+// sets it apart after the name: its version, else maker and year, else its
+// setname. A unique name, and a stand-in, stay as the MRA gives them.
+func TestDiscoverLocalDistinguishesSharedNames(t *testing.T) {
+	card := t.TempDir()
+	mk := func(rel, body string) {
+		t.Helper()
+		p := filepath.Join(card, filepath.FromSlash(rel))
+		os.MkdirAll(filepath.Dir(p), 0755)
+		if err := os.WriteFile(p, []byte(body), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	header := func(name, extra, setname string) string {
+		return `<misterromdescription><name>` + name + `</name>` + extra + `<setname>` + setname + `</setname><rbf>spaceinvaders</rbf>` +
+			`<rom index="0" zip="` + setname + `.zip"><part name="x"/></rom></misterromdescription>`
+	}
+	mk("_Arcade/_alternatives/_Space Invaders/Space Invaders Part II (Midway, Cocktail).mra",
+		header("Space Invaders Part II", `<version>Midway, Cocktail</version><year>1980</year><manufacturer>Midway</manufacturer>`, "invad2ct"))
+	mk("_Arcade/_Extra/Twin A.mra", header("Twin", `<year>1981</year><manufacturer>Maker A</manufacturer>`, "twina"))
+	mk("_Arcade/_Extra/Twin B.mra", header("TWIN ", "", "twinb"))
+	mk("_Arcade/_Extra/Twin C.mra", header("Twin", `<version>Twin</version><year>1982</year>`, "twinc"))
+	mk("_Arcade/_Extra/Unique.mra", header("Unique", `<version>set 2</version>`, "unique"))
+	catalogue := []data.Row{
+		{K: "invadpt2", Title: "Space Invaders Part II", Base: "Arcade", Core: "spaceinvaders", SN: "invadpt2", Family: "invadpt2",
+			FamilySets: []string{"invaddlx", "moonbase"}, MRA: "_Arcade/Space Invaders Part II (Taito, Bigger ROMs).mra"},
+	}
+	alts, _, _ := ScanAlternativesWithError(card, "")
+	res := DiscoverLocal(card, "", catalogue, ScanCores(card), nil, alts, nil, false)
+	if res.Err != nil {
+		t.Fatal(res.Err)
+	}
+	got := map[string]string{}
+	for _, r := range res.Rows {
+		got[r.K] = r.Title
+	}
+	want := map[string]string{
+		"local:invad2ct": "Space Invaders Part II (Midway, Cocktail)",
+		"local:twina":    "Twin (Maker A, 1981)",
+		"local:twinb":    "TWIN (twinb)",
+		"local:twinc":    "Twin (1982)", // its version is the name itself
+		"local:unique":   "Unique",
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("titles %v\nwant   %v", got, want)
+	}
+
+	// A stand-in is the catalogue's own game and keeps its name.
+	rows := []data.Row{{K: "local:gigandes", Title: "Gigandes", Standin: true}}
+	distinguish(rows, []Alt{{Setname: "gigandes", Version: "set 2"}}, []data.Row{{K: "gigandes", Title: "Gigandes"}})
+	if rows[0].Title != "Gigandes" {
+		t.Fatalf("stand-in renamed: %q", rows[0].Title)
 	}
 }
 

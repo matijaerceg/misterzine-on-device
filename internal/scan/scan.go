@@ -264,6 +264,7 @@ type Alt struct {
 	Zips    []string `json:"zips"` // lowercase zip names the rom index 0 references
 
 	Name         string   `json:"name,omitempty"`
+	Version      string   `json:"version,omitempty"` // <version>: what sets this release apart, e.g. "Midway, Cocktail"
 	Year         string   `json:"year,omitempty"`
 	Manufacturer string   `json:"manufacturer,omitempty"`
 	Category     string   `json:"category,omitempty"`
@@ -297,9 +298,9 @@ type altDir struct {
 	Skipped []Skipped `json:"skipped,omitempty"`
 }
 
-// Version 4 added parent metadata, version 5 the descriptive header fields;
-// older entries must be reparsed.
-const altCacheVersion = 5
+// Version 4 added parent metadata, version 5 the descriptive header fields,
+// version 6 <version>; older entries must be reparsed.
+const altCacheVersion = 6
 
 // ScanAlternatives walks every _alternatives folder (altRoots), parsing
 // only the header of each MRA. A per-directory cache keyed by mtime
@@ -540,7 +541,7 @@ var errNoXML = errors.New("no XML content")
 
 // headerText names the root's children whose text is kept.
 var headerText = map[string]bool{
-	"rbf": true, "setname": true, "parent": true, "name": true, "year": true,
+	"rbf": true, "setname": true, "parent": true, "name": true, "version": true, "year": true,
 	"manufacturer": true, "category": true, "rotation": true, "region": true,
 	"players": true, "joystick": true, "num_buttons": true, "homebrew": true, "bootleg": true,
 }
@@ -643,6 +644,8 @@ func (a *Alt) setText(name, v string) {
 		a.Setname = v
 	case "name":
 		a.Name = v
+	case "version":
+		a.Version = v
 	case "year":
 		a.Year = v
 	case "manufacturer":

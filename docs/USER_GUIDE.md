@@ -91,11 +91,16 @@ at the top of the view you left.
 
 Arcade games on the card that the catalogue does not list appear as well, with
 a "local" chip and "Local" as their source. The scan reads every `.mra` under
-`_Arcade` except `cores`, the `_alternatives` folders (those attach to the game
-they belong to) and arcade_organizer's `_Organized` copies. Title, year, maker,
+`_Arcade` except `cores` and arcade_organizer's `_Organized` copies. A file in an
+`_alternatives` folder joins the catalogue game it belongs to, and is listed as
+a local game only when it belongs to none. Title, year, maker,
 rotation, region, players and buttons come from the file itself; Details shows
 the file's path and the MRA category as a note. One row is shown per game
 however many copies are installed; the extra copies are offered as versions.
+A local game named like another game in the list shows the version its file
+gives after the name, or else its maker and year. Midway's cocktail Space
+Invaders Part II, a different game from Taito's in the catalogue, reads
+Space Invaders Part II (Midway, Cocktail).
 Local games carry no release dates, so they sit at the end of the date views
 (except a copy standing in for a greyed game, described below) and never count
 as new since your last look. To hide them, turn the Local
@@ -329,7 +334,9 @@ empty folder.
 After every card scan, a background pass runs the same check over every
 arcade game on the card and every version it offers, so problems show
 before you open anything: the list marks a game with `!` in place of its
-card mark when the version Start would launch has one, the version picker
+card mark when the version Start would launch has one (yellow when MiSTer
+cannot load it and Start refuses, dim lavender for a `Wrong ROM version:`
+the game usually runs with), the version picker
 in Details prefixes such a version with `!`, and Details counts the other
 versions with problems ("ROM problems in 2 of 12 versions"). Filters ->
 ROM check narrows the list to games with a problem in the version to
