@@ -57,8 +57,10 @@ the same narrow font at the titles' height; Options -> Title font chooses the
 font. A yellow β after a title marks a Patreon early-access core: Jotego's
 betas need his jtbeta.zip, and Coin-Op Collection's alphas and betas need a
 licence key for your MiSTer from their portal plus their filter overridden in
-downloader.ini. Details says which, and the chip reads alpha or beta. The
-date column format is chosen in Options -> Date format.
+downloader.ini. Details says which, and the chip reads alpha or beta. A local
+game, one read from an MRA on your card rather than from the catalogue, gets
+the mark too when that MRA runs on one of these cores. The date column format
+is chosen in Options -> Date format.
 
 | Mark | Meaning |
 |---|---|
@@ -333,6 +335,15 @@ checksum from the files as MiSTer does. When it fits, only the MRA's note of
 that one file is out of date, and nothing is shown; when it does not, MiSTer
 refuses the ROM, and so does Start. A Jotego beta key (`jtbeta.zip`) that does not
 match the MRAs shows this warning too.
+
+Whether a missing `jtbeta.zip` stops the game depends on its core. A Jotego
+beta core needs the key, so the warning says so and Start stops. An MRA copied
+while its core was in beta can still ask for the key after the core goes
+public, as Arcade Offset's The Simpsons (2 Players Free Play) does. For a core
+the catalogue lists as public, this is only a warning: MiSTer shows a message
+naming the missing file in a corner of the screen, and the game plays under
+it. For a core the catalogue does not list,
+MisterZine cannot tell, so it warns and Start goes ahead.
 
 MiSTer takes each file from the first archive in the MRA's list that has it,
 by CRC or else by name, and looks no further. When a later archive holds the
@@ -695,8 +706,9 @@ the marks to come. Each changed entry carries its own green date wherever it
 sorts, so an entry the catalogue added late under an old date is still found,
 and the Since last look filter lists exactly those entries.
 The On the card and ROM check choices count within your search and the other
-filters, like every other section: with Beta off, a beta game from the
-catalogue that lacks its key no longer counts as a ROM problem. Favorites mode
+filters, like every other section: with Beta off, a game on a beta core that
+lacks its key no longer counts as a ROM problem, whichever database its MRA
+came from. Favorites mode
 always shows favorites only;
 use Y in the main view to leave it.
 

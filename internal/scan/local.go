@@ -188,13 +188,15 @@ func scanArcadeMRAs(card, cachePath string) ([]Alt, []Skipped, []Skipped, error)
 // The rest are grouped by setname; the copy outside any _alternatives folder
 // with the shortest path becomes the row and the others its alternatives. A
 // row named like another row gets its version after the name (distinguish).
-// Set snap when the image service is available: such rows then ask it for a
-// shot by setname.
+// A row on a core the catalogue lists as gated is beta, with the same gate
+// term (CoreAccess). Set snap when the image service is available: such rows
+// then ask it for a shot by setname.
 func DiscoverLocal(card, cachePath string, catalogue []data.Row, idx *Index, status []data.Status, alts []Alt, attached map[string]bool, snap bool) LocalResult {
 	walked, skipped, dirs, err := scanArcadeMRAs(card, cachePath)
 	res := LocalResult{Alts: map[string][]string{}, Files: len(walked), Skipped: skipped, SkippedDirs: dirs, Err: err,
 		Versions: map[string][]string{}, VersionCores: map[string]string{}, VersionOwner: map[string]string{}}
 	own := catalogueOwners(catalogue)
+	access := NewCoreAccess(catalogue, idx)
 	cores := map[string]bool{}
 	has := func(core string) bool { // coreOnCard, remembered per name: a miss scans the index
 		v, ok := cores[core]
@@ -325,6 +327,12 @@ func DiscoverLocal(card, cachePath string, catalogue []data.Row, idx *Index, sta
 		r := rowFromAlt(g[0])
 		for _, a := range g {
 			r.Standin = r.Standin || standins[a.Path]
+		}
+		// a game on a gated core is a beta game whoever made its MRA, so
+		// Filters -> Type -> Beta off hides it with the catalogue's; a
+		// stand-in goes by its own core, not the catalogue game's
+		if acc := access.Of(r.Core); acc.Beta {
+			r.Beta, r.Gate = true, acc.Gate
 		}
 		if snap {
 			r.Img, r.ImgSlots = sn, []string{SlotLocalSnap}

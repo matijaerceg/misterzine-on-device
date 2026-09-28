@@ -1018,8 +1018,10 @@ func coreStem(name string) string {
 // row may say blkheart_mister, the file it was read from, while every
 // alternative MRA still says blkheart, or the other way round on a cached
 // feed), with or without an "arcade-" prefix and their own date suffixes.
-func sameCore(a, b string) bool {
-	a, b = coreStem(a), coreStem(b)
+func sameCore(a, b string) bool { return sameStem(coreStem(a), coreStem(b)) }
+
+// sameStem is sameCore for names already through coreStem.
+func sameStem(a, b string) bool {
 	return a == b || strings.HasPrefix(a, b+"_") || strings.HasPrefix(b, a+"_")
 }
 

@@ -90,6 +90,18 @@ func TestLocalDigestStable(t *testing.T) {
 	if LocalDigest(nil) != "" {
 		t.Fatal("no locals: empty digest")
 	}
+	// a core the catalogue starts or stops gating changes the rows a scan
+	// must publish
+	beta := []Row{localRow("a", "c2", "p2"), localRow("b", "c1", "p1")}
+	beta[1].Beta, beta[1].Gate = true, "jtbeta"
+	if LocalDigest(beta) == LocalDigest(a) {
+		t.Fatal("a row turning beta must change the digest")
+	}
+	alpha := append([]Row{}, beta...)
+	alpha[1].Gate = "coinop-collection-alpha"
+	if LocalDigest(alpha) == LocalDigest(beta) {
+		t.Fatal("another gate must change the digest")
+	}
 	if Generation("h", nil) != "h" || Generation("h", a) == "h" {
 		t.Fatal("Generation must equal the hash only without locals")
 	}

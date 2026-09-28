@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -37,11 +38,18 @@ type ROMResult struct {
 // and an older one is returned while a worker checks again, so the drawing
 // loop never waits on the card for long. Ready fires when a worker's answer
 // is worth a repaint. Start asks with fresh and waits for the answer.
+//
+// Whether a missing jtbeta.zip stops the game depends on the MRA's core,
+// which the catalogue says (SetAccess). A result remembers the answer it
+// was made under, and Details checks again once that is replaced.
 type ROMCheck struct {
 	card  string
 	ready chan struct{}
-	wait  time.Duration              // how long a first Details check waits
-	run   func(rel string) ROMResult // the check itself; a test may replace it
+	wait  time.Duration // how long a first Details check waits
+	// run is the check itself, under the given core access; a test may
+	// replace it
+	run    func(rel string, acc *CoreAccess) ROMResult
+	access atomic.Pointer[CoreAccess]
 
 	mu      sync.Mutex // guards results and pending
 	results map[string]romEntry
@@ -109,14 +117,15 @@ func (c *ROMCheck) sweep(paths []string, stop <-chan struct{}, done func(int, ti
 			// older one from here.
 			c.work.Lock()
 			t := time.Now()
-			res := c.run(rel)
+			acc := c.access.Load()
+			res := c.run(rel, acc)
 			if d := time.Since(t); d > 80*time.Millisecond && c.Slow != nil {
 				c.Slow(rel, d)
 			}
 			c.mu.Lock()
 			prev, known := c.results[rel]
 			if _, busy := c.pending[rel]; !busy {
-				c.results[rel] = romEntry{time.Now(), res}
+				c.results[rel] = romEntry{time.Now(), res, acc}
 			}
 			c.mu.Unlock()
 			c.work.Unlock()
@@ -165,6 +174,7 @@ func (c *ROMCheck) Known(rel string) (ROMResult, bool) {
 type romEntry struct {
 	at  time.Time
 	res ROMResult
+	acc *CoreAccess // what the result was made under
 }
 
 type romPending struct {
@@ -179,6 +189,16 @@ func NewROMCheck(card string) *ROMCheck {
 		mras: map[string]mraEntry{}, zips: map[string]*zipIndex{}, md5s: map[string]bool{}}
 	c.run = c.check
 	return c
+}
+
+// SetAccess gives the checks the catalogue's word on each core, from a card
+// scan: before the first, every core is unknown. It never waits on a
+// running check; one made under the access before is kept until checked
+// again, which Details does at once and the next sweep does for the list.
+func (c *ROMCheck) SetAccess(a *CoreAccess) {
+	if c != nil {
+		c.access.Store(a)
+	}
 }
 
 // Ready delivers a signal when a background check changed what Details
@@ -204,15 +224,16 @@ func (c *ROMCheck) Check(rel string, fresh bool) ROMResult {
 		// again. The parsed MRAs stay: some take a second to read.
 		clear(c.zips)
 		clear(c.md5s)
-		res := c.run(rel)
+		acc := c.access.Load()
+		res := c.run(rel, acc)
 		c.mu.Lock()
-		c.results[rel] = romEntry{time.Now(), res}
+		c.results[rel] = romEntry{time.Now(), res, acc}
 		c.mu.Unlock()
 		return res
 	}
 	c.mu.Lock()
 	e, known := c.results[rel]
-	if known && time.Since(e.at) < 3*time.Second {
+	if known && e.acc == c.access.Load() && time.Since(e.at) < 3*time.Second {
 		c.mu.Unlock()
 		return e.res
 	}
@@ -243,10 +264,11 @@ func (c *ROMCheck) refresh(rel string, p *romPending) {
 	// published before Start may run, so an older answer never replaces
 	// the one a Start check has just stored
 	c.work.Lock()
-	res := c.run(rel)
+	acc := c.access.Load()
+	res := c.run(rel, acc)
 	c.mu.Lock()
 	prev, known := c.results[rel]
-	c.results[rel] = romEntry{time.Now(), res}
+	c.results[rel] = romEntry{time.Now(), res, acc}
 	delete(c.pending, rel)
 	close(p.done)
 	changed := known && prev.res != res || !known && p.late && res != ROMResult{}
@@ -285,6 +307,7 @@ type romSection struct {
 type mraEntry struct {
 	size     int64
 	mtime    time.Time
+	rbf      string
 	sections []romSection
 	issue    string
 }
@@ -298,11 +321,12 @@ const (
 	romListUnreadable = "ROM check incomplete: couldn't read the MRA's ROM list"
 )
 
-func (c *ROMCheck) check(rel string) ROMResult {
-	sections, issue := c.requirements(rel)
+func (c *ROMCheck) check(rel string, acc *CoreAccess) ROMResult {
+	sections, rbf, issue := c.requirements(rel)
 	if issue != "" {
 		return ROMResult{issue, issue != romListUnreadable}
 	}
+	key := keyRule(rbf, acc)
 	root, rootMame := arcadeROMRoot(c.card)
 	if rootMame {
 		// Main takes a mame folder at the card's root before games/mame,
@@ -332,7 +356,7 @@ func (c *ROMCheck) check(rel string) ROMResult {
 	zeroDone := false
 	for i, s := range sections {
 		if s.index != 0 {
-			if res := c.sectionIssue(root, rel, i, s); res.Text != "" {
+			if res := c.sectionIssue(root, rel, i, s, key); res.Text != "" {
 				issues = append(issues, found{i, res})
 			}
 			continue
@@ -340,7 +364,7 @@ func (c *ROMCheck) check(rel string) ROMResult {
 		if zeroDone {
 			continue
 		}
-		res := c.sectionIssue(root, rel, i, s)
+		res := c.sectionIssue(root, rel, i, s, key)
 		switch {
 		case !s.realMD5:
 			last = &found{i, res}
@@ -376,28 +400,82 @@ func (c *ROMCheck) check(rel string) ROMResult {
 // the MRA was made for: Main discards it then, and otherwise sends it. An
 // MRA whose part CRCs went stale while its md5 still fits the files, as
 // Galaxian (New Invasion) from HBMame does, loads and plays.
-func (c *ROMCheck) sectionIssue(root, rel string, i int, s romSection) ROMResult {
-	var warn ROMResult
+//
+// Jotego's beta key is the exception: whether its absence stops the game is
+// the core's to say (keyRule). When it does not, it only warns, and the
+// parts after it are still looked at.
+func (c *ROMCheck) sectionIssue(root, rel string, i int, s romSection, key func(ROMResult) ROMResult) ROMResult {
+	var warn, keyWarn ROMResult
 	for _, p := range s.parts {
 		if p.name == "" {
 			continue
 		}
 		res, wrong := c.partIssue(root, p)
-		if res.Text != "" && !wrong {
-			return res
+		switch {
+		case res.Text == "":
+			continue
+		case wrong:
+			if warn.Text == "" {
+				warn = res
+			}
+			continue
+		case keyPart(p):
+			if res = key(res); !res.Block {
+				if keyWarn.Text == "" {
+					keyWarn = res
+				}
+				continue
+			}
 		}
-		if wrong && warn.Text == "" {
-			warn = res
+		return res
+	}
+	if warn.Text != "" && s.realMD5 {
+		if c.md5Fits(root, rel, i, s) {
+			warn = ROMResult{}
+		} else {
+			warn.Block = true
 		}
 	}
-	if warn.Text == "" || !s.realMD5 {
-		return warn
+	if warn.Text == "" {
+		return keyWarn
 	}
-	if c.md5Fits(root, rel, i, s) {
-		return ROMResult{}
-	}
-	warn.Block = true
 	return warn
+}
+
+// keyPart reports whether p is Jotego's beta key: a part looked for in
+// jtbeta.zip alone. Jotego's MRAs for a beta core carry it as beta.bin in a
+// <rom index="17">; an MRA copied while the core was beta can keep it after
+// the core goes public, as Arcade Offset's Simpsons (2 Players Free Play)
+// has. Coin-Op's coinopkey.zip is a licence for one MiSTer and stays an
+// ordinary requirement.
+func keyPart(p romPart) bool {
+	return len(p.zips) == 1 && strings.EqualFold(strings.TrimSpace(p.zips[0]), "jtbeta.zip")
+}
+
+// keyRule words a key part Main cannot load, for an MRA naming rbf. A core
+// the catalogue lists as Jotego's beta needs the key, so that stops the
+// game. Any other core does not stop for it: Main shows the missing file,
+// sends what it has, and starts the core. On a MiSTer Pi, Arcade Offset's
+// Simpsons (2 Players Free Play) on jtsimson played with "beta.bin not
+// found" in a corner. A core the catalogue does not know, or has not been
+// read for yet, gets the benefit of the doubt.
+func keyRule(rbf string, acc *CoreAccess) func(ROMResult) ROMResult {
+	core := "the " + rbf + " core"
+	if rbf == "" {
+		core = "the MRA's core"
+	}
+	return func(res ROMResult) ROMResult {
+		// asked only for a key that is missing: the sweep checks thousands
+		// of MRAs, and few have one
+		a := acc.Of(rbf)
+		switch {
+		case a.JotegoBeta():
+			return ROMResult{res.Text + "; " + core + " is a Patreon beta and needs it", true}
+		case a.Known && !a.Beta:
+			return ROMResult{res.Text + "; " + core + " isn't a beta: MiSTer shows an error, but the game plays", false}
+		}
+		return ROMResult{res.Text + "; can't tell whether " + core + " needs it", false}
+	}
 }
 
 // zipPath finds where Main looks for part name in zip list entry z: it
@@ -528,7 +606,7 @@ func (c *ROMCheck) md5Fits(root, rel string, i int, s romSection) bool {
 	if fits, ok := c.md5s[stamps.String()]; ok {
 		return fits
 	}
-	full, issue := parseROMSections(filepath.Join(c.card, filepath.FromSlash(rel)), true)
+	full, _, issue := parseROMSections(filepath.Join(c.card, filepath.FromSlash(rel)), true)
 	if issue != "" || i >= len(full) {
 		return false
 	}
@@ -623,39 +701,43 @@ func (c *ROMCheck) partEntry(root string, p romPart, open map[string]*zip.ReadCl
 	return nil
 }
 
-// requirements returns the MRA's ROM sections, parsed again only when the
-// file changes: some MRAs carry megabytes of inline data.
-func (c *ROMCheck) requirements(rel string) ([]romSection, string) {
+// requirements returns the MRA's ROM sections and the core it names,
+// parsed again only when the file changes: some MRAs carry megabytes of
+// inline data.
+func (c *ROMCheck) requirements(rel string) ([]romSection, string, string) {
 	p := filepath.Join(c.card, filepath.FromSlash(rel))
 	st, err := os.Stat(p)
 	if err != nil {
-		return nil, menuUnreadable
+		return nil, "", menuUnreadable
 	}
 	if e, ok := c.mras[rel]; ok && e.size == st.Size() && e.mtime.Equal(st.ModTime()) {
-		return e.sections, e.issue
+		return e.sections, e.rbf, e.issue
 	}
-	sections, issue := parseROMSections(p, false)
-	c.mras[rel] = mraEntry{st.Size(), st.ModTime(), sections, issue}
-	return sections, issue
+	sections, rbf, issue := parseROMSections(p, false)
+	c.mras[rel] = mraEntry{st.Size(), st.ModTime(), rbf, sections, issue}
+	return sections, rbf, issue
 }
 
-// parseROMSections reads an MRA's <rom> sections. Unnamed parts, whose
-// inline bytes can run to megabytes, are kept only with inline, and only
-// in a section whose md5 Main checks.
-func parseROMSections(p string, inline bool) ([]romSection, string) {
+// parseROMSections reads an MRA's <rom> sections and the <rbf> it names,
+// trimmed. Unnamed parts, whose inline bytes can run to megabytes, are kept
+// only with inline, and only in a section whose md5 Main checks.
+func parseROMSections(p string, inline bool) (sections []romSection, rbf, issue string) {
 	f, err := os.Open(p)
 	if err != nil {
-		return nil, menuUnreadable
+		return nil, "", menuUnreadable
 	}
 	defer f.Close()
 	dec := xml.NewDecoder(&mraReader{br: bufio.NewReader(f)})
 	dec.Strict = false
 	dec.CharsetReader = func(_ string, r io.Reader) (io.Reader, error) { return r, nil }
-	var sections []romSection
 	current := -1
 	zipList := ""
 	filling := -1 // the unnamed part whose hex text is being read
 	var text strings.Builder
+	// the header's <rbf>, read as parseMRAResult reads it: a child of the
+	// root, the last with any text winning, as in Main
+	depth, inRBF := 0, false
+	var rbfText strings.Builder
 	attr := func(el xml.StartElement, key string) (string, bool) {
 		for _, a := range el.Attr {
 			if strings.EqualFold(a.Name.Local, key) {
@@ -674,13 +756,17 @@ func parseROMSections(p string, inline bool) ([]romSection, string) {
 			// that fails to read stops Main as well
 			var syntax *xml.SyntaxError
 			if errors.As(err, &syntax) {
-				return nil, romListUnreadable
+				return nil, "", romListUnreadable
 			}
-			return nil, menuUnreadable
+			return nil, "", menuUnreadable
 		}
 		switch el := tok.(type) {
 		case xml.StartElement:
+			depth++
 			switch strings.ToLower(el.Name.Local) {
+			case "rbf":
+				inRBF = depth == 2
+				rbfText.Reset()
 			case "rom":
 				v, _ := attr(el, "index")
 				index := mainAtoi(v)
@@ -735,7 +821,17 @@ func parseROMSections(p string, inline bool) ([]romSection, string) {
 			if filling >= 0 {
 				text.Write(el)
 			}
+			if inRBF {
+				rbfText.Write(el)
+			}
 		case xml.EndElement:
+			depth--
+			if inRBF {
+				if v := strings.TrimSpace(rbfText.String()); v != "" {
+					rbf = v
+				}
+				inRBF = false
+			}
 			switch strings.ToLower(el.Name.Local) {
 			case "part":
 				if filling >= 0 && current >= 0 {
@@ -747,7 +843,7 @@ func parseROMSections(p string, inline bool) ([]romSection, string) {
 			}
 		}
 	}
-	return sections, ""
+	return sections, rbf, ""
 }
 
 // mainHex turns a part's inline text into bytes as Main's hexstr_to_char

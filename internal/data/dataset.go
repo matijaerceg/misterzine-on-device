@@ -269,7 +269,9 @@ func coverage(catalogue []Row) map[string]string {
 }
 
 // LocalDigest summarises a set of local rows: it changes only when a row is
-// added, removed, or launches a different file or core.
+// added, removed, launches a different file or core, or becomes beta or
+// stops being one. A scan publishes new local rows only when this changes,
+// so a core the catalogue starts or stops gating must show here.
 func LocalDigest(local []Row) string {
 	if len(local) == 0 {
 		return ""
@@ -277,7 +279,11 @@ func LocalDigest(local []Row) string {
 	parts := make([]string, 0, len(local))
 	for i := range local {
 		r := &local[i]
-		parts = append(parts, r.K+"|"+r.MRA+"|"+r.Core)
+		p := r.K + "|" + r.MRA + "|" + r.Core
+		if r.Beta {
+			p += "|beta:" + r.Gate
+		}
+		parts = append(parts, p)
 	}
 	sort.Strings(parts)
 	h := sha256.Sum256([]byte(strings.Join(parts, "\n")))

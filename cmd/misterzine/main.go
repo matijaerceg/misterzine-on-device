@@ -1269,6 +1269,9 @@ type scanResult struct {
 	// altCores are the own cores of the versions that run on another core
 	// than their row's, or sit outside the _alternatives folders
 	altCores map[string]string
+	// access is the catalogue's word on each core, read against this
+	// scan's cores; the final pass hands it to the ROM check
+	access *scan.CoreAccess
 }
 
 // scanDiag is what a card scan found, kept for Troubleshooting -> Send a
@@ -1444,7 +1447,8 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 	for _, a := range local.Accounted {
 		diag.files = append(diag.files, report.File{Path: a.Path, Reason: a.Reason + " (catalogue row " + a.K + ")"})
 	}
-	res := scanResult{index: idx, status: st, owners: owners, gen: gen, alts: resolved, altCores: local.VersionCores, notice: notice, final: true, hidden: hidden, iniFound: iniFound, diag: diag}
+	res := scanResult{index: idx, status: st, owners: owners, gen: gen, alts: resolved, altCores: local.VersionCores, notice: notice, final: true, hidden: hidden, iniFound: iniFound, diag: diag,
+		access: scan.NewCoreAccess(catalogue, idx)}
 	if nextGen != gen {
 		// The row set changes: statuses must index into the new rows.
 		res.status, res.owners = scan.Statuses(h.card, idx, merged)

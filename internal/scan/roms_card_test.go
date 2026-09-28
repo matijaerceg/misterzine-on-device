@@ -89,7 +89,7 @@ func TestROMCheckCard(t *testing.T) {
 // every named part's zip list must have one file present, index-0
 // sections being alternatives.
 func presenceOnly(card, rel string) string {
-	sections, issue := parseROMSections(filepath.Join(card, filepath.FromSlash(rel)), false)
+	sections, _, issue := parseROMSections(filepath.Join(card, filepath.FromSlash(rel)), false)
 	if issue != "" {
 		return issue
 	}

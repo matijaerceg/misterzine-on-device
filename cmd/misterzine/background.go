@@ -84,6 +84,8 @@ func (h *host) receiveScan(r scanResult) {
 	if r.final && r.index != nil && current {
 		h.alts, h.altCores = r.alts, r.altCores
 		h.altGen = h.a.Data().Gen
+		// before the sweep, so its answers go by this catalogue and card
+		h.roms.SetAccess(r.access)
 		// the sweep starts on a later tick: set up in the same frame as the
 		// new row set's first repaint, it stretched that frame to 150-200 ms
 		// on a Pi

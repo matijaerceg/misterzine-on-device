@@ -168,8 +168,9 @@ func TestROMRequirements(t *testing.T) {
 		{"jtbeta older key", `<rom index="0" zip="game.zip"><part name="p"/></rom><rom index="17" zip="jtbeta.zip" md5="None"><part name="beta.bin" crc="` + prog + `"/></rom>`,
 			map[string][]member{"game.zip": {{name: "p", data: "p"}}, "jtbeta.zip": {{name: "beta.bin", data: "older key"}}},
 			wrong("jtbeta.zip", "beta.bin", "older key"), false},
+		// no <rbf> and no catalogue: TestROMCheckJotegoKey has the cores
 		{"jtbeta absent", `<rom index="0" zip="game.zip"><part name="p"/></rom><rom index="17" zip="jtbeta.zip" md5="None"><part name="beta.bin" crc="` + prog + `"/></rom>`,
-			map[string][]member{"game.zip": {{name: "p", data: "p"}}}, "Missing game ROM: jtbeta.zip", true},
+			map[string][]member{"game.zip": {{name: "p", data: "p"}}}, "Missing game ROM: jtbeta.zip; can't tell whether the MRA's core needs it", false},
 		{"a block outranks an earlier warning", `<rom index="1" zip="w.zip"><part name="p" crc="` + prog + `"/></rom><rom index="2" zip="gone.zip"><part name="q"/></rom>`,
 			map[string][]member{"w.zip": {{name: "p", data: "older"}}}, "Missing game ROM: gone.zip", true},
 		{"index-0 warning layout beats a blocked one", `<rom index="0" zip="absent.zip"><part name="a"/></rom><rom index="0" zip="w.zip"><part name="p" crc="` + prog + `"/></rom>`,
@@ -391,7 +392,7 @@ func TestROMCheckDetailsInBackground(t *testing.T) {
 	c.wait = time.Millisecond
 	release := make(chan struct{})
 	answer := ROMResult{"Missing game ROM: x.zip", true}
-	c.run = func(string) ROMResult { <-release; return answer }
+	c.run = func(string, *CoreAccess) ROMResult { <-release; return answer }
 	if got := c.Check("g.mra", false); got != (ROMResult{}) {
 		t.Fatalf("slow first check returned %+v", got)
 	}
@@ -411,7 +412,7 @@ func TestROMCheckDetailsInBackground(t *testing.T) {
 	c.results["g.mra"] = e
 	c.mu.Unlock()
 	fixed := make(chan struct{})
-	c.run = func(string) ROMResult { <-fixed; return ROMResult{} }
+	c.run = func(string, *CoreAccess) ROMResult { <-fixed; return ROMResult{} }
 	if got := c.Check("g.mra", false); got != answer {
 		t.Fatalf("stale result not reused: %+v", got)
 	}
@@ -433,7 +434,7 @@ func TestROMCheckDetailsInBackground(t *testing.T) {
 func TestROMCheckQuickNoSignal(t *testing.T) {
 	c := NewROMCheck(t.TempDir())
 	c.wait = 5 * time.Second
-	c.run = func(string) ROMResult { return ROMResult{"Missing game ROM: x.zip", true} }
+	c.run = func(string, *CoreAccess) ROMResult { return ROMResult{"Missing game ROM: x.zip", true} }
 	if got := c.Check("g.mra", false); got.Text == "" {
 		t.Fatal("quick check not waited for")
 	}
@@ -452,7 +453,7 @@ func TestROMSweep(t *testing.T) {
 	c := NewROMCheck(t.TempDir())
 	var mu sync.Mutex
 	var checked []string
-	c.run = func(rel string) ROMResult {
+	c.run = func(rel string, _ *CoreAccess) ROMResult {
 		mu.Lock()
 		checked = append(checked, rel)
 		mu.Unlock()
@@ -496,7 +497,7 @@ func TestROMSweep(t *testing.T) {
 
 	// a slow sweep gives way to the next one
 	c.pace = 50 * time.Millisecond
-	c.run = func(string) ROMResult { return ROMResult{} }
+	c.run = func(string, *CoreAccess) ROMResult { return ROMResult{} }
 	first := make(chan int, 1)
 	c.Sweep([]string{"a.mra", "b.mra", "c.mra", "d.mra"}, func(n int, _ time.Duration) { first <- n })
 	time.Sleep(10 * time.Millisecond)
