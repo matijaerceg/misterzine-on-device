@@ -227,6 +227,14 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                       "-out", f"out/quick-{orientation}", "-script",
                       "press select; shot chord-legend; space; shot layout-split; space; shot layout-picture; space; shot layout-text; space; "
                       "tab; shot shots-title; enter; shot favorite-added; release select; shot released; space; shot sorted"])
+    # MisterZine Arcade (beta): the layout motion steps once per displayed
+    # frame, so 100 ms after Select+Y is exactly halfway (step 6 of 12), and
+    # its last frame is the settled layout
+    game = "1942" if rotation else "defender"
+    steps = "; ".join(f"press select; press space; wait 100; shot to-{layout}-mid; release space; release select; wait 400; shot {layout}"
+                      for layout in ("split", "picture", "text", "list"))
+    scenarios.append([*rotation, "-beta", "-motion", "-images", "testdata/images",
+                      "-out", f"out/beta-layout-motion-{orientation}", "-script", f"type {game}; back; {steps}"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     # the pad's Menu button: Options from the list, closed again, Options

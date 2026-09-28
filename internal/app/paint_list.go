@@ -355,7 +355,9 @@ func (a *App) paintScrollbar(c *gfx.Canvas) {
 func (a *App) paintMarker(c *gfx.Canvas, r image.Rectangle, text string) {
 	mid := r.Min.Y + r.Dy()/2
 	c.HLine(r.Min.X, r.Max.X-1, mid, gen.Eva.Line)
-	s := " " + gfx.Fit(text, a.sm.Cols(r.Dx())-2) + " "
+	// fitted to the line at rest (restLayout); the list's edge clips it
+	w := r.Dx() + a.restLayout().List.Dx() - a.lay.List.Dx()
+	s := " " + gfx.Fit(text, a.sm.Cols(w)-2) + " "
 	x := r.Min.X + a.body.W
 	c.Fill(image.Rect(x, r.Min.Y, x+a.sm.Width(s), r.Max.Y), gen.Eva.Bg)
 	c.Text(x, r.Min.Y+2, a.sm, s, gen.Eva.Muted)
@@ -394,7 +396,14 @@ func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {
 		// the year is on the header line, so the title takes the date column
 		tw += a.dateCols() * rf.W
 	}
-	a.paintTitle(c, x, y, tw, d.Title, row.Beta, titleCol)
+	if fit := tw + a.restLayout().TitleW - l.TitleW; fit != tw {
+		// a framed layout motion: the title as it reads at rest, cut by
+		// its column's moving edge
+		col := &gfx.Canvas{RGBA: c.Sub(image.Rect(x, c.Rect.Min.Y, x+tw, c.Rect.Max.Y))}
+		a.paintTitle(col, x, y, fit, d.Title, row.Beta, titleCol)
+	} else {
+		a.paintTitle(c, x, y, tw, d.Title, row.Beta, titleCol)
+	}
 	if l.PictureColumns {
 		return
 	}

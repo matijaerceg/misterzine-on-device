@@ -382,6 +382,13 @@ func advance(a *app.App, clock time.Time, d time.Duration, present func()) time.
 			if a.OptionSamplesRunning() {
 				changed = a.OptionSampleFrame() || changed
 			}
+			if a.LayoutTransitionRunning() {
+				// the beta's layout motion steps once per displayed frame
+				if a.LayoutMotionFrame() {
+					changed = true
+					present()
+				}
+			}
 			nextFrame = nextFrame.Add(16667 * time.Microsecond)
 		}
 		if changed {

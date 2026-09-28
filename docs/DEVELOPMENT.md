@@ -78,6 +78,13 @@ go run ./cmd/mzharness -motion -images /path/to/misterzine/docs/images -out moti
   -script "shot start; press select; press space; frames split 33 7; release space; release select"
 ```
 
+With `-beta` a layout change steps once per displayed frame instead of by
+the clock: 12 steps at 60 Hz, the last one the settled layout. The harness
+displays a frame every 16.7 ms of its clock, so `frames split 17 14` saves
+every step. On a board, the debug state's `layout_frames` lists each
+presented frame of a layout change: its paint, vsync wait and copy times,
+the interval since the previous one and how far the motion had got.
+
 README screenshots are harness end states, captured against the site's
 published export (`docs/releases/data.json` and `meta.json`) with `-now` set to
 the day of the shoot and `-images` pointing at the site's `docs/images`, so
