@@ -180,6 +180,11 @@ type Config struct {
 	// vendor_product as in MiSTer's map file name: "a" or "b" overrides
 	// the MENU OK choice read from that map; absent means auto (okbutton.go).
 	OKButtons map[string]string
+	// BetaUnlock, set by the host of a locked Patreon beta build, opens the
+	// app on the lock screen (beta_lock.go) and checks a code there: nil
+	// unlocks, and the host has saved the batch's receipt; beta.ErrLocked
+	// is a wrong code, beta.ErrBuild a build that cannot be unlocked.
+	BetaUnlock func(code string) error
 }
 
 // App is the state machine.
@@ -267,6 +272,8 @@ type App struct {
 
 	arcadeIntroAt  time.Time
 	arcadeIntroBar int
+
+	lock *betaLock // the beta's lock screen, nil when the app is open (beta_lock.go)
 }
 
 type detailState struct {
@@ -320,6 +327,9 @@ func New(cfg Config, ds *data.Dataset, stored *data.SeenRecord) *App {
 	a.setRotation(cfg.Rotation)
 	a.SetData(ds, stored)
 	a.saver.lastInput = cfg.TimerNow()
+	if cfg.BetaUnlock != nil {
+		a.lock = newBetaLock()
+	}
 	return a
 }
 
@@ -769,6 +779,9 @@ func (a *App) Handle(ev platform.Event) bool {
 	if a.handleSaverInput(ev) {
 		return true
 	}
+	if a.lock != nil {
+		return a.handleLock(ev)
+	}
 	if a.cfg.ArcadeIntro {
 		return a.handleArcadeIntro(ev)
 	}
@@ -882,6 +895,12 @@ func (a *App) bounced(ev platform.Event) bool {
 // repeatStep says whether a held key repeats on the current screen and how
 // fast; 0 means it does not.
 func (a *App) repeatStep(k platform.Key, count int) time.Duration {
+	if a.lock != nil {
+		if a.lockRepeats(k) {
+			return repeatStep
+		}
+		return 0
+	}
 	switch a.screen {
 	case ScreenList:
 		switch k {
@@ -940,7 +959,7 @@ func (a *App) Tick(now time.Time) bool {
 		a.all = true
 		changed = true
 	}
-	if a.screen == ScreenUpdate {
+	if a.screen == ScreenUpdate && a.lock == nil {
 		// Stay in the host's normal event loop so update progress and cancellation
 		// keep arriving while the log scrolls. NextTick schedules these repeats.
 		if k := a.rep.due(now, a.repeatStep); k != platform.KeyNone {
@@ -1048,6 +1067,9 @@ func (a *App) act(k platform.Key) bool {
 		a.all = true
 	}
 	a.listMotion = listMotion{}
+	if a.lock != nil {
+		return a.actLock(k)
+	}
 	switch a.screen {
 	case ScreenScan:
 		if k == platform.KeyBack || (k == platform.KeyEnter && a.scanReady) {
@@ -1331,6 +1353,14 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 		// the saver shows the picture it froze on its first frame; the
 		// screen under it is painted again when a key wakes the app
 		a.paintSaver(c)
+	} else if a.lock != nil {
+		// the lock screen instead of every other screen: nothing under it
+		// is painted or asks for pictures
+		c.Fill(c.Rect, gen.Eva.Bg)
+		a.paintLock(c)
+		if a.saver.active {
+			a.paintSaver(c)
+		}
 	} else {
 		c.Fill(c.Rect, gen.Eva.Bg)
 		switch a.screen {

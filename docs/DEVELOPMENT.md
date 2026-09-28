@@ -88,6 +88,28 @@ steps. `tools/startup_logo.py` renders the checked-in outlined SVG into the
 embedded 160×106 two-tone PNG (requires Pillow and svgpathtools). The app
 draws it at native size in every orientation, without runtime scaling.
 
+## Patreon beta build
+
+The Patreon beta, MisterZine Arcade, is this source built with
+`-X github.com/matijaerceg/misterzine-on-device/internal/beta.Channel=beta`.
+A members' release also sets `beta.Batch` (lowercase letters, digits and
+dashes) and `beta.CodeSHA256` (the SHA-256 of the batch's six-digit code, as
+64 lowercase hex digits; never the code itself). Such a build opens on a lock
+screen until the code is entered, then saves
+`misterzine/beta-unlocks/<batch>-<sha>.receipt` beside `settings.json`, so each
+batch asks once, an older batch keeps opening after a rollback, and a new
+batch needs its new code. A beta build without a code is unlocked. While the
+lock screen is up the app saves nothing else. `misterzine -version` names the
+channel and batch and exits 2 when the build's beta values do not belong
+together. The gate is a convenience for members, not protection: a six-digit
+code can be found from its hash, and a modified build skips the check.
+
+The beta's main-menu entry is `MisterZine Arcade.mgl`; it loads the same
+`misterzine` setname as the free build's `MisterZine.mgl`, and each build
+removes the other's entry when it writes its own. The harness renders the
+beta with `-beta` (unlocked, with the BETA mark) and its lock screen with
+`-beta-locked`, whose code is 123456.
+
 ## Device tools and debugging
 
 Set `PI` to your device's IP or SSH hostname when using `tools/dev.sh`; Go

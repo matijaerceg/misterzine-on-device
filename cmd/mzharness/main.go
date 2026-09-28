@@ -11,6 +11,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -35,6 +37,9 @@ import (
 )
 
 const allViews = "shot list; enter; shot details; wait 600; enter; shot screen; back; back; tab; shot filter; back; back; shot options; home; pagedown*2; right; down*4; enter; shot calibrate; back; end; shot options-bottom; back"
+
+// harnessCode is the code -beta-locked asks for.
+const harnessCode = "123456"
 
 func main() {
 	// Fixture timestamps must not depend on the machine running the harness.
@@ -77,8 +82,20 @@ func main() {
 	splash := flag.Bool("splash", false, "show the startup logo fade")
 	localPath := flag.String("local", "", "local rows fixture (a data.json-shaped array of rows the card scan would add)")
 	betaBuild := flag.Bool("beta", false, "render the Patreon beta build (MisterZine Arcade) instead of the free one")
+	betaLocked := flag.Bool("beta-locked", false, "render the beta build locked behind the test code "+harnessCode+" (implies -beta; the unlock is saved in a temporary folder)")
 	flag.Parse()
-	beta.Set(*betaBuild)
+	beta.Set(*betaBuild || *betaLocked)
+	unlockDir := ""
+	if *betaLocked {
+		sum := sha256.Sum256([]byte(harnessCode))
+		beta.Batch, beta.CodeSHA256 = "harness", hex.EncodeToString(sum[:])
+		dir, err := os.MkdirTemp("", "mzharness-beta-")
+		if err != nil {
+			die(err)
+		}
+		defer os.RemoveAll(dir)
+		unlockDir = dir
+	}
 
 	rows, meta := load(*dataPath, *metaPath)
 	if *localPath != "" {
@@ -145,6 +162,10 @@ func main() {
 			}
 			return nil
 		},
+	}
+	if beta.Check(unlockDir) != nil {
+		// as the device does: the lock screen until the code is entered
+		cfg.BetaUnlock = func(code string) error { return beta.Unlock(unlockDir, code) }
 	}
 	if *romIssue != "" {
 		// the background check knows every file, and finds the same fault

@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/app"
+	"github.com/matijaerceg/misterzine-on-device/internal/beta"
 	"github.com/matijaerceg/misterzine-on-device/internal/buildinfo"
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/debugsrv"
@@ -140,6 +141,11 @@ func main() {
 	flag.Parse()
 	if *version {
 		fmt.Println("misterzine " + buildinfo.String())
+		if err := beta.Validate(); err != nil {
+			// the release workflow checks a beta build this way
+			fmt.Fprintln(os.Stderr, "misterzine:", err)
+			os.Exit(2)
+		}
 		return
 	}
 	os.Exit(run(*root, *card, *ini, *debugAddr, *resume))
@@ -372,6 +378,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			}
 		},
 	}
+	cfg.BetaUnlock = betaLock(root, lg)
 	var seen *data.SeenRecord
 	if hasState && (len(h.state.Seen.Cur) > 0 || h.state.Seen.T != "") {
 		seen = &h.state.Seen
@@ -424,7 +431,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 				return map[string]any{
 					"detail_frames": h.detailFrames,
 					"page_frames":   h.pageFrames, "page_transitions": h.a.PageTransitions(),
-					"version": buildinfo.String(), "screen": h.a.Screen().String(), "cursor": h.a.CursorKey(),
+					"version": buildinfo.String(), "screen": h.a.Screen().String(), "locked": h.a.Locked(), "cursor": h.a.CursorKey(),
 					"canvas": h.a.Canvas(), "applied_canvas": h.appliedCanvas,
 					"sort": h.a.Sort().String(), "rows": len(h.a.Data().Rows), "fb": h.fb.Geometry().String(),
 					"search": h.a.Search(), "filters": h.a.Filters(), "rotation": h.a.Rotation().String(), "inset": fmt.Sprint(h.a.Inset()), "devices": h.input.Devices(),
@@ -594,6 +601,23 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			h.saveAll(true)
 			return h.doLaunch()
 		}
+	}
+}
+
+// betaLock is the lock screen's code check for a Patreon beta build still
+// waiting for this batch's code, which then opens on the lock screen; nil
+// when the app may open (the free build, a beta without a code, a batch
+// unlocked on this card). The receipt goes beside settings.json.
+func betaLock(root string, lg *log.Logger) func(code string) error {
+	err := beta.Check(root)
+	if err == nil {
+		return nil
+	}
+	lg.Printf("beta: locked (%v)", err)
+	return func(code string) error {
+		err := beta.Unlock(root, code)
+		lg.Printf("beta: unlock: %v", err)
+		return err
 	}
 }
 
@@ -954,6 +978,11 @@ func (h *host) pendingSave() bool {
 }
 
 func (h *host) saveAll(final bool) {
+	if h.a != nil && h.a.Locked() {
+		// the lock screen changes nothing, and quitting from it is not a
+		// visit: the since-visit marks wait for the unlock
+		return
+	}
 	if h.dirty || final {
 		st := store.State{Schema: 1,
 			LastOpen: h.now().UTC().Format(time.RFC3339), DataHash: h.a.Data().Hash, Filters: h.a.Filters(), Versions: h.a.Versions(), Recents: h.a.Recents()}
