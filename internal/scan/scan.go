@@ -352,11 +352,12 @@ func ScanAlternativesWithDirs(card, cachePath string) ([]Alt, []Skipped, []Skipp
 }
 
 func scanAlternatives(card, cachePath string) ([]Alt, []Skipped, []Skipped, error) {
-	roots := altRoots(card)
+	roots, problems := altRoots(card)
 	if len(roots) == 0 {
-		return nil, nil, nil, nil
+		return nil, nil, nil, errors.Join(problems...)
 	}
 	dc := openDirCache(cachePath)
+	dc.problems = append(dc.problems, problems...)
 	var out []Alt
 	var skipped, gone []Skipped
 	for _, root := range roots {
@@ -490,28 +491,37 @@ type altRoot struct {
 }
 
 // altRoots lists the _alternatives folders present on the card: the top one
-// first, then one per _Arcade/_<database> folder that has its own.
-func altRoots(card string) []altRoot {
+// first, then one per _Arcade/_<database> folder that has its own. A folder
+// that is not there is simply no root; any other failure to look is
+// returned, since dropping it quietly would hide every version in it.
+func altRoots(card string) ([]altRoot, []error) {
 	var roots []altRoot
-	top := "_Arcade/_alternatives"
-	if st, err := os.Stat(filepath.Join(card, filepath.FromSlash(top))); err == nil && st.IsDir() {
-		roots = append(roots, altRoot{rel: top})
+	var problems []error
+	add := func(rel, key string) {
+		st, err := os.Stat(filepath.Join(card, filepath.FromSlash(rel)))
+		switch {
+		case err == nil && st.IsDir():
+			roots = append(roots, altRoot{rel: rel, key: key})
+		case err != nil && !errors.Is(err, fs.ErrNotExist):
+			problems = append(problems, err)
+		}
 	}
+	add("_Arcade/_alternatives", "")
 	entries, err := os.ReadDir(filepath.Join(card, "_Arcade"))
 	if err != nil {
-		return roots
+		if !errors.Is(err, fs.ErrNotExist) {
+			problems = append(problems, err)
+		}
+		return roots, problems
 	}
 	for _, e := range entries {
 		n := e.Name()
 		if !e.IsDir() || !strings.HasPrefix(n, "_") || n == "_alternatives" {
 			continue
 		}
-		rel := path.Join("_Arcade", n, "_alternatives")
-		if st, err := os.Stat(filepath.Join(card, filepath.FromSlash(rel))); err == nil && st.IsDir() {
-			roots = append(roots, altRoot{rel: rel, key: n + "/"})
-		}
+		add(path.Join("_Arcade", n, "_alternatives"), n+"/")
 	}
-	return roots
+	return roots, problems
 }
 
 // Directory mtimes do not change when an existing MRA is rewritten.

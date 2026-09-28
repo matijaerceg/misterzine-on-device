@@ -2,9 +2,11 @@ package scan
 
 import (
 	"bytes"
+	"errors"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -221,5 +223,43 @@ func TestAlternativeSkipsGoneFolder(t *testing.T) {
 	fail(fs.ErrPermission)
 	if alts, _, dirs, err := ScanAlternativesWithDirs(card, ""); err == nil || len(alts) != 1 || len(dirs) != 0 {
 		t.Fatalf("unreadable folder: alts=%v dirs=%+v err=%v", alts, dirs, err)
+	}
+}
+
+// An _alternatives folder the scan cannot look at is a scan problem naming
+// it, not a folder quietly left out with every version in it. Here _Arcade
+// lists its names but, without search permission, nothing inside it can be
+// reached.
+func TestAlternativeRootReadErrorIsAProblem(t *testing.T) {
+	if runtime.GOOS == "windows" || os.Geteuid() == 0 {
+		t.Skip("needs folder permissions that apply to this user")
+	}
+	card := t.TempDir()
+	for rel, set := range map[string]string{
+		"_Arcade/_alternatives/_Game/game.mra":       "gamea",
+		"_Arcade/_DB/_alternatives/_Other/other.mra": "othera",
+	} {
+		p := filepath.Join(card, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(p), 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(mra(set, set, "game", "")), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	arcade := filepath.Join(card, "_Arcade")
+	if err := os.Chmod(arcade, 0600); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.Chmod(arcade, 0755) })
+	alts, _, err := ScanAlternativesWithError(card, "")
+	if !errors.Is(err, fs.ErrPermission) || !strings.Contains(err.Error(), "_alternatives") || len(alts) != 0 {
+		t.Fatalf("roots out of reach: alts=%v err=%v", alts, err)
+	}
+	if err := os.Chmod(arcade, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if alts, _, err := ScanAlternativesWithError(card, ""); err != nil || len(alts) != 2 {
+		t.Fatalf("roots in reach: alts=%v err=%v", alts, err)
 	}
 }
