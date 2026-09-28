@@ -1,10 +1,9 @@
 # MisterZine Arcade (Patreon beta)
 
 MisterZine Arcade is the members' build of MisterZine for supporters at
-[patreon.com/MisterZine](https://www.patreon.com/MisterZine). It is the free
-MisterZine plus the features still being finished, and it takes the free
-version's place on your card: favorites and settings come along, and Update
-All keeps it current. You can go back to the free version at any time.
+[patreon.com/MisterZine](https://www.patreon.com/MisterZine). It takes the
+free version's place on your card: favorites and settings come along, and
+Update All keeps it current. You can go back to the free version at any time.
 
 ## Install
 

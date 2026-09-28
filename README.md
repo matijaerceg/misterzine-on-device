@@ -35,23 +35,17 @@ uses a 320x240 framebuffer, with horizontal and rotated CRT layouts.
 ## Install once
 
 You need a current MiSTer system with Downloader (usually run through Update All).
-MisterZine uses MiSTer's framebuffer console, enabled by default. Only change
-`fb_terminal` in MiSTer.ini if you previously set it to `0`; it needs to be `1`.
+Display setup is part of installation: games can work on your screen while
+MisterZine still needs a display setting.
 
-**Choose HDMI or CRT for MisterZine's interface.** It does not currently mirror
-to a normal HDMI display and a 15 kHz CRT at their separate resolutions.
-Game cores keep their own display settings. The choice can cover the whole
-MiSTer menu or MisterZine alone, so an HDMI display can keep the menu and the
-terminal while the CRT shows MisterZine. For CRT setup or switching outputs,
-see [display setup](docs/TROUBLESHOOTING.md#display-setup). A MiSTercade or
-other JAMMA cabinet needs one extra INI section, described under
-[JAMMA cabinets](docs/TROUBLESHOOTING.md#jamma-cabinets-mistercade).
-
-1. Download [downloader_misterzine.ini](https://github.com/matijaerceg/misterzine-on-device/releases/latest/download/downloader_misterzine.ini).
-2. Copy it to the root of your SD card, beside `downloader.ini`.
-3. Run Update All or Downloader.
-4. Run **MisterZine-Setup** from Scripts once.
-5. Return to the main menu and choose **MisterZine Arcade**.
+1. **[Set up your display](docs/DISPLAY_SETUP.md).** Choose your connection:
+   HDMI, an analog-board CRT, an HDMI-to-VGA adapter, a JAMMA cabinet,
+   S-Video/composite, or both HDMI and CRT. Restart MiSTer if you change MiSTer.ini.
+2. Download [downloader_misterzine.ini](https://github.com/matijaerceg/misterzine-on-device/releases/latest/download/downloader_misterzine.ini).
+3. Copy it to the root of your SD card, beside `downloader.ini`.
+4. Run Update All or Downloader.
+5. Run **MisterZine-Setup** from Scripts once.
+6. Return to the main menu and choose **MisterZine Arcade**.
 
 **After setup, open MisterZine directly from the main menu.** Its launcher
 starts automatically at boot. You do not need to visit Scripts each time.
@@ -107,7 +101,8 @@ reinstall. Removal requires a current Downloader with uninstall support.
 ## More information
 
 - [User guide](docs/USER_GUIDE.md): controls, Options, Update All, installation and removal.
-- [Troubleshooting](docs/TROUBLESHOOTING.md): display setup, launching and saved data.
+- [Display setup](docs/DISPLAY_SETUP.md): connection-specific settings and display limitations.
+- [Troubleshooting](docs/TROUBLESHOOTING.md): display warnings, launching and saved data.
 - [Development](docs/DEVELOPMENT.md): builds, tests, screenshots and opt-in debugging.
 - [Changelog](CHANGELOG.md) and [release procedure](docs/RELEASING.md).
 
