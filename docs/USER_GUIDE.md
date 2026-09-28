@@ -338,8 +338,9 @@ MiSTer takes each file from the first archive in the MRA's list that has it,
 by CRC or else by name, and looks no further. When a later archive holds the
 expected file, the warning ends with `MiSTer never reaches the one in` that
 archive: Bagman (Stern Electronics, set 2) lists `bagman.zip` before
-`bagmans4.zip`, so the parent's `p3.bin` is the one loaded. Putting the
-clone's archive first in the MRA, or using a merged set, fixes it.
+`bagmans4.zip`, so the parent's `p3.bin` is the one loaded. The MRA needs the
+clone's archive first; that is a fix for the MRA's maintainers, since Update
+All restores an MRA edited on the card.
 
 `ROM check incomplete: couldn't read the MRA's ROM list` means MisterZine's
 reader could not make sense of the MRA. MiSTer reads MRAs more forgivingly,
@@ -694,8 +695,9 @@ the marks to come. Each changed entry carries its own green date wherever it
 sorts, so an entry the catalogue added late under an old date is still found,
 and the Since last look filter lists exactly those entries.
 The On the card and ROM check choices count within your search and the other
-filters, like every other section: with Beta off, a beta game missing its key
-no longer counts as a ROM problem. Favorites mode always shows favorites only;
+filters, like every other section: with Beta off, a beta game from the
+catalogue that lacks its key no longer counts as a ROM problem. Favorites mode
+always shows favorites only;
 use Y in the main view to leave it.
 
 Card scans run quietly on launch. Options -> Rescan card shows a result screen

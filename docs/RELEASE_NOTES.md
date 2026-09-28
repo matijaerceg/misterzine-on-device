@@ -6,7 +6,7 @@
 - A game file MisterZine cannot fully read now only gets a warning instead of being refused, since MiSTer may well load it.
 - Space Demon and Space Firebird start again. Thanks to dh3lix for reporting it.
 - Coin-Op's beta Black Heart no longer shows as installed when the Black Heart on your card is Kuze's free one: game details say whose version is there. The same goes for Wardner.
-- Filters -> On the card and ROM check count within your search and other filters, so hidden beta games no longer count as ROM problems.
+- Filters -> On the card and ROM check counts now follow your search and other filters.
 - A game named like another one in the list, such as Midway's cocktail Space Invaders Part II, shows what sets it apart.
 - A damaged or vanished file on the card no longer marks every card scan incomplete.
 
