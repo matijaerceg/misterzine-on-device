@@ -2,8 +2,6 @@ package app
 
 import (
 	"time"
-
-	"github.com/matijaerceg/misterzine-on-device/internal/gen"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
@@ -195,7 +193,7 @@ func (a *App) paintHoldBar(c *gfx.Canvas) {
 	if a.cfg.ArcadeIntro {
 		line, y = l.Hint, l.Hint.Min.Y
 	}
-	c.HLine(line.Min.X, line.Min.X+bar-1, y, gen.Eva.Ok)
+	c.HLine(line.Min.X, line.Min.X+bar-1, y, pal.Ok)
 }
 
 // openOptions opens Options over the current screen and remembers where

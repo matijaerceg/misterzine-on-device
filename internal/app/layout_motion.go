@@ -4,8 +4,6 @@ import (
 	"image"
 	"math"
 	"time"
-
-	"github.com/matijaerceg/misterzine-on-device/internal/gen"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 )
 
@@ -146,7 +144,7 @@ func (a *App) startLayoutMotion(m layoutMotion) {
 	// Resolve only the destination image size. Never send intermediate sizes to
 	// the image worker/cache while the pane is travelling.
 	c := gfx.New(a.lay.W, a.lay.H)
-	c.Fill(c.Rect, gen.Eva.Bg)
+	c.Fill(c.Rect, pal.Bg)
 	images := a.cfg.Images
 	if m.art != nil {
 		size := image.Point{}
@@ -274,18 +272,18 @@ func (a *App) paintLayoutMotion(c *gfx.Canvas) {
 	// what the settled list adds over its rows, so the last frame does not
 	// bring it in at once
 	if len(a.view) == 0 {
-		rows.Text(l.List.Min.X+a.body.W, l.List.Min.Y+l.Line, a.body, gfx.Fit(a.emptyListMessage(), m.rest.Cols-1), gen.Eva.Muted)
+		rows.Text(l.List.Min.X+a.body.W, l.List.Min.Y+l.Line, a.body, gfx.Fit(a.emptyListMessage(), m.rest.Cols-1), pal.Muted)
 	}
 	if pos := a.pinnedPos(); pos >= 0 {
 		r := l.lineRect(0)
-		rows.Fill(r, gen.Eva.Bg)
+		rows.Fill(r, pal.Bg)
 		a.paintMarker(rows, r, a.groupLabel(a.view[pos]), a.headerNote(pos))
 	}
 	a.paintScrollbar(c)
 	// Keep the pane opaque while its contents move with it; nothing of it
 	// spills past the body when it slides out for the text layout.
 	body := &gfx.Canvas{RGBA: c.Sub(final.Body)}
-	body.Fill(l.Pane, gen.Eva.Bg)
+	body.Fill(l.Pane, pal.Bg)
 	if m.art != nil {
 		scaleLayoutArt(body, m.art, l.Thumb, m.artX)
 	}
@@ -412,6 +410,6 @@ func (d paneDivider) interpolate(to paneDivider, p float64) paneDivider {
 }
 func (d paneDivider) paint(c *gfx.Canvas, body image.Rectangle) {
 	b := &gfx.Canvas{RGBA: c.Sub(body)}
-	b.VLine(d[0].X, d[0].Y, d[1].Y, gen.Eva.Line)
-	b.HLine(d[1].X, d[2].X, d[2].Y, gen.Eva.Line)
+	b.VLine(d[0].X, d[0].Y, d[1].Y, pal.Line)
+	b.HLine(d[1].X, d[2].X, d[2].Y, pal.Line)
 }

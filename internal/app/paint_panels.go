@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
-	"github.com/matijaerceg/misterzine-on-device/internal/gen"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 	"github.com/matijaerceg/misterzine-on-device/internal/updater"
@@ -77,7 +76,7 @@ func (a *App) paintLabel(c *gfx.Canvas, x, y, cols int, e panelEntry, col color.
 	if e.child {
 		x += 2 * e.depth * a.sm.W
 		cols -= 2 * e.depth
-		c.Text(x, y, a.sm, gfx.ChildMark, gen.Eva.Muted)
+		c.Text(x, y, a.sm, gfx.ChildMark, pal.Muted)
 		x += 2 * a.sm.W
 		cols -= 2
 	}
@@ -660,7 +659,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 	font := a.sm
 	a.paintStatus(c)
 	if a.notice == "" {
-		c.Fill(l.Status, gen.Eva.Surface)
+		c.Fill(l.Status, pal.Surface)
 		title := "Filters"
 		if a.screen == ScreenOptions || a.screen == ScreenSaverOptions {
 			title = "Options"
@@ -672,10 +671,10 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 		} else if a.screen == ScreenCredits {
 			title = "Credits"
 		}
-		c.Text(l.Status.Min.X+2, l.Status.Min.Y+2, a.sm, title, gen.Eva.Accent)
+		c.Text(l.Status.Min.X+2, l.Status.Min.Y+2, a.sm, title, pal.Accent)
 		a.paintHoldBar(c)
 	}
-	c.Fill(l.Body, gen.Eva.Bg)
+	c.Fill(l.Body, pal.Bg)
 	// Filters frames its entries. Options frames the help text instead, at
 	// the bottom of the body; the build and data details are greyed rows at
 	// the end of the list, so they take no room unless scrolled to.
@@ -688,7 +687,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 		helpBox = image.Rect(l.Body.Min.X, l.Body.Max.Y-helpH, l.Body.Max.X, l.Body.Max.Y)
 		inner = image.Rect(l.Body.Min.X+2, l.Body.Min.Y+2, l.Body.Max.X-2, helpBox.Min.Y-2)
 	} else {
-		c.Box(l.Body, gen.Eva.Line)
+		c.Box(l.Body, pal.Line)
 		inner = l.Body.Inset(2)
 	}
 	lh := font.H
@@ -740,7 +739,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 		}
 		r := image.Rect(inner.Min.X, y, inner.Max.X, y+rowH(n))
 		if n == p.cursor {
-			c.Fill(r, gen.Eva.Surface)
+			c.Fill(r, pal.Surface)
 		}
 		switch {
 		case e.header && e.glyph != "":
@@ -751,18 +750,18 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 				arrow = gfx.ArrowRight
 			}
 			title := gfx.Fit(arrow+" "+e.glyph+" "+e.text, cols)
-			col := gen.Eva.Muted
+			col := pal.Muted
 			if n == p.cursor {
-				col = gen.Eva.Accent
+				col = pal.Accent
 			}
 			w := c.Text(inner.Min.X+2, y, font, title, col)
 			if x := inner.Min.X + 2 + w + font.W; x < edge {
-				c.HLine(x, edge-1, y+font.H/2, gen.Eva.Line)
+				c.HLine(x, edge-1, y+font.H/2, pal.Line)
 			}
 		case e.header && e.info:
-			c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, cols), gen.Eva.Muted)
+			c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, cols), pal.Muted)
 		case e.header:
-			c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, cols), gen.Eva.Accent)
+			c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, cols), pal.Accent)
 		case e.kind == "year" || e.kind == "decade" || e.kind == "res" || e.kind == "base" || e.kind == "beta" || e.kind == "src" || e.kind == "rot" || e.kind == "plr" || e.kind == "genre" || e.kind == "directions" || e.kind == "buttons" || e.kind == "install" || e.kind == "rom" || e.kind == "fav" || e.kind == "since" || e.kind == "view":
 			mark := "[ ] "
 			if e.checked {
@@ -776,22 +775,22 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 				suffix = " (" + itoa(e.count) + ")"
 			}
 			text := mark + gfx.Fit(e.text, cols-len(mark)-len(suffix)) + suffix
-			col := gen.Eva.Fg
+			col := pal.Fg
 			if e.disabled && a.screen == ScreenViews {
-				col = gen.Eva.Muted // the last view on stays on
+				col = pal.Muted // the last view on stays on
 			} else if n == p.cursor && (a.screen == ScreenOptions || a.screen == ScreenSaverOptions) {
-				col = gen.Eva.Accent
+				col = pal.Accent
 			}
 			c.Text(inner.Min.X+2, y, font, gfx.Fit(text, cols), col)
 		case len(e.vals) > 0:
-			col := gen.Eva.Fg
+			col := pal.Fg
 			if n == p.cursor {
-				col = gen.Eva.Accent
+				col = pal.Accent
 			}
 			// the value with an arrow on each side that can still move
 			la, ra := " ", " "
 			if e.disabled {
-				col = gen.Eva.Muted // shown, not changeable here
+				col = pal.Muted // shown, not changeable here
 			} else {
 				if e.idx > 0 {
 					la = gfx.ArrowLeft
@@ -839,11 +838,11 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 				}
 			}
 		default:
-			col := gen.Eva.Fg
+			col := pal.Fg
 			if e.disabled {
-				col = gen.Eva.Muted // nothing to do yet
+				col = pal.Muted // nothing to do yet
 			} else if n == p.cursor && a.screen != ScreenFilter {
-				col = gen.Eva.Accent
+				col = pal.Accent
 			}
 			a.paintLabel(c, inner.Min.X+2, y, cols, e, col)
 		}
@@ -852,13 +851,13 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 	// more above or below: a cue in the gutter of the first or last drawn
 	// row, only while entries are actually out of view
 	if p.top > 0 {
-		c.Text(edge, inner.Min.Y, font, gfx.ArrowUp, gen.Eva.Muted)
+		c.Text(edge, inner.Min.Y, font, gfx.ArrowUp, pal.Muted)
 	}
 	if p.top+shown < len(p.entries) {
-		c.Text(edge, lastY, font, gfx.ArrowDown, gen.Eva.Muted)
+		c.Text(edge, lastY, font, gfx.ArrowDown, pal.Muted)
 	}
 	if a.screen == ScreenOptions || a.screen == ScreenSaverOptions {
-		c.Box(helpBox, gen.Eva.Line)
+		c.Box(helpBox, pal.Line)
 		if p.cursor < len(p.entries) && a.screen == ScreenOptions && p.entries[p.cursor].kind == "list-layout" {
 			a.paintLayoutPreviews(c, helpBox)
 		} else if p.cursor < len(p.entries) && a.screen == ScreenOptions && (p.entries[p.cursor].kind == "title-font" || p.entries[p.cursor].kind == "scroll" || p.entries[p.cursor].kind == "smooth-scroll" || p.entries[p.cursor].kind == "hold-delay") {
@@ -866,7 +865,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 		} else if p.cursor < len(p.entries) && p.entries[p.cursor].help != "" {
 			hy := helpBox.Min.Y + 3
 			for _, ln := range gfx.Wrap(p.entries[p.cursor].help, font.Cols(helpBox.Dx()-6), helpLines) {
-				c.Text(helpBox.Min.X+3, hy, font, ln, gen.Eva.Fg)
+				c.Text(helpBox.Min.X+3, hy, font, ln, pal.Fg)
 				hy += font.H + 1
 			}
 		}
@@ -1388,7 +1387,7 @@ func (a *App) togglePanel() bool {
 		a.Notice(strings.TrimSuffix(e.text, " now")+gfx.Ellipsis, 3e9)
 		return true
 	default:
-		return false
+		return a.membersPress(e.kind)
 	}
 	a.SetFilters(f)
 	a.buildPanel()
@@ -1402,21 +1401,21 @@ func (a *App) SetPrefetch(on bool) { a.panel.prefetch = on }
 func (a *App) paintCalibrate(c *gfx.Canvas) {
 	l := &a.lay
 	full := c.Rect
-	c.Fill(full, gen.Eva.Bg)
-	c.Box(l.Root, gen.Eva.Accent)
-	c.Box(l.Root.Inset(4), gen.Eva.Line)
+	c.Fill(full, pal.Bg)
+	c.Box(l.Root, pal.Accent)
+	c.Box(l.Root.Inset(4), pal.Line)
 	// crosshair
 	cx, cy := full.Dx()/2, full.Dy()/2
-	c.HLine(cx-20, cx+20, cy, gen.Eva.Muted)
-	c.VLine(cx, cy-20, cy+20, gen.Eva.Muted)
+	c.HLine(cx-20, cx+20, cy, pal.Muted)
+	c.VLine(cx, cy-20, cy+20, pal.Muted)
 	// the d-pad nudges the top-right corner: a diagonal arrow points at it
 	// from inside the frame
 	ax, ay := l.Root.Max.X-1, l.Root.Min.Y
 	for i := 3; i < 20; i++ { // the shaft, from inside out
-		c.Fill(image.Rect(ax-i-1, ay+i-1, ax-i+1, ay+i+1), gen.Eva.Fg)
+		c.Fill(image.Rect(ax-i-1, ay+i-1, ax-i+1, ay+i+1), pal.Fg)
 	}
 	for i := 0; i < 8; i++ { // the head, hugging the corner
-		c.HLine(ax-8+i, ax-1, ay+i, gen.Eva.Fg)
+		c.HLine(ax-8+i, ax-1, ay+i, pal.Fg)
 	}
 	lines := []string{
 		"Sides: " + itoa(a.cfg.SafeInsetX) + " px",
@@ -1429,7 +1428,7 @@ func (a *App) paintCalibrate(c *gfx.Canvas) {
 	y := min(cy+24, l.Root.Max.Y-4-(len(lines)-1)*(a.sm.H+2)-a.sm.H)
 	for _, s := range lines {
 		s = gfx.Fit(s, a.sm.Cols(l.Root.Dx()-4))
-		c.Text(cx-a.sm.Width(s)/2, y, a.sm, s, gen.Eva.Fg)
+		c.Text(cx-a.sm.Width(s)/2, y, a.sm, s, pal.Fg)
 		y += a.sm.H + 2
 	}
 }

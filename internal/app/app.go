@@ -12,7 +12,6 @@ import (
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/fonts"
-	"github.com/matijaerceg/misterzine-on-device/internal/gen"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 	"github.com/matijaerceg/misterzine-on-device/internal/updater"
@@ -347,6 +346,7 @@ func New(cfg Config, ds *data.Dataset, stored *data.SeenRecord) *App {
 		a.lock = newBetaLock()
 		a.lock.free = cfg.CanSwitchToFree != nil && cfg.CanSwitchToFree()
 	}
+	a.membersStart()
 	return a
 }
 
@@ -1346,7 +1346,7 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 	a.validateLayoutMotion()
 	if !a.all && a.LayoutTransitionRunning() && a.layoutMotion.dirty {
 		a.wants = a.wants[:0]
-		a.logical.Fill(a.lay.Body, gen.Eva.Bg)
+		a.logical.Fill(a.lay.Body, pal.Bg)
 		a.paintLayoutMotion(a.logical)
 		return a.rotatePaint()
 	}
@@ -1395,7 +1395,7 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 		// the lock screen instead of every other screen: nothing under it
 		// is painted or asks for pictures; its switch to the free version
 		// shows that run's update screen
-		c.Fill(c.Rect, gen.Eva.Bg)
+		c.Fill(c.Rect, pal.Bg)
 		if a.lock.switching {
 			a.paintUpdate(c)
 		} else {
@@ -1405,7 +1405,7 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 			a.paintSaver(c)
 		}
 	} else {
-		c.Fill(c.Rect, gen.Eva.Bg)
+		c.Fill(c.Rect, pal.Bg)
 		switch a.screen {
 		case ScreenList:
 			a.paintList(c)
@@ -1548,15 +1548,15 @@ func itoa(n int) string {
 func statusGlyph(st data.Status) (string, rgb) {
 	switch st {
 	case data.StatusCurrent:
-		return "+", gen.Eva.Ok
+		return "+", pal.Ok
 	case data.StatusOutdated, data.StatusLikelyOutdated:
-		return "^", gen.Eva.Warn
+		return "^", pal.Warn
 	case data.StatusFoundUndated:
-		return "~", gen.Eva.Muted
+		return "~", pal.Muted
 	case data.StatusNotFound:
-		return "-", gen.Eva.Muted
+		return "-", pal.Muted
 	}
-	return " ", gen.Eva.Muted
+	return " ", pal.Muted
 }
 
 // statusText fits the pane's 20 columns.
@@ -1604,13 +1604,13 @@ func chips(r *data.Row, d *data.Derived) []string {
 func typeHue(base string) rgb {
 	switch base {
 	case "Arcade":
-		return gen.Eva.TypeArcade
+		return pal.TypeArcade
 	case "Console":
-		return gen.Eva.TypeConsole
+		return pal.TypeConsole
 	case "Computer":
-		return gen.Eva.TypeComputer
+		return pal.TypeComputer
 	}
-	return gen.Eva.TypeOther
+	return pal.TypeOther
 }
 
 // rotShort compresses the MAD rotation string for narrow pane lines.

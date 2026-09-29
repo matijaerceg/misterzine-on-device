@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
-	"github.com/matijaerceg/misterzine-on-device/internal/gen"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
@@ -84,19 +83,19 @@ func (a *App) nextArcadeIntroTick() time.Time {
 }
 
 func (a *App) paintArcadeIntro(c *gfx.Canvas) {
-	c.Fill(a.lay.Body, gen.Eva.Bg)
+	c.Fill(a.lay.Body, pal.Bg)
 	box := a.lay.Body.Inset(4)
-	c.Fill(box, gen.Eva.Bg)
-	c.Box(box, gen.Eva.Line)
+	c.Fill(box, pal.Bg)
+	c.Box(box, pal.Line)
 	x, y := box.Min.X+5, box.Min.Y+5
 	for _, line := range gfx.Wrap("MisterZine now shows arcade games by default. Enable other cores in Options > List > Show non-arcade cores. Your favorites are kept.", a.sm.Cols(box.Dx()-10), 30) {
-		c.Text(x, y, a.sm, line, gen.Eva.Fg)
+		c.Text(x, y, a.sm, line, pal.Fg)
 		y += a.sm.H + 2
 	}
 	y += a.sm.H + 2
 	for _, line := range []string{"Thanks for trying MisterZine!", "- Matija"} {
 		for _, part := range gfx.Wrap(line, a.sm.Cols(box.Dx()-10), 4) {
-			c.Text(x, y, a.sm, part, gen.Eva.Fg)
+			c.Text(x, y, a.sm, part, pal.Fg)
 			y += a.sm.H + 2
 		}
 	}

@@ -2,8 +2,6 @@ package app
 
 import (
 	"image"
-
-	"github.com/matijaerceg/misterzine-on-device/internal/gen"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
@@ -22,7 +20,7 @@ func (a *App) paintShot(c *gfx.Canvas) {
 	}
 	slots := shotSlots(row)
 	area := a.shotArea()
-	c.Fill(area, gen.Eva.Bg)
+	c.Fill(area, pal.Bg)
 	if len(slots) == 0 {
 		a.placeholder(c, area, "no shot for this row")
 	} else {
@@ -61,14 +59,14 @@ func (a *App) paintShot(c *gfx.Canvas) {
 		w := a.sm.Width(s) + 6
 		tab := image.Rect(l.Root.Max.X-w, l.Root.Max.Y-a.sm.H-4, l.Root.Max.X, l.Root.Max.Y)
 		c.Fill(tab, rgb{R: 0, G: 0, B: 0, A: 255})
-		c.Text(tab.Min.X+3, tab.Min.Y+2, a.sm, s, gen.Eva.Fg)
+		c.Text(tab.Min.X+3, tab.Min.Y+2, a.sm, s, pal.Fg)
 	}
 	if a.notice != "" {
 		lines := gfx.Wrap(a.notice, a.sm.Cols(l.Root.Dx()-8), 4)
 		box := image.Rect(l.Root.Min.X, l.Root.Max.Y-len(lines)*(a.sm.H+1)-6, l.Root.Max.X, l.Root.Max.Y)
-		c.Fill(box, gen.Eva.Surface)
+		c.Fill(box, pal.Surface)
 		for i, line := range lines {
-			c.Text(box.Min.X+4, box.Min.Y+3+i*(a.sm.H+1), a.sm, line, gen.Eva.Fg)
+			c.Text(box.Min.X+4, box.Min.Y+3+i*(a.sm.H+1), a.sm, line, pal.Fg)
 		}
 	}
 }

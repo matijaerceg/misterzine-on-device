@@ -5,8 +5,6 @@ import (
 	"math"
 	"math/rand/v2"
 	"time"
-
-	"github.com/matijaerceg/misterzine-on-device/internal/gen"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
@@ -517,7 +515,7 @@ func saverShotHue(frame []uint8, w, h, stride int) rgb {
 		}
 	}
 	if best < 0 {
-		return gen.Eva.Fg
+		return pal.Fg
 	}
 	// the bin's centre hue at moderate saturation and full value
 	hue := (float64(best) + .5) / 4
@@ -730,7 +728,7 @@ func (a *App) paintSaverCaption(c *gfx.Canvas) {
 	}
 	c.Fill(image.Rect(sx, y+th, sx+sw, y+th+strip), rgb{A: 255})
 	if !s.holdOK {
-		c.Text(sx+3, y+th+1, a.sm, saverShotNoCard, saverShotDim(gen.Eva.Muted, s.bright))
+		c.Text(sx+3, y+th+1, a.sm, saverShotNoCard, saverShotDim(pal.Muted, s.bright))
 		return
 	}
 	held := a.cfg.TimerNow().Sub(s.holdAt)

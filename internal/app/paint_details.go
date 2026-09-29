@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
-	"github.com/matijaerceg/misterzine-on-device/internal/gen"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
@@ -246,19 +245,19 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 		}
 		L = append(L, paneLine{label + data.ASCII(val), col})
 	}
-	fg, mu := gen.Eva.Fg, gen.Eva.Muted
+	fg, mu := pal.Fg, pal.Muted
 	if a.cfg.ROMIssue != nil {
 		entries := a.launchEntries(row, i)
 		if len(entries) > 0 {
 			e := entries[a.pickIn(entries)]
 			if e.ok {
 				if issue, _ := a.cfg.ROMIssue(e.path, false); issue != "" {
-					L = append(L, paneLine{issue, gen.Eva.Warn})
+					L = append(L, paneLine{issue, pal.Warn})
 				}
 			}
 			// the other versions' problems, found by the background check
 			if bad, total := a.romVersions(row, entries); bad > 0 && total > 1 {
-				L = append(L, paneLine{"ROM problems in " + itoa(bad) + " of " + itoa(total) + " versions", gen.Eva.Warn})
+				L = append(L, paneLine{"ROM problems in " + itoa(bad) + " of " + itoa(total) + " versions", pal.Warn})
 			}
 		}
 	}
@@ -299,7 +298,7 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 	if row.Rot != "" {
 		addSpec("Rotation", "rot", row.Rot)
 		if row.Brot != "" {
-			L = append(L, paneLine{"  boots " + row.Brot + ", no screen flip", gen.Eva.Warn})
+			L = append(L, paneLine{"  boots " + row.Brot + ", no screen flip", pal.Warn})
 		}
 	}
 	L = append(L, paneLine{"", fg})
@@ -341,7 +340,7 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 		L = append(L, paneLine{"rm build: CRT Adjust and V-Size on the analog output and a pause overlay; the same game ships in the MiSTer Distribution without them", mu})
 	}
 	if row.Deprecated {
-		add("Status", "deprecated", gen.Eva.Danger)
+		add("Status", "deprecated", pal.Danger)
 	}
 	if row.Beta {
 		L = append(L, paneLine{data.GateLine(row), mu})
@@ -371,11 +370,11 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 		title = "* " + title
 	}
 	for _, t := range gfx.Wrap(title, cols, 2) {
-		c.Text(body.Min.X, y, a.body, t, gen.Eva.Accent)
+		c.Text(body.Min.X, y, a.body, t, pal.Accent)
 		y += l.Line
 	}
 	if ch := chips(row, d); len(ch) > 0 {
-		c.Text(body.Min.X, y, a.sm, gfx.Fit(strings.Join(ch, "  "), a.sm.Cols(body.Dx())), gen.Eva.Warn)
+		c.Text(body.Min.X, y, a.sm, gfx.Fit(strings.Join(ch, "  "), a.sm.Cols(body.Dx())), pal.Warn)
 		y += a.sm.H + 2
 	}
 	y += 4 // breathing room before the pictures
@@ -438,8 +437,8 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 	a.detail.versions, a.detail.versionY = entries, body.Max.Y-launchH
 	a.paintDetailVersion(c)
 	if a.notice != "" {
-		c.Fill(l.Hint, gen.Eva.Surface)
-		c.Text(l.Hint.Min.X+2, l.Hint.Min.Y+2, a.sm, gfx.Fit(a.notice, a.sm.Cols(l.Hint.Dx()-4)), gen.Eva.Fg)
+		c.Fill(l.Hint, pal.Surface)
+		c.Text(l.Hint.Min.X+2, l.Hint.Min.Y+2, a.sm, gfx.Fit(a.notice, a.sm.Cols(l.Hint.Dx()-4)), pal.Fg)
 		return
 	}
 	a.paintHint(c, a.detailsHint(len(lines) > maxLines, len(entries), max(0, len(lines)-maxLines)))
@@ -453,24 +452,24 @@ func (a *App) paintDetailVersion(c *gfx.Canvas) {
 	if row == nil {
 		return
 	}
-	c.Fill(image.Rect(body.Min.X, y-1, body.Max.X, y+a.detailLine()), gen.Eva.Bg)
-	c.HLine(body.Min.X, body.Max.X-1, y-1, gen.Eva.Line)
+	c.Fill(image.Rect(body.Min.X, y-1, body.Max.X, y+a.detailLine()), pal.Bg)
+	c.HLine(body.Min.X, body.Max.X-1, y-1, pal.Line)
 	a.detail.pick = a.pickIn(entries)
 	if len(entries) == 0 {
-		c.Text(body.Min.X, y, a.sm, "No version available", gen.Eva.Muted)
+		c.Text(body.Min.X, y, a.sm, "No version available", pal.Muted)
 	} else {
 		e := entries[a.detail.pick]
 		count := itoa(a.detail.pick+1) + "/" + itoa(len(entries))
-		c.TextRight(body.Max.X, y, a.sm, count, gen.Eva.Muted)
+		c.TextRight(body.Max.X, y, a.sm, count, pal.Muted)
 		prefix := "Version: "
 		if len(entries) > 1 {
 			prefix = gfx.ArrowLeft + gfx.ArrowRight + " "
 		}
-		col := gen.Eva.Accent
+		col := pal.Accent
 		label := e.label
 		if !e.ok {
 			prefix = "- " + prefix
-			col = gen.Eva.Muted
+			col = pal.Muted
 		} else if a.cfg.ROMKnown != nil {
 			// a version the background check found wanting says so
 			if text, _, known := a.cfg.ROMKnown(e.path); known && text != "" {
@@ -505,14 +504,14 @@ func (a *App) paintDetailInfo(c *gfx.Canvas) {
 	maxLines := a.detail.lines
 	off := max(0, min(a.detail.pixel, max(0, len(lines)-maxLines)*lh))
 	a.detail.pixel = off
-	c.Fill(clip, gen.Eva.Bg)
+	c.Fill(clip, pal.Bg)
 	for n := off / lh; n < len(lines) && n*lh-off < clip.Dy(); n++ {
 		c.TextClip(clip.Min.X, clip.Min.Y+n*lh-off, a.sm, gfx.Fit(lines[n].text, sc), lines[n].col, clip)
 	}
 	if len(lines) > maxLines && maxLines > 0 {
 		thumbH := max(2, clip.Dy()*maxLines/len(lines))
 		thumbY := clip.Min.Y + (clip.Dy()-thumbH)*off/((len(lines)-maxLines)*lh)
-		c.Fill(image.Rect(clip.Max.X-2, thumbY, clip.Max.X, thumbY+thumbH), gen.Eva.Accent)
+		c.Fill(image.Rect(clip.Max.X-2, thumbY, clip.Max.X, thumbY+thumbH), pal.Accent)
 	}
 	if a.notice == "" {
 		a.paintHint(c, a.detailsHint(len(lines) > maxLines, a.detail.entries, max(0, len(lines)-maxLines)))

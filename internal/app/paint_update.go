@@ -6,8 +6,6 @@ import (
 	"reflect"
 	"strings"
 	"time"
-
-	"github.com/matijaerceg/misterzine-on-device/internal/gen"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 	"github.com/matijaerceg/misterzine-on-device/internal/updater"
@@ -191,10 +189,10 @@ func (a *App) paintUpdate(c *gfx.Canvas) {
 	l := a.lay
 	s := a.update
 	v := &a.updateView
-	c.Fill(l.Root, gen.Eva.Bg)
-	c.Fill(l.Status, gen.Eva.Surface)
+	c.Fill(l.Root, pal.Bg)
+	c.Fill(l.Status, pal.Surface)
 	a.paintHoldBar(c)
-	c.Text(l.Status.Min.X+2, l.Status.Min.Y+2, a.sm, s.Name(), gen.Eva.Accent)
+	c.Text(l.Status.Min.X+2, l.Status.Min.Y+2, a.sm, s.Name(), pal.Accent)
 	status := s.Status
 	if s.Active() {
 		spin := []string{"|", "/", "-", "\\"}[int((v.now.UnixMilli()/250)&3)]
@@ -204,39 +202,39 @@ func (a *App) paintUpdate(c *gfx.Canvas) {
 		}
 		status = spin + " " + status
 	}
-	c.TextRight(l.Status.Max.X-2, l.Status.Min.Y+2, a.sm, status, gen.Eva.Fg)
+	c.TextRight(l.Status.Max.X-2, l.Status.Min.Y+2, a.sm, status, pal.Fg)
 	y := l.Body.Min.Y + 3
 	if s.Active() && s.Protected {
 		r := image.Rect(l.Body.Min.X, y, l.Body.Max.X, y+12)
-		c.Fill(r, gen.Eva.Surface)
-		c.Text(r.Min.X+3, y+2, a.sm, gfx.Fit("System write: keep power on", a.sm.Cols(r.Dx()-6)), gen.Eva.Accent)
+		c.Fill(r, pal.Surface)
+		c.Text(r.Min.X+3, y+2, a.sm, gfx.Fit("System write: keep power on", a.sm.Cols(r.Dx()-6)), pal.Accent)
 		y += 15
 	}
 	if s.Reboot {
 		r := image.Rect(l.Body.Min.X, y, l.Body.Max.X, y+12)
-		c.Fill(r, gen.Eva.Surface)
-		c.Text(r.Min.X+3, y+2, a.sm, "Restart expected", gen.Eva.Accent)
+		c.Fill(r, pal.Surface)
+		c.Text(r.Min.X+3, y+2, a.sm, "Restart expected", pal.Accent)
 		y += 15
 	}
 	label := s.Label
 	if label == "" {
 		label = "Preparing " + s.Name()
 	}
-	c.Text(l.Body.Min.X+2, y, a.body, gfx.Fit(label, a.body.Cols(l.Body.Dx()-4)), gen.Eva.Fg)
+	c.Text(l.Body.Min.X+2, y, a.body, gfx.Fit(label, a.body.Cols(l.Body.Dx()-4)), pal.Fg)
 	y += a.body.H + 3
 	w := (l.Body.Dx() - 4) / len(updater.Stages)
 	for i := range updater.Stages {
 		r := image.Rect(l.Body.Min.X+2+i*w, y, l.Body.Min.X+2+(i+1)*w-2, y+7)
-		c.Box(r, gen.Eva.Line)
+		c.Box(r, pal.Line)
 		if i < s.Stage {
-			c.Fill(r.Inset(1), gen.Eva.Accent)
+			c.Fill(r.Inset(1), pal.Accent)
 		} else if i == s.Stage && s.Active() {
-			c.Fill(r.Inset(1), gen.Eva.Muted)
+			c.Fill(r.Inset(1), pal.Muted)
 		}
 	}
 	y += 10
 	for i, name := range updater.Stages {
-		c.Text(l.Body.Min.X+2+i*w, y, a.sm, gfx.Fit(name, a.sm.Cols(w-2)), gen.Eva.Muted)
+		c.Text(l.Body.Min.X+2+i*w, y, a.sm, gfx.Fit(name, a.sm.Cols(w-2)), pal.Muted)
 	}
 	y += a.sm.H + 3
 	age := 0
@@ -249,7 +247,7 @@ func (a *App) paintUpdate(c *gfx.Canvas) {
 	} else if s.Active() {
 		elapsed += fmt.Sprintf("  output %ds ago", age)
 	}
-	c.Text(l.Body.Min.X+2, y, a.sm, gfx.Fit(elapsed, a.sm.Cols(l.Body.Dx()-4)), gen.Eva.Muted)
+	c.Text(l.Body.Min.X+2, y, a.sm, gfx.Fit(elapsed, a.sm.Cols(l.Body.Dx()-4)), pal.Muted)
 	y += a.sm.H + 3
 	message := s.Summary()
 	if s.Active() && s.Protected && (s.CancelRequested || v.cancelSent) {
@@ -265,7 +263,7 @@ func (a *App) paintUpdate(c *gfx.Canvas) {
 		message = "Keep holding " + a.btn("B") + " to cancel" // the line under the top bar shows how far
 	}
 	for _, line := range gfx.Wrap(message, a.sm.Cols(l.Body.Dx()-4), 2) {
-		c.Text(l.Body.Min.X+2, y, a.sm, line, gen.Eva.Fg)
+		c.Text(l.Body.Min.X+2, y, a.sm, line, pal.Fg)
 		y += a.sm.H + 1
 	}
 	if a.UpdateRestartAvailable() {
@@ -274,20 +272,20 @@ func (a *App) paintUpdate(c *gfx.Canvas) {
 			restart = "The free MisterZine is installed. Restart to use it."
 		}
 		for _, line := range gfx.Wrap(restart, a.sm.Cols(l.Body.Dx()-4), 3) {
-			c.Text(l.Body.Min.X+2, y, a.sm, line, gen.Eva.Accent)
+			c.Text(l.Body.Min.X+2, y, a.sm, line, pal.Accent)
 			y += a.sm.H + 1
 		}
 	}
 	cols := a.sm.Cols(l.Body.Dx() - 4)
 	for _, line := range v.card.lines(cols, 3) {
 		for _, part := range gfx.Wrap(line, cols, 2) {
-			c.Text(l.Body.Min.X+2, y, a.sm, part, gen.Eva.Fg)
+			c.Text(l.Body.Min.X+2, y, a.sm, part, pal.Fg)
 			y += a.sm.H + 1
 		}
 	}
 	y += 3
 	box := image.Rect(l.Body.Min.X, y, l.Body.Max.X, l.Body.Max.Y-2)
-	c.Box(box, gen.Eva.Line)
+	c.Box(box, pal.Line)
 	v.lines = max(1, (box.Dy()-4)/(a.sm.H+1))
 	if v.scroll == 0 || v.log == nil {
 		v.log = nil
@@ -307,7 +305,7 @@ func (a *App) paintUpdate(c *gfx.Canvas) {
 	start := max(0, end-v.lines)
 	y = box.Min.Y + 2
 	for _, line := range lines[start:end] {
-		c.Text(box.Min.X+3, y, a.sm, line, gen.Eva.Fg)
+		c.Text(box.Min.X+3, y, a.sm, line, pal.Fg)
 		y += a.sm.H + 1
 	}
 	hint := "B Back"

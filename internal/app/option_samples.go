@@ -1,7 +1,6 @@
 package app
 
 import (
-	"github.com/matijaerceg/misterzine-on-device/internal/gen"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"image"
 	"time"
@@ -83,8 +82,8 @@ func (a *App) paintOptionSamples(c *gfx.Canvas, area image.Rectangle, e panelEnt
 		a.paintSmoothScrollSamples(c, area, e)
 		return
 	}
-	c.Fill(area, gen.Eva.Surface)
-	c.Box(area, gen.Eva.Line)
+	c.Fill(area, pal.Surface)
+	c.Box(area, pal.Line)
 	if e.kind != "title-font" && a.optionSamples.kind != e.kind {
 		a.tickOptionSamples()
 	}
@@ -93,11 +92,11 @@ func (a *App) paintOptionSamples(c *gfx.Canvas, area image.Rectangle, e panelEnt
 	for i := 0; i < n; i++ {
 		cell := image.Rect(area.Min.X+3+i*(area.Dx()-6)/n, area.Min.Y+3, area.Min.X+3+(i+1)*(area.Dx()-6)/n-2, area.Max.Y-3)
 		if e.kind != "title-font" {
-			c.Fill(cell, gen.Eva.Bg)
+			c.Fill(cell, pal.Bg)
 		}
-		col := gen.Eva.Fg
+		col := pal.Fg
 		if i == e.idx {
-			col = gen.Eva.Accent
+			col = pal.Accent
 			c.Box(cell, col)
 		}
 		r := cell.Inset(3)
@@ -128,10 +127,10 @@ func (a *App) paintOptionSamples(c *gfx.Canvas, area image.Rectangle, e panelEnt
 		top := r.Min.Y + (r.Dy()-rows*a.sm.H)/2
 		for row := 0; row < rows; row++ {
 			y := top + row*a.sm.H
-			textCol := gen.Eva.Fg
+			textCol := pal.Fg
 			if row == selected {
-				c.Fill(image.Rect(r.Min.X, y, r.Max.X, y+a.sm.H), gen.Eva.Surface)
-				textCol = gen.Eva.Accent
+				c.Fill(image.Rect(r.Min.X, y, r.Max.X, y+a.sm.H), pal.Surface)
+				textCol = pal.Accent
 			}
 			c.Text(r.Min.X+1, y, a.sm, gfx.Fit(names[row], a.sm.Cols(r.Dx()-2)), textCol)
 		}
@@ -149,18 +148,18 @@ func smoothSampleTravel(elapsed, pace time.Duration, smooth bool, line int) int 
 }
 
 func (a *App) paintSmoothScrollSamples(c *gfx.Canvas, area image.Rectangle, e panelEntry) {
-	c.Fill(area, gen.Eva.Surface)
-	c.Box(area, gen.Eva.Line)
+	c.Fill(area, pal.Surface)
+	c.Box(area, pal.Line)
 	if a.optionSamples.kind != e.kind {
 		a.tickOptionSamples()
 	}
 	names := []string{"Galaga", "Pac-Man", "Out Run", "1942", "R-Type", "Gradius"}
 	for i := 0; i < 2; i++ {
 		cell := image.Rect(area.Min.X+3+i*(area.Dx()-6)/2, area.Min.Y+2, area.Min.X+3+(i+1)*(area.Dx()-6)/2-2, area.Max.Y-2)
-		c.Fill(cell, gen.Eva.Bg)
-		col := gen.Eva.Fg
+		c.Fill(cell, pal.Bg)
+		col := pal.Fg
 		if i == e.idx {
-			col = gen.Eva.Accent
+			col = pal.Accent
 			c.Box(cell, col)
 		}
 		viewport := cell.Inset(1)
@@ -169,9 +168,9 @@ func (a *App) paintSmoothScrollSamples(c *gfx.Canvas, area image.Rectangle, e pa
 		travel := smoothSampleTravel(a.optionSamples.elapsed, scrollPace(a.ScrollSpeed()), i == 1, line)
 		first, offset := travel/line, travel%line
 		selectedY := viewport.Min.Y + max(0, (viewport.Dy()/line)/2)*line
-		clipped.Fill(image.Rect(viewport.Min.X, selectedY, viewport.Max.X, selectedY+line), gen.Eva.Surface)
+		clipped.Fill(image.Rect(viewport.Min.X, selectedY, viewport.Max.X, selectedY+line), pal.Surface)
 		for row, y := first, viewport.Min.Y-offset; y < viewport.Max.Y; row, y = row+1, y+line {
-			clipped.Text(viewport.Min.X+1, y+2, a.sm, gfx.Fit(names[row%len(names)], a.sm.Cols(viewport.Dx()-2)), gen.Eva.Fg)
+			clipped.Text(viewport.Min.X+1, y+2, a.sm, gfx.Fit(names[row%len(names)], a.sm.Cols(viewport.Dx()-2)), pal.Fg)
 		}
 		c.Dirty(viewport)
 	}

@@ -2,8 +2,6 @@ package app
 
 import (
 	"image"
-
-	"github.com/matijaerceg/misterzine-on-device/internal/gen"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 )
 
@@ -25,14 +23,14 @@ func (a *App) paintLayoutPreviews(c *gfx.Canvas, area image.Rectangle) {
 		return
 	}
 	box := area
-	c.Fill(box, gen.Eva.Surface)
-	c.Box(box, gen.Eva.Line)
+	c.Fill(box, pal.Surface)
+	c.Box(box, pal.Line)
 	for i, style := range listLayouts {
 		x := box.Min.X + 2 + i*(cellW+gap)
 		r := image.Rect(x+(cellW-shotW)/2, box.Min.Y+(box.Dy()-shotH)/2, x+(cellW-shotW)/2+shotW, box.Min.Y+(box.Dy()-shotH)/2+shotH)
 		a.paintLayoutDiagram(c, r, style)
 		if style == a.ListLayout() {
-			c.Box(r.Inset(-2), gen.Eva.Accent)
+			c.Box(r.Inset(-2), pal.Accent)
 		}
 	}
 }
@@ -56,12 +54,12 @@ func (a *App) paintLayoutDiagram(c *gfx.Canvas, r image.Rectangle, style string)
 			meta = image.Rect(l.Thumb.Min.X, l.Thumb.Max.Y+3, l.Pane.Max.X, l.Pane.Max.Y)
 		}
 	}
-	c.Fill(r, gen.Eva.Bg)
+	c.Fill(r, pal.Bg)
 	target := r.Inset(2)
 	if l.Pane.Empty() {
 		// the text layout: rows across the whole body
 		for y := target.Min.Y; y < target.Max.Y; y += 4 {
-			c.HLine(target.Min.X, target.Max.X-1, y, gen.Eva.Fg)
+			c.HLine(target.Min.X, target.Max.X-1, y, pal.Fg)
 		}
 		return
 	}
@@ -90,10 +88,10 @@ func (a *App) paintLayoutDiagram(c *gfx.Canvas, r image.Rectangle, style string)
 		}
 	}
 	for y := list.Min.Y; y < list.Max.Y; y += 4 {
-		c.HLine(list.Min.X, list.Max.X-1, y, gen.Eva.Fg)
+		c.HLine(list.Min.X, list.Max.X-1, y, pal.Fg)
 	}
 	if !picture.Empty() {
-		c.Box(picture, gen.Eva.Fg)
+		c.Box(picture, pal.Fg)
 	}
 	if !l.Portrait && style == "split" && !list.Empty() {
 		lastListY := list.Min.Y + (list.Dy()-1)/4*4
@@ -105,7 +103,7 @@ func (a *App) paintLayoutDiagram(c *gfx.Canvas, r image.Rectangle, style string)
 			width = metadata.Dx() / 2
 		}
 		if width > 0 {
-			c.HLine(metadata.Min.X, metadata.Min.X+width-1, y, gen.Eva.Warn)
+			c.HLine(metadata.Min.X, metadata.Min.X+width-1, y, pal.Warn)
 		}
 	}
 }

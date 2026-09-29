@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
-	"github.com/matijaerceg/misterzine-on-device/internal/gen"
 )
 
 // launchPath is the file Start launches for row i without asking the
@@ -115,9 +114,9 @@ func (a *App) romMark(i int) (string, rgb, bool) {
 		return "", rgb{}, false
 	}
 	if _, block, _ := a.cfg.ROMKnown(a.launchPath(&a.ds.Rows[i], i)); block {
-		return "!", gen.Eva.Warn, true
+		return "!", pal.Warn, true
 	}
-	return "!", gen.Eva.Muted, true
+	return "!", pal.Muted, true
 }
 
 // ROMChanged tells the app the background ROM check has new answers, or

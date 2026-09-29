@@ -12,6 +12,10 @@ import (
 
 type rgb = color.RGBA
 
+// pal is the palette everything is drawn in: Unit-01, the site's "eva"
+// theme, unless the members' build picks another (members.go).
+var pal = gen.Eva
+
 // paintList draws the status bar, the list, the pane and the hint bar.
 func (a *App) paintList(c *gfx.Canvas) {
 	a.paintStatus(c)
@@ -63,8 +67,8 @@ func (a *App) listHint() string {
 
 func (a *App) paintStatus(c *gfx.Canvas) {
 	l := &a.lay
-	c.Fill(l.Status, gen.Eva.Surface)
-	c.HLine(l.Status.Min.X, l.Status.Max.X-1, l.Status.Max.Y-1, gen.Eva.Muted)
+	c.Fill(l.Status, pal.Surface)
+	c.HLine(l.Status.Min.X, l.Status.Max.X-1, l.Status.Max.Y-1, pal.Muted)
 	if !a.cfg.ArcadeIntro {
 		a.paintHoldBar(c)
 	}
@@ -78,32 +82,32 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 		// A notice covers the bar until it expires or a press changes what
 		// the bar says under it (notice.go): typing a search brings the
 		// query and its count back at once, even over a jump's month.
-		c.Text(st.Min.X+2, y, a.sm, gfx.Fit(a.notice, a.sm.Cols(st.Dx()-4)), gen.Eva.Fg)
+		c.Text(st.Min.X+2, y, a.sm, gfx.Fit(a.notice, a.sm.Cols(st.Dx()-4)), pal.Fg)
 		return
 	}
 	s := a.statusBar()
 	if s.query != "" {
 		count := itoa(s.shown) + " matches"
-		c.TextRight(st.Max.X-2, y, a.sm, count, gen.Eva.Muted)
+		c.TextRight(st.Max.X-2, y, a.sm, count, pal.Muted)
 		cols := a.sm.Cols(st.Dx()-8-a.sm.Width(count)) - len("Find: ") - 1
 		query := s.query
 		if len(query) > cols {
 			query = query[len(query)-max(0, cols):]
 		}
-		c.Text(st.Min.X+2, y, a.sm, "Find: "+query+"_", gen.Eva.Accent)
+		c.Text(st.Min.X+2, y, a.sm, "Find: "+query+"_", pal.Accent)
 		return
 	}
 	left := s.view
 	if s.update {
-		c.Text(st.Min.X+2, y, a.sm, left, gen.Eva.Accent)
-		c.TextRight(st.Max.X-2, y, a.sm, "App update", gen.Eva.Accent)
+		c.Text(st.Min.X+2, y, a.sm, left, pal.Accent)
+		c.TextRight(st.Max.X-2, y, a.sm, "App update", pal.Accent)
 		return
 	}
 	count := itoa(s.total) + " releases"
 	if s.narrow {
 		count = itoa(s.shown) + " of " + itoa(s.total) + " releases"
 	}
-	c.Text(st.Min.X+2, y, a.sm, left, gen.Eva.Accent)
+	c.Text(st.Min.X+2, y, a.sm, left, pal.Accent)
 	x := st.Min.X + 2 + a.sm.Width(left) + a.sm.W*2
 	if a.sm.Width(count) > st.Max.X-2-x {
 		count = itoa(s.total)
@@ -112,10 +116,10 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 		}
 	}
 	count = gfx.Fit(count, a.sm.Cols(st.Max.X-2-x))
-	c.Text(x, y, a.sm, count, gen.Eva.Muted)
+	c.Text(x, y, a.sm, count, pal.Muted)
 	left += "  " + count
 	if s.net != "" {
-		c.TextRight(st.Max.X-2, y, a.sm, gfx.Fit(s.net, a.sm.Cols(st.Dx()-a.sm.Width(left)-8)), gen.Eva.Fg)
+		c.TextRight(st.Max.X-2, y, a.sm, gfx.Fit(s.net, a.sm.Cols(st.Dx()-a.sm.Width(left)-8)), pal.Fg)
 	}
 }
 
@@ -163,7 +167,7 @@ func (a *App) statusBar() statusBar {
 // the first word of each chunk is the button and paints in the accent.
 func (a *App) paintHint(c *gfx.Canvas, s string) {
 	l := &a.lay
-	c.Fill(l.Hint, gen.Eva.Surface)
+	c.Fill(l.Hint, pal.Surface)
 	a.hintLine(c, l.Hint.Min.X+2, l.Hint.Min.Y+2, l.Hint.Dx()-4, s)
 }
 
@@ -236,9 +240,9 @@ func (a *App) hintLine(c *gfx.Canvas, x, y, w int, s string) {
 		if x+a.sm.Width(text) > maxX {
 			break
 		}
-		x += c.Text(x, y, a.sm, a.btn(ch.btn), gen.Eva.Accent)
+		x += c.Text(x, y, a.sm, a.btn(ch.btn), pal.Accent)
 		if ch.rest != "" {
-			x += c.Text(x, y, a.sm, " "+ch.rest, gen.Eva.Muted)
+			x += c.Text(x, y, a.sm, " "+ch.rest, pal.Muted)
 		}
 	}
 }
@@ -278,9 +282,9 @@ func (a *App) paintRows(c *gfx.Canvas) {
 		return
 	}
 	l := &a.lay
-	c.Fill(l.List, gen.Eva.Bg)
+	c.Fill(l.List, pal.Bg)
 	if len(a.view) == 0 {
-		c.Text(l.List.Min.X+a.body.W, l.List.Min.Y+l.Line, a.body, gfx.Fit(a.emptyListMessage(), l.Cols-1), gen.Eva.Muted)
+		c.Text(l.List.Min.X+a.body.W, l.List.Min.Y+l.Line, a.body, gfx.Fit(a.emptyListMessage(), l.Cols-1), pal.Muted)
 		return
 	}
 	// Clip partial rows to the list, keeping the snapped selection background
@@ -288,7 +292,7 @@ func (a *App) paintRows(c *gfx.Canvas) {
 	parent := c
 	c = &gfx.Canvas{RGBA: c.Sub(l.List)}
 	defer parent.Dirty(l.List)
-	c.Fill(l.lineRect(a.screenLine(a.cursor)-a.top), gen.Eva.Surface)
+	c.Fill(l.lineRect(a.screenLine(a.cursor)-a.top), pal.Surface)
 	offset := a.listMotion.offset
 	first := a.top - (offset+l.Line-1)/l.Line
 	if offset < 0 {
@@ -321,16 +325,16 @@ func (a *App) paintRows(c *gfx.Canvas) {
 	// a maker whose header scrolled off keeps its name on the top line
 	if pos := a.pinnedPos(); pos >= 0 {
 		r := l.lineRect(0)
-		c.Fill(r, gen.Eva.Bg)
+		c.Fill(r, pal.Bg)
 		a.paintMarker(c, r, a.groupLabel(a.view[pos]), a.headerNote(pos))
 	}
 }
 
 func (a *App) paintRowsStill(c *gfx.Canvas) {
 	l := &a.lay
-	c.Fill(l.List, gen.Eva.Bg)
+	c.Fill(l.List, pal.Bg)
 	if len(a.view) == 0 {
-		c.Text(l.List.Min.X+a.body.W, l.List.Min.Y+l.Line, a.body, gfx.Fit(a.emptyListMessage(), l.Cols-1), gen.Eva.Muted)
+		c.Text(l.List.Min.X+a.body.W, l.List.Min.Y+l.Line, a.body, gfx.Fit(a.emptyListMessage(), l.Cols-1), pal.Muted)
 		return
 	}
 	// the first row and the first marker at or below the top line
@@ -357,7 +361,7 @@ func (a *App) paintRowsStill(c *gfx.Canvas) {
 	// a maker whose header scrolled off keeps its name on the top line
 	if pos := a.pinnedPos(); pos >= 0 {
 		r := l.lineRect(0)
-		c.Fill(r, gen.Eva.Bg)
+		c.Fill(r, pal.Bg)
 		a.paintMarker(c, r, a.groupLabel(a.view[pos]), a.headerNote(pos))
 	}
 }
@@ -381,7 +385,7 @@ func (a *App) paintScrollbar(c *gfx.Canvas) {
 	// A group jump can put the last group at the top with blank rows below.
 	// Its thumb still stops at the end of the track.
 	y := t.Min.Y + (t.Dy()-h)*min(a.top, total-l.Lines)/(total-l.Lines)
-	c.Fill(image.Rect(t.Min.X, y, t.Max.X, y+h), gen.Eva.Accent)
+	c.Fill(image.Rect(t.Min.X, y, t.Max.X, y+h), pal.Accent)
 }
 
 // paintMarker draws a marker line: text on the rule near its left end
@@ -389,7 +393,7 @@ func (a *App) paintScrollbar(c *gfx.Canvas) {
 // keep their dates.
 func (a *App) paintMarker(c *gfx.Canvas, r image.Rectangle, text, note string) {
 	mid := r.Min.Y + r.Dy()/2
-	c.HLine(r.Min.X, r.Max.X-1, mid, gen.Eva.Line)
+	c.HLine(r.Min.X, r.Max.X-1, mid, pal.Line)
 	// fitted to the line at rest (restLayout); the list's edge clips it
 	w := r.Dx() + a.restLayout().List.Dx() - a.lay.List.Dx()
 	cols := a.sm.Cols(w) - 2
@@ -400,12 +404,12 @@ func (a *App) paintMarker(c *gfx.Canvas, r image.Rectangle, text, note string) {
 	}
 	s := " " + gfx.Fit(text, cols) + " "
 	x := r.Min.X + a.body.W
-	c.Fill(image.Rect(x, r.Min.Y, x+a.sm.Width(s), r.Max.Y), gen.Eva.Bg)
-	c.Text(x, r.Min.Y+2, a.sm, s, gen.Eva.Muted)
+	c.Fill(image.Rect(x, r.Min.Y, x+a.sm.Width(s), r.Max.Y), pal.Bg)
+	c.Text(x, r.Min.Y+2, a.sm, s, pal.Muted)
 	if note != "" {
 		nx := r.Max.X - a.sm.Width(note)
-		c.Fill(image.Rect(nx, r.Min.Y, r.Max.X, r.Max.Y), gen.Eva.Bg)
-		c.Text(nx, r.Min.Y+2, a.sm, note, gen.Eva.Muted)
+		c.Fill(image.Rect(nx, r.Min.Y, r.Max.X, r.Max.Y), pal.Bg)
+		c.Text(nx, r.Min.Y+2, a.sm, note, pal.Muted)
 	}
 }
 
@@ -416,23 +420,23 @@ func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {
 	d := &a.ds.Der[i]
 	selected := pos == a.cursor
 	if selected && a.listMotion.offset == 0 {
-		c.Fill(r, gen.Eva.Surface)
+		c.Fill(r, pal.Surface)
 	}
 	x := r.Min.X
 	y := r.Min.Y
 	fw := a.body.W
 	// fav
 	if a.cfg.Favorites[row.K] {
-		c.Text(x, y, a.body, "*", gen.Eva.Accent)
+		c.Text(x, y, a.body, "*", pal.Accent)
 	}
 	x += fw
 	// title
 	st := a.status(i)
-	titleCol := gen.Eva.Fg
+	titleCol := pal.Fg
 	if selected {
-		titleCol = gen.Eva.Accent
+		titleCol = pal.Accent
 	} else if st == data.StatusNotFound {
-		titleCol = gen.Eva.Muted
+		titleCol = pal.Muted
 	}
 	// the status glyph and the date use the narrow font at the titles'
 	// height, whose baseline sits one pixel below the body font's
@@ -473,9 +477,9 @@ func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {
 	}
 	// a row added or rebuilt since the last visit shows its date in the
 	// accent under every order: the app's form of the site's per-row dot
-	dateCol := gen.Eva.Muted
+	dateCol := pal.Muted
 	if a.seen != nil && a.seen.Unseen(row) {
-		dateCol = gen.Eva.Accent
+		dateCol = pal.Accent
 	}
 	text := a.dateCol(date)
 	if a.mode == data.SortMaker || a.mode == data.SortCore {
@@ -500,7 +504,7 @@ func (a *App) paintTitle(c *gfx.Canvas, x, y, w int, title string, beta bool, co
 		}
 		tw := c.TextProp(x, y, f, gfx.FitProp(f, title, w), col)
 		if beta {
-			c.TextProp(x+tw+f.Advance(' '), y, f, gfx.Beta, gen.Eva.Warn)
+			c.TextProp(x+tw+f.Advance(' '), y, f, gfx.Beta, pal.Warn)
 		}
 		return
 	}
@@ -511,14 +515,14 @@ func (a *App) paintTitle(c *gfx.Canvas, x, y, w int, title string, beta bool, co
 	s := gfx.Fit(title, cols)
 	c.Text(x, y, a.body, s, col)
 	if beta {
-		c.Text(x+a.body.Width(s)+a.body.W, y, a.body, gfx.Beta, gen.Eva.Warn)
+		c.Text(x+a.body.Width(s)+a.body.W, y, a.body, gfx.Beta, pal.Warn)
 	}
 }
 
 // paintPane draws the highlighted row's thumbnail and specs.
 func (a *App) paintPane(c *gfx.Canvas) {
 	l := &a.lay
-	c.Fill(l.Pane, gen.Eva.Bg)
+	c.Fill(l.Pane, pal.Bg)
 	dividerForLayout(*l).paint(c, l.Body)
 	a.paintedThumb, a.paintedPaneText = image.Rectangle{}, image.Rectangle{}
 	if l.Pane.Empty() {
@@ -563,7 +567,7 @@ func (a *App) paneLines(row *data.Row, d *data.Derived, i, cols int) []paneLine 
 	var lines []paneLine
 	hue := typeHue(row.Base)
 	for _, t := range gfx.Wrap(d.Title, cols, 2) {
-		lines = append(lines, paneLine{t, gen.Eva.Fg})
+		lines = append(lines, paneLine{t, pal.Fg})
 	}
 	// the card answer comes right after the title: it is the point of the app
 	if a.cfg.Status != nil {
@@ -577,25 +581,25 @@ func (a *App) paneLines(row *data.Row, d *data.Derived, i, cols int) []paneLine 
 	}
 	lines = append(lines, paneLine{kind, hue})
 	if row.Core != "" && d.CoreLabel != row.Title {
-		lines = append(lines, paneLine{d.CoreLabel, gen.Eva.Muted})
+		lines = append(lines, paneLine{d.CoreLabel, pal.Muted})
 	}
 	if row.Year != "" || row.Manufacturer != "" {
-		lines = append(lines, paneLine{strings.TrimSpace(row.Year + " " + data.ASCII(row.Manufacturer)), gen.Eva.Fg})
+		lines = append(lines, paneLine{strings.TrimSpace(row.Year + " " + data.ASCII(row.Manufacturer)), pal.Fg})
 	}
 	if row.IsArcade() {
 		spec := strings.TrimSpace(strings.Join(nonEmpty(rotShort(row.Rot), plrShort(row.Plr)), " / "))
 		if spec != "" {
-			lines = append(lines, paneLine{spec, gen.Eva.Fg})
+			lines = append(lines, paneLine{spec, pal.Fg})
 		}
 		if d.Ctl != "" {
-			lines = append(lines, paneLine{d.Ctl, gen.Eva.Fg})
+			lines = append(lines, paneLine{d.Ctl, pal.Fg})
 		}
 	}
 	if ch := chips(row, d); len(ch) > 0 {
-		col := gen.Eva.Muted
+		col := pal.Muted
 		for _, x := range ch {
 			if x == "beta" || strings.HasPrefix(x, "boots") {
-				col = gen.Eva.Warn
+				col = pal.Warn
 			}
 		}
 		lines = append(lines, paneLine{strings.Join(ch, ", "), col})
@@ -668,7 +672,7 @@ func (a *App) paintThumb(c *gfx.Canvas, box image.Rectangle, row *data.Row) imag
 func (a *App) placeholder(c *gfx.Canvas, box image.Rectangle, text string) {
 	c.Fill(box, rgb{R: 0, G: 0, B: 0, A: 255})
 	w := a.sm.Width(text)
-	c.Text(box.Min.X+(box.Dx()-w)/2, box.Min.Y+(box.Dy()-a.sm.H)/2, a.sm, text, gen.Eva.Muted)
+	c.Text(box.Min.X+(box.Dx()-w)/2, box.Min.Y+(box.Dy()-a.sm.H)/2, a.sm, text, pal.Muted)
 }
 
 func nonEmpty(ss ...string) []string {

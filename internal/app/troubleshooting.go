@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
-	"github.com/matijaerceg/misterzine-on-device/internal/gen"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 	"github.com/matijaerceg/misterzine-on-device/internal/report"
@@ -488,11 +487,11 @@ func (a *App) supportPages() [][]string {
 func (a *App) paintSupport(c *gfx.Canvas) {
 	a.paintStatus(c)
 	if a.notice == "" {
-		c.Fill(a.lay.Status, gen.Eva.Surface)
-		c.Text(a.lay.Status.Min.X+2, a.lay.Status.Min.Y+2, a.sm, "Troubleshooting", gen.Eva.Accent)
+		c.Fill(a.lay.Status, pal.Surface)
+		c.Text(a.lay.Status.Min.X+2, a.lay.Status.Min.Y+2, a.sm, "Troubleshooting", pal.Accent)
 		a.paintHoldBar(c) // the pad tester's leave hold
 	}
-	c.Box(a.lay.Body, gen.Eva.Line)
+	c.Box(a.lay.Body, pal.Line)
 	box := a.lay.Body.Inset(4)
 	y := box.Min.Y
 	cols := max(8, a.sm.Cols(box.Dx()))
@@ -513,104 +512,104 @@ func (a *App) paintSupport(c *gfx.Canvas) {
 	switch v.mode {
 	case "menu":
 		for i, label := range []string{"Test Start button", "Test pad buttons", "Test game launch", "Last troubleshooting result", "Send a report"} {
-			col := gen.Eva.Fg
+			col := pal.Fg
 			if i == v.cursor {
-				c.Fill(image.Rect(box.Min.X-1, y, box.Max.X+1, y+a.sm.H+2), gen.Eva.Surface)
-				col = gen.Eva.Accent
+				c.Fill(image.Rect(box.Min.X-1, y, box.Max.X+1, y+a.sm.H+2), pal.Surface)
+				col = pal.Accent
 			}
 			write(label, col)
 			y += 3
 		}
-		write("", gen.Eva.Fg)
+		write("", pal.Fg)
 		if v.cursor == 0 {
-			write("Press your Start button when asked. The result stays on screen for a photo.", gen.Eva.Muted)
+			write("Press your Start button when asked. The result stays on screen for a photo.", pal.Muted)
 		}
 		if v.cursor == 1 {
-			write("See which pad sent each press, its raw button, the MiSTer slot it is defined in and what MisterZine does. Hold "+a.btn("B")+" two seconds to leave.", gen.Eva.Muted)
+			write("See which pad sent each press, its raw button, the MiSTer slot it is defined in and what MisterZine does. Hold "+a.btn("B")+" two seconds to leave.", pal.Muted)
 		}
 		if v.cursor == 2 {
-			write("Try the highlighted game's main version using "+a.btn("A")+" / Enter.", gen.Eva.Muted)
+			write("Try the highlighted game's main version using "+a.btn("A")+" / Enter.", pal.Muted)
 		}
 		if v.cursor == 3 {
-			write("Review the saved result, including after restarting MisterZine.", gen.Eva.Muted)
+			write("Review the saved result, including after restarting MisterZine.", pal.Muted)
 		}
 		if v.cursor == 4 {
-			write("Send the developer a report about this card, with a code to quote when you ask for help.", gen.Eva.Muted)
+			write("Send the developer a report about this card, with a code to quote when you ask for help.", pal.Muted)
 		}
 		a.paintHint(c, "Up/Down Choose  A Open  B Back")
 	case "report":
-		write("SEND A REPORT", gen.Eva.Accent)
+		write("SEND A REPORT", pal.Accent)
 		y += 2
-		write("Sends the MisterZine developer a report about this card, so a problem can be looked into:", gen.Eva.Fg)
+		write("Sends the MisterZine developer a report about this card, so a problem can be looked into:", pal.Fg)
 		for _, s := range []string{"the app version, settings and filters", "your local games, and each game file left out of the list with the reason",
 			"the card's folders and core file names", "how the main-menu entry is set up", "recent log lines"} {
-			write("- "+s, gen.Eva.Fg)
+			write("- "+s, pal.Fg)
 		}
-		write("", gen.Eva.Fg)
-		write("No passwords, Wi-Fi details or Downloader addresses. Kept 30 days and read only by the developer. A copy is saved on the card.", gen.Eva.Muted)
+		write("", pal.Fg)
+		write("No passwords, Wi-Fi details or Downloader addresses. Kept 30 days and read only by the developer. A copy is saved on the card.", pal.Muted)
 		a.paintHint(c, "A Send  B Cancel")
 	case "report-sending":
-		write("SEND A REPORT", gen.Eva.Accent)
+		write("SEND A REPORT", pal.Accent)
 		y += 2
-		write("Sending"+gfx.Ellipsis, gen.Eva.Fg)
-		write("", gen.Eva.Fg)
-		write("This takes a few seconds.", gen.Eva.Muted)
+		write("Sending"+gfx.Ellipsis, pal.Fg)
+		write("", pal.Fg)
+		write("This takes a few seconds.", pal.Muted)
 		a.paintHint(c, "Please wait")
 	case "report-done":
 		o := v.outcome
 		if o.Code != "" {
-			write("REPORT SENT", gen.Eva.Accent)
+			write("REPORT SENT", pal.Accent)
 			y += 2
-			write("Your code:", gen.Eva.Fg)
+			write("Your code:", pal.Fg)
 			y += 2
 			code := report.DisplayCode(o.Code)
-			c.Text(box.Min.X, y, a.body, code, gen.Eva.Accent)
+			c.Text(box.Min.X, y, a.body, code, pal.Accent)
 			y += a.body.H + 4
-			write("Post this code where you asked for help.", gen.Eva.Fg)
+			write("Post this code where you asked for help.", pal.Fg)
 			if o.Saved != "" {
-				write("A copy is on the card as "+o.Saved+".", gen.Eva.Muted)
+				write("A copy is on the card as "+o.Saved+".", pal.Muted)
 			}
 		} else {
-			write("REPORT NOT SENT", gen.Eva.Accent)
+			write("REPORT NOT SENT", pal.Accent)
 			y += 2
-			write(o.Problem, gen.Eva.Fg)
-			write("", gen.Eva.Fg)
+			write(o.Problem, pal.Fg)
+			write("", pal.Fg)
 			if o.Saved != "" {
-				write("It is saved on the card as "+o.Saved+": send that file instead.", gen.Eva.Fg)
+				write("It is saved on the card as "+o.Saved+": send that file instead.", pal.Fg)
 			} else {
-				write("It could not be saved on the card either: "+o.SaveErr, gen.Eva.Fg)
+				write("It could not be saved on the card either: "+o.SaveErr, pal.Fg)
 			}
 		}
 		a.paintHint(c, "B Back")
 	case "pad":
-		write("PAD TEST", gen.Eva.Accent)
+		write("PAD TEST", pal.Accent)
 		y += 2
 		if len(v.pads) == 0 {
-			write("No gamepad is being read. A pad needs a Start button or a MiSTer map (define it in the MiSTer menu).", gen.Eva.Muted)
+			write("No gamepad is being read. A pad needs a Start button or a MiSTer map (define it in the MiSTer menu).", pal.Muted)
 		}
 		for _, p := range v.pads {
 			for i, line := range a.padLines(p) {
-				col := gen.Eva.Muted
+				col := pal.Muted
 				if i == 0 {
-					col = gen.Eva.Fg
+					col = pal.Fg
 				}
 				write(line, col)
 			}
 		}
-		write("", gen.Eva.Fg)
-		write("PRESSES, newest first", gen.Eva.Accent)
+		write("", pal.Fg)
+		write("PRESSES, newest first", pal.Accent)
 		y += 2
 		if len(v.presses) == 0 {
-			write("Press any button.", gen.Eva.Muted)
+			write("Press any button.", pal.Muted)
 		}
 		for i, p := range v.presses {
 			var prev *padPress
 			if i+1 < len(v.presses) {
 				prev = &v.presses[i+1]
 			}
-			col := gen.Eva.Fg
+			col := pal.Fg
 			if i > 0 {
-				col = gen.Eva.Muted
+				col = pal.Muted
 			}
 			write(a.padPressLine(p, prev), col)
 		}
@@ -622,39 +621,39 @@ func (a *App) paintSupport(c *gfx.Canvas) {
 	case "capture":
 		now := v.now
 		if now.Before(v.from) {
-			write(fmt.Sprintf("Get ready... %d", max(1, int(v.from.Sub(now).Seconds()+0.999))), gen.Eva.Accent)
-			write("", gen.Eva.Fg)
-			write("Release all buttons. Wait for GO.", gen.Eva.Fg)
+			write(fmt.Sprintf("Get ready... %d", max(1, int(v.from.Sub(now).Seconds()+0.999))), pal.Accent)
+			write("", pal.Fg)
+			write("Release all buttons. Wait for GO.", pal.Fg)
 		} else {
-			write("GO - press and release START", gen.Eva.Accent)
-			write("", gen.Eva.Fg)
-			write("Press only that button, once or twice.", gen.Eva.Fg)
-			write(fmt.Sprintf("Result in %d seconds", max(1, int(v.until.Sub(now).Seconds()+0.999))), gen.Eva.Muted)
+			write("GO - press and release START", pal.Accent)
+			write("", pal.Fg)
+			write("Press only that button, once or twice.", pal.Fg)
+			write(fmt.Sprintf("Result in %d seconds", max(1, int(v.until.Sub(now).Seconds()+0.999))), pal.Muted)
 		}
-		write("", gen.Eva.Fg)
-		write("The test ends automatically. Game launching is paused here.", gen.Eva.Muted)
+		write("", pal.Fg)
+		write("The test ends automatically. Game launching is paused here.", pal.Muted)
 		a.paintHint(c, "Wait for the result")
 	case "launch":
-		write("TEST GAME LAUNCH", gen.Eva.Accent)
-		write("", gen.Eva.Fg)
+		write("TEST GAME LAUNCH", pal.Accent)
+		write("", pal.Fg)
 		if v.target == "" {
-			write("No launch target selected. Return to the list and highlight an installed game first.", gen.Eva.Fg)
+			write("No launch target selected. Return to the list and highlight an installed game first.", pal.Fg)
 			a.paintHint(c, "B Back")
 		} else {
-			write(v.game, gen.Eva.Fg)
-			write("", gen.Eva.Fg)
-			write(a.btn("A")+" / Enter will launch this game's main version now.", gen.Eva.Fg)
-			write("", gen.Eva.Fg)
-			write("If it works, tell the person helping you. The last result is kept when you reopen MisterZine.", gen.Eva.Muted)
+			write(v.game, pal.Fg)
+			write("", pal.Fg)
+			write(a.btn("A")+" / Enter will launch this game's main version now.", pal.Fg)
+			write("", pal.Fg)
+			write("If it works, tell the person helping you. The last result is kept when you reopen MisterZine.", pal.Muted)
 			a.paintHint(c, "A Launch now  B Cancel")
 		}
 	case "result":
 		pages := a.supportPages()
 		v.page = min(v.page, len(pages)-1)
-		write(fmt.Sprintf("PHOTO RESULT  %d/%d", v.page+1, len(pages)), gen.Eva.Accent)
+		write(fmt.Sprintf("PHOTO RESULT  %d/%d", v.page+1, len(pages)), pal.Accent)
 		y += 3
 		for _, line := range pages[v.page] {
-			write(line, gen.Eva.Fg)
+			write(line, pal.Fg)
 		}
 		a.paintHint(c, "L/R or arrows: Pages  B Back")
 	}

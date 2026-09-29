@@ -2,7 +2,6 @@ package app
 
 import (
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
-	"github.com/matijaerceg/misterzine-on-device/internal/gen"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 )
 
@@ -54,7 +53,7 @@ func (a *App) cardCounts() map[data.Status]int {
 func (a *App) paintScan(c *gfx.Canvas) {
 	a.paintStatus(c)
 	box := a.lay.Body.Inset(4)
-	c.Box(box, gen.Eva.Line)
+	c.Box(box, pal.Line)
 	x, y := box.Min.X+4, box.Min.Y+4
 	cols := a.sm.Cols(box.Dx() - 8)
 	fit := (box.Max.Y-3-a.sm.H-y)/(a.sm.H+2) + 1 // the rows the box holds
@@ -67,7 +66,7 @@ func (a *App) paintScan(c *gfx.Canvas) {
 			if y+a.sm.H > box.Max.Y-3 {
 				break
 			}
-			c.Text(x, y, a.sm, part, gen.Eva.Fg)
+			c.Text(x, y, a.sm, part, pal.Fg)
 			y += a.sm.H + 2
 		}
 	}

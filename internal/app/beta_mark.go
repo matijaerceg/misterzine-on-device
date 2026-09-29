@@ -4,7 +4,6 @@ import (
 	"image"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/beta"
-	"github.com/matijaerceg/misterzine-on-device/internal/gen"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 )
 
@@ -27,7 +26,7 @@ func (a *App) paintBetaMark(c *gfx.Canvas) (right int) {
 	}
 	w := a.sm.Width(betaMarkText) + 4
 	r := image.Rect(st.Max.X-2-w, st.Min.Y+1, st.Max.X-2, st.Max.Y-1)
-	c.Fill(r, gen.Eva.Warn)
-	c.Text(r.Min.X+2, st.Min.Y+2, a.sm, betaMarkText, gen.Eva.AccentOn)
+	c.Fill(r, pal.Warn)
+	c.Text(r.Min.X+2, st.Min.Y+2, a.sm, betaMarkText, pal.AccentOn)
 	return r.Min.X - 2
 }

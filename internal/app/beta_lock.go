@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/beta"
-	"github.com/matijaerceg/misterzine-on-device/internal/gen"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 	"github.com/matijaerceg/misterzine-on-device/internal/updater"
@@ -352,17 +351,17 @@ func (a *App) lockSwitchLine(cols int) string {
 // status bar, what to do, the six boxes and the answer to the last try.
 func (a *App) paintLock(c *gfx.Canvas) {
 	l := &a.lay
-	c.Fill(l.Status, gen.Eva.Surface)
-	c.HLine(l.Status.Min.X, l.Status.Max.X-1, l.Status.Max.Y-1, gen.Eva.Muted)
+	c.Fill(l.Status, pal.Surface)
+	c.HLine(l.Status.Min.X, l.Status.Max.X-1, l.Status.Max.Y-1, pal.Muted)
 	right := a.paintBetaMark(c)
 	y := l.Status.Min.Y + 2
 	if a.notice != "" {
-		c.Text(l.Status.Min.X+2, y, a.sm, gfx.Fit(a.notice, a.sm.Cols(right-l.Status.Min.X-4)), gen.Eva.Fg)
+		c.Text(l.Status.Min.X+2, y, a.sm, gfx.Fit(a.notice, a.sm.Cols(right-l.Status.Min.X-4)), pal.Fg)
 	} else {
-		c.Text(l.Status.Min.X+2, y, a.sm, gfx.Fit("MisterZine Arcade", a.sm.Cols(right-l.Status.Min.X-4)), gen.Eva.Accent)
+		c.Text(l.Status.Min.X+2, y, a.sm, gfx.Fit("MisterZine Arcade", a.sm.Cols(right-l.Status.Min.X-4)), pal.Accent)
 	}
 
-	c.Box(l.Body, gen.Eva.Line)
+	c.Box(l.Body, pal.Line)
 	box := l.Body.Inset(4)
 	intro := evenWrap("Enter the code from the Patreon post.", a.body.Cols(box.Dx()), 3)
 	msgCols := a.sm.Cols(box.Dx())
@@ -378,20 +377,20 @@ func (a *App) paintLock(c *gfx.Canvas) {
 	top := box.Min.Y + max(0, (box.Dy()-h)/2)
 	y = top
 	for _, line := range intro {
-		c.Text(box.Min.X+(box.Dx()-a.body.Width(line))/2, y, a.body, line, gen.Eva.Fg)
+		c.Text(box.Min.X+(box.Dx()-a.body.Width(line))/2, y, a.body, line, pal.Fg)
 		y += a.body.H + 1
 	}
 	y += 10
 	a.paintCodeBoxes(c, box, y)
 	y += lockBoxH + 8
 	for _, line := range evenWrap(a.lock.message, msgCols, 2) {
-		c.Text(box.Min.X+(box.Dx()-a.sm.Width(line))/2, y, a.sm, line, gen.Eva.Warn)
+		c.Text(box.Min.X+(box.Dx()-a.sm.Width(line))/2, y, a.sm, line, pal.Warn)
 		y += a.sm.H + 1
 	}
 	y = top + h - footH
 	for _, line := range foot {
 		line = gfx.Fit(line, msgCols)
-		c.Text(box.Min.X+(box.Dx()-a.sm.Width(line))/2, y, a.sm, line, gen.Eva.Muted)
+		c.Text(box.Min.X+(box.Dx()-a.sm.Width(line))/2, y, a.sm, line, pal.Muted)
 		y += a.sm.H + 1
 	}
 	if sw != "" {
@@ -426,16 +425,16 @@ func (a *App) paintCodeBoxes(c *gfx.Canvas, box image.Rectangle, y int) {
 	inkL, inkT, inkW, inkH := digitInk(a.body)
 	for i, d := range a.lock.digits {
 		r := image.Rect(x, y, x+lockBoxW, y+lockBoxH)
-		frame, fill := gen.Eva.Line, gen.Eva.Bg
+		frame, fill := pal.Line, pal.Bg
 		if i == a.lock.box {
-			frame, fill = gen.Eva.Accent, gen.Eva.Surface
+			frame, fill = pal.Accent, pal.Surface
 		}
 		c.Fill(r, fill)
 		c.Box(r, frame)
 		if d >= 0 {
 			gx := r.Min.X + (lockBoxW-2*inkW)/2 - 2*inkL
 			gy := r.Min.Y + (lockBoxH-2*inkH)/2 - 2*inkT
-			bigGlyph(c, gx, gy, a.body, '0'+byte(d), gen.Eva.Fg)
+			bigGlyph(c, gx, gy, a.body, '0'+byte(d), pal.Fg)
 		}
 		x += lockBoxW + lockBoxGap
 		if i == codeLen/2-1 {
