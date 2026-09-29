@@ -33,10 +33,11 @@ const (
 	ScreenViews   // Options -> Views: the checkbox page of the Y cycle
 	ScreenCredits // Options -> Credits: who made it, what it builds on, the early adopters
 	ScreenSaverOptions
+	ScreenMembers // a page the members' build draws and drives (members.go); the free build never opens it
 )
 
 func (s Screen) String() string {
-	return [...]string{"list", "details", "screen", "filter", "options", "calibrate", "update", "troubleshooting", "scan", "views", "credits", "screensaver-options"}[s]
+	return [...]string{"list", "details", "screen", "filter", "options", "calibrate", "update", "troubleshooting", "scan", "views", "credits", "screensaver-options", "members"}[s]
 }
 
 // Config is what the app needs from its host.
@@ -875,7 +876,7 @@ func (a *App) Handle(ev platform.Event) (repaint bool) {
 	if ev.Key == platform.KeyMenu {
 		return a.menuButton()
 	}
-	if a.screen == ScreenList || a.screen == ScreenFilter || a.screen == ScreenOptions || a.screen == ScreenViews || a.screen == ScreenCredits || a.screen == ScreenSaverOptions {
+	if a.screen == ScreenList || a.screen == ScreenFilter || a.screen == ScreenOptions || a.screen == ScreenViews || a.screen == ScreenCredits || a.screen == ScreenSaverOptions || a.screen == ScreenMembers {
 		switch ev.Key {
 		case platform.KeyUp, platform.KeyDown, platform.KeyLeft, platform.KeyRight:
 			a.rep.next = ev.At.Add(time.Duration(a.HoldDelay()) * time.Millisecond)
@@ -963,6 +964,8 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 		case platform.KeyUp, platform.KeyDown, platform.KeyPageUp, platform.KeyPageDown:
 			return scrollPace(a.cfg.Scroll)
 		}
+	case ScreenMembers:
+		return a.membersRepeat(k)
 	}
 	return 0
 }
@@ -1118,6 +1121,8 @@ func (a *App) act(k platform.Key) bool {
 		return a.actPanel(k)
 	case ScreenCalibrate:
 		return a.actCalibrate(k)
+	case ScreenMembers:
+		return a.membersAct(k)
 	}
 	return false
 }
@@ -1423,6 +1428,8 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 			a.paintSupport(c)
 		case ScreenScan:
 			a.paintScan(c)
+		case ScreenMembers:
+			a.membersPaint(c)
 		}
 		a.neighbourhood()
 		a.cfg.Images.Want(a.wants)
