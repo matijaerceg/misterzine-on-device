@@ -449,3 +449,24 @@ func TestArcadeDefaultAndUpgrade(t *testing.T) {
 		}
 	}
 }
+
+func TestMembersSettingsRoundTrip(t *testing.T) {
+	p := writeSettings(t, `{"members":{"extra":"off"}}`)
+	s, err := LoadSettings(p)
+	if err != nil || s.Members["extra"] != "off" {
+		t.Fatalf("members' settings not read: %v, %v", s.Members, err)
+	}
+	if err := Save(p, s); err != nil {
+		t.Fatal(err)
+	}
+	if restored, err := LoadSettings(p); err != nil || !reflect.DeepEqual(restored.Members, s.Members) {
+		t.Fatalf("members' settings not kept: %v, %v", restored.Members, err)
+	}
+	s.Members = nil
+	if err := Save(p, s); err != nil {
+		t.Fatal(err)
+	}
+	if b, _ := os.ReadFile(p); strings.Contains(string(b), "members") {
+		t.Fatal("no members' settings should write no members key")
+	}
+}

@@ -63,6 +63,10 @@ type Settings struct {
 	// in MiSTer's map file name ("045e_028e"): "a" or "b". A pad not listed
 	// follows the MENU OK choice in its MiSTer definition.
 	OKButtons map[string]string `json:"ok_buttons,omitempty"`
+	// Members are the settings of MisterZine Arcade's members' extras, by
+	// name. The free build keeps them unread and writes them back as it
+	// found them.
+	Members map[string]string `json:"members,omitempty"`
 }
 
 // DefaultSettings for a fresh install.

@@ -612,7 +612,7 @@ func (a *App) optionsEntries() []panelEntry {
 			}
 		}
 	}
-	return E
+	return a.membersOptions(E)
 }
 
 // dateFormatHelp shows today's date in the chosen list format.
@@ -1206,6 +1206,8 @@ func (a *App) stepValue(d int) bool {
 		if a.cfg.Action != nil && a.cfg.Launcher != nil {
 			a.cfg.Action("launcher", []string{"off", "on"}[i])
 		}
+	default:
+		a.membersStep(e.kind, i)
 	}
 	if a.cfg.SettingsChanged != nil {
 		a.cfg.SettingsChanged()

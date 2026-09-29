@@ -188,6 +188,11 @@ type Config struct {
 	// vendor_product as in MiSTer's map file name: "a" or "b" overrides
 	// the MENU OK choice read from that map; absent means auto (okbutton.go).
 	OKButtons map[string]string
+	// Members holds the settings of the members' extras in MisterZine
+	// Arcade, by name (members.go). The free build never reads them and
+	// saves them back unchanged, so a member who goes back to free and
+	// later rejoins finds them as they were.
+	Members map[string]string
 	// BetaUnlock, set by the host of a locked Patreon beta build, opens the
 	// app on the lock screen (beta_lock.go) and checks a code there: nil
 	// unlocks, and the host has saved the batch's receipt; beta.ErrLocked

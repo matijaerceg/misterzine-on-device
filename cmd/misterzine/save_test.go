@@ -284,3 +284,18 @@ func TestFullDisplayChoiceSurvivesRestart(t *testing.T) {
 		t.Fatal("full display lost on restart")
 	}
 }
+
+// The free build never reads the members' settings, but saving its own
+// must not drop them: a member who went back to free finds them on rejoining.
+func TestFreeBuildKeepsMembersSettings(t *testing.T) {
+	root := t.TempDir()
+	h := favoritesHost(root)
+	h.settings.Members = map[string]string{"extra": "off"}
+	h.a = app.New(app.Config{PhysW: 320, PhysH: 240, Members: h.settings.Members, SettingsChanged: func() { h.setDirty = true }}, data.Ingest(nil, "test", time.Now()), nil)
+	h.settings.Members = nil // the save must take them from the app
+	h.saveAll(true)
+	saved, err := store.LoadSettings(filepath.Join(root, "settings.json"))
+	if err != nil || !reflect.DeepEqual(saved.Members, map[string]string{"extra": "off"}) {
+		t.Fatalf("members' settings after a free save: %v, %v", saved.Members, err)
+	}
+}

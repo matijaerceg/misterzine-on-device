@@ -308,7 +308,7 @@ func (a *App) paintRows(c *gfx.Canvas) {
 			break
 		}
 		if mk < len(a.marks) && a.marks[mk] == pos {
-			a.paintMarker(c, r, a.markText(mk))
+			a.paintMarker(c, r, a.markText(mk), a.markNote(mk))
 			mk++
 			continue
 		}
@@ -319,10 +319,10 @@ func (a *App) paintRows(c *gfx.Canvas) {
 		pos++
 	}
 	// a maker whose header scrolled off keeps its name on the top line
-	if h := a.pinnedHeader(); h != "" {
+	if pos := a.pinnedPos(); pos >= 0 {
 		r := l.lineRect(0)
 		c.Fill(r, gen.Eva.Bg)
-		a.paintMarker(c, r, h)
+		a.paintMarker(c, r, a.groupLabel(a.view[pos]), a.headerNote(pos))
 	}
 }
 
@@ -344,7 +344,7 @@ func (a *App) paintRowsStill(c *gfx.Canvas) {
 	for n := 0; n < l.Lines; n++ {
 		r := l.lineRect(n)
 		if mk < len(a.marks) && a.marks[mk] == pos {
-			a.paintMarker(c, r, a.markText(mk))
+			a.paintMarker(c, r, a.markText(mk), a.markNote(mk))
 			mk++
 			continue
 		}
@@ -355,10 +355,10 @@ func (a *App) paintRowsStill(c *gfx.Canvas) {
 		pos++
 	}
 	// a maker whose header scrolled off keeps its name on the top line
-	if h := a.pinnedHeader(); h != "" {
+	if pos := a.pinnedPos(); pos >= 0 {
 		r := l.lineRect(0)
 		c.Fill(r, gen.Eva.Bg)
-		a.paintMarker(c, r, h)
+		a.paintMarker(c, r, a.groupLabel(a.view[pos]), a.headerNote(pos))
 	}
 }
 
@@ -384,15 +384,29 @@ func (a *App) paintScrollbar(c *gfx.Canvas) {
 	c.Fill(image.Rect(t.Min.X, y, t.Max.X, y+h), gen.Eva.Accent)
 }
 
-func (a *App) paintMarker(c *gfx.Canvas, r image.Rectangle, text string) {
+// paintMarker draws a marker line: text on the rule near its left end
+// and, when there is one, note flush with its right end, where the rows
+// keep their dates.
+func (a *App) paintMarker(c *gfx.Canvas, r image.Rectangle, text, note string) {
 	mid := r.Min.Y + r.Dy()/2
 	c.HLine(r.Min.X, r.Max.X-1, mid, gen.Eva.Line)
 	// fitted to the line at rest (restLayout); the list's edge clips it
 	w := r.Dx() + a.restLayout().List.Dx() - a.lay.List.Dx()
-	s := " " + gfx.Fit(text, a.sm.Cols(w)-2) + " "
+	cols := a.sm.Cols(w) - 2
+	if note != "" {
+		note = " " + note
+		// a stretch of rule stays between the text and the note
+		cols = min(cols, (w-a.body.W-a.sm.Width(note))/a.sm.W-3)
+	}
+	s := " " + gfx.Fit(text, cols) + " "
 	x := r.Min.X + a.body.W
 	c.Fill(image.Rect(x, r.Min.Y, x+a.sm.Width(s), r.Max.Y), gen.Eva.Bg)
 	c.Text(x, r.Min.Y+2, a.sm, s, gen.Eva.Muted)
+	if note != "" {
+		nx := r.Max.X - a.sm.Width(note)
+		c.Fill(image.Rect(nx, r.Min.Y, r.Max.X, r.Max.Y), gen.Eva.Bg)
+		c.Text(nx, r.Min.Y+2, a.sm, note, gen.Eva.Muted)
+	}
 }
 
 func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {

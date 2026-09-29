@@ -94,17 +94,26 @@ func (a *App) markLine(k int) int {
 // the top line is a header itself, the cursor sits on the top line, or the
 // order has no group headers.
 func (a *App) pinnedHeader() string {
+	if pos := a.pinnedPos(); pos >= 0 {
+		return a.groupLabel(a.view[pos])
+	}
+	return ""
+}
+
+// pinnedPos is the view position of the top line's row while pinnedHeader
+// covers it, else -1.
+func (a *App) pinnedPos() int {
 	if !a.groupHeaders() || a.top == 0 || len(a.view) == 0 {
-		return ""
+		return -1
 	}
 	pos := 0
 	for pos < len(a.view) && a.screenLine(pos) < a.top {
 		pos++
 	}
 	if pos >= len(a.view) || a.screenLine(pos)-1 >= a.top || a.screenLine(a.cursor) == a.top {
-		return ""
+		return -1
 	}
-	return a.groupLabel(a.view[pos])
+	return pos
 }
 
 // markText is what marker k says: the since-visit status on the first
@@ -125,6 +134,19 @@ func (a *App) markText(k int) string {
 		if pos := a.marks[k]; pos < len(a.view) {
 			return a.groupLabel(a.view[pos])
 		}
+	}
+	return ""
+}
+
+// markNote is what the right end of marker k says: the members' build can
+// put a note on a group header (headerNote); the since-visit status row
+// has none.
+func (a *App) markNote(k int) string {
+	if a.marker && k == 0 || !a.groupHeaders() {
+		return ""
+	}
+	if pos := a.marks[k]; pos < len(a.view) {
+		return a.headerNote(pos)
 	}
 	return ""
 }

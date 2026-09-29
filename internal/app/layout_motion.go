@@ -261,7 +261,7 @@ func (a *App) paintLayoutMotion(c *gfx.Canvas) {
 			break
 		}
 		if mk < len(a.marks) && a.marks[mk] == pos {
-			a.paintMarker(rows, r, a.markText(mk))
+			a.paintMarker(rows, r, a.markText(mk), a.markNote(mk))
 			mk++
 			continue
 		}
@@ -276,10 +276,10 @@ func (a *App) paintLayoutMotion(c *gfx.Canvas) {
 	if len(a.view) == 0 {
 		rows.Text(l.List.Min.X+a.body.W, l.List.Min.Y+l.Line, a.body, gfx.Fit(a.emptyListMessage(), m.rest.Cols-1), gen.Eva.Muted)
 	}
-	if h := a.pinnedHeader(); h != "" {
+	if pos := a.pinnedPos(); pos >= 0 {
 		r := l.lineRect(0)
 		rows.Fill(r, gen.Eva.Bg)
-		a.paintMarker(rows, r, h)
+		a.paintMarker(rows, r, a.groupLabel(a.view[pos]), a.headerNote(pos))
 	}
 	a.paintScrollbar(c)
 	// Keep the pane opaque while its contents move with it; nothing of it
