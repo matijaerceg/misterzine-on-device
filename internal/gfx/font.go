@@ -249,6 +249,7 @@ const (
 	// it: a stem from the top of the cell turning into a short rule
 	ChildMark = "\x10"
 	OpenPage  = "\x0f" // northeast arrow: opens another screen/editor
+	Star      = "\x0e" // marks a MisterZine Arcade extra
 )
 
 // SetGlyph installs a glyph (rows top to bottom, MSB = leftmost pixel).
@@ -342,17 +343,20 @@ func (f *Font) addSectionMarks() {
 }
 
 // addButtonSymbols installs the PlayStation cross, circle, square and
-// triangle as one-cell glyphs about a capital's height, on the baseline.
+// triangle, and the members' star, as one-cell glyphs about a capital's
+// height, on the baseline.
 func (f *Font) addButtonSymbols() {
 	cross := []byte{0x88, 0x50, 0x20, 0x50, 0x88}
 	circle := []byte{0x70, 0x88, 0x88, 0x88, 0x70}
 	square := []byte{0xF8, 0x88, 0x88, 0x88, 0xF8}
 	triangle := []byte{0x20, 0x50, 0x50, 0x88, 0xF8}
+	star := []byte{0x20, 0xF8, 0x70, 0x50, 0x88}
 	if f.W >= 6 {
 		cross = []byte{0x84, 0x48, 0x30, 0x30, 0x48, 0x84}
 		circle = []byte{0x78, 0x84, 0x84, 0x84, 0x84, 0x78}
 		square = []byte{0xFC, 0x84, 0x84, 0x84, 0x84, 0xFC}
 		triangle = []byte{0x30, 0x30, 0x48, 0x48, 0x84, 0xFC}
+		star = []byte{0x20, 0x20, 0xF8, 0x70, 0x50, 0x88}
 	}
 	place := func(shape []byte) []byte {
 		rows := make([]byte, f.H)
@@ -364,6 +368,7 @@ func (f *Font) addButtonSymbols() {
 	f.SetGlyph(Circle[0], place(circle))
 	f.SetGlyph(Square[0], place(square))
 	f.SetGlyph(Triangle[0], place(triangle))
+	f.SetGlyph(Star[0], place(star))
 }
 
 // Cols is how many cells fit in w pixels.
