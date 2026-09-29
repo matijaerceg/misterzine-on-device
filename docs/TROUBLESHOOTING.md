@@ -114,7 +114,9 @@ romDirs = /media/fat/MisterZine Arcade.mgl
 ```
 
 Then delete `ConsoleMode/caches/global_cache.json` so that Console Mode
-rebuilds its lists. MisterZine appears under Load Game -> Ports.
+rebuilds its lists. MisterZine appears under Load Game -> Ports. Console Mode
+stops updating a `Ports.ini` you have edited, so ports it adds in later
+versions will not appear there.
 
 ## Favorites unreadable
 
