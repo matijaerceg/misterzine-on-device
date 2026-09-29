@@ -24,6 +24,7 @@ const (
 	uiDevCreate  = 0x5501
 	uiDevDestroy = 0x5502
 	vtActivate   = 0x5606
+	vtUnlockSw   = 0x560C // VT_UNLOCKSWITCH
 	evSyn        = 0
 	evKeyType    = 1
 
@@ -142,6 +143,22 @@ func Chvt(n int) error {
 	want := fmt.Sprintf("tty%d", n)
 	if !awaitConsole(want, ActiveTTY, time.Sleep, 2*time.Second) {
 		return fmt.Errorf("console did not switch to %s in 2s (still %s: another program holds the screen?)", want, ActiveTTY())
+	}
+	return nil
+}
+
+// UnlockVTSwitch lifts a VT_LOCKSWITCH. While one is held the kernel
+// refuses every console switch, text mode or not, and the lock outlives the
+// program that took it: a Console Mode card held one after its frontend was
+// ended by a signal rather than its own Quit.
+func UnlockVTSwitch() error {
+	f, err := os.OpenFile("/dev/tty0", os.O_RDWR|syscall.O_NOCTTY|syscall.O_CLOEXEC, 0)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	if _, _, e := syscall.Syscall(syscall.SYS_IOCTL, f.Fd(), vtUnlockSw, 0); e != 0 {
+		return fmt.Errorf("VT_UNLOCKSWITCH: %v", e)
 	}
 	return nil
 }

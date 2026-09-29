@@ -239,6 +239,21 @@ func TestFrontendScriptRunsRecognisesDegaussOnly(t *testing.T) {
 	}
 }
 
+// Under Console Mode's Main a session ends on its menu core, by the
+// relative path its own returns use: only that one brings its frontend
+// back (an absolute path or the stock menu core leaves it closed).
+func TestMenuCoreCmdFollowsConsoleMode(t *testing.T) {
+	if got := menuCoreCmd(false); got != "load_core /media/fat/menu.rbf" {
+		t.Fatalf("stock Main: %q", got)
+	}
+	if got := menuCoreCmd(true); got != "load_core ConsoleMode/menu_ConsoleMode.rbf" {
+		t.Fatalf("Console Mode: %q", got)
+	}
+	if consoleModeRunning() {
+		t.Fatal("no MiSTer_ConsoleMode runs on the test host")
+	}
+}
+
 func TestFrontendTakingMenuIgnoresStaleOrForeignScripts(t *testing.T) {
 	// No process named degauss runs on the test host, so the answer is
 	// driven by /tmp/script alone: a stale one (older than the selection)

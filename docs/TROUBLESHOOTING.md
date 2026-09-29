@@ -90,6 +90,32 @@ Degauss does not list MisterZine's menu entry, so its Scripts list carries
 when MisterZine quits (through Options -> Quit MisterZine or the pad's Menu
 button; keyboard F12 does not leave from a Scripts session).
 
+### Console Mode shows a blinking cursor
+
+Console Mode replaces MiSTer's main program with its own version
+(`main=ConsoleMode/MiSTer_ConsoleMode` in MiSTer.ini). That version ignores
+the key the launcher pressed to open the console. MisterZine Arcade then left
+an empty screen with a blinking cursor, and `watch.log` said "could not open
+the console". Now the launcher opens the console directly under Console Mode,
+and Console Mode comes back when MisterZine quits. This works whether you
+choose MisterZine Arcade after quitting Console Mode or from an item Console
+Mode lists. Return after game and Open at boot work too.
+
+To open MisterZine from Console Mode's own menus, add it to the Ports list.
+Open `ConsoleMode/themeconfig/section_groups/Ports.ini`, add `,MisterZine`
+to the end of the `consoleList` line, and add these lines at the end of the
+file:
+
+```
+[MisterZine]
+execs = none
+romExts = .mgl
+romDirs = /media/fat/MisterZine Arcade.mgl
+```
+
+Then delete `ConsoleMode/caches/global_cache.json` so that Console Mode
+rebuilds its lists. MisterZine appears under Load Game -> Ports.
+
 ## Favorites unreadable
 
 The app keeps the original favorites file on read errors and disables favorite

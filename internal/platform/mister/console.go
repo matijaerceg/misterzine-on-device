@@ -129,6 +129,20 @@ func ConsoleGraphics(p string) bool {
 	return mode == kdGraphics
 }
 
+// ConsoleText puts console p back in text mode, as a program that drew on
+// it does when it exits cleanly: for a console such a program left behind.
+func ConsoleText(p string) error {
+	f, err := os.OpenFile(p, os.O_RDWR|syscall.O_NOCTTY|syscall.O_CLOEXEC, 0)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	if _, _, e := syscall.Syscall(syscall.SYS_IOCTL, f.Fd(), kdsetmode, kdText); e != 0 {
+		return fmt.Errorf("KDSETMODE text on %s: %v", p, e)
+	}
+	return nil
+}
+
 // RestoreAll is the `console-restore` subcommand: text mode and a visible
 // cursor on the consoles a script can touch, for the wrapper's exit trap and
 // the SSH recovery recipe. Errors are ignored on purpose.

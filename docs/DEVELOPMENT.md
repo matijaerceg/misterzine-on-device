@@ -232,7 +232,13 @@ advances at framebuffer pace. The launcher watches an MGL selection, opens the
 script console and restores Menu afterward. Its console switch waits at most
 two seconds, because the kernel drops the request while the front console is
 in graphics mode. A `main=` frontend (Degauss) that took the menu load is
-closed first; the menu restore brings it back.
+closed first; the menu restore brings it back. Under Console Mode's Main
+(`MiSTer_ConsoleMode`), which ignores F9 and keeps the framebuffer console on
+screen, the launcher closes a leftover `ConsoleMode_arm`, puts a console it left
+in graphics mode back to text, lifts any VT_LOCKSWITCH and takes tty2
+directly. It ends a session and the exit chord with `load_core
+ConsoleMode/menu_ConsoleMode.rbf`: only that relative path makes Console Mode's
+Main start its frontend again.
 
 Update All runs under a detached supervisor so it can survive the UI closing or
 its executable being replaced. Live state is in RAM, with recovery checkpoints

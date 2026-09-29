@@ -56,8 +56,10 @@ Its main-menu entry, called MisterZine until now, becomes **MisterZine Arcade**
 by itself; see [the new entry name](docs/TROUBLESHOOTING.md#the-menu-entry-is-now-misterzine-arcade)
 if a tag or script opened the old one.
 
-If another frontend is your main menu (Degauss), choose **MisterZine-Run** in
-its Scripts list, or exit to the MiSTer menu and choose MisterZine Arcade there.
+If another frontend is your main menu (Degauss, Console Mode), choose
+**MisterZine-Run** in its Scripts list, or exit to the MiSTer menu and choose
+MisterZine Arcade there. Console Mode can also list MisterZine under Ports; see
+[Console Mode](docs/TROUBLESHOOTING.md#console-mode-shows-a-blinking-cursor).
 For configuration by hand, see [installation details](docs/USER_GUIDE.md#installation).
 
 ## Everyday controls

@@ -162,7 +162,7 @@ func followGame(lg *log.Logger, chord string) bool {
 			core := coreName()
 			return core != "" && core != menuCore && core != "misterzine"
 		}, func() {
-			if err := sendMainCmd("load_core /media/fat/menu.rbf"); err != nil {
+			if err := sendMainCmd(menuCoreCmd(consoleModeRunning())); err != nil {
 				lg.Printf("watch: exit chord: %v", err)
 			}
 		}, lg)
@@ -598,8 +598,9 @@ func watch() int {
 			b, _ := os.ReadFile(corenameFile)
 			return strings.TrimSpace(string(b)), launcherUpdateActive()
 		}, time.Sleep) {
-			// back to a plain menu: resets CORENAME so this does not retrigger
-			sendMainCmd("load_core /media/fat/menu.rbf")
+			// back to a plain menu, or Console Mode's: resets CORENAME so
+			// this does not retrigger
+			sendMainCmd(menuCoreCmd(consoleModeRunning()))
 		}
 		// wait for CORENAME to change before watching again
 		for i := 0; i < 40; i++ {
@@ -697,15 +698,100 @@ func closeFrontend(lg *log.Logger, selected time.Time, pause func(time.Duration)
 	lg.Printf("watch: %s did not close; opening the console anyway", frontendName)
 }
 
+// Console Mode (MiSTer.ini main=ConsoleMode/MiSTer_ConsoleMode) runs its own
+// build of Main, which keeps the framebuffer console on screen and ignores
+// F9: the F9 route parked the screen on an empty tty3, a blinking cursor,
+// whether the entry was chosen from Main's menu after quitting Console Mode
+// or from an item Console Mode lists. Under it tty2 is taken directly, and
+// a session ends on its menu core, which brings its frontend back; the stock
+// menu core would leave the player at a login prompt.
+const (
+	consoleModeMain = "MiSTer_ConsoleMode"               // its Main's process name
+	consoleModeUI   = "ConsoleMode_arm"                  // its frontend's process name
+	consoleModeMenu = "ConsoleMode/menu_ConsoleMode.rbf" // its menu core, relative, as its own returns load it
+)
+
+func consoleModeRunning() bool { return len(pidsOf(consoleModeMain)) > 0 }
+
+// closeConsoleModeFrontend ends a Console Mode frontend still on screen as
+// the entry loads. Its Main starts the frontend with its menu core and does
+// not end it when the entry's load restarts Main, so Open at boot and
+// Return after game, which load the entry as the frontend comes up, found
+// its console (tty3) held in graphics mode. The frontend exits on SIGTERM;
+// a console left in graphics mode with no frontend running goes back to
+// text, or the kernel refuses every switch away from it.
+func closeConsoleModeFrontend(lg *log.Logger, pause func(time.Duration)) {
+	if pids := pidsOf(consoleModeUI); len(pids) > 0 {
+		lg.Printf("watch: Console Mode's frontend is on screen (pid %v); closing it to open MisterZine", pids)
+		for _, p := range pids {
+			syscall.Kill(p, syscall.SIGTERM)
+		}
+		for waited := time.Duration(0); waited < 5*time.Second && len(pidsOf(consoleModeUI)) > 0; waited += 100 * time.Millisecond {
+			pause(100 * time.Millisecond)
+		}
+	}
+	if len(pidsOf(consoleModeUI)) == 0 && mister.ConsoleGraphics("/dev/tty0") {
+		lg.Printf("watch: %s was left in graphics mode; putting it back in text mode", mister.ActiveTTY())
+		if err := mister.ConsoleText("/dev/tty0"); err != nil {
+			lg.Printf("watch: %v", err)
+		}
+	}
+}
+
+// menuCoreCmd is the MiSTer_cmd line that ends a MisterZine session or a
+// game on the menu: Console Mode's menu core under its Main, else Menu.
+func menuCoreCmd(consoleMode bool) string {
+	if consoleMode {
+		return "load_core " + consoleModeMenu
+	}
+	return "load_core /media/fat/menu.rbf"
+}
+
 // runFromMenu opens the console and runs the app wrapper on tty2, like
 // Main does for its own Scripts menu, and returns when the app exits.
 // resume tells the app it is reopening after a game; selected is when the
 // menu selection was written.
 func runFromMenu(lg *log.Logger, kbd *mister.VKeyboard, resume bool, selected time.Time) error {
 	time.Sleep(1200 * time.Millisecond) // Main has just re-executed itself
-	// Remote's trick: park on tty3, press F9 until Main switches to tty1
 	lg.Printf("watch: console: active %s, fb mode %q before", mister.ActiveTTY(), mister.SysfsMode())
 	closeFrontend(lg, selected, time.Sleep)
+	if consoleModeRunning() {
+		closeConsoleModeFrontend(lg, time.Sleep)
+		if err := mister.UnlockVTSwitch(); err != nil {
+			lg.Printf("watch: %v", err)
+		}
+		if err := mister.Chvt(2); err != nil {
+			return err
+		}
+		lg.Printf("watch: console open under Console Mode's Main, no F9 needed: active %s, fb mode %q", mister.ActiveTTY(), mister.SysfsMode())
+	} else if err := openConsoleF9(lg, kbd); err != nil {
+		return err
+	}
+	entry := scriptEntry
+	if !fileExists(entry) {
+		// Allow an older installation to finish an update before its new
+		// wrapper arrives. Downloader removes this old Scripts entry.
+		entry = "/media/fat/Scripts/misterzine.sh"
+	}
+	args := ""
+	if resume {
+		args = " --resume"
+	}
+	launcher := "#!/bin/bash\nexport LC_ALL=en_US.UTF-8\nexport HOME=/root\ncd " + filepath.Dir(entry) + "\n" + entry + args + "\n"
+	if err := os.WriteFile("/tmp/script", []byte(launcher), 0700); err != nil {
+		return err
+	}
+	lg.Printf("watch: running the app on tty2")
+	t0 := time.Now()
+	cmd := exec.Command("/sbin/agetty", "-a", "root", "-l", "/tmp/script", "--nohostname", "-L", "tty2", "linux")
+	err := cmd.Run()
+	lg.Printf("watch: app finished after %v (err=%v)", time.Since(t0).Round(time.Second), err)
+	return nil
+}
+
+// openConsoleF9 is Remote's trick for the stock Main: park on tty3, press
+// F9 until Main switches to tty1 (its console), then take tty2.
+func openConsoleF9(lg *log.Logger, kbd *mister.VKeyboard) error {
 	if err := mister.Chvt(3); err != nil {
 		lg.Printf("watch: %v", err)
 	}
@@ -727,25 +813,6 @@ func runFromMenu(lg *log.Logger, kbd *mister.VKeyboard, resume bool, selected ti
 		return err
 	}
 	lg.Printf("watch: console open after %d F9 press(es): active %s, fb mode %q", presses, mister.ActiveTTY(), mister.SysfsMode())
-	entry := scriptEntry
-	if !fileExists(entry) {
-		// Allow an older installation to finish an update before its new
-		// wrapper arrives. Downloader removes this old Scripts entry.
-		entry = "/media/fat/Scripts/misterzine.sh"
-	}
-	args := ""
-	if resume {
-		args = " --resume"
-	}
-	launcher := "#!/bin/bash\nexport LC_ALL=en_US.UTF-8\nexport HOME=/root\ncd " + filepath.Dir(entry) + "\n" + entry + args + "\n"
-	if err := os.WriteFile("/tmp/script", []byte(launcher), 0700); err != nil {
-		return err
-	}
-	lg.Printf("watch: running the app on tty2")
-	t0 := time.Now()
-	cmd := exec.Command("/sbin/agetty", "-a", "root", "-l", "/tmp/script", "--nohostname", "-L", "tty2", "linux")
-	err := cmd.Run()
-	lg.Printf("watch: app finished after %v (err=%v)", time.Since(t0).Round(time.Second), err)
 	return nil
 }
 
