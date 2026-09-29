@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
+	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 )
 
 // The background ROM check marks the list by the version Start launches,
@@ -145,5 +146,47 @@ func TestROMStateCountsTheMainBehindARememberedVersion(t *testing.T) {
 	a.Refilter()
 	if len(a.view) != 1 {
 		t.Error("missing under problem in any version")
+	}
+}
+
+// Once the background check has finished, the ROM check section names the
+// file it wrote its list of problems to, the path on a line of its own;
+// while it runs, and when it writes none (the free build), it names none.
+func TestROMListNamedInFilters(t *testing.T) {
+	rows := []data.Row{{K: "bad", Title: "Bad", Base: "Arcade", MRA: "_Arcade/Bad.mra", Core: "bad"}}
+	clock := time.Date(2026, 9, 29, 12, 0, 0, 0, time.UTC)
+	done, total := 1, 3
+	cfg := Config{PhysW: 320, PhysH: 240, Now: func() time.Time { return clock }, TimerNow: func() time.Time { return clock },
+		Status:      func(int) data.Status { return data.StatusCurrent },
+		Exists:      func(string) bool { return true },
+		ROMKnown:    func(string) (string, bool, bool) { return "Missing game ROM: bad.zip", true, true },
+		ROMProgress: func() (int, int) { return done, total },
+		ROMList:     "misterzine/rom_problems.txt",
+	}
+	info := func(a *App) []string {
+		var out []string
+		in := false
+		for _, e := range a.rawFilterEntries() {
+			if e.header && !e.info {
+				in = e.kind == "rom"
+				continue
+			}
+			if in && e.info {
+				out = append(out, e.text)
+			}
+		}
+		return out
+	}
+	a := New(cfg, data.Ingest(rows, "test", clock), nil)
+	if got := info(a); len(got) != 1 || got[0] != "checking 1 of 3 files"+gfx.Ellipsis {
+		t.Fatalf("while checking: %q", got)
+	}
+	done = 3
+	if got := info(a); len(got) != 2 || got[0] != "problems listed in" || got[1] != "misterzine/rom_problems.txt" {
+		t.Fatalf("once checked: %q", got)
+	}
+	cfg.ROMList = ""
+	if got := info(New(cfg, data.Ingest(rows, "test", clock), nil)); len(got) != 0 {
+		t.Fatalf("with no list: %q", got)
 	}
 }

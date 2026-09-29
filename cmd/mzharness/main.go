@@ -182,6 +182,9 @@ func main() {
 		// the background check knows every file, and finds the same fault
 		cfg.ROMKnown = func(string) (string, bool, bool) { return *romIssue, true, true }
 		cfg.ROMProgress = func() (int, int) { return 3, 3 }
+		if beta.On() {
+			cfg.ROMList = "misterzine/rom_problems.txt" // as the device names it
+		}
 	}
 	if *imgDir != "" {
 		if _, err := os.Stat(*imgDir); err == nil {

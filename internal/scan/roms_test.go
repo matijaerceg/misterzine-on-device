@@ -391,7 +391,7 @@ func TestROMCheckDetailsInBackground(t *testing.T) {
 	c := NewROMCheck(t.TempDir())
 	c.wait = time.Millisecond
 	release := make(chan struct{})
-	answer := ROMResult{"Missing game ROM: x.zip", true}
+	answer := ROMResult{Text: "Missing game ROM: x.zip", Block: true}
 	c.run = func(string, *CoreAccess) ROMResult { <-release; return answer }
 	if got := c.Check("g.mra", false); got != (ROMResult{}) {
 		t.Fatalf("slow first check returned %+v", got)
@@ -434,7 +434,7 @@ func TestROMCheckDetailsInBackground(t *testing.T) {
 func TestROMCheckQuickNoSignal(t *testing.T) {
 	c := NewROMCheck(t.TempDir())
 	c.wait = 5 * time.Second
-	c.run = func(string, *CoreAccess) ROMResult { return ROMResult{"Missing game ROM: x.zip", true} }
+	c.run = func(string, *CoreAccess) ROMResult { return ROMResult{Text: "Missing game ROM: x.zip", Block: true} }
 	if got := c.Check("g.mra", false); got.Text == "" {
 		t.Fatal("quick check not waited for")
 	}
@@ -458,7 +458,7 @@ func TestROMSweep(t *testing.T) {
 		checked = append(checked, rel)
 		mu.Unlock()
 		if rel == "bad.mra" {
-			return ROMResult{"Missing game ROM: x.zip", true}
+			return ROMResult{Text: "Missing game ROM: x.zip", Block: true}
 		}
 		return ROMResult{}
 	}

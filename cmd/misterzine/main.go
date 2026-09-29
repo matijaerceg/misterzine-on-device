@@ -86,6 +86,7 @@ type host struct {
 	client                        *fetch.Client
 	img                           *images.Service
 	roms                          *scan.ROMCheck
+	romList                       string // where each finished sweep writes its list of problems; "" = nowhere
 	index                         *scan.Index
 	status                        []data.Status
 	owners                        map[string]string // row key -> the row whose file sits at its MRA path (scan.Statuses)
@@ -248,6 +249,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	h.roms.Slow = func(rel string, d time.Duration) {
 		lg.Printf("rom sweep: slow check %s (%v)", rel, d.Round(time.Millisecond))
 	}
+	h.romList = romListPath(root)
 
 	// app
 	favSet := h.favs.Set()
@@ -314,6 +316,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			return r.Text, r.Block, ok
 		},
 		ROMProgress:     h.roms.Progress,
+		ROMList:         cardRelative(card, h.romList),
 		Launch:          h.requestLaunch,
 		Quit:            h.stop,
 		Version:         buildinfo.String(),

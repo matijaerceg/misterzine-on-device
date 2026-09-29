@@ -345,6 +345,9 @@ func (a *App) rawFilterEntries() []panelEntry {
 				E = append(E, panelEntry{text: "checking " + itoa(done) + " of " + itoa(total) + " files" + gfx.Ellipsis, info: true})
 			} else if total == 0 {
 				E = append(E, panelEntry{text: "checked after the card scan", info: true})
+			} else if a.cfg.ROMList != "" {
+				// the path on a line of its own fits tate with a safe area
+				E = append(E, panelEntry{text: "problems listed in", info: true}, panelEntry{text: a.cfg.ROMList, info: true})
 			}
 		}
 	}

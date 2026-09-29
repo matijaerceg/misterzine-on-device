@@ -104,6 +104,10 @@ type Config struct {
 	ROMKnown func(rel string) (text string, block, known bool)
 	// ROMProgress is how far the background ROM check has got (nil = none).
 	ROMProgress func() (done, total int)
+	// ROMList is where on the card the background ROM check writes its
+	// list of problems when it finishes, such as misterzine/rom_problems.txt,
+	// for Filters to name then. "" = it writes none.
+	ROMList string
 	// Launcher reports whether the main-menu launcher is enabled (nil = unsupported).
 	Launcher func() bool
 	// CanUpdateApp reports whether this card can fetch a new MisterZine on

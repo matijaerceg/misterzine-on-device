@@ -23,6 +23,11 @@ scenarios = [
      "enter; shot details; start; shot blocked"],
     ["-data", "testdata/rom-warning.json", "-rom-issue", "Incomplete ROM: jpark.zip (no jp_ic1.bin)", "-rot", "left", "-logical", "-inset", "40", "-out", "out/missing-rom-long-t", "-script",
      "enter; shot details; start; shot blocked"],
+    # the Patreon beta names the list of problems it writes to the card; tate at the widest inset
+    ["-beta", "-data", "testdata/rom-warning.json", "-rom-issue", "Missing game ROM: jpark.zip", "-out", "out/beta-rom-list-h", "-script",
+     "tab; down; right; shot filters"],
+    ["-beta", "-data", "testdata/rom-warning.json", "-rom-issue", "Missing game ROM: jpark.zip", "-rot", "left", "-logical", "-inset", "40", "-out", "out/beta-rom-list-t", "-script",
+     "tab; down; right; shot filters"],
     ["-out", "out/saver-dim-h", "-script",
      "back; home; pagedown*2; right; down*3; enter; down*2; right*2; down; shot brightness-33; enter; wait 1500; shot preview-33; back; right; shot brightness-66; enter; wait 1500; shot preview-66"],
     ["-rot", "left", "-logical", "-out", "out/saver-dim-t", "-script",

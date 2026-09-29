@@ -24,6 +24,10 @@ import (
 type ROMResult struct {
 	Text  string
 	Block bool
+	// Zips names the zip files the problem is about, "|"-separated as an
+	// MRA lists them: the ones to add, or to replace with a set that fits.
+	// Empty when the trouble is no zip's, such as an unreadable MRA.
+	Zips string
 }
 
 // ROMCheck looks inside the ROM archives an MRA names, the way MiSTer's
@@ -59,6 +63,8 @@ type ROMCheck struct {
 	mras map[string]mraEntry
 	zips map[string]*zipIndex
 	md5s map[string]bool // md5Fits answers by section and zip stamps
+
+	list sync.Mutex // one WriteList at a time
 
 	// a sweep checks every MRA the list may mark, in the background
 	sweepStop  chan struct{} // closed to end the running sweep; guarded by mu
@@ -324,7 +330,7 @@ const (
 func (c *ROMCheck) check(rel string, acc *CoreAccess) ROMResult {
 	sections, rbf, issue := c.requirements(rel)
 	if issue != "" {
-		return ROMResult{issue, issue != romListUnreadable}
+		return ROMResult{Text: issue, Block: issue != romListUnreadable}
 	}
 	key := keyRule(rbf, acc)
 	root, rootMame := arcadeROMRoot(c.card)
@@ -336,7 +342,7 @@ func (c *ROMCheck) check(rel string, acc *CoreAccess) ROMResult {
 		for _, s := range sections {
 			for _, p := range s.parts {
 				if p.name != "" {
-					return ROMResult{"MiSTer can't load ROMs while " + filepath.ToSlash(filepath.Join(c.card, "mame")) + " exists", true}
+					return ROMResult{Text: "MiSTer can't load ROMs while " + filepath.ToSlash(filepath.Join(c.card, "mame")) + " exists", Block: true}
 				}
 			}
 		}
@@ -470,11 +476,13 @@ func keyRule(rbf string, acc *CoreAccess) func(ROMResult) ROMResult {
 		a := acc.Of(rbf)
 		switch {
 		case a.JotegoBeta():
-			return ROMResult{res.Text + "; " + core + " is a Patreon beta and needs it", true}
+			res.Text, res.Block = res.Text+"; "+core+" is a Patreon beta and needs it", true
 		case a.Known && !a.Beta:
-			return ROMResult{res.Text + "; " + core + " isn't a beta: MiSTer shows an error, but the game plays", false}
+			res.Text, res.Block = res.Text+"; "+core+" isn't a beta: MiSTer shows an error, but the game plays", false
+		default:
+			res.Text, res.Block = res.Text+"; can't tell whether "+core+" needs it", false
 		}
-		return ROMResult{res.Text + "; can't tell whether " + core + " needs it", false}
+		return res
 	}
 }
 
@@ -569,12 +577,16 @@ func (c *ROMCheck) partIssue(root string, p romPart) (res ROMResult, wrong bool)
 	switch {
 	case len(absent) > 0:
 		res.Text = "Missing game ROM: " + strings.Join(absent, " or ")
+		res.Zips = strings.Join(absent, "|")
 	case len(unreadable) > 0:
 		res.Text = "Unreadable ROM: " + strings.Join(unreadable, " or ")
+		res.Zips = strings.Join(unreadable, "|")
 	case at != "":
 		res.Text = "Wrong ROM version: " + at + " (" + p.name + ") is " + crcs
+		res.Zips = at
 	default:
 		res.Text = "Incomplete ROM: " + strings.Join(tried, " or ") + " (no " + p.name + ")"
+		res.Zips = strings.Join(tried, "|")
 	}
 	if at != "" && len(absent)+len(unreadable) > 0 {
 		// the zip Main passed over leads; what it loads instead follows

@@ -3,10 +3,14 @@
 package main
 
 import (
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/app"
+	"github.com/matijaerceg/misterzine-on-device/internal/beta"
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
+	"github.com/matijaerceg/misterzine-on-device/internal/scan"
 )
 
 // Requests and completion flags belong to the UI loop. Snapshot the current
@@ -149,9 +153,36 @@ func (h *host) sweepROMs() {
 		}
 	}
 	h.lg.Printf("rom sweep: %d files to check", len(paths))
+	list := h.romList
 	h.roms.Sweep(paths, func(n int, d time.Duration) {
 		h.lg.Printf("rom sweep: %d MRAs checked (%v)", n, d.Round(time.Millisecond))
+		if list != "" {
+			if err := h.roms.WriteList(list, paths); err != nil {
+				h.lg.Printf("rom sweep: list: %v", err)
+			}
+		}
 	})
+}
+
+// romListPath is where a finished sweep writes its list of ROM problems:
+// MisterZine's folder in the Patreon beta, nowhere in the free build.
+func romListPath(root string) string {
+	if !beta.On() {
+		return ""
+	}
+	return filepath.Join(root, scan.ROMListName)
+}
+
+// cardRelative is path as a player finds it on the card, such as
+// misterzine/rom_problems.txt; "" stays "".
+func cardRelative(card, path string) string {
+	if path == "" {
+		return ""
+	}
+	if rel, err := filepath.Rel(card, path); err == nil && !strings.HasPrefix(rel, "..") {
+		return filepath.ToSlash(rel)
+	}
+	return filepath.ToSlash(path)
 }
 
 func (h *host) sendScan(r scanResult) bool {
