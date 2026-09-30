@@ -134,13 +134,15 @@ func tailLines(n int, dir string, names ...string) []string {
 func menuEntryStatus(card, root, coreName, mainProgram string) []string {
 	present := func(name string) bool { return fileExists(filepath.Join(card, name)) }
 	var lines []string
-	if name := filepath.Base(menuMGL); present(name) {
+	if name := filepath.Base(menuMGL()); present(name) {
 		lines = append(lines, "Entry: "+name+" present")
 	} else {
 		lines = append(lines, "Entry: "+name+" missing (MisterZine-Setup writes it)")
 	}
-	if name := filepath.Base(legacyMGL); present(name) {
-		lines = append(lines, "Old entry: "+name+" still present")
+	for _, other := range otherMGLs() {
+		if name := filepath.Base(other); present(name) {
+			lines = append(lines, "Old entry: "+name+" still present")
+		}
 	}
 	startup := "Startup line: "
 	if b, err := os.ReadFile(filepath.Join(card, "linux", filepath.Base(startupScript))); err != nil {

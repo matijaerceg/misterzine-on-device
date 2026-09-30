@@ -269,7 +269,7 @@ func (a *App) paintUpdate(c *gfx.Canvas) {
 	if a.UpdateRestartAvailable() {
 		restart := "MisterZine updated. Restart to use the new version."
 		if s.Mode == updater.ModeBeta {
-			restart = "MisterZine Arcade is installed. Restart to use it."
+			restart = "MisterZine Arcade BETA is installed. Restart to use it."
 		}
 		for _, line := range gfx.Wrap(restart, a.sm.Cols(l.Body.Dx()-4), 3) {
 			c.Text(l.Body.Min.X+2, y, a.sm, line, pal.Accent)

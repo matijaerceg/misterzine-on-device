@@ -63,8 +63,8 @@ func betaEntryNeeded(root, card string) bool {
 
 // Notices of the beta's guard, short enough for the status bar in tate.
 const (
-	betaEntryKept   = "Update All keeps the beta now"
-	betaEntryFailed = "Run Install-Beta to keep the beta"
+	betaEntryKept   = "Update All keeps Beta now"
+	betaEntryFailed = "Run Install-Beta to keep Beta"
 )
 
 // keepBetaEntry runs the beta's guard off the UI goroutine: channel.py,

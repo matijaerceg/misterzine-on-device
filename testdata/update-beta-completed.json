@@ -7,11 +7,11 @@
   "started": "2026-09-08T11:59:20Z",
   "elapsed": 52,
   "lines": [
-    "MisterZine's Downloader entry in downloader_misterzine.ini now points at MisterZine Arcade.",
+    "MisterZine's Downloader entry in downloader_misterzine.ini now points at MisterZine Arcade BETA.",
     "Running MiSTer Downloader",
     "Installing misterzine/misterzine",
-    "Installing Scripts/MisterZine-Switch-To-Free.sh",
-    "MisterZine Arcade is installed. Choose it in the main menu and enter the code",
-    "from the Patreon members' post. Favorites and settings came along."
+    "Installing Scripts/MisterZine-Switch-To-Stable.sh",
+    "MisterZine Arcade BETA is installed. Choose it in the main menu and enter",
+    "the code from the Patreon members' post. Favorites and settings came along."
   ]
 }

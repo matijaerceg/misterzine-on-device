@@ -37,7 +37,7 @@ class RemovalTest(unittest.TestCase):
         (self.app / "misterzine").write_bytes(b"binary")
         (self.card / "unrelated.txt").write_bytes(b"keep")
         # the main-menu entry, and one still under its old name
-        for name in ("MisterZine Arcade.mgl", "MisterZine.mgl"):
+        for name in ("MisterZine Arcade.mgl", "MisterZine Arcade BETA.mgl", "MisterZine.mgl"):
             (self.card / name).write_bytes(b"<mistergamedescription/>")
         self.calls = []
 
@@ -64,6 +64,7 @@ class RemovalTest(unittest.TestCase):
         self.assertFalse(self.app.exists())
         self.assertFalse((self.card / "MisterZine.mgl").exists())
         self.assertFalse((self.card / "MisterZine Arcade.mgl").exists())
+        self.assertFalse((self.card / "MisterZine Arcade BETA.mgl").exists())
         self.assertTrue(self.archive.exists())
         self.assertEqual((self.card / "unrelated.txt").read_bytes(), b"keep")
 

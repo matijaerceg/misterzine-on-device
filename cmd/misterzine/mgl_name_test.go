@@ -5,30 +5,64 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"testing"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/beta"
 )
 
-// The main-menu entry is MisterZine Arcade in the free build and in the
-// beta alike, and its setname stays misterzine, which CORENAME, the INI's
-// [MisterZine] section and the watcher go by.
-func TestMenuEntryIsMisterZineArcade(t *testing.T) {
-	for _, on := range []bool{false, true} {
-		restore := beta.Set(on)
+// The main-menu entry is MisterZine Arcade in Stable and MisterZine Arcade
+// BETA in the members' Beta, and its setname stays misterzine in both, which
+// CORENAME, the INI's [MisterZine] section and the watcher go by.
+func TestMenuEntryNamesTheBuild(t *testing.T) {
+	for _, tc := range []struct {
+		beta          bool
+		entry, others string
+	}{
+		{false, "/media/fat/MisterZine Arcade.mgl", "/media/fat/MisterZine Arcade BETA.mgl /media/fat/MisterZine.mgl"},
+		{true, "/media/fat/MisterZine Arcade BETA.mgl", "/media/fat/MisterZine Arcade.mgl /media/fat/MisterZine.mgl"},
+	} {
+		restore := beta.Set(tc.beta)
 		sent := ""
 		openMenuEntry(func(line string) error { sent = line; return nil })
+		entry, others := menuMGL(), strings.Join(otherMGLs(), " ")
 		restore()
-		if menuMGL != "/media/fat/MisterZine Arcade.mgl" || legacyMGL != "/media/fat/MisterZine.mgl" {
-			t.Fatalf("beta %v: entry %q, old name %q", on, menuMGL, legacyMGL)
+		if entry != tc.entry || others != tc.others {
+			t.Fatalf("beta %v: entry %q, others %q", tc.beta, entry, others)
 		}
-		if sent != "load_core /media/fat/MisterZine Arcade.mgl" {
-			t.Fatalf("beta %v: Open at boot and Return after game send %q", on, sent)
+		if sent != "load_core "+tc.entry {
+			t.Fatalf("beta %v: Open at boot and Return after game send %q", tc.beta, sent)
 		}
 	}
 	if mglBody != "<mistergamedescription>\n\t<rbf>menu</rbf>\n\t<setname>misterzine</setname>\n</mistergamedescription>\n" {
 		t.Fatalf("the entry's setname changed: %q", mglBody)
+	}
+}
+
+// A card that moves between Stable and Beta shows one entry: each build's
+// writes its own name and removes the other's, whichever way round.
+func TestEachBuildReplacesTheOthersEntry(t *testing.T) {
+	dir := t.TempDir()
+	stable, betaEntry, legacy := filepath.Join(dir, "MisterZine Arcade.mgl"), filepath.Join(dir, "MisterZine Arcade BETA.mgl"), filepath.Join(dir, "MisterZine.mgl")
+	if err := os.WriteFile(stable, []byte(mglBody), 0644); err != nil {
+		t.Fatal(err)
+	}
+	for _, step := range []struct {
+		entry  string
+		others []string
+		want   string
+	}{
+		{betaEntry, []string{stable, legacy}, "MisterZine Arcade BETA.mgl"}, // to Beta
+		{stable, []string{betaEntry, legacy}, "MisterZine Arcade.mgl"},      // back to Stable
+		{betaEntry, []string{stable, legacy}, "MisterZine Arcade BETA.mgl"}, // and again
+	} {
+		if err := ensureMGLAt(step.entry, step.others...); err != nil {
+			t.Fatal(err)
+		}
+		if got := mglEntries(t, dir); len(got) != 1 || got[0] != step.want {
+			t.Fatalf("after writing %s: %q", filepath.Base(step.entry), got)
+		}
 	}
 }
 
@@ -108,20 +142,20 @@ func TestEnsureMGLReplacesTheOldEntry(t *testing.T) {
 }
 
 // Turning the shortcut off (and Uninstall's launcher disable) removes the
-// entry under either name.
-func TestDisableLauncherRemovesBothNames(t *testing.T) {
+// entry under any of its names.
+func TestDisableLauncherRemovesEveryName(t *testing.T) {
 	dir := t.TempDir()
 	startup := filepath.Join(dir, "user-startup.sh")
-	entry, legacy := filepath.Join(dir, "MisterZine Arcade.mgl"), filepath.Join(dir, "MisterZine.mgl")
-	for _, p := range []string{entry, legacy} {
+	entry, betaEntry, legacy := filepath.Join(dir, "MisterZine Arcade.mgl"), filepath.Join(dir, "MisterZine Arcade BETA.mgl"), filepath.Join(dir, "MisterZine.mgl")
+	for _, p := range []string{entry, betaEntry, legacy} {
 		if err := os.WriteFile(p, []byte(mglBody), 0644); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if err := disableLauncherFiles(startup, entry, legacy); err != nil {
+	if err := disableLauncherFiles(startup, entry, betaEntry, legacy); err != nil {
 		t.Fatal(err)
 	}
-	for _, p := range []string{entry, legacy} {
+	for _, p := range []string{entry, betaEntry, legacy} {
 		if _, err := os.Stat(p); !os.IsNotExist(err) {
 			t.Fatalf("%s survived disabling", filepath.Base(p))
 		}

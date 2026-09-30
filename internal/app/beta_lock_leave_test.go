@@ -40,7 +40,7 @@ func TestLockScreenNamesTheWayOutOnlyToEarlierMembers(t *testing.T) {
 		t.Fatalf("a first install is told the way out: %q", got)
 	}
 	l = newLockedApp(t, Config{BetaEarlierBatch: true})
-	if got := strings.Join(l.lockLeaveLines(80), " "); got != "Leaving the beta? Run MisterZine-Switch-To-Free from Scripts." {
+	if got := strings.Join(l.lockLeaveLines(80), " "); got != "Leaving Beta? Run MisterZine-Switch-To-Stable from Scripts." {
 		t.Fatalf("the line: %q", got)
 	}
 }
@@ -64,16 +64,16 @@ func TestLockLeaveLinesFit(t *testing.T) {
 						t.Fatalf("rot %v inset %d %v: %q is wider than %d columns", rot, inset, size, line, cols)
 					}
 					switch {
-					case strings.Contains(line, "Switch-To-Free"):
+					case strings.Contains(line, "Switch-To-Stable"):
 						whole = true
-					case strings.Contains(line, "Switch") || strings.Contains(line, "Free") || strings.HasSuffix(line, "-"):
+					case strings.Contains(line, "Switch") || strings.Contains(line, "Stable") || strings.HasSuffix(line, "-"):
 						t.Fatalf("rot %v inset %d %v: the script's name is broken across lines: %q", rot, inset, size, lines)
 					}
 				}
 				if !whole || len(lines) > 3 {
 					t.Fatalf("rot %v inset %d %v: %d columns give %q", rot, inset, size, cols, lines)
 				}
-				if cols >= len("MisterZine-Switch-To-Free") && !strings.Contains(strings.Join(lines, " "), "MisterZine-Switch-To-Free") {
+				if cols >= len("MisterZine-Switch-To-Stable") && !strings.Contains(strings.Join(lines, " "), "MisterZine-Switch-To-Stable") {
 					t.Fatalf("rot %v inset %d %v: the full name fits %d columns, yet %q", rot, inset, size, cols, lines)
 				}
 				if _, _, _, h := a.lockBlock(box); h > box.Dy() {

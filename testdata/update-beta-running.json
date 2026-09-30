@@ -9,10 +9,10 @@
   "last_output": "2026-09-08T11:59:58Z",
   "elapsed": 40,
   "lines": [
-    "MisterZine's Downloader entry in downloader_misterzine.ini now points at MisterZine Arcade.",
+    "MisterZine's Downloader entry in downloader_misterzine.ini now points at MisterZine Arcade BETA.",
     "Running MiSTer Downloader",
     "Checking installed files...",
     "Installing misterzine/misterzine",
-    "Installing Scripts/MisterZine-Switch-To-Free.sh"
+    "Installing Scripts/MisterZine-Switch-To-Stable.sh"
   ]
 }

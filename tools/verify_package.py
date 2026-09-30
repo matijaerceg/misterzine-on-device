@@ -20,8 +20,8 @@ RELEASES = {
     True: "https://github.com/matijaerceg/misterzine-arcade-betas/releases/download/",
 }
 # Files only MisterZine Arcade, the members' beta, ships: its way back to free.
-BETA_FILES = {"misterzine/channel.py", "Scripts/MisterZine-Switch-To-Free.sh"}
-BETA_ASSETS = {"MisterZine-Install-Beta.sh", "MisterZine-Switch-To-Free.sh", "channel.py"}
+BETA_FILES = {"misterzine/channel.py", "Scripts/MisterZine-Switch-To-Stable.sh"}
+BETA_ASSETS = {"MisterZine-Install-Beta.sh", "MisterZine-Switch-To-Stable.sh", "channel.py"}
 
 
 def is_beta(tag):

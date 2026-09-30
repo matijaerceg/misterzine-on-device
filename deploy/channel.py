@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Move this card's MisterZine to the free release or to MisterZine Arcade,
-the Patreon members' beta, through Downloader.
+"""Move this card's MisterZine to Stable, the public release, or to MisterZine
+Arcade BETA, the Patreon members' Beta, through Downloader.
 
     python3 channel.py beta|free [--card /media/fat] [--point-only]
 
@@ -12,11 +12,12 @@ the drop-in the free release ships, pointed at the chosen build. Downloader
 then runs for that database alone and replaces the files in place, so
 favorites and settings stay and Update All keeps updating the chosen build.
 
-Both builds show the same main-menu entry, MisterZine Arcade.mgl, which a
-switch leaves in place; an entry still under its old name, MisterZine.mgl,
-takes the new one. On a card that never had MisterZine the menu entry is
-enabled as MisterZine-Setup would. Safe to run again.
-MisterZine-Install-Beta.sh and MisterZine-Switch-To-Free.sh carry a copy of
+Stable's main-menu entry is MisterZine Arcade.mgl and Beta's MisterZine
+Arcade BETA.mgl: a switch gives the entry the chosen build's name, whichever
+name it had, the old MisterZine.mgl included, and the launcher of the build it
+installs does the same when it starts. On a card that never had MisterZine the
+menu entry is enabled as MisterZine-Setup would. Safe to run again.
+MisterZine-Install-Beta.sh and MisterZine-Switch-To-Stable.sh carry a copy of
 this file, so they work on any card; the beta also installs it as
 misterzine/channel.py. --point-only rewrites the entry and nothing else: the
 beta runs it when something (MiSTer Companion's Install Center, a re-copied
@@ -36,7 +37,9 @@ URLS = {
     "free": "https://github.com/matijaerceg/misterzine-on-device/releases/latest/download/misterzine.json.zip",
     "beta": "https://raw.githubusercontent.com/matijaerceg/misterzine-arcade-betas/main/beta.json.zip",
 }
-NAMES = {"free": "the free MisterZine", "beta": "MisterZine Arcade"}
+# What each build is called on screen. The channels keep their names inside
+# the scripts: free is Stable.
+NAMES = {"free": "Stable", "beta": "MisterZine Arcade BETA"}
 DROP_IN = "downloader_misterzine.ini"
 # The drop-in the free release ships (deploy/downloader_misterzine.ini),
 # with the chosen build's database in it.
@@ -48,7 +51,7 @@ db_url = @URL@
 ; Install the whole app even when global filters select only particular cores.
 filter =
 """
-MGL = "MisterZine Arcade.mgl"
+MGL = {"free": "MisterZine Arcade.mgl", "beta": "MisterZine Arcade BETA.mgl"}
 LEGACY_MGL = "MisterZine.mgl"  # the entry's name before the rename
 UPDATERS = {
     "update.sh", "update_all.sh", "update_all.pyz", "downloader.sh",
@@ -194,17 +197,19 @@ def busy(proc_root):
             raise RuntimeError("An updater is running. Let it finish, then try again.")
 
 
-def rename_entry(card):
-    """Give a menu entry still under its old name the new one, the way the
-    launcher does when it starts, so the menu never lists both."""
-    legacy = [p for p in card.iterdir() if p.name.lower() == LEGACY_MGL.lower() and (p.is_symlink() or p.is_file())]
-    if not legacy:
+def rename_entry(card, channel):
+    """Give the menu entry the chosen build's name when it has the other
+    build's or the old one, the way the launcher does when it starts, so the
+    menu lists the one entry under the name of what it opens."""
+    others = {name.lower() for key, name in MGL.items() if key != channel} | {LEGACY_MGL.lower()}
+    found = [p for p in sorted(card.iterdir()) if p.name.lower() in others and (p.is_symlink() or p.is_file())]
+    if not found:
         return
-    entry = card / MGL
+    entry = card / MGL[channel]
     if not (entry.is_symlink() or entry.exists()):
-        os.replace(legacy[0], entry)
-        legacy = legacy[1:]
-    for path in legacy:
+        os.replace(found[0], entry)
+        found = found[1:]
+    for path in found:
         path.unlink()
 
 
@@ -250,7 +255,7 @@ def switch(card, channel, run=subprocess.run, proc_root=Path("/proc")):
                            + "). Run this again, or run Update All, which finishes the switch.")
     if not binary.is_file():
         raise RuntimeError("Downloader finished without installing MisterZine. Check the misterzine entry's filter.")
-    rename_entry(card)
+    rename_entry(card, channel)
     if fresh:
         if run([str(binary), "launcher", "enable"]).returncode:
             print("Run MisterZine-Setup from Scripts once to add the main-menu entry.")
@@ -289,10 +294,10 @@ def main():
         print("\n" + NAMES[args.channel][0].upper() + NAMES[args.channel][1:] + " was not installed: " + str(exc))
         return 1
     if args.channel == "beta":
-        print("\nMisterZine Arcade is installed. Choose it in the main menu and enter the code")
-        print("from the Patreon members' post. Favorites and settings came along.")
+        print("\nMisterZine Arcade BETA is installed. Choose it in the main menu and enter")
+        print("the code from the Patreon members' post. Favorites and settings came along.")
     else:
-        print("\nThe free MisterZine is back. Choose MisterZine Arcade in the main menu.")
+        print("\nStable is back. Choose MisterZine Arcade in the main menu.")
         print("Favorites and settings came along.")
     return 0
 

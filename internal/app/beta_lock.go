@@ -21,10 +21,10 @@ import (
 // Backspace erases and Enter unlocks. B clears a started entry, and on an
 // empty one returns to the MiSTer menu, as the Menu button always does.
 //
-// The screen offers no way to the free version itself, so a member cannot
+// The screen offers no way to Stable itself, so a member cannot
 // leave by accident. On a card unlocked for an earlier batch
 // (Config.BetaEarlierBatch), where a member whose membership has lapsed
-// stands, one line names the way: MisterZine-Switch-To-Free in Scripts. A
+// stands, one line names the way: MisterZine-Switch-To-Stable in Scripts. A
 // first install never sees it.
 
 // codeLen is the number of digits in a code.
@@ -35,7 +35,7 @@ type betaLock struct {
 	digits  [codeLen]int8 // -1 while a box is empty
 	box     int           // the chosen box
 	message string        // the answer to the last Unlock, "" before one
-	leaving bool          // unlocked for an earlier batch: name the way to free
+	leaving bool          // unlocked for an earlier batch: name the way to Stable
 }
 
 func newBetaLock() *betaLock {
@@ -256,7 +256,7 @@ const (
 	lockBoxW, lockBoxH = 18, 24
 	lockBoxGap         = 4
 	lockGroupGap       = 10
-	lockLeaveGap       = 4 // above the lines that name the way to the free version
+	lockLeaveGap       = 4 // above the lines that name the way to Stable
 )
 
 // lockFooter is the foot of the lock screen's body: where the code comes
@@ -265,17 +265,17 @@ func (a *App) lockFooter() []string {
 	return []string{"patreon.com/MisterZine"}
 }
 
-// lockLeave is the line that names the way back to the free version, from
+// lockLeave is the line that names the way back to Stable, from
 // the longest to the shortest: where even the script's full name is wider
 // than the body (tate at the widest inset), Scripts lists it as
-// MisterZine-Switch-To-Free, so the end of its name finds it.
+// MisterZine-Switch-To-Stable, so the end of its name finds it.
 var lockLeave = []string{
-	"Leaving the beta? Run MisterZine-Switch-To-Free from Scripts.",
-	"Leaving? Run MisterZine-Switch-To-Free in Scripts.",
-	"Leaving? Run Switch-To-Free in Scripts.",
+	"Leaving Beta? Run MisterZine-Switch-To-Stable from Scripts.",
+	"Leaving? Run MisterZine-Switch-To-Stable in Scripts.",
+	"Leaving? Run Switch-To-Stable in Scripts.",
 }
 
-// lockLeaveLines name the way back to the free version under the footer,
+// lockLeaveLines name the way back to Stable under the footer,
 // wrapped to cols characters, on a card unlocked for an earlier batch; nil
 // on any other. It is text, not a control: the Scripts entry does it. The
 // script's full name comes first, in two lines if it can and three if it

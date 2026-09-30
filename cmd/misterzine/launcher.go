@@ -16,6 +16,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/matijaerceg/misterzine-on-device/internal/beta"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform/mister"
 	"github.com/matijaerceg/misterzine-on-device/internal/store"
 	"github.com/matijaerceg/misterzine-on-device/internal/updater"
@@ -23,16 +24,19 @@ import (
 
 // Main lists cores and MGL files. The resident launcher watches for our MGL's
 // setname, opens the script console, and restores Menu when the app exits.
-// The entry is "MisterZine Arcade.mgl", the name the menu shows; releases
-// before it wrote MisterZine.mgl, which is removed wherever the entry is
-// written. The setname stays misterzine, so CORENAME, the INI's [MisterZine]
-// section and pidof misterzine work as they always have.
+// The entry is "MisterZine Arcade.mgl" in Stable and "MisterZine Arcade
+// BETA.mgl" in the members' Beta, the names the menu shows. Wherever a build
+// writes its entry it removes the other build's, and MisterZine.mgl, which
+// releases before the rename wrote, so a card that moves between the two
+// shows one entry. The setname stays misterzine in both, so CORENAME, the
+// INI's [MisterZine] section and pidof misterzine work as they always have.
 
 const (
 	startupScript = "/media/fat/linux/user-startup.sh"
 	startupMark   = "# misterzine"
 	startupLine   = "[[ -e /media/fat/misterzine/misterzine ]] && /media/fat/misterzine/misterzine launcher start"
-	menuMGL       = "/media/fat/MisterZine Arcade.mgl"
+	stableMGL     = "/media/fat/MisterZine Arcade.mgl"
+	betaMGL       = "/media/fat/MisterZine Arcade BETA.mgl"
 	legacyMGL     = "/media/fat/MisterZine.mgl" // the entry's old name
 	mglBody       = "<mistergamedescription>\n\t<rbf>menu</rbf>\n\t<setname>misterzine</setname>\n</mistergamedescription>\n"
 	pidFile       = "/media/fat/misterzine/watch.pid"
@@ -43,6 +47,24 @@ const (
 	bootMark      = "/tmp/misterzine-boot" // /tmp empties at boot: the first watcher of a boot creates it
 	menuCore      = "MENU"                 // what Main writes to CORENAME for its own menu
 )
+
+// menuMGL is this build's main-menu entry: MisterZine Arcade BETA in the
+// beta, MisterZine Arcade in Stable.
+func menuMGL() string {
+	if beta.On() {
+		return betaMGL
+	}
+	return stableMGL
+}
+
+// otherMGLs are the entries this build removes where it writes its own: the
+// other build's, and the old name.
+func otherMGLs() []string {
+	if beta.On() {
+		return []string{stableMGL, legacyMGL}
+	}
+	return []string{betaMGL, legacyMGL}
+}
 
 // watchSettings reads the Options the watcher carries out (Open at boot,
 // Return after game); the app saves settings.json on every change.
@@ -84,7 +106,7 @@ func sendMainCmd(line string) error {
 // menu does (Open at boot, Return after game). The path goes out whole and
 // unquoted although it has a space: Main takes the rest of the line after
 // load_core as the path, the way the app's own launches pass MRA names.
-func openMenuEntry(send func(string) error) error { return send("load_core " + menuMGL) }
+func openMenuEntry(send func(string) error) error { return send("load_core " + menuMGL()) }
 
 // firstWatcherSinceBoot is true once per boot: the mark lives in /tmp, which
 // is empty after power-on, and the watcher a Downloader update restarts or a
@@ -186,7 +208,7 @@ func launcherCmd(args []string) int {
 		launcherStop()
 		return 0
 	case "status":
-		fmt.Printf("enabled=%v running=%v mgl=%v\n", launcherEnabled(), watcherPID() > 0, fileExists(menuMGL))
+		fmt.Printf("enabled=%v running=%v mgl=%v\n", launcherEnabled(), watcherPID() > 0, fileExists(menuMGL()))
 		return 0
 	case "enable":
 		if err := launcherEnable(); err != nil {
@@ -249,13 +271,16 @@ func hasStartupHook(script string) bool {
 // case-insensitive, so an older lowercase file answers to the new name too
 // and would keep the menu entry lowercase; it is renamed. Downloader may
 // also have removed the old path after installing the new one (same file on
-// this filesystem), in which case the MGL is written back. The entry under
-// its old name goes first, so an updated card shows one entry; failing
-// that, the new one is still written.
-func ensureMGL() error { return ensureMGLAt(menuMGL, legacyMGL) }
+// this filesystem), in which case the MGL is written back. The entries under
+// the old name and the other build's name go first, so an updated card, or
+// one that moved between Stable and Beta, shows one entry; failing that, this
+// build's is still written.
+func ensureMGL() error { return ensureMGLAt(menuMGL(), otherMGLs()...) }
 
-func ensureMGLAt(mglPath, legacy string) error {
-	removeMGL(legacy)
+func ensureMGLAt(mglPath string, others ...string) error {
+	for _, other := range others {
+		removeMGL(other)
+	}
 	dir, base := filepath.Split(mglPath)
 	if ents, err := os.ReadDir(dir); err == nil {
 		exact := false
@@ -357,9 +382,11 @@ func removeMGL(path string) error {
 	return nil
 }
 
-// launcherDisable removes the boot block and the main-menu entry, under its
-// old name too.
-func launcherDisable() error { return disableLauncherFiles(startupScript, menuMGL, legacyMGL) }
+// launcherDisable removes the boot block and the main-menu entry, under
+// either build's name and the old one.
+func launcherDisable() error {
+	return disableLauncherFiles(startupScript, stableMGL, betaMGL, legacyMGL)
+}
 
 func disableLauncherFiles(startup string, mgls ...string) error {
 	b, err := os.ReadFile(startup)

@@ -100,9 +100,9 @@ class CardTest(unittest.TestCase):
         self.assertFalse((self.card / "downloader_misterzine.ini").exists())
         self.assertEqual((self.app / "misterzine").read_text(), "beta")
         self.assertEqual((self.app / "favorites.json").read_text(), "kept")
-        # the entry under its old name takes the new one
-        self.assertEqual(self.entries(), ["MisterZine Arcade.mgl"])
-        self.assertEqual((self.card / "MisterZine Arcade.mgl").read_text(), "free entry")
+        # the entry under its old name takes Beta's
+        self.assertEqual(self.entries(), ["MisterZine Arcade BETA.mgl"])
+        self.assertEqual((self.card / "MisterZine Arcade BETA.mgl").read_text(), "free entry")
         self.assertEqual(len(self.calls), 1, "Setup ran on a card that already had MisterZine")
 
     def entries(self):
@@ -142,16 +142,24 @@ class CardTest(unittest.TestCase):
         self.assertEqual(run.returncode, 1)
         self.assertIn("was not changed", run.stdout)
 
-    def test_the_old_entry_goes_beside_the_new_one_either_way(self):
+    def test_the_entry_takes_the_chosen_builds_name_either_way(self):
         self.give_downloader()
-        for build in ("free", "beta"):
+        stable, beta = "MisterZine Arcade.mgl", "MisterZine Arcade BETA.mgl"
+        for build, own, other in (("beta", beta, stable), ("free", stable, beta), ("beta", beta, stable)):
+            for entry in self.card.glob("*.mgl"):
+                entry.unlink()
             self.install(build)
-            (self.card / "MisterZine Arcade.mgl").write_text("entry")
+            (self.card / other).write_text("entry")
             (self.card / "misterzine.mgl").write_text("old entry")
             (self.card / "MisterZine Tools.mgl").write_text("someone else's")
             channel.switch(self.card, build, run=self.downloader, proc_root=self.proc)
-            self.assertEqual(self.entries(), ["MisterZine Arcade.mgl", "MisterZine Tools.mgl"], build)
-            self.assertEqual((self.card / "MisterZine Arcade.mgl").read_text(), "entry", build)
+            self.assertEqual(self.entries(), sorted([own, "MisterZine Tools.mgl"]), build)
+            self.assertEqual((self.card / own).read_text(), "entry", build)
+            # the chosen build's own entry, already there, stays as it is
+            (self.card / other).write_text("stray")
+            channel.switch(self.card, build, run=self.downloader, proc_root=self.proc)
+            self.assertEqual(self.entries(), sorted([own, "MisterZine Tools.mgl"]), build)
+            self.assertEqual((self.card / own).read_text(), "entry", build)
 
     def test_free_over_beta_everywhere_the_entry_is_and_keeps_the_arcade_entry(self):
         config = self.card / "Scripts/.config/downloader"
@@ -162,7 +170,7 @@ class CardTest(unittest.TestCase):
         (self.card / "downloader").mkdir()
         (self.card / "downloader/extra.ini").write_text("[misterzine]\ndb_url = " + BETA + "\n")
         (self.card / "downloader_misterzine.ini").write_text(channel.DROP_IN_TEXT.replace("@URL@", BETA))
-        (self.card / "MisterZine Arcade.mgl").write_text("beta entry")
+        (self.card / "MisterZine Arcade BETA.mgl").write_text("beta entry")
         channel.switch(self.card, "free", run=self.downloader, proc_root=self.proc)
         self.assertEqual(self.calls, [[str(config / "downloader_bin"), "--run-only", "misterzine"]])
         for path in ("downloader.ini", "downloader/extra.ini", "downloader_misterzine.ini"):
@@ -170,8 +178,9 @@ class CardTest(unittest.TestCase):
             self.assertIn("db_url = " + FREE, text, path)
             self.assertNotIn(BETA, text, path)
         self.assertEqual((self.card / "downloader_misterzine.ini").read_text(), (ROOT / "deploy/downloader_misterzine.ini").read_text())
-        # both builds show MisterZine Arcade in the main menu
+        # Beta's entry takes Stable's name, and keeps what it held
         self.assertEqual(self.entries(), ["MisterZine Arcade.mgl"])
+        self.assertEqual((self.card / "MisterZine Arcade.mgl").read_text(), "beta entry")
         self.assertEqual((self.app / "misterzine").read_text(), "free")
 
     def test_rerunning_changes_nothing_more(self):
@@ -193,10 +202,11 @@ class CardTest(unittest.TestCase):
     def test_downloader_failure_keeps_the_arcade_entry(self):
         self.give_downloader()
         self.install("beta")
-        (self.card / "MisterZine Arcade.mgl").write_text("beta entry")
+        (self.card / "MisterZine Arcade BETA.mgl").write_text("beta entry")
         with self.assertRaisesRegex(RuntimeError, "did not finish"):
             channel.switch(self.card, "free", run=lambda *a, **k: subprocess.CompletedProcess(a, 3), proc_root=self.proc)
-        self.assertTrue((self.card / "MisterZine Arcade.mgl").exists())
+        # the entry keeps Beta's name until Stable is on the card
+        self.assertEqual(self.entries(), ["MisterZine Arcade BETA.mgl"])
         # the entry already names free, so the next Update All finishes the switch
         self.assertIn(FREE, (self.card / "downloader_misterzine.ini").read_text())
 
@@ -258,7 +268,7 @@ class ScriptTest(unittest.TestCase):
         downloader = self.card / "Scripts/downloader.sh"
         downloader.write_text(FAKE_DOWNLOADER)
         downloader.chmod(0o755)
-        for name, which in ((make_db.INSTALL_BETA, "beta"), (make_db.SWITCH_TO_FREE, "free")):
+        for name, which in ((make_db.INSTALL_BETA, "beta"), (make_db.SWITCH_TO_STABLE, "free")):
             script = self.card / "Scripts" / name
             script.write_text(make_db.channel_script(which))
             script.chmod(0o755)
@@ -275,22 +285,22 @@ class ScriptTest(unittest.TestCase):
     def test_install_switch_back_and_again(self):
         result = self.run_script(make_db.INSTALL_BETA)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn("MisterZine Arcade is installed", result.stdout)
+        self.assertIn("MisterZine Arcade BETA is installed", result.stdout)
         self.assertEqual((self.card / "installed").read_text(), "beta\n")
         self.assertEqual(self.calls(), ["downloader --run-only misterzine", "beta launcher enable"])
         (self.card / "misterzine/favorites.json").write_text("kept")
-        (self.card / "MisterZine Arcade.mgl").write_text("beta entry")
+        (self.card / "MisterZine Arcade BETA.mgl").write_text("beta entry")
 
-        result = self.run_script(make_db.SWITCH_TO_FREE)
+        result = self.run_script(make_db.SWITCH_TO_STABLE)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn("The free MisterZine is back. Choose MisterZine Arcade in the main menu.", result.stdout)
+        self.assertIn("Stable is back. Choose MisterZine Arcade in the main menu.", result.stdout)
         self.assertEqual((self.card / "installed").read_text(), "free\n")
-        self.assertTrue((self.card / "MisterZine Arcade.mgl").exists())
+        self.assertEqual(sorted(p.name for p in self.card.glob("*.mgl")), ["MisterZine Arcade.mgl"])
         self.assertEqual((self.card / "downloader_misterzine.ini").read_text(),
                          (ROOT / "deploy/downloader_misterzine.ini").read_text())
         self.assertEqual((self.card / "misterzine/favorites.json").read_text(), "kept")
 
-        for name, build in ((make_db.SWITCH_TO_FREE, "free"), (make_db.INSTALL_BETA, "beta"), (make_db.INSTALL_BETA, "beta")):
+        for name, build in ((make_db.SWITCH_TO_STABLE, "free"), (make_db.INSTALL_BETA, "beta"), (make_db.INSTALL_BETA, "beta")):
             result = self.run_script(name)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertEqual((self.card / "installed").read_text(), build + "\n")
@@ -301,7 +311,7 @@ class ScriptTest(unittest.TestCase):
         (self.card / "Scripts/downloader.sh").write_text("#!/bin/bash\nexit 4\n")
         result = self.run_script(make_db.INSTALL_BETA)
         self.assertEqual(result.returncode, 1)
-        self.assertIn("MisterZine Arcade was not installed: Downloader did not finish (status 4)", result.stdout)
+        self.assertIn("MisterZine Arcade BETA was not installed: Downloader did not finish (status 4)", result.stdout)
 
 
 if __name__ == "__main__":

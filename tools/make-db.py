@@ -13,7 +13,7 @@ downloader rejects root-level ini files inside a database ("illegal path").
 
 A vX.Y.Z-beta.N tag builds MisterZine Arcade, the Patreon members' beta: the
 same database ID, so it replaces the free files in place, plus channel.py and
-MisterZine-Switch-To-Free.sh for the way back, all published on the
+MisterZine-Switch-To-Stable.sh for the way back, all published on the
 misterzine-arcade-betas repository, which holds built files only. The members'
 release in misterzine-arcade-private runs this from the tree it assembles.
 MisterZine-Install-Beta.sh and a drop-in pointed at the beta are release
@@ -57,19 +57,19 @@ ASSETS = {
 }
 ROOT = Path(__file__).resolve().parent.parent
 BETA_TAG = re.compile(r"v([0-9]+)\.([0-9]+)\.([0-9]+)-beta\.([0-9]+)")
-# The beta's way back to free, which the app runs as misterzine/channel.py.
+# The beta's way back to Stable, which it keeps as misterzine/channel.py.
 BETA_ASSETS = {"misterzine/channel.py": ("deploy/channel.py", "channel.py")}
 INSTALL_BETA = "MisterZine-Install-Beta.sh"
-SWITCH_TO_FREE = "MisterZine-Switch-To-Free.sh"
+SWITCH_TO_STABLE = "MisterZine-Switch-To-Stable.sh"
 SCRIPT_END = "MISTERZINE_CHANNEL"
 SCRIPT_NOTES = {
-    "beta": ("Installs MisterZine Arcade, the Patreon members' beta, or moves this card's",
-             "MisterZine over to it. Put it in Scripts and run it; running it again is",
-             "safe. Favorites and settings stay, and Update All keeps the beta current.",
-             "MisterZine-Switch-To-Free goes back to the free version."),
-    "free": ("Puts the free MisterZine back in place of MisterZine Arcade, the members'",
-             "beta. Favorites and settings stay, and Update All follows the free releases",
-             "again. Running it again is safe."),
+    "beta": ("Installs MisterZine Arcade BETA, the Patreon members' Beta, or moves this",
+             "card's MisterZine over to it. Put it in Scripts and run it; running it again",
+             "is safe. Favorites and settings stay, and Update All keeps Beta current.",
+             "MisterZine-Switch-To-Stable goes back to Stable."),
+    "free": ("Puts Stable, the public release, back in place of MisterZine Arcade BETA,",
+             "the members' Beta. Favorites and settings stay, and Update All follows the",
+             "Stable releases again. Running it again is safe."),
 }
 # The licence of the members' extras, which the members' repository adds to
 # its tree: a beta built with them ships it beside the MIT licence, since
@@ -134,12 +134,12 @@ def build(tag, binary, out):
         files[path] = entry(target, base + quote(asset))
         asset_names.append(asset)
     if beta:
-        for name, channel in ((SWITCH_TO_FREE, "free"), (INSTALL_BETA, "beta")):
+        for name, channel in ((SWITCH_TO_STABLE, "free"), (INSTALL_BETA, "beta")):
             with open(os.path.join(staging, name), "w", encoding="utf-8", newline="\n") as script:
                 script.write(channel_script(channel))
             asset_names.append(name)
-        target = os.path.join(staging, SWITCH_TO_FREE)
-        files["Scripts/" + SWITCH_TO_FREE] = entry(target, base + quote(SWITCH_TO_FREE))
+        target = os.path.join(staging, SWITCH_TO_STABLE)
+        files["Scripts/" + SWITCH_TO_STABLE] = entry(target, base + quote(SWITCH_TO_STABLE))
         switcher = channel_module()
         with open(os.path.join(staging, "downloader_misterzine.ini"), "w", encoding="utf-8", newline="\n") as ini:
             ini.write(switcher.DROP_IN_TEXT.replace("@URL@", switcher.URLS["beta"]))
@@ -201,7 +201,7 @@ def distribution(tag, release, out):
             raise ValueError("The betas repository serves " + current + ", which is newer than " + tag)
     db_url = channel_module().URLS["beta"]
     shutil.copyfile(release / "misterzine.json.zip", out / db_url.rsplit("/", 1)[1])
-    for name in (INSTALL_BETA, SWITCH_TO_FREE):
+    for name in (INSTALL_BETA, SWITCH_TO_STABLE):
         shutil.copyfile(release / name, out / name)
     catalogue["releases"]["beta"] = {"version": tag, "batch": batch, "db_url": db_url}
     path.write_text(json.dumps(catalogue, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n")

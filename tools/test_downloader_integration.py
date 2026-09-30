@@ -248,17 +248,18 @@ def exercise_switch(archive, free, beta):
             (app / name).write_bytes(data)
         channel.switch(card, "beta", run=run, proc_root=proc)
         assert (app / "misterzine").read_bytes() == binary(beta)
-        assert (app / "channel.py").exists() and (card / "Scripts/MisterZine-Switch-To-Free.sh").exists()
-        (card / "MisterZine Arcade.mgl").write_text("menu entry fixture")
+        assert (app / "channel.py").exists() and (card / "Scripts/MisterZine-Switch-To-Stable.sh").exists()
+        (card / "MisterZine Arcade BETA.mgl").write_text("menu entry fixture")
         channel.switch(card, "free", run=run, proc_root=proc)
         assert (app / "misterzine").read_bytes() == binary(free)
         assert not (app / "channel.py").exists(), "the beta's channel.py stayed"
-        assert not (card / "Scripts/MisterZine-Switch-To-Free.sh").exists(), "the beta's switch script stayed"
+        assert not (card / "Scripts/MisterZine-Switch-To-Stable.sh").exists(), "the beta's switch script stayed"
+        assert sorted(p.name for p in card.glob("*.mgl")) == ["MisterZine Arcade.mgl"], "the menu entry kept Beta's name"
         assert (card / "MisterZine Arcade.mgl").read_text() == "menu entry fixture", "the menu entry left with the beta"
         for name, data in saved.items():
             assert (app / name).read_bytes() == data
         assert (card / "downloader_misterzine.ini").read_text() == channel.DROP_IN_TEXT.replace("@URL@", channel.URLS["free"])
-        print("PASS: free to MisterZine Arcade and back in place, saved data and menu entry kept, beta files removed")
+        print("PASS: Stable to MisterZine Arcade BETA and back in place, saved data and menu entry kept, beta files removed")
 
 
 if __name__ == "__main__":

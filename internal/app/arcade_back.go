@@ -9,15 +9,14 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/updater"
 )
 
-// The free build's way back to MisterZine Arcade (Config.ArcadeBack). On a
-// card that had the members' beta and now runs the free MisterZine, a page
-// at start asks once whether to go back: MiSTer Companion's Install Center
-// rewrites MisterZine's Downloader entry, and the next Update All then puts
-// the free version in the beta's place without the member choosing it.
-// Holding A runs the member's own installer (updater.ModeBeta) on the update
-// screen, which offers the restart into the beta once it has finished; B
-// keeps the free version. Either answer is the last one: the host records
-// it once ArcadeBackPending turns false.
+// Stable's way back to MisterZine Arcade BETA (Config.ArcadeBack). On a card
+// that had the members' Beta and now runs Stable, a page at start asks once
+// whether to go back: MiSTer Companion's Install Center rewrites MisterZine's
+// Downloader entry, and the next Update All then puts Stable in Beta's place
+// without the member choosing it. Holding A runs the member's own installer
+// (updater.ModeBeta) on the update screen, which offers the restart into Beta
+// once it has finished; B keeps Stable. Either answer is the last one: the
+// host records it once ArcadeBackPending turns false.
 
 // arcadeBackHold is how long A is held to go back, as long as the arcade
 // intro's: the page comes up at start, where a stray press is likely.
@@ -140,10 +139,10 @@ func (a *App) arcadeBackLines(box image.Rectangle) [][]string {
 	cols := a.sm.Cols(box.Dx() - 10)
 	var out [][]string
 	for _, p := range []string{
-		"Back to MisterZine Arcade?",
-		"This card had MisterZine Arcade, the members' version. It has the free one now.",
+		"Back to MisterZine Arcade BETA?",
+		"This card had MisterZine Arcade BETA, the members' version. It has Stable now.",
 		"Not your choice? MiSTer Companion's Install Center can do that. Hold " + a.btn("A") + " to go back; favorites and settings stay.",
-		a.btn("B") + " keeps the free version. This won't ask again.",
+		a.btn("B") + " keeps Stable. This won't ask again.",
 	} {
 		out = append(out, gfx.Wrap(p, cols, 8))
 	}
@@ -161,9 +160,9 @@ func (a *App) arcadeBackHeight(box image.Rectangle) int {
 
 // arcadeBackHint is the page's legend, shortened where the bar is narrow.
 func (a *App) arcadeBackHint() string {
-	hint := "Hold A Go back  B Stay free"
+	hint := "Hold A Go back  B Keep Stable"
 	if !a.hintFits(hint) {
-		hint = "Hold A Back  B Free"
+		hint = "Hold A Back  B Stable"
 	}
 	return hint
 }

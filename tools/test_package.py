@@ -106,16 +106,16 @@ class BetaPackageTest(unittest.TestCase):
             db = json.loads(z.read("misterzine.json"))
         self.assertEqual(db["db_id"], "misterzine")
         self.assertIn("misterzine/channel.py", db["files"])
-        self.assertIn("Scripts/MisterZine-Switch-To-Free.sh", db["files"])
+        self.assertIn("Scripts/MisterZine-Switch-To-Stable.sh", db["files"])
         self.assertNotIn("Scripts/MisterZine-Install-Beta.sh", db["files"])
         channel = (Path(make_db.ROOT) / "deploy/channel.py").read_text(encoding="utf-8")
         self.assertEqual((release / "channel.py").read_text(encoding="utf-8"), channel)
-        for name in ("MisterZine-Install-Beta.sh", "MisterZine-Switch-To-Free.sh"):
+        for name in ("MisterZine-Install-Beta.sh", "MisterZine-Switch-To-Stable.sh"):
             script = (release / name).read_text(encoding="utf-8")
             self.assertIn(channel, script)
             self.assertTrue(script.startswith("#!/bin/bash\n"))
         self.assertIn("exec python3 - beta", (release / "MisterZine-Install-Beta.sh").read_text(encoding="utf-8"))
-        self.assertIn("exec python3 - free", (release / "MisterZine-Switch-To-Free.sh").read_text(encoding="utf-8"))
+        self.assertIn("exec python3 - free", (release / "MisterZine-Switch-To-Stable.sh").read_text(encoding="utf-8"))
         ini = (release / "downloader_misterzine.ini").read_text(encoding="utf-8")
         self.assertIn("db_url = https://raw.githubusercontent.com/matijaerceg/misterzine-arcade-betas/main/beta.json.zip\n", ini)
 
@@ -142,7 +142,7 @@ class BetaPackageTest(unittest.TestCase):
             verify(release, tag)
             self.assertEqual((release / "downloader_misterzine.ini").read_bytes(),
                              (Path(make_db.ROOT) / "deploy/downloader_misterzine.ini").read_bytes())
-            for name in ("channel.py", "MisterZine-Install-Beta.sh", "MisterZine-Switch-To-Free.sh"):
+            for name in ("channel.py", "MisterZine-Install-Beta.sh", "MisterZine-Switch-To-Stable.sh"):
                 self.assertFalse((release / name).exists(), tag + " ships " + name)
 
     def test_a_package_of_the_wrong_kind_is_refused(self):
@@ -173,7 +173,7 @@ class BetaPackageTest(unittest.TestCase):
         self.assertEqual(json.loads((out / "catalogue.json").read_text()), {"schema": 1, "releases": {"beta": {
             "version": "v1.2.0-beta.2", "batch": "arcade-one",
             "db_url": "https://raw.githubusercontent.com/matijaerceg/misterzine-arcade-betas/main/beta.json.zip"}}})
-        for name in ("MisterZine-Install-Beta.sh", "MisterZine-Switch-To-Free.sh"):
+        for name in ("MisterZine-Install-Beta.sh", "MisterZine-Switch-To-Stable.sh"):
             self.assertTrue((out / name).is_file(), name)
         # the README there is the members' guide, which the members' release writes
         self.assertFalse((out / "README.md").exists())

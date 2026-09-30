@@ -55,14 +55,13 @@ type State struct {
 }
 
 // Name is what the run is called on screen: "Update All", "MisterZine
-// update" for a run of the misterzine database alone, or "Back to the
-// beta".
+// update" for a run of the misterzine database alone, or "Back to Beta".
 func (s State) Name() string {
 	switch s.Mode {
 	case ModeApp:
 		return "MisterZine update"
 	case ModeBeta:
-		return "Back to the beta"
+		return "Back to Beta"
 	}
 	return "Update All"
 }
@@ -244,7 +243,7 @@ func (s State) Summary() string {
 		return "Updating MisterZine alone through Downloader"
 	}
 	if s.Mode == ModeBeta {
-		return "Installing MisterZine Arcade through Downloader"
+		return "Installing MisterZine Arcade BETA through Downloader"
 	}
 	return "Updating with your saved Update All settings"
 }

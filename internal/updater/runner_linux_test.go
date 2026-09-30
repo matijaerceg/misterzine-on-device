@@ -410,14 +410,14 @@ func TestBetaModeRunsTheMembersInstaller(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if s.Mode != ModeBeta || s.Name() != "Back to the beta" {
+	if s.Mode != ModeBeta || s.Name() != "Back to Beta" {
 		t.Fatalf("started as %+v", s)
 	}
 	s = waitState(t, root, func(s State) bool { return !s.Active() })
 	if s.Status != "completed" || !strings.Contains(strings.Join(s.Lines, "\n"), "install --card "+card) {
 		t.Fatalf("%+v", s)
 	}
-	if s.Summary() != "Back to the beta finished successfully" {
+	if s.Summary() != "Back to Beta finished successfully" {
 		t.Fatalf("summary %q", s.Summary())
 	}
 	os.WriteFile(status, []byte("1"), 0600)

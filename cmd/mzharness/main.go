@@ -85,8 +85,8 @@ func main() {
 	localPath := flag.String("local", "", "local rows fixture (a data.json-shaped array of rows the card scan would add)")
 	betaBuild := flag.Bool("beta", false, "render the Patreon beta build (MisterZine Arcade) instead of the free one")
 	betaLocked := flag.Bool("beta-locked", false, "render the beta build locked behind the test code "+harnessCode+" (implies -beta; the unlock is saved in a temporary folder)")
-	betaEarlier := flag.Bool("beta-earlier", false, "with -beta-locked: the card was unlocked for an earlier batch, so the lock screen names the way back to the free version")
-	arcadeBack := flag.Bool("arcade-back", false, "the free build on a card that had MisterZine Arcade: the page asking once to go back; with -update-state the run a held A starts reads that state (and -update-restart offers the restart) instead of the app opening on it")
+	betaEarlier := flag.Bool("beta-earlier", false, "with -beta-locked: the card was unlocked for an earlier batch, so the lock screen names the way back to Stable")
+	arcadeBack := flag.Bool("arcade-back", false, "Stable on a card that had MisterZine Arcade BETA: the page asking once to go back; with -update-state the run a held A starts reads that state (and -update-restart offers the restart) instead of the app opening on it")
 	flag.Parse()
 	beta.Set(*betaBuild || *betaLocked)
 	unlockDir := ""
