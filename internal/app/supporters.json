@@ -1,6 +1,10 @@
 {
-  "updated": "2026-09-28",
+  "updated": "2026-09-30",
   "current": [
+    {
+      "name": "Aaron Whitmore",
+      "since": "2026-09"
+    },
     {
       "name": "Adam Hepton",
       "since": "2026-09"
@@ -43,6 +47,18 @@
     },
     {
       "name": "Christopher K Sands",
+      "since": "2026-09"
+    },
+    {
+      "name": "Christopher King",
+      "since": "2026-09"
+    },
+    {
+      "name": "Daniel Nichols",
+      "since": "2026-09"
+    },
+    {
+      "name": "Daniel oldaker",
       "since": "2026-09"
     },
     {
@@ -107,6 +123,10 @@
     },
     {
       "name": "Nate",
+      "since": "2026-09"
+    },
+    {
+      "name": "Nicholas Sakalidis",
       "since": "2026-09"
     },
     {

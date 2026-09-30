@@ -1,10 +1,7 @@
-**MisterZine Arcade opens with Console Mode**
+**Preparing for Patreon members' builds**
 
-**Fixed**
+Nothing changes in the public stable version.
 
-- On a MiSTer running Console Mode, choosing **MisterZine Arcade** showed only a blinking cursor. It now opens MisterZine, and quitting takes you back to Console Mode. Thanks to Buu for reporting it.
-- Send a report also says how the **MisterZine Arcade** menu entry is set up, so an entry that won't open can be looked into.
-
-Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v121--2026-09-29).
+Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v122--2026-10-01).
 Existing installations update through Update All, or through Update MisterZine only. New installation:
 [installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once).
