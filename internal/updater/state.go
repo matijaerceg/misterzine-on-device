@@ -21,19 +21,20 @@ var Stages = []string{"Prepare", "Check", "Update", "Extras", "Finish"}
 
 // The modes a run can take: Update All with the user's saved settings, or
 // Downloader run for the misterzine database alone (--run-only), the
-// quick way to a new MisterZine when one is announced. ModeFree takes a
-// MisterZine Arcade card back to the free release: misterzine/channel.py,
-// which only the beta installs, points the misterzine entry at the free
-// database and runs Downloader for it the way ModeApp does.
+// quick way to a new MisterZine when one is announced. ModeBeta takes a
+// card that had MisterZine Arcade, the members' beta, back to it from the
+// free release: the member's own Scripts/MisterZine-Install-Beta.sh, which
+// no database installs or removes, points the misterzine entry at the
+// beta's database and runs Downloader for it the way ModeApp does.
 const (
 	ModeAll  = "all"
 	ModeApp  = "app"
-	ModeFree = "free"
+	ModeBeta = "beta"
 )
 
 type State struct {
 	ID              string    `json:"id"`
-	Mode            string    `json:"mode,omitempty"` // ModeAll ("" in records from before modes), ModeApp or ModeFree
+	Mode            string    `json:"mode,omitempty"` // ModeAll ("" in records from before modes), ModeApp or ModeBeta
 	PID             int       `json:"pid"`
 	Boot            string    `json:"boot"`
 	Status          string    `json:"status"`
@@ -54,13 +55,14 @@ type State struct {
 }
 
 // Name is what the run is called on screen: "Update All", "MisterZine
-// update" for a run of the misterzine database alone, or "Switch to free".
+// update" for a run of the misterzine database alone, or "Back to the
+// beta".
 func (s State) Name() string {
 	switch s.Mode {
 	case ModeApp:
 		return "MisterZine update"
-	case ModeFree:
-		return "Switch to free"
+	case ModeBeta:
+		return "Back to the beta"
 	}
 	return "Update All"
 }
@@ -241,8 +243,8 @@ func (s State) Summary() string {
 	if s.Mode == ModeApp {
 		return "Updating MisterZine alone through Downloader"
 	}
-	if s.Mode == ModeFree {
-		return "Installing the free MisterZine through Downloader"
+	if s.Mode == ModeBeta {
+		return "Installing MisterZine Arcade through Downloader"
 	}
 	return "Updating with your saved Update All settings"
 }

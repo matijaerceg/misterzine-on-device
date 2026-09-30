@@ -12,12 +12,22 @@ import (
 
 const LatestReleaseURL = "https://api.github.com/repos/matijaerceg/misterzine-on-device/releases/latest"
 
-// BetaCatalogueURL names the newest MisterZine Arcade beta. The release
-// workflow writes it on the distribution branch in the same commit as the
-// beta database, beta.json.zip, which a member's misterzine entry follows,
-// so a beta build announces exactly the update that entry brings. GitHub's
-// latest release never is a beta: betas are prereleases.
-const BetaCatalogueURL = "https://raw.githubusercontent.com/matijaerceg/misterzine-on-device/distribution/catalogue.json"
+// The two Downloader databases MisterZine's one entry, [misterzine], can
+// follow: the free releases, and MisterZine Arcade, the members' beta,
+// which the misterzine-arcade-betas repository serves (it holds built
+// files only; the members' release in misterzine-arcade-private writes
+// it). deploy/channel.py, deploy/downloader_misterzine.ini and
+// tools/verify_package.py name the same two (urls_test.go).
+const (
+	FreeDBURL = "https://github.com/matijaerceg/misterzine-on-device/releases/latest/download/misterzine.json.zip"
+	BetaDBURL = "https://raw.githubusercontent.com/matijaerceg/misterzine-arcade-betas/main/beta.json.zip"
+)
+
+// BetaCatalogueURL names the newest MisterZine Arcade beta. The members'
+// release writes it beside the beta database, BetaDBURL, in the same
+// commit, so a beta build announces exactly the update a member's
+// misterzine entry brings.
+const BetaCatalogueURL = "https://raw.githubusercontent.com/matijaerceg/misterzine-arcade-betas/main/catalogue.json"
 
 // stableParts rejects development/prerelease tags and malformed remote data.
 func stableParts(s string) ([3]int, bool) {

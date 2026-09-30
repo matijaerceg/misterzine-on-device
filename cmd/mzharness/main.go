@@ -85,7 +85,8 @@ func main() {
 	localPath := flag.String("local", "", "local rows fixture (a data.json-shaped array of rows the card scan would add)")
 	betaBuild := flag.Bool("beta", false, "render the Patreon beta build (MisterZine Arcade) instead of the free one")
 	betaLocked := flag.Bool("beta-locked", false, "render the beta build locked behind the test code "+harnessCode+" (implies -beta; the unlock is saved in a temporary folder)")
-	switchFree := flag.Bool("switch-free", false, "a card that can take the beta back to the free version, which the lock screen offers; with -update-state the switch it starts reads that state (and -update-restart offers the restart) instead of the app opening on it")
+	betaEarlier := flag.Bool("beta-earlier", false, "with -beta-locked: the card was unlocked for an earlier batch, so the lock screen names the way back to the free version")
+	arcadeBack := flag.Bool("arcade-back", false, "the free build on a card that had MisterZine Arcade: the page asking once to go back; with -update-state the run a held A starts reads that state (and -update-restart offers the restart) instead of the app opening on it")
 	flag.Parse()
 	beta.Set(*betaBuild || *betaLocked)
 	unlockDir := ""
@@ -127,8 +128,8 @@ func main() {
 	disp := headless.NewDisplay(cw, ch)
 	cmd := &headless.Cmd{}
 	var a *app.App
-	var switchState *updater.State // -switch-free with -update-state
-	cfg := app.Config{ShowNonArcade: *showNonArcade, ArcadeIntro: *arcadeIntro,
+	var backState *updater.State // -arcade-back with -update-state
+	cfg := app.Config{ShowNonArcade: *showNonArcade, ArcadeIntro: *arcadeIntro, ArcadeBack: *arcadeBack,
 		PhysW: cw, PhysH: ch, Rotation: rotation, SafeInsetX: *inset, SafeInsetY: *inset,
 		Now:            func() time.Time { return clock },
 		ClockTrusted:   true,
@@ -151,16 +152,16 @@ func main() {
 		Launcher:       func() bool { return *launcher },
 		// a card that can fetch the app by itself, so the -app-update fixture
 		// renders the Update MisterZine only row as a real card would
-		CanUpdateApp:    func() bool { return true },
-		CanSwitchToFree: func() bool { return *switchFree },
+		CanUpdateApp:     func() bool { return true },
+		BetaEarlierBatch: *betaEarlier,
 		Action: func(kind, arg string) {
 			if kind == "launcher" {
 				*launcher = arg == "on"
 			}
-			if kind == "update" && arg == updater.ModeFree && switchState != nil {
+			if kind == "update" && arg == updater.ModeBeta && backState != nil {
 				// what the host's start of the run hands back
-				a.SetUpdate(*switchState, true)
-				a.SetUpdateRestart(switchState.ID, *updateRestart)
+				a.SetUpdate(*backState, true)
+				a.SetUpdateRestart(backState.ID, *updateRestart)
 			}
 		},
 		Alternatives: func(r *data.Row) []string {
@@ -326,8 +327,8 @@ func main() {
 		if err := json.Unmarshal(b, &state); err != nil {
 			die(err)
 		}
-		if *switchFree {
-			switchState = &state // the lock screen's switch starts it
+		if *arcadeBack {
+			backState = &state // a held A on the page starts it
 		} else {
 			if *scanChanges && !state.Active() {
 				// the run's last running snapshot first, so its end asks for

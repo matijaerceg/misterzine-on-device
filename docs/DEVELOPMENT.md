@@ -36,8 +36,9 @@ local registration/removal run normally. It does not run a real system update.
 
 `tools/test_channel.py` runs the move between the free MisterZine and
 MisterZine Arcade, the Patreon beta, on fixture cards: `deploy/channel.py`,
-which repoints the `misterzine` Downloader entry, and the generated
-MisterZine-Install-Beta and MisterZine-Switch-To-Free scripts that carry it.
+which repoints the `misterzine` Downloader entry (with `--point-only`, and
+nothing else), and the generated MisterZine-Install-Beta and
+MisterZine-Switch-To-Free scripts that carry it.
 A beta release directory as a third argument to the integration test above
 also moves a card from the free package to the beta and back through the real
 Downloader. Beta releases are described in
@@ -131,11 +132,19 @@ The main-menu entry is `MisterZine Arcade.mgl` in both builds. It loads the
 `[MisterZine]` section go by, and the launcher removes the entry's old name,
 `MisterZine.mgl`, wherever it writes the entry. The harness renders the
 beta with `-beta` (unlocked, with the BETA mark) and its lock screen with
-`-beta-locked`, whose code is 123456. On a card where
-`updater.CanSwitchToFree` holds, the lock screen also offers the way back
-to the free version: X twice starts an `updater.ModeFree` run and shows its
-update screen, still locked. The harness offers it with `-switch-free`, and
-`-update-state` then gives the state that switch reports.
+`-beta-locked`, whose code is 123456. The lock screen has no way to the free
+version of its own; on a card unlocked for an earlier batch, where a lapsed
+member stands, it names MisterZine-Switch-To-Free in Scripts, as text
+(`-beta-earlier`). The free build's page asking once to go back to the beta
+(RELEASING.md, "Between the free version and the beta") renders with
+`-arcade-back`; with `-update-state` a held A there reads that state as its
+`updater.ModeBeta` run.
+
+The members' extras are not in this repository: the private
+`misterzine-arcade-private` adds them as files built with `-tags arcade`,
+through the hooks in `internal/app/members.go`, whose free stubs are in
+`members_free.go`. Draw with `pal` (paint_list.go), never `gen.Eva`
+directly, so the members' themes reach every screen.
 
 ## Device tools and debugging
 

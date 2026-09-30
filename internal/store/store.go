@@ -21,6 +21,7 @@ type Settings struct {
 	LaunchTransition     string        `json:"launch_transition,omitempty"` // hold (default): only a held Start plays it, or always
 	ShowNonArcade        bool          `json:"show_non_arcade"`
 	ArcadeIntroPending   bool          `json:"arcade_intro_pending"`
+	ArcadeBackAsked      bool          `json:"arcade_back_asked,omitempty"` // the free build asked once whether to go back to MisterZine Arcade
 	ShowDeprecated       bool          `json:"show_deprecated"`
 	Schema               int           `json:"schema"`
 	Rotation             string        `json:"rotation"` // auto, left, right, off

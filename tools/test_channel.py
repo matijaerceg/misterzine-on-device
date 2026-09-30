@@ -108,6 +108,40 @@ class CardTest(unittest.TestCase):
     def entries(self):
         return sorted(p.name for p in self.card.glob("*.mgl"))
 
+    def test_point_only_rewrites_the_entry_and_runs_nothing(self):
+        # what the beta does when Companion put the free database back
+        self.give_downloader()
+        self.install("beta")
+        config = self.card / "downloader.ini"
+        config.write_bytes(("[MiSTer]\r\nverbose = false\r\n[misterzine]\r\ndb_url = " + FREE + "\r\n").encode())
+        drop_in = self.card / "downloader_misterzine.ini"
+        drop_in.write_text(channel.DROP_IN_TEXT.replace("@URL@", FREE))
+        channel.point_only(self.card, "beta")
+        # Companion writes CRLF; the line endings stay as they were
+        self.assertEqual(config.read_bytes().decode(), "[MiSTer]\r\nverbose = false\r\n[misterzine]\r\ndb_url = " + BETA + "\r\n")
+        self.assertEqual(drop_in.read_text(), channel.DROP_IN_TEXT.replace("@URL@", BETA))
+        self.assertEqual(self.calls, [])
+        self.assertEqual((self.app / "misterzine").read_text(), "beta")
+        # a card with no entry gets the drop-in, still without a Downloader run
+        config.unlink()
+        drop_in.unlink()
+        channel.point_only(self.card, "beta")
+        self.assertEqual(drop_in.read_text(), channel.DROP_IN_TEXT.replace("@URL@", BETA))
+        with self.assertRaises(RuntimeError):
+            channel.point_only(self.card / "missing", "beta")
+
+    def test_point_only_from_the_command_line(self):
+        (self.card / "downloader_misterzine.ini").write_text(channel.DROP_IN_TEXT.replace("@URL@", FREE))
+        run = subprocess.run(["python3", str(ROOT / "deploy/channel.py"), "beta", "--point-only", "--card", str(self.card)],
+                             capture_output=True, text=True)
+        self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+        self.assertIn("now points at MisterZine Arcade", run.stdout)
+        self.assertIn(BETA, (self.card / "downloader_misterzine.ini").read_text())
+        run = subprocess.run(["python3", str(ROOT / "deploy/channel.py"), "beta", "--point-only", "--card", str(self.card / "missing")],
+                             capture_output=True, text=True)
+        self.assertEqual(run.returncode, 1)
+        self.assertIn("was not changed", run.stdout)
+
     def test_the_old_entry_goes_beside_the_new_one_either_way(self):
         self.give_downloader()
         for build in ("free", "beta"):
@@ -204,7 +238,7 @@ card=$(cd "$(dirname "$0")/.." && pwd)
 echo "downloader $*" >> "$card/calls"
 [ "$*" = "--run-only misterzine" ] || exit 9
 mkdir -p "$card/misterzine"
-if cat "$card"/downloader*.ini 2>/dev/null | grep -q distribution/beta.json.zip; then build=beta; else build=free; fi
+if cat "$card"/downloader*.ini 2>/dev/null | grep -q misterzine-arcade-betas/main/beta.json.zip; then build=beta; else build=free; fi
 printf '#!/bin/bash\necho "%s $*" >> "%s/calls"\n' "$build" "$card" > "$card/misterzine/misterzine"
 chmod +x "$card/misterzine/misterzine"
 echo "$build" > "$card/installed"

@@ -1,0 +1,17 @@
+{
+  "id": "back-to-beta",
+  "mode": "beta",
+  "status": "completed",
+  "stage": 5,
+  "label": "Update complete",
+  "started": "2026-09-08T11:59:20Z",
+  "elapsed": 52,
+  "lines": [
+    "MisterZine's Downloader entry in downloader_misterzine.ini now points at MisterZine Arcade.",
+    "Running MiSTer Downloader",
+    "Installing misterzine/misterzine",
+    "Installing Scripts/MisterZine-Switch-To-Free.sh",
+    "MisterZine Arcade is installed. Choose it in the main menu and enter the code",
+    "from the Patreon members' post. Favorites and settings came along."
+  ]
+}

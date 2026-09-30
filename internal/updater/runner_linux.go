@@ -87,8 +87,8 @@ type engine struct {
 // people take. A card with neither cannot update the app by itself, and
 // says so rather than offering the row (see CanUpdateApp).
 func engineFor(card, mode string) (engine, error) {
-	if mode == ModeFree {
-		return freeEngine(card)
+	if mode == ModeBeta {
+		return betaEngine(card)
 	}
 	if mode != ModeApp {
 		script := filepath.Join(card, "Scripts", "update_all.sh")
@@ -127,28 +127,32 @@ func CanUpdateApp(card string) bool {
 	return err == nil
 }
 
-// freeEngine runs the beta's way back to free, misterzine/channel.py, the
-// same code as the MisterZine-Switch-To-Free script. It repoints the entry
-// and runs Downloader itself, so it needs what ModeApp needs and Python.
-func freeEngine(card string) (engine, error) {
+// installBeta is the members' installer, kept in Scripts: no database
+// installs or removes it, so it stays after a card goes back to free.
+const installBeta = "MisterZine-Install-Beta.sh"
+
+// betaEngine runs the member's MisterZine-Install-Beta script, which
+// carries channel.py whole: it repoints the entry and runs Downloader
+// itself, so it needs what ModeApp needs and Python.
+func betaEngine(card string) (engine, error) {
 	if _, err := engineFor(card, ModeApp); err != nil {
 		return engine{}, err
 	}
-	script := filepath.Join(card, "misterzine", "channel.py")
+	script := filepath.Join(card, "Scripts", installBeta)
 	if !exists(script) {
-		return engine{}, fmt.Errorf("the switch to the free version is not on this card")
+		return engine{}, fmt.Errorf("%s is not in Scripts", installBeta)
 	}
-	python, err := exec.LookPath("python3")
-	if err != nil {
-		return engine{}, fmt.Errorf("the switch to the free version needs Python 3")
+	if _, err := exec.LookPath("python3"); err != nil {
+		return engine{}, fmt.Errorf("going back to the beta needs Python 3")
 	}
-	return engine{path: python, args: []string{script, "free", "--card", card}, env: []string{"PYTHONUTF8=1"}}, nil
+	return engine{path: "/bin/bash", args: []string{script, "--card", card}, env: []string{"PYTHONUTF8=1"}}, nil
 }
 
-// CanSwitchToFree reports whether this card can go back to the free
-// MisterZine by itself: a beta install with Downloader on the card.
-func CanSwitchToFree(card string) bool {
-	_, err := engineFor(card, ModeFree)
+// CanSwitchToBeta reports whether this card can go back to MisterZine
+// Arcade by itself: the member's installer in Scripts, with Downloader on
+// the card.
+func CanSwitchToBeta(card string) bool {
+	_, err := engineFor(card, ModeBeta)
 	return err == nil
 }
 
@@ -468,7 +472,7 @@ func runWorker(root, card, id, mode string, e engine) int {
 				o.s.Status = "failed"
 				o.s.Label = "Update failed"
 				o.s.Message = o.s.Name() + " failed. Review the output below."
-			case !o.s.SawSuccess && o.s.Mode != ModeApp && o.s.Mode != ModeFree:
+			case !o.s.SawSuccess && o.s.Mode != ModeApp && o.s.Mode != ModeBeta:
 				// Update All announces its success in the output; Downloader
 				// on its own does not, and says so with its exit code.
 				o.s.Status = "failed"

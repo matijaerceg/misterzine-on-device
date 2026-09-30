@@ -13,11 +13,15 @@ downloader rejects root-level ini files inside a database ("illegal path").
 
 A vX.Y.Z-beta.N tag builds MisterZine Arcade, the Patreon members' beta: the
 same database ID, so it replaces the free files in place, plus channel.py and
-MisterZine-Switch-To-Free.sh for the way back. MisterZine-Install-Beta.sh and a
-drop-in pointed at the beta are release assets only. --distribution then
-writes the files the distribution branch serves at a fixed address: the beta
-database as beta.json.zip, catalogue.json that beta builds check for updates,
-and both scripts. Stable and candidate releases are built exactly as before.
+MisterZine-Switch-To-Free.sh for the way back, all published on the
+misterzine-arcade-betas repository, which holds built files only. The members'
+release in misterzine-arcade-private runs this from the tree it assembles.
+MisterZine-Install-Beta.sh and a drop-in pointed at the beta are release
+assets only. --distribution then writes the files that repository's main
+branch serves at a fixed address: the beta database as beta.json.zip,
+catalogue.json that beta builds check for updates, and both scripts; its
+README, the members' guide, is the members' release's own. Stable and
+candidate releases are built exactly as before.
 
 Schema: https://github.com/MiSTer-devel/Downloader_MiSTer/blob/main/docs/custom-databases.md
 """
@@ -35,6 +39,9 @@ from urllib.parse import quote
 
 DB_ID = "misterzine"
 REPO = "matijaerceg/misterzine-on-device"
+# Betas are published on a repository that holds built files only; the
+# members' release in misterzine-arcade-private builds and publishes them.
+BETA_REPO = "matijaerceg/misterzine-arcade-betas"
 NAME = "misterzine.json"
 ASSETS = {
     "misterzine/launch.sh": ("deploy/launch.sh", "launch.sh"),
@@ -64,18 +71,10 @@ SCRIPT_NOTES = {
              "beta. Favorites and settings stay, and Update All follows the free releases",
              "again. Running it again is safe."),
 }
-DISTRIBUTION_README = """# MisterZine Arcade distribution
-
-Files served at fixed addresses for MisterZine Arcade, the Patreon members'
-beta of [MisterZine](https://github.com/matijaerceg/misterzine-on-device).
-The release workflow writes this branch for every vX.Y.Z-beta.N tag; do not
-edit it by hand.
-
-- `beta.json.zip`: the Downloader database of the newest beta
-- `catalogue.json`: the newest beta, which beta builds check for updates
-- `MisterZine-Install-Beta.sh`: installs the beta, or moves a card to it
-- `MisterZine-Switch-To-Free.sh`: goes back to the free version
-"""
+# The licence of the members' extras, which the members' repository adds to
+# its tree: a beta built with them ships it beside the MIT licence, since
+# those files are not MIT. This repository has none, so its builds ship none.
+MEMBERS_LICENSE = ("deploy/MEMBERS-LICENSE.txt", "MEMBERS-LICENSE.txt")
 
 
 def channel_module():
@@ -117,7 +116,8 @@ def entry(path, url):
 
 def build(tag, binary, out):
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    base = f"https://github.com/{REPO}/releases/download/{tag}/"
+    beta = is_beta(tag)
+    base = f"https://github.com/{BETA_REPO if beta else REPO}/releases/download/{tag}/"
     staging = os.path.dirname(os.path.abspath(out))
     os.makedirs(staging, exist_ok=True)
     binary_asset = os.path.join(staging, "misterzine")
@@ -125,8 +125,10 @@ def build(tag, binary, out):
         shutil.copyfile(binary, binary_asset)
     files = {"misterzine/misterzine": entry(binary_asset, base + "misterzine")}
     asset_names = ["misterzine"]
-    beta = is_beta(tag)
-    for path, (source, asset) in dict(ASSETS, **(BETA_ASSETS if beta else {})).items():
+    assets = dict(ASSETS, **(BETA_ASSETS if beta else {}))
+    if beta and os.path.isfile(os.path.join(root, MEMBERS_LICENSE[0])):
+        assets["misterzine/" + MEMBERS_LICENSE[1]] = MEMBERS_LICENSE
+    for path, (source, asset) in assets.items():
         target = os.path.join(staging, asset)
         shutil.copyfile(os.path.join(root, source), target)
         files[path] = entry(target, base + quote(asset))
@@ -173,10 +175,10 @@ def beta_order(tag):
 
 
 def distribution(tag, release, out):
-    """Write the distribution branch's files for a published beta release,
-    from its verified assets. Keeps other channels in the catalogue, does
-    nothing for the beta it already serves and refuses an older one, so a
-    rerun of an old tag cannot take members back."""
+    """Write the files the betas repository serves for a published beta
+    release, from its verified assets. Keeps other channels in the
+    catalogue, does nothing for the beta it already serves and refuses an
+    older one, so a rerun of an old tag cannot take members back."""
     sys.path.insert(0, str(ROOT / "tools"))
     import beta_batch
     import verify_package
@@ -190,21 +192,20 @@ def distribution(tag, release, out):
     if path.exists():
         catalogue = json.loads(path.read_text(encoding="utf-8"))
         if catalogue.get("schema") != 1 or not isinstance(catalogue.get("releases"), dict):
-            raise ValueError("Unsupported catalogue.json on the distribution branch")
+            raise ValueError("Unsupported catalogue.json in " + str(out))
         current = (catalogue["releases"].get("beta") or {}).get("version")
         if current == tag:
-            print("The distribution branch already serves " + tag)
+            print("The betas repository already serves " + tag)
             return False
         if current and beta_order(current) > beta_order(tag):
-            raise ValueError("The distribution branch serves " + current + ", which is newer than " + tag)
+            raise ValueError("The betas repository serves " + current + ", which is newer than " + tag)
     db_url = channel_module().URLS["beta"]
     shutil.copyfile(release / "misterzine.json.zip", out / db_url.rsplit("/", 1)[1])
     for name in (INSTALL_BETA, SWITCH_TO_FREE):
         shutil.copyfile(release / name, out / name)
     catalogue["releases"]["beta"] = {"version": tag, "batch": batch, "db_url": db_url}
     path.write_text(json.dumps(catalogue, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
-    (out / "README.md").write_text(DISTRIBUTION_README, encoding="utf-8", newline="\n")
-    print("Distribution files for " + tag + " (batch " + batch + ") in " + str(out))
+    print("Betas repository files for " + tag + " (batch " + batch + ") in " + str(out))
     return True
 
 

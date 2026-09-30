@@ -2,7 +2,7 @@
 """Move this card's MisterZine to the free release or to MisterZine Arcade,
 the Patreon members' beta, through Downloader.
 
-    python3 channel.py beta|free [--card /media/fat]
+    python3 channel.py beta|free [--card /media/fat] [--point-only]
 
 Both builds install as the one Downloader database, misterzine, so a switch
 rewrites only that entry's db_url, wherever the card keeps it: the drop-in
@@ -18,7 +18,10 @@ takes the new one. On a card that never had MisterZine the menu entry is
 enabled as MisterZine-Setup would. Safe to run again.
 MisterZine-Install-Beta.sh and MisterZine-Switch-To-Free.sh carry a copy of
 this file, so they work on any card; the beta also installs it as
-misterzine/channel.py, which the app runs to switch back to free.
+misterzine/channel.py. --point-only rewrites the entry and nothing else: the
+beta runs it when something (MiSTer Companion's Install Center, a re-copied
+free drop-in) has pointed its own entry back at the free database, so that
+the next Update All keeps the beta.
 """
 import argparse
 import os
@@ -31,7 +34,7 @@ import tempfile
 DB_ID = "misterzine"
 URLS = {
     "free": "https://github.com/matijaerceg/misterzine-on-device/releases/latest/download/misterzine.json.zip",
-    "beta": "https://raw.githubusercontent.com/matijaerceg/misterzine-on-device/distribution/beta.json.zip",
+    "beta": "https://raw.githubusercontent.com/matijaerceg/misterzine-arcade-betas/main/beta.json.zip",
 }
 NAMES = {"free": "the free MisterZine", "beta": "MisterZine Arcade"}
 DROP_IN = "downloader_misterzine.ini"
@@ -255,12 +258,30 @@ def switch(card, channel, run=subprocess.run, proc_root=Path("/proc")):
         os.sync()
 
 
+def point_only(card, channel):
+    """Point the card's misterzine entry at the channel's database without
+    running Downloader; the files already on the card stay as they are."""
+    card = Path(card)
+    if not card.is_dir():
+        raise RuntimeError("There is no SD card at " + str(card) + ".")
+    for path in repoint(card.resolve(), channel):
+        print("MisterZine's Downloader entry in " + path.name + " now points at " + NAMES[channel] + ".", flush=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("channel", choices=sorted(URLS))
     parser.add_argument("--card", default="/media/fat")
+    parser.add_argument("--point-only", action="store_true", help="rewrite the entry, do not run Downloader")
     parser.add_argument("--proc", default="/proc", help=argparse.SUPPRESS)
     args = parser.parse_args()
+    if args.point_only:
+        try:
+            point_only(args.card, args.channel)
+        except (OSError, RuntimeError) as exc:
+            print("MisterZine's Downloader entry was not changed: " + str(exc))
+            return 1
+        return 0
     print()
     try:
         switch(args.card, args.channel, proc_root=Path(args.proc))

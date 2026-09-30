@@ -3,12 +3,12 @@ package app
 import (
 	"errors"
 	"image"
+	"strings"
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/beta"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
-	"github.com/matijaerceg/misterzine-on-device/internal/updater"
 )
 
 // The Patreon beta's lock screen. A locked beta build (Config.BetaUnlock
@@ -21,21 +21,21 @@ import (
 // Backspace erases and Enter unlocks. B clears a started entry, and on an
 // empty one returns to the MiSTer menu, as the Menu button always does.
 //
-// On a card that can go back to the free MisterZine by itself
-// (Config.CanSwitchToFree), X pressed twice switches to it: the run's
-// update screen shows in place of the lock screen, and when it has
-// finished A restarts into the free version and B comes back here.
+// The screen offers no way to the free version itself, so a member cannot
+// leave by accident. On a card unlocked for an earlier batch
+// (Config.BetaEarlierBatch), where a member whose membership has lapsed
+// stands, one line names the way: MisterZine-Switch-To-Free in Scripts. A
+// first install never sees it.
 
 // codeLen is the number of digits in a code.
 const codeLen = 6
 
 // betaLock is the lock screen's state; App.lock is nil once unlocked.
 type betaLock struct {
-	digits    [codeLen]int8 // -1 while a box is empty
-	box       int           // the chosen box
-	message   string        // the answer to the last Unlock, "" before one
-	free      bool          // the card can switch back to the free version
-	switching bool          // the switch's update screen shows instead
+	digits  [codeLen]int8 // -1 while a box is empty
+	box     int           // the chosen box
+	message string        // the answer to the last Unlock, "" before one
+	leaving bool          // unlocked for an earlier batch: name the way to free
 }
 
 func newBetaLock() *betaLock {
@@ -161,22 +161,7 @@ func (a *App) actLock(k platform.Key) bool {
 		l.message = ""
 	case platform.KeyEnter, platform.KeyStart:
 		a.tryUnlock()
-	case platform.KeyTab:
-		// X asks first, then switches to the free version
-		if !l.free {
-			return false
-		}
-		if l.message != a.lockSwitchAsk() {
-			l.message = a.lockSwitchAsk()
-			break
-		}
-		a.switchToFree()
-		return true
 	case platform.KeyBack:
-		if l.message == a.lockSwitchAsk() {
-			l.message = "" // no switch, and the entry stays
-			break
-		}
 		if !l.started() && l.message == "" {
 			a.quit()
 			return false
@@ -251,70 +236,16 @@ func (a *App) unlock(notice string) {
 	a.all = true
 }
 
-// lockSwitchAsk is the question the first X puts: a second X switches.
-func (a *App) lockSwitchAsk() string {
-	return "Press " + a.btn("X") + " again to switch to the free version."
-}
-
-// switchToFree starts the run that takes the card back to the free
-// MisterZine (updater.ModeFree) and shows its update screen, still locked:
-// the host saves nothing, and the screen's keys are handleLockSwitch's.
-func (a *App) switchToFree() {
-	a.lock.switching = true
-	a.lock.message = ""
-	a.OpenUpdate(updater.ModeFree)
-}
-
-// handleLockSwitch takes every key while the lock screen shows its switch
-// to the free version. The update screen's own keys work (hold B cancels
-// the run, the arrows scroll its log, A restarts into the free version
-// once it is installed), but nothing leads past the lock: once the run has
-// finished, B comes back to the lock screen and Menu returns to the MiSTer
-// menu, where the update screen would open Options.
-func (a *App) handleLockSwitch(ev platform.Event) bool {
-	if a.bounced(ev) {
-		return false
-	}
-	if ev.Pressed && !a.down[ev.Key] && !a.update.Active() {
-		switch ev.Key {
-		case platform.KeyBack:
-			a.down[ev.Key] = true
-			if a.update.ResultNotice() && a.cfg.Action != nil {
-				a.cfg.Action("update-dismiss", a.update.ID)
-			}
-			a.lock.switching = false
-			a.screen = ScreenList // what the unlock opens onto
-			a.rep = repeater{}
-			a.all = true
-			return true
-		case platform.KeyMenu:
-			a.down[ev.Key] = true
-			a.quit()
-			return false
-		}
-	}
-	return a.handleUpdate(ev)
-}
-
 // lockHint is the lock screen's legend, shortened where the bar is narrow.
-// X for the free version comes last, and goes first when space runs out:
-// the line under the code says it too.
 func (a *App) lockHint() string {
 	back := "B Quit"
 	if a.lock.started() || a.lock.message != "" {
 		back = "B Clear"
 	}
 	digits := gfx.ArrowUp + gfx.ArrowDown + " Digit  " + gfx.ArrowLeft + gfx.ArrowRight + " Move  "
-	free := ""
-	if a.lock.free {
-		free = "  X Free version"
-	}
-	hint := digits + "A Unlock  " + back + free
-	for _, h := range []string{digits + "A OK  " + back + free, digits + "A OK  " + back} {
-		if a.hintFits(hint) {
-			break
-		}
-		hint = h
+	hint := digits + "A Unlock  " + back
+	if !a.hintFits(hint) {
+		hint = digits + "A OK  " + back
 	}
 	return hint
 }
@@ -325,7 +256,7 @@ const (
 	lockBoxW, lockBoxH = 18, 24
 	lockBoxGap         = 4
 	lockGroupGap       = 10
-	lockSwitchGap      = 4 // above the line that offers the free version
+	lockLeaveGap       = 4 // above the lines that name the way to the free version
 )
 
 // lockFooter is the foot of the lock screen's body: where the code comes
@@ -334,17 +265,60 @@ func (a *App) lockFooter() []string {
 	return []string{"patreon.com/MisterZine"}
 }
 
-// lockSwitchLine is the line under the footer that offers the free
-// version, as a legend chunk, in the shorter form where the longer does
-// not fit cols characters; "" on a card that cannot switch.
-func (a *App) lockSwitchLine(cols int) string {
-	if !a.lock.free {
-		return ""
+// lockLeave is the line that names the way back to the free version, from
+// the longest to the shortest: where even the script's full name is wider
+// than the body (tate at the widest inset), Scripts lists it as
+// MisterZine-Switch-To-Free, so the end of its name finds it.
+var lockLeave = []string{
+	"Leaving the beta? Run MisterZine-Switch-To-Free from Scripts.",
+	"Leaving? Run MisterZine-Switch-To-Free in Scripts.",
+	"Leaving? Run Switch-To-Free in Scripts.",
+}
+
+// lockLeaveLines name the way back to the free version under the footer,
+// wrapped to cols characters, on a card unlocked for an earlier batch; nil
+// on any other. It is text, not a control: the Scripts entry does it. The
+// script's full name comes first, in two lines if it can and three if it
+// must; only where it is wider than the body does the short one stand in.
+func (a *App) lockLeaveLines(cols int) []string {
+	if !a.lock.leaving {
+		return nil
 	}
-	if s := "X Switch to the free version"; len(s) <= cols {
-		return s
+	for _, try := range []struct {
+		s     string
+		lines int
+	}{{lockLeave[0], 2}, {lockLeave[1], 2}, {lockLeave[1], 3}, {lockLeave[2], 3}} {
+		if len(gfx.Wrap(try.s, cols, len(try.s)+1)) <= try.lines && wordsWhole(try.s, cols) {
+			return evenWrap(try.s, cols, try.lines)
+		}
 	}
-	return "X Free version"
+	return evenWrap(lockLeave[len(lockLeave)-1], cols, 3)
+}
+
+// wordsWhole reports every word of s no wider than cols, so wrapping never
+// cuts one.
+func wordsWhole(s string, cols int) bool {
+	for _, w := range strings.Fields(s) {
+		if len(w) > cols {
+			return false
+		}
+	}
+	return true
+}
+
+// lockBlock lays out the lock screen's body in box: the intro's lines, the
+// lines naming the way out, the footer's height with them, and the height
+// of the whole block. The block holds the intro, the boxes, two lines kept
+// for the answer so nothing moves when one appears, and the footer.
+func (a *App) lockBlock(box image.Rectangle) (intro, leave []string, footH, h int) {
+	intro = evenWrap("Enter the code from the Patreon post.", a.body.Cols(box.Dx()), 3)
+	leave = a.lockLeaveLines(a.sm.Cols(box.Dx()))
+	footH = len(a.lockFooter()) * (a.sm.H + 1)
+	if len(leave) > 0 {
+		footH += lockLeaveGap + len(leave)*(a.sm.H+1)
+	}
+	h = len(intro)*(a.body.H+1) + 10 + lockBoxH + 8 + 2*(a.sm.H+1) + 6 + footH
+	return intro, leave, footH, h
 }
 
 // paintLock draws the lock screen: the title and the BETA mark in the
@@ -363,17 +337,10 @@ func (a *App) paintLock(c *gfx.Canvas) {
 
 	c.Box(l.Body, pal.Line)
 	box := l.Body.Inset(4)
-	intro := evenWrap("Enter the code from the Patreon post.", a.body.Cols(box.Dx()), 3)
 	msgCols := a.sm.Cols(box.Dx())
 	foot := a.lockFooter()
-	sw := a.lockSwitchLine(msgCols)
-	footH := len(foot) * (a.sm.H + 1)
-	if sw != "" {
-		footH += lockSwitchGap + a.sm.H + 1
-	}
-	// the block, centred on the body: the intro, the boxes, two lines kept
-	// for the answer so nothing moves when one appears, and the footer
-	h := len(intro)*(a.body.H+1) + 10 + lockBoxH + 8 + 2*(a.sm.H+1) + 6 + footH
+	intro, leave, footH, h := a.lockBlock(box)
+	// the block, centred on the body
 	top := box.Min.Y + max(0, (box.Dy()-h)/2)
 	y = top
 	for _, line := range intro {
@@ -393,24 +360,26 @@ func (a *App) paintLock(c *gfx.Canvas) {
 		c.Text(box.Min.X+(box.Dx()-a.sm.Width(line))/2, y, a.sm, line, pal.Muted)
 		y += a.sm.H + 1
 	}
-	if sw != "" {
-		// painted as the legend paints it: the button in the accent
-		y += lockSwitchGap
-		w := a.hintWidth(hintChunks(sw), " ")
-		a.hintLine(c, box.Min.X+(box.Dx()-w)/2, y, w, sw)
+	if len(leave) > 0 {
+		y += lockLeaveGap
+		for _, line := range leave {
+			c.Text(box.Min.X+(box.Dx()-a.sm.Width(line))/2, y, a.sm, line, pal.Muted)
+			y += a.sm.H + 1
+		}
 	}
 	a.paintHint(c, a.lockHint())
 }
 
 // evenWrap wraps centred text into as few lines as gfx.Wrap does, but as
-// narrow as they stay that few, so a last line is not left with one word.
+// narrow as they stay that few, so a last line is not left with one word;
+// never so narrow that a word would be cut.
 func evenWrap(s string, cols, maxLines int) []string {
 	lines := gfx.Wrap(s, cols, maxLines)
 	n := len(gfx.Wrap(s, cols, len(s)+1))
 	if n < 2 || n > maxLines {
 		return lines
 	}
-	for c := cols - 1; c > 0 && len(gfx.Wrap(s, c, len(s)+1)) == n; c-- {
+	for c := cols - 1; c > 0 && wordsWhole(s, c) && len(gfx.Wrap(s, c, len(s)+1)) == n; c-- {
 		lines = gfx.Wrap(s, c, maxLines)
 	}
 	return lines

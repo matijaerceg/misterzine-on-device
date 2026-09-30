@@ -38,9 +38,6 @@ func (a *App) PageTransitions() bool { return !a.cfg.TransitionsDisabled }
 func (a *App) EnablePageTransitions() { a.transition.enabled = true }
 
 func (a *App) pageIdentity() pageIdentity {
-	if a.lock != nil && a.lock.switching {
-		return pageIdentity{locked: true, screen: ScreenUpdate}
-	}
 	if a.lock != nil {
 		return pageIdentity{locked: true}
 	}

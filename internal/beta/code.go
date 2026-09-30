@@ -154,6 +154,44 @@ func receiptPath(dir string) string {
 	return filepath.Join(dir, "beta-unlocks", Batch+"-"+CodeSHA256+".receipt")
 }
 
+// Unlocked reports whether the card in dir has ever been unlocked: any
+// batch's receipt in beta-unlocks, this build's or another's. The free
+// build asks it too, to know a card that had MisterZine Arcade.
+func Unlocked(dir string) bool {
+	return len(receipts(dir)) > 0
+}
+
+// EarlierUnlock reports a receipt for a batch other than this build's: a
+// card that was unlocked before and now waits for a newer batch's code,
+// which is where a lapsed member stands.
+func EarlierUnlock(dir string) bool {
+	own := filepath.Base(receiptPath(dir))
+	for _, name := range receipts(dir) {
+		if name != own {
+			return true
+		}
+	}
+	return false
+}
+
+// receipts lists the receipt files in dir's beta-unlocks, by name.
+func receipts(dir string) []string {
+	if dir == "" {
+		return nil
+	}
+	entries, err := os.ReadDir(filepath.Join(dir, "beta-unlocks"))
+	if err != nil {
+		return nil
+	}
+	var names []string
+	for _, e := range entries {
+		if e.Type().IsRegular() && filepath.Ext(e.Name()) == ".receipt" {
+			names = append(names, e.Name())
+		}
+	}
+	return names
+}
+
 // Describe names the build for version lines: "" for the free build,
 // "beta" or "beta batch arcade-1" for the beta.
 func Describe() string {

@@ -94,6 +94,42 @@ func TestCodeLifecycle(t *testing.T) {
 	}
 }
 
+// Unlocked sees any batch's receipt; EarlierUnlock only another batch's,
+// the card of a member who has not entered this batch's code.
+func TestEarlierUnlocks(t *testing.T) {
+	dir := codeBuild(t)
+	if Unlocked(dir) || EarlierUnlock(dir) || Unlocked("") || EarlierUnlock("") {
+		t.Fatal("a card never unlocked counts as unlocked")
+	}
+	if err := Unlock(dir, "012345"); err != nil {
+		t.Fatal(err)
+	}
+	if !Unlocked(dir) || EarlierUnlock(dir) {
+		t.Fatalf("this batch's own receipt: unlocked %v earlier %v", Unlocked(dir), EarlierUnlock(dir))
+	}
+	// the next batch, its code not yet entered
+	Batch, CodeSHA256 = "next", hashOf("654321")
+	if !Unlocked(dir) || !EarlierUnlock(dir) {
+		t.Fatalf("the earlier batch's receipt: unlocked %v earlier %v", Unlocked(dir), EarlierUnlock(dir))
+	}
+	// the free build knows the card had the beta
+	Channel, Batch, CodeSHA256 = "", "", ""
+	if !Unlocked(dir) {
+		t.Fatal("the free build does not see the receipt")
+	}
+	// only receipt files count
+	other := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(other, "beta-unlocks", "x.receipt"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(other, "beta-unlocks", ".unlock-123"), []byte("unlocked\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if Unlocked(other) {
+		t.Fatal("a folder or a leftover temporary file counts as a receipt")
+	}
+}
+
 func TestCodeCannotSave(t *testing.T) {
 	dir := codeBuild(t)
 	// a file where the receipts folder should be

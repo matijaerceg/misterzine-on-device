@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 """The access batch of MisterZine Arcade, the Patreon members' beta.
 
-    beta_batch.py new BATCH [--private DIR]   start a batch with a new code
+    beta_batch.py new BATCH [--private DIR] [--batch-file PATH]   start a batch with a new code
     beta_batch.py ldflags                     linker flags for the beta build
     beta_batch.py verify BINARY               check a beta build carries them
 
 A batch is a name and the SHA-256 of its six-digit code. deploy/beta-batch.json
-holds both and is committed; the release workflow builds every vX.Y.Z-beta.N
-tag with them. The code itself never enters the repository: `new` keeps it in
-<private>/<batch>.code (default ~/.misterzine-beta) and prints only that path.
+holds both. The members' repository, misterzine-arcade-private, keeps it
+(overlay/deploy/beta-batch.json, which its assembled tree has at
+deploy/beta-batch.json) and builds every vX.Y.Z-beta.N with it; this
+repository has none. The code itself never enters either repository: `new`
+keeps it in <private>/<batch>.code (default ~/.misterzine-beta) and prints
+only that path.
 A new batch means a new code for the members' post; a new version alone does
 not. This is a convenience gate: six digits are recoverable from their hash.
 """
@@ -101,14 +104,16 @@ def main():
     start = commands.add_parser("new", help="start a batch with a new code")
     start.add_argument("batch")
     start.add_argument("--private", type=Path, default=PRIVATE)
+    start.add_argument("--batch-file", type=Path, default=BATCH_FILE,
+                       help="where the batch goes: the members' repository keeps it as overlay/deploy/beta-batch.json")
     commands.add_parser("ldflags", help="print the linker flags for the beta build")
     check = commands.add_parser("verify", help="check a beta build carries the batch")
     check.add_argument("binary")
     args = parser.parse_args()
     try:
         if args.command == "new":
-            secret = new(args.batch, args.private)
-            print("New batch " + args.batch + " in " + str(BATCH_FILE.relative_to(ROOT)) + "; commit it.")
+            secret = new(args.batch, args.private, args.batch_file)
+            print("New batch " + args.batch + " in " + str(args.batch_file) + "; commit it.")
             print("Its code is in " + str(secret) + ". Keep a copy; it is not stored anywhere else.")
         elif args.command == "ldflags":
             print(ldflags())

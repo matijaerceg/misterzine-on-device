@@ -11,16 +11,27 @@ import zipfile
 # Where each build's drop-in points (deploy/channel.py has the same two).
 DB_URLS = {
     False: "https://github.com/matijaerceg/misterzine-on-device/releases/latest/download/misterzine.json.zip",
-    True: "https://raw.githubusercontent.com/matijaerceg/misterzine-on-device/distribution/beta.json.zip",
+    True: "https://raw.githubusercontent.com/matijaerceg/misterzine-arcade-betas/main/beta.json.zip",
+}
+# Where each build's release assets are published: betas on the repository
+# that holds built files only (make-db.py has the same two).
+RELEASES = {
+    False: "https://github.com/matijaerceg/misterzine-on-device/releases/download/",
+    True: "https://github.com/matijaerceg/misterzine-arcade-betas/releases/download/",
 }
 # Files only MisterZine Arcade, the members' beta, ships: its way back to free.
 BETA_FILES = {"misterzine/channel.py", "Scripts/MisterZine-Switch-To-Free.sh"}
 BETA_ASSETS = {"MisterZine-Install-Beta.sh", "MisterZine-Switch-To-Free.sh", "channel.py"}
 
 
+def is_beta(tag):
+    return re.fullmatch(r"v[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+", tag) is not None
+
+
 def verify(directory, tag):
     directory = Path(directory)
-    prefix = "https://github.com/matijaerceg/misterzine-on-device/releases/download/" + tag + "/"
+    beta = is_beta(tag)
+    prefix = RELEASES[beta] + tag + "/"
     with zipfile.ZipFile(directory / "misterzine.json.zip") as z:
         db = json.loads(z.read("misterzine.json"))
     if db.get("db_id") != "misterzine":
@@ -41,12 +52,13 @@ def verify(directory, tag):
             raise ValueError("SHA256 mismatch: " + name)
         names.add(name)
     # A beta database must never reach the free channel, nor the free one the beta.
-    beta = re.fullmatch(r"v[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+", tag) is not None
     shipped = BETA_FILES & set(db["files"])
     if beta and shipped != BETA_FILES or not beta and shipped:
         raise ValueError("The database's beta files do not match a " + ("beta" if beta else "free") + " release")
     if beta and not BETA_ASSETS <= names or not beta and BETA_ASSETS & names:
         raise ValueError("The release's beta scripts do not match a " + ("beta" if beta else "free") + " release")
+    if not beta and "misterzine/MEMBERS-LICENSE.txt" in db["files"]:
+        raise ValueError("A free release ships the members' licence")
     ini = configparser.ConfigParser(inline_comment_prefixes=(";", "#"))
     ini.read(directory / "downloader_misterzine.ini")
     if ini.get("misterzine", "db_url", fallback="") != DB_URLS[beta]:

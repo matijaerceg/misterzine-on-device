@@ -25,12 +25,11 @@ type noticeBar struct {
 }
 
 // noticeBarNow reads what a notice would cover now; false on the screens
-// that show none (Update All, the lock screen's switch to the free
-// version, calibration), where a notice waits for the screen that shows
-// it.
+// that show none (Update All, calibration), where a notice waits for the
+// screen that shows it.
 func (a *App) noticeBarNow() (noticeBar, bool) {
 	if a.lock != nil {
-		return noticeBar{locked: true}, !a.lock.switching
+		return noticeBar{locked: true}, true
 	}
 	switch a.screen {
 	case ScreenUpdate, ScreenCalibrate:

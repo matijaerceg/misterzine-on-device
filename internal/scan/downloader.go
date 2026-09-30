@@ -35,6 +35,26 @@ func DownloaderDBs(card string) (dbs []data.DB, found bool) {
 	return nil, false
 }
 
+// MisterZineEntries lists the db_url of every [misterzine] section
+// Downloader reads on the card, lowercased, in its order: the database
+// MisterZine's own updates come from, the free releases' or MisterZine
+// Arcade's. A section without a db_url lists "", and a comment after the
+// address is dropped. found is false when the card has no downloader.ini,
+// so the caller knows nothing about it.
+func MisterZineEntries(card string) (urls []string, found bool) {
+	dbs, found := DownloaderDBs(card)
+	for _, db := range dbs {
+		if db.ID == "misterzine" {
+			url := ""
+			if f := strings.Fields(db.URL); len(f) > 0 {
+				url = f[0]
+			}
+			urls = append(urls, url)
+		}
+	}
+	return urls, found
+}
+
 // dropInFiles lists the drop-in database files Downloader reads from the
 // folder holding downloader.ini, in its order: downloader/*.ini, then
 // downloader_*.ini, each sorted, dotfiles skipped.

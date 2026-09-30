@@ -258,13 +258,13 @@ func TestUpdateRescanReport(t *testing.T) {
 	if a.updateView.card != nil {
 		t.Fatal("a MisterZine-only run watched the card")
 	}
-	free := updater.State{ID: "free", Mode: updater.ModeFree, Status: "running"}
-	a.SetUpdate(free, true)
-	free.Status = "completed"
-	a.SetUpdate(free, true)
+	back := updater.State{ID: "beta", Mode: updater.ModeBeta, Status: "running"}
+	a.SetUpdate(back, true)
+	back.Status = "completed"
+	a.SetUpdate(back, true)
 	a.RescanAfterUpdate()
 	if a.updateView.card != nil {
-		t.Fatal("the switch to the free version watched the card")
+		t.Fatal("the way back to the beta watched the card")
 	}
 
 	failed := updater.State{ID: "failed", Status: "running"}

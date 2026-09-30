@@ -79,6 +79,7 @@ type host struct {
 	sig                           chan os.Signal
 	favDirty                      bool
 	favLoadFailed                 bool // preserve a favorites file we could not read
+	arcadeBack                    bool // the free build asks whether to go back to MisterZine Arcade (channel_guard.go)
 	saveAt                        time.Time
 	saveRetry                     bool
 	setDirty                      bool
@@ -252,6 +253,10 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	h.romList = romListPath(root)
 
 	// app
+	h.arcadeBack = arcadeBackOffered(root, card, h.settings.ArcadeBackAsked)
+	if h.arcadeBack {
+		lg.Printf("arcade back: the card had MisterZine Arcade and follows the free releases; asking once")
+	}
 	favSet := h.favs.Set()
 	cfg := app.Config{
 		PhysW: h.fb.CanvasW, PhysH: h.fb.CanvasH, Rotation: rotation, SafeInsetX: h.settings.InsetX, SafeInsetY: h.settings.InsetY,
@@ -273,6 +278,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		ShowDeprecated:       h.settings.ShowDeprecated,
 		ShowNonArcade:        h.settings.ShowNonArcade,
 		ArcadeIntro:          h.settings.ArcadeIntroPending,
+		ArcadeBack:           h.arcadeBack,
 		ViewsOff:             h.settings.ViewsOff,
 		RecentLaunches:       h.state.Recents,
 		LastSort:             h.settings.LastSort,
@@ -293,7 +299,6 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		Progress:             func() (int, int) { return h.img.Progress() },
 		Launcher:             launcherEnabled,
 		CanUpdateApp:         func() bool { return updater.CanUpdateApp(card) },
-		CanSwitchToFree:      func() bool { return updater.CanSwitchToFree(card) },
 		Status: func(i int) data.Status {
 			if i < len(h.status) {
 				return h.status[i]
@@ -388,11 +393,22 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		},
 	}
 	cfg.BetaUnlock = betaLock(root, lg)
+	cfg.BetaEarlierBatch = cfg.BetaUnlock != nil && beta.EarlierUnlock(root)
+	if unlock := cfg.BetaUnlock; unlock != nil {
+		cfg.BetaUnlock = func(code string) error {
+			err := unlock(code)
+			if err == nil {
+				h.keepBetaEntry() // a member again: the entry follows the beta
+			}
+			return err
+		}
+	}
 	var seen *data.SeenRecord
 	if hasState && (len(h.state.Seen.Cur) > 0 || h.state.Seen.T != "") {
 		seen = &h.state.Seen
 	}
 	h.a = app.New(cfg, ds, seen)
+	h.keepBetaEntry()
 	h.loadSupporters()
 	h.a.StartSplash()
 	h.a.EnablePageTransitions()
@@ -1044,6 +1060,9 @@ func (h *host) saveAll(final bool) {
 		h.settings.ShowDeprecated = h.a.ShowDeprecated()
 		h.settings.ShowNonArcade = h.a.ShowNonArcade()
 		h.settings.ArcadeIntroPending = h.a.ArcadeIntroPending()
+		if h.arcadeBack && !h.a.ArcadeBackPending() {
+			h.settings.ArcadeBackAsked = true // answered, either way: never again
+		}
 		h.settings.ViewsOff = h.a.ViewsOff()
 		h.settings.LastSort = h.a.Sort()
 		h.settings.DefaultSort = h.a.DefaultView()

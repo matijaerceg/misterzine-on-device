@@ -163,12 +163,15 @@ func (a *App) nextMenuTick() time.Time {
 
 // holdBar is the hold line to paint on the current screen, in pixels: the
 // Menu hold, the B hold that cancels Update All, or the B hold that
-// leaves the pad tester, or the arcade notice acknowledgement hold
-// (the longest if two are running).
+// leaves the pad tester, or the arcade notice acknowledgement hold, or the
+// A hold back to MisterZine Arcade (the longest if two are running).
 func (a *App) holdBar() int {
 	bar := a.menuBar
 	if a.cfg.ArcadeIntro {
 		bar = max(bar, a.arcadeIntroBar)
+	}
+	if a.cfg.ArcadeBack {
+		bar = max(bar, a.arcadeBackBar)
 	}
 	if a.screen == ScreenUpdate {
 		bar = max(bar, a.updateView.holdBar)
@@ -181,7 +184,8 @@ func (a *App) holdBar() int {
 
 // paintHoldBar draws the hold progress along the status bar's bottom
 // line, over the usual muted line, while a hold is running. The arcade
-// notice uses the bottom legend instead so its action and feedback stay together.
+// notice and the way back to MisterZine Arcade use the bottom legend
+// instead so their action and feedback stay together.
 func (a *App) paintHoldBar(c *gfx.Canvas) {
 	bar := a.holdBar()
 	if bar <= 0 {
@@ -190,7 +194,7 @@ func (a *App) paintHoldBar(c *gfx.Canvas) {
 	l := &a.lay
 	line := l.Status
 	y := line.Max.Y - 1
-	if a.cfg.ArcadeIntro {
+	if a.cfg.ArcadeIntro || a.cfg.ArcadeBack {
 		line, y = l.Hint, l.Hint.Min.Y
 	}
 	c.HLine(line.Min.X, line.Min.X+bar-1, y, pal.Ok)

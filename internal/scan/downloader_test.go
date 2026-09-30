@@ -45,6 +45,25 @@ func TestDownloaderDBs(t *testing.T) {
 	}
 }
 
+// MisterZine's own entry, wherever the card keeps it: downloader.ini, the
+// drop-in the release ships, or both.
+func TestMisterZineEntries(t *testing.T) {
+	card := t.TempDir()
+	if urls, found := MisterZineEntries(card); found || urls != nil {
+		t.Fatalf("no downloader.ini: found=%v urls=%v", found, urls)
+	}
+	os.WriteFile(filepath.Join(card, "downloader.ini"), []byte("[mister]\nfilter = arcade\n[distribution_mister]\ndb_url = https://example.org/db.json.zip\n"), 0644)
+	if urls, found := MisterZineEntries(card); !found || urls != nil {
+		t.Fatalf("no entry: found=%v urls=%v", found, urls)
+	}
+	os.WriteFile(filepath.Join(card, "downloader.ini"), []byte("[MisterZine]\r\nDB_URL = https://Example.org/Free.json.zip ; pinned\r\n"), 0644)
+	os.WriteFile(filepath.Join(card, "downloader_misterzine.ini"), []byte("; the drop-in\n[misterzine]\nfilter =\n"), 0644)
+	urls, found := MisterZineEntries(card)
+	if !found || !reflect.DeepEqual(urls, []string{"https://example.org/free.json.zip", ""}) {
+		t.Fatalf("both: found=%v urls=%q", found, urls)
+	}
+}
+
 func TestDownloaderDropIns(t *testing.T) {
 	card := t.TempDir()
 	write := func(rel, s string) {

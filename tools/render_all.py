@@ -352,15 +352,21 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "-out", f"out/beta-lock-{orientation}-{inset}", "-script",
                           "shot empty; type 12; up; right; down; shot part; type 999; enter; shot wrong; "
                           "back; start; shot incomplete; type 123456; enter; shot unlocked"])
-        # on a card that can go back to the free version: the offer, the
-        # question the first X puts, and the switch's run under way
-        scenarios.append([*rotation, "-inset", str(inset), "-beta-locked", "-switch-free", "-update-state", "testdata/update-free-running.json",
-                          "-out", f"out/beta-lock-free-{orientation}-{inset}", "-script",
-                          "shot offer; tab; shot ask; tab; shot running"])
-    # the switch done: the restart into the free version, and B back to the lock
-    scenarios.append([*rotation, "-beta-locked", "-switch-free", "-update-state", "testdata/update-free-completed.json", "-update-restart",
-                      "-out", f"out/beta-lock-free-{orientation}-done", "-script",
-                      "type 12; tab; tab; shot restart; back; shot returned"])
+        # a card unlocked for an earlier batch, where a lapsed member stands:
+        # the way back to the free version named as text; X does nothing
+        scenarios.append([*rotation, "-inset", str(inset), "-beta-locked", "-beta-earlier",
+                          "-out", f"out/beta-lock-leave-{orientation}-{inset}", "-script",
+                          "shot leave; type 12; tab; tab; shot x-ignored; type 3456; enter; shot unlocked"])
+        # the free build on a card that had MisterZine Arcade: the page asking
+        # once to go back, a hold let go early, and B keeping the free version
+        scenarios.append([*rotation, "-inset", str(inset), "-arcade-back",
+                          "-out", f"out/arcade-back-{orientation}-{inset}", "-script",
+                          "shot page; press enter; wait 1000; shot holding; release enter; shot let-go; back; shot stayed"])
+    # a full hold: the member's installer under way, then the restart into the beta
+    scenarios.append([*rotation, "-arcade-back", "-update-state", "testdata/update-beta-running.json",
+                      "-out", f"out/arcade-back-{orientation}-run", "-script", "hold enter 2100; shot running"])
+    scenarios.append([*rotation, "-arcade-back", "-update-state", "testdata/update-beta-completed.json", "-update-restart",
+                      "-out", f"out/arcade-back-{orientation}-done", "-script", "hold enter 2100; shot restart"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):

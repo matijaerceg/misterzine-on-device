@@ -136,10 +136,10 @@ func textRows(lines []string, cols int) int {
 
 // RescanAfterUpdate is told when the host has asked for the card scan a
 // finished update run ends with: the run's screen then reports what that
-// scan changed. A MisterZine-only run and the switch to the free version
-// leave the games alone and report nothing.
+// scan changed. A MisterZine-only run and the way back to the beta leave
+// the games alone and report nothing.
 func (a *App) RescanAfterUpdate() {
-	if a.update.Mode == updater.ModeApp || a.update.Mode == updater.ModeFree {
+	if a.update.Mode == updater.ModeApp || a.update.Mode == updater.ModeBeta {
 		return
 	}
 	a.updateView.card = a.watchCard()

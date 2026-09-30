@@ -113,10 +113,6 @@ type Config struct {
 	// CanUpdateApp reports whether this card can fetch a new MisterZine on
 	// its own, which needs Downloader (nil = unsupported).
 	CanUpdateApp func() bool
-	// CanSwitchToFree reports whether this card can take the beta back to
-	// the free MisterZine by itself (updater.CanSwitchToFree); the lock
-	// screen then offers it (nil = unsupported).
-	CanSwitchToFree func() bool
 	// Scroll is the held-scrolling speed in rows per second: 20, 30, 60.
 	Scroll               string
 	SmoothScrollDisabled bool
@@ -150,6 +146,10 @@ type Config struct {
 	InstalledOnly  bool
 	ShowNonArcade  bool
 	ArcadeIntro    bool // one-time explanation for upgraded installations
+	// ArcadeBack, on the free build, asks once whether to go back to
+	// MisterZine Arcade: the card had the beta and the member's installer
+	// can take it back (arcade_back.go).
+	ArcadeBack bool
 	ShowDeprecated bool // Include catalogue rows marked deprecated.
 	// ViewsOff names the views Options -> Views left out of the Y cycle
 	// (data.SortMode.Name); a fresh install lists only "recents".
@@ -198,6 +198,10 @@ type Config struct {
 	// unlocks, and the host has saved the batch's receipt; beta.ErrLocked
 	// is a wrong code, beta.ErrBuild a build that cannot be unlocked.
 	BetaUnlock func(code string) error
+	// BetaEarlierBatch, with BetaUnlock, says the card was unlocked for an
+	// earlier batch (beta.EarlierUnlock): the lock screen then names the
+	// way back to the free version, for a member whose membership lapsed.
+	BetaEarlierBatch bool
 }
 
 // App is the state machine.
@@ -288,6 +292,8 @@ type App struct {
 
 	arcadeIntroAt  time.Time
 	arcadeIntroBar int
+	arcadeBackAt   time.Time // A held on the way back to the beta (arcade_back.go)
+	arcadeBackBar  int
 
 	lock *betaLock // the beta's lock screen, nil when the app is open (beta_lock.go)
 }
@@ -345,7 +351,7 @@ func New(cfg Config, ds *data.Dataset, stored *data.SeenRecord) *App {
 	a.saver.lastInput = cfg.TimerNow()
 	if cfg.BetaUnlock != nil {
 		a.lock = newBetaLock()
-		a.lock.free = cfg.CanSwitchToFree != nil && cfg.CanSwitchToFree()
+		a.lock.leaving = cfg.BetaEarlierBatch
 	}
 	a.membersStart()
 	return a
@@ -802,14 +808,14 @@ func (a *App) Handle(ev platform.Event) (repaint bool) {
 	if a.handleSaverInput(ev) {
 		return true
 	}
-	if a.lock != nil && a.lock.switching {
-		return a.handleLockSwitch(ev)
-	}
 	if a.lock != nil {
 		return a.handleLock(ev)
 	}
 	if a.cfg.ArcadeIntro {
 		return a.handleArcadeIntro(ev)
+	}
+	if a.cfg.ArcadeBack {
+		return a.handleArcadeBack(ev)
 	}
 	if a.supportCapturing() {
 		// Observe releases but do not navigate, search, launch or repeat. A
@@ -921,7 +927,7 @@ func (a *App) bounced(ev platform.Event) bool {
 // repeatStep says whether a held key repeats on the current screen and how
 // fast; 0 means it does not.
 func (a *App) repeatStep(k platform.Key, count int) time.Duration {
-	if a.lock != nil && !a.lock.switching {
+	if a.lock != nil {
 		if a.lockRepeats(k) {
 			return repeatStep
 		}
@@ -981,6 +987,7 @@ func (a *App) Tick(now time.Time) (changed bool) {
 	changed = a.tickSplash(now) || changed
 	changed = a.tickMenu(now) || changed
 	changed = a.tickArcadeIntro(now) || changed
+	changed = a.tickArcadeBack(now) || changed
 	changed = a.tickOptionSamples() || changed
 	// Expire notices on every screen so NextTick cannot keep returning a past
 	// deadline while Update All handles its own animation and cancel input.
@@ -989,7 +996,7 @@ func (a *App) Tick(now time.Time) (changed bool) {
 		a.all = true
 		changed = true
 	}
-	if a.screen == ScreenUpdate && (a.lock == nil || a.lock.switching) {
+	if a.screen == ScreenUpdate && a.lock == nil {
 		// Stay in the host's normal event loop so update progress and cancellation
 		// keep arriving while the log scrolls. NextTick schedules these repeats.
 		if k := a.rep.due(now, a.repeatStep); k != platform.KeyNone {
@@ -1024,6 +1031,7 @@ func (a *App) Frame(now time.Time) (changed bool) {
 	changed = a.tickSplash(now) || changed
 	changed = a.tickMenu(now) || changed
 	changed = a.tickArcadeIntro(now) || changed
+	changed = a.tickArcadeBack(now) || changed
 	changed = a.OptionSampleFrame() || changed
 	if k := a.rep.frameDue(now, a.repeatStep); k != platform.KeyNone {
 		oldTop, oldScreen := a.top, a.screen
@@ -1075,6 +1083,9 @@ func (a *App) NextTick() time.Time {
 	if next := a.nextArcadeIntroTick(); !next.IsZero() && (t.IsZero() || next.Before(t)) {
 		t = next
 	}
+	if next := a.nextArcadeBackTick(); !next.IsZero() && (t.IsZero() || next.Before(t)) {
+		t = next
+	}
 	if next := a.nextMenuTick(); !next.IsZero() && (t.IsZero() || next.Before(t)) {
 		t = next
 	}
@@ -1099,7 +1110,7 @@ func (a *App) act(k platform.Key) bool {
 		a.all = true
 	}
 	a.listMotion = listMotion{}
-	if a.lock != nil && !a.lock.switching {
+	if a.lock != nil {
 		return a.actLock(k)
 	}
 	switch a.screen {
@@ -1398,14 +1409,9 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 		a.paintSaver(c)
 	} else if a.lock != nil {
 		// the lock screen instead of every other screen: nothing under it
-		// is painted or asks for pictures; its switch to the free version
-		// shows that run's update screen
+		// is painted or asks for pictures
 		c.Fill(c.Rect, pal.Bg)
-		if a.lock.switching {
-			a.paintUpdate(c)
-		} else {
-			a.paintLock(c)
-		}
+		a.paintLock(c)
 		if a.saver.active {
 			a.paintSaver(c)
 		}
@@ -1435,6 +1441,8 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 		a.cfg.Images.Want(a.wants)
 		if a.cfg.ArcadeIntro {
 			a.paintArcadeIntro(c)
+		} else if a.cfg.ArcadeBack {
+			a.paintArcadeBack(c)
 		}
 		if a.saver.active {
 			a.paintSaver(c)

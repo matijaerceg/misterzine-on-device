@@ -117,7 +117,24 @@ class BetaPackageTest(unittest.TestCase):
         self.assertIn("exec python3 - beta", (release / "MisterZine-Install-Beta.sh").read_text(encoding="utf-8"))
         self.assertIn("exec python3 - free", (release / "MisterZine-Switch-To-Free.sh").read_text(encoding="utf-8"))
         ini = (release / "downloader_misterzine.ini").read_text(encoding="utf-8")
-        self.assertIn("db_url = https://raw.githubusercontent.com/matijaerceg/misterzine-on-device/distribution/beta.json.zip\n", ini)
+        self.assertIn("db_url = https://raw.githubusercontent.com/matijaerceg/misterzine-arcade-betas/main/beta.json.zip\n", ini)
+
+    def test_the_members_licence_ships_only_with_a_beta_built_with_it(self):
+        notice = self.dir / "MEMBERS-LICENSE.txt"
+        notice.write_text("The members' extras are proprietary.\n")
+        with mock.patch.object(make_db, "MEMBERS_LICENSE", (str(notice), "MEMBERS-LICENSE.txt")):
+            beta = self.release("v1.2.0-beta.3")
+            stable = self.release("v1.2.3")
+        # a tree without the file (this repository's own) ships none
+        with mock.patch.object(make_db, "MEMBERS_LICENSE", (str(self.dir / "absent.txt"), "MEMBERS-LICENSE.txt")):
+            without = self.release("v1.2.0-beta.4")
+        verify(beta, "v1.2.0-beta.3")
+        verify(stable, "v1.2.3")
+        for release, shipped in ((beta, True), (stable, False), (without, False)):
+            with zipfile.ZipFile(release / "misterzine.json.zip") as z:
+                files = json.loads(z.read("misterzine.json"))["files"]
+            self.assertEqual("misterzine/MEMBERS-LICENSE.txt" in files, shipped, release.name)
+        self.assertEqual((beta / "MEMBERS-LICENSE.txt").read_text(), notice.read_text())
 
     def test_stable_and_candidates_are_built_as_before(self):
         for tag in ("v1.2.0", "v1.2.0-rc.2"):
@@ -129,25 +146,37 @@ class BetaPackageTest(unittest.TestCase):
                 self.assertFalse((release / name).exists(), tag + " ships " + name)
 
     def test_a_package_of_the_wrong_kind_is_refused(self):
+        # published on the other build's repository
         with mock.patch.object(make_db, "is_beta", lambda tag: False):
             release = self.release("v1.2.0-beta.1")
-        with self.assertRaisesRegex(ValueError, "beta files"):
+        with self.assertRaisesRegex(ValueError, "Wrong release URL"):
             verify(release, "v1.2.0-beta.1")
         with mock.patch.object(make_db, "is_beta", lambda tag: True):
             release = self.release("v1.2.0")
-        with self.assertRaisesRegex(ValueError, "beta files"):
+        with self.assertRaisesRegex(ValueError, "Wrong release URL"):
             verify(release, "v1.2.0")
+        # at the right addresses, with the other build's files
+        with mock.patch.object(make_db, "is_beta", lambda tag: False), mock.patch.object(make_db, "REPO", make_db.BETA_REPO):
+            release = self.release("v1.2.0-beta.2")
+        with self.assertRaisesRegex(ValueError, "beta files"):
+            verify(release, "v1.2.0-beta.2")
+        with mock.patch.object(make_db, "is_beta", lambda tag: True), mock.patch.object(make_db, "BETA_REPO", make_db.REPO):
+            release = self.release("v1.2.1")
+        with self.assertRaisesRegex(ValueError, "beta files"):
+            verify(release, "v1.2.1")
 
-    def test_distribution_serves_the_newest_beta_only(self):
-        out = self.dir / "distribution"
+    def test_the_betas_repository_serves_the_newest_beta_only(self):
+        out = self.dir / "betas"
         first = self.release("v1.2.0-beta.2")
         self.assertTrue(make_db.distribution("v1.2.0-beta.2", first, out))
         self.assertEqual((out / "beta.json.zip").read_bytes(), (first / "misterzine.json.zip").read_bytes())
         self.assertEqual(json.loads((out / "catalogue.json").read_text()), {"schema": 1, "releases": {"beta": {
             "version": "v1.2.0-beta.2", "batch": "arcade-one",
-            "db_url": "https://raw.githubusercontent.com/matijaerceg/misterzine-on-device/distribution/beta.json.zip"}}})
-        for name in ("MisterZine-Install-Beta.sh", "MisterZine-Switch-To-Free.sh", "README.md"):
+            "db_url": "https://raw.githubusercontent.com/matijaerceg/misterzine-arcade-betas/main/beta.json.zip"}}})
+        for name in ("MisterZine-Install-Beta.sh", "MisterZine-Switch-To-Free.sh"):
             self.assertTrue((out / name).is_file(), name)
+        # the README there is the members' guide, which the members' release writes
+        self.assertFalse((out / "README.md").exists())
         self.assertNotIn("ab" * 32, "".join(p.read_text(errors="replace") for p in out.iterdir()))
         # a rerun of the same tag changes nothing; an older one is refused
         self.assertFalse(make_db.distribution("v1.2.0-beta.2", first, out))

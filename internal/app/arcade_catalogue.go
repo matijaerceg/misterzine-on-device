@@ -13,8 +13,14 @@ func (a *App) catalogueIncludes(r *data.Row) bool {
 	return (a.cfg.ShowNonArcade || r.IsArcade()) && (a.cfg.ShowDeprecated || !r.Deprecated) && !(a.cfg.InstalledOnly && a.hiddenSrc[r.Src])
 }
 
-// CatalogueNews describes changes within the enabled catalogue only.
+// CatalogueNews describes changes within the enabled catalogue only. The
+// lock screen gets none: its bar names MisterZine Arcade, the list the news
+// is about is out of reach, and the since-visit row there says it once the
+// code is in.
 func (a *App) CatalogueNews(old *data.Dataset, rows []data.Row) string {
+	if a.lock != nil {
+		return ""
+	}
 	visible := make([]data.Row, 0, len(rows))
 	for _, r := range rows {
 		if a.catalogueIncludes(&r) {

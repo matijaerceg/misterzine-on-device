@@ -69,7 +69,7 @@ func (a *App) paintStatus(c *gfx.Canvas) {
 	l := &a.lay
 	c.Fill(l.Status, pal.Surface)
 	c.HLine(l.Status.Min.X, l.Status.Max.X-1, l.Status.Max.Y-1, pal.Muted)
-	if !a.cfg.ArcadeIntro {
+	if !a.cfg.ArcadeIntro && !a.cfg.ArcadeBack {
 		a.paintHoldBar(c)
 	}
 	// the text's room: the bar, less the beta's BETA mark on the list

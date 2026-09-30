@@ -166,7 +166,7 @@ def exercise(archive, package):
         print("PASS: packaged install with global filters, legacy/space-name upgrade, keep-data removal, same-version reinstall, full removal")
 
 
-# Serves the exact URLs a release and the distribution branch publish.
+# Serves the exact URLs a release and the betas repository publish.
 ROUTED_RUNNER = r'''
 import contextlib
 import io

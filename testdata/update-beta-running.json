@@ -1,6 +1,6 @@
 {
-  "id": "switch-free",
-  "mode": "free",
+  "id": "back-to-beta",
+  "mode": "beta",
   "status": "running",
   "stage": 2,
   "label": "Updating files",
@@ -9,10 +9,10 @@
   "last_output": "2026-09-08T11:59:58Z",
   "elapsed": 40,
   "lines": [
-    "MisterZine's Downloader entry in downloader_misterzine.ini now points at the free MisterZine.",
+    "MisterZine's Downloader entry in downloader_misterzine.ini now points at MisterZine Arcade.",
     "Running MiSTer Downloader",
     "Checking installed files...",
     "Installing misterzine/misterzine",
-    "Removing Scripts/MisterZine-Switch-To-Free.sh"
+    "Installing Scripts/MisterZine-Switch-To-Free.sh"
   ]
 }

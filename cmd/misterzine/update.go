@@ -47,7 +47,7 @@ func (h *host) initUpdates() {
 }
 
 // startUpdate begins a run of the given mode (updater.ModeAll, ModeApp, or
-// ModeFree from the beta's lock screen).
+// ModeBeta, the free build's way back to MisterZine Arcade).
 func (h *host) startUpdate(mode string) {
 	if h.updatePending {
 		return
