@@ -1338,6 +1338,9 @@ type scanResult struct {
 	// access is the catalogue's word on each core, read against this
 	// scan's cores; the final pass hands it to the ROM check
 	access *scan.CoreAccess
+	// complete is set on a final pass that read both walks without error,
+	// so a local row it does not list is really not on the card
+	complete bool
 }
 
 // scanDiag is what a card scan found, kept for Troubleshooting -> Send a
@@ -1514,7 +1517,7 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 		diag.files = append(diag.files, report.File{Path: a.Path, Reason: a.Reason + " (catalogue row " + a.K + ")"})
 	}
 	res := scanResult{index: idx, status: st, owners: owners, gen: gen, alts: resolved, altCores: local.VersionCores, notice: notice, final: true, hidden: hidden, iniFound: iniFound, diag: diag,
-		access: scan.NewCoreAccess(catalogue, idx)}
+		access: scan.NewCoreAccess(catalogue, idx), complete: err == nil && local.Err == nil}
 	if nextGen != gen {
 		// The row set changes: statuses must index into the new rows.
 		res.status, res.owners = scan.Statuses(h.card, idx, merged)

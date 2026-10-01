@@ -249,6 +249,36 @@ func LocalTakeovers(local, catalogue []Row) map[string]string {
 	return out
 }
 
+// StrandedLocalKeys maps each local key in keys that no row of rows carries
+// to the catalogue row that now covers its game, the way LocalTakeovers
+// would have. Such a key outlived its row unseen: the catalogue that names
+// the game arrived before this run's first card scan, so the local row was
+// never listed to give way. A key a row still carries (a local row the scan
+// keeps, or a standin) stays where it is.
+func StrandedLocalKeys(keys []string, rows, catalogue []Row) map[string]string {
+	live := make(map[string]bool, len(rows))
+	for i := range rows {
+		live[rows[i].K] = true
+	}
+	var byID map[string]string
+	out := map[string]string{}
+	for _, k := range keys {
+		if !strings.HasPrefix(k, LocalKey("")) || live[k] {
+			continue
+		}
+		if byID == nil {
+			byID = coverage(catalogue)
+		}
+		if to, ok := byID[k]; ok {
+			out[k] = to
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
 // coverage maps the local key of every setname, family root and known clone
 // an arcade catalogue row names to that row's K.
 func coverage(catalogue []Row) map[string]string {

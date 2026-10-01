@@ -28,3 +28,33 @@ func TestLocalTakeovers(t *testing.T) {
 		t.Fatal("nothing to move must be nil")
 	}
 }
+
+// A catalogue that lists a local game before the run's first card scan
+// leaves the game's star under a key no row carries.
+func TestStrandedLocalKeys(t *testing.T) {
+	catalogue := []Row{
+		{Title: "Cue Brick", Base: "Arcade", Src: "jtbindb", K: "cuebrickj", SN: "cuebrickj", Family: "cuebrick", FamilySets: []string{"cuebrickj"}},
+		{Title: "Gigandes", Base: "Arcade", Src: "jtbindb", K: "gigandes", SN: "gigandes"},
+		{Title: "Orphan core", Base: "Computer", Src: "distribution_mister", K: "C64", SN: "orphan"},
+	}
+	stand := localRow("gigandes", "taitox", "_Arcade/_Extra/Gigandes.mra")
+	stand.Standin = true
+	rows := append(append([]Row{}, catalogue...), stand, localRow("kept", "defender", "_Arcade/_Extra/Kept.mra"))
+	keys := []string{
+		"local:cuebrickj", // no row: the catalogue's row takes it
+		"local:cuebrick",  // the family root: same row
+		"local:gigandes",  // a standin still carries it
+		"local:kept",      // a local row the scan keeps
+		"local:orphan",    // only a non-arcade row names it
+		"local:gone",      // nothing covers it: left alone
+		"colony7",         // not a local key
+	}
+	got := StrandedLocalKeys(keys, rows, catalogue)
+	want := map[string]string{"local:cuebrickj": "cuebrickj", "local:cuebrick": "cuebrickj"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("stranded %v, want %v", got, want)
+	}
+	if StrandedLocalKeys(nil, rows, catalogue) != nil || StrandedLocalKeys([]string{"local:kept", "colony7"}, rows, catalogue) != nil {
+		t.Fatal("nothing to move must be nil")
+	}
+}

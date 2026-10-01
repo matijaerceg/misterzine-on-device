@@ -1,5 +1,31 @@
 package app
 
+import "github.com/matijaerceg/misterzine-on-device/internal/data"
+
+// AdoptStrandedLocalKeys moves the favorites, remembered versions and launch
+// records still filed under a local row this run never listed, because the
+// catalogue already names its game (data.StrandedLocalKeys), and returns the
+// moves. The host calls it once a complete card scan has settled the local
+// rows, so a local or standin row the card still has keeps its key.
+func (a *App) AdoptStrandedLocalKeys() map[string]string {
+	if a.ds == nil {
+		return nil
+	}
+	var keys []string
+	for k := range a.cfg.Favorites {
+		keys = append(keys, k)
+	}
+	for k := range a.cfg.Versions {
+		keys = append(keys, k)
+	}
+	for _, r := range a.cfg.RecentLaunches {
+		keys = append(keys, r.K)
+	}
+	moves := data.StrandedLocalKeys(keys, a.ds.Rows, a.ds.Catalogue())
+	a.RenameKeys(moves)
+	return moves
+}
+
 // RenameKeys moves favorites, remembered versions and launch records from
 // old row keys to new ones (data.LocalTakeovers), when a game the card scan
 // listed on its own joins the catalogue. An entry the new key already has

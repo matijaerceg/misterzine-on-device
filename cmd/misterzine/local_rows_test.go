@@ -241,6 +241,64 @@ func TestSwapKeepsStandinKey(t *testing.T) {
 	}
 }
 
+// The launch the MiSTer Pi showed on 2026-09-30: the catalogue that first
+// lists Cue Brick arrives before the first card scan, so the local row the
+// star was on is never listed and no swap hands it over. The first complete
+// scan moves it; a local game the card still lists keeps its own.
+func TestFirstScanAdoptsStrandedStar(t *testing.T) {
+	h := backgroundHost(t)
+	cores := filepath.Join(h.card, "_Arcade", "cores")
+	os.MkdirAll(cores, 0755)
+	os.WriteFile(filepath.Join(cores, "jttwin16.rbf"), []byte("x"), 0644)
+	os.WriteFile(filepath.Join(cores, "Defender_20260714.rbf"), []byte("x"), 0644)
+	writeMRA(t, h.card, "_Arcade/_alternatives/_Cuebrick/Cue Brick (Japan).mra", "Cue Brick (Japan)", "cuebrickj", "jttwin16")
+	writeMRA(t, h.card, "_Arcade/_Extra/Orphan.mra", "Orphan", "orphan", "defender")
+	cat := append(catalogueRows(), data.Row{K: "cuebrickj", Title: "Cue Brick", Base: "Arcade", Src: "jtbindb", Core: "jttwin16",
+		SN: "cuebrickj", Family: "cuebrick", FamilySets: []string{"cuebrickj"}, MRA: "_Arcade/_alternatives/_Cuebrick/Cue Brick (Japan).mra", Updated: "2026-09-04"})
+	h.a = app.New(app.Config{PhysW: 320, PhysH: 240,
+		Favorites:      map[string]bool{"local:cuebrickj": true, "local:orphan": true},
+		Versions:       map[string]string{"local:cuebrickj": "_Arcade/_alternatives/_Cuebrick/Cue Brick (Japan).mra"},
+		RecentLaunches: []data.Recent{{K: "local:cuebrickj", At: "2026-09-29T10:00:00Z"}},
+		FavChanged:     func() { h.favDirty = true },
+		VersionChanged: func() { h.dirty = true },
+		RecentsChanged: func() { h.dirty = true },
+	}, data.Ingest(cat, "new", time.Now()), nil)
+	h.favDirty, h.dirty = false, false
+	h.requestScan()
+	finishBackground(t, h)
+	ds := h.a.Data()
+	if len(ds.Rows) != 4 || ds.Rows[3].K != "local:orphan" {
+		t.Fatalf("rows after scan: %d", len(ds.Rows))
+	}
+	if f := h.a.FavoriteSet(); !f["cuebrickj"] || f["local:cuebrickj"] || !f["local:orphan"] || !h.favDirty {
+		t.Fatalf("favorites %v dirty=%v", f, h.favDirty)
+	}
+	if v := h.a.Versions(); v["cuebrickj"] == "" || v["local:cuebrickj"] != "" || !h.dirty {
+		t.Fatalf("versions %v dirty=%v", v, h.dirty)
+	}
+	if r := h.a.Recents(); len(r) != 1 || r[0].K != "cuebrickj" {
+		t.Fatalf("recents %v", r)
+	}
+}
+
+// A scan that could not read the card cannot say a local row is gone, so its
+// star stays put until a complete one does.
+func TestIncompleteScanLeavesStrandedStar(t *testing.T) {
+	h := backgroundHost(t)
+	cat := append(catalogueRows(), data.Row{K: "cuebrickj", Title: "Cue Brick", Base: "Arcade", Src: "jtbindb", Core: "jttwin16", SN: "cuebrickj", MRA: "_Arcade/x.mra"})
+	h.a = app.New(app.Config{PhysW: 320, PhysH: 240, Favorites: map[string]bool{"local:cuebrickj": true}},
+		data.Ingest(cat, "new", time.Now()), nil)
+	ds := h.a.Data()
+	h.receiveScan(scanResult{gen: ds.Gen, final: true, index: &scan.Index{}, status: make([]data.Status, len(ds.Rows))})
+	if f := h.a.FavoriteSet(); !f["local:cuebrickj"] || f["cuebrickj"] {
+		t.Fatalf("an incomplete scan moved the star: %v", f)
+	}
+	h.receiveScan(scanResult{gen: ds.Gen, final: true, complete: true, index: &scan.Index{}, status: make([]data.Status, len(ds.Rows))})
+	if f := h.a.FavoriteSet(); f["local:cuebrickj"] || !f["cuebrickj"] {
+		t.Fatalf("a complete scan left the star: %v", f)
+	}
+}
+
 func TestReceiveScanStaleGenIgnored(t *testing.T) {
 	h := backgroundHost(t)
 	h.a.SetData(data.Ingest(catalogueRows(), "cat", time.Now()), nil)

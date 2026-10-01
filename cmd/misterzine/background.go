@@ -86,6 +86,13 @@ func (h *host) receiveScan(r scanResult) {
 	}
 	// A nil alternatives result means genuinely empty only on the final pass.
 	if r.final && r.index != nil && current {
+		if r.complete {
+			// a star on a local row that a catalogue refresh covered before
+			// this run's first scan could list it, so no takeover saw it
+			if moves := h.a.AdoptStrandedLocalKeys(); len(moves) > 0 {
+				h.lg.Printf("scan: %d local keys moved to the catalogue rows that now list them", len(moves))
+			}
+		}
 		h.alts, h.altCores = r.alts, r.altCores
 		h.altGen = h.a.Data().Gen
 		// before the sweep, so its answers go by this catalogue and card
