@@ -573,7 +573,7 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "Troubleshooting", kind: "troubleshooting",
 			help: "Test your Start button or game launching. Results stay on screen for a photo; no keyboard or log files needed."},
 		{text: "Enter MisterZine code", kind: "enter-code", opensPage: true, help: "Your access: " + a.cfg.AccessMonth.String() + ". Codes permanently unlock covered features. Star: Fancy. Beta sign: experimental."},
-		{text: "Show beta features", kind: "show-beta-features", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ShowBetaFeatures], help: "Show and enable experimental features when your code qualifies. Off hides them and stops their behaviour; saved choices are kept."},
+		{text: "Show beta features", kind: "show-beta-features", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ShowBetaFeatures], help: "Show experimental features. Your code unlocks them. Off hides and stops them."},
 		{text: "Credits", kind: "credits"},
 		{text: "Quit MisterZine", kind: "quit"},
 		// the build and data details: greyed, not selectable, below Quit
