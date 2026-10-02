@@ -503,9 +503,9 @@ func (a *App) paintAccessCode(c *gfx.Canvas) {
 	box := l.Body.Inset(4)
 	cols := a.sm.Cols(box.Dx())
 	paragraphs := []string{
-		"Patreon support keeps MisterZine growing.",
-		"One month of support unlocks all Fancy and Beta features through your code's month, forever.",
-		"No ongoing subscription needed. Newer features may need a newer code.",
+		"Patreon support funds MisterZine development.",
+		"Your code unlocks all Fancy and Beta features through its month, forever.",
+		"No need to stay subscribed. Newer features may need a newer code.",
 	}
 	var lines []string
 	for _, p := range paragraphs {
@@ -521,9 +521,20 @@ func (a *App) paintAccessCode(c *gfx.Canvas) {
 	lines = append(lines, "")
 	lines = append(lines, gfx.Wrap(required, cols, 100)...)
 	lineH := a.sm.H + 1
-	h := len(lines)*lineH + 4 + lockBoxH + 4 + 3*lineH
+	h := 4 + lockBoxH + 4 + 3*lineH
+	for _, line := range lines {
+		if line == "" {
+			h += 3
+		} else {
+			h += lineH
+		}
+	}
 	y := box.Min.Y + max(0, (box.Dy()-h)/2)
 	for _, line := range lines {
+		if line == "" {
+			y += 3
+			continue
+		}
 		c.Text(box.Min.X+(box.Dx()-a.sm.Width(line))/2, y, a.sm, line, pal.Fg)
 		y += lineH
 	}
