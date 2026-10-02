@@ -26,6 +26,7 @@ func (a *App) gatedOption(row panelEntry, f access.Feature) panelEntry {
 	row.text += featureMarks(f)
 	row.feature = true
 	if !a.featureAllowed(f) {
+		row.value = row.kind // Preserve the feature identity when sharing the code-entry action.
 		row.kind = "enter-code"
 		row.vals = []string{"locked"}
 		row.idx = 0
