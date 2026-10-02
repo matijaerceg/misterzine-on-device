@@ -16,6 +16,7 @@ import (
 
 // panelEntry is one line of the Filters or Options screen.
 type panelEntry struct {
+	earlyAccess   bool
 	requiredMonth access.Month
 	feature       bool // feature markers retain their highlight even on locked rows
 	text          string
@@ -623,7 +624,7 @@ func (a *App) optionsEntries() []panelEntry {
 	if a.featureVisible(access.ROMReport) {
 		for i, e := range E {
 			if e.kind == "rescan" {
-				row := a.gatedOption(panelEntry{text: "ROM report", kind: "rom-report", help: "Writes misterzine/rom_problems.txt after the background ROM check. Rescan card to refresh it."}, access.ROMReport)
+				row := a.gatedOption(panelEntry{text: "ROM report", kind: "rom-report", help: "Lists ROM problems in misterzine/rom_problems.txt. Rescan card refreshes it."}, access.ROMReport)
 				E = append(E[:i+1], append([]panelEntry{row}, E[i+1:]...)...)
 				break
 			}
@@ -1292,6 +1293,10 @@ func (a *App) togglePanel() bool {
 		if e.requiredMonth != 0 {
 			a.lock.featureTitle = "Unlock " + e.text
 			a.lock.requiredMonth = e.requiredMonth
+			a.lock.earlyAccess = e.earlyAccess
+			if e.earlyAccess {
+				a.lock.featureTitle = e.text + " - Early access"
+			}
 		}
 		return true
 	case "show-beta-features":

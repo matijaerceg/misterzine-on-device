@@ -4,6 +4,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/access"
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
+	"strings"
 	"testing"
 	"time"
 )
@@ -99,6 +100,31 @@ func TestLockedOptionSelectionSurvivesRebuild(t *testing.T) {
 		a.actLock(platform.KeyBack)
 		if got := a.panel.entries[a.panel.cursor].text; got != name {
 			t.Fatalf("leaving code entry jumped from %q to %q", name, got)
+		}
+	}
+}
+
+// Only beta-only features promise free access after graduation.
+func TestBetaOnlyEarlyAccessCopy(t *testing.T) {
+	for _, supporter := range []bool{false, true} {
+		a := New(Config{PhysW: 320, PhysH: 240, ShowBetaFeatures: true}, data.Ingest(nil, "", time.Now()), nil)
+		f := access.Feature{Fancy: supporter, Beta: true, Since: 202610}
+		row := a.gatedOption(panelEntry{text: "Example", kind: "example", help: "Explains the feature."}, f)
+		if row.earlyAccess == supporter {
+			t.Fatal("early access status conflated with Supporter")
+		}
+		if strings.Contains(row.help, "Free for everyone after beta.") == supporter {
+			t.Fatal("wrong free-after-beta promise")
+		}
+		a.openOptions()
+		a.panel.entries = []panelEntry{row}
+		a.panel.cursor = 0
+		a.actPanel(platform.KeyEnter)
+		if a.lock == nil || a.lock.earlyAccess == supporter {
+			t.Fatal("code screen lost feature status")
+		}
+		if strings.Contains(a.codeScreenTitle(), "Early access") == supporter {
+			t.Fatal("wrong code screen title")
 		}
 	}
 }

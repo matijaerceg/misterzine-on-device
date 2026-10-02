@@ -33,6 +33,7 @@ const codeLen = 6
 
 // betaLock is the lock screen's state; App.lock is nil once unlocked.
 type betaLock struct {
+	earlyAccess   bool
 	featureTitle  string
 	requiredMonth access.Month
 	optional      bool
@@ -507,6 +508,13 @@ func (a *App) paintAccessCode(c *gfx.Canvas) {
 		"Your code unlocks all Supporter and Beta features through its month, forever.",
 		"No need to stay subscribed.",
 	}
+	if a.lock.earlyAccess {
+		paragraphs = []string{
+			"This feature will be free for everyone when it leaves beta.",
+			"Patreon support funds development and gives you early access.",
+			"No need to stay subscribed.",
+		}
+	}
 	var lines []string
 	for _, p := range paragraphs {
 		if len(lines) > 0 {
@@ -524,6 +532,10 @@ func (a *App) paintAccessCode(c *gfx.Canvas) {
 	lineH := a.sm.H + 1
 	future := evenWrap("Future features may need a newer code.", cols, 3)
 	footH := len(future)*lineH + 4 + lineH
+	if a.lock.earlyAccess {
+		future = nil
+		footH = lineH
+	}
 	h := 4 + lockBoxH + 4 + 2*lineH + 4 + footH
 	for _, line := range lines {
 		if line == "" {
@@ -569,6 +581,6 @@ func (a *App) paintAccessCode(c *gfx.Canvas) {
 		y += lineH
 	}
 	url := "patreon.com/MisterZine"
-	c.Text(box.Min.X+(box.Dx()-a.sm.Width(url))/2, y+4, a.sm, url, pal.Accent)
+	c.Text(box.Min.X+(box.Dx()-a.sm.Width(url))/2, footerY+footH-lineH, a.sm, url, pal.Accent)
 	a.paintHint(c, a.lockHint())
 }
