@@ -5,20 +5,21 @@ package main
 import (
 	"testing"
 
-	"github.com/matijaerceg/misterzine-on-device/internal/beta"
+	"github.com/matijaerceg/misterzine-on-device/internal/access"
 )
 
-// Only the Patreon beta writes the list of ROM problems, into MisterZine's
-// folder, and Filters names it from the card's root.
-func TestROMListOnlyInTheBeta(t *testing.T) {
-	defer beta.Set(false)()
-	if got := romListPath("/media/fat/misterzine"); got != "" {
-		t.Fatalf("the free build writes a list to %q", got)
+func TestROMListRequiresAccessAndBetaOptIn(t *testing.T) {
+	for _, month := range []access.Month{0, 202609, 202610, 202612} {
+		for _, show := range []bool{false, true} {
+			got := romListPath("/media/fat/misterzine", month, show)
+			if (got != "") != (show && month >= 202610) {
+				t.Fatalf("month=%d show=%v path=%q", month, show, got)
+			}
+		}
 	}
-	beta.Set(true)
-	path := romListPath("/media/fat/misterzine")
+	path := romListPath("/media/fat/misterzine", 202610, true)
 	if path != "/media/fat/misterzine/rom_problems.txt" {
-		t.Fatalf("the beta writes its list to %q", path)
+		t.Fatal(path)
 	}
 	for _, tc := range []struct{ path, want string }{
 		{path, "misterzine/rom_problems.txt"},

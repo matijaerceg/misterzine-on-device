@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/matijaerceg/misterzine-on-device/internal/access"
 	"github.com/matijaerceg/misterzine-on-device/internal/app"
-	"github.com/matijaerceg/misterzine-on-device/internal/beta"
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/scan"
 )
@@ -173,9 +173,9 @@ func (h *host) sweepROMs() {
 }
 
 // romListPath is where a finished sweep writes its list of ROM problems:
-// MisterZine's folder in the Patreon beta, nowhere in the free build.
-func romListPath(root string) string {
-	if !beta.On() {
+// only when the ROM report is visible and unlocked.
+func romListPath(root string, month access.Month, showBeta bool) string {
+	if !access.ROMReport.Allowed(month, showBeta) {
 		return ""
 	}
 	return filepath.Join(root, scan.ROMListName)

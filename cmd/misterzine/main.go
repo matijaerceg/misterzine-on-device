@@ -253,9 +253,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	h.roms.Slow = func(rel string, d time.Duration) {
 		lg.Printf("rom sweep: slow check %s (%v)", rel, d.Round(time.Millisecond))
 	}
-	if access.ROMReport.Allowed(access.Load(root), h.settings.ShowBetaFeatures) {
-		h.romList = filepath.Join(root, scan.ROMListName)
-	}
+	h.romList = romListPath(root, access.Load(root), h.settings.ShowBetaFeatures)
 
 	// app
 	h.arcadeBack = false
@@ -404,10 +402,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		h.settings.ShowBetaFeatures = showBeta
 		h.romReportMu.Lock()
 		defer h.romReportMu.Unlock()
-		h.romList = ""
-		if access.ROMReport.Allowed(month, showBeta) {
-			h.romList = filepath.Join(root, scan.ROMListName)
-		}
+		h.romList = romListPath(root, month, showBeta)
 		h.a.SetROMList(cardRelative(card, h.romList))
 		h.dirty = true
 	}
