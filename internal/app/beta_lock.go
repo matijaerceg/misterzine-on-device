@@ -33,11 +33,13 @@ const codeLen = 6
 
 // betaLock is the lock screen's state; App.lock is nil once unlocked.
 type betaLock struct {
-	optional bool
-	digits   [codeLen]int8 // -1 while a box is empty
-	box      int           // the chosen box
-	message  string        // the answer to the last Unlock, "" before one
-	leaving  bool          // unlocked for an earlier batch: name the way to Stable
+	featureTitle  string
+	requiredMonth access.Month
+	optional      bool
+	digits        [codeLen]int8 // -1 while a box is empty
+	box           int           // the chosen box
+	message       string        // the answer to the last Unlock, "" before one
+	leaving       bool          // unlocked for an earlier batch: name the way to Stable
 }
 
 func newBetaLock() *betaLock {
@@ -356,6 +358,10 @@ func (a *App) lockBlock(box image.Rectangle) (intro, leave []string, footH, h in
 // paintLock draws the lock screen: the title and the BETA mark in the
 // status bar, what to do, the six boxes and the answer to the last try.
 func (a *App) paintLock(c *gfx.Canvas) {
+	if a.lock.optional {
+		a.paintAccessCode(c)
+		return
+	}
 	l := &a.lay
 	c.Fill(l.Status, pal.Surface)
 	c.HLine(l.Status.Min.X, l.Status.Max.X-1, l.Status.Max.Y-1, pal.Muted)
@@ -478,7 +484,57 @@ func bigGlyph(c *gfx.Canvas, x, y int, f *gfx.Font, ch byte, col rgb) {
 
 func (a *App) codeScreenTitle() string {
 	if a.lock.optional {
+		if a.lock.featureTitle != "" {
+			return a.lock.featureTitle
+		}
 		return "MisterZine code"
 	}
 	return "MisterZine Arcade"
+}
+
+// paintAccessCode explains permanent access without blocking ordinary app use.
+func (a *App) paintAccessCode(c *gfx.Canvas) {
+	l := &a.lay
+	c.Fill(l.Status, pal.Surface)
+	c.HLine(l.Status.Min.X, l.Status.Max.X-1, l.Status.Max.Y-1, pal.Muted)
+	paintFeatureText(c, l.Status.Min.X+2, l.Status.Min.Y+2, a.sm,
+		gfx.Fit(a.codeScreenTitle(), a.sm.Cols(l.Status.Dx()-4)), pal.Accent)
+	c.Box(l.Body, pal.Line)
+	box := l.Body.Inset(4)
+	cols := a.sm.Cols(box.Dx())
+	paragraphs := []string{
+		"Patreon support keeps MisterZine growing.",
+		"One month of support unlocks all Fancy and Beta features through your code's month, forever.",
+		"No ongoing subscription needed. Newer features may need a newer code.",
+	}
+	var lines []string
+	for _, p := range paragraphs {
+		if len(lines) > 0 {
+			lines = append(lines, "")
+		}
+		lines = append(lines, gfx.Wrap(p, cols, 100)...)
+	}
+	required := "Enter your Patreon code"
+	if a.lock.requiredMonth != 0 {
+		required = a.lock.requiredMonth.String() + " code or newer"
+	}
+	lines = append(lines, "")
+	lines = append(lines, gfx.Wrap(required, cols, 100)...)
+	lineH := a.sm.H + 1
+	h := len(lines)*lineH + 4 + lockBoxH + 4 + 3*lineH
+	y := box.Min.Y + max(0, (box.Dy()-h)/2)
+	for _, line := range lines {
+		c.Text(box.Min.X+(box.Dx()-a.sm.Width(line))/2, y, a.sm, line, pal.Fg)
+		y += lineH
+	}
+	y += 4
+	a.paintCodeBoxes(c, box, y)
+	y += lockBoxH + 4
+	for _, line := range evenWrap(a.lock.message, cols, 2) {
+		c.Text(box.Min.X+(box.Dx()-a.sm.Width(line))/2, y, a.sm, line, pal.Warn)
+		y += lineH
+	}
+	url := "patreon.com/MisterZine"
+	c.Text(box.Min.X+(box.Dx()-a.sm.Width(url))/2, box.Max.Y-lineH, a.sm, url, pal.Accent)
+	a.paintHint(c, a.lockHint())
 }

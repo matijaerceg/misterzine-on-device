@@ -28,11 +28,12 @@ func (a *App) gatedOption(row panelEntry, f access.Feature) panelEntry {
 	if !a.featureAllowed(f) {
 		row.value = row.kind // Preserve the feature identity when sharing the code-entry action.
 		row.kind = "enter-code"
-		row.vals = []string{"locked"}
+		row.vals = []string{"Unlock"}
 		row.idx = 0
 		row.opensPage = true
 		row.disabled = true
-		row.help = "Needs " + f.Since.String() + " code or newer. patreon.com/MisterZine. " + a.btn("A") + " enters code."
+		row.requiredMonth = f.Since
+		row.help += " " + a.btn("A") + ": Unlock."
 	}
 	return row
 }

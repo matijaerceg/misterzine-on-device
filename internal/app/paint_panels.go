@@ -16,25 +16,26 @@ import (
 
 // panelEntry is one line of the Filters or Options screen.
 type panelEntry struct {
-	feature   bool // feature markers retain their highlight even on locked rows
-	text      string
-	header    bool
-	glyph     string   // Options section headers: the mark before the title, with a rule after it
-	depth     int      // extra indentation levels beyond child
-	child     bool     // Options: only applies given the row above; drawn indented behind a branch mark
-	short     string   // Options: a child row's name without the parent's word, for when the full one does not fit
-	info      bool     // plain text, never selectable
-	help      string   // shown in the help area while selected
-	kind      string   // filter section: "base","src","rot","plr","genre","install","fav"; settings: "rotation","inset","prefetch","rescan","refresh","clear","about","settings","back"
-	value     string   // facet value for filter entries
-	vals      []string // settings: the choices, Left/Right pick one
-	idx       int      // settings: the current choice
-	checked   bool
-	partial   bool // some, but not all, years in a decade are enabled
-	disabled  bool // settings: shown muted, Left/Right ignored
-	count     int
-	showCount bool
-	opensPage bool // append an opening arrow after the row label
+	requiredMonth access.Month
+	feature       bool // feature markers retain their highlight even on locked rows
+	text          string
+	header        bool
+	glyph         string   // Options section headers: the mark before the title, with a rule after it
+	depth         int      // extra indentation levels beyond child
+	child         bool     // Options: only applies given the row above; drawn indented behind a branch mark
+	short         string   // Options: a child row's name without the parent's word, for when the full one does not fit
+	info          bool     // plain text, never selectable
+	help          string   // shown in the help area while selected
+	kind          string   // filter section: "base","src","rot","plr","genre","install","fav"; settings: "rotation","inset","prefetch","rescan","refresh","clear","about","settings","back"
+	value         string   // facet value for filter entries
+	vals          []string // settings: the choices, Left/Right pick one
+	idx           int      // settings: the current choice
+	checked       bool
+	partial       bool // some, but not all, years in a decade are enabled
+	disabled      bool // settings: shown muted, Left/Right ignored
+	count         int
+	showCount     bool
+	opensPage     bool // append an opening arrow after the row label
 }
 
 // label is the row's text as drawn: a child row sits two cells in behind
@@ -1288,6 +1289,10 @@ func (a *App) togglePanel() bool {
 		return true
 	case "enter-code":
 		a.openCode()
+		if e.requiredMonth != 0 {
+			a.lock.featureTitle = "Unlock " + e.text
+			a.lock.requiredMonth = e.requiredMonth
+		}
 		return true
 	case "show-beta-features":
 		return a.stepValue(1 - 2*e.idx)
