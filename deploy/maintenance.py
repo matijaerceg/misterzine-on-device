@@ -13,7 +13,7 @@ import zipfile
 STARTUP_LINE = "[[ -e /media/fat/misterzine/misterzine ]] && /media/fat/misterzine/misterzine launcher start"
 # Kept with "Keep favorites and preferences"; beta-unlocks holds the Patreon
 # beta's saved unlocks, so a reinstalled beta does not ask for its code again.
-SAVED_FILES = ("favorites.json", "settings.json", "state.json", "beta-unlocks")
+SAVED_FILES = ("favorites.json", "settings.json", "state.json", "beta-unlocks", "unlocks")
 UPDATERS = {
     "update.sh", "update_all.sh", "update_all.pyz", "downloader.sh",
     "downloader_bin", "downloader_latest.zip", "ua_downloader_bin",

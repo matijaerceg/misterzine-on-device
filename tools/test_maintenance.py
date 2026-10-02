@@ -32,6 +32,8 @@ class RemovalTest(unittest.TestCase):
             (self.app / name).write_bytes(("original " + name).encode())
         (self.app / "shots").mkdir()
         (self.app / "shots/a.png").write_bytes(b"cached picture")
+        (self.app / "unlocks").mkdir()
+        (self.app / "unlocks/code.receipt").write_bytes(b"unlocked\n")
         (self.app / "beta-unlocks").mkdir()
         (self.app / "beta-unlocks/arcade-1-0123.receipt").write_bytes(b"unlocked\n")
         (self.app / "misterzine").write_bytes(b"binary")
@@ -51,7 +53,7 @@ class RemovalTest(unittest.TestCase):
     def test_keep_preserves_originals_and_recovery_files(self):
         maintenance.uninstall(self.card, True, run=self.downloader, proc_root=self.proc)
         self.assertEqual(sorted(p.name for p in self.app.iterdir()),
-                         ["beta-unlocks", "favorites.json", "favorites.json.bad", "settings.json", "state.json"])
+                         ["beta-unlocks", "favorites.json", "favorites.json.bad", "settings.json", "state.json", "unlocks"])
         self.assertEqual((self.app / "beta-unlocks/arcade-1-0123.receipt").read_bytes(), b"unlocked\n")
         self.assertEqual((self.app / "favorites.json").read_bytes(), b"original favorites.json")
         self.assertEqual((self.app / "state.json").read_bytes(), b"original state.json")

@@ -938,7 +938,10 @@ func (a *App) optionsHint() string {
 // legend words it; a row missing here ignores A (Left/Right pick its
 // value, or it is greyed).
 var optionsActs = map[string]string{
-	"refresh": "Refresh", "update": "Run", "update-app": "Run", "update-result": "Open", "rescan": "Rescan", "clearimg": "Clear",
+	"enter-code":         "Enter code",
+	"rom-report":         "Info",
+	"show-beta-features": "Toggle",
+	"refresh":            "Refresh", "update": "Run", "update-app": "Run", "update-result": "Open", "rescan": "Rescan", "clearimg": "Clear",
 	"views": "Open", "saver-options": "Open", "saver-preview": "Preview", "screensaver": "Preview", "launch-transition": "Preview", "saver-style": "Preview", "saver-bright": "Preview", "saver-dim": "Preview", "saver-info": "Preview",
 	"inset": "Edit", "troubleshooting": "Open", "credits": "Open", "quit": "Quit",
 }
