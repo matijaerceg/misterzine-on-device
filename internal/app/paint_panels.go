@@ -934,6 +934,9 @@ func (a *App) optionsHint() string {
 			parts = append(parts, arrows+" Change")
 		}
 		if act := optionsActs[e.kind]; act != "" {
+			if e.earlyAccess {
+				act = "Early access"
+			}
 			parts = append(parts, "A "+act)
 		}
 	}

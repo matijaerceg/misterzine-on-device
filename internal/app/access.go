@@ -36,7 +36,7 @@ func (a *App) gatedOption(row panelEntry, f access.Feature) panelEntry {
 		row.earlyAccess = f.Beta && !f.Fancy
 		if row.earlyAccess {
 			row.vals = []string{"Early access"}
-			row.help += " Free for everyone after beta. " + a.btn("A") + ": Early access."
+			row.help += " Free for everyone after beta."
 		} else {
 			row.help += " " + a.btn("A") + ": Unlock."
 		}
