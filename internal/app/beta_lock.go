@@ -518,6 +518,7 @@ func (a *App) paintAccessCode(c *gfx.Canvas) {
 	if a.lock.requiredMonth != 0 {
 		required = a.lock.requiredMonth.String() + " code or newer:"
 	}
+	introCount := len(lines)
 	lines = append(lines, "")
 	lines = append(lines, gfx.Wrap(required, cols, 100)...)
 	lineH := a.sm.H + 1
@@ -532,7 +533,21 @@ func (a *App) paintAccessCode(c *gfx.Canvas) {
 		}
 	}
 	y := box.Min.Y + max(0, (box.Dy()-h)/2)
-	for _, line := range lines {
+	introH := 0
+	for _, line := range lines[:introCount] {
+		if line == "" {
+			introH += 6
+		} else {
+			introH += lineH
+		}
+	}
+	requiredY := y + introH + 6
+	y = box.Min.Y + max(0, (requiredY-box.Min.Y-introH)/2)
+	for i, line := range lines {
+		if i == introCount {
+			y = requiredY
+			continue
+		}
 		if line == "" {
 			y += 6
 			continue
@@ -543,16 +558,17 @@ func (a *App) paintAccessCode(c *gfx.Canvas) {
 	y += 4
 	a.paintCodeBoxes(c, box, y)
 	y += lockBoxH + 4
+	footerY := max(y+2*lineH+4, (y-4+box.Max.Y-footH)/2)
 	for _, line := range evenWrap(a.lock.message, cols, 2) {
 		c.Text(box.Min.X+(box.Dx()-a.sm.Width(line))/2, y, a.sm, line, pal.Warn)
 		y += lineH
 	}
-	y = box.Max.Y - footH
+	y = footerY
 	for _, line := range future {
 		c.Text(box.Min.X+(box.Dx()-a.sm.Width(line))/2, y, a.sm, line, pal.Fg)
 		y += lineH
 	}
 	url := "patreon.com/MisterZine"
-	c.Text(box.Min.X+(box.Dx()-a.sm.Width(url))/2, box.Max.Y-lineH, a.sm, url, pal.Accent)
+	c.Text(box.Min.X+(box.Dx()-a.sm.Width(url))/2, y+4, a.sm, url, pal.Accent)
 	a.paintHint(c, a.lockHint())
 }
