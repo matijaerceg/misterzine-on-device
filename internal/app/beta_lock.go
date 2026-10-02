@@ -503,9 +503,9 @@ func (a *App) paintAccessCode(c *gfx.Canvas) {
 	box := l.Body.Inset(4)
 	cols := a.sm.Cols(box.Dx())
 	paragraphs := []string{
-		"Patreon support funds MisterZine development.",
+		"Patreon support funds development.",
 		"Your code unlocks all Fancy and Beta features through its month, forever.",
-		"No need to stay subscribed. Newer features may need a newer code.",
+		"No need to stay subscribed.",
 	}
 	var lines []string
 	for _, p := range paragraphs {
@@ -514,17 +514,19 @@ func (a *App) paintAccessCode(c *gfx.Canvas) {
 		}
 		lines = append(lines, gfx.Wrap(p, cols, 100)...)
 	}
-	required := "Enter your Patreon code"
+	required := "Enter your Patreon code:"
 	if a.lock.requiredMonth != 0 {
-		required = a.lock.requiredMonth.String() + " code or newer"
+		required = a.lock.requiredMonth.String() + " code or newer:"
 	}
 	lines = append(lines, "")
 	lines = append(lines, gfx.Wrap(required, cols, 100)...)
 	lineH := a.sm.H + 1
-	h := 4 + lockBoxH + 4 + 3*lineH
+	future := evenWrap("Future features may need a newer code.", cols, 3)
+	footH := len(future)*lineH + 4 + lineH
+	h := 4 + lockBoxH + 4 + 2*lineH + 4 + footH
 	for _, line := range lines {
 		if line == "" {
-			h += 3
+			h += 6
 		} else {
 			h += lineH
 		}
@@ -532,7 +534,7 @@ func (a *App) paintAccessCode(c *gfx.Canvas) {
 	y := box.Min.Y + max(0, (box.Dy()-h)/2)
 	for _, line := range lines {
 		if line == "" {
-			y += 3
+			y += 6
 			continue
 		}
 		c.Text(box.Min.X+(box.Dx()-a.sm.Width(line))/2, y, a.sm, line, pal.Fg)
@@ -543,6 +545,11 @@ func (a *App) paintAccessCode(c *gfx.Canvas) {
 	y += lockBoxH + 4
 	for _, line := range evenWrap(a.lock.message, cols, 2) {
 		c.Text(box.Min.X+(box.Dx()-a.sm.Width(line))/2, y, a.sm, line, pal.Warn)
+		y += lineH
+	}
+	y = box.Max.Y - footH
+	for _, line := range future {
+		c.Text(box.Min.X+(box.Dx()-a.sm.Width(line))/2, y, a.sm, line, pal.Fg)
 		y += lineH
 	}
 	url := "patreon.com/MisterZine"
