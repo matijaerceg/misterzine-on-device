@@ -360,5 +360,11 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     for inset in (15, 40):
         scenarios.append([*rotation, "-inset", str(inset), "-out", f"out/access-{orientation}-{inset}", "-script",
                           "back; home; pagedown*4; right; end; up*3; shot beta-off; left; right; shot beta-on; up; enter; shot code; type 123456; enter; shot unlocked; back; shot list"])
+# Feature-specific code screen, including error feedback in the narrow safe zone.
+for rotation in ([], ["-rot", "left", "-logical"]):
+    orientation = "t" if rotation else "h"
+    for inset in (15, 40):
+        scenarios.append([*rotation, "-show-beta", "-inset", str(inset), "-out", f"out/unlock-feature-{orientation}-{inset}", "-script",
+                          "back; home; down*5; shot description; enter; shot code; type 111111; enter; shot wrong; back; back; shot returned"])
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)

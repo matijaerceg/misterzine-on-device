@@ -57,7 +57,10 @@ func TestStableFancyTeaser(t *testing.T) {
 	if !a.featureVisible(f) || a.featureAllowed(f) {
 		t.Fatal("stable Fancy visibility/access conflated")
 	}
-	row := a.gatedOption(panelEntry{text: "Extra", kind: "extra"}, f)
+	row := a.gatedOption(panelEntry{text: "Extra", kind: "extra", help: "Describes the feature."}, f)
+	if row.help != "Describes the feature. A: Unlock." || row.requiredMonth != f.Since {
+		t.Fatal("locked feature lost its description or required month")
+	}
 	if row.kind != "enter-code" || !row.disabled {
 		t.Fatal("locked extra lacks code entry")
 	}
