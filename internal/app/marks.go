@@ -138,7 +138,7 @@ func (a *App) markText(k int) string {
 	return ""
 }
 
-// markNote is what the right end of marker k says: the members' build can
+// markNote is the annotation beside marker k: the members' build can
 // put a note on a group header (headerNote); the since-visit status row
 // has none.
 func (a *App) markNote(k int) string {

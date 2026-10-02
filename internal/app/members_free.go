@@ -25,7 +25,7 @@ func (a *App) membersStep(kind string, i int) {}
 // whether anything happened.
 func (a *App) membersPress(kind string) bool { return false }
 
-// headerNote is what the right end of a group header says for the group
+// headerNote is the annotation beside a group header for the group
 // that view position pos belongs to.
 func (a *App) headerNote(pos int) string { return "" }
 

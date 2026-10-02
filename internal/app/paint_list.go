@@ -398,19 +398,14 @@ func (a *App) paintMarker(c *gfx.Canvas, r image.Rectangle, text, note string) {
 	w := r.Dx() + a.restLayout().List.Dx() - a.lay.List.Dx()
 	cols := a.sm.Cols(w) - 2
 	if note != "" {
-		note = " " + note
-		// a stretch of rule stays between the text and the note
-		cols = min(cols, (w-a.body.W-a.sm.Width(note))/a.sm.W-3)
+		note = " (" + note + ")"
+		// Keep the note beside the name, shortening only the name to fit.
+		cols = min(cols, (w-a.body.W)/a.sm.W-3-len(note))
 	}
-	s := " " + gfx.Fit(text, cols) + " "
+	s := " " + gfx.Fit(text, cols) + note + " "
 	x := r.Min.X + a.body.W
 	c.Fill(image.Rect(x, r.Min.Y, x+a.sm.Width(s), r.Max.Y), pal.Bg)
 	c.Text(x, r.Min.Y+2, a.sm, s, pal.Muted)
-	if note != "" {
-		nx := r.Max.X - a.sm.Width(note)
-		c.Fill(image.Rect(nx, r.Min.Y, r.Max.X, r.Max.Y), pal.Bg)
-		c.Text(nx, r.Min.Y+2, a.sm, note, pal.Muted)
-	}
 }
 
 func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {

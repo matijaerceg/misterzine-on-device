@@ -1,18 +1,17 @@
 package app
 
 import (
+	"image"
 	"strings"
 	"testing"
 	"time"
 
+	"bytes"
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
-	"github.com/matijaerceg/misterzine-on-device/internal/gen"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 )
 
-// A note on a marker line (members.go's headerNote) sits flush right,
-// and a header name too long for the line gives way to it, leaving a
-// stretch of rule between the two at every width.
+// Notes stay beside the fitted header name, in parentheses, at every width.
 func TestMarkerNoteKeepsItsRule(t *testing.T) {
 	long := strings.Repeat("Nichibutsu ", 12)
 	for _, c := range []struct {
@@ -31,15 +30,16 @@ func TestMarkerNoteKeepsItsRule(t *testing.T) {
 		r := a.lay.lineRect(0)
 		canvas := gfx.New(a.lay.W, a.lay.H)
 		a.paintMarker(canvas, r, long, c.note)
-		mid := r.Min.Y + r.Dy()/2
-		nx := r.Max.X - a.sm.Width(" "+c.note)
-		for x := nx - a.sm.W; x < nx; x++ {
-			if canvas.RGBAAt(x, mid) != gen.Eva.Line {
-				t.Fatalf("%s: no rule at x=%d before the note at %d", c.name, x, nx)
-			}
-		}
-		if canvas.RGBAAt(r.Max.X-1, mid) == gen.Eva.Line {
-			t.Fatalf("%s: the note does not reach the right end", c.name)
+		expected := gfx.New(a.lay.W, a.lay.H)
+		expected.HLine(r.Min.X, r.Max.X-1, r.Min.Y+r.Dy()/2, pal.Line)
+		note := " (" + c.note + ")"
+		cols := min(a.sm.Cols(r.Dx())-2, (r.Dx()-a.body.W)/a.sm.W-3-len(note))
+		label := " " + gfx.Fit(long, cols) + note + " "
+		x := r.Min.X + a.body.W
+		expected.Fill(image.Rect(x, r.Min.Y, x+a.sm.Width(label), r.Max.Y), pal.Bg)
+		expected.Text(x, r.Min.Y+2, a.sm, label, pal.Muted)
+		if !bytes.Equal(canvas.Pix, expected.Pix) {
+			t.Fatalf("%s: marker note is not beside its fitted name", c.name)
 		}
 	}
 }
