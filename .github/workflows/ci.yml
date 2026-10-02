@@ -30,7 +30,6 @@ jobs:
           python3 tools/test_wrapper.py
           python3 tools/test_maintenance.py
           python3 tools/test_package.py
-          python3 tools/test_channel.py
           go vet ./...
           go test ./...
           GOARCH=386 CGO_ENABLED=0 go test ./internal/app -run TestUpdate
@@ -45,8 +44,7 @@ jobs:
         run: |
           python3 tools/make-db.py v0.0.0-ci dist/misterzine dist/misterzine.json.zip
           python3 tools/make-db.py --check dist/misterzine.json.zip
-          python3 tools/make-db.py v0.0.0-beta.1 dist/misterzine dist/beta/misterzine.json.zip
-          python3 tools/verify_package.py dist/beta v0.0.0-beta.1
+          python3 tools/verify_package.py dist v0.0.0-ci
       - name: Harness renders
         run: python3 tools/render_all.py
       - name: Verify golden renders

@@ -160,10 +160,11 @@ func (h *host) sweepROMs() {
 		}
 	}
 	h.lg.Printf("rom sweep: %d files to check", len(paths))
-	list := h.romList
 	h.roms.Sweep(paths, func(n int, d time.Duration) {
 		h.lg.Printf("rom sweep: %d MRAs checked (%v)", n, d.Round(time.Millisecond))
-		if list != "" {
+		h.romReportMu.RLock()
+		defer h.romReportMu.RUnlock()
+		if list := h.romList; list != "" {
 			if err := h.roms.WriteList(list, paths); err != nil {
 				h.lg.Printf("rom sweep: list: %v", err)
 			}

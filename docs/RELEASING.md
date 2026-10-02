@@ -42,84 +42,30 @@ To test a candidate through Downloader, temporarily point the single existing
 MisterZine database entry at that candidate's versioned database URL. Do not add
 a duplicate database. Restore the stable URL afterward.
 
-## Beta releases
+## One official release
 
-The two builds are **Stable**, this repository's releases, which everyone
-gets, and **Beta**, MisterZine Arcade BETA, which Patreon members get first
-and which their code unlocks. Beta is this source with the members' extras
-from the private repository `misterzine-arcade-private`, built with
-`-tags arcade` and `internal/beta.Channel=beta`; every beta-only feature shows
-itself only when `beta.On()` is true. The members' release there assembles the
-two, runs this repository's checks and its own over them, builds, packages
-with this repository's `tools/make-db.py` and `tools/verify_package.py`, and
-publishes on `matijaerceg/misterzine-arcade-betas`, a public repository that
-holds built files only. Its README is the members' guide. The procedure,
-the access batch and the matching beta after each Stable release are in
-`misterzine-arcade-private`'s README. This repository's release workflow
-refuses `-beta.` tags. On screen and in anything members read, the builds
-are Stable and Beta, never "free"; the code keeps its internal names (the
-`free` channel, `FreeDBURL`).
+Everyone installs the same complete binary from this repository's releases.
+The private repository assembles this source with the proprietary extras,
+checks the combined tree, and publishes the package here. This repository's
+release workflow checks tags; it never publishes an incomplete public-only binary.
 
-Beta installs as the same Downloader database, `misterzine`, so it replaces
-Stable's files in place and Update All keeps working. Members' entries follow
-fixed addresses on the betas repository's `main` branch:
+Use the private `Official release` workflow, first with publish off. A public
+release still requires the owner's approval. Publishing requires
+`MISTERZINE_RELEASE_TOKEN`, scoped to Contents write on this repository.
+The private build records both source commits and includes MEMBERS-LICENSE.txt.
+Never upload the assembled source tree as an artifact.
 
-- `https://raw.githubusercontent.com/matijaerceg/misterzine-arcade-betas/main/beta.json.zip`,
-  the newest beta's database (`buildinfo.BetaDBURL`);
-- `.../main/catalogue.json`, its version and batch, which beta builds read for
-  their **App update** notice (`buildinfo.BetaCatalogueURL`);
-- `.../main/MisterZine-Install-Beta.sh` and `MisterZine-Switch-To-Stable.sh`.
+Features have independent readiness (beta or stable) and access (Fancy or
+ordinary). The star marks Fancy and the beta glyph marks experimental features.
+Codes grant permanent access through their named month across supported apps.
+The beta toggle defaults off and controls both visibility and execution.
+Graduation removes beta status; Fancy features retain their original threshold.
 
-A beta package adds `misterzine/channel.py` and
-`Scripts/MisterZine-Switch-To-Stable.sh` to the database, with
-`MisterZine-Install-Beta.sh` and a drop-in pointed at the beta as release
-assets only; its files are published under the betas repository's releases.
-`make-db.py --distribution` writes the files its `main` branch serves, refuses
-a beta older than the one served, and leaves its README alone.
-`buildinfo.FreeDBURL` and `BetaDBURL` name the two databases, and a test keeps
-`deploy/channel.py`, Stable's drop-in and `tools/verify_package.py` in step
-with them.
+There is no separate beta feed, installer, or matching release. The unannounced
+beta distribution is retired. Test cards that used it must be repointed to the
+ordinary database before that repository is deleted; preserve their settings
+and unlock receipts.
 
-A beta build offers only newer betas. A newer Stable release is not offered to
-members: their entry follows the beta database, and taking Stable would drop
-the beta features. So every Stable release gets a matching beta from the same
-commit or later, so members are never behind. To offer Stable releases to
-beta builds instead, change `buildinfo.CheckBetaUpdate`.
-
-### Promoting a feature to Stable
-
-Delete the feature's `beta.On()` check (a members' extra also moves from the
-private overlay to this repository), render its Stable goldens and inspect
-them, remove the `-beta` scenarios that only covered it, and ship it in the
-next Stable release. Then cut the next beta from that release or later.
-
-### Between Stable and Beta
-
-`MisterZine-Install-Beta` runs `channel.py beta` and `MisterZine-Switch-To-Stable`
-runs `channel.py free`: each points the `misterzine` entry at its database
-and runs Downloader for it, which replaces the files in place; going to Stable
-removes the beta-only files. Both edit only the entry's `db_url`, wherever it
-is: the drop-in, another drop-in or a `downloader.ini` section; a card with no
-entry gets the standard drop-in.
-
-The main-menu entry names the build: `MisterZine Arcade.mgl` for Stable and
-`MisterZine Arcade BETA.mgl` for Beta, both loading the `misterzine` setname.
-A switch gives the entry the chosen build's name, and each build's launcher
-does the same when it starts, removing the other build's entry and the old
-`MisterZine.mgl`, so a card lists one entry.
-
-The app has no way to Stable of its own. Two guards keep a card from sliding
-between the builds by accident, since MiSTer Companion's Install Center
-rewrites the `misterzine` entry to Stable's database
-(`cmd/misterzine/channel_guard.go`):
-
-- An unlocked beta whose entry follows Stable's database, or has none, points
-  it back with `channel.py beta --point-only` and says so.
-- Stable, on a card that holds a beta unlock (`misterzine/beta-unlocks/`) and
-  whose entry follows Stable's database, asks once whether to go back;
-  holding A runs the member's own `Scripts/MisterZine-Install-Beta.sh`
-  (`updater.ModeBeta`), which stays in Scripts after going to Stable because
-  no database installs it.
 ## The changelog and the release card
 
 The changelog is the complete record: every change, the reason for a fix and
@@ -220,12 +166,6 @@ one-time Setup and Uninstall Scripts entries, removal helper, MGL and licenses
 alongside the binary. It also writes `SHA256SUMS`. The drop-in INI is supplied
 as a release asset for users to copy; Downloader does not install its own
 root-level configuration.
-
-A beta tag also packages `channel.py` and `MisterZine-Switch-To-Stable.sh`, and
-stages `MisterZine-Install-Beta.sh` and a drop-in pointed at the beta database
-as release assets, all addressed on the betas repository's releases.
-`tools/verify_package.py` refuses a beta database under a free tag and the
-reverse, and files addressed on the other build's repository.
 
 Favorites, preferences, filters, logs, tokens and debug flags are never package
 contents. Developer test binaries and render outputs are also excluded.

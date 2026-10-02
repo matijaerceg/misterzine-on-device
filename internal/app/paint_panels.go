@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/matijaerceg/misterzine-on-device/internal/access"
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
@@ -571,6 +572,8 @@ func (a *App) optionsEntries() []panelEntry {
 		spacer,
 		{text: "Troubleshooting", kind: "troubleshooting",
 			help: "Test your Start button or game launching. Results stay on screen for a photo; no keyboard or log files needed."},
+		{text: "Enter MisterZine code", kind: "enter-code", opensPage: true, help: "Your access: " + a.cfg.AccessMonth.String() + ". Codes permanently unlock covered features. Star: Fancy. Beta sign: experimental."},
+		{text: "Show beta features", kind: "show-beta-features", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ShowBetaFeatures], help: "Show and enable experimental features when your code qualifies. Off hides them and stops their behaviour; saved choices are kept."},
 		{text: "Credits", kind: "credits"},
 		{text: "Quit MisterZine", kind: "quit"},
 		// the build and data details: greyed, not selectable, below Quit
@@ -610,6 +613,9 @@ func (a *App) optionsEntries() []panelEntry {
 				break
 			}
 		}
+	}
+	if a.featureVisible(access.ROMReport) {
+		E = append(E[:len(E)-5], append([]panelEntry{a.gatedOption(panelEntry{text: "ROM report", kind: "rom-report", help: "Writes misterzine/rom_problems.txt after the background ROM check. Rescan card to refresh it."}, access.ROMReport)}, E[len(E)-5:]...)...)
 	}
 	return a.membersOptions(E)
 }
@@ -1110,6 +1116,9 @@ func (a *App) stepValue(d int) bool {
 		return false
 	}
 	switch e.kind {
+	case "show-beta-features":
+		a.cfg.ShowBetaFeatures = i == 1
+		a.accessChanged()
 	case "rotation":
 		a.SetRotation([]gfx.Rotation{gfx.RotRight, gfx.RotNone, gfx.RotLeft}[i])
 		if a.cfg.Action != nil {
@@ -1260,6 +1269,14 @@ func (a *App) togglePanel() bool {
 	case "views":
 		a.openViews()
 		return true
+	case "rom-report":
+		a.Notice("Rescan card to refresh the ROM report", 4*time.Second)
+		return true
+	case "enter-code":
+		a.openCode()
+		return true
+	case "show-beta-features":
+		return a.stepValue(1 - 2*e.idx)
 	case "credits":
 		a.openCredits()
 		return true

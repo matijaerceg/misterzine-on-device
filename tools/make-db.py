@@ -11,19 +11,7 @@ User-created preferences, favorites and debug flags are never packaged.
 The drop-in downloader_misterzine.ini is a release asset for manual use only:
 downloader rejects root-level ini files inside a database ("illegal path").
 
-A vX.Y.Z-beta.N tag builds MisterZine Arcade, the Patreon members' beta: the
-same database ID, so it replaces the free files in place, plus channel.py and
-MisterZine-Switch-To-Stable.sh for the way back, all published on the
-misterzine-arcade-betas repository, which holds built files only. The members'
-release in misterzine-arcade-private runs this from the tree it assembles.
-MisterZine-Install-Beta.sh and a drop-in pointed at the beta are release
-assets only. --distribution then writes the files that repository's main
-branch serves at a fixed address: the beta database as beta.json.zip,
-catalogue.json that beta builds check for updates, and both scripts; its
-README, the members' guide, is the members' release's own. Stable and
-candidate releases are built exactly as before.
-
-Schema: https://github.com/MiSTer-devel/Downloader_MiSTer/blob/main/docs/custom-databases.md
+Official releases include private extras, gated inside the app.
 """
 import hashlib
 import importlib.util
@@ -41,7 +29,7 @@ DB_ID = "misterzine"
 REPO = "matijaerceg/misterzine-on-device"
 # Betas are published on a repository that holds built files only; the
 # members' release in misterzine-arcade-private builds and publishes them.
-BETA_REPO = "matijaerceg/misterzine-arcade-betas"
+
 NAME = "misterzine.json"
 ASSETS = {
     "misterzine/launch.sh": ("deploy/launch.sh", "launch.sh"),
@@ -56,50 +44,7 @@ ASSETS = {
     "misterzine/THIRD-PARTY-NOTICES.txt": ("deploy/THIRD-PARTY-NOTICES.txt", "THIRD-PARTY-NOTICES.txt"),
 }
 ROOT = Path(__file__).resolve().parent.parent
-BETA_TAG = re.compile(r"v([0-9]+)\.([0-9]+)\.([0-9]+)-beta\.([0-9]+)")
-# The beta's way back to Stable, which it keeps as misterzine/channel.py.
-BETA_ASSETS = {"misterzine/channel.py": ("deploy/channel.py", "channel.py")}
-INSTALL_BETA = "MisterZine-Install-Beta.sh"
-SWITCH_TO_STABLE = "MisterZine-Switch-To-Stable.sh"
-SCRIPT_END = "MISTERZINE_CHANNEL"
-SCRIPT_NOTES = {
-    "beta": ("Installs MisterZine Arcade BETA, the Patreon members' Beta, or moves this",
-             "card's MisterZine over to it. Put it in Scripts and run it; running it again",
-             "is safe. Favorites and settings stay, and Update All keeps Beta current.",
-             "MisterZine-Switch-To-Stable goes back to Stable."),
-    "free": ("Puts Stable, the public release, back in place of MisterZine Arcade BETA,",
-             "the members' Beta. Favorites and settings stay, and Update All follows the",
-             "Stable releases again. Running it again is safe."),
-}
-# The licence of the members' extras, which the members' repository adds to
-# its tree: a beta built with them ships it beside the MIT licence, since
-# those files are not MIT. This repository has none, so its builds ship none.
 MEMBERS_LICENSE = ("deploy/MEMBERS-LICENSE.txt", "MEMBERS-LICENSE.txt")
-
-
-def channel_module():
-    spec = importlib.util.spec_from_file_location("channel", ROOT / "deploy/channel.py")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-def is_beta(tag):
-    return BETA_TAG.fullmatch(tag) is not None
-
-
-def channel_script(channel):
-    """A Scripts entry that carries deploy/channel.py whole, so it works on
-    any card; exec hands over to Python, so Downloader may replace the
-    script while it runs."""
-    source = (ROOT / "deploy/channel.py").read_text(encoding="utf-8")
-    if SCRIPT_END in source.splitlines():
-        raise ValueError("channel.py contains the script's end marker")
-    lines = ["#!/bin/bash"] + ["# " + line for line in SCRIPT_NOTES[channel]] + [
-        'command -v python3 >/dev/null || { echo "This needs Python 3, supplied with current MiSTer Linux."; exit 1; }',
-        "exec python3 - " + channel + ' "$@" <<\'' + SCRIPT_END + "'",
-    ]
-    return "\n".join(lines) + "\n" + source + SCRIPT_END + "\n"
 
 
 def md5(path):
@@ -116,8 +61,9 @@ def entry(path, url):
 
 def build(tag, binary, out):
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    beta = is_beta(tag)
-    base = f"https://github.com/{BETA_REPO if beta else REPO}/releases/download/{tag}/"
+    if "-beta" in tag:
+        raise ValueError("Beta releases have been retired")
+    base = f"https://github.com/{REPO}/releases/download/{tag}/"
     staging = os.path.dirname(os.path.abspath(out))
     os.makedirs(staging, exist_ok=True)
     binary_asset = os.path.join(staging, "misterzine")
@@ -125,27 +71,16 @@ def build(tag, binary, out):
         shutil.copyfile(binary, binary_asset)
     files = {"misterzine/misterzine": entry(binary_asset, base + "misterzine")}
     asset_names = ["misterzine"]
-    assets = dict(ASSETS, **(BETA_ASSETS if beta else {}))
-    if beta and os.path.isfile(os.path.join(root, MEMBERS_LICENSE[0])):
+    assets = dict(ASSETS)
+    if os.path.isfile(os.path.join(root, MEMBERS_LICENSE[0])):
         assets["misterzine/" + MEMBERS_LICENSE[1]] = MEMBERS_LICENSE
     for path, (source, asset) in assets.items():
         target = os.path.join(staging, asset)
         shutil.copyfile(os.path.join(root, source), target)
         files[path] = entry(target, base + quote(asset))
         asset_names.append(asset)
-    if beta:
-        for name, channel in ((SWITCH_TO_STABLE, "free"), (INSTALL_BETA, "beta")):
-            with open(os.path.join(staging, name), "w", encoding="utf-8", newline="\n") as script:
-                script.write(channel_script(channel))
-            asset_names.append(name)
-        target = os.path.join(staging, SWITCH_TO_STABLE)
-        files["Scripts/" + SWITCH_TO_STABLE] = entry(target, base + quote(SWITCH_TO_STABLE))
-        switcher = channel_module()
-        with open(os.path.join(staging, "downloader_misterzine.ini"), "w", encoding="utf-8", newline="\n") as ini:
-            ini.write(switcher.DROP_IN_TEXT.replace("@URL@", switcher.URLS["beta"]))
-    else:
-        shutil.copyfile(os.path.join(root, "deploy/downloader_misterzine.ini"),
-                        os.path.join(staging, "downloader_misterzine.ini"))
+    shutil.copyfile(os.path.join(root, "deploy/downloader_misterzine.ini"),
+                    os.path.join(staging, "downloader_misterzine.ini"))
     asset_names += ["downloader_misterzine.ini", os.path.basename(out)]
     db = {
         "v": 1,
@@ -162,51 +97,9 @@ def build(tag, binary, out):
         for name in sorted(asset_names):
             with open(os.path.join(staging, name), "rb") as asset:
                 sums.write(hashlib.sha256(asset.read()).hexdigest() + "  " + name + "\n")
-    print(f"{out}: {len(files)} files for {tag}" + (" (MisterZine Arcade beta)" if beta else ""))
+    print(f"{out}: {len(files)} files for {tag}")
     for p, e in files.items():
         print(f"  {p}  {e['size']} bytes  {e['hash']}")
-
-
-def beta_order(tag):
-    match = BETA_TAG.fullmatch(tag or "")
-    if match is None:
-        raise ValueError("Not a beta tag: " + str(tag))
-    return tuple(int(part) for part in match.groups())
-
-
-def distribution(tag, release, out):
-    """Write the files the betas repository serves for a published beta
-    release, from its verified assets. Keeps other channels in the
-    catalogue, does nothing for the beta it already serves and refuses an
-    older one, so a rerun of an old tag cannot take members back."""
-    sys.path.insert(0, str(ROOT / "tools"))
-    import beta_batch
-    import verify_package
-    release, out = Path(release), Path(out)
-    beta_order(tag)
-    verify_package.verify(release, tag)
-    batch = beta_batch.load()[0]
-    out.mkdir(parents=True, exist_ok=True)
-    path = out / "catalogue.json"
-    catalogue = {"schema": 1, "releases": {}}
-    if path.exists():
-        catalogue = json.loads(path.read_text(encoding="utf-8"))
-        if catalogue.get("schema") != 1 or not isinstance(catalogue.get("releases"), dict):
-            raise ValueError("Unsupported catalogue.json in " + str(out))
-        current = (catalogue["releases"].get("beta") or {}).get("version")
-        if current == tag:
-            print("The betas repository already serves " + tag)
-            return False
-        if current and beta_order(current) > beta_order(tag):
-            raise ValueError("The betas repository serves " + current + ", which is newer than " + tag)
-    db_url = channel_module().URLS["beta"]
-    shutil.copyfile(release / "misterzine.json.zip", out / db_url.rsplit("/", 1)[1])
-    for name in (INSTALL_BETA, SWITCH_TO_STABLE):
-        shutil.copyfile(release / name, out / name)
-    catalogue["releases"]["beta"] = {"version": tag, "batch": batch, "db_url": db_url}
-    path.write_text(json.dumps(catalogue, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
-    print("Betas repository files for " + tag + " (batch " + batch + ") in " + str(out))
-    return True
 
 
 def check(path):
@@ -232,8 +125,6 @@ def check(path):
 if __name__ == "__main__":
     if len(sys.argv) == 3 and sys.argv[1] == "--check":
         check(sys.argv[2])
-    elif len(sys.argv) == 5 and sys.argv[1] == "--distribution":
-        distribution(sys.argv[2], sys.argv[3], sys.argv[4])
     elif len(sys.argv) == 4:
         build(sys.argv[1], sys.argv[2], sys.argv[3])
     else:

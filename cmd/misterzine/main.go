@@ -10,6 +10,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/matijaerceg/misterzine-on-device/internal/access"
 	"image"
 	"image/png"
 	"log"
@@ -21,6 +22,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -87,6 +89,7 @@ type host struct {
 	client                        *fetch.Client
 	img                           *images.Service
 	roms                          *scan.ROMCheck
+	romReportMu                   sync.RWMutex
 	romList                       string // where each finished sweep writes its list of problems; "" = nowhere
 	index                         *scan.Index
 	status                        []data.Status
@@ -250,10 +253,12 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	h.roms.Slow = func(rel string, d time.Duration) {
 		lg.Printf("rom sweep: slow check %s (%v)", rel, d.Round(time.Millisecond))
 	}
-	h.romList = romListPath(root)
+	if access.ROMReport.Allowed(access.Load(root), h.settings.ShowBetaFeatures) {
+		h.romList = filepath.Join(root, scan.ROMListName)
+	}
 
 	// app
-	h.arcadeBack = arcadeBackOffered(root, card, h.settings.ArcadeBackAsked)
+	h.arcadeBack = false
 	if h.arcadeBack {
 		lg.Printf("arcade back: the card had MisterZine Arcade and follows the free releases; asking once")
 	}
@@ -392,23 +397,25 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			}
 		},
 	}
-	cfg.BetaUnlock = betaLock(root, lg)
-	cfg.BetaEarlierBatch = cfg.BetaUnlock != nil && beta.EarlierUnlock(root)
-	if unlock := cfg.BetaUnlock; unlock != nil {
-		cfg.BetaUnlock = func(code string) error {
-			err := unlock(code)
-			if err == nil {
-				h.keepBetaEntry() // a member again: the entry follows the beta
-			}
-			return err
+	cfg.AccessMonth = access.Load(root)
+	cfg.ShowBetaFeatures = h.settings.ShowBetaFeatures
+	cfg.UnlockCode = func(code string) (access.Month, error) { return access.Unlock(root, code) }
+	cfg.AccessChanged = func(month access.Month, showBeta bool) {
+		h.settings.ShowBetaFeatures = showBeta
+		h.romReportMu.Lock()
+		defer h.romReportMu.Unlock()
+		h.romList = ""
+		if access.ROMReport.Allowed(month, showBeta) {
+			h.romList = filepath.Join(root, scan.ROMListName)
 		}
+		h.a.SetROMList(cardRelative(card, h.romList))
+		h.dirty = true
 	}
 	var seen *data.SeenRecord
 	if hasState && (len(h.state.Seen.Cur) > 0 || h.state.Seen.T != "") {
 		seen = &h.state.Seen
 	}
 	h.a = app.New(cfg, ds, seen)
-	h.keepBetaEntry()
 	h.loadSupporters()
 	h.a.StartSplash()
 	h.a.EnablePageTransitions()
@@ -1076,6 +1083,7 @@ func (h *host) saveAll(final bool) {
 		h.settings.ButtonLabels = h.a.ButtonLabels()
 		h.settings.OKButtons = h.a.OKButtons()
 		h.settings.Members = h.a.MembersSettings()
+		h.settings.ShowBetaFeatures = h.a.ShowBetaFeatures()
 		h.settings.Canvas = h.a.Canvas()
 		h.settings.MenuButton = h.a.MenuButton()
 		if err := store.Save(filepath.Join(h.root, "settings.json"), h.settings); err != nil {

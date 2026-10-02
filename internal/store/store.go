@@ -16,6 +16,7 @@ import (
 
 // Settings are the user's device settings.
 type Settings struct {
+	ShowBetaFeatures     bool          `json:"show_beta_features,omitempty"`
 	SmoothScrollDisabled bool          `json:"smooth_scroll_disabled,omitempty"`
 	TransitionsDisabled  bool          `json:"transitions_disabled,omitempty"`
 	LaunchTransition     string        `json:"launch_transition,omitempty"` // hold (default): only a held Start plays it, or always

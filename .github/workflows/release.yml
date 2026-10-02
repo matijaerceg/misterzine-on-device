@@ -1,72 +1,12 @@
-name: Release
+name: Release checks
 
+# Official binaries are assembled and published by the private release workflow.
+# A public-source-only build must never replace the complete official package.
 on:
   push:
     tags: ["v*"]
-
 permissions:
-  contents: write
-
+  contents: read
 jobs:
   checks:
     uses: ./.github/workflows/ci.yml
-    permissions:
-      contents: read
-  build:
-    needs: checks
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-          cache: false
-      - name: Validate release version
-        run: |
-          # MisterZine Arcade's betas (vX.Y.Z-beta.N) are built with the
-          # members' extras and published on misterzine-arcade-betas by the
-          # members' release in misterzine-arcade-private, never from here.
-          [[ "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]] || {
-            echo "Use vX.Y.Z or vX.Y.Z-rc.N. Betas are released from misterzine-arcade-private."; exit 1;
-          }
-      - name: Build device binary
-        run: |
-          SHA="$(git rev-parse --short HEAD)"
-          DATE="$(date -u +%Y-%m-%d)"
-          M=github.com/matijaerceg/misterzine-on-device/internal/buildinfo
-          GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go build -trimpath \
-            -ldflags "-s -w -X $M.Version=$GITHUB_REF_NAME -X $M.Commit=$SHA -X $M.Date=$DATE" \
-            -o dist/misterzine ./cmd/misterzine
-          file dist/misterzine | grep -q "ELF 32-bit LSB executable, ARM"
-          file dist/misterzine | grep -q "statically linked"
-      - name: Package and verify local assets
-        run: |
-          python3 tools/make-db.py "$GITHUB_REF_NAME" dist/misterzine dist/release/misterzine.json.zip
-          python3 tools/verify_package.py dist/release "$GITHUB_REF_NAME"
-      - name: Upload draft
-        uses: softprops/action-gh-release@v2
-        with:
-          draft: true
-          prerelease: ${{ contains(github.ref_name, '-rc.') }}
-          make_latest: "false"
-          files: dist/release/*
-          fail_on_unmatched_files: true
-          body_path: docs/RELEASE_NOTES.md
-  publish:
-    needs: build
-    runs-on: ubuntu-latest
-    env:
-      GH_TOKEN: ${{ github.token }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Verify uploaded draft assets
-        run: |
-          gh release download "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --dir downloaded
-          python3 tools/verify_package.py downloaded "$GITHUB_REF_NAME"
-      - name: Publish verified release
-        run: |
-          if [[ "$GITHUB_REF_NAME" == *-rc.* ]]; then
-            gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease --latest=false
-          else
-            gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease=false --latest
-          fi

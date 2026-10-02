@@ -6,6 +6,7 @@
 package app
 
 import (
+	"github.com/matijaerceg/misterzine-on-device/internal/access"
 	"image"
 	"strings"
 	"time"
@@ -143,13 +144,13 @@ type Config struct {
 	FilterRotation bool // strict filter on the current orientation
 	// InstalledOnly is Options -> Sources: installed only. Sources whose Downloader
 	// database the card lacks (SetHiddenSources) leave every view.
-	InstalledOnly  bool
-	ShowNonArcade  bool
-	ArcadeIntro    bool // one-time explanation for upgraded installations
+	InstalledOnly bool
+	ShowNonArcade bool
+	ArcadeIntro   bool // one-time explanation for upgraded installations
 	// ArcadeBack, on the free build, asks once whether to go back to
 	// MisterZine Arcade: the card had the beta and the member's installer
 	// can take it back (arcade_back.go).
-	ArcadeBack bool
+	ArcadeBack     bool
 	ShowDeprecated bool // Include catalogue rows marked deprecated.
 	// ViewsOff names the views Options -> Views left out of the Y cycle
 	// (data.SortMode.Name); a fresh install lists only "recents".
@@ -192,7 +193,11 @@ type Config struct {
 	// Arcade, by name (members.go). The free build never reads them and
 	// saves them back unchanged, so a member who goes back to free and
 	// later rejoins finds them as they were.
-	Members map[string]string
+	Members          map[string]string
+	ShowBetaFeatures bool
+	AccessMonth      access.Month
+	UnlockCode       func(string) (access.Month, error)
+	AccessChanged    func(access.Month, bool)
 	// BetaUnlock, set by the host of a locked Patreon beta build, opens the
 	// app on the lock screen (beta_lock.go) and checks a code there: nil
 	// unlocks, and the host has saved the batch's receipt; beta.ErrLocked

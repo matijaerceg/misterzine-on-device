@@ -2,6 +2,7 @@ package app
 
 import (
 	"errors"
+	"github.com/matijaerceg/misterzine-on-device/internal/access"
 	"image"
 	"strings"
 	"time"
@@ -32,10 +33,11 @@ const codeLen = 6
 
 // betaLock is the lock screen's state; App.lock is nil once unlocked.
 type betaLock struct {
-	digits  [codeLen]int8 // -1 while a box is empty
-	box     int           // the chosen box
-	message string        // the answer to the last Unlock, "" before one
-	leaving bool          // unlocked for an earlier batch: name the way to Stable
+	optional bool
+	digits   [codeLen]int8 // -1 while a box is empty
+	box      int           // the chosen box
+	message  string        // the answer to the last Unlock, "" before one
+	leaving  bool          // unlocked for an earlier batch: name the way to Stable
 }
 
 func newBetaLock() *betaLock {
@@ -162,6 +164,10 @@ func (a *App) actLock(k platform.Key) bool {
 	case platform.KeyEnter, platform.KeyStart:
 		a.tryUnlock()
 	case platform.KeyBack:
+		if l.optional {
+			a.unlock("")
+			return true
+		}
 		if !l.started() && l.message == "" {
 			a.quit()
 			return false
@@ -210,6 +216,29 @@ func (a *App) tryUnlock() {
 		l.message = lockIncomplete
 		return
 	}
+	if l.optional {
+		if a.cfg.UnlockCode == nil {
+			l.message = "Codes are available in the official app."
+			return
+		}
+		month, err := a.cfg.UnlockCode(code)
+		if errors.Is(err, access.ErrCode) {
+			l.message = lockWrong
+			return
+		}
+		if !month.Valid() {
+			l.message = lockBadBuild
+			return
+		}
+		a.cfg.AccessMonth = max(a.cfg.AccessMonth, month)
+		a.accessChanged()
+		msg := "Unlocked through " + a.cfg.AccessMonth.String()
+		if err != nil {
+			msg = lockUnsaved
+		}
+		a.unlock(msg)
+		return
+	}
 	var err error
 	if a.cfg.BetaUnlock != nil {
 		err = a.cfg.BetaUnlock(code)
@@ -239,7 +268,10 @@ func (a *App) unlock(notice string) {
 // lockHint is the lock screen's legend, shortened where the bar is narrow.
 func (a *App) lockHint() string {
 	back := "B Quit"
-	if a.lock.started() || a.lock.message != "" {
+	if a.lock.optional {
+		back = "B Back"
+	}
+	if !a.lock.optional && (a.lock.started() || a.lock.message != "") {
 		back = "B Clear"
 	}
 	digits := gfx.ArrowUp + gfx.ArrowDown + " Digit  " + gfx.ArrowLeft + gfx.ArrowRight + " Move  "

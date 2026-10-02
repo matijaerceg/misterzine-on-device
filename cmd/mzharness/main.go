@@ -129,7 +129,8 @@ func main() {
 	cmd := &headless.Cmd{}
 	var a *app.App
 	var backState *updater.State // -arcade-back with -update-state
-	cfg := app.Config{ShowNonArcade: *showNonArcade, ArcadeIntro: *arcadeIntro, ArcadeBack: *arcadeBack,
+	cfg := app.Config{
+		AccessMonth: 202610, ShowBetaFeatures: *betaBuild, ShowNonArcade: *showNonArcade, ArcadeIntro: *arcadeIntro, ArcadeBack: *arcadeBack,
 		PhysW: cw, PhysH: ch, Rotation: rotation, SafeInsetX: *inset, SafeInsetY: *inset,
 		Now:            func() time.Time { return clock },
 		ClockTrusted:   true,

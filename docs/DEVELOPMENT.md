@@ -12,7 +12,6 @@ GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go vet ./...
 GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o dist/misterzine ./cmd/misterzine
 python3 tools/test_maintenance.py
 python3 tools/test_package.py
-python3 tools/test_channel.py
 python3 tools/test_wrapper.py
 python3 tools/test_snapshot.py
 node --test tools/sort_golden.test.js
@@ -33,16 +32,6 @@ python3 tools/test_downloader_integration.py /path/to/downloader_latest.zip dist
 This uses temporary card directories. Only HTTP transport is replaced with
 fixture bytes; Downloader's URL validation, hash checks, file operations and
 local registration/removal run normally. It does not run a real system update.
-
-`tools/test_channel.py` runs the move between Stable and MisterZine Arcade
-BETA, the Patreon members' Beta, on fixture cards: `deploy/channel.py`,
-which repoints the `misterzine` Downloader entry (with `--point-only`, and
-nothing else), and the generated MisterZine-Install-Beta and
-MisterZine-Switch-To-Stable scripts that carry it.
-A beta release directory as a third argument to the integration test above
-also moves a card from the Stable package to the beta and back through the real
-Downloader. Beta releases are described in
-[RELEASING.md](RELEASING.md#beta-releases).
 
 ## Visual checks
 
@@ -111,41 +100,23 @@ steps. `tools/startup_logo.py` renders the checked-in outlined SVG into the
 embedded 160×106 two-tone PNG (requires Pillow and svgpathtools). The app
 draws it at native size in every orientation, without runtime scaling.
 
-## Patreon beta build
+## Feature access
 
-The Patreon Beta, MisterZine Arcade BETA, is this source built with
-`-X github.com/matijaerceg/misterzine-on-device/internal/beta.Channel=beta`.
-A members' release also sets `beta.Batch` (lowercase letters, digits and
-dashes) and `beta.CodeSHA256` (the SHA-256 of the batch's six-digit code, as
-64 lowercase hex digits; never the code itself). Such a build opens on a lock
-screen until the code is entered, then saves
-`misterzine/beta-unlocks/<batch>-<sha>.receipt` beside `settings.json`, so each
-batch asks once, an older batch keeps opening after a rollback, and a new
-batch needs its new code. A beta build without a code is unlocked. While the
-lock screen is up the app saves nothing else. `misterzine -version` names the
-channel and batch and exits 2 when the build's beta values do not belong
-together. The gate is a convenience for members, not protection: a six-digit
-code can be found from its hash, and a modified build skips the check.
+Official downloads contain the public app and private Fancy implementations,
+assembled with `-tags arcade`. Public source builds remain usable without those
+extras. `internal/access` defines readiness, access thresholds and permanent
+code receipts. The private registry supplies all issued code verifiers; keep
+old entries forever and use the same history across MisterZine apps.
 
-The main-menu entry is `MisterZine Arcade.mgl` in Stable and `MisterZine
-Arcade BETA.mgl` in Beta. Both load the `misterzine` setname, which the
-watcher, `/tmp/CORENAME` and the INI's `[MisterZine]` section go by, and
-wherever the launcher writes its entry it removes the other build's and the
-old name, `MisterZine.mgl`. The harness renders the
-beta with `-beta` (unlocked, with the BETA mark) and its lock screen with
-`-beta-locked`, whose code is 123456. The lock screen has no way to Stable of
-its own; on a card unlocked for an earlier batch, where a lapsed
-member stands, it names MisterZine-Switch-To-Stable in Scripts, as text
-(`-beta-earlier`). Stable's page asking once to go back to Beta
-(RELEASING.md, "Between Stable and Beta") renders with
-`-arcade-back`; with `-update-state` a held A there reads that state as its
-`updater.ModeBeta` run.
+Settings store `show_beta_features`, default false. The code screen is optional.
+A code's month is an entitlement, never an expiry, and no wall clock or network
+check is involved. Older codes cannot reduce access. The original beta receipt
+is recognised as October 2026 by the official registry.
 
-The members' extras are not in this repository: the private
-`misterzine-arcade-private` adds them as files built with `-tags arcade`,
-through the hooks in `internal/app/members.go`, whose free stubs are in
-`members_free.go`. Draw with `pal` (paint_list.go), never `gen.Eva`
-directly, so the members' themes reach every screen.
+Private feature code must check access at entry points and execution sites,
+not only hide its option. Locked stable Fancy features remain visible. Beta
+features are hidden and inactive with the toggle off. Turning the toggle off
+preserves preferences. Draw with `pal` so themes reach every screen.
 
 ## Device tools and debugging
 
