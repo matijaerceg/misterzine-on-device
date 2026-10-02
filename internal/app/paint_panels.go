@@ -16,6 +16,7 @@ import (
 
 // panelEntry is one line of the Filters or Options screen.
 type panelEntry struct {
+	feature   bool // feature markers retain their highlight even on locked rows
 	text      string
 	header    bool
 	glyph     string   // Options section headers: the mark before the title, with a rule after it
@@ -81,7 +82,11 @@ func (a *App) paintLabel(c *gfx.Canvas, x, y, cols int, e panelEntry, col color.
 		x += 2 * a.sm.W
 		cols -= 2
 	}
-	c.Text(x, y, a.sm, e.fitText(cols), col)
+	if e.feature {
+		paintFeatureText(c, x, y, a.sm, e.fitText(cols), col)
+	} else {
+		c.Text(x, y, a.sm, e.fitText(cols), col)
+	}
 }
 
 type panelState struct {
