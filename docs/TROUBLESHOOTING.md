@@ -76,10 +76,8 @@ Zaparoo tag, a `bootcore` line in MiSTer.ini, a favorite or shortcut in
 another frontend, or a script of your own. Point it at
 `/media/fat/MisterZine Arcade.mgl` instead; the space is part of the name.
 
-On MisterZine Arcade BETA, the Patreon members' Beta, the entry is
-`/media/fat/MisterZine Arcade BETA.mgl`. Moving between Stable and Beta gives
-the entry the other name, so a tag or `bootcore` line needs the one for the
-build on the card.
+All official installations use the same entry, including installations with
+unlocked Fancy or beta features.
 
 ### Degauss opens instead
 
