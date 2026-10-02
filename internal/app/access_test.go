@@ -3,6 +3,7 @@ package app
 import (
 	"github.com/matijaerceg/misterzine-on-device/internal/access"
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
+	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 	"strings"
 	"testing"
@@ -126,5 +127,62 @@ func TestBetaOnlyEarlyAccessCopy(t *testing.T) {
 		if strings.Contains(a.codeScreenTitle(), "Early access") == supporter {
 			t.Fatal("wrong code screen title")
 		}
+	}
+}
+
+func TestFeatureCodeRequiresCoveredMonth(t *testing.T) {
+	var saved access.Month
+	a := New(Config{PhysW: 320, PhysH: 240, ShowBetaFeatures: true,
+		UnlockCode: func(code string) (access.Month, error) {
+			if code == "123456" {
+				return 202609, nil
+			}
+			if code == "654321" {
+				return 202709, nil
+			}
+			return 0, access.ErrCode
+		},
+		AccessChanged: func(m access.Month, _ bool) { saved = m },
+	}, data.Ingest(nil, "", time.Now()), nil)
+	a.openOptions()
+	a.openCode()
+	a.lock.requiredMonth = 202709
+	a.lock.featureTitle = "Example - Early access"
+	a.lock.earlyAccess = true
+	for _, ch := range "123456" {
+		a.lockType(int8(ch - '0'))
+	}
+	a.tryUnlock()
+	if !a.Locked() || a.cfg.AccessMonth != 202609 || saved != 202609 {
+		t.Fatal("older code must retain its access while keeping this feature's entry open")
+	}
+	if a.lock.message != "Covers September 2026. Needs September 2027 or newer." {
+		t.Fatalf("unclear insufficient coverage: %q", a.lock.message)
+	}
+	if a.lock.started() || a.lock.box != 0 || !a.lock.earlyAccess || a.lock.requiredMonth != 202709 {
+		t.Fatal("retry did not reset input or preserve feature context")
+	}
+	for _, rot := range []gfx.Rotation{gfx.RotNone, gfx.RotLeft} {
+		layoutApp := New(Config{PhysW: 320, PhysH: 240, Rotation: rot, SafeInsetX: 40, SafeInsetY: 40}, data.Ingest(nil, "", time.Now()), nil)
+		if len(gfx.Wrap(a.lock.message, layoutApp.sm.Cols(layoutApp.lay.Body.Inset(4).Dx()), 100)) > 2 {
+			t.Fatal("coverage feedback exceeds reserved message space")
+		}
+	}
+	for _, ch := range "654321" {
+		a.lockType(int8(ch - '0'))
+	}
+	a.tryUnlock()
+	if a.Locked() || a.cfg.AccessMonth != 202709 || saved != 202709 || !a.ShowBetaFeatures() {
+		t.Fatal("sufficient newer code did not complete retry")
+	}
+	// Entering an older code cannot reduce already held access.
+	a.openCode()
+	a.lock.requiredMonth = 202709
+	for _, ch := range "123456" {
+		a.lockType(int8(ch - '0'))
+	}
+	a.tryUnlock()
+	if a.Locked() || a.cfg.AccessMonth != 202709 {
+		t.Fatal("older code reduced existing coverage")
 	}
 }

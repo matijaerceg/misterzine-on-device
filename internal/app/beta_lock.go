@@ -235,6 +235,11 @@ func (a *App) tryUnlock() {
 		}
 		a.cfg.AccessMonth = max(a.cfg.AccessMonth, month)
 		a.accessChanged()
+		if a.cfg.AccessMonth < l.requiredMonth {
+			l.clear()
+			l.message = "Covers " + a.cfg.AccessMonth.String() + ". Needs " + l.requiredMonth.String() + " or newer."
+			return
+		}
 		msg := "Unlocked through " + a.cfg.AccessMonth.String()
 		if err != nil {
 			msg = lockUnsaved
