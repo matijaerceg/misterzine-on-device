@@ -574,11 +574,11 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "On: when a game started here exits to the MiSTer menu, MisterZine reopens on that game. Not after quitting with the Menu button. Needs the shortcut."},
 		{text: "Exit chord", kind: "exit-chord", child: true, vals: []string{"off", "Select+Start", "L+R+Select+Start"}, idx: map[string]int{"": 0, "select-start": 1, "lr-select-start": 2}[a.ExitChord()], disabled: launcherIdx == 0,
 			help: "Hold these MiSTer-defined pad buttons one second in a game started here: it exits to the MiSTer menu, and Return after game reopens MisterZine."},
-		spacer,
-		{text: "Troubleshooting", kind: "troubleshooting",
-			help: "Test your Start button or game launching. Results stay on screen for a photo; no keyboard or log files needed."},
 		{text: "Enter MisterZine code", kind: "enter-code", opensPage: true, help: "Your access: " + a.cfg.AccessMonth.String() + ". Codes permanently unlock covered features. Star: Fancy. Beta sign: experimental."},
 		{text: "Show beta features", kind: "show-beta-features", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ShowBetaFeatures], help: "Show experimental features. Your code unlocks them. Off hides and stops them."},
+		{text: "Troubleshooting", kind: "troubleshooting",
+			help: "Test your Start button or game launching. Results stay on screen for a photo; no keyboard or log files needed."},
+		spacer,
 		{text: "Credits", kind: "credits"},
 		{text: "Quit MisterZine", kind: "quit"},
 		// the build and data details: greyed, not selectable, below Quit
@@ -621,9 +621,9 @@ func (a *App) optionsEntries() []panelEntry {
 	}
 	if a.featureVisible(access.ROMReport) {
 		for i, e := range E {
-			if e.kind == "enter-code" {
+			if e.kind == "rescan" {
 				row := a.gatedOption(panelEntry{text: "ROM report", kind: "rom-report", help: "Writes misterzine/rom_problems.txt after the background ROM check. Rescan card to refresh it."}, access.ROMReport)
-				E = append(E[:i], append([]panelEntry{row}, E[i:]...)...)
+				E = append(E[:i+1], append([]panelEntry{row}, E[i+1:]...)...)
 				break
 			}
 		}

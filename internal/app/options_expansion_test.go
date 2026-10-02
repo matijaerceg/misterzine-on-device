@@ -1,6 +1,7 @@
 package app
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
@@ -44,7 +45,7 @@ func TestOptionsExpansion(t *testing.T) {
 	if has("refresh") || a.panel.entries[a.panel.cursor].value != "Data" {
 		t.Fatal("collapse lost selection")
 	}
-	for _, kind := range []string{"troubleshooting", "credits", "quit"} {
+	for _, kind := range []string{"credits", "quit"} {
 		if !has(kind) {
 			t.Fatalf("collapsed page hides %s", kind)
 		}
@@ -77,5 +78,43 @@ func TestOptionsExpansion(t *testing.T) {
 	fresh, _, _, _ := shotsApp()
 	if !fresh.optionSectionOpen("Data") || fresh.optionSectionOpen("List") {
 		t.Fatal("expansion survived restart")
+	}
+}
+
+// Access controls belong to Operation; ROM report belongs to Data even locked.
+func TestAccessOptionsSections(t *testing.T) {
+	a, _, _, _ := shotsApp()
+	a.cfg.ShowBetaFeatures = true
+	a.cfg.AccessMonth = 0
+	a.optionsOpen = map[string]bool{}
+	has := func(text string) bool {
+		for _, e := range a.visibleOptionsEntries() {
+			if strings.HasPrefix(e.text, text) {
+				return true
+			}
+		}
+		return false
+	}
+	for _, text := range []string{"Enter MisterZine code", "Show beta features", "Troubleshooting", "ROM report"} {
+		if has(text) {
+			t.Fatalf("collapsed sections expose %s", text)
+		}
+	}
+	a.optionsOpen["Operation"] = true
+	for _, text := range []string{"Enter MisterZine code", "Show beta features", "Troubleshooting"} {
+		if !has(text) {
+			t.Fatalf("Operation lacks %s", text)
+		}
+	}
+	if has("ROM report") {
+		t.Fatal("Operation exposes ROM report")
+	}
+	a.optionsOpen = map[string]bool{"Data": true}
+	if !has("ROM report") {
+		t.Fatal("Data lacks locked ROM report")
+	}
+	a.cfg.ShowBetaFeatures = false
+	if has("ROM report") {
+		t.Fatal("beta-off exposes ROM report")
 	}
 }

@@ -33,9 +33,9 @@ scenarios = [
     ["-rot", "left", "-logical", "-out", "out/saver-dim-t", "-script",
      "back; home; pagedown*2; right; down*3; enter; down*2; right*2; down; shot brightness-33; enter; wait 1500; shot preview-33; back; right; shot brightness-66; enter; wait 1500; shot preview-66"],
     ["-support-report", "testdata/support-mapped-start.json", "-out", "out/support-mapped-h", "-script",
-     "back; end; up*2; enter; down*3; enter; shot result; right; shot mapping"],
+     "back; home; pagedown*4; right; end; up*2; enter; down*3; enter; shot result; right; shot mapping"],
     ["-support-report", "testdata/support-mapped-start.json", "-inset", "40", "-rot", "left", "-logical", "-out", "out/support-mapped-t", "-script",
-     "back; end; up*2; enter; down*3; enter; shot result; right; shot mapping"],
+     "back; home; pagedown*4; right; end; up*2; enter; down*3; enter; shot result; right; shot mapping"],
     ["-rot", "none", "-out", "out/h"],
     ["-rot", "left", "-out", "out/t", "-logical"],
     ["-out", "out/filters-h", "-script",
@@ -70,23 +70,23 @@ scenarios = [
     ["-rot", "left", "-logical", "-out", "out/saver-shots-t", "-script",
      "back; home; pagedown*2; right; down*3; enter; down*2; shot style; right; shot style-shots; down; shot bright; right; shot bright-full; enter; wait 1500; shot preview; back; wait 300; left; up; left; shot style-word"],
     ["-support-report", "testdata/support-controller.json", "-out", "out/support-h", "-script",
-     "back; end; up*2; enter; shot menu; enter; shot ready; wait 3500; shot capture; wait 6000; shot result; right; shot evidence; back; down*2; enter; shot launch; enter; shot launch-result"],
+     "back; home; pagedown*4; right; end; up*2; enter; shot menu; enter; shot ready; wait 3500; shot capture; wait 6000; shot result; right; shot evidence; back; down*2; enter; shot launch; enter; shot launch-result"],
     ["-support-report", "testdata/support-controller.json", "-rot", "left", "-logical", "-out", "out/support-t", "-script",
-     "back; end; up*2; enter; shot menu; enter; shot ready; wait 3500; shot capture; wait 6000; shot result; right; shot evidence; back; down*2; enter; shot launch; enter; shot launch-result"],
+     "back; home; pagedown*4; right; end; up*2; enter; shot menu; enter; shot ready; wait 3500; shot capture; wait 6000; shot result; right; shot evidence; back; down*2; enter; shot launch; enter; shot launch-result"],
     ["-support-report", "testdata/support-no-input.json", "-inset", "40", "-out", "out/support-small-h", "-script",
-     "back; end; up*2; enter; down*3; enter; shot result; right; shot evidence"],
+     "back; home; pagedown*4; right; end; up*2; enter; down*3; enter; shot result; right; shot evidence"],
     ["-support-report", "testdata/support-no-input.json", "-inset", "40", "-rot", "left", "-logical", "-out", "out/support-small-t", "-script",
-     "back; end; up*2; enter; down*3; enter; shot result; right; shot evidence"],
+     "back; home; pagedown*4; right; end; up*2; enter; down*3; enter; shot result; right; shot evidence"],
     # Troubleshooting -> Send a report, with the upload faked: the entry,
     # what the player agrees to, the code, and the card copy when offline
     ["-report-send", "sent", "-out", "out/report-h", "-script",
-     "back; end; up*2; enter; down*4; shot menu; enter; shot consent; enter; shot sent"],
+     "back; home; pagedown*4; right; end; up*2; enter; down*4; shot menu; enter; shot consent; enter; shot sent"],
     ["-report-send", "sent", "-rot", "left", "-logical", "-out", "out/report-t", "-script",
-     "back; end; up*2; enter; down*4; shot menu; enter; shot consent; enter; shot sent"],
+     "back; home; pagedown*4; right; end; up*2; enter; down*4; shot menu; enter; shot consent; enter; shot sent"],
     ["-report-send", "failed", "-out", "out/report-failed-h", "-script",
-     "back; end; up*2; enter; down*4; enter; enter; shot failed"],
+     "back; home; pagedown*4; right; end; up*2; enter; down*4; enter; enter; shot failed"],
     ["-report-send", "failed", "-rot", "left", "-logical", "-out", "out/report-failed-t", "-script",
-     "back; end; up*2; enter; down*4; enter; enter; shot failed"],
+     "back; home; pagedown*4; right; end; up*2; enter; down*4; enter; enter; shot failed"],
 ]
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
@@ -216,7 +216,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     # presses (no pad name, so they show as script input), then hold B out
     scenarios.append([*rotation, "-support-report", "testdata/support-controller.json",
                       "-out", f"out/pad-test-{orientation}", "-script",
-                      "back; end; up*2; enter; down; shot menu; enter; shot empty; enter; space; tab; start; shot presses; "
+                      "back; home; pagedown*4; right; end; up*2; enter; down; shot menu; enter; shot empty; enter; space; tab; start; shot presses; "
                       "press back; wait 1000; shot leave-hold; release back; hold back 2200; shot left"])
     # Options -> OK button with the defined pad (MENU OK on B) as the current
     # pad: auto, the A override, the B override, and back to auto
@@ -341,7 +341,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
         scenarios.append([*rotation, "-inset", str(inset), "-out", f"out/options-sections-{orientation}-{inset}", "-script",
                           "back; shot default; enter; shot collapsed; pagedown; shot list-closed; right; shot list-open; "
                           "pagedown; enter; shot display-open; left; shot display-closed; back; back; shot remembered; "
-                          "end; shot bottom; up*4; enter; shot troubleshooting; back; shot returned"])
+                          "end; shot bottom; home; pagedown*4; right; end; up*2; enter; shot troubleshooting; back; shot returned"])
 # Full display on 1080p (480x270), and on 720p or 1440p (426x240, a column
 # short of 16:9 because the canvas is the framebuffer rounded down)
 for canvas, name in (("480x270", "full-display"), ("426x240", "full-426x240")):
@@ -359,6 +359,6 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):
         scenarios.append([*rotation, "-inset", str(inset), "-out", f"out/access-{orientation}-{inset}", "-script",
-                          "back; end; up*2; shot beta-off; left; right; shot beta-on; up; enter; shot code; type 123456; enter; shot unlocked; back; shot list"])
+                          "back; home; pagedown*4; right; end; up*3; shot beta-off; left; right; shot beta-on; up; enter; shot code; type 123456; enter; shot unlocked; back; shot list"])
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)
