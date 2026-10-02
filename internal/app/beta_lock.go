@@ -558,7 +558,7 @@ func (a *App) paintAccessCode(c *gfx.Canvas) {
 	y += 4
 	a.paintCodeBoxes(c, box, y)
 	y += lockBoxH + 4
-	footerY := max(y+2*lineH+4, (y-4+box.Max.Y-footH)/2)
+	footerY := min(box.Max.Y-footH, max(y+2*lineH+4, (y-4+box.Max.Y-footH)/2))
 	for _, line := range evenWrap(a.lock.message, cols, 2) {
 		c.Text(box.Min.X+(box.Dx()-a.sm.Width(line))/2, y, a.sm, line, pal.Warn)
 		y += lineH
