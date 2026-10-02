@@ -155,6 +155,26 @@ debug argument, and restart. Removing the file cannot stop an already running se
 
 ## On-device troubleshooting
 
+### Controller setup hooks
+
+The controller beta is supplied by the private overlay. The public side exposes
+raw event identity (`DeviceID`, `Node`, `Direct`, `Keyboard`, `Cancelled`), device
+discovery, a panel translation-suppression hook, and an inert Controls UI/host
+contract. `internal/controls` holds only the shared profile data types. Without
+the overlay, the screen and persistence hooks are no-ops and controls.json is
+never read or written. See [Button mapping](BUTTON_MAPPING.md) for the user flow
+and hardware checklist. The overlay's tests and `tools/render_controls.py`
+exercise capture, rollback, persistence and both orientations.
+
+The harness supports `-controls` with `-show-beta -access-month 202610` in an
+assembled build. `raw 0 307` taps raw button 307 on the first fixture;
+`rawpress`/`rawrelease` supply individual edges. Device 0 is an Xbox pad and
+device 1 is a keyboard encoder. `unplug` removes the fixtures. Ordinary keyboard
+script commands remain independent recovery input. These fixtures never open
+devices or write saved controller settings.
+
+### Existing diagnostic tools
+
 The on-device Troubleshooting screen is separate from remote debugging. Its
 explicit controller test temporarily opens independent read-only evdev readers,
 including devices omitted by normal keyboard/Start filtering. It never grabs

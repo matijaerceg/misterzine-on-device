@@ -60,6 +60,9 @@ func (a *App) ButtonLabels() string {
 // pass through, so it is safe on a hint chunk like "Hold B" or "A < >" as
 // well as on a single name.
 func (a *App) btn(s string) string {
+	if text, ok := a.controlLegend(s); ok {
+		return text
+	}
 	if a.legendSwapped() {
 		s = applyLabels(s, swapLabels)
 	}
@@ -78,9 +81,6 @@ var swapLabels = map[string]string{"A": "B", "B": "A"}
 func applyLabels(s string, m map[string]string) string {
 	if l, ok := m[s]; ok {
 		return l
-	}
-	if !strings.ContainsAny(s, "ABXY") {
-		return s
 	}
 	words := strings.Split(s, " ")
 	for i, w := range words {

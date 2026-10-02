@@ -49,7 +49,7 @@ func TestInputDisconnectAndOverflowRelease(t *testing.T) {
 			}
 			select {
 			case ev := <-in.ch:
-				if ev.Pressed || ev.Key != platform.KeyDown {
+				if ev.Pressed || ev.Key != platform.KeyDown || !ev.Cancelled {
 					t.Fatal(ev)
 				}
 			case <-time.After(time.Second):

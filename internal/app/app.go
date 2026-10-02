@@ -7,6 +7,7 @@ package app
 
 import (
 	"github.com/matijaerceg/misterzine-on-device/internal/access"
+	"github.com/matijaerceg/misterzine-on-device/internal/controls"
 	"image"
 	"strings"
 	"time"
@@ -35,28 +36,31 @@ const (
 	ScreenCredits // Options -> Credits: who made it, what it builds on, the early adopters
 	ScreenSaverOptions
 	ScreenMembers // a page the members' build draws and drives (members.go); the free build never opens it
+	ScreenControls
 )
 
 func (s Screen) String() string {
-	return [...]string{"list", "details", "screen", "filter", "options", "calibrate", "update", "troubleshooting", "scan", "views", "credits", "screensaver-options", "members"}[s]
+	return [...]string{"list", "details", "screen", "filter", "options", "calibrate", "update", "troubleshooting", "scan", "views", "credits", "screensaver-options", "members", "controls"}[s]
 }
 
 // Config is what the app needs from its host.
 type Config struct {
-	PhysW, PhysH int // physical frame: 320x240, or the fit-display size the host chose
-	Rotation     gfx.Rotation
-	SafeInsetX   int              // safe-zone margin at the left and right edges, as viewed
-	SafeInsetY   int              // and at the top and bottom
-	Now          func() time.Time // calendar dates, possibly corrected before NTP
-	TimerNow     func() time.Time // same clock as input events and Tick/Frame
-	ClockTrusted bool
-	Images       Images
-	Status       func(i int) data.Status // install status per row index; nil = unknown
-	Favorites    map[string]bool
-	Launch       func(path string) // called with a card-relative path; the host exits
-	Quit         func()
-	Version      string
-	Support      *SupportHooks
+	PhysW, PhysH    int // physical frame: 320x240, or the fit-display size the host chose
+	Rotation        gfx.Rotation
+	SafeInsetX      int              // safe-zone margin at the left and right edges, as viewed
+	SafeInsetY      int              // and at the top and bottom
+	Now             func() time.Time // calendar dates, possibly corrected before NTP
+	TimerNow        func() time.Time // same clock as input events and Tick/Frame
+	ClockTrusted    bool
+	Images          Images
+	Status          func(i int) data.Status // install status per row index; nil = unknown
+	Favorites       map[string]bool
+	Launch          func(path string) // called with a card-relative path; the host exits
+	Quit            func()
+	Version         string
+	Support         *SupportHooks
+	Controls        *ControlsHooks
+	ControlProfiles controls.File
 
 	// FavoritesUnavailable prevents edits after the host could not read the file.
 	FavoritesUnavailable bool
@@ -250,16 +254,18 @@ type App struct {
 	marks              []int                  // every marker line, by the view position it precedes (marks.go)
 	viewsOff           map[data.SortMode]bool // views left out of the Y cycle (views.go)
 
-	screen     Screen
-	cursor     int  // index into view
-	top        int  // first visible screen line
-	shortPage  bool // group jumps may leave space below the last group
-	slot       int  // screen view slot index
-	detail     detailState
-	panel      panelState
-	update     updater.State
-	updateView updateView
-	support    supportView
+	screen       Screen
+	cursor       int  // index into view
+	top          int  // first visible screen line
+	shortPage    bool // group jumps may leave space below the last group
+	slot         int  // screen view slot index
+	detail       detailState
+	panel        panelState
+	update       updater.State
+	updateView   updateView
+	support      supportView
+	mapping      controlsView
+	controlInput controlsInput
 
 	wants      []ImageReq // pictures this frame asked for, in priority order
 	rep        repeater
@@ -806,7 +812,11 @@ func (a *App) ensureVisible() {
 func (a *App) Handle(ev platform.Event) (repaint bool) {
 	a.readNoticeBar()
 	defer func() { repaint = a.settleNotice() || repaint }()
-	ev = a.padEvent(ev) // a pad whose OK button is B trades Enter and back
+	var captured, changed bool
+	ev, captured, changed = a.controlEvent(ev)
+	if captured {
+		return changed
+	}
 	if a.handleLaunchCab(ev) {
 		return true
 	}
@@ -1013,6 +1023,9 @@ func (a *App) Tick(now time.Time) (changed bool) {
 	if a.screen == ScreenTroubleshooting {
 		return a.tickSupport(now) || changed
 	}
+	if a.screen == ScreenControls {
+		return a.tickControls(now) || changed
+	}
 	if k := a.rep.due(now, a.repeatStep); k != platform.KeyNone {
 		if a.act(k) {
 			changed = true
@@ -1064,6 +1077,9 @@ func (a *App) NextTick() time.Time {
 		return a.cfg.TimerNow()
 	}
 	t := a.rep.nextAt()
+	if a.screen == ScreenControls {
+		t = a.nextControlsTick()
+	}
 	if a.screen == ScreenTroubleshooting {
 		t = a.support.next
 		if v := &a.support; v.mode == "pad" && !v.backAt.IsZero() {
@@ -1437,6 +1453,8 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 			a.paintUpdate(c)
 		case ScreenTroubleshooting:
 			a.paintSupport(c)
+		case ScreenControls:
+			a.paintControls(c)
 		case ScreenScan:
 			a.paintScan(c)
 		case ScreenMembers:

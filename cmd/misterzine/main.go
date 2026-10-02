@@ -397,6 +397,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	}
 	cfg.AccessMonth = access.Load(root)
 	cfg.ShowBetaFeatures = h.settings.ShowBetaFeatures
+	h.configureControls(&cfg, root)
 	cfg.UnlockCode = func(code string) (access.Month, error) { return access.Unlock(root, code) }
 	cfg.AccessChanged = func(month access.Month, showBeta bool) {
 		h.settings.ShowBetaFeatures = showBeta

@@ -25,9 +25,10 @@ import (
 // cannot read here reaches the app through MiSTer's translation, which
 // already sends Enter for its OK, so the row has nothing to offer it.
 type okButtons struct {
-	pads  []support.Pad   // the pads the input reader has open, as last fetched
-	known map[string]bool // every input source seen: true for a pad, false otherwise
-	cur   string          // the pad that pressed last, by name; "" before any
+	pads           []support.Pad   // the pads the input reader has open, as last fetched
+	known          map[string]bool // every input source seen: true for a pad, false otherwise
+	cur            string          // the pad that pressed last, by name; "" before any
+	curID, curNode string          // raw events distinguish devices that share a name
 }
 
 // padID is the pad's identity in settings, as in MiSTer's map file name.
@@ -68,10 +69,26 @@ func (a *App) padEvent(ev platform.Event) platform.Event {
 		}
 	}
 	p, ok := a.padByName(ev.Source)
+	if ev.DeviceID != "" {
+		find := func() (support.Pad, bool) {
+			for _, pad := range a.oks.pads {
+				if padID(pad) == ev.DeviceID && (ev.Node == "" || pad.Node == ev.Node) {
+					return pad, true
+				}
+			}
+			return support.Pad{}, false
+		}
+		p, ok = find()
+		if !ok {
+			a.refreshPads()
+			p, ok = find()
+		}
+	}
 	if !ok {
 		return ev
 	}
 	a.oks.cur = p.Name
+	a.oks.curID, a.oks.curNode = padID(p), p.Node
 	if a.swapped(p) {
 		switch ev.Key {
 		case platform.KeyEnter:
@@ -110,6 +127,13 @@ func (a *App) swapped(p support.Pad) bool {
 func (a *App) currentPad() (support.Pad, bool) {
 	if a.oks.known == nil {
 		a.refreshPads()
+	}
+	if a.oks.curID != "" {
+		for _, p := range a.oks.pads {
+			if padID(p) == a.oks.curID && p.Node == a.oks.curNode {
+				return p, true
+			}
+		}
 	}
 	if a.oks.cur != "" {
 		if p, ok := a.padByName(a.oks.cur); ok {
@@ -213,6 +237,11 @@ func (a *App) okButtonRow() panelEntry {
 		return row
 	}
 	name := shortName(p.Name, 14)
+	if profile := a.controlProfile(padID(p)); len(profile.Bindings) > 0 {
+		row.vals, row.disabled = []string{"see Button mapping"}, true
+		row.help = "This pad has custom actions. Change Open / confirm and Back on its Button mapping page."
+		return row
+	}
 	if !p.Direct {
 		row.vals, row.disabled = []string{"via MiSTer"}, true
 		row.help = name + ": A or B is not in its MiSTer definition, so its buttons come through MiSTer's translation. Define it in the MiSTer menu."

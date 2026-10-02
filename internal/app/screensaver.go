@@ -468,7 +468,7 @@ func (a *App) saverEnd() {
 }
 
 func (a *App) nextSaverTick() time.Time {
-	if a.screen == ScreenTroubleshooting {
+	if a.screen == ScreenTroubleshooting || a.screen == ScreenControls {
 		return time.Time{}
 	}
 	if a.saver.active {

@@ -69,6 +69,7 @@ type device struct {
 	f               *os.File
 	held            map[uint16]platform.Key
 	pad             bool // a gamepad node: read by MiSTer define-slot, see padMapping
+	physical        bool // has a kernel physical path; virtual keyboards cannot own profiles
 	mapping         padMapping
 	vendor, product uint16
 	abs             map[uint16]absInfo // axis ranges, read on first use
@@ -107,6 +108,7 @@ type Input struct {
 	// works through Main's translation, but only while no mapped pad is
 	// present, since the translated keys carry no pad name.
 	rawFace atomic.Bool
+	panels  atomic.Value // map[vendor_product]bool, immutable snapshots
 }
 
 // OpenInput starts reading. It never fails hard: with no devices it just
@@ -187,6 +189,7 @@ func (in *Input) rescan() {
 		}
 		d := &device{path: p, name: name, f: f, pad: pad, mapping: m, held: map[uint16]platform.Key{}, abs: map[uint16]absInfo{}, axisEdge: map[uint16]uint8{}}
 		d.vendor, d.product = devID(f)
+		d.physical = devPhys(f) != ""
 		if pad && m.direct {
 			// held exclusively: Main sees nothing from it, so its MiSTer menu
 			// button is the app's and cannot hand the screen to Main
@@ -252,6 +255,52 @@ func (in *Input) Pads() []support.Pad {
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Node < out[j].Node })
 	return out
+}
+
+// ControlDevices includes physical keyboards for explicit encoder setup.
+// Virtual and unnamed-identity devices are never remapping targets.
+func (in *Input) ControlDevices() []support.Pad {
+	in.mu.Lock()
+	defer in.mu.Unlock()
+	var out []support.Pad
+	for _, d := range in.devs {
+		if d.name == "MiSTer virtual input" || (d.vendor == 0 && d.product == 0) || !d.physical {
+			continue
+		}
+		p := d.mapping.info(filepath.Base(d.path), d.name, d.vendor, d.product)
+		p.Keyboard = !d.pad
+		// Remapping a pad requires an exclusive raw reader; otherwise Main
+		// could still act on its old Menu assignment during capture.
+		p.Direct = d.pad && d.mapping.direct && d.grabbed
+		out = append(out, p)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Node < out[j].Node })
+	return out
+}
+
+func (in *Input) SetPanels(ids map[string]bool) {
+	m := map[string]bool{}
+	for id, on := range ids {
+		if on {
+			m[id] = true
+		}
+	}
+	in.panels.Store(m)
+}
+
+func (in *Input) panelConnected() bool {
+	m, _ := in.panels.Load().(map[string]bool)
+	if len(m) == 0 {
+		return false
+	}
+	in.mu.Lock()
+	defer in.mu.Unlock()
+	for _, d := range in.devs {
+		if d.physical && !d.pad && m[fmt.Sprintf("%04x_%04x", d.vendor, d.product)] {
+			return true
+		}
+	}
+	return false
 }
 
 // slotText is the mapping in one line for the log.
@@ -463,19 +512,31 @@ func (in *Input) emit(d *device, code uint16, pressed bool, text rune, at time.T
 	if mk, ok := d.osdKey(code, pressed); ok {
 		k = mk
 	}
-	if d.name == "MiSTer virtual input" && in.rawFace.Load() {
+	if d.name == "MiSTer virtual input" && (in.rawFace.Load() || in.panelConnected()) {
 		return true // the mapped pads deliver their own presses
 	}
 	if k == platform.KeyStart {
 		text = 0
 	}
-	ev := platform.Event{Key: k, Text: text, Code: code, Pressed: pressed, At: at, Source: d.name}
+	ev := d.event(k, code, pressed, at)
+	ev.Text = text
 	if pressed {
 		d.held[code] = k
 	} else {
 		delete(d.held, code)
 	}
 	return in.deliver(ev)
+}
+
+func (d *device) event(k platform.Key, code uint16, pressed bool, at time.Time) platform.Event {
+	ev := platform.Event{Key: k, Code: code, Pressed: pressed, At: at, Source: d.name}
+	if d.physical && d.name != "MiSTer virtual input" && (d.vendor != 0 || d.product != 0) {
+		ev.DeviceID = fmt.Sprintf("%04x_%04x", d.vendor, d.product)
+		ev.Node = filepath.Base(d.path)
+		ev.Direct = d.pad && d.mapping.direct && d.grabbed
+		ev.Keyboard = !d.pad
+	}
+	return ev
 }
 
 func (in *Input) Events() <-chan platform.Event { return in.ch }
@@ -612,7 +673,9 @@ func (in *Input) releaseHeld(d *device) {
 	}
 	for code, key := range d.held {
 		delete(d.held, code)
-		if !in.deliver(platform.Event{Key: key, Code: code, At: time.Now(), Source: d.name}) {
+		ev := d.event(key, code, false, time.Now())
+		ev.Cancelled = true
+		if !in.deliver(ev) {
 			return
 		}
 	}

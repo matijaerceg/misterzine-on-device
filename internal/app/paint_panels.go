@@ -630,7 +630,7 @@ func (a *App) optionsEntries() []panelEntry {
 			}
 		}
 	}
-	return a.membersOptions(E)
+	return a.membersOptions(a.controlsOptions(E))
 }
 
 // dateFormatHelp shows today's date in the chosen list format.
@@ -948,6 +948,7 @@ func (a *App) optionsHint() string {
 // legend words it; a row missing here ignores A (Left/Right pick its
 // value, or it is greyed).
 var optionsActs = map[string]string{
+	"controls":           "Open",
 	"enter-code":         "Enter code",
 	"rom-report":         "Info",
 	"show-beta-features": "Toggle",
@@ -1274,6 +1275,9 @@ func (a *App) togglePanel() bool {
 	switch e.kind {
 	case "year", "decade":
 		return a.toggleYears(false)
+	case "controls":
+		a.OpenControls()
+		return true
 	case "troubleshooting":
 		a.OpenTroubleshooting()
 		return true

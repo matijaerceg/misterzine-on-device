@@ -45,6 +45,7 @@ func (a *App) gatedOption(row panelEntry, f access.Feature) panelEntry {
 }
 
 func (a *App) accessChanged() {
+	a.controlsChanged()
 	selected := ""
 	if a.panel.cursor < len(a.panel.entries) {
 		selected = a.panel.entries[a.panel.cursor].text

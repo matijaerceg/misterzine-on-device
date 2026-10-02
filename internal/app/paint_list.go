@@ -211,7 +211,7 @@ func (a *App) hintWidth(chunks []hintChunk, gap string) int {
 		if i > 0 {
 			w += a.sm.Width(gap)
 		}
-		w += a.sm.Width(strings.TrimSpace(ch.btn + " " + ch.rest))
+		w += a.sm.Width(strings.TrimSpace(a.btn(ch.btn) + " " + ch.rest))
 	}
 	return w
 }
@@ -233,7 +233,7 @@ func (a *App) hintLine(c *gfx.Canvas, x, y, w int, s string) {
 	}
 	maxX := x + w
 	for i, ch := range chunks {
-		text := strings.TrimSpace(ch.btn + " " + ch.rest)
+		text := strings.TrimSpace(a.btn(ch.btn) + " " + ch.rest)
 		if i > 0 {
 			x += a.sm.Width(gap)
 		}

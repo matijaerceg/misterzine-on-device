@@ -49,6 +49,7 @@ func (d Device) Route() string {
 // which raw button code sits in each MiSTer define-slot (A, B, X, Y, L, R,
 // Select, Start) and where that came from.
 type Pad struct {
+	Keyboard        bool // physical keyboard or encoder, offered by the Controls screen
 	Node, Name      string
 	Vendor, Product uint16
 	Mapped          bool              // a MiSTer map file was read
