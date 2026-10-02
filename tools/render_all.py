@@ -24,9 +24,9 @@ scenarios = [
     ["-data", "testdata/rom-warning.json", "-rom-issue", "Incomplete ROM: jpark.zip (no jp_ic1.bin)", "-rot", "left", "-logical", "-inset", "40", "-out", "out/missing-rom-long-t", "-script",
      "enter; shot details; start; shot blocked"],
     # the Patreon beta names the list of problems it writes to the card; tate at the widest inset
-    ["-beta", "-data", "testdata/rom-warning.json", "-rom-issue", "Missing game ROM: jpark.zip", "-out", "out/beta-rom-list-h", "-script",
+    ["-show-beta", "-access-month", "202610", "-data", "testdata/rom-warning.json", "-rom-issue", "Missing game ROM: jpark.zip", "-out", "out/beta-rom-list-h", "-script",
      "tab; down; right; shot filters"],
-    ["-beta", "-data", "testdata/rom-warning.json", "-rom-issue", "Missing game ROM: jpark.zip", "-rot", "left", "-logical", "-inset", "40", "-out", "out/beta-rom-list-t", "-script",
+    ["-show-beta", "-access-month", "202610", "-data", "testdata/rom-warning.json", "-rom-issue", "Missing game ROM: jpark.zip", "-rot", "left", "-logical", "-inset", "40", "-out", "out/beta-rom-list-t", "-script",
      "tab; down; right; shot filters"],
     ["-out", "out/saver-dim-h", "-script",
      "back; home; pagedown*2; right; down*3; enter; down*2; right*2; down; shot brightness-33; enter; wait 1500; shot preview-33; back; right; shot brightness-66; enter; wait 1500; shot preview-66"],
@@ -197,14 +197,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "shot loading; type defender; back; shot horizontal; type 1942; back; shot vertical"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
-    # the Patreon beta: the BETA mark at the right end of the status bar in
-    # each layout, and beside the app update notice and a search at the
-    # widest inset
-    for layout in ("list", "split", "picture", "text"):
-        scenarios.append([*rotation, "-beta", "-layout", layout,
-                          "-out", f"out/beta-mark-{orientation}-{layout}", "-script", "shot list"])
-    scenarios.append([*rotation, "-beta", "-inset", "40", "-app-update", "v1.0.6",
-                      "-out", f"out/beta-mark-{orientation}-40", "-script", "shot update; type 1943; shot find"])
+
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     # Options -> Button labels: PlayStation symbols on the list, Details and
@@ -345,35 +338,10 @@ for rotation in ([], ["-rot", "left", "-logical"]):
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):
-        # the Patreon beta's lock screen: empty, part-typed on the pad and the
-        # keyboard, a wrong code, an incomplete one, then the code (123456)
-        # and the list it opens onto
-        scenarios.append([*rotation, "-inset", str(inset), "-beta-locked",
-                          "-out", f"out/beta-lock-{orientation}-{inset}", "-script",
-                          "shot empty; type 12; up; right; down; shot part; type 999; enter; shot wrong; "
-                          "back; start; shot incomplete; type 123456; enter; shot unlocked"])
-        # a card unlocked for an earlier batch, where a lapsed member stands:
-        # the way back to the free version named as text; X does nothing
-        scenarios.append([*rotation, "-inset", str(inset), "-beta-locked", "-beta-earlier",
-                          "-out", f"out/beta-lock-leave-{orientation}-{inset}", "-script",
-                          "shot leave; type 12; tab; tab; shot x-ignored; type 3456; enter; shot unlocked"])
-        # the free build on a card that had MisterZine Arcade: the page asking
-        # once to go back, a hold let go early, and B keeping the free version
-        scenarios.append([*rotation, "-inset", str(inset), "-arcade-back",
-                          "-out", f"out/arcade-back-{orientation}-{inset}", "-script",
-                          "shot page; press enter; wait 1000; shot holding; release enter; shot let-go; back; shot stayed"])
-    # a full hold: the member's installer under way, then the restart into the beta
-    scenarios.append([*rotation, "-arcade-back", "-update-state", "testdata/update-beta-running.json",
-                      "-out", f"out/arcade-back-{orientation}-run", "-script", "hold enter 2100; shot running"])
-    scenarios.append([*rotation, "-arcade-back", "-update-state", "testdata/update-beta-completed.json", "-update-restart",
-                      "-out", f"out/arcade-back-{orientation}-done", "-script", "hold enter 2100; shot restart"])
-for rotation in ([], ["-rot", "left", "-logical"]):
-    orientation = "t" if rotation else "h"
-    for inset in (15, 40):
         scenarios.append([*rotation, "-inset", str(inset), "-out", f"out/options-sections-{orientation}-{inset}", "-script",
                           "back; shot default; enter; shot collapsed; pagedown; shot list-closed; right; shot list-open; "
                           "pagedown; enter; shot display-open; left; shot display-closed; back; back; shot remembered; "
-                          "end; shot bottom; up*2; enter; shot troubleshooting; back; shot returned"])
+                          "end; shot bottom; up*4; enter; shot troubleshooting; back; shot returned"])
 # Full display on 1080p (480x270), and on 720p or 1440p (426x240, a column
 # short of 16:9 because the canvas is the framebuffer rounded down)
 for canvas, name in (("480x270", "full-display"), ("426x240", "full-426x240")):
@@ -387,5 +355,10 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     scenarios.append([*rotation, "-out", f"out/hdmi-choice-{orientation}", "-script",
                       "back; pagedown*2; right; down*5; shot full; right; shot classic; right; shot fit-4-3"])
+for rotation in ([], ["-rot", "left", "-logical"]):
+    orientation = "t" if rotation else "h"
+    for inset in (15, 40):
+        scenarios.append([*rotation, "-inset", str(inset), "-out", f"out/access-{orientation}-{inset}", "-script",
+                          "back; end; up*2; shot beta-off; left; right; shot beta-on; up; enter; shot code; type 123456; enter; shot unlocked; back; shot list"])
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)

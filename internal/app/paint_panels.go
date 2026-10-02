@@ -615,7 +615,13 @@ func (a *App) optionsEntries() []panelEntry {
 		}
 	}
 	if a.featureVisible(access.ROMReport) {
-		E = append(E[:len(E)-5], append([]panelEntry{a.gatedOption(panelEntry{text: "ROM report", kind: "rom-report", help: "Writes misterzine/rom_problems.txt after the background ROM check. Rescan card to refresh it."}, access.ROMReport)}, E[len(E)-5:]...)...)
+		for i, e := range E {
+			if e.kind == "enter-code" {
+				row := a.gatedOption(panelEntry{text: "ROM report", kind: "rom-report", help: "Writes misterzine/rom_problems.txt after the background ROM check. Rescan card to refresh it."}, access.ROMReport)
+				E = append(E[:i], append([]panelEntry{row}, E[i:]...)...)
+				break
+			}
+		}
 	}
 	return a.membersOptions(E)
 }

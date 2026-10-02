@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/matijaerceg/misterzine-on-device/internal/access"
 	"image"
 	"image/png"
 	"os"
@@ -83,6 +84,8 @@ func main() {
 	arcadeIntro := flag.Bool("arcade-intro", false, "show upgrade explanation")
 	splash := flag.Bool("splash", false, "show the startup logo fade")
 	localPath := flag.String("local", "", "local rows fixture (a data.json-shaped array of rows the card scan would add)")
+	showBetaFeatures := flag.Bool("show-beta", false, "show experimental features")
+	accessMonth := flag.Int("access-month", 0, "fixture entitlement month YYYYMM")
 	betaBuild := flag.Bool("beta", false, "render the Patreon beta build (MisterZine Arcade) instead of the free one")
 	betaLocked := flag.Bool("beta-locked", false, "render the beta build locked behind the test code "+harnessCode+" (implies -beta; the unlock is saved in a temporary folder)")
 	betaEarlier := flag.Bool("beta-earlier", false, "with -beta-locked: the card was unlocked for an earlier batch, so the lock screen names the way back to Stable")
@@ -130,7 +133,7 @@ func main() {
 	var a *app.App
 	var backState *updater.State // -arcade-back with -update-state
 	cfg := app.Config{
-		AccessMonth: 202610, ShowBetaFeatures: *betaBuild, ShowNonArcade: *showNonArcade, ArcadeIntro: *arcadeIntro, ArcadeBack: *arcadeBack,
+		AccessMonth: access.Month(*accessMonth), ShowBetaFeatures: *showBetaFeatures || *betaBuild, ShowNonArcade: *showNonArcade, ArcadeIntro: *arcadeIntro, ArcadeBack: *arcadeBack,
 		PhysW: cw, PhysH: ch, Rotation: rotation, SafeInsetX: *inset, SafeInsetY: *inset,
 		Now:            func() time.Time { return clock },
 		ClockTrusted:   true,
@@ -176,6 +179,15 @@ func main() {
 			return nil
 		},
 	}
+	if *betaBuild {
+		cfg.AccessMonth = 202610
+	}
+	cfg.UnlockCode = func(code string) (access.Month, error) {
+		if code == harnessCode {
+			return 202610, nil
+		}
+		return 0, access.ErrCode
+	}
 	if beta.Check(unlockDir) != nil {
 		// as the device does: the lock screen until the code is entered
 		cfg.BetaUnlock = func(code string) error { return beta.Unlock(unlockDir, code) }
@@ -184,7 +196,7 @@ func main() {
 		// the background check knows every file, and finds the same fault
 		cfg.ROMKnown = func(string) (string, bool, bool) { return *romIssue, true, true }
 		cfg.ROMProgress = func() (int, int) { return 3, 3 }
-		if beta.On() {
+		if access.ROMReport.Allowed(cfg.AccessMonth, cfg.ShowBetaFeatures) {
 			cfg.ROMList = "misterzine/rom_problems.txt" // as the device names it
 		}
 	}

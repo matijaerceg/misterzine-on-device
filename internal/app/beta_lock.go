@@ -364,7 +364,7 @@ func (a *App) paintLock(c *gfx.Canvas) {
 	if a.notice != "" {
 		c.Text(l.Status.Min.X+2, y, a.sm, gfx.Fit(a.notice, a.sm.Cols(right-l.Status.Min.X-4)), pal.Fg)
 	} else {
-		c.Text(l.Status.Min.X+2, y, a.sm, gfx.Fit("MisterZine Arcade", a.sm.Cols(right-l.Status.Min.X-4)), pal.Accent)
+		c.Text(l.Status.Min.X+2, y, a.sm, gfx.Fit(a.codeScreenTitle(), a.sm.Cols(right-l.Status.Min.X-4)), pal.Accent)
 	}
 
 	c.Box(l.Body, pal.Line)
@@ -474,4 +474,11 @@ func bigGlyph(c *gfx.Canvas, x, y int, f *gfx.Font, ch byte, col rgb) {
 			}
 		}
 	}
+}
+
+func (a *App) codeScreenTitle() string {
+	if a.lock.optional {
+		return "MisterZine code"
+	}
+	return "MisterZine Arcade"
 }
