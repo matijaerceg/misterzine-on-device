@@ -55,11 +55,11 @@ release still requires the owner's approval. Publishing requires
 The private build records both source commits and includes MEMBERS-LICENSE.txt.
 Never upload the assembled source tree as an artifact.
 
-Features have independent readiness (beta or stable) and access (Fancy or
-ordinary). The star marks Fancy and the beta glyph marks experimental features.
+Features have independent readiness (beta or stable) and access (Supporter or
+ordinary). The star marks Supporter and the beta glyph marks experimental features.
 Codes grant permanent access through their named month across supported apps.
 The beta toggle defaults off and controls both visibility and execution.
-Graduation removes beta status; Fancy features retain their original threshold.
+Graduation removes beta status; Supporter features retain their original threshold.
 
 There is no separate beta feed, installer, or matching release. The unannounced
 beta distribution is retired. Test cards that used it must be repointed to the

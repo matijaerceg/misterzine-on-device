@@ -102,7 +102,7 @@ draws it at native size in every orientation, without runtime scaling.
 
 ## Feature access
 
-Official downloads contain the public app and private Fancy implementations,
+Official downloads contain the public app and private Supporter implementations,
 assembled with `-tags arcade`. Public source builds remain usable without those
 extras. `internal/access` defines readiness, access thresholds and permanent
 code receipts. The private registry supplies all issued code verifiers; keep
@@ -114,7 +114,7 @@ check is involved. Older codes cannot reduce access. The original beta receipt
 is recognised as October 2026 by the official registry.
 
 Private feature code must check access at entry points and execution sites,
-not only hide its option. Locked stable Fancy features remain visible. Beta
+not only hide its option. Locked stable Supporter features remain visible. Beta
 features are hidden and inactive with the toggle off. Turning the toggle off
 preserves preferences. Draw with `pal` so themes reach every screen.
 

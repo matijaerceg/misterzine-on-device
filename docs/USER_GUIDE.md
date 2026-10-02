@@ -857,10 +857,10 @@ Everyone installs the same app and receives the same updates. Options ->
 Enter MisterZine code accepts the six-digit code from the MisterZine Patreon
 post. The ordinary app works without a code.
 
-A star marks a Fancy extra. The Greek beta sign marks an experimental feature.
+A star marks a Supporter extra. The Greek beta sign marks an experimental feature.
 A feature can have both marks. Show beta features defaults off; switching it
 on reveals experimental features, and a qualifying code enables them. Turning
-it off hides and stops them while keeping their saved preferences. Stable Fancy
+it off hides and stops them while keeping their saved preferences. Stable Supporter
 options remain visible even without a code; their help names the required month.
 
 A code permanently unlocks features through its named month. October 2026 is
@@ -869,6 +869,6 @@ on a fresh installation. Newer codes include earlier features. The same code
 applies across supported MisterZine apps; enter it in each app. Keep a copy.
 In months without new gated features, the latest existing code stays current.
 
-When an ordinary beta feature becomes stable, everyone gets it. A Fancy beta
-feature becomes a stable Fancy extra and keeps its original code requirement.
+When an ordinary beta feature becomes stable, everyone gets it. A Supporter beta
+feature becomes a stable Supporter extra and keeps its original code requirement.
 Keeping preferences during uninstall also keeps saved unlocks.

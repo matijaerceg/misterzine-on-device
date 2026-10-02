@@ -575,7 +575,7 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "On: when a game started here exits to the MiSTer menu, MisterZine reopens on that game. Not after quitting with the Menu button. Needs the shortcut."},
 		{text: "Exit chord", kind: "exit-chord", child: true, vals: []string{"off", "Select+Start", "L+R+Select+Start"}, idx: map[string]int{"": 0, "select-start": 1, "lr-select-start": 2}[a.ExitChord()], disabled: launcherIdx == 0,
 			help: "Hold these MiSTer-defined pad buttons one second in a game started here: it exits to the MiSTer menu, and Return after game reopens MisterZine."},
-		{text: "Enter MisterZine code", kind: "enter-code", opensPage: true, help: "Your access: " + a.cfg.AccessMonth.String() + ". Codes permanently unlock covered features. Star: Fancy. Beta sign: experimental."},
+		{text: "Enter MisterZine code", kind: "enter-code", opensPage: true, help: "Your access: " + a.cfg.AccessMonth.String() + ". Codes permanently unlock covered features. Star: Supporter. Beta sign: experimental."},
 		{text: "Show beta features", kind: "show-beta-features", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ShowBetaFeatures], help: "Show experimental features. Your code unlocks them. Off hides and stops them."},
 		{text: "Troubleshooting", kind: "troubleshooting",
 			help: "Test your Start button or game launching. Results stay on screen for a photo; no keyboard or log files needed."},

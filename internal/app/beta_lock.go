@@ -504,7 +504,7 @@ func (a *App) paintAccessCode(c *gfx.Canvas) {
 	cols := a.sm.Cols(box.Dx())
 	paragraphs := []string{
 		"Patreon support funds development.",
-		"Your code unlocks all Fancy and Beta features through its month, forever.",
+		"Your code unlocks all Supporter and Beta features through its month, forever.",
 		"No need to stay subscribed.",
 	}
 	var lines []string

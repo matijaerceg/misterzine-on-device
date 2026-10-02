@@ -77,7 +77,7 @@ another frontend, or a script of your own. Point it at
 `/media/fat/MisterZine Arcade.mgl` instead; the space is part of the name.
 
 All official installations use the same entry, including installations with
-unlocked Fancy or beta features.
+unlocked Supporter or beta features.
 
 ### Degauss opens instead
 
