@@ -512,7 +512,7 @@ func (a *App) paintAccessCode(c *gfx.Canvas) {
 		if len(lines) > 0 {
 			lines = append(lines, "")
 		}
-		lines = append(lines, gfx.Wrap(p, cols, 100)...)
+		lines = append(lines, evenWrap(p, cols, 100)...)
 	}
 	required := "Enter your Patreon code:"
 	if a.lock.requiredMonth != 0 {
