@@ -7,31 +7,26 @@ an October 2026 or later code. Open **Options → Controls → Button mapping**.
 
 ## Set up a controller
 
-1. MisterZine opens the controller you are using, or the only directly readable
-   pad. **Change controller** lets you pick another. Controllers of the same
-   model share a saved setup.
-2. **Set up buttons** walks through Launch, Open, Back, Filters and View.
-   Each step lets you change the button or keep the current one. There is no
-   countdown. Directions and extra buttons are under **Your buttons → More buttons**.
-3. To change a button, press and release it. MisterZine shows your choice and
-   explains any swap before you accept it. Choose **Try another button** to
-   correct a mistake, or **Keep previous button** to undo that step. Holding
-   a button for two seconds cancels capture; Esc on a separate keyboard also
-   returns. Completed steps stay available to review.
-4. **Test buttons** shows what each press would do without launching a game.
-   It stays open until you hold the proposed Back button for two seconds or
-   press Esc on a separate keyboard.
-5. **Your buttons** is a compact summary. Choose any action to change it, or
-   **Save changes** to finish. If the controls changed, press and release the
-   new Open button, then the new Back button. Take as long as you need;
-   holding a button for two seconds cancels this check. Label-only changes
-   save directly.
-6. **Buttons saved** confirms completion. Choose **Back to games** to play.
+1. Choose the controller from the connected-device list. The USB identity is
+   shown beneath its name. Controllers of the same model share a saved setup.
+2. Choose an action, then press and release the physical button you want to use.
+   **Set up all buttons** walks through the actions and directions in order.
+   Waiting eight seconds keeps the current assignment. Esc on a separate
+   keyboard cancels capture.
+3. A button already assigned to another action swaps places with that action's
+   old button. An asterisk marks edited assignments. Your saved controls keep
+   navigating the editor while you work on the draft.
+4. **Test draft buttons** shows what each press would do, without launching a
+   game or navigating away. Hold the draft's Back button for two seconds, use
+   Esc on a separate keyboard, or wait 30 seconds without a press to return.
+5. **Save & test** asks you to press and release the new **Open / confirm** button,
+   then the new **Back / Options** button. Each step has a 12-second limit.
+   Both must be demonstrated on the selected device before anything is saved.
 
-Your saved controls keep navigating setup until you finish saving. A disconnect,
-interrupted input or failed write preserves them. Leaving with unsaved changes
-lets you keep editing or discard. **More buttons → Restore defaults** asks before
-restoring the original buttons and labels; review and save to apply the reset.
+Waiting, disconnecting the controller, interrupted input, or a failed write
+keeps the current saved setup. A timeout leaves the draft available to correct.
+Leaving with unsaved edits offers **Discard** or **Keep editing**. **Restore
+defaults** resets the draft's buttons and labels; use Save & test to apply it.
 
 Launch, Open, Back, and the four directions must be assigned and distinct when
 saving a custom mapping. Optional actions can be left unassigned. A pad arriving
@@ -40,9 +35,7 @@ page explains this rather than offering a setup it cannot read reliably.
 
 ## Labels that match your panel
 
-Open **Button labels**. **Label style** changes only with left/right, with arrows
-showing the available directions; OK leaves it unchanged. A preview shows the
-resulting Launch, Open and Back hints. Choose the existing global
+**Label style** applies to the selected controller. Choose the existing global
 labels, MiSTer letters, Xbox letters, PlayStation symbols, numbers, **Neo Geo
 A B C D**, or **Custom letters**. Presets follow the physical MiSTer slot after
 a remap, so moving Filters onto Start also changes the hint to Start.
@@ -71,10 +64,10 @@ The starting layout is the common MAME keyboard layout:
 | Menu | Esc |
 | Directions | Arrow keys |
 
-Use the guided setup if the encoder was reprogrammed. Save changes to the panel
+Use the guided setup if the encoder was reprogrammed. Save & test the panel
 choice before using it on the game list. Once saved, keys from that model act
 as controls and stop entering search text; a separate keyboard model can still
-type. Change Use as back to **Typing keyboard** and save to undo the mode.
+type. Change Use as back to **Typing keyboard** and Save & test to undo the mode.
 Restore defaults keeps the chosen keyboard/panel mode.
 
 Panel recognition from MiSTer.ini and importing MiSTer's keyboard-encoder maps
@@ -103,11 +96,8 @@ combinations and game return behaviour still need testing on hardware.
 
 ## Hardware review
 
-- On a pad, swap Launch with Filters. Check the swap explanation and try again
-  or keep the previous button. Test the choices, cancel the save check with a
-  held button, and confirm the old mapping still works. Repeat and save.
-- Leave setup idle for a minute: it must not skip a step or discard work. Verify
-  Label style changes only with left/right and shows arrows and preview hints.
+- On a pad, swap Launch with Filters. Test the draft, let the save trial expire,
+  and confirm the old mapping still works. Repeat and save with the new buttons.
 - Restart MisterZine and check the mapping and legends. Try a second controller.
 - Choose Neo Geo and custom labels; inspect the list, Details and Options in
   landscape and tate, including a large safe zone.
