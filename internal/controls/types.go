@@ -2,9 +2,12 @@
 package controls
 
 type Profile struct {
-	Reviewed bool   `json:"reviewed,omitempty"`
-	Name     string `json:"name,omitempty"`
-	Panel    bool   `json:"arcade_panel,omitempty"`
+	MappingVersion int               `json:"mapping_version,omitempty"`
+	Inputs         map[uint16]string `json:"inputs,omitempty"`
+	BasicsComplete bool              `json:"basics_complete,omitempty"`
+	Reviewed       bool              `json:"reviewed,omitempty"`
+	Name           string            `json:"name,omitempty"`
+	Panel          bool              `json:"arcade_panel,omitempty"`
 	// Missing actions inherit; zero explicitly clears an action after a swap.
 	Bindings map[string]uint16 `json:"bindings,omitempty"`
 	Style    string            `json:"label_style,omitempty"`
@@ -32,6 +35,10 @@ func (p Profile) Clone() Profile {
 	q.Names = map[uint16]string{}
 	for k, v := range p.Names {
 		q.Names[k] = v
+	}
+	q.Inputs = map[uint16]string{}
+	for k, v := range p.Inputs {
+		q.Inputs[k] = v
 	}
 	return q
 }

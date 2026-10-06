@@ -11,7 +11,6 @@ import (
 
 func (a *App) discoverControls(time.Time) bool { return false }
 func (a *App) nextControlDiscovery() time.Time { return time.Time{} }
-func (a *App) OpenControlLabels()              {}
 
 type controlsView struct{}
 type controlsInput struct{}

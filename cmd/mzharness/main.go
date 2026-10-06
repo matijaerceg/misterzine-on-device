@@ -411,7 +411,7 @@ func main() {
 		}
 		switch f[0] {
 		case "labels":
-			a.OpenControlLabels()
+			a.OpenControls()
 		case "controls":
 			a.OpenControls()
 		case "unplug":
