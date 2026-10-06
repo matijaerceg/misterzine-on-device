@@ -410,8 +410,7 @@ func main() {
 			die(fmt.Errorf("script: %q needs %d words", tok, need))
 		}
 		switch f[0] {
-		case "labels":
-			a.OpenControls()
+
 		case "controls":
 			a.OpenControls()
 		case "unplug":
