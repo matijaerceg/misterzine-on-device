@@ -10,11 +10,19 @@ These mappings affect MisterZine only, never MiSTer's global settings or games.
 An unfamiliar device is invited only when you press an input on it. That opening
 press is consumed; release it before answering. Devices used during another setup
 are not queued: press again after closing setup. Cancelling defers only that device
-until the next app launch.
+until its next fresh press, after all held inputs have been released. Repeats do
+not reopen the invitation.
 
-Keyboard-class devices first ask **Keyboard / Controller / pad**. Choose Keyboard
+The short controller invitation shows its name and two instructions:
+**Begin setup: hold one button** and **Not now: hold two buttons on any device**.
+When a keyboard is connected, **or press Esc on keyboard** joins the Not now hint.
+The opening press cannot begin setup; the hold that begins cannot assign Right.
+A partial two-button release never becomes a single-button confirmation.
+
+Keyboard-class devices first ask **Keyboard** or **Controller / pad**. Choose Keyboard
 to retain ordinary navigation and typing without remapping. Use arrows, Enter and
-Esc for this question. Choosing Controller / pad starts the six basic assignments;
+Esc for this question, or tap a button to switch choices and hold one to choose.
+Holding two buttons defers. These fallback controls also work on keyboard encoders. Choosing Controller / pad starts the six basic assignments;
 unassigned keys then do not type. A separate keyboard can still type normally.
 
 New controllers and every manual **Button mapping** entry assign **Right, Left,
@@ -25,7 +33,8 @@ unless a basic assignment displaces one.
 
 **Hold an input for one second to cancel directly.** Manual entry returns to
 Options; an invitation returns to the interrupted screen. A hold on another
-device also cancels, as shown by the on-screen hint. Cancellation/disconnection
+device also cancels, as shown by the on-screen hint. Esc on a separate keyboard
+cancels immediately. Esc on the keyboard being mapped can still be assigned. Cancellation/disconnection
 preserves the previous setup. The six assignments save together before Controller
 check opens. Failed saves keep the previous setup and allow retry.
 
