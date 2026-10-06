@@ -49,18 +49,19 @@ func (d Device) Route() string {
 // which raw button code sits in each MiSTer define-slot (A, B, X, Y, L, R,
 // Select, Start) and where that came from.
 type Pad struct {
-	HeldKnown       bool     // the kernel held-key snapshot was read successfully
-	Held            []uint16 // currently held physical keys, sampled when entering diagnostics
-	Keys, Axes      []uint16 // advertised physical input capabilities; immutable snapshots
-	Keyboard        bool     // physical keyboard or encoder, offered by the Controls screen
-	Node, Name      string
-	Vendor, Product uint16
-	Mapped          bool              // a MiSTer map file was read
-	Direct          bool              // A and B are readable: the pad is held and read by define-slot; otherwise only Start is, the rest through Main
-	Slots           map[string]uint16 // slot name -> code (a button code, or an axis edge 0x300+axis*2+direction)
-	Map, Note       string
-	MenuStick       string // the stick that moves Main's menu, when defined ("axes 0/1")
-	Menu            string // the MiSTer menu button's code ("316"), or "a+b" for a combo, when the app reads it as its Menu button
+	InstanceID, Connection string   // stable physical identity and human-readable connection
+	HeldKnown              bool     // the kernel held-key snapshot was read successfully
+	Held                   []uint16 // currently held physical keys, sampled when entering diagnostics
+	Keys, Axes             []uint16 // advertised physical input capabilities; immutable snapshots
+	Keyboard               bool     // physical keyboard or encoder, offered by the Controls screen
+	Node, Name             string
+	Vendor, Product        uint16
+	Mapped                 bool              // a MiSTer map file was read
+	Direct                 bool              // A and B are readable: the pad is held and read by define-slot; otherwise only Start is, the rest through Main
+	Slots                  map[string]uint16 // slot name -> code (a button code, or an axis edge 0x300+axis*2+direction)
+	Map, Note              string
+	MenuStick              string // the stick that moves Main's menu, when defined ("axes 0/1")
+	Menu                   string // the MiSTer menu button's code ("316"), or "a+b" for a combo, when the app reads it as its Menu button
 	// OK and Back are the buttons the user gave MiSTer's own menu as MENU OK
 	// and MENU BACK at the end of its define screen, named by the slot they
 	// sit in ("A", "B", ...), by their code when they are in no slot, or ""

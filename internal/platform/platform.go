@@ -82,6 +82,7 @@ type Event struct {
 	Pressed         bool
 	At              time.Time
 	Source          string // device name, "script", "debug"
+	InstanceID      string // physical controller instance; model remains in DeviceID
 	DeviceID        string // vendor_product; empty for translated, virtual or injected input
 	Node            string // evdev node, separates simultaneous identical devices
 	Direct          bool   // raw pad read independently of Main's translation

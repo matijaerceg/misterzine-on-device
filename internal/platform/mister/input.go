@@ -3,6 +3,7 @@
 package mister
 
 import (
+	"crypto/sha256"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -61,19 +62,20 @@ func eviocgbitKey(n int) uintptr {
 }
 
 type device struct {
-	path            string
-	name            string
-	f               *os.File
-	held            map[uint16]platform.Key
-	pad             bool // a gamepad node: read by MiSTer define-slot, see padMapping
-	physical        bool // has a kernel physical path; virtual keyboards cannot own profiles
-	mapping         padMapping
-	vendor, product uint16
-	abs             map[uint16]absInfo // axis ranges, read on first use
-	axisEdge        map[uint16]uint8   // 0 centred, 1 at the minimum, 2 at the maximum
-	grabbed         bool               // held exclusively (EVIOCGRAB): Main sees nothing from it
-	keys, axes      []uint16
-	menuCode        uint16 // the combo button whose press became Menu, until it is released
+	instanceID, connection string
+	path                   string
+	name                   string
+	f                      *os.File
+	held                   map[uint16]platform.Key
+	pad                    bool // a gamepad node: read by MiSTer define-slot, see padMapping
+	physical               bool // has a kernel physical path; virtual keyboards cannot own profiles
+	mapping                padMapping
+	vendor, product        uint16
+	abs                    map[uint16]absInfo // axis ranges, read on first use
+	axisEdge               map[uint16]uint8   // 0 centred, 1 at the minimum, 2 at the maximum
+	grabbed                bool               // held exclusively (EVIOCGRAB): Main sees nothing from it
+	keys, axes             []uint16
+	menuCode               uint16 // the combo button whose press became Menu, until it is released
 }
 
 type absInfo struct {
@@ -189,7 +191,9 @@ func (in *Input) rescan() {
 		d := &device{path: p, name: name, f: f, pad: pad, mapping: m, held: map[uint16]platform.Key{}, abs: map[uint16]absInfo{}, axisEdge: map[uint16]uint8{}}
 		d.keys, d.axes = inputCapabilities(f, evKey, 768), inputCapabilities(f, evAbs, 64)
 		d.vendor, d.product = devID(f)
-		d.physical = devPhys(f) != ""
+		phys := devPhys(f)
+		d.physical = phys != ""
+		d.instanceID, d.connection = controllerIdentity(d.vendor, d.product, devUniq(f), phys)
 		if pad && m.direct {
 			// held exclusively: Main sees nothing from it, so its MiSTer menu
 			// button is the app's and cannot hand the screen to Main
@@ -268,6 +272,7 @@ func (in *Input) ControlDevices() []support.Pad {
 			continue
 		}
 		p := d.mapping.info(filepath.Base(d.path), d.name, d.vendor, d.product)
+		p.InstanceID, p.Connection = d.instanceID, d.connection
 		p.Held, p.HeldKnown = heldCapabilities(d.f)
 		p.Keys, p.Axes = append([]uint16(nil), d.keys...), append([]uint16(nil), d.axes...)
 		p.Keyboard = !d.pad
@@ -336,7 +341,7 @@ func (in *Input) panelConnected() bool {
 	in.mu.Lock()
 	defer in.mu.Unlock()
 	for _, d := range in.devs {
-		if d.physical && !d.pad && m[fmt.Sprintf("%04x_%04x", d.vendor, d.product)] {
+		if d.physical && !d.pad && (m[d.instanceID] || m[fmt.Sprintf("%04x_%04x", d.vendor, d.product)]) {
 			return true
 		}
 	}
@@ -598,6 +603,7 @@ func (d *device) event(k platform.Key, code uint16, pressed bool, at time.Time) 
 		}
 	}
 	if d.physical && d.name != "MiSTer virtual input" && (d.vendor != 0 || d.product != 0) {
+		ev.InstanceID = d.instanceID
 		ev.DeviceID = fmt.Sprintf("%04x_%04x", d.vendor, d.product)
 		ev.Node = filepath.Base(d.path)
 		ev.Direct = d.pad && d.mapping.direct && d.grabbed
@@ -746,4 +752,25 @@ func (in *Input) releaseHeld(d *device) {
 			return
 		}
 	}
+}
+
+func devUniq(f *os.File) string {
+	var b [256]byte
+	if ioctl(f.Fd(), uintptr(0x81004508), unsafe.Pointer(&b[0])) != nil {
+		return ""
+	}
+	return strings.TrimRight(string(b[:]), "\x00")
+}
+func controllerIdentity(vendor, product uint16, unique, physical string) (string, string) {
+	model := fmt.Sprintf("%04x_%04x", vendor, product)
+	connection := strings.Split(physical, "/input")[0]
+	if unique == "" && connection == "" {
+		return "", ""
+	}
+	source := "port:" + connection
+	if unique != "" {
+		source = "unique:" + unique
+	}
+	hash := sha256.Sum256([]byte(source))
+	return fmt.Sprintf("%s_%x", model, hash[:8]), connection
 }
