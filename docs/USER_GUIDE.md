@@ -211,7 +211,7 @@ filter choices are saved.
 ## Controls
 
 The experimental [Button mapping screen](BUTTON_MAPPING.md) requires six basic
-assignments for unfamiliar devices, then combines input checking, action changes
+assignments for controllers when first used and on manual entry, then combines input checking, action changes
 and button naming in one table. Keyboard devices can retain typing or act as
 arcade controls. Enable Show beta features; no supporter code is required.
 
@@ -624,7 +624,8 @@ screenshots match, lettering runs instead and the Preview help explains why.
   button MiSTer calls A, B, X or Y comes from its define buttons screen; this
   guide uses those names.
 - **Button mapping (beta):** six basic controls, then a controller-check table.
-  Press an input to identify it; hold it to change its action or OSD name.
+  Press an input to identify it; hold for one second to change its action or OSD name.
+  New keyboards can instead be accepted for ordinary typing without remapping.
   Replaces the separate OK-button selector in builds with controller support.
 - **Menu button:** what the pad button you defined as MiSTer's menu (OSD)
   button does in MisterZine, which holds a defined pad while it runs: Options

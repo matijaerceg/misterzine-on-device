@@ -7,24 +7,27 @@ These mappings affect MisterZine only, never MiSTer's global settings or games.
 
 ## Six basic controls
 
-Every unfamiliar physical device first assigns **Right, Left, Up, Down, OK, Back**.
-Press and release the requested input to advance. Duplicate and reserved inputs
-are rejected. All six are required; progressing through the prompts proves them.
-Optional compatible mappings are retained unless a basic assignment displaces one.
+An unfamiliar device is invited only when you press an input on it. That opening
+press is consumed; release it before answering. Devices used during another setup
+are not queued: press again after closing setup. Cancelling defers only that device
+until the next app launch.
 
-Hold an input to pause. Tap to choose Resume or Cancel setup, then hold to select.
-Cancel or disconnection preserves the previous setup. Hold a non-direction input
-on another device to defer only the displayed device until the next app launch.
-Invitations wait while launching, updating, or another modal screen is open.
+Keyboard-class devices first ask **Keyboard / Controller / pad**. Choose Keyboard
+to retain ordinary navigation and typing without remapping. Use arrows, Enter and
+Esc for this question. Choosing Controller / pad starts the six basic assignments;
+unassigned keys then do not type. A separate keyboard can still type normally.
 
-Keyboard-class devices then ask **Keyboard / Arcade controls**. Both use the
-assignments you just made. Keyboard lets otherwise-unassigned keys type into
-search; Arcade controls never types from unassigned keys. This lets a J-PAC act
-as cabinet controls while a separate keyboard still types. The choice is saved
-per physical device and can be changed later.
+New controllers and every manual **Button mapping** entry assign **Right, Left,
+Up, Down, OK, Back**. Press and release to advance. Duplicate and reserved inputs
+are rejected. All six are required; progressing proves them. Recent completed
+assignments appear as code:action pairs. Compatible optional mappings are retained
+unless a basic assignment displaces one.
 
-The six assignments and keyboard choice save together before Controller check
-opens. If saving fails, the old setup stays active and the new setup can be retried.
+**Hold an input for one second to cancel directly.** Manual entry returns to
+Options; an invitation returns to the interrupted screen. A hold on another
+device also cancels, as shown by the on-screen hint. Cancellation/disconnection
+preserves the previous setup. The six assignments save together before Controller
+check opens. Failed saves keep the previous setup and allow retry.
 
 ## Check, assign, and name inputs
 
@@ -36,8 +39,8 @@ Each physical input has its own row. Actions can have several inputs, or an empt
 placeholder when unassigned. Required controls start confirmed. Other assigned
 inputs are dim until pressed; newly discovered unassigned inputs appear below.
 Pressing an input highlights it immediately and smoothly scrolls its row toward
-the middle, stopping at the list ends. There is no manual scrolling. Multiple
-held inputs clear the highlight and stop scrolling. Latest reports the most
+the middle, stopping at the list ends. There is no manual scrolling. Every held input stays highlighted, including off-screen rows. A fresh press
+redirects scrolling toward that input; repeats do not restart animation. Latest reports the most
 recent input and its action, including unassigned inputs.
 
 **Hold one input** to open its popup:
@@ -55,7 +58,8 @@ returns to the table. Back closes the popup without changing anything. Failed
 saves leave it open for retry and retain the previously saved settings.
 
 **Hold two inputs** on the table to exit. This does not save anything: successful
-edits were already saved. Hold progress lights up the relevant instruction text.
+edits were already saved. Holds take one second. Holding a button on another device also exits.
+Hold progress lights up the relevant instruction text.
 Held inputs must be released before they can act on a newly opened screen.
 
 The table consumes input without navigating the app, launching games or typing.
