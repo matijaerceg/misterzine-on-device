@@ -75,18 +75,18 @@ func ParseKey(name string) Key {
 // Event is one key press or release.
 type Event struct {
 	ObservationOnly bool // raw input with no safe normal action route
-	Direction bool // physical direction or axis edge, never a hold gesture button
-	Key       Key
-	Text      rune   // printable keyboard character; zero for gamepad/navigation input
-	Code      uint16 // raw evdev code
-	Pressed   bool
-	At        time.Time
-	Source    string // device name, "script", "debug"
-	DeviceID  string // vendor_product; empty for translated, virtual or injected input
-	Node      string // evdev node, separates simultaneous identical devices
-	Direct    bool   // raw pad read independently of Main's translation
-	Keyboard  bool   // physical typing keyboard / keyboard encoder
-	Cancelled bool   // synthetic release after disconnect or kernel queue overflow
+	Direction       bool // physical direction or axis edge, never a hold gesture button
+	Key             Key
+	Text            rune   // printable keyboard character; zero for gamepad/navigation input
+	Code            uint16 // raw evdev code
+	Pressed         bool
+	At              time.Time
+	Source          string // device name, "script", "debug"
+	DeviceID        string // vendor_product; empty for translated, virtual or injected input
+	Node            string // evdev node, separates simultaneous identical devices
+	Direct          bool   // raw pad read independently of Main's translation
+	Keyboard        bool   // physical typing keyboard / keyboard encoder
+	Cancelled       bool   // synthetic release after disconnect or kernel queue overflow
 }
 
 // Display shows frames. Present copies the given rectangles of the canvas

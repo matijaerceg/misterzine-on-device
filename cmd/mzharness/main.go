@@ -27,6 +27,7 @@ import (
 
 	"github.com/matijaerceg/misterzine-on-device/internal/app"
 	"github.com/matijaerceg/misterzine-on-device/internal/beta"
+	"github.com/matijaerceg/misterzine-on-device/internal/controls"
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/images"
@@ -313,7 +314,7 @@ func main() {
 	}
 	controlPads := controlFixtures()
 	if *controlsPreview {
-		cfg.Controls = &app.ControlsHooks{Devices: func() []support.Pad { return controlPads }}
+		cfg.Controls = &app.ControlsHooks{Devices: func() []support.Pad { return controlPads }, Save: func(controls.File) error { return nil }}
 		cfg.Support = &app.SupportHooks{Pads: func() []support.Pad { return controlPads[:min(1, len(controlPads))] }}
 	}
 	a = app.New(cfg, ds, stored)
@@ -408,6 +409,8 @@ func main() {
 			die(fmt.Errorf("script: %q needs %d words", tok, need))
 		}
 		switch f[0] {
+		case "labels":
+			a.OpenControlLabels()
 		case "controls":
 			a.OpenControls()
 		case "unplug":

@@ -11,13 +11,16 @@ import (
 
 func (a *App) discoverControls(time.Time) bool { return false }
 func (a *App) nextControlDiscovery() time.Time { return time.Time{} }
-func (a *App) OpenControlLabels() {}
+func (a *App) OpenControlLabels()              {}
 
 type controlsView struct{}
 type controlsInput struct{}
 
 func (a *App) controlEvent(ev platform.Event) (platform.Event, bool, bool) {
-	if ev.ObservationOnly { return ev, true, false }; return a.padEvent(ev), false, false
+	if ev.ObservationOnly {
+		return ev, true, false
+	}
+	return a.padEvent(ev), false, false
 }
 func (a *App) controlsChanged()                            {}
 func (a *App) OpenControls()                               {}
