@@ -89,8 +89,8 @@ builds leave these features inert. To reset outside the app, close MisterZine,
 back up and rename that file, then restart. Damaged or newer-format files are
 preserved and cannot be overwritten through setup.
 
-MiSTer's defined two-button Menu recovery chord remains available. F12 cannot be
-assigned. Keyboard encoders remain shared with MiSTer; source-less translated
+Existing setups retain MiSTer's two-button Menu chord. A full remap replaces
+Menu too; skipping it leaves no Menu action. F12 cannot be assigned. Keyboard encoders remain shared with MiSTer; source-less translated
 echoes are suppressed during diagnostics and while a configured panel is connected.
 
 Background: [J-PAC request, issue #5](https://github.com/matijaerceg/misterzine-on-device/issues/5)
