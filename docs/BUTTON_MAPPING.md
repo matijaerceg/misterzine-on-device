@@ -84,15 +84,35 @@ Encoder-specific shift combinations and unusual hardware need individual testing
 For devices that cannot be captured safely, use **MiSTer's controller setup** first;
 the diagnostic explains the limitation. This is not a promise of universal support.
 
-## Labels
+## Button names
 
-The separate **Options → Controls → Controller labels** screen retains global,
-MiSTer, Xbox, PlayStation, numeric, **Neo Geo A B C D**, and custom letter styles.
-Left/right changes the style or custom character; arrows indicate available
-changes. OK does not cycle styles. Save changes to apply labels.
+Open **Options → Controls → Button names** for the controller in hand. The screen
+starts empty. Press an input to add its raw code, assigned action (or Unassigned),
+and current OSD name. It highlights immediately; all held inputs highlight together.
+Repeated presses reuse the same row. Inputs here cannot navigate or launch games.
 
-Custom letters name actions, for example `Y` for a yellow Launch button or `R`
-for a red OK button. Labels remain separate from the remapping walkthrough.
+**Hold one button to edit; hold two together to exit.** Editing always starts on
+Presets. Left/right selects a preset; OK does not cycle it. Choosing a preset
+clears custom overrides in the draft. Below it, every identified or assigned input
+has an editable name row. OK opens a category picker with a compact label grid:
+letters, numbers, PlayStation, colors, fighting-game abbreviations (LP, HP, etc.),
+pad buttons, keyboard keys, and directions. Select Default to remove an override.
+Changing a row switches the preset to Custom while retaining the other names.
+
+Save applies the draft and returns to identification. Cancel (or Back) discards
+it and returns to identification. Failed saves keep the draft available for retry.
+Names belong to physical inputs, including unassigned buttons, and follow those
+inputs through later remapping. Existing action-based custom letters migrate when
+edited or remapped. Naming a keyboard does not convert it into an arcade panel.
+
+Button mapping and Button names remain adjacent Options entries. The old separate
+OK-button selector is removed in builds with controller support; existing saved
+OK/Back preferences still work. Use a full remap to change their assignments.
+
+Hold progress lights up the relevant instruction text continuously, including
+wrapped lines, on controller checks, setup/pause and button identification.
+There is no separate progress bar. Releasing early cancels an incomplete hold;
+completed holds act immediately.
 
 ## Recovery and background
 
