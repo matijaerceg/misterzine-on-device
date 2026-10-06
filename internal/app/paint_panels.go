@@ -26,6 +26,7 @@ type panelEntry struct {
 	child         bool     // Options: only applies given the row above; drawn indented behind a branch mark
 	short         string   // Options: a child row's name without the parent's word, for when the full one does not fit
 	info          bool     // plain text, never selectable
+	lockedHelp    string   // concise feature description beside code coverage
 	help          string   // shown in the help area while selected
 	kind          string   // filter section: "base","src","rot","plr","genre","install","fav"; settings: "rotation","inset","prefetch","rescan","refresh","clear","about","settings","back"
 	value         string   // facet value for filter entries
@@ -626,7 +627,7 @@ func (a *App) optionsEntries() []panelEntry {
 	if a.featureVisible(access.ROMReport) {
 		for i, e := range E {
 			if e.kind == "rescan" {
-				row := a.gatedOption(panelEntry{text: "ROM report", kind: "rom-report", help: "Lists ROM problems in misterzine/rom_problems.txt. Rescan card refreshes it."}, access.ROMReport)
+				row := a.gatedOption(panelEntry{text: "ROM report", kind: "rom-report", lockedHelp: "Save a list of ROM problems.", help: "Lists ROM problems in misterzine/rom_problems.txt. Rescan card refreshes it."}, access.ROMReport)
 				E = append(E[:i+1], append([]panelEntry{row}, E[i+1:]...)...)
 				break
 			}

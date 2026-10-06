@@ -26,6 +26,9 @@ func (a *App) gatedOption(row panelEntry, f access.Feature) panelEntry {
 	row.text += featureMarks(f)
 	row.feature = true
 	if !a.featureAllowed(f) {
+		if row.lockedHelp != "" {
+			row.help = row.lockedHelp
+		}
 		row.value = row.kind // Preserve the feature identity when sharing the code-entry action.
 		row.kind = "enter-code"
 		row.vals = []string{f.Since.Short()}
@@ -39,7 +42,11 @@ func (a *App) gatedOption(row panelEntry, f access.Feature) panelEntry {
 		} else {
 			row.help += " Your code unlocks it forever."
 		}
-		row.help = "Needs " + f.Since.Short() + "+. Your access: " + a.cfg.AccessMonth.Short() + ". " + row.help
+		current := a.cfg.AccessMonth.Short()
+		if !a.cfg.AccessMonth.Valid() {
+			current = "none"
+		}
+		row.help = "Needs " + f.Since.Short() + "+. Your access: " + current + ". " + row.help
 	}
 	return row
 }
