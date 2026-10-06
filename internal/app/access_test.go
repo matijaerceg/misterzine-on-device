@@ -1,10 +1,12 @@
 package app
 
 import (
+	"errors"
 	"github.com/matijaerceg/misterzine-on-device/internal/access"
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
+	"image"
 	"strings"
 	"testing"
 	"time"
@@ -204,16 +206,20 @@ func TestAccessOverviewAndReturn(t *testing.T) {
 				t.Fatal("overview unavailable")
 			}
 			rows := a.panel.entries
-			if len(rows) != 2+2*len(access.Catalog()) {
+			extra := 0
+			if month.Valid() {
+				extra = 2
+			}
+			if len(rows) != 2+len(access.Catalog())+extra {
 				t.Fatal("missing features")
 			}
 			for i, f := range access.Catalog() {
-				a.panel.cursor = 2 + i*2
+				a.panel.cursor = 2 + i
 				a.buildPanel()
 				if a.panel.entries[a.panel.cursor].value != f.ID {
 					t.Fatal("rebuild moved feature selection")
 				}
-				state := rows[3+i*2].text
+				state := rows[2+i].accessStatus
 				if strings.HasPrefix(state, "Unlocked") != f.Covered(month) {
 					t.Fatalf("wrong coverage: %v %s", month, state)
 				}
@@ -242,6 +248,88 @@ func TestLockedDescriptionsFit(t *testing.T) {
 		for _, row := range a.optionsEntries() {
 			if row.requiredMonth != 0 && len(gfx.Wrap(row.help, a.sm.Cols(a.lay.Body.Dx()-6), 100)) > 4 {
 				t.Fatalf("%s explanation is truncated: %s", row.text, row.help)
+			}
+		}
+	}
+}
+
+func TestForgetCodeRequiresFreshContinuousHold(t *testing.T) {
+	now := time.Unix(1800000000, 0)
+	calls := 0
+	fail := false
+	a := New(Config{PhysW: 320, PhysH: 240, AccessMonth: 202610, ShowBetaFeatures: true, TimerNow: func() time.Time { return now }, ForgetCode: func() (access.Month, error) {
+		calls++
+		if fail {
+			return 202610, errors.New("disk error")
+		}
+		return 0, nil
+	}}, data.Ingest(nil, "", now), nil)
+	a.openAccess()
+	a.panel.cursor = len(a.panel.entries) - 1
+	key := func(k platform.Key, pressed bool) { a.Handle(platform.Event{Key: k, Pressed: pressed, At: now}) }
+	key(platform.KeyEnter, true)
+	now = now.Add(3 * time.Second)
+	a.Tick(now)
+	if calls != 0 || a.forget == nil {
+		t.Fatal("opening press confirmed deletion")
+	}
+	key(platform.KeyEnter, false)
+	key(platform.KeyEnter, true)
+	now = now.Add(time.Second)
+	a.Tick(now)
+	key(platform.KeyEnter, false)
+	now = now.Add(3 * time.Second)
+	a.Tick(now)
+	if calls != 0 {
+		t.Fatal("short hold deleted code")
+	}
+	key(platform.KeyBack, true)
+	key(platform.KeyBack, false)
+	if a.forget != nil || a.cfg.AccessMonth != 202610 {
+		t.Fatal("cancel changed access")
+	}
+	a.openForgetCode()
+	fail = true
+	key(platform.KeyEnter, true)
+	now = now.Add(2 * time.Second)
+	a.Tick(now)
+	if a.forget == nil || a.cfg.AccessMonth != 202610 || a.forget.message == "" {
+		t.Fatal("failure claimed success")
+	}
+	key(platform.KeyEnter, false)
+	fail = false
+	key(platform.KeyEnter, true)
+	now = now.Add(2 * time.Second)
+	key(platform.KeyEnter, false)
+	if a.forget != nil || a.cfg.AccessMonth != 0 || !a.cfg.ShowBetaFeatures || a.screen != ScreenAccess {
+		t.Fatal("forget did not apply free access in place")
+	}
+	for _, e := range a.panel.entries {
+		if e.kind == "forget-code" {
+			t.Fatal("forget row retained without access")
+		}
+	}
+}
+
+func TestAccessColumnsFallbackAndROMChild(t *testing.T) {
+	a := New(Config{PhysW: 320, PhysH: 240, AccessMonth: 202610, ShowBetaFeatures: true}, data.Ingest(nil, "", time.Now()), nil)
+	rows := a.accessEntries()
+	if rows[2].accessStatus != "Unlocked" {
+		t.Fatal("wide view not in columns")
+	}
+	a.lay.Body = image.Rect(0, 0, 100, 200)
+	rows = a.accessEntries()
+	if rows[2].accessStatus != "" || !rows[3].info || rows[3].text != "Unlocked" {
+		t.Fatal("narrow view truncated instead of stacking")
+	}
+	for _, month := range []access.Month{0, 202610} {
+		a.cfg.AccessMonth = month
+		rows = a.optionsEntries()
+		for i, e := range rows {
+			if strings.HasPrefix(e.text, "ROM report") {
+				if !e.child || i == 0 || rows[i-1].kind != "rescan" {
+					t.Fatal("ROM report not under Rescan")
+				}
 			}
 		}
 	}

@@ -887,3 +887,15 @@ code screens show the required month and your current access.
 
 Codes still work after later app updates or on a fresh installation. Keeping
 preferences during uninstall also keeps saved unlocks.
+
+
+Your access pairs feature names with their status in two columns, falling back
+to stacked rows where the full text would not fit. **Forget code** at the bottom
+opens a confirmation: hold A for two seconds to remove all saved unlocks on this
+device, or B to keep them. Your settings stay saved, and your code still works;
+enter it again to restore access. Beta stays as you set it. Leave it on to
+inspect locked early-access features, or turn it off for the default free view.
+
+Options starts with all five sections collapsed. Open Data to reach Rescan card
+and its child ROM report row. Section expansion is remembered while the app is
+running; restarting collapses the sections again.

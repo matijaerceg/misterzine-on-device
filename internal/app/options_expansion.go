@@ -1,10 +1,10 @@
 package app
 
-// A nil map is the startup default: only Data is open. This lives on App
+// A nil map is the startup default: all sections are collapsed. This lives on App
 // because returning to Filters restores its own saved panel state.
 func (a *App) optionSectionOpen(section string) bool {
 	if a.optionsOpen == nil {
-		return section == "Data"
+		return false
 	}
 	return a.optionsOpen[section]
 }
@@ -38,7 +38,7 @@ func (a *App) expandOptionsSection(open bool) bool {
 		return false
 	}
 	if a.optionsOpen == nil {
-		a.optionsOpen = map[string]bool{"Data": true}
+		a.optionsOpen = map[string]bool{}
 	}
 	a.optionsOpen[a.panel.entries[a.panel.cursor].value] = open
 	a.buildPanel()

@@ -468,6 +468,9 @@ func (a *App) saverEnd() {
 }
 
 func (a *App) nextSaverTick() time.Time {
+	if a.forget != nil {
+		return time.Time{}
+	}
 	if a.screen == ScreenTroubleshooting || a.screen == ScreenControls {
 		return time.Time{}
 	}
@@ -484,6 +487,10 @@ func (a *App) nextSaverTick() time.Time {
 }
 
 func (a *App) tickSaver(now time.Time) bool {
+	if a.forget != nil {
+		a.saver.lastInput = now
+		return false
+	}
 	next := a.nextSaverTick()
 	if next.IsZero() || now.Before(next) {
 		return false

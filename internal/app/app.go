@@ -202,6 +202,7 @@ type Config struct {
 	ShowBetaFeatures bool
 	AccessMonth      access.Month
 	UnlockCode       func(string) (access.Month, error)
+	ForgetCode       func() (access.Month, error)
 	AccessChanged    func(access.Month, bool)
 	// BetaUnlock, set by the host of a locked Patreon beta build, opens the
 	// app on the lock screen (beta_lock.go) and checks a code there: nil
@@ -302,6 +303,7 @@ type App struct {
 	cab            launchCab
 	holdLaunch     holdLaunch
 
+	forget         *forgetCodeState
 	arcadeIntroAt  time.Time
 	arcadeIntroBar int
 	arcadeBackAt   time.Time // A held on the way back to the beta (arcade_back.go)
@@ -818,6 +820,9 @@ func (a *App) Handle(ev platform.Event) (repaint bool) {
 	if captured {
 		return changed
 	}
+	if a.forget != nil {
+		return a.handleForgetCode(ev)
+	}
 	if a.handleLaunchCab(ev) {
 		return true
 	}
@@ -1002,6 +1007,7 @@ func (a *App) Tick(now time.Time) (changed bool) {
 	a.validateLayoutMotion() // the motion itself steps once per displayed frame (LayoutMotionFrame)
 	changed = a.tickSplash(now) || changed
 	changed = a.tickMenu(now) || changed
+	changed = a.tickForgetCode(now) || changed
 	changed = a.tickArcadeIntro(now) || changed
 	changed = a.tickArcadeBack(now) || changed
 	changed = a.tickOptionSamples() || changed
@@ -1049,6 +1055,7 @@ func (a *App) Frame(now time.Time) (changed bool) {
 	changed = a.LayoutMotionFrame() || changed
 	changed = a.tickSplash(now) || changed
 	changed = a.tickMenu(now) || changed
+	changed = a.tickForgetCode(now) || changed
 	changed = a.tickArcadeIntro(now) || changed
 	changed = a.tickArcadeBack(now) || changed
 	changed = a.OptionSampleFrame() || changed
@@ -1107,6 +1114,12 @@ func (a *App) NextTick() time.Time {
 	}
 	if next := a.nextArcadeBackTick(); !next.IsZero() && (t.IsZero() || next.Before(t)) {
 		t = next
+	}
+	if a.forget != nil && !a.forget.at.IsZero() {
+		next := a.nextHoldPixel(a.forget.at, 2*time.Second, a.forget.bar)
+		if t.IsZero() || next.Before(t) {
+			t = next
+		}
 	}
 	if next := a.nextMenuTick(); !next.IsZero() && (t.IsZero() || next.Before(t)) {
 		t = next
@@ -1434,6 +1447,9 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 		// is painted or asks for pictures
 		c.Fill(c.Rect, pal.Bg)
 		a.paintLock(c)
+		if a.forget != nil {
+			a.paintForgetCode(c)
+		}
 		if a.saver.active {
 			a.paintSaver(c)
 		}
@@ -1467,6 +1483,9 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 			a.paintArcadeIntro(c)
 		} else if a.cfg.ArcadeBack {
 			a.paintArcadeBack(c)
+		}
+		if a.forget != nil {
+			a.paintForgetCode(c)
 		}
 		if a.saver.active {
 			a.paintSaver(c)

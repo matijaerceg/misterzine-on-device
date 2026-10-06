@@ -89,6 +89,7 @@ func TestUpdateMisterzineOnlyRow(t *testing.T) {
 	a.cfg.Action = func(kind, arg string) { actions = append(actions, kind+"="+arg) }
 	a.SetAppUpdate("v1.0.6")
 	a.openOptions()
+	expandOptionsForTest(a)
 	for i, e := range a.panel.entries {
 		if e.kind == "update-app" {
 			a.panel.cursor = i
@@ -108,6 +109,7 @@ func TestUpdateMisterzineOnlyRow(t *testing.T) {
 		t.Fatalf("summary %q", a.update.Summary())
 	}
 	a.openOptions()
+	expandOptionsForTest(a)
 	for i, e := range a.panel.entries {
 		if e.kind == "update" {
 			a.panel.cursor = i

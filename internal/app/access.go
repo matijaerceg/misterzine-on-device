@@ -96,18 +96,17 @@ func (a *App) accessEntries() []panelEntry {
 		{text: "Your access: " + a.cfg.AccessMonth.Short(), kind: "access-info", help: "The month is coverage, not expiry. You do not need to stay subscribed."},
 		{text: "Enter MisterZine code", kind: "enter-code", opensPage: true, help: "Newer codes include earlier features. Older codes never reduce your access."},
 	}
+
+	// Use one aligned status column only when every complete name/status fits.
+	nameW, statusW := 0, 0
+	for _, entry := range access.Catalog() {
+		nameW = max(nameW, a.sm.Width(entry.Name+featureMarks(entry.Feature)))
+		statusW = max(statusW, a.sm.Width(a.featureAccessStatus(entry.Feature)))
+	}
+	columns := nameW+2*a.sm.W+statusW <= a.lay.Body.Dx()-8-a.sm.W
 	for _, entry := range access.Catalog() {
 		f := entry.Feature
-		state := "Needs " + f.Since.Short() + "+"
-		if f.Covered(a.cfg.AccessMonth) {
-			state = "Unlocked"
-			if f.Beta && !a.cfg.ShowBetaFeatures {
-				state = "Unlocked; beta off"
-			}
-			if !f.Beta && !f.Fancy {
-				state = "Free"
-			}
-		}
+		state := a.featureAccessStatus(f)
 		help := f.Category() + ". " + state + ". "
 		if f.Fancy {
 			help += "Your code unlocks it forever."
@@ -115,7 +114,15 @@ func (a *App) accessEntries() []panelEntry {
 			help += "Free for everyone after beta."
 		}
 		row := panelEntry{text: entry.Name + featureMarks(f), kind: "access-info", value: entry.ID, feature: true, help: help}
-		E = append(E, row, panelEntry{text: state, info: true})
+		if columns {
+			row.accessStatus = state
+			E = append(E, row)
+		} else {
+			E = append(E, row, panelEntry{text: state, info: true})
+		}
+	}
+	if a.cfg.AccessMonth.Valid() {
+		E = append(E, panelEntry{header: true, info: true}, panelEntry{text: "Forget code", kind: "forget-code", opensPage: true, help: "Remove saved unlocks on this device. Settings stay saved. Enter your code again to restore access."})
 	}
 	return E
 }
@@ -130,4 +137,17 @@ func (a *App) closeAccess() {
 		}
 	}
 	a.all = true
+}
+
+func (a *App) featureAccessStatus(f access.Feature) string {
+	if !f.Covered(a.cfg.AccessMonth) {
+		return "Needs " + f.Since.Short() + "+"
+	}
+	if !f.Beta && !f.Fancy {
+		return "Free"
+	}
+	if f.Beta && !a.cfg.ShowBetaFeatures {
+		return "Unlocked; beta off"
+	}
+	return "Unlocked"
 }

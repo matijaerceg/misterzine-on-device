@@ -107,6 +107,7 @@ func TestOptionsReviewsResultWithoutStartingUpdate(t *testing.T) {
 	a := New(Config{PhysW: 320, PhysH: 240, Action: func(string, string) { calls++ }}, data.Ingest(nil, "", now), nil)
 	a.SetUpdate(updater.State{ID: "old", Status: "completed", Lines: []string{"saved output"}}, false)
 	a.openPanel(ScreenOptions)
+	expandOptionsForTest(a)
 	for i, e := range a.panel.entries {
 		if e.kind == "update-result" {
 			a.panel.cursor = i

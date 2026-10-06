@@ -38,8 +38,12 @@ func TestOptionsExpansion(t *testing.T) {
 		}
 		return false
 	}
-	if !has("refresh") || has("sources") || has("rotation") || has("scroll") || has("launcher") {
-		t.Fatal("startup must reveal only Data")
+	if has("refresh") || has("sources") || has("rotation") || has("scroll") || has("launcher") {
+		t.Fatal("startup must collapse every section")
+	}
+	a.actPanel(platform.KeyEnter)
+	if !has("refresh") {
+		t.Fatal("Data did not open")
 	}
 	a.actPanel(platform.KeyEnter)
 	if has("refresh") || a.panel.entries[a.panel.cursor].value != "Data" {
@@ -76,7 +80,7 @@ func TestOptionsExpansion(t *testing.T) {
 		t.Fatal("Filters restored stale Options expansion")
 	}
 	fresh, _, _, _ := shotsApp()
-	if !fresh.optionSectionOpen("Data") || fresh.optionSectionOpen("List") {
+	if fresh.optionSectionOpen("Data") || fresh.optionSectionOpen("List") {
 		t.Fatal("expansion survived restart")
 	}
 }

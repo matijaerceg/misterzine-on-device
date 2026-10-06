@@ -104,7 +104,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     for inset in (15, 40):
         scenarios.append([*rotation, "-inset", str(inset), "-app-update", "v1.0.6",
                           "-out", f"out/new-modes-{orientation}-{inset}", "-script",
-                          "shot update-notice; back; down*2; shot update-option; back; "
+                          "shot update-notice; back; right; down*2; shot update-option; back; "
                           "enter; space; back; space*6; wait 2200; shot favorites; tab; shot counts"])
         # Rescan card: a rescan that changed nothing, and what one changed
         scenarios.append([*rotation, "-inset", str(inset), "-scan-result",
@@ -339,7 +339,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):
         scenarios.append([*rotation, "-inset", str(inset), "-out", f"out/options-sections-{orientation}-{inset}", "-script",
-                          "back; shot default; enter; shot collapsed; pagedown; shot list-closed; right; shot list-open; "
+                          "back; shot default; enter; shot data-open; left; shot collapsed; pagedown; shot list-closed; right; shot list-open; "
                           "pagedown; enter; shot display-open; left; shot display-closed; back; back; shot remembered; "
                           "end; shot bottom; home; pagedown*4; right; end; up*2; enter; shot troubleshooting; back; shot returned"])
 # Full display on 1080p (480x270), and on 720p or 1440p (426x240, a column
@@ -365,12 +365,17 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):
         scenarios.append([*rotation, "-show-beta", "-inset", str(inset), "-out", f"out/unlock-feature-{orientation}-{inset}", "-script",
-                          "back; home; down*5; shot description; enter; shot code; type 111111; enter; shot wrong; back; back; shot returned"])
+                          "back; home; right; down*5; shot description; enter; shot code; type 111111; enter; shot wrong; back; back; shot returned"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):
         for month in (0, 202609, 202610):
             scenarios.append([*rotation, "-inset", str(inset), "-access-month", str(month), "-out", f"out/coverage-{orientation}-{inset}-{month}", "-script",
                               "back; home; pagedown*4; right; end; up*4; enter; shot access; down*2; shot themes; down*3; shot controls; home; down; enter; shot code; back; back; shot returned"])
+for rotation in ([], ["-rot", "left", "-logical"]):
+    orientation = "t" if rotation else "h"
+    for inset in (15, 40):
+        scenarios.append([*rotation, "-inset", str(inset), "-access-month", "202610", "-show-beta", "-out", f"out/forget-{orientation}-{inset}", "-script",
+                          "back; shot collapsed; home; right; down*5; shot rom-child; home; pagedown*4; right; end; up*4; enter; shot access; end; shot forget-row; enter; shot ask; press enter; wait 1000; shot half; release enter; shot released; back; shot kept; enter; hold enter 2000; shot forgotten; wait 3200; home; down; enter; type 123456; enter; shot restored"])
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)

@@ -183,6 +183,7 @@ func main() {
 	if *betaBuild {
 		cfg.AccessMonth = 202610
 	}
+	cfg.ForgetCode = func() (access.Month, error) { return 0, nil }
 	cfg.UnlockCode = func(code string) (access.Month, error) {
 		if code == harnessCode {
 			return 202610, nil

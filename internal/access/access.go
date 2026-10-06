@@ -151,3 +151,20 @@ func Unlock(dir, code string) (Month, error) {
 	}
 	return 0, ErrCode
 }
+
+// Forget removes all saved access, including legacy receipts, but no settings.
+// Return the access actually left on disk if either directory cannot be removed.
+func Forget(dir string) (Month, error) {
+	if dir == "" {
+		return 0, errors.New("access: no settings directory")
+	}
+	info, err := os.Stat(dir)
+	if err != nil {
+		return Load(dir), err
+	}
+	if !info.IsDir() {
+		return 0, errors.New("access: settings path is not a directory")
+	}
+	err = errors.Join(os.RemoveAll(filepath.Join(dir, "unlocks")), os.RemoveAll(filepath.Join(dir, "beta-unlocks")))
+	return Load(dir), err
+}

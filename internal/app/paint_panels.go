@@ -26,6 +26,7 @@ type panelEntry struct {
 	child         bool     // Options: only applies given the row above; drawn indented behind a branch mark
 	short         string   // Options: a child row's name without the parent's word, for when the full one does not fit
 	info          bool     // plain text, never selectable
+	accessStatus  string   // read-only right column on Your access
 	lockedHelp    string   // concise feature description beside code coverage
 	help          string   // shown in the help area while selected
 	kind          string   // filter section: "base","src","rot","plr","genre","install","fav"; settings: "rotation","inset","prefetch","rescan","refresh","clear","about","settings","back"
@@ -627,7 +628,7 @@ func (a *App) optionsEntries() []panelEntry {
 	if a.featureVisible(access.ROMReport) {
 		for i, e := range E {
 			if e.kind == "rescan" {
-				row := a.gatedOption(panelEntry{text: "ROM report", kind: "rom-report", lockedHelp: "Save a list of ROM problems.", help: "Lists ROM problems in misterzine/rom_problems.txt. Rescan card refreshes it."}, access.ROMReport)
+				row := a.gatedOption(panelEntry{text: "ROM report", child: true, kind: "rom-report", lockedHelp: "Save a list of ROM problems.", help: "Lists ROM problems in misterzine/rom_problems.txt. Rescan card refreshes it."}, access.ROMReport)
 				E = append(E[:i+1], append([]panelEntry{row}, E[i+1:]...)...)
 				break
 			}
@@ -806,6 +807,13 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 				col = pal.Accent
 			}
 			c.Text(inner.Min.X+2, y, font, gfx.Fit(text, cols), col)
+		case e.accessStatus != "":
+			col := pal.Fg
+			if n == p.cursor {
+				col = pal.Accent
+			}
+			a.paintLabel(c, inner.Min.X+2, y, cols-a.sm.Cols(a.sm.Width(e.accessStatus))-2, e, col)
+			c.Text(edge-a.sm.Width(e.accessStatus), y, a.sm, e.accessStatus, col)
 		case len(e.vals) > 0:
 			col := pal.Fg
 			if n == p.cursor {
@@ -958,6 +966,7 @@ var optionsActs = map[string]string{
 	"controls":           "Open",
 	"enter-code":         "Enter code",
 	"your-access":        "Open",
+	"forget-code":        "Open",
 	"rom-report":         "Info",
 	"show-beta-features": "Toggle",
 	"refresh":            "Refresh", "update": "Run", "update-app": "Run", "update-result": "Open", "rescan": "Rescan", "clearimg": "Clear",
@@ -1306,6 +1315,9 @@ func (a *App) togglePanel() bool {
 		return true
 	case "rom-report":
 		a.Notice("Rescan card to refresh the ROM report", 4*time.Second)
+		return true
+	case "forget-code":
+		a.openForgetCode()
 		return true
 	case "your-access":
 		a.openAccess()
