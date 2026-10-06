@@ -210,10 +210,10 @@ filter choices are saved.
 
 ## Controls
 
-The experimental [Button mapping screen](BUTTON_MAPPING.md) adds per-controller
-diagnostics for unfamiliar controllers, a complete remapping walkthrough,
-Neo Geo and custom labels, and explicit arcade-panel mapping for keyboards. It is beta, without the Supporter star; see the linked guide
-for setup, safe testing, and recovery.
+The experimental [Button mapping screen](BUTTON_MAPPING.md) requires six basic
+assignments for unfamiliar devices, then combines input checking, action changes
+and button naming in one table. Keyboard devices can retain typing or act as
+arcade controls. Enable Show beta features; no supporter code is required.
 
 | Pad | Keyboard | List | Details | Artwork | Filters | Options |
 |---|---|---|---|---|---|---|
@@ -253,8 +253,8 @@ pad is connected.
 Which button confirms follows the MENU OK you chose at the end of MiSTer's
 define screen. If you put it on the button you defined as B, B confirms
 here too and A goes back, and the legends say so; the table above then
-reads with A and B swapped for that pad. Options -> OK button shows the
-choice for the pad in your hand and can override it, per pad.
+reads with A and B swapped for that pad. Existing per-pad overrides remain effective. In builds with controller support,
+use Options -> Button mapping to change assignments.
 
 Hold Select on the list (the legend's last entry, Select +, is the
 reminder) and the legend changes: Y cycles Layout, X switches Art type,
@@ -420,7 +420,7 @@ lines: Sources, Filter by rotation, Views (with Remember last view and its
 conditional Default view beneath it), Title font,
 Art type, Date format, Layout), Display (a monitor: rotation,
 screensaver delay, style, brightness and info, safe zone, HDMI picture), Controls
-(an arcade stick: Button labels, OK button, Menu button, Scroll speed, Hold
+(an arcade stick: Button labels, Button mapping, Menu button, Scroll speed, Hold
 delay) and Operation (sliders: the main menu shortcut, Open at boot, Return
 after game, Exit chord). Troubleshooting, Credits and Quit sit below the sections and
 are never hidden by collapsing one. Only Data starts expanded. Select a
@@ -623,15 +623,9 @@ screenshots match, lettering runs instead and the Preview help explains why.
   1 2 3 4 in MiSTer's define order. Only the names change. Which physical
   button MiSTer calls A, B, X or Y comes from its define buttons screen; this
   guide uses those names.
-- **OK button:** which face button confirms, per pad. Auto from MiSTer
-  (default) follows the MENU OK you gave MiSTer's define screen: on a pad
-  whose MENU OK is B, B confirms and A goes back, and the legends name the
-  buttons that way round. A pad MiSTer has not defined reads Auto from
-  Linux: its bottom button confirms. A or B overrides it for the pad shown. The row
-  follows the pad that last pressed a button, so change it with that pad in
-  hand; the hint names it. It is muted, with the reason, before any pad has
-  pressed, for a pad that comes through MiSTer's translation, and for one
-  whose A and B are the same button.
+- **Button mapping (beta):** six basic controls, then a controller-check table.
+  Press an input to identify it; hold it to change its action or OSD name.
+  Replaces the separate OK-button selector in builds with controller support.
 - **Menu button:** what the pad button you defined as MiSTer's menu (OSD)
   button does in MisterZine, which holds a defined pad while it runs: Options
   (default) from any screen, closing it when it is up, or quit MisterZine

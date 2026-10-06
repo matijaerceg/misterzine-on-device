@@ -1,154 +1,90 @@
-# Button mapping (beta)
+# Controller setup and check (beta)
 
-Check what your controller already does, then accept it or give every function
-its own button. These controls belong to MisterZine; game controls and MiSTer's
-global controller definitions are separate.
+Enable **Show beta features**, then open **Options → Controls → Button mapping**.
+Controller setup is a free beta: no supporter code is required. Public-source
+builds retain inert hooks; the implementation is provided by the private overlay.
+These mappings affect MisterZine only, never MiSTer's global settings or games.
 
-This ordinary beta feature has no Supporter star. In a build that includes it,
-enable **Options → Operation → Show beta features** and unlock the beta with an
-October 2026 or later code.
+## Six basic controls
 
-## Check a controller
+Every unfamiliar physical device first assigns **Right, Left, Up, Down, OK, Back**.
+Press and release the requested input to advance. Duplicate and reserved inputs
+are rejected. All six are required; progressing through the prompts proves them.
+Optional compatible mappings are retained unless a basic assignment displaces one.
 
-An unfamiliar controller or keyboard opens **New controller detected** when the
-app is ready. Updates, launching and other screens are not interrupted. Accepted physical devices do not prompt again. Each device has its own saved
-setup. A compatible model mapping supplies a starting point for a new device;
-accepting or remapping one never changes another device.
+Hold an input to pause. Tap to choose Resume or Cancel setup, then hold to select.
+Cancel or disconnection preserves the previous setup. Hold a non-direction input
+on another device to defer only the displayed device until the next app launch.
+Invitations wait while launching, updating, or another modal screen is open.
 
-For another check, open **Options → Controls → Button mapping** with the controller
-you want to configure. The screen says **Currently mapping:** and its name. When
-there is no identifiable opening controller, choose one from the list.
+Keyboard-class devices then ask **Keyboard / Arcade controls**. Both use the
+assignments you just made. Keyboard lets otherwise-unassigned keys type into
+search; Arcade controls never types from unassigned keys. This lets a J-PAC act
+as cabinet controls while a separate keyboard still types. The choice is saved
+per physical device and can be changed later.
 
-The functions start untested. Press buttons to populate their rows; held inputs
-light up. The bottom Latest line names the most recent input and its assigned function
-or marks it Unassigned. Presses here do not navigate, search or launch games.
+The six assignments and keyboard choice save together before Controller check
+opens. If saving fails, the old setup stays active and the new setup can be retried.
 
-- **Hold one button for two seconds:** accept the existing setup.
-- **Hold two buttons together for two seconds, then release both:** remap all.
+## Check, assign, and name inputs
 
-Both gestures remain available after any number of test presses.
-Directions do not count toward these gestures. The progress bar only appears
-while holding; there is no timeout. The action happens when the bar fills;
-held inputs are ignored until released on the next screen. Adding a second button cancels single-button
-acceptance. Buttons already held on entry must first be released. Interrupted
-input and disconnects cannot confirm anything.
+The table shows **Code | Action | MiSTer/key | MZ label**. Code identifies the raw
+input. MiSTer/key is its original reported slot or key; MZ label is the name in
+MisterZine's button hints. Missing original mappings show a dash.
 
-To leave an inaccessible controller, **hold any button for two seconds on another
-controller or keyboard**. This discards any unfinished setup without accepting
-the selected controller. Only that device is deferred until the next app start. The next unfamiliar
-device is still offered; manual Button mapping remains available.
+Each physical input has its own row. Actions can have several inputs, or an empty
+placeholder when unassigned. Required controls start confirmed. Other assigned
+inputs are dim until pressed; newly discovered unassigned inputs appear below.
+Pressing an input highlights it immediately and smoothly scrolls its row toward
+the middle, stopping at the list ends. There is no manual scrolling. Multiple
+held inputs clear the highlight and stop scrolling. Latest reports the most
+recent input and its action, including unassigned inputs.
 
-## Remap everything
+**Hold one input** to open its popup:
 
-Setup immediately asks for **Up**, then **Down, Left, Right, OK, Back, Filters, View,
-Page up, Page down, Launch, Toggles and Menu**. Each step
-explains the function and suggests a typical physical button. Completed choices
-remain visible. Tap and release to assign and advance.
+- **Change action:** assign it to an action or Unassigned. Existing buttons for
+  that action stay assigned. You cannot remove the last tested input for a
+  direction, OK, or Back; assign and test a replacement first.
+- **Change OSD label:** pick a short name from categorized grids, including
+  letters, numbers, PlayStation symbols, colors, fighting-game abbreviations,
+  controller names and keyboard keys. **Use default name** resets only this input.
+- **Device settings:** redo the six basic controls, or change a keyboard's role.
 
-Each input can be assigned once. If it is already used, the screen names that
-function and waits for another choice; nothing swaps automatically.
+Popups use D-pad/OK/Back. Selecting an action or name saves immediately and
+returns to the table. Back closes the popup without changing anything. Failed
+saves leave it open for retry and retain the previously saved settings.
 
-**Hold any button for two seconds** to pause. Tap a button to cycle through
-**Resume · Skip · Cancel setup**, then hold for two seconds to select.
-These controls work before navigation is mapped. The four directions, OK and
-Back cannot be skipped. Other functions, including Launch, may be skipped;
-**skipped means unassigned**, not inherited from the old setup.
+**Hold two inputs** on the table to exit. This does not save anything: successful
+edits were already saved. Hold progress lights up the relevant instruction text.
+Held inputs must be released before they can act on a newly opened screen.
 
-Cancel returns directly to the diagnostic with the saved setup. Completing the
-final function saves the mapping immediately and returns to the ordinary check
-screen. **Controls saved** briefly confirms success. Hold one button
-to accept and close; hold two to start remapping again. These
-gestures are the same on every visit. Check rows populate on button-down, and
-all currently held assigned inputs highlight together.
+The table consumes input without navigating the app, launching games or typing.
+The screensaver stays out of setup/checking and gets a fresh idle period on exit.
 
-Nothing changes before all functions are assigned or explicitly skipped. The
-four directions, OK and Back remain required by save validation. A failed save
-keeps the previous setup and the completed choices, with a hold-to-retry prompt.
-The screensaver stays out of setup and gets a fresh idle period on exit.
+## Existing setups and recovery
 
-## Keyboards and arcade panels
+Existing valid profiles remain familiar. Old custom names, label styles and
+OK/Back preferences retain their appearance and behavior when converted. Names
+belong to physical inputs and survive action changes. The old separate naming,
+preset, and OK-button screens are replaced by this flow in builds with controller
+support; the global Button labels preference remains available.
 
-Accepting a keyboard as it is preserves ordinary keyboard navigation and typing:
-Enter, Esc, Tab, Space, arrows, page keys and existing search behaviour.
-Untested keyboard rows show the expected key in parentheses; pressing it confirms
-what actually arrives. A missing release cancels hold progress when the physical
-key is no longer held, so a later tap cannot accept a stale hold.
+Existing MiSTer Menu chords remain compatible. Assigning an explicit Menu input
+replaces that inherited chord. The table identifies an inherited chord separately.
+F12 is reserved. Devices without safely readable raw inputs must be configured
+through MiSTer's controller setup; support is not universal.
 
-Completing and saving a full keyboard remap explicitly makes that model an arcade
-panel. Its unassigned keys no longer enter search. A separate keyboard model can
-still type. Existing saved panel profiles retain their layout and labels.
+Profiles live in `/media/fat/misterzine/controls.json`. Back up this file before
+resetting or rolling back a build. New fields are versioned; incompatible or
+damaged files are preserved rather than overwritten. Turning beta features off
+retains saved profiles but disables their mappings and labels.
 
-J-PAC and similar encoders can use this flow when their physical key inputs are
-readable. USB identity alone does not convert a typing keyboard into a panel.
-Encoder-specific shift combinations and unusual hardware need individual testing.
-For devices that cannot be captured safely, use **MiSTer's controller setup** first;
-the diagnostic explains the limitation. This is not a promise of universal support.
+Physical identity uses a hardware identifier when available, otherwise the USB
+connection path. Moving a port-backed device can produce a new invitation.
+Receiver interfaces share an identity. Device 1, Device 2, etc. are temporary
+display numbers. Compatible model profiles supply copied defaults, never shared
+mutable preferences; unfamiliar physical devices still complete the six prompts.
 
-## Button names
-
-Open **Options → Controls → Button names** for the controller in hand. The screen
-starts empty. Press an input to add its raw code, assigned action (or Unassigned),
-and current OSD name. It highlights immediately; all held inputs highlight together.
-Repeated presses reuse the same row. Inputs here cannot navigate or launch games.
-
-**Hold one button to edit; hold two together to exit.** Editing always starts on
-Presets. Left/right selects a preset; OK does not cycle it. Choosing a preset
-clears custom overrides in the draft. Below it, every identified or assigned input
-has an editable name row. OK opens a category picker with a compact label grid:
-letters, numbers, PlayStation, colors, fighting-game abbreviations (LP, HP, etc.),
-pad buttons, keyboard keys, and directions. Select Default to remove an override.
-Changing a row switches the preset to Custom while retaining the other names.
-
-Save applies the draft and returns to identification. Cancel (or Back) discards
-it and returns to identification. Failed saves keep the draft available for retry.
-Names belong to physical inputs, including unassigned buttons, and follow those
-inputs through later remapping. Existing action-based custom letters migrate when
-edited or remapped. Naming a keyboard does not convert it into an arcade panel.
-
-Button mapping and Button names remain adjacent Options entries. The old separate
-OK-button selector is removed in builds with controller support; existing saved
-OK/Back preferences still work. Use a full remap to change their assignments.
-
-Hold progress lights up the relevant instruction text continuously, including
-wrapped lines, on controller checks, setup/pause and button identification.
-There is no separate progress bar. Releasing early cancels an incomplete hold;
-completed holds act immediately.
-
-## Recovery and background
-
-Profiles are stored in `/media/fat/misterzine/controls.json`. Turning beta features
-off disables their mappings and labels while retaining the file. Public-source
-builds leave these features inert. To reset outside the app, close MisterZine,
-back up and rename that file, then restart. Damaged or newer-format files are
-preserved and cannot be overwritten through setup.
-
-Existing setups retain MiSTer's two-button Menu chord. A full remap replaces
-Menu too; skipping it leaves no Menu action. F12 cannot be assigned. Keyboard encoders remain shared with MiSTer; source-less translated
-echoes are suppressed during diagnostics and while a configured panel is connected.
-
-Background: [J-PAC request, issue #5](https://github.com/matijaerceg/misterzine-on-device/issues/5)
-and the [existing controls guide](USER_GUIDE.md#controls). Neo Geo and custom
-letter labels address cabinet button legends independently of input mapping.
-
-## Hardware review
-
-Check first detection, accept/reconnect, manual entry from each controller, and
-ordinary keyboard typing. Try late second-button presses, staggered releases,
-buttons held on entry, disconnects and a long idle pause. Remap every function,
-try a duplicate, skip optional actions, cancel, retry, and save. Confirm that
-unmatched inputs never launch, navigate or type in the diagnostic. Inspect labels
-and both landscape and portrait layouts. Real keyboard encoders additionally need
-shifted keys, a second typing keyboard, and game launch/return checked on hardware.
-
-## Separate physical devices
-
-A hardware unique identifier is used when available. Otherwise the USB connection
-identifies the device, so moving it to another port may produce a new check.
-Interfaces of one receiver share a controller memory. The check emphasises the controller name and shows **Device 1**, **Device 2**, etc. beneath it
-to distinguish connected devices. These are temporary display numbers; saved
-mappings still use the underlying physical identity.
-
-Existing model-wide profiles remain as starting defaults. New per-device profiles
-are independent copies. Compatible saved mappings from the same model can also
-supply defaults; a model ID alone does not prove that two controllers are alike.
-MiSTer definitions remain the fallback when no suitable saved template exists.
+Background: [J-PAC issue #5](https://github.com/matijaerceg/misterzine-on-device/issues/5).
+Real keyboard encoders, shifted inputs and unusual controllers require hardware
+checks; automated input simulations do not establish universal compatibility.
