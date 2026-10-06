@@ -100,6 +100,12 @@ alone; finish it before trying again. The helper records handoff errors in
 
 ### Degauss opens instead
 
+Degauss 1.0 also replaces the standard menu core with its bundled menu,
+which can discard the shortcut's request to open MisterZine. MisterZine now
+updates the shortcut automatically to use `degauss/menu` when
+`main=degauss/MiSTer_Degauss` is configured and that core is installed.
+Older installations without that core keep using the standard menu.
+
 Degauss installs itself as MiSTer's `main=` frontend and takes over every load
 of the menu core, and MisterZine's menu entry loads the menu core. Choosing
 MisterZine therefore brought up Degauss, and the launcher then waited for a

@@ -251,6 +251,11 @@ Protected-write detection follows known upstream output markers and checks
 known writers before cancellation signals. Unknown output stays visible;
 MisterZine cannot guarantee protection against arbitrary external root commands
 or loss of power. No timeout guesses when a protected write is safe to kill.
+Under Degauss 1.0's Main, the generated MGL loads `degauss/menu` directly
+when present, and menu restore selects the same core. Its startup redirects
+stock menu loads without preserving the MGL XML, losing the setname. Older
+Degauss installations without the private core retain the stock menu path.
+
 Under Zaparoo's Main, the generated MGL loads `zaparoo/menu_zaparoo` directly:
 loading stock `menu.rbf` triggers a replacement that loses the MGL's setname.
 Existing entries are rewritten only when their contents change, including

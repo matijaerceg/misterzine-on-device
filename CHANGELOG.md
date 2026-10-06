@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fix the same shortcut failure with Degauss 1.0's bundled menu core. Existing shortcuts automatically select that core when Degauss is configured, and quitting returns to it. Older Degauss installations without the bundled core retain their existing launch path.
 - Fix the main-menu shortcut under Zaparoo's custom MiSTer program. The shortcut now selects Zaparoo's menu core directly, preserving the request to open MisterZine, and an active Zaparoo Frontend hands over the screen through its console protocol. Existing shortcuts update automatically. Quitting returns to Zaparoo; F12, Open at boot, Return after game and the exit chord keep working.
 
 ## v1.2.2 — 2026-10-01

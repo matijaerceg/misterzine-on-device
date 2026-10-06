@@ -276,7 +276,7 @@ func hasStartupHook(script string) bool {
 // one that moved between Stable and Beta, shows one entry; failing that, this
 // build's is still written.
 func ensureMGL() error {
-	return ensureMGLBodyAt(menuMGL(), menuEntryBody(configuredZaparoo()), otherMGLs()...)
+	return ensureMGLBodyAt(menuMGL(), menuEntryBody(configuredMenuCore()), otherMGLs()...)
 }
 
 func ensureMGLAt(mglPath string, others ...string) error {

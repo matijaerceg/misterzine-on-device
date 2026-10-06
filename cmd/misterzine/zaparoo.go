@@ -23,28 +23,38 @@ const (
 )
 
 // The configured Main decides the NEXT menu load, including before Main has
-// started at boot. Merely having Zaparoo's files installed is not enough.
-func configuredZaparoo() bool {
+// started at boot. Merely having a frontend's files installed is not enough.
+func configuredMenuCore() string {
 	ini, _ := mister.ActiveIni("/media/fat")
-	return zaparooMenuAvailable(mister.ReadIni(ini).Main, fileExists)
+	return frontendMenuCore(mister.ReadIni(ini).Main, fileExists)
 }
 
-func zaparooMenuAvailable(main string, exists func(string) bool) bool {
-	return strings.EqualFold(filepath.Base(main), zaparooMain) && exists("/media/fat/"+zaparooMenu)
+func frontendMenuCore(main string, exists func(string) bool) string {
+	var core string
+	switch {
+	case strings.EqualFold(filepath.Base(main), zaparooMain):
+		core = zaparooMenu
+	case strings.EqualFold(filepath.Base(main), "MiSTer_Degauss"):
+		core = "degauss/menu.rbf"
+	}
+	if core != "" && exists("/media/fat/"+core) {
+		return core
+	}
+	return ""
 }
 
-func menuEntryBody(zaparoo bool) string {
-	if zaparoo {
-		// Loading stock menu.rbf makes Zaparoo replace it and lose the MGL's
-		// setname before our watcher can see it. Load its menu directly.
-		return strings.Replace(mglBody, "<rbf>menu</rbf>", "<rbf>zaparoo/menu_zaparoo</rbf>", 1)
+func menuEntryBody(core string) string {
+	if core != "" {
+		// These frontends replace stock menu.rbf and lose the MGL's setname
+		// before our watcher can see it. Load the matching menu directly.
+		return strings.Replace(mglBody, "<rbf>menu</rbf>", "<rbf>"+strings.TrimSuffix(core, ".rbf")+"</rbf>", 1)
 	}
 	return mglBody
 }
 
 func restoreMenuCmd() string {
-	if configuredZaparoo() {
-		return "load_core /media/fat/" + zaparooMenu
+	if core := configuredMenuCore(); core != "" {
+		return "load_core /media/fat/" + core
 	}
 	return menuCoreCmd(consoleModeRunning())
 }

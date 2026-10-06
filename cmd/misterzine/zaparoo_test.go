@@ -10,10 +10,10 @@ import (
 	"time"
 )
 
-func TestZaparooShortcutMigratesBothWays(t *testing.T) {
+func TestFrontendShortcutMigration(t *testing.T) {
 	p := filepath.Join(t.TempDir(), "MisterZine Arcade.mgl")
-	for _, zaparoo := range []bool{false, true, true, false} {
-		body := menuEntryBody(zaparoo)
+	for _, core := range []string{"", zaparooMenu, zaparooMenu, "degauss/menu.rbf", ""} {
+		body := menuEntryBody(core)
 		if err := ensureMGLBodyAt(p, body); err != nil {
 			t.Fatal(err)
 		}
@@ -32,16 +32,36 @@ func TestZaparooShortcutMigratesBothWays(t *testing.T) {
 	}
 }
 
-func TestZaparooMenuRequiresConfiguredMainAndCore(t *testing.T) {
+func TestFrontendMenuRequiresConfiguredMainAndCore(t *testing.T) {
 	for _, c := range []struct {
-		main         string
-		exists, want bool
+		main   string
+		exists bool
+		want   string
 	}{
-		{"", true, false}, {"MiSTer", true, false}, {"zaparoo/MiSTer_Zaparoo", true, true},
-		{"zaparoo/MiSTer_Zaparoo", false, false}, {"degauss/MiSTer_Degauss", true, false},
+		{"", true, ""}, {"MiSTer", true, ""},
+		{"zaparoo/MiSTer_Zaparoo", true, zaparooMenu},
+		{"zaparoo/MiSTer_Zaparoo", false, ""},
+		{"degauss/MiSTer_Degauss", true, "degauss/menu.rbf"},
+		{"degauss/MiSTer_Degauss", false, ""},
+		{"/media/fat/degauss/MiSTer_Degauss", true, "degauss/menu.rbf"},
+		{"ConsoleMode/MiSTer_ConsoleMode", true, ""},
 	} {
-		if got := zaparooMenuAvailable(c.main, func(string) bool { return c.exists }); got != c.want {
-			t.Fatalf("%+v: %v", c, got)
+		got := frontendMenuCore(c.main, func(path string) bool {
+			if c.want != "" && path != "/media/fat/"+c.want {
+				t.Fatalf("wrong core checked: %s", path)
+			}
+			return c.exists
+		})
+		if got != c.want {
+			t.Fatalf("%+v: %q", c, got)
+		}
+		body := menuEntryBody(got)
+		want := strings.TrimSuffix(c.want, ".rbf")
+		if want == "" {
+			want = "menu"
+		}
+		if !strings.Contains(body, "<rbf>"+want+"</rbf>") {
+			t.Fatalf("wrong shortcut: %s", body)
 		}
 	}
 }
