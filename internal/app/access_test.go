@@ -208,6 +208,11 @@ func TestAccessOverviewAndReturn(t *testing.T) {
 				t.Fatal("missing features")
 			}
 			for i, f := range access.Catalog() {
+				a.panel.cursor = 2 + i*2
+				a.buildPanel()
+				if a.panel.entries[a.panel.cursor].value != f.ID {
+					t.Fatal("rebuild moved feature selection")
+				}
 				state := rows[3+i*2].text
 				if strings.HasPrefix(state, "Unlocked") != f.Covered(month) {
 					t.Fatalf("wrong coverage: %v %s", month, state)

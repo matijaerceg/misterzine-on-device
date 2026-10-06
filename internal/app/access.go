@@ -35,7 +35,6 @@ func (a *App) gatedOption(row panelEntry, f access.Feature) panelEntry {
 		row.requiredMonth = f.Since
 		row.earlyAccess = f.Beta && !f.Fancy
 		if row.earlyAccess {
-			row.vals = []string{f.Since.Short()}
 			row.help += " Free for everyone after beta."
 		} else {
 			row.help += " Your code unlocks it forever."
@@ -108,7 +107,7 @@ func (a *App) accessEntries() []panelEntry {
 		} else if f.Beta {
 			help += "Free for everyone after beta."
 		}
-		row := panelEntry{text: entry.Name + featureMarks(f), kind: "access-info", feature: true, help: help}
+		row := panelEntry{text: entry.Name + featureMarks(f), kind: "access-info", value: entry.ID, feature: true, help: help}
 		E = append(E, row, panelEntry{text: state, info: true})
 	}
 	return E
