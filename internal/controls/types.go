@@ -9,6 +9,8 @@ type Profile struct {
 	Bindings map[string]uint16 `json:"bindings,omitempty"`
 	Style    string            `json:"label_style,omitempty"`
 	Labels   map[string]string `json:"labels,omitempty"`
+	Names    map[uint16]string `json:"button_names,omitempty"`
+	NameBase string            `json:"name_base,omitempty"`
 }
 
 type File struct {
@@ -26,6 +28,10 @@ func (p Profile) Clone() Profile {
 	q.Labels = map[string]string{}
 	for k, v := range p.Labels {
 		q.Labels[k] = v
+	}
+	q.Names = map[uint16]string{}
+	for k, v := range p.Names {
+		q.Names[k] = v
 	}
 	return q
 }
