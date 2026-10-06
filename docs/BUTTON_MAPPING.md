@@ -40,8 +40,8 @@ device is still offered; manual Button mapping remains available.
 
 ## Remap everything
 
-Setup immediately asks for **Up**, then **Down, Left, Right, OK, Back, Launch,
-Filters, View/favorite, Page up, Page down, Quick toggles and Menu**. Each step
+Setup immediately asks for **Up**, then **Down, Left, Right, OK, Back, Filters, View,
+Page up, Page down, Launch, Toggles and Menu**. Each step
 explains the function and suggests a typical physical button. Completed choices
 remain visible. Tap and release to assign and advance.
 
@@ -124,8 +124,9 @@ shifted keys, a second typing keyboard, and game launch/return checked on hardwa
 
 A hardware unique identifier is used when available. Otherwise the USB connection
 identifies the device, so moving it to another port may produce a new check.
-Interfaces of one receiver share a controller memory. The check emphasises the controller name and shows **USB port:** beneath it
-to distinguish devices that report the same name.
+Interfaces of one receiver share a controller memory. The check emphasises the controller name and shows **Device 1**, **Device 2**, etc. beneath it
+to distinguish connected devices. These are temporary display numbers; saved
+mappings still use the underlying physical identity.
 
 Existing model-wide profiles remain as starting defaults. New per-device profiles
 are independent copies. Compatible saved mappings from the same model can also
