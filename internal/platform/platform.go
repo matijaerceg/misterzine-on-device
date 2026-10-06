@@ -74,6 +74,8 @@ func ParseKey(name string) Key {
 
 // Event is one key press or release.
 type Event struct {
+	ObservationOnly bool // raw input with no safe normal action route
+	Direction bool // physical direction or axis edge, never a hold gesture button
 	Key       Key
 	Text      rune   // printable keyboard character; zero for gamepad/navigation input
 	Code      uint16 // raw evdev code

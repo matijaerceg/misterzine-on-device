@@ -2,6 +2,7 @@
 package controls
 
 type Profile struct {
+	Reviewed bool `json:"reviewed,omitempty"`
 	Name  string `json:"name,omitempty"`
 	Panel bool   `json:"arcade_panel,omitempty"`
 	// Missing actions inherit; zero explicitly clears an action after a swap.

@@ -1011,6 +1011,7 @@ func (a *App) Tick(now time.Time) (changed bool) {
 	changed = a.tickArcadeIntro(now) || changed
 	changed = a.tickArcadeBack(now) || changed
 	changed = a.tickOptionSamples() || changed
+	changed = a.discoverControls(now) || changed
 	// Expire notices on every screen so NextTick cannot keep returning a past
 	// deadline while Update All handles its own animation and cancel input.
 	if a.notice != "" && !now.Before(a.until) {
@@ -1085,6 +1086,7 @@ func (a *App) NextTick() time.Time {
 		return a.cfg.TimerNow()
 	}
 	t := a.rep.nextAt()
+	if n := a.nextControlDiscovery(); !n.IsZero() && (t.IsZero() || n.Before(t)) { t = n }
 	if a.screen == ScreenControls {
 		t = a.nextControlsTick()
 	}

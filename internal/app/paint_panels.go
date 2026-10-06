@@ -1292,6 +1292,8 @@ func (a *App) togglePanel() bool {
 	switch e.kind {
 	case "year", "decade":
 		return a.toggleYears(false)
+	case "control-labels":
+		a.OpenControlLabels()
 	case "controls":
 		a.OpenControls()
 		return true

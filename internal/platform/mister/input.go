@@ -75,6 +75,7 @@ type device struct {
 	abs             map[uint16]absInfo // axis ranges, read on first use
 	axisEdge        map[uint16]uint8   // 0 centred, 1 at the minimum, 2 at the maximum
 	grabbed         bool               // held exclusively (EVIOCGRAB): Main sees nothing from it
+	keys, axes []uint16
 	menuCode        uint16             // the combo button whose press became Menu, until it is released
 }
 
@@ -108,6 +109,7 @@ type Input struct {
 	// works through Main's translation, but only while no mapped pad is
 	// present, since the translated keys carry no pad name.
 	rawFace atomic.Bool
+	observe atomic.Value // selected physical node, read before action filtering
 	panels  atomic.Value // map[vendor_product]bool, immutable snapshots
 }
 
@@ -181,13 +183,14 @@ func (in *Input) rescan() {
 		if !isKeyboard(f) {
 			// gamepad nodes are read for Start (Main never forwards it)
 			// and, with a MiSTer map, for the face buttons by define-slot
-			if m.Code == 0 && len(m.Keys) == 0 {
+			if m.Code == 0 && len(m.Keys) == 0 && !isPad(f) {
 				f.Close()
 				continue
 			}
 			pad = true
 		}
 		d := &device{path: p, name: name, f: f, pad: pad, mapping: m, held: map[uint16]platform.Key{}, abs: map[uint16]absInfo{}, axisEdge: map[uint16]uint8{}}
+		d.keys, d.axes = inputCapabilities(f, evKey, 768), inputCapabilities(f, evAbs, 64)
 		d.vendor, d.product = devID(f)
 		d.physical = devPhys(f) != ""
 		if pad && m.direct {
@@ -268,6 +271,7 @@ func (in *Input) ControlDevices() []support.Pad {
 			continue
 		}
 		p := d.mapping.info(filepath.Base(d.path), d.name, d.vendor, d.product)
+		p.Keys, p.Axes = append([]uint16(nil), d.keys...), append([]uint16(nil), d.axes...)
 		p.Keyboard = !d.pad
 		// Remapping a pad requires an exclusive raw reader; otherwise Main
 		// could still act on its old Menu assignment during capture.
@@ -276,6 +280,17 @@ func (in *Input) ControlDevices() []support.Pad {
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Node < out[j].Node })
 	return out
+}
+
+func (in *Input) ObserveControls(node string) { in.observe.Store(node) }
+func (in *Input) observing(d *device) bool { node, _ := in.observe.Load().(string); return node != "" && node == filepath.Base(d.path) }
+
+func inputCapabilities(f *os.File, kind, count int) []uint16 {
+ bits := make([]byte, (count+7)/8)
+ request := uintptr(0x80000000) | uintptr(len(bits))<<16 | 0x4500 | uintptr(0x20+kind)
+ if ioctl(f.Fd(), request, unsafe.Pointer(&bits[0])) != nil { return nil }
+ var codes []uint16
+ for c:=0;c<count;c++ { if bits[c/8]&(1<<uint(c%8))!=0 { codes=append(codes,uint16(c)) } }; return codes
 }
 
 func (in *Input) SetPanels(ids map[string]bool) {
@@ -434,7 +449,7 @@ func isPad(f *os.File) bool {
 	if err := ioctl(f.Fd(), eviocgbitKey(len(bits)), unsafe.Pointer(&bits[0])); err != nil {
 		return false
 	}
-	return bits[btnStart/8]&(1<<uint(btnStart%8)) != 0
+	for c:=0x120;c<=0x13f;c++ { if bits[c/8]&(1<<uint(c%8)) != 0 { return true } }; return false
 }
 
 func (in *Input) read(d *device) {
@@ -478,7 +493,7 @@ func (in *Input) read(d *device) {
 			usec := int64(int32(binary.LittleEndian.Uint32(buf[i+4:])))
 			at := time.Unix(sec, usec*1000)
 			if typ == evAbs {
-				if !d.pad || !d.mapping.direct {
+				if !d.pad || (!d.mapping.direct && !in.observing(d)) {
 					continue
 				}
 				for _, e := range d.axisEvents(code, val) {
@@ -512,7 +527,7 @@ func (in *Input) emit(d *device, code uint16, pressed bool, text rune, at time.T
 	if mk, ok := d.osdKey(code, pressed); ok {
 		k = mk
 	}
-	if d.name == "MiSTer virtual input" && (in.rawFace.Load() || in.panelConnected()) {
+	if d.name == "MiSTer virtual input" && (in.rawFace.Load() || in.panelConnected() || func() bool { n,_ := in.observe.Load().(string); return n != "" }()) {
 		return true // the mapped pads deliver their own presses
 	}
 	if k == platform.KeyStart {
@@ -520,6 +535,7 @@ func (in *Input) emit(d *device, code uint16, pressed bool, text rune, at time.T
 	}
 	ev := d.event(k, code, pressed, at)
 	ev.Text = text
+	if d.pad && !d.mapping.direct && code != d.mapping.Code { ev.ObservationOnly = true }
 	if pressed {
 		d.held[code] = k
 	} else {
@@ -530,6 +546,8 @@ func (in *Input) emit(d *device, code uint16, pressed bool, text rune, at time.T
 
 func (d *device) event(k platform.Key, code uint16, pressed bool, at time.Time) platform.Event {
 	ev := platform.Event{Key: k, Code: code, Pressed: pressed, At: at, Source: d.name}
+	ev.Direction = code >= 0x300 || code == 103 || code == 105 || code == 106 || code == 108 || (code >= 0x220 && code <= 0x223)
+	for _, slot := range []string{"Up", "Down", "Left", "Right"} { if c:=d.mapping.Slots[slot]; c!=0 && c==code { ev.Direction=true } }
 	if d.physical && d.name != "MiSTer virtual input" && (d.vendor != 0 || d.product != 0) {
 		ev.DeviceID = fmt.Sprintf("%04x_%04x", d.vendor, d.product)
 		ev.Node = filepath.Base(d.path)
