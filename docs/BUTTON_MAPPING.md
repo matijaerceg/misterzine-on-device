@@ -5,7 +5,7 @@ its own button. These controls belong to MisterZine; game controls and MiSTer's
 global controller definitions are separate.
 
 This ordinary beta feature has no Supporter star. In a build that includes it,
-enable **Options → Operation → Show beta features** and unlock the beta with an
+enable **Options â†’ Operation â†’ Show beta features** and unlock the beta with an
 October 2026 or later code.
 
 ## Check a controller
@@ -15,7 +15,7 @@ app is ready. Updates, launching and other screens are not interrupted. Accepted
 models and models with existing saved profiles do not prompt again. Identical
 models share their preferences.
 
-For another check, open **Options → Controls → Button mapping** with the controller
+For another check, open **Options â†’ Controls â†’ Button mapping** with the controller
 you want to configure. The screen says **Currently mapping:** and its name. When
 there is no identifiable opening controller, choose one from the list.
 
@@ -31,6 +31,11 @@ while holding; there is no timeout. Adding a second button cancels single-button
 acceptance. Buttons already held on entry must first be released. Interrupted
 input and disconnects cannot confirm anything.
 
+To leave an inaccessible controller, press and release **Back / Esc on another
+controller or keyboard**. This discards any unfinished setup without accepting
+the selected controller. Further automatic invitations wait until the next app
+start; manual Button mapping remains available.
+
 ## Remap everything
 
 Setup immediately asks for **Up**, then **Down, Left, Right, Open, Back, Launch,
@@ -42,7 +47,7 @@ Each input can be assigned once. If it is already used, the screen names that
 function and waits for another choice; nothing swaps automatically.
 
 **Hold any button for two seconds** to pause. Tap a button to cycle through
-**Resume · Skip · Cancel setup**, then hold for two seconds and release to select.
+**Resume Â· Skip Â· Cancel setup**, then hold for two seconds and release to select.
 These controls work before navigation is mapped. The four directions, Open and
 Back cannot be skipped. Other functions, including Launch, may be skipped;
 **skipped means unassigned**, not inherited from the old setup.
@@ -60,6 +65,9 @@ and receives a fresh idle period when you leave.
 
 Accepting a keyboard as it is preserves ordinary keyboard navigation and typing:
 Enter, Esc, Tab, Space, arrows, page keys and existing search behaviour.
+Untested keyboard rows show the expected key in parentheses; pressing it confirms
+what actually arrives. A missing release cancels hold progress when the physical
+key is no longer held, so a later tap cannot accept a stale hold.
 
 Completing and saving a full keyboard remap explicitly makes that model an arcade
 panel. Its unassigned keys no longer enter search. A separate keyboard model can
@@ -73,7 +81,7 @@ the diagnostic explains the limitation. This is not a promise of universal suppo
 
 ## Labels
 
-The separate **Options → Controls → Controller labels** screen retains global,
+The separate **Options â†’ Controls â†’ Controller labels** screen retains global,
 MiSTer, Xbox, PlayStation, numeric, **Neo Geo A B C D**, and custom letter styles.
 Left/right changes the style or custom character; arrows indicate available
 changes. OK does not cycle styles. Save changes to apply labels.
