@@ -30,3 +30,5 @@ func (a *App) paintControls(*gfx.Canvas)                   {}
 func (a *App) controlProfile(string) controls.Profile      { return controls.Profile{} }
 func (a *App) controlLegend(s string) (string, bool)       { return s, false }
 func (a *App) controlsOptions(e []panelEntry) []panelEntry { return e }
+
+func (a *App) ControlsAnimating() bool { return false }

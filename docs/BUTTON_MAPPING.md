@@ -5,7 +5,7 @@ its own button. These controls belong to MisterZine; game controls and MiSTer's
 global controller definitions are separate.
 
 This ordinary beta feature has no Supporter star. In a build that includes it,
-enable **Options â†’ Operation â†’ Show beta features** and unlock the beta with an
+enable **Options Ã¢â€ â€™ Operation Ã¢â€ â€™ Show beta features** and unlock the beta with an
 October 2026 or later code.
 
 ## Check a controller
@@ -15,7 +15,7 @@ app is ready. Updates, launching and other screens are not interrupted. Accepted
 models and models with existing saved profiles do not prompt again. Identical
 models share their preferences.
 
-For another check, open **Options â†’ Controls â†’ Button mapping** with the controller
+For another check, open **Options Ã¢â€ â€™ Controls Ã¢â€ â€™ Button mapping** with the controller
 you want to configure. The screen says **Currently mapping:** and its name. When
 there is no identifiable opening controller, choose one from the list.
 
@@ -26,13 +26,14 @@ recent input. Presses here do not navigate, search or launch games.
 - **Hold one button for two seconds, then release:** accept the existing setup.
 - **Hold two buttons together for two seconds, then release both:** remap all.
 
+Both gestures remain available after any number of test presses.
 Directions do not count toward these gestures. The progress bar only appears
 while holding; there is no timeout. Adding a second button cancels single-button
 acceptance. Buttons already held on entry must first be released. Interrupted
 input and disconnects cannot confirm anything.
 
-To leave an inaccessible controller, press and release **Back / Esc on another
-controller or keyboard**. This discards any unfinished setup without accepting
+To leave an inaccessible controller, **hold any button for two seconds on another
+controller or keyboard, then release**. This discards any unfinished setup without accepting
 the selected controller. Further automatic invitations wait until the next app
 start; manual Button mapping remains available.
 
@@ -47,7 +48,7 @@ Each input can be assigned once. If it is already used, the screen names that
 function and waits for another choice; nothing swaps automatically.
 
 **Hold any button for two seconds** to pause. Tap a button to cycle through
-**Resume Â· Skip Â· Cancel setup**, then hold for two seconds and release to select.
+**Resume Ã‚Â· Skip Ã‚Â· Cancel setup**, then hold for two seconds and release to select.
 These controls work before navigation is mapped. The four directions, Open and
 Back cannot be skipped. Other functions, including Launch, may be skipped;
 **skipped means unassigned**, not inherited from the old setup.
@@ -81,7 +82,7 @@ the diagnostic explains the limitation. This is not a promise of universal suppo
 
 ## Labels
 
-The separate **Options â†’ Controls â†’ Controller labels** screen retains global,
+The separate **Options Ã¢â€ â€™ Controls Ã¢â€ â€™ Controller labels** screen retains global,
 MiSTer, Xbox, PlayStation, numeric, **Neo Geo A B C D**, and custom letter styles.
 Left/right changes the style or custom character; arrows indicate available
 changes. OK does not cycle styles. Save changes to apply labels.

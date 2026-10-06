@@ -624,7 +624,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			h.frameLoop()
 		} else if h.a.SaverRunning() {
 			h.saverLoop()
-		} else if h.a.OptionSamplesRunning() || h.a.PageTransitionRunning() || h.a.LayoutTransitionRunning() || h.a.DetailScrollRunning() || h.a.ListScrollRunning() || h.a.LaunchCabRunning() {
+		} else if h.a.ControlsAnimating() || h.a.OptionSamplesRunning() || h.a.PageTransitionRunning() || h.a.LayoutTransitionRunning() || h.a.DetailScrollRunning() || h.a.ListScrollRunning() || h.a.LaunchCabRunning() {
 			h.optionSampleLoop()
 		}
 		h.autosave(time.Now(), false)
@@ -793,7 +793,7 @@ func (h *host) frameLoop() {
 func (h *host) optionSampleLoop() {
 	h.roms.SetPaused(true) // the sweep waits for the motion to end
 	defer h.roms.SetPaused(false)
-	for (h.a.OptionSamplesRunning() || h.a.PageTransitionRunning() || h.a.LayoutTransitionRunning() || h.a.DetailScrollRunning() || h.a.ListScrollRunning() || h.a.LaunchCabRunning()) && !h.a.Repeating() {
+	for (h.a.ControlsAnimating() || h.a.OptionSamplesRunning() || h.a.PageTransitionRunning() || h.a.LayoutTransitionRunning() || h.a.DetailScrollRunning() || h.a.ListScrollRunning() || h.a.LaunchCabRunning()) && !h.a.Repeating() {
 		if !h.pump() {
 			return
 		}
