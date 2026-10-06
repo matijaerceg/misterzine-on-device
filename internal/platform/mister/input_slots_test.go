@@ -228,3 +228,24 @@ func TestRawFaceFollowsMappedPads(t *testing.T) {
 		t.Fatal("unplugging the mapped pad should restore the translation")
 	}
 }
+
+func TestUnmappedRightStickReportsBothDirections(t *testing.T) {
+	d := &device{mapping: padMapping{}, abs: map[uint16]absInfo{3: {-32768, 32767, true}, 4: {-32768, 32767, true}, 2: {0, 255, true}}, axisEdge: map[uint16]uint8{}}
+	for _, axis := range []uint16{3, 4} {
+		down := d.axisEvents(axis, -32768)
+		if len(down) != 1 || down[0].code != AxisCode(axis, false) || !down[0].pressed {
+			t.Fatal("negative direction missing", axis, down)
+		}
+		cross := d.axisEvents(axis, 32767)
+		if len(cross) != 2 || cross[0].pressed || !cross[1].pressed || cross[1].code != AxisCode(axis, true) {
+			t.Fatal("axis crossing", cross)
+		}
+		up := d.axisEvents(axis, 0)
+		if len(up) != 1 || up[0].pressed {
+			t.Fatal("no release", up)
+		}
+	}
+	if events := d.axisEvents(2, 0); len(events) != 0 {
+		t.Fatal("trigger at rest became a negative press", events)
+	}
+}

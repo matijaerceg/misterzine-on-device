@@ -404,7 +404,7 @@ func (d *device) axisEvents(axis uint16, value int32) []axisEvent {
 		span := info.max - info.min + 1
 		centre := info.min + span/2
 		threshold := span / 4
-		if value < centre-threshold && d.mapping.bothEdges(axis) {
+		if value < centre-threshold && (d.mapping.bothEdges(axis) || axis == 0 || axis == 1 || axis == 3 || axis == 4) {
 			edge = 1
 		}
 		if value > centre+threshold {
