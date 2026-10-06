@@ -1,108 +1,108 @@
 # Button mapping (beta)
 
-Make MisterZine's controls and button hints match the pad or arcade cabinet you
-are using. This feature is experimental, without the Supporter star. In a build
-that includes it, enable **Options → Operation → Show beta features**. No code is needed. Open **Options → Controls → Button mapping**.
+Check what your controller already does, then accept it or give every function
+its own button. These controls belong to MisterZine; game controls and MiSTer's
+global controller definitions are separate.
 
-## Set up a controller
+This ordinary beta feature has no Supporter star. In a build that includes it,
+enable **Options → Operation → Show beta features** and unlock the beta with an
+October 2026 or later code.
 
-1. Choose the controller from the connected-device list. The USB identity is
-   shown beneath its name. Controllers of the same model share a saved setup.
-2. Choose an action, then press and release the physical button you want to use.
-   **Set up all buttons** walks through the actions and directions in order.
-   Waiting eight seconds keeps the current assignment. Esc on a separate
-   keyboard cancels capture.
-3. A button already assigned to another action swaps places with that action's
-   old button. An asterisk marks edited assignments. Your saved controls keep
-   navigating the editor while you work on the draft.
-4. **Test draft buttons** shows what each press would do, without launching a
-   game or navigating away. Hold the draft's Back button for two seconds, use
-   Esc on a separate keyboard, or wait 30 seconds without a press to return.
-5. **Save & test** asks you to press and release the new **Open / confirm** button,
-   then the new **Back / Options** button. Each step has a 12-second limit.
-   Both must be demonstrated on the selected device before anything is saved.
+## Check a controller
 
-Waiting, disconnecting the controller, interrupted input, or a failed write
-keeps the current saved setup. A timeout leaves the draft available to correct.
-Leaving with unsaved edits offers **Discard** or **Keep editing**. **Restore
-defaults** resets the draft's buttons and labels; use Save & test to apply it.
+An unfamiliar controller or keyboard opens **New controller detected** when the
+app is ready. Updates, launching and other screens are not interrupted. Accepted
+models and models with existing saved profiles do not prompt again. Identical
+models share their preferences.
 
-Launch, Open, Back, and the four directions must be assigned and distinct when
-saving a custom mapping. Optional actions can be left unassigned. A pad arriving
-through MiSTer's translated input must first be defined in MiSTer's menu; the
-page explains this rather than offering a setup it cannot read reliably.
+For another check, open **Options → Controls → Button mapping** with the controller
+you want to configure. The screen says **Currently mapping:** and its name. When
+there is no identifiable opening controller, choose one from the list.
 
-## Labels that match your panel
+The functions start untested. Press buttons to populate their rows; held inputs
+light up. Unmatched inputs appear separately, and the bottom line names the most
+recent input. Presses here do not navigate, search or launch games.
 
-**Label style** applies to the selected controller. Choose the existing global
-labels, MiSTer letters, Xbox letters, PlayStation symbols, numbers, **Neo Geo
-A B C D**, or **Custom letters**. Presets follow the physical MiSTer slot after
-a remap, so moving Filters onto Start also changes the hint to Start.
+- **Hold one button for two seconds, then release:** accept the existing setup.
+- **Hold two buttons together for two seconds, then release both:** remap all.
 
-Custom letters provide a separate label for each of the nine button actions,
-including Launch. Left/right chooses **A–Z or 0–9**. For example, set Launch to
-`Y` for a yellow start button, Open to `R` for red, and Back to `B` for blue.
-Single-character labels keep the legends readable on a small CRT. They name
-MisterZine actions, not a game's controls. Directions retain arrow hints.
+Directions do not count toward these gestures. The progress bar only appears
+while holding; there is no timeout. Adding a second button cancels single-button
+acceptance. Buttons already held on entry must first be released. Interrupted
+input and disconnects cannot confirm anything.
 
-## J-PAC and other keyboard encoders
+## Remap everything
 
-Choose the encoder from the device list and change **Use as** to **Arcade panel**.
-This is an explicit choice; a USB identity alone never converts a typing keyboard.
-The starting layout is the common MAME keyboard layout:
+Setup immediately asks for **Up**, then **Down, Left, Right, Open, Back, Launch,
+Filters, View/favorite, Page up, Page down, Quick toggles and Menu**. Each step
+explains the function and suggests a typical physical button. Completed choices
+remain visible. Tap and release to assign and advance.
 
-| Control | Initial key |
-|---|---|
-| Launch | 1 |
-| Open / confirm | Left Ctrl |
-| Back / Options | Left Alt |
-| Filters | Space |
-| View / favorite | Left Shift |
-| Page up / down | Z / X |
-| Quick toggles | 5 |
-| Menu | Esc |
-| Directions | Arrow keys |
+Each input can be assigned once. If it is already used, the screen names that
+function and waits for another choice; nothing swaps automatically.
 
-Use the guided setup if the encoder was reprogrammed. Save & test the panel
-choice before using it on the game list. Once saved, keys from that model act
-as controls and stop entering search text; a separate keyboard model can still
-type. Change Use as back to **Typing keyboard** and Save & test to undo the mode.
-Restore defaults keeps the chosen keyboard/panel mode.
+**Hold any button for two seconds** to pause. Tap a button to cycle through
+**Resume · Skip · Cancel setup**, then hold for two seconds and release to select.
+These controls work before navigation is mapped. The four directions, Open and
+Back cannot be skipped. Other functions, including Launch, may be skipped;
+**skipped means unassigned**, not inherited from the old setup.
 
-Panel recognition from MiSTer.ini and importing MiSTer's keyboard-encoder maps
-are not part of this first beta. This manual route addresses the Start/search
-problem described in [issue #5](https://github.com/matijaerceg/misterzine-on-device/issues/5).
-The earlier [controls guide](USER_GUIDE.md#controls) explains the underlying
-MiSTer slots, OK-button choice, and existing global label styles.
+Cancel returns directly to the diagnostic with the saved setup. After the final
+function, try the proposed controls in the diagnostic. Hold one button and release
+to save, or hold two and release both to start again. **Controls saved** briefly
+confirms success, then returns to the previous screen.
 
-## Recovery and scope
+Nothing changes until acceptance. A failed save keeps both the previous setup
+and the proposed choices, so you can retry. The screensaver stays out of setup
+and receives a fresh idle period when you leave.
 
-All changes belong to MisterZine. Game mappings, MiSTer's global definitions,
-and the in-game exit chord are separate. A MiSTer-defined two-button Menu combo
-remains available. F12 keeps its existing host function and cannot be assigned.
+## Keyboards and arcade panels
 
-Turning **Show beta features** off stops these mappings and labels and preserves
-them for later. The separate `/media/fat/misterzine/controls.json` holds the
-profiles; public-source builds leave it alone. To recover outside the app, close
-MisterZine and rename that file, then restart. A damaged or newer-format file is
-left intact and the screen explains that it cannot save over it.
+Accepting a keyboard as it is preserves ordinary keyboard navigation and typing:
+Enter, Esc, Tab, Space, arrows, page keys and existing search behaviour.
 
-Keyboard encoders remain shared with MiSTer so their existing menu combinations
-can work. MiSTer's source-less translated controller events are ignored while a
-configured panel is connected, as they already are while a directly read pad is
-connected. Use directly readable pads alongside a panel. Actual encoder shift
-combinations and game return behaviour still need testing on hardware.
+Completing and saving a full keyboard remap explicitly makes that model an arcade
+panel. Its unassigned keys no longer enter search. A separate keyboard model can
+still type. Existing saved panel profiles retain their layout and labels.
+
+J-PAC and similar encoders can use this flow when their physical key inputs are
+readable. USB identity alone does not convert a typing keyboard into a panel.
+Encoder-specific shift combinations and unusual hardware need individual testing.
+For devices that cannot be captured safely, use **MiSTer's controller setup** first;
+the diagnostic explains the limitation. This is not a promise of universal support.
+
+## Labels
+
+The separate **Options → Controls → Controller labels** screen retains global,
+MiSTer, Xbox, PlayStation, numeric, **Neo Geo A B C D**, and custom letter styles.
+Left/right changes the style or custom character; arrows indicate available
+changes. OK does not cycle styles. Save changes to apply labels.
+
+Custom letters name actions, for example `Y` for a yellow Launch button or `R`
+for a red Open button. Labels remain separate from the remapping walkthrough.
+
+## Recovery and background
+
+Profiles are stored in `/media/fat/misterzine/controls.json`. Turning beta features
+off disables their mappings and labels while retaining the file. Public-source
+builds leave these features inert. To reset outside the app, close MisterZine,
+back up and rename that file, then restart. Damaged or newer-format files are
+preserved and cannot be overwritten through setup.
+
+MiSTer's defined two-button Menu recovery chord remains available. F12 cannot be
+assigned. Keyboard encoders remain shared with MiSTer; source-less translated
+echoes are suppressed during diagnostics and while a configured panel is connected.
+
+Background: [J-PAC request, issue #5](https://github.com/matijaerceg/misterzine-on-device/issues/5)
+and the [existing controls guide](USER_GUIDE.md#controls). Neo Geo and custom
+letter labels address cabinet button legends independently of input mapping.
 
 ## Hardware review
 
-- On a pad, swap Launch with Filters. Test the draft, let the save trial expire,
-  and confirm the old mapping still works. Repeat and save with the new buttons.
-- Restart MisterZine and check the mapping and legends. Try a second controller.
-- Choose Neo Geo and custom labels; inspect the list, Details and Options in
-  landscape and tate, including a large safe zone.
-- Disconnect during capture and during each save-test step. Reconnect and
-  verify that no unfinished mapping was saved.
-- On a real J-PAC/I-PAC, test factory and reprogrammed keys, held modifiers,
-  shifted menu combinations, a separate typing keyboard, and game launch/return.
-- Turn beta features off and on, then restore defaults. Confirm the saved
-  preferences survive a temporary return to a build without this feature.
+Check first detection, accept/reconnect, manual entry from each controller, and
+ordinary keyboard typing. Try late second-button presses, staggered releases,
+buttons held on entry, disconnects and a long idle pause. Remap every function,
+try a duplicate, skip optional actions, cancel, retry, and save. Confirm that
+unmatched inputs never launch, navigate or type in the diagnostic. Inspect labels
+and both landscape and portrait layouts. Real keyboard encoders additionally need
+shifted keys, a second typing keyboard, and game launch/return checked on hardware.

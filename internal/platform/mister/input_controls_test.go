@@ -53,3 +53,39 @@ func TestRawControlIdentityAndPanelTranslationSuppression(t *testing.T) {
 		t.Fatal("virtual encoder acquired a profile", ev)
 	}
 }
+
+func TestDiagnosticObservationKeepsRawIdentityAndSuppressesEcho(t *testing.T) {
+	in := &Input{ch: make(chan platform.Event, 16), stop: make(chan struct{}), devs: map[string]*device{}}
+	pad := &device{path: "/dev/input/event7", name: "unmapped pad", vendor: 1, product: 2, pad: true, physical: true, held: map[uint16]platform.Key{}}
+	virtual := &device{name: "MiSTer virtual input", held: map[uint16]platform.Key{}}
+	in.ObserveControls("event7")
+	in.emit(virtual, keyEnter, true, 0, time.Now())
+	if len(in.ch) != 0 {
+		t.Fatal("echo escaped diagnostic")
+	}
+	in.emit(pad, 330, true, 0, time.Now())
+	ev := <-in.ch
+	if !ev.ObservationOnly || ev.DeviceID != "0001_0002" || ev.Node != "event7" || ev.Direct || ev.Key != platform.KeyOther {
+		t.Fatal(ev)
+	}
+	in.emit(pad, 330, false, 0, time.Now())
+	ev = <-in.ch
+	if ev.Pressed || !ev.ObservationOnly {
+		t.Fatal(ev)
+	}
+	in.emit(pad, 802, true, 0, time.Now())
+	ev = <-in.ch
+	if !ev.Direction || !ev.ObservationOnly {
+		t.Fatal(ev)
+	}
+	in.releaseHeld(pad)
+	ev = <-in.ch
+	if !ev.Cancelled || ev.Pressed {
+		t.Fatal(ev)
+	}
+	in.ObserveControls("")
+	in.emit(virtual, keyEnter, true, 0, time.Now())
+	if len(in.ch) != 1 {
+		t.Fatal("echo suppression stuck after diagnostic")
+	}
+}

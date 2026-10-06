@@ -211,8 +211,8 @@ filter choices are saved.
 ## Controls
 
 The experimental [Button mapping screen](BUTTON_MAPPING.md) adds per-controller
-remapping, Neo Geo and custom labels, and an explicit arcade-panel mode for
-keyboard encoders. It is beta, without the Supporter star; see the linked guide
+diagnostics for unfamiliar controllers, a complete remapping walkthrough,
+Neo Geo and custom labels, and explicit arcade-panel mapping for keyboards. It is beta, without the Supporter star; see the linked guide
 for setup, safe testing, and recovery.
 
 | Pad | Keyboard | List | Details | Artwork | Filters | Options |

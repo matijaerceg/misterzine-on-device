@@ -74,6 +74,7 @@ func main() {
 	layout := flag.String("layout", "list", "main view arrangement: list, split, picture or text")
 	motion := flag.Bool("motion", false, "run the page and layout transitions on the scripted clock (off: every shot is an end state); the frames command records them")
 	buttonLabels := flag.String("button-labels", "mister", "legend button names: mister, xbox, playstation or numbers")
+	controlsAuto := flag.Bool("controls-auto", false, "invite unfamiliar controller fixtures automatically")
 	controlsPreview := flag.Bool("controls", false, "open Button mapping with a pad and keyboard-encoder fixture; requires beta access")
 	menuButton := flag.String("menu-button", "options", "what the pad's Menu button does: options or leave")
 	launcher := flag.Bool("launcher", false, "start with the main menu shortcut on, so Open at boot, Return after game and Exit chord are live; the Options row toggles it")
@@ -313,7 +314,7 @@ func main() {
 		stored = &data.SeenRecord{T: now.Add(-*seenAge).UTC().Format(time.RFC3339), Cur: cur}
 	}
 	controlPads := controlFixtures()
-	if *controlsPreview {
+	if *controlsPreview || *controlsAuto {
 		cfg.Controls = &app.ControlsHooks{Devices: func() []support.Pad { return controlPads }, Save: func(controls.File) error { return nil }}
 		cfg.Support = &app.SupportHooks{Pads: func() []support.Pad { return controlPads[:min(1, len(controlPads))] }}
 	}
