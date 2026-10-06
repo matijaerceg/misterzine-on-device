@@ -5,7 +5,7 @@ its own button. These controls belong to MisterZine; game controls and MiSTer's
 global controller definitions are separate.
 
 This ordinary beta feature has no Supporter star. In a build that includes it,
-enable **Options Ã¢â€ â€™ Operation Ã¢â€ â€™ Show beta features** and unlock the beta with an
+enable **Options → Operation → Show beta features** and unlock the beta with an
 October 2026 or later code.
 
 ## Check a controller
@@ -15,7 +15,7 @@ app is ready. Updates, launching and other screens are not interrupted. Accepted
 models and models with existing saved profiles do not prompt again. Identical
 models share their preferences.
 
-For another check, open **Options Ã¢â€ â€™ Controls Ã¢â€ â€™ Button mapping** with the controller
+For another check, open **Options → Controls → Button mapping** with the controller
 you want to configure. The screen says **Currently mapping:** and its name. When
 there is no identifiable opening controller, choose one from the list.
 
@@ -39,7 +39,7 @@ start; manual Button mapping remains available.
 
 ## Remap everything
 
-Setup immediately asks for **Up**, then **Down, Left, Right, Open, Back, Launch,
+Setup immediately asks for **Up**, then **Down, Left, Right, OK, Back, Launch,
 Filters, View/favorite, Page up, Page down, Quick toggles and Menu**. Each step
 explains the function and suggests a typical physical button. Completed choices
 remain visible. Tap and release to assign and advance.
@@ -48,19 +48,22 @@ Each input can be assigned once. If it is already used, the screen names that
 function and waits for another choice; nothing swaps automatically.
 
 **Hold any button for two seconds** to pause. Tap a button to cycle through
-**Resume Ã‚Â· Skip Ã‚Â· Cancel setup**, then hold for two seconds and release to select.
-These controls work before navigation is mapped. The four directions, Open and
+**Resume · Skip · Cancel setup**, then hold for two seconds and release to select.
+These controls work before navigation is mapped. The four directions, OK and
 Back cannot be skipped. Other functions, including Launch, may be skipped;
 **skipped means unassigned**, not inherited from the old setup.
 
-Cancel returns directly to the diagnostic with the saved setup. After the final
-function, try the proposed controls in the diagnostic. Hold one button and release
-to save, or hold two and release both to start again. **Controls saved** briefly
-confirms success, then returns to the previous screen.
+Cancel returns directly to the diagnostic with the saved setup. Completing the
+final function saves the mapping immediately and returns to the ordinary check
+screen. **Controls saved** briefly confirms success. Hold one button and release
+to accept and close; hold two and release both to start remapping again. These
+gestures are the same on every visit. Check rows populate on button-down, and
+all currently held assigned inputs highlight together.
 
-Nothing changes until acceptance. A failed save keeps both the previous setup
-and the proposed choices, so you can retry. The screensaver stays out of setup
-and receives a fresh idle period when you leave.
+Nothing changes before all functions are assigned or explicitly skipped. The
+four directions, OK and Back remain required by save validation. A failed save
+keeps the previous setup and the completed choices, with a hold-to-retry prompt.
+The screensaver stays out of setup and gets a fresh idle period on exit.
 
 ## Keyboards and arcade panels
 
@@ -82,13 +85,13 @@ the diagnostic explains the limitation. This is not a promise of universal suppo
 
 ## Labels
 
-The separate **Options Ã¢â€ â€™ Controls Ã¢â€ â€™ Controller labels** screen retains global,
+The separate **Options → Controls → Controller labels** screen retains global,
 MiSTer, Xbox, PlayStation, numeric, **Neo Geo A B C D**, and custom letter styles.
 Left/right changes the style or custom character; arrows indicate available
 changes. OK does not cycle styles. Save changes to apply labels.
 
 Custom letters name actions, for example `Y` for a yellow Launch button or `R`
-for a red Open button. Labels remain separate from the remapping walkthrough.
+for a red OK button. Labels remain separate from the remapping walkthrough.
 
 ## Recovery and background
 
