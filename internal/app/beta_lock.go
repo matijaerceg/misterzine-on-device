@@ -33,7 +33,6 @@ const codeLen = 6
 
 // betaLock is the lock screen's state; App.lock is nil once unlocked.
 type betaLock struct {
-	earlyAccess   bool
 	featureTitle  string
 	requiredMonth access.Month
 	optional      bool
@@ -510,17 +509,10 @@ func (a *App) paintAccessCode(c *gfx.Canvas) {
 	cols := a.sm.Cols(box.Dx())
 	paragraphs := []string{
 		"Patreon support funds development.",
-		"Codes cover features introduced through their month, not an expiry date.",
+		"Codes cover Supporter extras through their month, not an expiry date.",
 		"No need to stay subscribed.",
 	}
-	if a.lock.earlyAccess {
-		paragraphs = []string{
-			"This feature will be free for everyone when it leaves beta.",
-			"Your code keeps this early access unlocked.",
-			"No need to stay subscribed.",
-		}
-	}
-	if a.lock.requiredMonth != 0 && !a.lock.earlyAccess {
+	if a.lock.requiredMonth != 0 {
 		paragraphs[0] = "A Supporter extra, including after beta."
 		paragraphs[1] = "Your code unlocks it forever."
 	}
@@ -540,12 +532,9 @@ func (a *App) paintAccessCode(c *gfx.Canvas) {
 	lines = append(lines, gfx.Wrap("Your access: "+a.cfg.AccessMonth.Short(), cols, 100)...)
 	lines = append(lines, gfx.Wrap(required, cols, 100)...)
 	lineH := a.sm.H + 1
-	future := evenWrap("Future features may need a newer code.", cols, 3)
+	future := evenWrap("Future Supporter extras may need a newer code.", cols, 3)
 	footH := len(future)*lineH + 4 + lineH
-	if a.lock.earlyAccess {
-		future = nil
-		footH = lineH
-	}
+
 	h := 4 + lockBoxH + 4 + 2*lineH + 4 + footH
 	for _, line := range lines {
 		if line == "" {

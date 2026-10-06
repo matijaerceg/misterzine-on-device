@@ -864,24 +864,25 @@ month and the covered features. Select Enter MisterZine code there to enter the
 six-digit code from the MisterZine Patreon post. With no saved code, the page
 says **No code entered**.
 
-A month such as **Oct 2026** means the code covers features introduced through
+A month such as **Oct 2026** means the code covers Supporter extras introduced through
 that month. It is not an expiry date or a subscription deadline.
 **You do not need to stay subscribed.** Newer codes include earlier features;
 entering an older code never reduces your access. The same code applies across
 supported MisterZine apps; enter it in each app. Keep a copy. In months without
 new gated features, the latest existing code stays current.
 
-Each feature has an earliest eligible code month. A star marks a Supporter extra:
+Each Supporter extra has an earliest eligible code month. A star marks a Supporter extra:
 **Your code unlocks it forever**, including after beta. The Greek beta sign marks
-an experimental feature. Ordinary early-access features become free for everyone
-when they leave beta. A feature may be both Supporter and beta; leaving beta
+an experimental feature. Free beta features need only the Beta toggle, never a code. A feature may be both Supporter and beta; leaving beta
 does not remove its Supporter requirement. Updates and fixes to an unlocked
 feature do not move its required month forward.
 
 Show beta features is a separate preference in Operation, off by default.
-Switching it on reveals experimental features, and a qualifying code enables
-them. Switching it off hides and stops them while keeping their preferences.
-Your access still lists covered beta features as **Unlocked; beta off**.
+Switching it on enables free beta features. Supporter betas also need a qualifying code. Switching it off hides and stops them while keeping their preferences.
+Your access groups Supporter extras separately from Free beta features.
+Covered Supporter betas show **Beta off** when disabled; their help confirms
+your code covers them and asks you to enable Beta. Free betas are listed only
+with Beta on, with a reminder in their place when it is off.
 Stable Supporter options remain visible without a code. Locked rows and their
 code screens show the required month and your current access.
 
@@ -894,7 +895,7 @@ to stacked rows where the full text would not fit. **Forget code** at the bottom
 opens a confirmation: hold A for two seconds to remove all saved unlocks on this
 device, or B to keep them. Your settings stay saved, and your code still works;
 enter it again to restore access. Beta stays as you set it. Leave it on to
-inspect locked early-access features, or turn it off for the default free view.
+try free betas and inspect locked Supporter betas, or turn it off for the default free view.
 
 Options starts with all five sections collapsed. Open Data to reach Rescan card
 and its child ROM report row. Section expansion is remembered while the app is

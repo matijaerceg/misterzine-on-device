@@ -62,11 +62,14 @@ func TestPermanentAccess(t *testing.T) {
 func TestFeatureLifecycle(t *testing.T) {
 	for _, fancy := range []bool{false, true} {
 		f := Feature{Fancy: fancy, Beta: true, Since: 202610}
-		if f.Visible(false) || f.Allowed(202612, false) || f.Allowed(202609, true) {
+		if f.Visible(false) || f.Allowed(202612, false) || (f.Allowed(202609, true) == fancy) {
 			t.Fatal("beta gate bypassed", f)
 		}
 		if !f.Visible(true) || !f.Allowed(202610, true) {
 			t.Fatal("qualifying beta hidden", f)
+		}
+		if f.Allowed(0, true) == fancy {
+			t.Fatal("free beta requires a code or supporter beta bypassed it")
 		}
 		f.Beta = false
 		if !f.Visible(false) || !f.Allowed(202610, false) {

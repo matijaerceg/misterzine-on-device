@@ -107,28 +107,18 @@ func TestLockedOptionSelectionSurvivesRebuild(t *testing.T) {
 	}
 }
 
-// Only beta-only features promise free access after graduation.
-func TestBetaOnlyEarlyAccessCopy(t *testing.T) {
-	for _, supporter := range []bool{false, true} {
-		a := New(Config{PhysW: 320, PhysH: 240, ShowBetaFeatures: true}, data.Ingest(nil, "", time.Now()), nil)
-		f := access.Feature{Fancy: supporter, Beta: true, Since: 202610}
+func TestFreeBetaDoesNotOfferCodeEntry(t *testing.T) {
+	a := New(Config{PhysW: 320, PhysH: 240, ShowBetaFeatures: true}, data.Ingest(nil, "", time.Now()), nil)
+	for _, f := range []access.Feature{access.ROMReport, access.Controls} {
 		row := a.gatedOption(panelEntry{text: "Example", kind: "example", help: "Explains the feature."}, f)
-		if row.earlyAccess == supporter {
-			t.Fatal("early access status conflated with Supporter")
+		if row.kind != "example" || row.requiredMonth != 0 || row.disabled || !a.featureAllowed(f) {
+			t.Fatal("free beta asks for a code")
 		}
-		if strings.Contains(row.help, "Free for everyone after beta.") == supporter {
-			t.Fatal("wrong free-after-beta promise")
-		}
-		a.openOptions()
-		a.panel.entries = []panelEntry{row}
-		a.panel.cursor = 0
-		a.actPanel(platform.KeyEnter)
-		if a.lock == nil || a.lock.earlyAccess == supporter {
-			t.Fatal("code screen lost feature status")
-		}
-		if strings.Contains(a.codeScreenTitle(), "Early access") == supporter {
-			t.Fatal("wrong code screen title")
-		}
+	}
+	f := access.Themes
+	row := a.gatedOption(panelEntry{text: "Example", kind: "example"}, f)
+	if row.kind != "enter-code" || row.requiredMonth != f.Since {
+		t.Fatal("supporter beta lost code requirement")
 	}
 }
 
@@ -149,8 +139,7 @@ func TestFeatureCodeRequiresCoveredMonth(t *testing.T) {
 	a.openOptions()
 	a.openCode()
 	a.lock.requiredMonth = 202709
-	a.lock.featureTitle = "Example - Early access"
-	a.lock.earlyAccess = true
+	a.lock.featureTitle = "Example - Supporter"
 	for _, ch := range "123456" {
 		a.lockType(int8(ch - '0'))
 	}
@@ -161,7 +150,7 @@ func TestFeatureCodeRequiresCoveredMonth(t *testing.T) {
 	if a.lock.message != "Covers September 2026. Needs September 2027 or newer." {
 		t.Fatalf("unclear insufficient coverage: %q", a.lock.message)
 	}
-	if a.lock.started() || a.lock.box != 0 || !a.lock.earlyAccess || a.lock.requiredMonth != 202709 {
+	if a.lock.started() || a.lock.box != 0 || a.lock.requiredMonth != 202709 {
 		t.Fatal("retry did not reset input or preserve feature context")
 	}
 	for _, rot := range []gfx.Rotation{gfx.RotNone, gfx.RotLeft} {
@@ -205,26 +194,47 @@ func TestAccessOverviewAndReturn(t *testing.T) {
 			if a.screen != ScreenAccess {
 				t.Fatal("overview unavailable")
 			}
-			rows := a.panel.entries
-			extra := 0
-			if month.Valid() {
-				extra = 2
-			}
-			if len(rows) != 2+len(access.Catalog())+extra {
-				t.Fatal("missing features")
-			}
-			for i, f := range access.Catalog() {
-				a.panel.cursor = 2 + i
+			for _, f := range access.Catalog() {
+				found := -1
+				for i, e := range a.panel.entries {
+					if e.value == f.ID {
+						found = i
+						break
+					}
+				}
+				if !f.Fancy && !beta {
+					if found >= 0 {
+						t.Fatal("free beta shown with toggle off")
+					}
+					continue
+				}
+				if found < 0 {
+					t.Fatal("missing visible feature", f.ID)
+				}
+				a.panel.cursor = found
 				a.buildPanel()
-				if a.panel.entries[a.panel.cursor].value != f.ID {
-					t.Fatal("rebuild moved feature selection")
+				row := a.panel.entries[found]
+				if row.value != f.ID {
+					t.Fatal("rebuild moved selection")
 				}
-				state := rows[2+i].accessStatus
-				if strings.HasPrefix(state, "Unlocked") != f.Covered(month) {
-					t.Fatalf("wrong coverage: %v %s", month, state)
+				want := "Available"
+				if f.Fancy {
+					want = "Needs Oct 2026+"
+					if f.Covered(month) {
+						want = "Unlocked"
+						if !beta {
+							want = "Beta off"
+						}
+					}
 				}
-				if strings.Contains(state, "beta off") != (f.Covered(month) && f.Beta && !beta) {
-					t.Fatal("beta confused with access")
+				if row.accessStatus != want {
+					t.Fatalf("%s: got %q want %q", f.ID, row.accessStatus, want)
+				}
+				if !f.Fancy && !strings.Contains(row.help, "No code needed") {
+					t.Fatal("free beta explanation missing")
+				}
+				if f.Fancy && f.Beta && !beta && !strings.Contains(row.help, "Enable Beta") {
+					t.Fatal("supporter beta requirement missing")
 				}
 			}
 			a.panel.cursor = 1
@@ -314,12 +324,12 @@ func TestForgetCodeRequiresFreshContinuousHold(t *testing.T) {
 func TestAccessColumnsFallbackAndROMChild(t *testing.T) {
 	a := New(Config{PhysW: 320, PhysH: 240, AccessMonth: 202610, ShowBetaFeatures: true}, data.Ingest(nil, "", time.Now()), nil)
 	rows := a.accessEntries()
-	if rows[2].accessStatus != "Unlocked" {
+	if rows[3].accessStatus != "Unlocked" {
 		t.Fatal("wide view not in columns")
 	}
 	a.lay.Body = image.Rect(0, 0, 100, 200)
 	rows = a.accessEntries()
-	if rows[2].accessStatus != "" || !rows[3].info || rows[3].text != "Unlocked" {
+	if rows[3].accessStatus != "" || !rows[4].info || rows[4].text != "Unlocked" {
 		t.Fatal("narrow view truncated instead of stacking")
 	}
 	for _, month := range []access.Month{0, 202610} {

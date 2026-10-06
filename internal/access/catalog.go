@@ -26,7 +26,7 @@ func (f Feature) Category() string {
 		return "Supporter"
 	}
 	if f.Beta {
-		return "Early access"
+		return "Free beta"
 	}
 	return "Free"
 }

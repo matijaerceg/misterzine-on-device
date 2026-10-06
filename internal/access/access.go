@@ -37,7 +37,7 @@ type Feature struct {
 }
 
 func (f Feature) Covered(month Month) bool {
-	return (!f.Fancy && !f.Beta) || (f.Since.Valid() && month.Valid() && month >= f.Since)
+	return !f.Fancy || (f.Since.Valid() && month.Valid() && month >= f.Since)
 }
 func (f Feature) Visible(showBeta bool) bool { return !f.Beta || showBeta }
 func (f Feature) Allowed(month Month, showBeta bool) bool {
@@ -45,10 +45,10 @@ func (f Feature) Allowed(month Month, showBeta bool) bool {
 }
 
 var (
-	Controls  = Feature{Beta: true, Since: 202610}
+	Controls  = Feature{Beta: true}
 	Themes    = Feature{Fancy: true, Beta: true, Since: 202610}
 	Tallies   = Feature{Fancy: true, Beta: true, Since: 202610}
-	ROMReport = Feature{Beta: true, Since: 202610}
+	ROMReport = Feature{Beta: true}
 	ErrCode   = errors.New("access: unrecognised MisterZine code")
 )
 

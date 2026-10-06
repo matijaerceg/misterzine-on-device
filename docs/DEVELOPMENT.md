@@ -114,7 +114,7 @@ check is involved. Older codes cannot reduce access. The original beta receipt
 is recognised as October 2026 by the official registry.
 
 Private feature code must check access at entry points and execution sites,
-not only hide its option. Locked stable Supporter features remain visible. Beta
+not only hide its option. Locked stable Supporter features remain visible. Free betas need no code; only Supporter extras use month thresholds. Beta
 features are hidden and inactive with the toggle off. Turning the toggle off
 preserves preferences. Draw with `pal` so themes reach every screen.
 

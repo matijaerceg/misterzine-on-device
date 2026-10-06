@@ -16,7 +16,6 @@ import (
 
 // panelEntry is one line of the Filters or Options screen.
 type panelEntry struct {
-	earlyAccess   bool
 	requiredMonth access.Month
 	feature       bool // feature markers retain their highlight even on locked rows
 	text          string
@@ -581,7 +580,7 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "Exit chord", kind: "exit-chord", child: true, vals: []string{"off", "Select+Start", "L+R+Select+Start"}, idx: map[string]int{"": 0, "select-start": 1, "lr-select-start": 2}[a.ExitChord()], disabled: launcherIdx == 0,
 			help: "Hold these MiSTer-defined pad buttons one second in a game started here: it exits to the MiSTer menu, and Return after game reopens MisterZine."},
 		{text: "Your access", kind: "your-access", opensPage: true, help: "Your access: " + a.cfg.AccessMonth.Short() + ". See covered features or enter a code. No need to stay subscribed."},
-		{text: "Show beta features", kind: "show-beta-features", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ShowBetaFeatures], help: "Show experimental features. Codes cover features through their month. Off hides and stops them."},
+		{text: "Show beta features", kind: "show-beta-features", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ShowBetaFeatures], help: "Try free betas without a code. Supporter betas also need a code. Off hides and stops all betas."},
 		{text: "Troubleshooting", kind: "troubleshooting",
 			help: "Test your Start button or game launching. Results stay on screen for a photo; no keyboard or log files needed."},
 		spacer,
@@ -949,9 +948,6 @@ func (a *App) optionsHint() string {
 			parts = append(parts, arrows+" Change")
 		}
 		if act := optionsActs[e.kind]; act != "" {
-			if e.earlyAccess {
-				act = "Early access"
-			}
 			parts = append(parts, "A "+act)
 		}
 	}
@@ -1327,10 +1323,6 @@ func (a *App) togglePanel() bool {
 		if e.requiredMonth != 0 {
 			a.lock.featureTitle = "Unlock " + e.text
 			a.lock.requiredMonth = e.requiredMonth
-			a.lock.earlyAccess = e.earlyAccess
-			if e.earlyAccess {
-				a.lock.featureTitle = e.text + " - Early access"
-			}
 		}
 		return true
 	case "show-beta-features":
