@@ -184,7 +184,7 @@ func followGame(lg *log.Logger, chord string) bool {
 			core := coreName()
 			return core != "" && core != menuCore && core != "misterzine"
 		}, func() {
-			if err := sendMainCmd(menuCoreCmd(consoleModeRunning())); err != nil {
+			if err := sendMainCmd(restoreMenuCmd()); err != nil {
 				lg.Printf("watch: exit chord: %v", err)
 			}
 		}, lg)
@@ -275,9 +275,15 @@ func hasStartupHook(script string) bool {
 // the old name and the other build's name go first, so an updated card, or
 // one that moved between Stable and Beta, shows one entry; failing that, this
 // build's is still written.
-func ensureMGL() error { return ensureMGLAt(menuMGL(), otherMGLs()...) }
+func ensureMGL() error {
+	return ensureMGLBodyAt(menuMGL(), menuEntryBody(configuredZaparoo()), otherMGLs()...)
+}
 
 func ensureMGLAt(mglPath string, others ...string) error {
+	return ensureMGLBodyAt(mglPath, mglBody, others...)
+}
+
+func ensureMGLBodyAt(mglPath, body string, others ...string) error {
 	for _, other := range others {
 		removeMGL(other)
 	}
@@ -296,17 +302,41 @@ func ensureMGLAt(mglPath string, others ...string) error {
 					tmp := mglPath + ".tmp"
 					if err := os.Rename(filepath.Join(dir, e.Name()), tmp); err == nil {
 						if err := os.Rename(tmp, mglPath); err == nil {
-							return nil
+							return writeMGLBody(mglPath, body)
 						}
 					}
 				}
 			}
 		}
 		if exact {
-			return nil
+			return writeMGLBody(mglPath, body)
 		}
 	}
-	return os.WriteFile(mglPath, []byte(mglBody), 0644)
+	return writeMGLBody(mglPath, body)
+}
+
+func writeMGLBody(path, body string) error {
+	if b, err := os.ReadFile(path); err == nil && string(b) == body {
+		return nil
+	}
+	// Replace atomically: Main must never parse a half-written shortcut.
+	f, err := os.CreateTemp(filepath.Dir(path), ".misterzine-entry-*")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(f.Name())
+	if _, err = f.WriteString(body); err != nil {
+		f.Close()
+		return err
+	}
+	if err = f.Chmod(0644); err != nil {
+		f.Close()
+		return err
+	}
+	if err = f.Close(); err != nil {
+		return err
+	}
+	return os.Rename(f.Name(), path)
 }
 
 // launcherEnable adds the boot block and makes sure the MGL exists.
@@ -595,6 +625,10 @@ func watch() int {
 		os.Remove(launchedFile)
 		if err := runFromMenu(lg, kbd, resume, handled); err != nil {
 			lg.Printf("watch: %v", err)
+			if errors.Is(err, errZaparooConsole) {
+				resume = false
+				continue // another client may own the screen; don't reload Menu
+			}
 		}
 		resume = false
 		enabled := launcherEnabled()
@@ -627,7 +661,7 @@ func watch() int {
 		}, time.Sleep) {
 			// back to a plain menu, or Console Mode's: resets CORENAME so
 			// this does not retrigger
-			sendMainCmd(menuCoreCmd(consoleModeRunning()))
+			sendMainCmd(restoreMenuCmd())
 		}
 		// wait for CORENAME to change before watching again
 		for i := 0; i < 40; i++ {
@@ -782,7 +816,27 @@ func runFromMenu(lg *log.Logger, kbd *mister.VKeyboard, resume bool, selected ti
 	time.Sleep(1200 * time.Millisecond) // Main has just re-executed itself
 	lg.Printf("watch: console: active %s, fb mode %q before", mister.ActiveTTY(), mister.SysfsMode())
 	closeFrontend(lg, selected, time.Sleep)
-	if consoleModeRunning() {
+	lease, err := borrowZaparooConsole(lg)
+	if err != nil {
+		return err
+	}
+	if lease != nil {
+		defer func() {
+			if fileExists(launchedFile) {
+				return // the new core owns Main now
+			}
+			// The UI can leave while its updater still owns the console.
+			// Keep the lease until the same point as the normal menu restore.
+			if !waitForMenuRestore(lg, func() (string, bool) {
+				return coreName(), launcherUpdateActive()
+			}, time.Sleep) {
+				return
+			}
+			if err := lease.release(); err != nil {
+				lg.Printf("watch: Zaparoo release: %v", err)
+			}
+		}()
+	} else if consoleModeRunning() {
 		closeConsoleModeFrontend(lg, time.Sleep)
 		if err := mister.UnlockVTSwitch(); err != nil {
 			lg.Printf("watch: %v", err)
@@ -805,13 +859,16 @@ func runFromMenu(lg *log.Logger, kbd *mister.VKeyboard, resume bool, selected ti
 		args = " --resume"
 	}
 	launcher := "#!/bin/bash\nexport LC_ALL=en_US.UTF-8\nexport HOME=/root\ncd " + filepath.Dir(entry) + "\n" + entry + args + "\n"
+	if lease != nil {
+		launcher = strings.Replace(launcher, "export HOME=/root\n", "export HOME=/root\nexport "+menuLeaseEnv+"=1\n", 1)
+	}
 	if err := os.WriteFile("/tmp/script", []byte(launcher), 0700); err != nil {
 		return err
 	}
 	lg.Printf("watch: running the app on tty2")
 	t0 := time.Now()
 	cmd := exec.Command("/sbin/agetty", "-a", "root", "-l", "/tmp/script", "--nohostname", "-L", "tty2", "linux")
-	err := cmd.Run()
+	err = cmd.Run()
 	lg.Printf("watch: app finished after %v (err=%v)", time.Since(t0).Round(time.Second), err)
 	return nil
 }

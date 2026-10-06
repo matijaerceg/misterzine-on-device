@@ -661,7 +661,13 @@ func (h *host) handleEvent(ev platform.Event) {
 	}
 	if ev.Key == platform.KeyScreenshot {
 		if ev.Pressed {
-			h.screenshot()
+			if os.Getenv(menuLeaseEnv) == "1" {
+				// Zaparoo disables Main's OSD keys during a console lease, so
+				// keep the normal menu-session F12 exit in the app itself.
+				h.stop()
+			} else {
+				h.screenshot()
+			}
 		}
 		return
 	}

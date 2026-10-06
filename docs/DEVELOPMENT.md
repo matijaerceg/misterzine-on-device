@@ -251,6 +251,16 @@ Protected-write detection follows known upstream output markers and checks
 known writers before cancellation signals. Unknown output stays visible;
 MisterZine cannot guarantee protection against arbitrary external root commands
 or loss of power. No timeout guesses when a protected write is safe to kill.
+Under Zaparoo's Main, the generated MGL loads `zaparoo/menu_zaparoo` directly:
+loading stock `menu.rbf` triggers a replacement that loses the MGL's setname.
+Existing entries are rewritten only when their contents change, including
+when the configured Main changes back to stock. With the frontend active,
+the watcher acquires tty2 through `zaparoo_console acquire NONCE 2`, validates
+the live Main PID and nonce in `/tmp/zaparoo_console_state`, and releases that
+nonce on exit. A game load owns the subsequent Main session and is left alone.
+Busy or unacknowledged handoffs do not trigger a menu reload over another
+client. The leased child handles F12 itself because Main disables OSD keys.
+
 Launcher entry is deferred while known external updaters own the console.
 
 Regression tests use simulated updaters and temporary files. Run a real system

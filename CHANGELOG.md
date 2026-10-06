@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fix the main-menu shortcut under Zaparoo's custom MiSTer program. The shortcut now selects Zaparoo's menu core directly, preserving the request to open MisterZine, and an active Zaparoo Frontend hands over the screen through its console protocol. Existing shortcuts update automatically. Quitting returns to Zaparoo; F12, Open at boot, Return after game and the exit chord keep working.
+
 ## v1.2.2 — 2026-10-01
 
 - Name the two builds Stable and Beta. Stable is this repository's releases, which everyone gets; Beta, MisterZine Arcade BETA, is what Patreon members get first and what their code unlocks. Beta shows as MisterZine Arcade BETA in MiSTer's main menu (`MisterZine Arcade BETA.mgl`), and Stable keeps MisterZine Arcade. Each build's launcher writes its own entry and removes the other build's, and the old `MisterZine.mgl`, when it starts, and the scripts that move a card between them give the entry the chosen build's name, so a card lists one entry whichever way it went. The way back from Beta is now MisterZine-Switch-To-Stable, and the scripts, the pages and the notices say Stable and Beta rather than free. Uninstall removes either entry. An NFC tag or `bootcore` line that names the entry needs the one for the build on the card; Troubleshooting says so.

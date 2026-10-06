@@ -79,6 +79,25 @@ another frontend, or a script of your own. Point it at
 All official installations use the same entry, including installations with
 unlocked Supporter or beta features.
 
+### Zaparoo returns to the menu instead of opening MisterZine
+
+Zaparoo's custom MiSTer program replaces the standard menu core with its
+own. Older MisterZine shortcuts lost their selection during that replacement,
+so the screen briefly went black and returned to the menu, even though
+MisterZine-Run worked from Scripts.
+
+MisterZine now updates its shortcut automatically to use Zaparoo's menu core
+when `main=zaparoo/MiSTer_Zaparoo` is configured. With Zaparoo Frontend 2.0
+running, it requests the console through Zaparoo's screen handoff and returns
+it when you leave. F12 still quits a main-menu session. With the frontend
+disabled or absent, it uses the ordinary console path. No extra setting or
+change to MiSTer.ini is needed. Open at boot and Return after game use the
+same shortcut.
+
+If another program is using Zaparoo's console, MisterZine leaves that session
+alone; finish it before trying again. The helper records handoff errors in
+`misterzine/watch.log`, included in **Send a report**.
+
 ### Degauss opens instead
 
 Degauss installs itself as MiSTer's `main=` frontend and takes over every load
