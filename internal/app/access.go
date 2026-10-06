@@ -127,7 +127,11 @@ func (a *App) accessEntries() []panelEntry {
 					help = state + ". " + help
 				}
 				if f.Beta {
-					if a.cfg.ShowBetaFeatures { help += " Beta is on." } else { help += " Enable Beta to use." }
+					if a.cfg.ShowBetaFeatures {
+						help += " Beta is on."
+					} else {
+						help += " Enable Beta to use."
+					}
 				}
 			}
 			row := panelEntry{text: entry.Name + featureMarks(f), kind: "access-info", value: entry.ID, feature: true, help: help}

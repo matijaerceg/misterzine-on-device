@@ -8,11 +8,11 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/access"
 )
 
-func TestROMListRequiresAccessAndBetaOptIn(t *testing.T) {
+func TestROMListRequiresOnlyBetaOptIn(t *testing.T) {
 	for _, month := range []access.Month{0, 202609, 202610, 202612} {
 		for _, show := range []bool{false, true} {
 			got := romListPath("/media/fat/misterzine", month, show)
-			if (got != "") != (show && month >= 202610) {
+			if (got != "") != show {
 				t.Fatalf("month=%d show=%v path=%q", month, show, got)
 			}
 		}

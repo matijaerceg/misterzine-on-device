@@ -2,8 +2,7 @@
 
 Make MisterZine's controls and button hints match the pad or arcade cabinet you
 are using. This feature is experimental, without the Supporter star. In a build
-that includes it, enable **Options → Operation → Show beta features** and use
-an October 2026 or later code. Open **Options → Controls → Button mapping**.
+that includes it, enable **Options → Operation → Show beta features**. No code is needed. Open **Options → Controls → Button mapping**.
 
 ## Set up a controller
 

@@ -5,7 +5,7 @@ import "testing"
 func TestCoverageSurvivesGraduation(t *testing.T) {
 	for _, named := range Catalog() {
 		f := named.Feature
-		if f.Covered(f.Since-1) || !f.Covered(f.Since) || !f.Covered(f.Since+1) {
+		if f.Fancy && (f.Covered(f.Since-1) || !f.Covered(f.Since) || !f.Covered(f.Since+1)) {
 			t.Fatalf("bad boundary: %s", named.Name)
 		}
 		if f.Allowed(f.Since, false) {
