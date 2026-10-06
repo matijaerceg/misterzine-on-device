@@ -510,15 +510,18 @@ func (a *App) paintAccessCode(c *gfx.Canvas) {
 	cols := a.sm.Cols(box.Dx())
 	paragraphs := []string{
 		"Patreon support funds development.",
-		"Your code unlocks all Supporter and Beta features through its month, forever.",
+		"Codes cover features introduced through their month, not an expiry date.",
 		"No need to stay subscribed.",
 	}
 	if a.lock.earlyAccess {
 		paragraphs = []string{
 			"This feature will be free for everyone when it leaves beta.",
-			"Patreon support funds development and gives you early access.",
+			"Your code keeps this early access unlocked.",
 			"No need to stay subscribed.",
 		}
+	}
+	if a.lock.requiredMonth != 0 && !a.lock.earlyAccess {
+		paragraphs[1] = "Your code unlocks it forever."
 	}
 	var lines []string
 	for _, p := range paragraphs {
@@ -529,10 +532,11 @@ func (a *App) paintAccessCode(c *gfx.Canvas) {
 	}
 	required := "Enter your Patreon code:"
 	if a.lock.requiredMonth != 0 {
-		required = a.lock.requiredMonth.String() + " code or newer:"
+		required = "Requires " + a.lock.requiredMonth.Short() + " or newer:"
 	}
 	introCount := len(lines)
 	lines = append(lines, "")
+	lines = append(lines, gfx.Wrap("Your access: "+a.cfg.AccessMonth.Short(), cols, 100)...)
 	lines = append(lines, gfx.Wrap(required, cols, 100)...)
 	lineH := a.sm.H + 1
 	future := evenWrap("Future features may need a newer code.", cols, 3)

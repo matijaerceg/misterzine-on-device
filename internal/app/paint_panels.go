@@ -147,6 +147,8 @@ func (a *App) buildPanel() {
 		a.panel.entries = a.saverEntries()
 	case ScreenViews:
 		a.panel.entries = a.viewsEntries()
+	case ScreenAccess:
+		a.panel.entries = a.accessEntries()
 	case ScreenCredits:
 		a.panel.entries = a.creditsEntries()
 	default:
@@ -576,7 +578,7 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "On: when a game started here exits to the MiSTer menu, MisterZine reopens on that game. Not after quitting with the Menu button. Needs the shortcut."},
 		{text: "Exit chord", kind: "exit-chord", child: true, vals: []string{"off", "Select+Start", "L+R+Select+Start"}, idx: map[string]int{"": 0, "select-start": 1, "lr-select-start": 2}[a.ExitChord()], disabled: launcherIdx == 0,
 			help: "Hold these MiSTer-defined pad buttons one second in a game started here: it exits to the MiSTer menu, and Return after game reopens MisterZine."},
-		{text: "Enter MisterZine code", kind: "enter-code", opensPage: true, help: "Your access: " + a.cfg.AccessMonth.String() + ". Codes permanently unlock covered features. Star: Supporter. Beta sign: experimental."},
+		{text: "Your access", kind: "your-access", opensPage: true, help: "Your access: " + a.cfg.AccessMonth.Short() + ". See covered features or enter a code. No need to stay subscribed."},
 		{text: "Show beta features", kind: "show-beta-features", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ShowBetaFeatures], help: "Show experimental features. Codes cover features through their month. Off hides and stops them."},
 		{text: "Troubleshooting", kind: "troubleshooting",
 			help: "Test your Start button or game launching. Results stay on screen for a photo; no keyboard or log files needed."},
@@ -687,6 +689,8 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			}
 		} else if a.screen == ScreenViews {
 			title = "Views"
+		} else if a.screen == ScreenAccess {
+			title = "Your access"
 		} else if a.screen == ScreenCredits {
 			title = "Credits"
 		}
@@ -699,7 +703,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 	// the end of the list, so they take no room unless scrolled to.
 	var inner, helpBox image.Rectangle
 	helpLines := 0
-	if a.screen == ScreenOptions || a.screen == ScreenSaverOptions {
+	if a.screen == ScreenOptions || a.screen == ScreenSaverOptions || a.screen == ScreenAccess {
 		// Keep the hint and preview area fixed at four lines in both orientations.
 		helpLines = 4
 		helpH := helpLines*(font.H+1) + 5
@@ -875,7 +879,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 	if p.top+shown < len(p.entries) {
 		c.Text(edge, lastY, font, gfx.ArrowDown, pal.Muted)
 	}
-	if a.screen == ScreenOptions || a.screen == ScreenSaverOptions {
+	if a.screen == ScreenOptions || a.screen == ScreenSaverOptions || a.screen == ScreenAccess {
 		c.Box(helpBox, pal.Line)
 		if p.cursor < len(p.entries) && a.screen == ScreenOptions && p.entries[p.cursor].kind == "list-layout" {
 			a.paintLayoutPreviews(c, helpBox)
@@ -902,6 +906,8 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			}
 		}
 		a.paintHint(c, hint)
+	} else if a.screen == ScreenAccess {
+		a.paintHint(c, a.optionsHint())
 	} else if a.screen == ScreenCredits {
 		a.paintHint(c, "B Back")
 	} else {
@@ -950,6 +956,7 @@ func (a *App) optionsHint() string {
 var optionsActs = map[string]string{
 	"controls":           "Open",
 	"enter-code":         "Enter code",
+	"your-access":        "Open",
 	"rom-report":         "Info",
 	"show-beta-features": "Toggle",
 	"refresh":            "Refresh", "update": "Run", "update-app": "Run", "update-result": "Open", "rescan": "Rescan", "clearimg": "Clear",
@@ -1012,6 +1019,10 @@ func (a *App) actPanel(k platform.Key) bool {
 		}
 		if a.screen == ScreenViews {
 			a.closeViews()
+			return true
+		}
+		if a.screen == ScreenAccess {
+			a.closeAccess()
 			return true
 		}
 		if a.screen == ScreenCredits {
@@ -1294,6 +1305,9 @@ func (a *App) togglePanel() bool {
 		return true
 	case "rom-report":
 		a.Notice("Rescan card to refresh the ROM report", 4*time.Second)
+		return true
+	case "your-access":
+		a.openAccess()
 		return true
 	case "enter-code":
 		a.openCode()

@@ -28,18 +28,19 @@ func (a *App) gatedOption(row panelEntry, f access.Feature) panelEntry {
 	if !a.featureAllowed(f) {
 		row.value = row.kind // Preserve the feature identity when sharing the code-entry action.
 		row.kind = "enter-code"
-		row.vals = []string{"Unlock"}
+		row.vals = []string{f.Since.Short()}
 		row.idx = 0
 		row.opensPage = true
 		row.disabled = true
 		row.requiredMonth = f.Since
 		row.earlyAccess = f.Beta && !f.Fancy
 		if row.earlyAccess {
-			row.vals = []string{"Early access"}
+			row.vals = []string{f.Since.Short()}
 			row.help += " Free for everyone after beta."
 		} else {
-			row.help += " " + a.btn("A") + ": Unlock."
+			row.help += " Your code unlocks it forever."
 		}
+		row.help = "Needs " + f.Since.Short() + "+. Your access: " + a.cfg.AccessMonth.Short() + ". " + row.help
 	}
 	return row
 }
@@ -81,4 +82,46 @@ func paintFeatureText(c *gfx.Canvas, x, y int, font *gfx.Font, text string, col 
 			c.Text(x+i*font.W, y, font, text[i:i+1], pal.Warn)
 		}
 	}
+}
+
+// Your access is available even with beta hidden and with no code entered.
+func (a *App) accessEntries() []panelEntry {
+	E := []panelEntry{
+		{text: "Your access: " + a.cfg.AccessMonth.Short(), kind: "access-info", help: "The month is coverage, not expiry. You do not need to stay subscribed."},
+		{text: "Enter MisterZine code", kind: "enter-code", opensPage: true, help: "Newer codes include earlier features. Older codes never reduce your access."},
+	}
+	for _, entry := range access.Catalog() {
+		f := entry.Feature
+		state := "Needs " + f.Since.Short() + "+"
+		if f.Covered(a.cfg.AccessMonth) {
+			state = "Unlocked"
+			if f.Beta && !a.cfg.ShowBetaFeatures {
+				state = "Unlocked; beta off"
+			}
+			if !f.Beta && !f.Fancy {
+				state = "Free"
+			}
+		}
+		help := f.Category() + ". " + state + ". "
+		if f.Fancy {
+			help += "Your code unlocks it forever."
+		} else if f.Beta {
+			help += "Free for everyone after beta."
+		}
+		row := panelEntry{text: entry.Name + featureMarks(f), kind: "access-info", feature: true, help: help}
+		E = append(E, row, panelEntry{text: state, info: true})
+	}
+	return E
+}
+
+func (a *App) openAccess() { a.openPanel(ScreenAccess) }
+func (a *App) closeAccess() {
+	a.openOptions()
+	for i, e := range a.panel.entries {
+		if e.kind == "your-access" {
+			a.panel.cursor = i
+			break
+		}
+	}
+	a.all = true
 }

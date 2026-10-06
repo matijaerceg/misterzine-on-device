@@ -60,7 +60,7 @@ func TestStableFancyTeaser(t *testing.T) {
 		t.Fatal("stable Fancy visibility/access conflated")
 	}
 	row := a.gatedOption(panelEntry{text: "Extra", kind: "extra", help: "Describes the feature."}, f)
-	if row.help != "Describes the feature. A: Unlock." || row.requiredMonth != f.Since {
+	if !strings.Contains(row.help, "Describes the feature.") || !strings.Contains(row.help, "Your code unlocks it forever.") || row.requiredMonth != f.Since {
 		t.Fatal("locked feature lost its description or required month")
 	}
 	if row.kind != "enter-code" || !row.disabled {
@@ -80,7 +80,7 @@ func TestLockedOptionSelectionSurvivesRebuild(t *testing.T) {
 			names = append(names, e.text)
 		}
 	}
-	if len(names) < 2 {
+	if len(names) < 1 {
 		t.Fatal("need both a locked feature and standalone code entry")
 	}
 	for _, name := range names {
@@ -184,5 +184,48 @@ func TestFeatureCodeRequiresCoveredMonth(t *testing.T) {
 	a.tryUnlock()
 	if a.Locked() || a.cfg.AccessMonth != 202709 {
 		t.Fatal("older code reduced existing coverage")
+	}
+}
+
+func TestAccessOverviewAndReturn(t *testing.T) {
+	for _, month := range []access.Month{0, 202609, 202610, 202611} {
+		for _, beta := range []bool{false, true} {
+			a := New(Config{PhysW: 320, PhysH: 240, AccessMonth: month, ShowBetaFeatures: beta}, data.Ingest(nil, "", time.Now()), nil)
+			a.openOptions()
+			expandOptionsForTest(a)
+			for i, e := range a.panel.entries {
+				if e.kind == "your-access" {
+					a.panel.cursor = i
+					break
+				}
+			}
+			a.actPanel(platform.KeyEnter)
+			if a.screen != ScreenAccess {
+				t.Fatal("overview unavailable")
+			}
+			rows := a.panel.entries
+			if len(rows) != 2+2*len(access.Catalog()) {
+				t.Fatal("missing features")
+			}
+			for i, f := range access.Catalog() {
+				state := rows[3+i*2].text
+				if strings.HasPrefix(state, "Unlocked") != f.Covered(month) {
+					t.Fatalf("wrong coverage: %v %s", month, state)
+				}
+				if strings.Contains(state, "beta off") != (f.Covered(month) && f.Beta && !beta) {
+					t.Fatal("beta confused with access")
+				}
+			}
+			a.panel.cursor = 1
+			a.actPanel(platform.KeyEnter)
+			a.actLock(platform.KeyBack)
+			if a.screen != ScreenAccess || a.panel.cursor != 1 {
+				t.Fatal("code back lost overview")
+			}
+			a.actPanel(platform.KeyBack)
+			if a.screen != ScreenOptions || a.panel.entries[a.panel.cursor].kind != "your-access" {
+				t.Fatal("overview back lost options row")
+			}
+		}
 	}
 }

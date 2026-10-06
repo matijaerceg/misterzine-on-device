@@ -22,15 +22,26 @@ func (m Month) String() string {
 	return fmt.Sprintf("%s %d", time.Month(m%100), m/100)
 }
 
+// Short names identify coverage, never an expiry date.
+func (m Month) Short() string {
+	if !m.Valid() {
+		return "No code entered"
+	}
+	return fmt.Sprintf("%.3s %d", time.Month(m%100).String(), m/100)
+}
+
 // Feature separates readiness from access. Graduation changes Beta only.
 type Feature struct {
 	Fancy, Beta bool
 	Since       Month
 }
 
+func (f Feature) Covered(month Month) bool {
+	return (!f.Fancy && !f.Beta) || (f.Since.Valid() && month.Valid() && month >= f.Since)
+}
 func (f Feature) Visible(showBeta bool) bool { return !f.Beta || showBeta }
 func (f Feature) Allowed(month Month, showBeta bool) bool {
-	return f.Visible(showBeta) && ((!f.Fancy && !f.Beta) || (f.Since.Valid() && month.Valid() && month >= f.Since))
+	return f.Visible(showBeta) && f.Covered(month)
 }
 
 var (
