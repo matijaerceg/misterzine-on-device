@@ -858,44 +858,32 @@ preferences and filters load automatically.
 
 ## MisterZine codes and optional features
 
-Everyone installs the same app and receives the same updates. Options ->
-Enter MisterZine code accepts the six-digit code from the MisterZine Patreon
-post. The ordinary app works without a code.
+Everyone installs the same app and receives the same updates. The ordinary app
+works without a code. Options -> Operation -> Your access lists your saved access
+month and the covered features. Select Enter MisterZine code there to enter the
+six-digit code from the MisterZine Patreon post. With no saved code, the page
+says **No code entered**.
 
-A star marks a Supporter extra. The Greek beta sign marks an experimental feature.
-A feature can have both marks. Show beta features defaults off; switching it
-on reveals experimental features, and a qualifying code enables them. Turning
-it off hides and stops them while keeping their saved preferences. Stable Supporter
-options remain visible even without a code; their help names the required month.
+A month such as **Oct 2026** means the code covers features introduced through
+that month. It is not an expiry date or a subscription deadline.
+**You do not need to stay subscribed.** Newer codes include earlier features;
+entering an older code never reduces your access. The same code applies across
+supported MisterZine apps; enter it in each app. Keep a copy. In months without
+new gated features, the latest existing code stays current.
 
-A code permanently unlocks features through its named month. October 2026 is
-coverage, not an expiry date: that code still works after later app updates or
-on a fresh installation. Newer codes include earlier features. The same code
-applies across supported MisterZine apps; enter it in each app. Keep a copy.
-In months without new gated features, the latest existing code stays current.
+Each feature has an earliest eligible code month. A star marks a Supporter extra:
+**Your code unlocks it forever**, including after beta. The Greek beta sign marks
+an experimental feature. Ordinary early-access features become free for everyone
+when they leave beta. A feature may be both Supporter and beta; leaving beta
+does not remove its Supporter requirement. Updates and fixes to an unlocked
+feature do not move its required month forward.
 
-When an ordinary beta feature becomes stable, everyone gets it. A Supporter beta
-feature becomes a stable Supporter extra and keeps its original code requirement.
-Keeping preferences during uninstall also keeps saved unlocks.
+Show beta features is a separate preference in Operation, off by default.
+Switching it on reveals experimental features, and a qualifying code enables
+them. Switching it off hides and stops them while keeping their preferences.
+Your access still lists covered beta features as **Unlocked; beta off**.
+Stable Supporter options remain visible without a code. Locked rows and their
+code screens show the required month and your current access.
 
-
-## Your access and code months
-
-Options → Operation → Your access lists your saved access month and every
-Supporter or early-access feature. A month such as **Oct 2026** means the code
-covers features introduced through that month. It is not an expiry date or a
-subscription deadline. **You do not need to stay subscribed.** Newer codes
-include earlier features; entering an older code never reduces your access.
-
-Each feature has an earliest eligible code month. Supporter extras carry a
-star: **Your code unlocks it forever**, including after beta. Ordinary
-early-access features become free for everyone when they leave beta. Updates
-and fixes to an unlocked feature do not move its required month forward.
-
-Beta is a separate preference, off by default. Your access still lists covered
-beta features when they are switched off, as **Unlocked; beta off**. Enable
-Beta features in Operation to use them. A feature may be both Supporter and
-beta; leaving beta does not remove its Supporter requirement.
-
-No code is needed for the existing free app. With no saved code, Your access
-says **No code entered**. Select Enter MisterZine code there to add access.
+Codes still work after later app updates or on a fresh installation. Keeping
+preferences during uninstall also keeps saved unlocks.

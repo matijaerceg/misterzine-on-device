@@ -234,3 +234,15 @@ func TestAccessOverviewAndReturn(t *testing.T) {
 		}
 	}
 }
+
+// Dates must not crowd out the feature explanation on a narrow tate screen.
+func TestLockedDescriptionsFit(t *testing.T) {
+	for _, month := range []access.Month{0, 202609} {
+		a := New(Config{PhysW: 320, PhysH: 240, Rotation: gfx.RotLeft, SafeInsetX: 40, SafeInsetY: 40, ShowBetaFeatures: true, AccessMonth: month}, data.Ingest(nil, "", time.Now()), nil)
+		for _, row := range a.optionsEntries() {
+			if row.requiredMonth != 0 && len(gfx.Wrap(row.help, a.sm.Cols(a.lay.Body.Dx()-6), 100)) > 4 {
+				t.Fatalf("%s explanation is truncated: %s", row.text, row.help)
+			}
+		}
+	}
+}
