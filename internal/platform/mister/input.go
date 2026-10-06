@@ -268,7 +268,7 @@ func (in *Input) ControlDevices() []support.Pad {
 			continue
 		}
 		p := d.mapping.info(filepath.Base(d.path), d.name, d.vendor, d.product)
-		p.Held = heldCapabilities(d.f)
+		p.Held, p.HeldKnown = heldCapabilities(d.f)
 		p.Keys, p.Axes = append([]uint16(nil), d.keys...), append([]uint16(nil), d.axes...)
 		p.Keyboard = !d.pad
 		// Remapping a pad requires an exclusive raw reader; otherwise Main
@@ -286,10 +286,13 @@ func (in *Input) observing(d *device) bool {
 	return node != "" && node == filepath.Base(d.path)
 }
 
-func heldCapabilities(f *os.File) []uint16 {
+func heldCapabilities(f *os.File) ([]uint16, bool) {
+	if f == nil {
+		return nil, false
+	}
 	var bits [96]byte
 	if ioctl(f.Fd(), uintptr(0x80604518), unsafe.Pointer(&bits[0])) != nil {
-		return nil
+		return nil, false
 	}
 	var held []uint16
 	for code := 0; code < len(bits)*8; code++ {
@@ -297,7 +300,7 @@ func heldCapabilities(f *os.File) []uint16 {
 			held = append(held, uint16(code))
 		}
 	}
-	return held
+	return held, true
 }
 
 func inputCapabilities(f *os.File, kind, count int) []uint16 {
@@ -536,6 +539,19 @@ func (in *Input) read(d *device) {
 			text := d.keyboardText(code)
 			if val != 0 && val != 1 && !(val == 2 && text != 0) {
 				continue // navigation repeats in the app; typing uses keyboard repeat
+			}
+			// A fresh down for an already-held key means its release was lost.
+			// Cancel the old press before starting another, never turn two taps
+			// into a continuous hold. Kernel repeats use value 2, not value 1.
+			if val == 1 {
+				if previous, held := d.held[code]; held {
+					cancelled := d.event(previous, code, false, at)
+					cancelled.Cancelled = true
+					delete(d.held, code)
+					if !in.deliver(cancelled) {
+						return
+					}
+				}
 			}
 			if !in.emit(d, code, val != 0, text, at) {
 				return

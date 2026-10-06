@@ -49,6 +49,7 @@ func (d Device) Route() string {
 // which raw button code sits in each MiSTer define-slot (A, B, X, Y, L, R,
 // Select, Start) and where that came from.
 type Pad struct {
+	HeldKnown       bool     // the kernel held-key snapshot was read successfully
 	Held            []uint16 // currently held physical keys, sampled when entering diagnostics
 	Keys, Axes      []uint16 // advertised physical input capabilities; immutable snapshots
 	Keyboard        bool     // physical keyboard or encoder, offered by the Controls screen

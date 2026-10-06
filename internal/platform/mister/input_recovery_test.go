@@ -94,3 +94,28 @@ func TestInputFullQueueDoesNotLoseRelease(t *testing.T) {
 		t.Fatal("stop blocked")
 	}
 }
+
+func TestInputNewDownCancelsMissingRelease(t *testing.T) {
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	in := &Input{ch: make(chan platform.Event, 16), stop: make(chan struct{}), devs: map[string]*device{}}
+	d := &device{f: r, name: "keyboard", held: map[uint16]platform.Key{}}
+	in.wg.Add(1)
+	go in.read(d)
+	for _, v := range []int32{1, 2, 1, 0} {
+		if _, err := w.Write(absEvent(evKey, keyEnter, v)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	w.Close()
+	in.wg.Wait()
+	var got []platform.Event
+	for len(in.ch) > 0 {
+		got = append(got, <-in.ch)
+	}
+	if len(got) != 4 || !got[0].Pressed || !got[1].Cancelled || got[1].Pressed || !got[2].Pressed || got[3].Pressed || got[3].Cancelled {
+		t.Fatalf("lost release sequence: %+v", got)
+	}
+}
