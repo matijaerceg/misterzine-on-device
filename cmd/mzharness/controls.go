@@ -10,8 +10,8 @@ import (
 
 func controlFixtures() []support.Pad {
 	return []support.Pad{
-		{Node: "event3", Name: "Xbox 360 controller", Vendor: 0x045e, Product: 0x028e, Direct: true, Mapped: true, OK: "B", Back: "A", Menu: "316", Slots: map[string]uint16{"A": 305, "B": 304, "X": 307, "Y": 308, "Start": 315, "Select": 314, "L": 310, "R": 311, "Up": 802, "Down": 803, "Left": 800, "Right": 801}},
-		{Node: "event4", Name: "J-PAC keyboard encoder", Vendor: 0xd209, Product: 0x0301, Keyboard: true},
+		{Node: "event3", Connection: "usb-controller-1.1", Name: "Xbox 360 controller", Vendor: 0x045e, Product: 0x028e, Direct: true, Mapped: true, OK: "B", Back: "A", Menu: "316", Slots: map[string]uint16{"A": 305, "B": 304, "X": 307, "Y": 308, "Start": 315, "Select": 314, "L": 310, "R": 311, "Up": 802, "Down": 803, "Left": 800, "Right": 801}},
+		{Node: "event4", Connection: "usb-controller-1.2", Name: "J-PAC keyboard encoder", Vendor: 0xd209, Product: 0x0301, Keyboard: true},
 	}
 }
 

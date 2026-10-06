@@ -20,8 +20,8 @@ you want to configure. The screen says **Currently mapping:** and its name. When
 there is no identifiable opening controller, choose one from the list.
 
 The functions start untested. Press buttons to populate their rows; held inputs
-light up. Unmatched inputs appear separately, and the bottom line names the most
-recent input. Presses here do not navigate, search or launch games.
+light up. The bottom Latest line names the most recent input and its assigned function
+or marks it Unassigned. Presses here do not navigate, search or launch games.
 
 - **Hold one button for two seconds:** accept the existing setup.
 - **Hold two buttons together for two seconds, then release both:** remap all.
@@ -124,8 +124,8 @@ shifted keys, a second typing keyboard, and game launch/return checked on hardwa
 
 A hardware unique identifier is used when available. Otherwise the USB connection
 identifies the device, so moving it to another port may produce a new check.
-Interfaces of one receiver share a controller memory. The check shows the
-connection to distinguish devices that report the same name.
+Interfaces of one receiver share a controller memory. The check emphasises the controller name and shows **USB port:** beneath it
+to distinguish devices that report the same name.
 
 Existing model-wide profiles remain as starting defaults. New per-device profiles
 are independent copies. Compatible saved mappings from the same model can also
