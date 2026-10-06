@@ -877,3 +877,25 @@ In months without new gated features, the latest existing code stays current.
 When an ordinary beta feature becomes stable, everyone gets it. A Supporter beta
 feature becomes a stable Supporter extra and keeps its original code requirement.
 Keeping preferences during uninstall also keeps saved unlocks.
+
+
+## Your access and code months
+
+Options → Operation → Your access lists your saved access month and every
+Supporter or early-access feature. A month such as **Oct 2026** means the code
+covers features introduced through that month. It is not an expiry date or a
+subscription deadline. **You do not need to stay subscribed.** Newer codes
+include earlier features; entering an older code never reduces your access.
+
+Each feature has an earliest eligible code month. Supporter extras carry a
+star: **Your code unlocks it forever**, including after beta. Ordinary
+early-access features become free for everyone when they leave beta. Updates
+and fixes to an unlocked feature do not move its required month forward.
+
+Beta is a separate preference, off by default. Your access still lists covered
+beta features when they are switched off, as **Unlocked; beta off**. Enable
+Beta features in Operation to use them. A feature may be both Supporter and
+beta; leaving beta does not remove its Supporter requirement.
+
+No code is needed for the existing free app. With no saved code, Your access
+says **No code entered**. Select Enter MisterZine code there to add access.

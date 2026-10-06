@@ -521,6 +521,7 @@ func (a *App) paintAccessCode(c *gfx.Canvas) {
 		}
 	}
 	if a.lock.requiredMonth != 0 && !a.lock.earlyAccess {
+		paragraphs[0] = "A Supporter extra, including after beta."
 		paragraphs[1] = "Your code unlocks it forever."
 	}
 	var lines []string
