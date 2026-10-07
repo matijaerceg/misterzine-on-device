@@ -75,7 +75,7 @@ recent input and its action, including unassigned inputs.
 - **Change OSD label:** available for actions used in app legends, including
   Page up/down; hidden for directions, Menu and unassigned inputs. Pick a short
   name from categorized grids, including
-  letters, numbers, PlayStation symbols, colors, fighting-game abbreviations,
+  letters, numbers, PlayStation symbols, colors, fighting-game abbreviations, arcade cabinet names such as Coin, Start, Service and P1,
   controller names and keyboard keys. **Use default name** resets only this input.
 
 Popups use D-pad/OK/Back. Selecting an action or name saves immediately and
