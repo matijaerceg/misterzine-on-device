@@ -4,13 +4,15 @@ Button mapping, a free beta in Options -> Controls, teaches MisterZine your cont
 
 For example: an arcade stick MiSTer has never seen works in MisterZine as soon as you have pressed its directions, OK and Back once, and a keyboard can act as an arcade control board instead of typing into search.
 
-Betas are off by default. Switch on **Show beta features** in Options -> Operation to try Button mapping and the ROM report, no code needed. **Your access**, in the same section, lists every feature and its status; Themes and Group tallies are Supporter extras, unlocked by the code from the MisterZine Patreon.
+Betas are off by default. Switch on **Show beta features** in Options -> Operation to try Button mapping and the ROM report, no code needed. The first two Supporter extras, Themes and Group tallies, arrive in the same release: the Oct 2026 code from the MisterZine Patreon unlocks them in **Your access**, in the same section, for good.
 
 **Added**
 
 - Button mapping, a free beta in Options -> Controls: set up any controller or keyboard from its own buttons, check every input in a table, and name the buttons the way the bottom bar should print them.
-- Show beta features, in Options -> Operation: one switch for the free betas, Button mapping and the ROM report. Off hides and stops them.
-- Your access, in Options -> Operation: your saved code, if any, and every feature with its status. Enter a code there to unlock the Supporter extras, Themes and Group tallies, or forget it again.
+- Themes, a Supporter beta in Options -> Display: colour schemes for the whole app, from presets such as Amber, DMG and Vaporwave to a custom one you edit yourself.
+- Group tallies, a Supporter beta in Options -> List: the number of games in each group, printed beside the group name in the list.
+- Show beta features, in Options -> Operation: one switch for the free betas, Button mapping and the ROM report. Off hides and stops every beta.
+- Your access, in Options -> Operation: your saved code, if any, and every feature with its status. Enter a code there to unlock the Supporter extras, or forget it again. [Which code unlocks what](https://github.com/matijaerceg/misterzine-on-device/blob/main/docs/CODES.md).
 
 **Fixed**
 
