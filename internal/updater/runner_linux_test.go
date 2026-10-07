@@ -27,12 +27,25 @@ func TestMain(m *testing.M) {
 		json.NewEncoder(os.Stdout).Encode(s)
 		os.Exit(0)
 	}
-	os.Exit(m.Run())
+	// fake updaters of this run live under one folder of their own, so a
+	// second test run on the same machine never sees them as a real one
+	scope, err := os.MkdirTemp("", "mz-updater-scope-")
+	if err != nil {
+		panic(err)
+	}
+	os.Setenv("MISTERZINE_UPDATER_SCOPE", scope)
+	code := m.Run()
+	os.RemoveAll(scope)
+	os.Exit(code)
 }
 
 func fakeCard(t *testing.T, script string) (string, string) {
 	t.Helper()
-	card := t.TempDir()
+	card, err := os.MkdirTemp(os.Getenv("MISTERZINE_UPDATER_SCOPE"), "card-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.RemoveAll(card) })
 	root := filepath.Join(card, "misterzine")
 	os.MkdirAll(filepath.Join(card, "Scripts"), 0700)
 	if err := os.WriteFile(filepath.Join(card, "Scripts", "update_all.sh"), []byte("#!/bin/bash\n"+script), 0700); err != nil {

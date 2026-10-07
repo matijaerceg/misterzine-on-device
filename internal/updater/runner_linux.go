@@ -30,6 +30,7 @@ func workerAlive(s State) bool {
 
 // OtherScript guards the updater's shared temporary paths.
 func OtherScript() bool {
+	scope := os.Getenv("MISTERZINE_UPDATER_SCOPE")
 	entries, _ := os.ReadDir("/proc")
 	for _, e := range entries {
 		pid, err := strconv.Atoi(e.Name())
@@ -42,6 +43,12 @@ func OtherScript() bool {
 		}
 		args := strings.Split(strings.TrimRight(string(b), "\x00"), "\x00")
 		for _, a := range args {
+			if scope != "" && !strings.HasPrefix(a, scope+"/") {
+				// the tests of two checkouts on one machine each run fake
+				// updaters of their own; only the ones under this run's
+				// folder count
+				continue
+			}
 			base := filepath.Base(a)
 			if base == "update_all.sh" || base == "update_all.pyz" || base == "ua_downloader_bin" || base == "ua_downloader_dd.pyz" || base == "ua_downloader_latest.zip" || base == "downloader_bin" || base == "downloader.sh" || base == "update.sh" {
 				return true
