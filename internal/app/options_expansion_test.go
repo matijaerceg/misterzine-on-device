@@ -99,13 +99,13 @@ func TestAccessOptionsSections(t *testing.T) {
 		}
 		return false
 	}
-	for _, text := range []string{"Your access", "Show beta features", "Troubleshooting", "ROM report"} {
+	for _, text := range []string{yourAccessRow, "Show beta features", "Troubleshooting", "ROM report"} {
 		if has(text) {
 			t.Fatalf("collapsed sections expose %s", text)
 		}
 	}
 	a.optionsOpen["Operation"] = true
-	for _, text := range []string{"Your access", "Show beta features", "Troubleshooting"} {
+	for _, text := range []string{yourAccessRow, "Show beta features", "Troubleshooting"} {
 		if !has(text) {
 			t.Fatalf("Operation lacks %s", text)
 		}
