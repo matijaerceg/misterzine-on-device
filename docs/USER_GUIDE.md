@@ -870,7 +870,7 @@ six-digit code from the MisterZine Patreon post. With no saved code, the page
 says **No code entered**.
 
 A month such as **Oct 2026** means the code covers Supporter extras introduced through
-that month. It is not an expiry date or a subscription deadline.
+that month; [MisterZine codes](CODES.md) lists what each month unlocks. It is not an expiry date or a subscription deadline.
 **You do not need to stay subscribed.** Newer codes include earlier features;
 entering an older code never reduces your access. The same code applies across
 supported MisterZine apps; enter it in each app. Keep a copy. In months without

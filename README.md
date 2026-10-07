@@ -103,6 +103,7 @@ reinstall. Removal requires a current Downloader with uninstall support.
 ## More information
 
 - [User guide](docs/USER_GUIDE.md): controls, Options, Update All, installation and removal.
+- [MisterZine codes](docs/CODES.md): which Supporter extras each code month unlocks.
 - [Display setup](docs/DISPLAY_SETUP.md): connection-specific settings and display limitations.
 - [Troubleshooting](docs/TROUBLESHOOTING.md): display warnings, launching and saved data.
 - [Development](docs/DEVELOPMENT.md): builds, tests, screenshots and opt-in debugging.
