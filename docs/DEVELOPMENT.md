@@ -239,7 +239,12 @@ screen, the launcher closes a leftover `ConsoleMode_arm`, puts a console it left
 in graphics mode back to text, lifts any VT_LOCKSWITCH and takes tty2
 directly. It ends a session and the exit chord with `load_core
 ConsoleMode/menu_ConsoleMode.rbf`: only that relative path makes Console Mode's
-Main start its frontend again.
+Main start its frontend again. The app writes `misterzine/launched` before
+every launch. The launcher's own sessions read and remove it once the app
+exits; a marker that turns up while the launcher idles comes from a session
+opened through Scripts (MisterZine-Run, the way in from Degauss and Console
+Mode), and the launcher follows that game the same way, with the exit chord
+and Return after game. A marker older than the launcher's start is ignored.
 
 Update All runs under a detached supervisor so it can survive the UI closing or
 its executable being replaced. Live state is in RAM, with recovery checkpoints

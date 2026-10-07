@@ -656,24 +656,31 @@ screenshots match, lettering runs instead and the Preview help explains why.
   way you would. A `bootcore` in the INI takes precedence and nothing happens.
   Needs the Main menu shortcut.
 - **Return after game:** off by default. On: when a game you started from
-  MisterZine exits to the MiSTer menu (Reset or Exit in the OSD), the launcher
-  picks the MisterZine Arcade entry again and the list opens on that game: in the
+  MisterZine exits to the MiSTer menu, the launcher picks the MisterZine
+  Arcade entry again and the list opens on that game: in the
   view it starts in when that view lists the game, otherwise in the view you
   launched it from (with Remember last view off, MisterZine starts in the
   Default view, which may not hold it). A game the current filters hide is
-  not shown; the list opens at the top. Games
+  not shown; the list opens at the top. To leave a game for the menu without
+  the Exit chord, open MiSTer's OSD, press right for the System page and
+  choose Reboot with a short press (holding it restarts the whole MiSTer).
+  Reset on the game's own OSD page only restarts the game, and Exit only
+  closes the OSD. Games
   loaded some other way, and quitting through the Menu button, do not bring
-  it back. Needs the Main menu shortcut.
+  it back. Needs the Main menu shortcut, also when you opened MisterZine
+  through Scripts -> MisterZine-Run (as Degauss and Console Mode do).
 - **Exit chord:** off by default. Select+Start, or L+R+Select+Start, held
   together for one second inside a game you started from MisterZine leaves the
-  game for the MiSTer menu, as Reset in the OSD would; with Return after game
+  game for the MiSTer menu, or for your frontend's menu under Degauss or
+  Console Mode; with Return after game
   on, MisterZine reopens on that game. The buttons are the ones you defined in
   MiSTer's define-buttons screen, so the chord is the same on every defined pad
   (a pad MiSTer has not defined uses the standard Linux gamepad layout). It is
   read from the pad while the core runs, so it never reaches the game. A quick
   pass over the buttons does nothing; a wireless pad's own power-off hold is
   longer. SNAC controllers and pads whose Select or Start sit on an axis are
-  not seen. Needs the Main menu shortcut.
+  not seen. Needs the Main menu shortcut, also when you opened MisterZine
+  through Scripts -> MisterZine-Run.
 - **Troubleshooting:** a guided Start-button test, a pad tester, and an
   A/Enter game-launch test, with results you can photograph. The last result
   survives restarting. The pad tester lists every connected pad with the raw

@@ -308,6 +308,48 @@ func TestAwaitGameExitFollowsOnlyOurGame(t *testing.T) {
 	}
 }
 
+func TestScriptLaunchReportsEachNewMarkerOnce(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "launched")
+	write := func(target string, at time.Time) {
+		t.Helper()
+		if err := os.WriteFile(path, []byte(target+"\n"), 0644); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Chtimes(path, at, at); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var seen time.Time
+	if _, ok := scriptLaunch(path, &seen); ok {
+		t.Fatal("no marker reported as a launch")
+	}
+
+	// a marker from before the watcher started: the watcher takes its time as seen
+	stale := time.Date(2026, 9, 30, 21, 0, 0, 0, time.UTC)
+	write("/media/fat/_Arcade/1942 (Revision B).mra", stale)
+	seen = stale
+	if _, ok := scriptLaunch(path, &seen); ok {
+		t.Fatal("the stale marker was reported as a launch")
+	}
+
+	launch := stale.Add(time.Hour)
+	write("/media/fat/_Arcade/4-D Warriors.mra", launch)
+	if got, ok := scriptLaunch(path, &seen); !ok || got != "/media/fat/_Arcade/4-D Warriors.mra" {
+		t.Fatalf("new marker: %q, %v", got, ok)
+	}
+	if !seen.Equal(launch) {
+		t.Fatalf("seen = %v, want %v", seen, launch)
+	}
+	if _, ok := scriptLaunch(path, &seen); ok {
+		t.Fatal("the same marker was reported twice")
+	}
+
+	write("/media/fat/_Arcade/Galaga (Midway).mra", launch.Add(time.Minute))
+	if got, ok := scriptLaunch(path, &seen); !ok || got != "/media/fat/_Arcade/Galaga (Midway).mra" {
+		t.Fatalf("rewritten marker: %q, %v", got, ok)
+	}
+}
+
 func TestAwaitMenuAtBootLeavesBootcoreAlone(t *testing.T) {
 	for _, c := range []struct {
 		cores []string

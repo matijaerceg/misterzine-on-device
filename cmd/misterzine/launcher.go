@@ -195,6 +195,45 @@ func followGame(lg *log.Logger, chord string) bool {
 	return exited
 }
 
+// followLaunch carries out Return after game and the exit chord for a game
+// the app has just launched, and reports whether it asked Main to reopen
+// MisterZine (the selection then arrives as a fresh CORENAME write).
+func followLaunch(lg *log.Logger, enabled bool) bool {
+	ws := watchSettings()
+	if !enabled || (!ws.ReturnAfterGame && ws.ExitChord == mister.ExitChordOff) {
+		return false
+	}
+	lg.Printf("watch: following the game (return after game %v, exit chord %s)", ws.ReturnAfterGame, mister.ExitChordName(ws.ExitChord))
+	if !followGame(lg, ws.ExitChord) {
+		lg.Printf("watch: the game did not load, or another core took over")
+		return false
+	}
+	if !ws.ReturnAfterGame || launcherUpdateActive() {
+		return false
+	}
+	lg.Printf("watch: game exited; reopening MisterZine")
+	if err := openMenuEntry(sendMainCmd); err != nil {
+		lg.Printf("watch: return after game: %v", err)
+		return false
+	}
+	return true
+}
+
+// scriptLaunch reports a launch marker written since seen and moves seen
+// to it. The app writes the marker before every launch, and the watcher's
+// own sessions read and remove it once the app exits (see watch), so one
+// that turns up while the watcher idles came from a session opened through
+// Scripts: MisterZine-Run, the way in from Degauss and Console Mode.
+func scriptLaunch(path string, seen *time.Time) (string, bool) {
+	st, err := os.Stat(path)
+	if err != nil || st.ModTime().Equal(*seen) {
+		return "", false
+	}
+	*seen = st.ModTime()
+	b, _ := os.ReadFile(path)
+	return strings.TrimSpace(string(b)), true
+}
+
 // launcherCmd handles: launcher start | stop | status | enable | disable
 func launcherCmd(args []string) int {
 	if len(args) == 0 {
@@ -565,6 +604,12 @@ func watch() int {
 		}
 	}
 	resume := false // the next app run was a return after a game
+	// A marker left from before this watcher started is not a launch to
+	// follow: the game it names is long gone.
+	var launchSeen time.Time
+	if st, err := os.Stat(launchedFile); err == nil {
+		launchSeen = st.ModTime()
+	}
 	var kbd *mister.VKeyboard
 	defer func() {
 		if kbd != nil {
@@ -579,6 +624,14 @@ func watch() int {
 	var handled time.Time
 	for {
 		time.Sleep(100 * time.Millisecond)
+		if target, ok := scriptLaunch(launchedFile, &launchSeen); ok {
+			// Without this a game started from a Scripts session ran
+			// unfollowed: no exit chord, no Return after game.
+			os.Remove(launchedFile)
+			lg.Printf("watch: the app launched %s from a Scripts session", target)
+			resume = followLaunch(lg, launcherEnabled())
+			continue
+		}
 		st, err := os.Stat(corenameFile)
 		if err != nil || st.ModTime().Equal(handled) {
 			continue
@@ -639,21 +692,8 @@ func watch() int {
 			// the app itself loaded a core: leave it alone
 			os.Remove(launchedFile)
 			lg.Printf("watch: the app launched %s; not touching the menu", strings.TrimSpace(string(b)))
-			if ws := watchSettings(); enabled && (ws.ReturnAfterGame || ws.ExitChord != mister.ExitChordOff) {
-				lg.Printf("watch: following the game (return after game %v, exit chord %s)", ws.ReturnAfterGame, mister.ExitChordName(ws.ExitChord))
-				exited := followGame(lg, ws.ExitChord)
-				if exited && ws.ReturnAfterGame && !launcherUpdateActive() {
-					lg.Printf("watch: game exited; reopening MisterZine")
-					resume = true
-					if err := openMenuEntry(sendMainCmd); err != nil {
-						lg.Printf("watch: return after game: %v", err)
-						resume = false
-					}
-					continue // the selection arrives as a fresh CORENAME write
-				}
-				if !exited {
-					lg.Printf("watch: the game did not load, or another core took over")
-				}
+			if resume = followLaunch(lg, enabled); resume {
+				continue // the selection arrives as a fresh CORENAME write
 			}
 		} else if waitForMenuRestore(lg, func() (string, bool) {
 			b, _ := os.ReadFile(corenameFile)
