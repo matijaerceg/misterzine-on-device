@@ -309,13 +309,13 @@ func (f *Font) AddArrows() {
 }
 
 // addChildMark installs the Options child-row mark as a one-cell glyph:
-// a stem down the cell's second column from the top, turning into a
-// short rule to the right at the middle of a capital, like the last
-// branch of a tree.
+// a stem down the cell's second column from one pixel below the top, so
+// it stands clear of the row above, turning into a short rule to the
+// right at the middle of a capital, like the last branch of a tree.
 func (f *Font) addChildMark() {
 	rows := make([]byte, f.H)
 	mid := max(1, (f.H-f.descent)/2)
-	for y := 0; y < mid; y++ {
+	for y := 1; y < mid; y++ {
 		rows[y] = 0x40
 	}
 	rows[mid] = 0x70
