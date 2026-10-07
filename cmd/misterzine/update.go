@@ -28,14 +28,20 @@ func (h *host) initUpdates() {
 	} else {
 		h.updateReadFailure(err)
 	}
+	h.updateWatch.Store(h.updateRunning)
 	go func() {
-		t := time.NewTicker(500 * time.Millisecond)
-		defer t.Stop()
 		for {
+			// twice a second while a run is on or starting, so its screen
+			// follows the log; otherwise a look every few seconds is
+			// enough to notice a run another program started
+			wait := 3 * time.Second
+			if h.updateWatch.Load() {
+				wait = 500 * time.Millisecond
+			}
 			select {
 			case <-h.quit:
 				return
-			case <-t.C:
+			case <-time.After(wait):
 				s, err := updater.Read(h.root)
 				select {
 				case h.updates <- updateResult{state: s, err: err}:
@@ -53,6 +59,7 @@ func (h *host) startUpdate(mode string) {
 		return
 	}
 	h.updatePending = true
+	h.updateWatch.Store(true)
 	go func() {
 		s, err := updater.Start(h.root, h.card, mode)
 		select {
@@ -139,6 +146,7 @@ func (h *host) applyUpdate(s updater.State, open bool) {
 		h.img.SetPaused(active)
 	}
 	h.updateRunning = active
+	h.updateWatch.Store(active || h.updatePending)
 	if finished && s.ID != "" {
 		go func(id string) {
 			available, err := differentProgram("/proc/self/exe", filepath.Join(h.root, "misterzine"))

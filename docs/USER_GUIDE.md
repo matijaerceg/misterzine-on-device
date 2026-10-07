@@ -401,8 +401,12 @@ versions with problems ("ROM problems in 2 of 12 versions"). Filters ->
 ROM check narrows the list to games with a problem in the version to
 launch, in any version, or to games whose versions all checked clean;
 while the pass is still running the section says how far it has got. The
-pass takes about 40 seconds for 3,000 files on a MiSTer Pi and does not
-slow the list. Choosing another version in Details moves the mark with it.
+first pass takes about 40 seconds for 3,000 files on a MiSTer Pi; its
+verdicts are kept on the card (misterzine/cache/roms.json), so later
+launches reread only the MRAs and zips that changed and the pass is over
+in a second or two. It waits while the list scrolls or a page turns, and
+runs below the drawing's priority, so it does not slow the list. Choosing
+another version in Details moves the mark with it.
 
 MisterZine cannot promise that a game runs: the card status describes
 installation and core version, not a guarantee of playability.

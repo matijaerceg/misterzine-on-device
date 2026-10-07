@@ -12,6 +12,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -71,6 +72,15 @@ type ROMCheck struct {
 	sweepDone  int           // paths the running sweep has answered
 	sweepTotal int           // paths it was given; 0 when none ran
 	pace       time.Duration // rest between two sweep checks
+	pauseCh    chan struct{} // open while the sweep is to wait (the screen is in motion); guarded by mu
+	// CachePath, when set, is where the sweep keeps its verdicts between
+	// runs (roms_cache.go); stamps are the ones this run confirmed or made,
+	// guarded by mu.
+	CachePath string
+	cache     map[string]romCacheEntry
+	cacheOnce sync.Once
+	cacheRaw  []byte
+	stamps    map[string]romCacheEntry
 	// Slow, when set, hears of a sweep check that took over 80 ms, for
 	// the log: on a Pi most take under 10 ms, a few Atari and Universal
 	// sets with many inline parts take half a second or more.
@@ -82,9 +92,14 @@ type ROMCheck struct {
 // new Sweep ends the one before. Answers land in the same store Details
 // reads, Ready fires at most every quarter second while they change what
 // the list shows, and once at the end; done is called then with how many
-// paths were checked and how long it took. Files other than MRAs are
-// skipped without a check.
-func (c *ROMCheck) Sweep(paths []string, done func(n int, d time.Duration)) {
+// paths were answered, how many of those came from the saved verdicts of
+// an earlier run (CachePath) and how long it took. Files other than MRAs
+// are skipped without a check.
+//
+// The sweep runs on a thread of its own at a lower priority than the rest
+// of the program, and waits while SetPaused holds it, so the screen's
+// motion is never short of a core.
+func (c *ROMCheck) Sweep(paths []string, done func(n, reused int, d time.Duration)) {
 	c.mu.Lock()
 	if c.sweepStop != nil {
 		close(c.sweepStop)
@@ -96,9 +111,46 @@ func (c *ROMCheck) Sweep(paths []string, done func(n int, d time.Duration)) {
 	go c.sweep(paths, stop, done)
 }
 
-func (c *ROMCheck) sweep(paths []string, stop <-chan struct{}, done func(int, time.Duration)) {
+// SetPaused holds the sweep between two checks while the screen is in
+// motion, and lets it go on when the motion ends. A nil checker ignores it.
+func (c *ROMCheck) SetPaused(p bool) {
+	if c == nil {
+		return
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if p && c.pauseCh == nil {
+		c.pauseCh = make(chan struct{})
+	} else if !p && c.pauseCh != nil {
+		close(c.pauseCh)
+		c.pauseCh = nil
+	}
+}
+
+// awaitResume returns once the sweep may go on; false when stop closed.
+func (c *ROMCheck) awaitResume(stop <-chan struct{}) bool {
+	for {
+		c.mu.Lock()
+		ch := c.pauseCh
+		c.mu.Unlock()
+		if ch == nil {
+			return true
+		}
+		select {
+		case <-ch:
+		case <-stop:
+			return false
+		}
+	}
+}
+
+func (c *ROMCheck) sweep(paths []string, stop <-chan struct{}, done func(int, int, time.Duration)) {
+	// a thread of its own, niced: never unlocked, so the thread ends with
+	// the goroutine and its priority stays its own
+	runtime.LockOSThread()
+	LowerThreadPriority()
 	start := time.Now()
-	signalled := start
+	signalled, saved := start, start
 	changed := false
 	signal := func(force bool) {
 		if !changed || !force && time.Since(signalled) < 250*time.Millisecond {
@@ -110,31 +162,53 @@ func (c *ROMCheck) sweep(paths []string, stop <-chan struct{}, done func(int, ti
 		default:
 		}
 	}
-	n := 0
+	root, rootMame := arcadeROMRoot(c.card)
+	c.loadCache(root, rootMame)
+	stats := map[string]zipStamp{}
+	n, reused := 0, 0
 	for _, rel := range paths {
+		if !c.awaitResume(stop) {
+			return
+		}
 		select {
 		case <-stop:
 			return
 		default:
 		}
+		working := false // a check ran, rather than a verdict being reused
 		if strings.EqualFold(filepath.Ext(rel), ".mra") {
-			// Start (fresh) and Details (refresh) hold work while they
-			// store, so an answer of theirs is never overwritten by an
-			// older one from here.
-			c.work.Lock()
-			t := time.Now()
 			acc := c.access.Load()
-			res := c.run(rel, acc)
-			if d := time.Since(t); d > 80*time.Millisecond && c.Slow != nil {
-				c.Slow(rel, d)
+			var res ROMResult
+			var stamp romCacheEntry
+			stamped := false
+			if e, ok := c.cached(rel, stats); ok && !rootMame {
+				res, stamp, stamped = e.result(), e, true
+				reused++
+			} else {
+				// Start (fresh) and Details (refresh) hold work while they
+				// store, so an answer of theirs is never overwritten by an
+				// older one from here.
+				c.work.Lock()
+				working = true
+				t := time.Now()
+				res = c.run(rel, acc)
+				if d := time.Since(t); d > 80*time.Millisecond && c.Slow != nil {
+					c.Slow(rel, d)
+				}
+				stamp, stamped = c.stampVerdict(root, rel, res)
 			}
 			c.mu.Lock()
 			prev, known := c.results[rel]
 			if _, busy := c.pending[rel]; !busy {
 				c.results[rel] = romEntry{time.Now(), res, acc}
 			}
+			if stamped {
+				c.stamps[rel] = stamp
+			}
 			c.mu.Unlock()
-			c.work.Unlock()
+			if working {
+				c.work.Unlock()
+			}
 			if !known || prev.res != res {
 				changed = true
 			}
@@ -144,14 +218,24 @@ func (c *ROMCheck) sweep(paths []string, stop <-chan struct{}, done func(int, ti
 		c.sweepDone++
 		c.mu.Unlock()
 		signal(false)
-		if c.pace > 0 {
-			time.Sleep(c.pace)
+		if time.Since(saved) > romCacheSaveEvery {
+			saved = time.Now()
+			c.saveCache(root, rootMame, paths)
+		}
+		if c.pace > 0 && working {
+			time.Sleep(c.pace) // a reused verdict cost a few stats: no rest needed
 		}
 	}
 	signal(true)
+	c.saveCache(root, rootMame, paths)
 	if done != nil {
-		done(n, time.Since(start))
+		done(n, reused, time.Since(start))
 	}
+}
+
+// cardPath is rel as a file on the card.
+func (c *ROMCheck) cardPath(rel string) string {
+	return filepath.Join(c.card, filepath.FromSlash(rel))
 }
 
 // Progress is how far the last sweep got: paths answered and paths given.
@@ -191,7 +275,7 @@ type romPending struct {
 // NewROMCheck returns the checker for one card.
 func NewROMCheck(card string) *ROMCheck {
 	c := &ROMCheck{card: card, ready: make(chan struct{}, 1), wait: 8 * time.Millisecond, pace: 3 * time.Millisecond,
-		results: map[string]romEntry{}, pending: map[string]*romPending{},
+		results: map[string]romEntry{}, pending: map[string]*romPending{}, stamps: map[string]romCacheEntry{},
 		mras: map[string]mraEntry{}, zips: map[string]*zipIndex{}, md5s: map[string]bool{}}
 	c.run = c.check
 	return c

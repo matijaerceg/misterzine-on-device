@@ -18,6 +18,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"runtime/debug"
 	"sort"
 	"strconv"
@@ -108,11 +109,13 @@ type host struct {
 	scanRunning                   bool
 	scanPending                   bool
 	manualScan                    bool
+	prefetchSet                   bool // the picture service has its prefetch list (after the first scan)
 	netCh                         chan string
 	updates                       chan updateResult
 	updatePending                 bool
 	updateReadError               string // UI-owned; suppress repeated status-read diagnostics
 	updateRunning                 bool
+	updateWatch                   atomic.Bool // the status poll runs fast: a run is on or starting
 	canvasDue                     time.Time
 	sweepDue                      time.Time // when the ROM sweep a scan asked for starts; zero = none due
 	appliedCanvas                 string
@@ -248,11 +251,14 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	// pictures
 	h.client = fetch.NewClient(buildinfo.Version)
 	h.img = images.New(filepath.Join(root, "shots"), h.client, lg, 24<<20)
-	h.img.SetPrefetch(picsFor(ds), h.settings.Prefetch)
+	// the prefetch list, and the count of its pictures already on the
+	// card, wait for the first card scan (receiveScan): counting stats
+	// thousands of files, which the scan is doing too
 	h.roms = scan.NewROMCheck(card)
 	h.roms.Slow = func(rel string, d time.Duration) {
 		lg.Printf("rom sweep: slow check %s (%v)", rel, d.Round(time.Millisecond))
 	}
+	h.roms.CachePath = filepath.Join(root, "cache", "roms.json")
 	h.romList = romListPath(root, access.Load(root), h.settings.ShowBetaFeatures)
 
 	// app
@@ -467,6 +473,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 					"search": h.a.Search(), "filters": h.a.Filters(), "rotation": h.a.Rotation().String(), "inset": fmt.Sprint(h.a.Inset()), "devices": h.input.Devices(),
 					"sysfs": mister.SysfsMode(), "uptime": time.Since(t0).String(), "frames": h.stats.String(), "cadence": h.stats.Cadence(), "saver": h.a.SaverStats(), "saver_blank_frames": h.saverBlankFrames, "saver_misses": h.saverMisses,
 					"update":      h.a.UpdateState(),
+					"mem":         memStats(),
 					"screensaver": h.a.Screensaver(), "screensaver_active": h.a.ScreensaverActive(), "saver_style": h.a.SaverStyle(), "saver_info": h.a.SaverInfo(),
 					"title_font": h.a.TitleFont(), "list_shot": h.a.ListShot(), "date_format": h.a.DateFormat(), "button_labels": h.a.ButtonLabels(),
 				}
@@ -499,15 +506,16 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	}
 
 	// the pad's menu button: Main takes the screen back and grabs the
-	// input devices; a probe every quarter second notices (it costs tens of
-	// milliseconds, so it runs off the UI goroutine)
+	// input devices; a probe every half second notices (it opens every
+	// input node and costs tens of milliseconds, so it runs off the UI
+	// goroutine, and no oftener: the screen is Main's by then anyway)
 	h.lostCh = make(chan struct{}, 1)
 	go func() {
 		for {
 			select {
 			case <-h.quit:
 				return
-			case <-time.After(250 * time.Millisecond):
+			case <-time.After(500 * time.Millisecond):
 			}
 			if h.input.ScreenLost() {
 				select {
@@ -522,11 +530,13 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	// card scan: cores, MRA presence, then alternatives
 	h.requestScan()
 
-	// freshness: first check shortly after boot, then every 30 minutes;
-	// while the clock is unset (the first seconds after a cold boot, before
-	// NTP) or the last check failed, every 15 seconds instead
+	// freshness: first check a few seconds after boot (three TLS handshakes
+	// cost a Cortex-A9 most of a second, better spent on the first frames
+	// and the card scan), then every 30 minutes; while the clock is unset
+	// (the first seconds after a cold boot, before NTP) or the last check
+	// failed, every 15 seconds instead
 	go func() {
-		wait := 300 * time.Millisecond
+		wait := 2500 * time.Millisecond
 		for {
 			select {
 			case <-h.quit:
@@ -690,8 +700,12 @@ func (h *host) drainEvents() {
 // in (the wait for vsync already happened). Pictures that land are painted
 // within the same frame budget; nothing else runs.
 func (h *host) frameLoop() {
-	// the decoder shares the memory bus and the GC with us: quiet it once
-	// the key really repeats (a tap leaves it working on the neighbours)
+	// the ROM sweep waits for the motion to end (it has no picture to
+	// land); the decoder shares the memory bus and the GC with us: quiet
+	// it once the key really repeats (a tap leaves it working on the
+	// neighbours)
+	h.roms.SetPaused(true)
+	defer h.roms.SetPaused(false)
 	paused := false
 	var t0 time.Time
 	if h.debugEnabled {
@@ -777,6 +791,8 @@ func (h *host) frameLoop() {
 // optionSampleLoop drives previews, page wipes and detail scrolling at vertical blank.
 // Keep servicing events and saves, and allow inactivity to start the screensaver.
 func (h *host) optionSampleLoop() {
+	h.roms.SetPaused(true) // the sweep waits for the motion to end
+	defer h.roms.SetPaused(false)
 	for (h.a.OptionSamplesRunning() || h.a.PageTransitionRunning() || h.a.LayoutTransitionRunning() || h.a.DetailScrollRunning() || h.a.ListScrollRunning() || h.a.LaunchCabRunning()) && !h.a.Repeating() {
 		if !h.pump() {
 			return
@@ -1394,6 +1410,11 @@ func goneLines(files, dirs []scan.Skipped) []string {
 // alternatives and the local walk after (slow the first time). rows are the
 // dataset's rows, local rows included; ncat of them are the catalogue's.
 func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Time) {
+	// a thread of its own, below the UI's priority, so the walks and the
+	// core hashing never take a core from a frame (the thread ends with
+	// this goroutine: never unlocked)
+	runtime.LockOSThread()
+	scan.LowerThreadPriority()
 	t0 := time.Now()
 	idx := scan.ScanCores(h.card)
 	idx.FeedAt = feedAt

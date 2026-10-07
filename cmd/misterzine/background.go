@@ -74,6 +74,7 @@ func (h *host) receiveScan(r scanResult) {
 			// a standin row the card now runs from the catalogue hands its star over
 			h.a.RenameKeys(r.moves)
 			if h.img != nil {
+				h.prefetchSet = true
 				h.img.SetPrefetch(picsFor(ds), h.settings.Prefetch)
 			}
 		}
@@ -114,6 +115,12 @@ func (h *host) receiveScan(r scanResult) {
 	if r.final {
 		if r.diag != nil {
 			h.scanDiag = r.diag
+		}
+		if !h.prefetchSet && h.img != nil {
+			// the first scan is over: the picture service may count and
+			// fetch the prefetch list now
+			h.prefetchSet = true
+			h.img.SetPrefetch(picsFor(h.a.Data()), h.settings.Prefetch)
 		}
 		h.scanRunning = false
 		if current && !h.scanPending {
@@ -160,8 +167,8 @@ func (h *host) sweepROMs() {
 		}
 	}
 	h.lg.Printf("rom sweep: %d files to check", len(paths))
-	h.roms.Sweep(paths, func(n int, d time.Duration) {
-		h.lg.Printf("rom sweep: %d MRAs checked (%v)", n, d.Round(time.Millisecond))
+	h.roms.Sweep(paths, func(n, reused int, d time.Duration) {
+		h.lg.Printf("rom sweep: %d MRAs checked, %d of them from the last run's verdicts (%v)", n, reused, d.Round(time.Millisecond))
 		h.romReportMu.RLock()
 		defer h.romReportMu.RUnlock()
 		if list := h.romList; list != "" {

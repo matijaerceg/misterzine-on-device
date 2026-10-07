@@ -463,7 +463,7 @@ func TestROMSweep(t *testing.T) {
 		return ROMResult{}
 	}
 	finished := make(chan int, 1)
-	c.Sweep([]string{"ok.mra", "bad.mra", "core.rbf"}, func(n int, _ time.Duration) { finished <- n })
+	c.Sweep([]string{"ok.mra", "bad.mra", "core.rbf"}, func(n, _ int, _ time.Duration) { finished <- n })
 	select {
 	case n := <-finished:
 		if n != 2 {
@@ -499,11 +499,11 @@ func TestROMSweep(t *testing.T) {
 	c.pace = 50 * time.Millisecond
 	c.run = func(string, *CoreAccess) ROMResult { return ROMResult{} }
 	first := make(chan int, 1)
-	c.Sweep([]string{"a.mra", "b.mra", "c.mra", "d.mra"}, func(n int, _ time.Duration) { first <- n })
+	c.Sweep([]string{"a.mra", "b.mra", "c.mra", "d.mra"}, func(n, _ int, _ time.Duration) { first <- n })
 	time.Sleep(10 * time.Millisecond)
 	c.pace = 0
 	second := make(chan int, 1)
-	c.Sweep([]string{"e.mra"}, func(n int, _ time.Duration) { second <- n })
+	c.Sweep([]string{"e.mra"}, func(n, _ int, _ time.Duration) { second <- n })
 	select {
 	case <-second:
 	case <-time.After(5 * time.Second):
