@@ -46,11 +46,14 @@ check opens. Failed saves keep the previous setup and allow retry.
 
 ## Check, assign, and name inputs
 
-The table shows **Code | Action | MiSTer/key | MZ label**. Code identifies the raw
+The table shows **Code | MiSTer/key | MZ label | Action**. Code identifies the raw
 input. MiSTer/key is its original reported slot or key; MZ label is the name in
-MisterZine's button hints. Missing original mappings show a dash. Directions
-default to Up, Down, Left, and Right, even for otherwise unnamed axes or repurposed
-buttons. An explicitly chosen custom name still overrides the default.
+MisterZine's button hints; Action is what the input does. Missing original
+mappings and unassigned inputs show `--`. Directions default to Up, Down, Left,
+and Right, even for otherwise unnamed axes or repurposed buttons. An explicitly
+chosen custom name still overrides the default. MZ label is dimmed wherever the
+name cannot appear in a hint: directions, unassigned inputs, and Menu, which
+shows N/A because no hint names the Menu button.
 
 Each physical input has its own row. Actions can have several inputs, or an empty
 placeholder when unassigned. Required controls start confirmed. Other assigned
@@ -62,15 +65,16 @@ recent input and its action, including unassigned inputs.
 
 **Hold any button > Edit it** opens its popup:
 
-- **Change action:** assign it to an action or Unassigned. Existing buttons for
+- **Change action:** assign it to an action or `--` (unassigned). Existing buttons for
   that action stay assigned, except for explicit paired swaps. Choosing the other
   half of OK/Back, Left/Right, or Up/Down offers a swap: both inputs must have been
   tested, and the popup shows both changes before confirmation. If several tested
   buttons have the paired action, choose which physical input to swap. Other
   changes cannot remove the last tested input for a direction, OK, or Back;
   assign and test a replacement first.
-- **Change OSD label:** available for actions used in app legends; hidden for
-  directions and unassigned inputs. Pick a short name from categorized grids, including
+- **Change OSD label:** available for actions used in app legends, including
+  Page up/down; hidden for directions, Menu and unassigned inputs. Pick a short
+  name from categorized grids, including
   letters, numbers, PlayStation symbols, colors, fighting-game abbreviations,
   controller names and keyboard keys. **Use default name** resets only this input.
 
