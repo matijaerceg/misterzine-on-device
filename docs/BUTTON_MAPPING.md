@@ -42,7 +42,9 @@ check opens. Failed saves keep the previous setup and allow retry.
 
 The table shows **Code | Action | MiSTer/key | MZ label**. Code identifies the raw
 input. MiSTer/key is its original reported slot or key; MZ label is the name in
-MisterZine's button hints. Missing original mappings show a dash.
+MisterZine's button hints. Missing original mappings show a dash. Directions
+default to Up, Down, Left, and Right, even for otherwise unnamed axes or repurposed
+buttons. An explicitly chosen custom name still overrides the default.
 
 Each physical input has its own row. Actions can have several inputs, or an empty
 placeholder when unassigned. Required controls start confirmed. Other assigned
