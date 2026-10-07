@@ -26,12 +26,12 @@ Holding two buttons defers. These fallback controls also work on keyboard encode
 unassigned keys then do not type. A separate keyboard can still type normally.
 
 New controllers and every manual **Button mapping** entry assign **Right, Left,
-Up, Down, OK, Back**. Press and release to advance. Duplicate and reserved inputs
+Down, Up, OK, Back**. Press and release to advance. Duplicate and reserved inputs
 are rejected. All six are required; progressing proves them. Recent completed
 assignments appear as code:action pairs. Compatible optional mappings are retained
 unless a basic assignment displaces one.
 
-**Hold an input for one second to cancel directly.** Manual entry returns to
+**Hold button on any pad > Cancel.** Holds take one second. Manual entry returns to
 Options; an invitation returns to the interrupted screen. A hold on another
 device also cancels, as shown by the on-screen hint. Esc on a separate keyboard
 cancels immediately. Esc on the keyboard being mapped can still be assigned. Cancellation/disconnection
@@ -54,12 +54,13 @@ the middle, stopping at the list ends. There is no manual scrolling. Every held 
 redirects scrolling toward that input; repeats do not restart animation. Latest reports the most
 recent input and its action, including unassigned inputs.
 
-**Hold one input** to open its popup:
+**Hold any button > Edit it** opens its popup:
 
 - **Change action:** assign it to an action or Unassigned. Existing buttons for
   that action stay assigned. You cannot remove the last tested input for a
   direction, OK, or Back; assign and test a replacement first.
-- **Change OSD label:** pick a short name from categorized grids, including
+- **Change OSD label:** available for actions used in app legends; hidden for
+  directions and unassigned inputs. Pick a short name from categorized grids, including
   letters, numbers, PlayStation symbols, colors, fighting-game abbreviations,
   controller names and keyboard keys. **Use default name** resets only this input.
 - **Device settings:** redo the six basic controls, or change a keyboard's role.
@@ -68,7 +69,7 @@ Popups use D-pad/OK/Back. Selecting an action or name saves immediately and
 returns to the table. Back closes the popup without changing anything. Failed
 saves leave it open for retry and retain the previously saved settings.
 
-**Hold two inputs** on the table to exit. This does not save anything: successful
+**Hold any two buttons > Exit** on the table. This does not save anything: successful
 edits were already saved. Holds take one second. Holding a button on another device also exits.
 Hold progress lights up the relevant instruction text.
 Held inputs must be released before they can act on a newly opened screen.
