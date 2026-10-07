@@ -14,6 +14,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/http/pprof"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -70,6 +71,10 @@ func Serve(addr string, h Hooks, lg *log.Logger) bool {
 		w.Header().Set("Content-Type", "image/png")
 		png.Encode(w, img)
 	})
+	// a CPU profile of the running app: GET /api/profile?seconds=10, read
+	// with go tool pprof; the heap too, at /api/heap
+	mux.HandleFunc("/api/profile", pprof.Profile)
+	mux.Handle("/api/heap", pprof.Handler("heap"))
 	mux.HandleFunc("/api/state", func(w http.ResponseWriter, r *http.Request) {
 		var st any
 		h.Run(func() { st = h.State() })
