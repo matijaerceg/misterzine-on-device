@@ -111,8 +111,10 @@ in one line each.
   help text, spacing, colours, timings, defaults and any tuning or reshaping
   of something that already existed are adjustments. When in doubt it is an
   adjustment.
-- **Added and Fixed:** everything besides the headline feature, one plain
-  line each, under the bold labels `**Added**` and `**Fixed**`. Added holds
+- **Added and Fixed:** everything, one plain line each, under the bold
+  labels `**Added**` and `**Fixed**`. The headline feature is listed again
+  under Added, deliberately redundant with the opening, so the lists alone
+  are a complete inventory for a reader who skips the prose. Added holds
   what a user can now do or see that they could not before: other features,
   new controls, sources, help screens.
   Fixed holds bugfixes, behaviour tweaks, consistency across views, and

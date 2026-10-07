@@ -1,13 +1,20 @@
-**Smoother scrolling after launch**
+**Set up any controller from its own buttons**
 
-The ROM check that runs after every start used to make the list stutter for the first minute. It now remembers what it found and only looks at files that changed, so scrolling is smooth from the first second.
+Button mapping, a free beta in Options -> Controls, teaches MisterZine your controller or keyboard the first time you press it: hold a button to begin, press the six basics, and then check every input in a table. From there you can change what a button does and name it the way the bottom bar should print it, from letters, PlayStation symbols, colours, fighting-game abbreviations and arcade names such as Coin, Start and P1.
+
+For example: an arcade stick MiSTer has never seen works in MisterZine as soon as you have pressed its directions, OK and Back once, and a keyboard can act as an arcade control board instead of typing into search.
+
+Betas are off by default. Switch on **Show beta features** in Options -> Operation to try Button mapping and the ROM report, no code needed. **Your access**, in the same section, lists every feature and its status; Themes and Group tallies are Supporter extras, unlocked by the code from the MisterZine Patreon.
 
 **Added**
 
-- Button mapping, a beta in Options -> Controls: set up any controller or keyboard from its own buttons, check every input in a table, and name the buttons the way the bottom bar should print them. Switch on Show beta features to try it.
+- Button mapping, a free beta in Options -> Controls: set up any controller or keyboard from its own buttons, check every input in a table, and name the buttons the way the bottom bar should print them.
+- Show beta features, in Options -> Operation: one switch for the free betas, Button mapping and the ROM report. Off hides and stops them.
+- Your access, in Options -> Operation: your saved code, if any, and every feature with its status. Enter a code there to unlock the Supporter extras, Themes and Group tallies, or forget it again.
 
 **Fixed**
 
+- The ROM check that runs after every start used to make the list stutter for the first minute. It now remembers what it found, so scrolling is smooth from the first second.
 - The main-menu shortcut works again under Zaparoo and under Degauss 1.0's bundled menu core, and quitting returns to them.
 - A star, remembered version or recent launch on a game you added yourself no longer goes missing when the catalogue lists that game.
 - Holding a direction stays at full speed once a controller has been set up.
