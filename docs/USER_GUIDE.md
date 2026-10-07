@@ -617,7 +617,7 @@ screenshots match, lettering runs instead and the Preview help explains why.
   Hold Start (default) launches at once on a tap and plays the animation only
   while Start is held. A previews it from the row.
   Safe-zone margins still apply.
-- **Button labels:** how the legends name the pad's face buttons, in MiSTer's
+- **Button labels (beta off):** how the legends name the pad's face buttons, in MiSTer's
   A B X Y order: A B X Y (default), B A Y X for an Xbox-lettered pad mapped by
   position, the PlayStation circle, cross, triangle and square by position, or
   1 2 3 4 in MiSTer's define order. Only the names change. Which physical
@@ -626,7 +626,13 @@ screenshots match, lettering runs instead and the Preview help explains why.
 - **Button mapping (beta):** six basic controls, then a controller-check table.
   Press an input to identify it; hold for one second to change its action or OSD name.
   New keyboards can instead be accepted for ordinary typing without remapping.
-  Replaces the separate OK-button selector in builds with controller support.
+  Replaces the separate OK button and Button labels options while beta is on.
+  With beta off, those options return with their previous preferences.
+  Choosing the paired action (OK/Back, Left/Right, Up/Down) previews an explicit
+  swap between two tested buttons before saving both changes together.
+- **Keyboard use (beta):** shown when a keyboard is connected. Choose Keyboard
+  to let unassigned keys type, or Controller / pad to keep them from typing.
+  Existing assignments stay intact; an unconfigured controller needs six basics.
 - **Menu button:** what the pad button you defined as MiSTer's menu (OSD)
   button does in MisterZine, which holds a defined pad while it runs: Options
   (default) from any screen, closing it when it is up, or quit MisterZine
