@@ -17,6 +17,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -363,6 +364,10 @@ type Alt struct {
 	Setname string   `json:"setname"`
 	Parent  string   `json:"parent,omitempty"`
 	Zips    []string `json:"zips"` // lowercase zip names the rom index 0 references
+	// OtherZips are the zip names the remaining <rom> elements load, in
+	// order, without repeats: a patched set's program comes from its own
+	// archive while its graphics and sound still come from the game's.
+	OtherZips []string `json:"other_zips,omitempty"`
 
 	Name         string   `json:"name,omitempty"`
 	Version      string   `json:"version,omitempty"` // <version>: what sets this release apart, e.g. "Midway, Cocktail"
@@ -421,12 +426,18 @@ type altDir struct {
 }
 
 // Version 4 added parent metadata, version 5 the descriptive header fields,
-// version 6 <version>; older entries must be reparsed.
-const altCacheVersion = 6
+// version 6 <version>, version 7 the other archives a file loads; older
+// entries must be reparsed.
+const altCacheVersion = 7
+
+// altDepth is how many folders below a game's own the alternatives scan
+// enters (_alternatives/_Game/_trainer/_old is the last read).
+const altDepth = 2
 
 // ScanAlternatives walks every _alternatives folder (altRoots), parsing
-// only the header of each MRA. A per-directory cache keyed by mtime
-// (cachePath, JSON) makes warm runs cheap; pass "" to disable the cache.
+// only the header of each MRA in each game folder and the folders inside
+// it. A per-directory cache keyed by mtime (cachePath, JSON) makes warm
+// runs cheap; pass "" to disable the cache.
 func ScanAlternatives(card, cachePath string) []Alt {
 	alts, _, _ := ScanAlternativesWithError(card, cachePath)
 	return alts
@@ -466,11 +477,11 @@ func scanAlternatives(card, cachePath string) ([]Alt, []Skipped, []Skipped, erro
 			dc.problems = append(dc.problems, err)
 			continue
 		}
-		for _, d := range dirs {
-			if !d.IsDir() {
-				continue
-			}
-			rel := path.Join(root.rel, d.Name())
+		// A game folder's MRAs, then those of the folders inside it: a pack
+		// files its patched sets in a subfolder of the game's (_trainer), as
+		// MiSTer's menu browses any depth.
+		var folder func(key, rel string, d os.DirEntry, depth int)
+		folder = func(key, rel string, d os.DirEntry, depth int) {
 			info, err := d.Info()
 			var files []os.DirEntry
 			if err == nil {
@@ -478,15 +489,28 @@ func scanAlternatives(card, cachePath string) ([]Alt, []Skipped, []Skipped, erro
 			}
 			if errors.Is(err, fs.ErrNotExist) {
 				gone = append(gone, Skipped{Path: rel, Reason: GoneReason, Fresh: true, Gone: true})
-				continue
+				return
 			}
 			if err != nil {
 				dc.problems = append(dc.problems, err)
-				continue
+				return
 			}
-			alts, skips := dc.dir(card, root.key+d.Name(), rel, info.ModTime().UnixNano(), files)
+			alts, skips := dc.dir(card, key, rel, info.ModTime().UnixNano(), files)
 			out = append(out, alts...)
 			skipped = append(skipped, skips...)
+			if depth >= altDepth {
+				return
+			}
+			for _, f := range files {
+				if f.IsDir() && skipDirReason(f.Name()) == "" {
+					folder(key+"/"+f.Name(), path.Join(rel, f.Name()), f, depth+1)
+				}
+			}
+		}
+		for _, d := range dirs {
+			if d.IsDir() {
+				folder(root.key+d.Name(), path.Join(root.rel, d.Name()), d, 0)
+			}
 		}
 	}
 	dc.save("alternatives cache")
@@ -753,12 +777,17 @@ func parseMRAResult(r io.Reader) (Alt, bool, error) {
 							zip = at.Value
 						}
 					}
-					if idx == "0" && a.Zips == nil {
-						for _, z := range strings.Split(zip, "|") {
-							z = strings.ToLower(strings.TrimSpace(z))
-							if z != "" {
+					for _, z := range strings.Split(zip, "|") {
+						z = strings.ToLower(strings.TrimSpace(z))
+						if z == "" {
+							continue
+						}
+						if idx == "0" {
+							if !slices.Contains(a.Zips, z) {
 								a.Zips = append(a.Zips, z)
 							}
+						} else if !slices.Contains(a.OtherZips, z) {
+							a.OtherZips = append(a.OtherZips, z)
 						}
 					}
 					sawROM = true

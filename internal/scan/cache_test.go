@@ -76,9 +76,9 @@ func TestAlternativeCacheRebuildsVersion2(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	old := bytes.ReplaceAll(b, []byte(`"version":6`), []byte(`"version":2`))
+	old := bytes.ReplaceAll(b, []byte(`"version":7`), []byte(`"version":2`))
 	if bytes.Equal(old, b) {
-		t.Fatalf("cache holds no version 6 entries: %s", b)
+		t.Fatalf("cache holds no version 7 entries: %s", b)
 	}
 	if err := os.WriteFile(cache, old, 0644); err != nil {
 		t.Fatal(err)

@@ -315,7 +315,11 @@ The version chosen is remembered for that game, across restarts: Details
 opens on it next time and Start launches it from the list and from artwork.
 Alternatives are read from `_Arcade/_alternatives` and from the
 `_alternatives` folder inside a database's own folder, such as
-`_Arcade/_MeatCores` and `_Arcade/_rmCores`. A game that runs on your card
+`_Arcade/_MeatCores` and `_Arcade/_rmCores`, including folders inside a
+game's own, up to two deep (`_alternatives/_Akai Katana/_trainer`). A patched
+set filed there under a new setname, such as a trainer, joins the game whose
+name it keeps and whose archive it still loads; the picker shows it by its
+folder and file name. A game that runs on your card
 also offers its other sets found anywhere under `_Arcade`, including sets for
 another core, when that core is on the card too: Pleiads, say, runs on the
 Phoenix core, and its Centuri and bootleg sets on the Pleiads core. Such an

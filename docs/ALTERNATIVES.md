@@ -19,6 +19,19 @@ failed reads are retried. Version 4 of the alternatives cache includes parent
 metadata and file stamps, so old caches rebuild once and in-place edits are
 noticed. Resolved lists are applied only to the catalog snapshot they describe.
 
+The scan reads each game folder under `_alternatives` and the folders inside
+it, two deep: Insert-Coin's Cave pack files its trainers as
+`_alternatives/_Akai Katana/_trainer/Akai Katana (...).mra`. Such a trainer
+keeps the game's `<name>` and core, loads the game's archive for everything
+but its patched program, which comes from an archive of its own, and names no
+parent; by setname alone it would be a game of its own. `scan.InferParents`
+fills in the parent when the file sits under `_alternatives` and, of the
+archives it loads besides its own set's (fallbacks such as
+`futaribljt.zip|futariblj.zip` included), exactly one is the setname of a game
+of the same name on the same core, in the catalogue or on the card. Shared archives of differently named games (a BIOS, sound samples)
+never link, and a file loading two same-named games' archives links to
+neither.
+
 ## Versions on other cores, and outside `_alternatives`
 
 The compatible-core matcher above never sees two kinds of set a player can run

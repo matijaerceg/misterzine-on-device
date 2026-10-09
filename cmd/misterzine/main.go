@@ -1495,6 +1495,9 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 	// also a row of its own.
 	t2 := time.Now()
 	catalogue := rows[:ncat]
+	// a patched set that names no parent joins its catalogue game as a
+	// version; DiscoverLocal repeats this with the local walk's files in hand
+	scan.InferParents(alts, nil, catalogue)
 	resolved := h.familyCache.Resolve(h.card, alts, catalogue)
 	// st[:ncat] is what the list shows for the catalogue: a row runs when
 	// its core and its own MRA are on the card

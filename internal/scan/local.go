@@ -236,7 +236,10 @@ func DiscoverLocal(card, cachePath string, catalogue []data.Row, idx *Index, sta
 	var loose []Alt
 	present := map[string]bool{}
 	standins := map[string]bool{} // path -> the catalogue lists this game, unrunnably
-	for _, a := range append(append([]Alt{}, walked...), alts...) {
+	all := append(append([]Alt{}, walked...), alts...)
+	// a patched set files under the local game it belongs to (see InferParents)
+	InferParents(all, nil, catalogue)
+	for _, a := range all {
 		// the catalogue's own files are its rows
 		if own.paths[a.Path] {
 			res.OwnFiles++

@@ -97,7 +97,7 @@ func TestLocalCacheWarm(t *testing.T) {
 		t.Fatalf("warm run differs: %v", err)
 	}
 	b, _ := os.ReadFile(cache)
-	if !strings.Contains(string(b), `"version":6`) || !strings.Contains(string(b), `"_Arcade/_Extra/deeper"`) {
+	if !strings.Contains(string(b), `"version":7`) || !strings.Contains(string(b), `"_Arcade/_Extra/deeper"`) {
 		t.Fatalf("cache: %s", b)
 	}
 	// A new file in an existing folder is noticed (the folder's mtime moves).
