@@ -542,8 +542,23 @@ func AttachedPaths(resolved map[string][]string) map[string]bool {
 	return out
 }
 
+// underAlternatives compares in place rather than lowercasing the path: it
+// runs per file on every scan, and on sorts.
 func underAlternatives(p string) bool {
-	return strings.Contains(strings.ToLower(p), "/_alternatives/")
+	const dir = "/_alternatives/"
+next:
+	for i := 0; i+len(dir) <= len(p); i++ {
+		if p[i] != '/' {
+			continue
+		}
+		for k := 1; k < len(dir); k++ {
+			if lowerASCII(p[i+k]) != dir[k] {
+				continue next
+			}
+		}
+		return true
+	}
+	return false
 }
 
 // String makes the result readable in the audit tool's output.

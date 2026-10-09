@@ -1,6 +1,7 @@
 package scan
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -60,6 +61,59 @@ func TestAlternativesReadGameSubfolders(t *testing.T) {
 		a := got[0]
 		if a.Setname != "akatanat" || len(a.Zips) != 1 || a.Zips[0] != "akatanat.zip" || len(a.OtherZips) != 1 || a.OtherZips[0] != "akatana.zip" {
 			t.Fatalf("%s: header %+v", run, a)
+		}
+	}
+}
+
+// A card's worth: the board's scan pays this twice per run, so it must stay
+// near linear (the first version compared every file with every game and
+// took over two minutes on a MiSTer Pi).
+func BenchmarkInferParents(b *testing.B) {
+	var rows []data.Row
+	for i := 0; i < 6000; i++ {
+		rows = append(rows, data.Row{K: fmt.Sprint("g", i), SN: fmt.Sprint("g", i), Core: fmt.Sprint("core", i%300), Title: fmt.Sprintf("Game %d (World, rev %d)", i, i%7), Base: "Arcade"})
+	}
+	var alts []Alt
+	for i := 0; i < 3200; i++ {
+		alts = append(alts, Alt{Path: fmt.Sprintf("_Arcade/_alternatives/_Game %d/v%d.mra", i, i), RBF: fmt.Sprint("core", i%300), Setname: fmt.Sprint("a", i),
+			Name: fmt.Sprintf("Game %d (World, rev %d)", i, i%7), Zips: []string{fmt.Sprintf("a%d.zip", i)}, OtherZips: []string{fmt.Sprintf("g%d.zip", i), "bios.zip"}})
+	}
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		work := append([]Alt(nil), alts...)
+		InferParents(work, nil, rows)
+	}
+}
+
+func TestUnderAlternatives(t *testing.T) {
+	for p, want := range map[string]bool{
+		"_Arcade/_alternatives/_Galaga/Galaga.mra":         true,
+		"_Arcade/_ALTERNATIVES/_Galaga/Galaga.mra":         true,
+		"_Arcade/_MeatCores/_Alternatives/_X/x.mra":        true,
+		"_Arcade/_alternatives":                            false,
+		"_Arcade/_alternatives_old/x.mra":                  false,
+		"_Arcade/Galaga.mra":                               false,
+		"_Arcade/x_alternatives/_G/g.mra":                  false,
+		"_Arcade//_alternatives/_G/g.mra":                  true,
+		"/_alternatives/":                                  true,
+		"_Arcade/_Extra/_alternatives/_alternatives/x.mra": true,
+	} {
+		if got := underAlternatives(p); got != want {
+			t.Errorf("underAlternatives(%q) = %v", p, got)
+		}
+	}
+}
+
+// sameTitle's shortcut agrees with comparing titleKeys.
+func TestSameTitle(t *testing.T) {
+	titles := []string{"", " ", "Akai Katana (Japan, 2010/ 8/13 MASTER VER.)", "akai  katana (japan, 2010/ 8/13 master ver.)",
+		" Akai\tKatana (Japan, 2010/ 8/13 MASTER VER.) ", "Akai Katana (Japan, 2010/8/13 MASTER VER.)", "Akai Katana",
+		"Pokémon", "Pokemon", "POKEMON", "Mr. Do’s Castle", "Mr. Do's Castle", "A·B", "A / B", "A\x01B", "A?B", "A\x7fB"}
+	for _, a := range titles {
+		for _, b := range titles {
+			if got, want := sameTitle(a, b), titleKey(a) == titleKey(b); got != want {
+				t.Errorf("sameTitle(%q, %q) = %v, titleKey says %v", a, b, got, want)
+			}
 		}
 	}
 }
