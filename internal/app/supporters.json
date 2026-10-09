@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-07",
+  "updated": "2026-10-09",
   "current": [
     {
       "name": "Aaron Whitmore",
@@ -70,6 +70,14 @@
       "since": "2026-09"
     },
     {
+      "name": "Dong-hyeon Park",
+      "since": "2026-10"
+    },
+    {
+      "name": "Eric O",
+      "since": "2026-10"
+    },
+    {
       "name": "Ethan Dahlstrom",
       "since": "2026-09"
     },
@@ -130,6 +138,10 @@
       "since": "2026-09"
     },
     {
+      "name": "Lucas Azevedo",
+      "since": "2026-10"
+    },
+    {
       "name": "Luke Boyce",
       "since": "2026-09"
     },
@@ -144,6 +156,10 @@
     {
       "name": "Mathieu HERVAIS",
       "since": "2026-09"
+    },
+    {
+      "name": "Michael",
+      "since": "2026-10"
     },
     {
       "name": "MiSTer Vibe Cores",
@@ -198,6 +214,10 @@
       "since": "2026-09"
     },
     {
+      "name": "Stefano Mazzola",
+      "since": "2026-10"
+    },
+    {
       "name": "ThatsaVidyaGame",
       "since": "2026-09"
     },
@@ -216,6 +236,10 @@
     {
       "name": "Wolfgang Wolfgang",
       "since": "2026-09"
+    },
+    {
+      "name": "Yunho Nam",
+      "since": "2026-10"
     }
   ],
   "past": [],
