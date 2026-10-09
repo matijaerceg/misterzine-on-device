@@ -138,6 +138,14 @@ func TestMenuEntryStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() { helper.Process.Kill(); helper.Wait() }()
+	// Start returns once exec is under way, a moment before the kernel sets
+	// the new command line: /proc reads it empty until then
+	cmdline := fmt.Sprintf("/proc/%d/cmdline", helper.Process.Pid)
+	for deadline := time.Now().Add(5 * time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
+		if b, _ := os.ReadFile(cmdline); strings.Contains(string(b), "watch") {
+			break
+		}
+	}
 	os.WriteFile(filepath.Join(root, "watch.pid"), []byte(strconv.Itoa(helper.Process.Pid)), 0644)
 	if lines := menuEntryStatus(card, root, "MENU", ""); !slices.Contains(lines, fmt.Sprintf("Helper: running, pid %d", helper.Process.Pid)) {
 		t.Fatalf("running helper:\n%s", strings.Join(lines, "\n"))
