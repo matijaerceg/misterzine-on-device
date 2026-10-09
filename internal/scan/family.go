@@ -20,9 +20,12 @@ func (c *FamilyCache) Resolve(card string, alts []Alt, rows []data.Row) map[stri
 	index := IndexAlternatives(alts)
 	fresh := map[string]mainHeader{}
 	out := map[string][]string{}
-	for _, row := range rows {
+	for n, row := range rows {
 		if !row.IsArcade() {
 			continue
+		}
+		if n%64 == 0 {
+			Motion.Wait()
 		}
 		if identity(row.Family) == "" && row.MRA != "" {
 			p := filepath.Join(card, filepath.FromSlash(row.MRA))

@@ -101,6 +101,7 @@ func scanArcadeMRAs(card, cachePath string) ([]Alt, []Skipped, []Skipped, error)
 	files := 0
 	var walk func(rel string, depth int) bool
 	walk = func(rel string, depth int) bool {
+		Motion.Wait()
 		abs := filepath.Join(card, filepath.FromSlash(rel))
 		// A subfolder its parent listed that is gone by now is skipped, not
 		// a failure: deleted since, or an entry the card cannot open.
@@ -239,7 +240,10 @@ func DiscoverLocal(card, cachePath string, catalogue []data.Row, idx *Index, sta
 	all := append(append([]Alt{}, walked...), alts...)
 	// a patched set files under the local game it belongs to (see InferParents)
 	InferParents(all, nil, catalogue)
-	for _, a := range all {
+	for n, a := range all {
+		if n%64 == 0 {
+			Motion.Wait()
+		}
 		// the catalogue's own files are its rows
 		if own.paths[a.Path] {
 			res.OwnFiles++

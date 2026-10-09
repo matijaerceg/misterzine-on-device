@@ -255,6 +255,7 @@ func Status(card string, idx *Index, r *data.Row) data.Status {
 func Statuses(card string, idx *Index, rows []data.Row) (st []data.Status, owners map[string]string) {
 	out := make([]data.Status, len(rows))
 	for i := range rows {
+		Motion.Wait()
 		out[i] = Status(card, idx, &rows[i])
 	}
 	idx.hashes.save()
@@ -482,6 +483,7 @@ func scanAlternatives(card, cachePath string) ([]Alt, []Skipped, []Skipped, erro
 		// MiSTer's menu browses any depth.
 		var folder func(key, rel string, d os.DirEntry, depth int)
 		folder = func(key, rel string, d os.DirEntry, depth int) {
+			Motion.Wait()
 			info, err := d.Info()
 			var files []os.DirEntry
 			if err == nil {

@@ -706,6 +706,8 @@ func (h *host) frameLoop() {
 	// neighbours)
 	h.roms.SetPaused(true)
 	defer h.roms.SetPaused(false)
+	scan.Motion.SetPaused(true) // and so does the card scan
+	defer scan.Motion.SetPaused(false)
 	paused := false
 	var t0 time.Time
 	if h.debugEnabled {
@@ -791,8 +793,10 @@ func (h *host) frameLoop() {
 // optionSampleLoop drives previews, page wipes and detail scrolling at vertical blank.
 // Keep servicing events and saves, and allow inactivity to start the screensaver.
 func (h *host) optionSampleLoop() {
-	h.roms.SetPaused(true) // the sweep waits for the motion to end
+	h.roms.SetPaused(true) // the sweep and the card scan wait for the motion to end
 	defer h.roms.SetPaused(false)
+	scan.Motion.SetPaused(true)
+	defer scan.Motion.SetPaused(false)
 	for (h.a.ControlsAnimating() || h.a.OptionSamplesRunning() || h.a.PageTransitionRunning() || h.a.LayoutTransitionRunning() || h.a.DetailScrollRunning() || h.a.ListScrollRunning() || h.a.LaunchCabRunning()) && !h.a.Repeating() {
 		if !h.pump() {
 			return
