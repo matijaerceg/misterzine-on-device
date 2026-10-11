@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.2.5 — 2026-10-11
+
+- List the card's own games from the first frame. Games whose MRAs the catalogue does not list, such as a ZN-1 set or the Unlocked CPS2 hacks, were found only by the card scan after every launch, and on a full 2 TB card that scan took 15 seconds: the list opened with some 860 games and grew to 1,022 once it ended, which read as MisterZine forgetting them (reported on Discord by ctrain1985, with a card report). Each complete scan now saves its local rows to `misterzine/cache/local_rows.json`, and the next launch lists them with the catalogue before the scan has run; the scan still replaces them when the card has changed, by generation and field for field, so a retitled MRA also updates, and a file of another version or one that does not decode is ignored with one log line and rewritten by the next scan. The startup log and the report's LIST line say when the rows came from the last run's scan. On a MiSTer Pi 315 saved rows cost 150 ms at start.
+- Add bazset as a source, an opt-in database like MeatCores (Kaneko EXPRO-02, Chase H.Q., Night Striker, Rainbow Islands and others), with its section `[bazset/MiSTer_BAZSET]` in `downloader.ini`; a card without it keeps its games out of the list under Installed only, as for every other source.
+- Credits: DJ METH LAB FOR CUTIE, Fabien Lafarge, GASQBDUV, Jerry Blade, Jon Anderson, Lon Seidman / Lon.TV, Mark Paterson, Steve Randall and nuxvomo join the Patreon supporters.
+- Embedded catalogue snapshot refreshed (1,480 rows, 2026-10-11).
+
 ## v1.2.4 — 2026-10-09
 
 - Follow the games started from a MisterZine opened through Scripts. MisterZine opened by Scripts -> MisterZine-Run, which is how Console Mode's Load Script and Degauss's Scripts list open it, runs without the helper that opens the main-menu entry, so nothing watched the game it started: the exit chord did nothing and Return after game never reopened MisterZine (issue #7, reported by RonanGH). The app already writes a marker before every launch, and the helper's own sessions consume it; a marker that turns up while the helper idles is now followed the same way, so the chord leaves the game and, with Return after game on, MisterZine reopens on it. A marker older than the helper's start is ignored. Confirmed on a DE10 with the stock menu and with Console Mode 1.1.4.2's Load Script.
