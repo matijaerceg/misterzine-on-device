@@ -94,9 +94,21 @@ in one line each.
   your card can play" became "Better local file handling"), not a sentence
   of mechanics, and never a fix. A release without a feature names its most
   visible fix and skips the opening. No release name or tagline.
+- **Length:** the shortest card that says what changed. A release with one
+  fix and one small addition is a headline, one sentence and two one-line
+  bullets, and nothing else. No paragraph restates a bullet, no bullet
+  restates the opening unless the headline feature needs its line under
+  Added, and no numbers (counts, seconds, card sizes) unless the number is
+  the point. The v1.2.5 draft ("Your card's own games are listed from the
+  start", a two-sentence opening, a "For example:" paragraph with game
+  counts, and bullets repeating both) was cut to "Local games show up right
+  away", one sentence, "bazset's database is recognized as a source" and
+  "Better handling of local MRAs". When a bullet reads like the owner's own
+  one-liner, it is done.
 - **The opening:** one or two sentences saying what is new and what it
-  does for them. A concrete case goes in its own short paragraph starting
-  "For example:" ("For example: Pleiads plays on the Phoenix core, so its
+  does for them, and only when the card has a feature to introduce. A
+  concrete case goes in its own short paragraph starting
+  "For example:", and only when the opening alone would be unclear ("For example: Pleiads plays on the Phoenix core, so its
   Centuri and bootleg sets ... used to be out of reach"). Say how to reach
   something new and how to set it, with the choices in plain words ("full
   details, the title only, or nothing but the picture"); do not re-explain
