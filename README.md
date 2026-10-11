@@ -4,7 +4,8 @@ An arcade-first frontend for MiSTer. Browse games, follow new releases,
 see what's on your card, and launch straight into play from the MiSTer main menu. MisterZine brings the [release tracker](https://misterzine.fyi)
 to your display, with screenshots, favorites, filters, and keyboard search.
 
-<video src="https://github.com/user-attachments/assets/4fb458ba-5adf-4f02-aec2-c5af51a0eaa1" controls muted></video>
+https://github.com/user-attachments/assets/242355a4-892f-456b-9c58-988b5fc30976
+
 
 Every frame above is the app itself, at 30 fps. The same tour runs at
 [1080p60 on YouTube](https://www.youtube.com/watch?v=vplqOaqzo9A).
