@@ -39,6 +39,9 @@ type AppPart struct {
 	Saved     string   // the filters the player chose, JSON
 	Hidden    []string // sources hidden by Installed only
 	Local     []LocalGame
+	// LocalSaved is set while the local rows are the last run's, which this
+	// run's scan has not yet confirmed or replaced.
+	LocalSaved bool
 }
 
 // LocalGame is one local row: a game read from the card's own MRA.
@@ -139,7 +142,11 @@ func format(in Input, files []File, logLines []string) []byte {
 		view += fmt.Sprintf(" (search %q)", a.Search)
 	}
 	line("View: %s; screen rotation %s", view, a.Rotation)
-	line("Rows: %d (catalogue %d, local %d); in the list now: %d", a.Rows, a.Catalogue, len(a.Local), a.Shown)
+	local := fmt.Sprint(len(a.Local))
+	if a.LocalSaved {
+		local += " from the last run's scan, not yet rechecked"
+	}
+	line("Rows: %d (catalogue %d, local %s); in the list now: %d", a.Rows, a.Catalogue, local, a.Shown)
 	line("Filters in force: %s", orNone(a.Effective))
 	line("Filters chosen: %s", orNone(a.Saved))
 	if len(a.Hidden) > 0 {

@@ -59,6 +59,12 @@ func TestBuildSections(t *testing.T) {
 	if strings.Contains(s, "t=123") {
 		t.Error("a query string reached the report")
 	}
+	// local rows kept from the last run say so until this run's scan is done
+	in := sample()
+	in.App.LocalSaved = true
+	if s := string(Build(in)); !strings.Contains(s, "Rows: 1286 (catalogue 1276, local 2 from the last run's scan, not yet rechecked); in the list now: 1071") {
+		t.Errorf("saved local rows not named:\n%s", s)
+	}
 }
 
 func TestBuildCaps(t *testing.T) {

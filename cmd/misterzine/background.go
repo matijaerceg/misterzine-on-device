@@ -47,7 +47,7 @@ func (h *host) requestScan() {
 	h.scanPending = false
 	h.scanRunning = true
 	ds := h.a.Data()
-	go h.scan(ds.Rows, ds.NCat, ds.Gen, ds.Hash, ds.Updated)
+	go h.scan(ds.Rows, ds.NCat, ds.Gen, ds.Hash, ds.Updated, h.localSaved)
 }
 
 // receiveScan installs a scan result. Results are checked against the
@@ -71,6 +71,7 @@ func (h *host) receiveScan(r scanResult) {
 		} else {
 			h.status, h.owners = r.status, r.owners
 			h.a.SetData(ds, nil)
+			h.localSaved = false
 			// a standin row the card now runs from the catalogue hands its star over
 			h.a.RenameKeys(r.moves)
 			if h.img != nil {
@@ -88,6 +89,8 @@ func (h *host) receiveScan(r scanResult) {
 	// A nil alternatives result means genuinely empty only on the final pass.
 	if r.final && r.index != nil && current {
 		if r.complete {
+			// the last run's local rows are this card's, as far as a scan can tell
+			h.localSaved = false
 			// a star on a local row that a catalogue refresh covered before
 			// this run's first scan could list it, so no takeover saw it
 			if moves := h.a.AdoptStrandedLocalKeys(); len(moves) > 0 {

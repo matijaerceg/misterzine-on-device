@@ -98,6 +98,7 @@ type host struct {
 	alts                          map[string][]string
 	altCores                      map[string]string // version path -> its own core, for versions on other cores (scanResult.altCores)
 	altGen                        string            // the dataset generation alts belongs to
+	localSaved                    bool              // UI-owned: the local rows on show are the last run's (local_cache.go), not yet confirmed by a complete scan
 	familyCache                   scan.FamilyCache
 	scanCh                        chan scanResult
 	timeSample                    atomic.Pointer[serverClockSample]
@@ -204,13 +205,18 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 
 	// data: cache, else the embedded snapshot
 	rows, meta, source := h.loadData()
+	ncat := len(rows)
+	// and the card's own games as the last scan found them, until this
+	// run's scan confirms or replaces them
+	rows, nlocal, localNote := h.withSavedLocalRows(rows, meta.Hash)
+	h.localSaved = nlocal > 0
 	upd, _ := data.ParseMetaTime(meta.Updated)
 	now := time.Now()
 	trusted := !upd.IsZero() && now.After(upd.Add(-24*time.Hour))
 	h.clock = platform.Clock{Now: h.now, Trusted: trusted}
 	h.dataUpdated = upd
 	ds := data.Ingest(rows, meta.Hash, upd)
-	lg.Printf("data: %d rows from %s, hash %.8s, updated %s, clock trusted=%v (%v)", len(rows), source, meta.Hash, meta.Updated, trusted, time.Since(t0).Round(time.Millisecond))
+	lg.Printf("data: %d rows from %s%s, hash %.8s, updated %s, clock trusted=%v (%v)", ncat, source, localNote, meta.Hash, meta.Updated, trusted, time.Since(t0).Round(time.Millisecond))
 
 	// platform
 	var err error
@@ -1413,7 +1419,8 @@ func goneLines(files, dirs []scan.Skipped) []string {
 // scan reads the card off the UI goroutine: cores and MRA stats first (fast),
 // alternatives and the local walk after (slow the first time). rows are the
 // dataset's rows, local rows included; ncat of them are the catalogue's.
-func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Time) {
+// saved is set when those local rows are the last run's (local_cache.go).
+func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Time, saved bool) {
 	// a thread of its own, below the UI's priority, so the walks and the
 	// core hashing never take a core from a frame (the thread ends with
 	// this goroutine: never unlocked)
@@ -1557,7 +1564,13 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 	}
 	res := scanResult{index: idx, status: st, owners: owners, gen: gen, alts: resolved, altCores: local.VersionCores, notice: notice, final: true, hidden: hidden, iniFound: iniFound, diag: diag,
 		access: scan.NewCoreAccess(catalogue, idx), complete: err == nil && local.Err == nil}
-	if nextGen != gen {
+	if res.complete {
+		// only a scan that read the whole card knows every local row
+		h.saveLocalRows(hash, merged[ncat:])
+	}
+	// Saved rows can match this scan's by generation and still differ in a
+	// title or a field this build adds: the scan's own rows replace them.
+	if nextGen != gen || saved && !data.SameLocalRows(rows[ncat:], merged[ncat:]) {
 		// The row set changes: statuses must index into the new rows.
 		res.status, res.owners = scan.Statuses(h.card, idx, merged)
 		res.rows, res.nextGen = merged, nextGen

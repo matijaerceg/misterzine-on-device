@@ -30,6 +30,7 @@ func (h *host) sendReport(part report.AppPart, done func(report.Outcome)) {
 		done(report.Outcome{Problem: "A report is already on its way.", SaveErr: "the report is still being written"})
 		return
 	}
+	part.LocalSaved = h.localSaved
 	in := report.Input{Version: buildinfo.String(), Created: time.Now(), App: part}
 	sys := h.newSupportReport()
 	in.System = []string{"Kernel: " + sys.Kernel, "Display: " + sys.Display, "Catalogue: " + sys.Data, "INI: " + h.iniLine}
