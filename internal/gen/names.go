@@ -26,6 +26,7 @@ var CoreNames = map[string]string{
 	"Darius2NinjaWarriors":     "Taito (Ninja Warriors)",
 	"Darius2WarriorBlade":      "Taito (Darius II)",
 	"Deco16":                   "Data East DECO-16",
+	"EXPRO02_bazset":           "Kaneko EXPRO-02",
 	"Exidy2":                   "Exidy",
 	"IGSPGM":                   "IGS PGM",
 	"ITech32":                  "Incredible Technologies 32-bit",
@@ -142,6 +143,7 @@ var CoreNames = map[string]string{
 
 // SrcNames mirrors SRC_NAMES: pipeline source id to display name.
 var SrcNames = map[string]string{
+	"bazset":                             "bazset",
 	"blahm1d":                            "blahm1d",
 	"coinop":                             "Coin-Op Collection",
 	"distribution_mister":                "MiSTer Distribution",
@@ -161,6 +163,7 @@ type SrcDB struct {
 
 // SrcDBs mirrors FT_SECTIONS and OPTIN_DBS: pipeline source id to its database.
 var SrcDBs = map[string]SrcDB{
+	"bazset":                             {Section: "bazset/MiSTer_BAZSET", URL: "https://raw.githubusercontent.com/bazset/MiSTer_BAZSET/db/db.json.zip"},
 	"blahm1d":                            {Section: "blahm1d", URL: "https://mister.blahm1d.com/db.json.zip"},
 	"coinop":                             {Section: "Coin-OpCollection/Distribution-MiSTerFPGA", URL: ""},
 	"distribution_mister":                {Section: "distribution_mister", URL: ""},
