@@ -1,17 +1,14 @@
-**Your card's own games are listed from the start**
+**Local games show up right away**
 
-Games MisterZine finds only on your card, with no entry in its online catalogue, used to appear after the card scan finished, which on a big card took a quarter of a minute. MisterZine now remembers them between launches, so the list is complete from the first frame.
-
-For example: a 2 TB card with the ZN-1 games and the Unlocked CPS2 sets opened with some 860 games and grew to 1,022 fifteen seconds later; it now opens with 1,022. Thanks to ctrain1985 for reporting it.
+Games found only on your card used to appear once the card scan finished; they now show from the first frame.
 
 **Added**
 
-- bazset's community database is a source: enable it in `downloader.ini` like MeatCores and its games show up.
-- Your card's own games are listed from the first frame.
+- bazset's database is recognized as a source.
 
 **Fixed**
 
-- The game count no longer grows after launch while the card scan runs.
+- Better handling of local MRAs: they are listed from the start, not 15 seconds in. Thanks to ctrain1985 for reporting it.
 
 Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v125--2026-10-11).
 Existing installations update through Update All, or through Update MisterZine only. New installation:
