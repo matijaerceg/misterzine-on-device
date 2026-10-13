@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.2.6 — 2026-10-13
+
+- Fix MiSTercade V2 directions being ignored during Button mapping setup with beta features enabled (reported by ctrain1985). Its firmware reports each direction as both a button and a directional axis, which setup mistook for two controls pressed together. Setup and hold gestures now recognize those paired reports as one direction, while keeping genuinely separate buttons separate. Existing mappings, including mappings saved using the directional axes, remain usable. Verified on a MiSTer Pi with emulated MiSTercade V2 input reports and the attached Brook controller; a physical MiSTercade V2 was not available.
+- Embedded catalogue snapshot refreshed (1,504 rows, 2026-10-13).
+
 ## v1.2.5 — 2026-10-11
 
 - List the card's own games from the first frame. Games whose MRAs the catalogue does not list, such as a ZN-1 set or the Unlocked CPS2 hacks, were found only by the card scan after every launch, and on a full 2 TB card that scan took 15 seconds: the list opened with some 860 games and grew to 1,022 once it ended, which read as MisterZine forgetting them (reported on Discord by ctrain1985, with a card report). Each complete scan now saves its local rows to `misterzine/cache/local_rows.json`, and the next launch lists them with the catalogue before the scan has run; the scan still replaces them when the card has changed, by generation and field for field, so a retitled MRA also updates, and a file of another version or one that does not decode is ignored with one log line and rewritten by the next scan. The startup log and the report's LIST line say when the rows came from the last run's scan. On a MiSTer Pi 315 saved rows cost 150 ms at start.
