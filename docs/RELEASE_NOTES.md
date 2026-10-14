@@ -1,17 +1,15 @@
-**Mature games setting**
+**Fan patches from Arcade Patches**
 
-A new **Mature games** row in Options can pixelate the screenshots of games MAME marks as adult, or hide those games from the list, search and screensaver.
+Details now lists the fan patches from arcadepatches.com, by strygo, for the games that have them: English translations and restorations of Japan-only sets, enhanced editions and arranged soundtracks. Each line gives the version and date, and says whether the built patch is on your card or where to get it. A patch you have built and copied under **_Arcade Patches** shows up as a version of its game, picked with Left and Right, instead of as a separate game.
 
 **Added**
 
-- **Mature games** in Options: show, pixelate or hide.
-- rossops' Sega Y Board database is recognized as a source.
+- Fan patches from Arcade Patches in Details, and a **Patches** section in Filters: Translation, Restoration, Enhanced, Arranged soundtrack, None.
 
 **Fixed**
 
-- The **Prefetch shots** count reaches its total without a restart.
-- Vertical games from your own MRAs that have no screenshot, such as Andromeda, show a proper picture box in their details. Thanks to Gadget for reporting both.
+- A version name too long for its line in Details scrolls smoothly.
 
-Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v128--2026-10-14).
+Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v129--2026-10-14).
 Existing installations update through Update All, or through Update MisterZine only. New installation:
 [installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once).

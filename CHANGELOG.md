@@ -1,9 +1,9 @@
 # Changelog
 
-## Unreleased
+## v1.2.9 — 2026-10-14
 
+- Show fan patches from Arcade Patches (arcadepatches.com, by strygo). Games with an English translation, restoration, enhanced edition or arranged soundtrack patch, such as Vampire Hunter 2 (Night Warriors 2), list them at the end of Details with version and date, and say whether the built patch is on the card or where to get it. A patch you have built and copied under `_Arcade/_Arcade Patches` now appears as a version of its game, picked with Left/Right, instead of as a separate game. Filters gains a Patches section (Translation, Restoration, Enhanced, Arranged soundtrack, None) after Genre. The embedded catalogue in this release carries the patch data, as does the live one from the site.
 - Smooth the scrolling of a version name too long for its line in Details. The label now moves one pixel every second display refresh, in step with the vertical blank, instead of on a 30 fps timer that drifted against the refresh and hitched.
-- Show fan patches from Arcade Patches (arcadepatches.com, by strygo). Games with an English translation, restoration, enhanced edition or arranged soundtrack patch, such as Vampire Hunter 2 (Night Warriors 2), list them at the end of Details with version and date, and say whether the built patch is on the card or where to get it. A patch you have built and copied under `_Arcade/_Arcade Patches` now appears as a version of its game, picked with Left/Right, instead of as a separate game. Filters gains a Patches section (Translation, Restoration, Enhanced, Arranged soundtrack, None) after Genre. Needs the catalogue to carry the patch data; until it does, nothing changes.
 
 ## v1.2.8 — 2026-10-14
 
