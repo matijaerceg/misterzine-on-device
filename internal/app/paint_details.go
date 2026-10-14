@@ -374,22 +374,6 @@ func (a *App) patchLines(row *data.Row, i int) []paneLine {
 			sets[strings.ToLower(sn)] = true
 		}
 	}
-	family := map[string]bool{}
-	for _, v := range row.FamilySets {
-		family[strings.ToLower(v)] = true
-	}
-	onCard := func(p data.Patch) bool {
-		if p.SN != "" {
-			return sets[strings.ToLower(p.SN)]
-		}
-		// no setname given: any family set but the game's own counts
-		for sn := range sets {
-			if family[sn] && sn != strings.ToLower(row.SN) {
-				return true
-			}
-		}
-		return false
-	}
 	L := []paneLine{{"", pal.Fg}, {"Patches: Arcade Patches (strygo)", pal.Muted}}
 	for _, p := range row.PT {
 		t := data.PatchLabel(p.T) + ": " + p.N
@@ -399,7 +383,10 @@ func (a *App) patchLines(row *data.Row, i int) []paneLine {
 		if p.D != "" {
 			t += " (" + p.D + ")"
 		}
-		if onCard(p) {
+		if p.SN == "" {
+			// no setname to look for (CPS+ spans many MRAs): no claim either way
+			L = append(L, paneLine{data.ASCII(t), pal.Fg})
+		} else if sets[strings.ToLower(p.SN)] {
 			L = append(L, paneLine{data.ASCII(t + ", on card"), pal.Fg})
 		} else {
 			L = append(L, paneLine{data.ASCII(t + ", not on card, arcadepatches.com"), pal.Muted})

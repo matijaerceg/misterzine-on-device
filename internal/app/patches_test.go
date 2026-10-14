@@ -56,7 +56,7 @@ func TestPatchDetailLines(t *testing.T) {
 			t.Errorf("vhunt2 details lack %q:\n%s", want, got)
 		}
 	}
-	if g := text(1); !strings.Contains(g, "Enhanced: SFA2 Gold, not on card, arcadepatches.com") {
+	if g := text(1); !strings.Contains(g, "Enhanced: SFA2 Gold") || strings.Contains(g, "on card") {
 		t.Errorf("sfa2 details:\n%s", g)
 	}
 	if g := text(2); strings.Contains(g, "Patches") {
