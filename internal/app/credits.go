@@ -8,6 +8,8 @@ package app
 // move through the rows, B goes back to Options on the Credits row, and
 // nothing on it can be changed.
 
+import "github.com/matijaerceg/misterzine-on-device/internal/data"
+
 // builtOn credits the people whose technology MisterZine runs on, one
 // selectable row each, kept short enough for the tate layout; a following
 // line (a plain row, not selectable) carries what did not fit.
@@ -23,7 +25,8 @@ var builtOn = [][]string{
 func (a *App) creditsEntries() []panelEntry {
 	group := func(title string) panelEntry { return panelEntry{text: title, header: true, info: true} }
 	spacer := panelEntry{header: true, info: true}
-	row := func(text string) panelEntry { return panelEntry{text: text, kind: "credit"} }
+	// names come from Patreon as typed: fold accents the font has not got
+	row := func(text string) panelEntry { return panelEntry{text: data.ASCII(text), kind: "credit"} }
 	E := []panelEntry{group("Developer:"), row("Matija Erceg"), spacer, group("Built on:")}
 	for _, lines := range builtOn {
 		E = append(E, row(lines[0]))

@@ -89,11 +89,11 @@ func TestCreditsSupporters(t *testing.T) {
 	if len(a.supporters.Current) == 0 {
 		t.Fatal("the embedded supporters snapshot is empty")
 	}
-	s, err := DecodeSupporters([]byte(`{"updated":"2026-10-01","current":[{"name":" Zed ","since":"2026-10"},{"name":"","since":"2026-10"}],"past":[{"name":"Gone","since":"2026-05","until":"2026-08"}]}`))
+	s, err := DecodeSupporters([]byte(`{"updated":"2026-10-01","current":[{"name":" Zed ","since":"2026-10"},{"name":"","since":"2026-10"},{"name":"Anders Öhlund","since":"2026-10"}],"past":[{"name":"Gone","since":"2026-05","until":"2026-08"}]}`))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(s.Current) != 1 || s.Current[0].Name != "Zed" || len(s.Past) != 1 {
+	if len(s.Current) != 2 || s.Current[0].Name != "Zed" || len(s.Past) != 1 {
 		t.Fatalf("decoded %+v", s)
 	}
 	a.actList(platform.KeyBack)
@@ -106,7 +106,8 @@ func TestCreditsSupporters(t *testing.T) {
 		texts = append(texts, e.text)
 	}
 	page := strings.Join(texts, "\n")
-	for _, w := range []string{"Patreon supporters:", "Zed", "Past supporters:", "Gone", "Special thanks to the early adopters:"} {
+	// the font has no accents: a name typed with them is folded, not "??"
+	for _, w := range []string{"Patreon supporters:", "Zed", "Anders Ohlund", "Past supporters:", "Gone", "Special thanks to the early adopters:"} {
 		if !strings.Contains(page, w) {
 			t.Errorf("credits page lacks %q in\n%s", w, page)
 		}
