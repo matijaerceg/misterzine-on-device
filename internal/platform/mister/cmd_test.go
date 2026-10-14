@@ -32,3 +32,25 @@ func TestLaunchCoreMatchesScanNames(t *testing.T) {
 		t.Fatal("nil interface accepted")
 	}
 }
+
+// A name ending in a dot puts ".." before the extension (issue #12).
+func TestLaunchPathDottedNames(t *testing.T) {
+	card := t.TempDir()
+	os.MkdirAll(filepath.Join(card, "_Arcade", "_MeatCores"), 0755)
+	for _, target := range []string{"_Arcade/S.O.S..mra", "_Arcade/_MeatCores/Dragon Ball Z V.R. V.S..mra"} {
+		os.WriteFile(filepath.Join(card, filepath.FromSlash(target)), []byte("<misterromdescription/>"), 0644)
+		got, err := LaunchPath(card, target)
+		if err != nil || got != filepath.ToSlash(filepath.Join(card, filepath.FromSlash(target))) {
+			t.Fatalf("%s: %s %v", target, got, err)
+		}
+		if _, err := LaunchPath(card, filepath.ToSlash(filepath.Join(card, filepath.FromSlash(target)))); err != nil {
+			t.Fatalf("absolute %s: %v", target, err)
+		}
+	}
+	os.WriteFile(filepath.Join(card, "x.mra"), []byte("x"), 0644)
+	for _, target := range []string{"_Arcade/../x.mra", "../x.mra", "_Arcade/..", card + "/_Arcade/../x.mra"} {
+		if _, err := LaunchPath(card, target); err == nil {
+			t.Fatalf("%s accepted", target)
+		}
+	}
+}

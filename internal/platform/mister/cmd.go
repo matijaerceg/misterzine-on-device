@@ -72,8 +72,11 @@ func LaunchPath(card, target string) (string, error) {
 	if strings.HasPrefix(target, "core:") {
 		return findCore(card, strings.TrimPrefix(target, "core:"))
 	}
-	if strings.Contains(target, "..") {
-		return "", errors.New("bad path")
+	// only a whole ".." element climbs; names like "S.O.S..mra" are fine
+	for _, part := range strings.Split(target, "/") {
+		if part == ".." {
+			return "", errors.New("bad path")
+		}
 	}
 	ext := strings.ToLower(path.Ext(target))
 	if ext != ".mra" && ext != ".rbf" && ext != ".mgl" {
