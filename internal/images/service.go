@@ -27,8 +27,13 @@ type Pic struct {
 type scaledKey struct {
 	Pic
 	W, H    int
-	Native  bool
-	Stretch bool
+	Native   bool
+	Stretch  bool
+	Pixelate bool
+}
+
+func keyFor(r app.ImageReq) scaledKey {
+	return scaledKey{Pic{r.Key, r.Slot}, r.W, r.H, r.Native, r.Stretch, r.Pixelate}
 }
 
 type entry struct {
@@ -69,6 +74,8 @@ type Service struct {
 	paused        bool // no decoding while the UI scrolls
 	have          int  // prefetch pictures on disk (kept current, never rescanned per call)
 	haveKnown     bool
+	haveGen       int          // bumped per new prefetch list; a stale count is dropped
+	got           map[Pic]bool // downloaded this run, so a count racing a download keeps it
 	progressReady chan struct{}
 	ready         chan struct{}
 	stop          chan struct{}
@@ -87,6 +94,7 @@ func New(dir string, client *fetch.Client, lg *log.Logger, budget int) *Service 
 		cache: map[scaledKey]*entry{}, lru: list.New(), budget: budget,
 		raw: map[Pic]*image.RGBA{}, inflight: map[scaledKey]bool{}, netBusy: map[Pic]bool{},
 		missing: map[Pic]time.Time{}, failed: map[Pic]bool{}, retryAt: map[Pic]time.Time{}, retries: map[Pic]int{},
+		got:  map[Pic]bool{},
 		kick: make(chan struct{}, 1), decodeKick: make(chan struct{}, 1),
 		progressReady: make(chan struct{}, 1), ready: make(chan struct{}, 1), stop: make(chan struct{}),
 	}
@@ -147,29 +155,70 @@ func (s *Service) SetOffline(off bool) {
 }
 
 // SetPrefetch installs the background download list (priority order) and
-// switches prefetching on or off.
+// switches prefetching on or off. A picture two rows share is listed once,
+// or the tally's total would count it twice while its download counts once.
 func (s *Service) SetPrefetch(pics []Pic, on bool) {
+	pics = uniquePics(pics)
 	s.mu.Lock()
-	rescan := !s.haveKnown || len(pics) != len(s.prefetch)
+	rescan := !s.haveKnown || !samePics(pics, s.prefetch)
 	s.prefetch = pics
 	s.prefetchOn = on
 	s.prefetchPos = 0
+	gen := s.haveGen
+	if rescan {
+		s.haveGen++
+		gen = s.haveGen
+	}
 	s.mu.Unlock()
 	if rescan {
-		go s.countHave(pics)
+		go s.countHave(pics, gen)
 	}
 	s.poke(s.kick)
 }
 
-// countHave counts the prefetch pictures already on disk, once, off the UI.
-func (s *Service) countHave(pics []Pic) {
-	n := 0
+func uniquePics(pics []Pic) []Pic {
+	seen := make(map[Pic]bool, len(pics))
+	out := make([]Pic, 0, len(pics))
 	for _, p := range pics {
-		if s.exists(p) {
+		if !seen[p] {
+			seen[p] = true
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+func samePics(a, b []Pic) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// countHave counts the prefetch pictures already on disk, off the UI. A
+// download that lands while it walks the list is counted from got, and the
+// count for a list that has since been replaced is dropped.
+func (s *Service) countHave(pics []Pic, gen int) {
+	on := make([]bool, len(pics))
+	for i, p := range pics {
+		on[i] = s.exists(p)
+	}
+	s.mu.Lock()
+	if gen != s.haveGen {
+		s.mu.Unlock()
+		return
+	}
+	n := 0
+	for i, p := range pics {
+		if on[i] || s.got[p] {
 			n++
 		}
 	}
-	s.mu.Lock()
 	s.have, s.haveKnown = n, true
 	s.mu.Unlock()
 	s.poke(s.progressReady)
@@ -208,8 +257,8 @@ func (s *Service) exists(p Pic) bool {
 
 // Get implements app.Images.
 func (s *Service) Get(req app.ImageReq) (*image.RGBA, app.ImageState) {
-	p := Pic{req.Key, req.Slot}
-	k := scaledKey{p, req.W, req.H, req.Native, req.Stretch}
+	k := keyFor(req)
+	p := k.Pic
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if e, ok := s.cache[k]; ok {
@@ -232,7 +281,7 @@ func (s *Service) Want(reqs []app.ImageReq) {
 	s.mu.Lock()
 	s.wanted = s.wanted[:0]
 	for _, r := range reqs {
-		s.wanted = append(s.wanted, scaledKey{Pic{r.Key, r.Slot}, r.W, r.H, r.Native, r.Stretch})
+		s.wanted = append(s.wanted, keyFor(r))
 	}
 	s.mu.Unlock()
 	s.poke(s.kick)
@@ -325,7 +374,7 @@ func (s *Service) decode(k scaledKey) {
 		}
 		s.mu.Unlock()
 	}
-	scaled := Scale(src, k.W, k.H, k.Native, k.Stretch)
+	scaled := scaleFor(src, k)
 	s.mu.Lock()
 	s.put(k, scaled)
 	s.mu.Unlock()
@@ -501,8 +550,7 @@ func (s *Service) download(p Pic) {
 	delete(s.retryAt, p)
 	delete(s.retries, p)
 	s.prefetched++
-	s.mu.Unlock()
-	s.mu.Lock()
+	s.got[p] = true
 	for _, q := range s.prefetch {
 		if q == p {
 			s.have++
@@ -612,6 +660,7 @@ func (s *Service) ClearCache() {
 	s.failed = map[Pic]bool{}
 	s.prefetchPos = 0
 	s.have = 0
+	s.got = map[Pic]bool{}
 	s.mu.Unlock()
 	s.signal()
 	for _, sub := range slotDirs {
