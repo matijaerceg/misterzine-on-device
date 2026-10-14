@@ -56,6 +56,10 @@ type Row struct {
 	Brot         string   `json:"brot"`
 	Note         string   `json:"note"`
 	Scr          int      `json:"scr"`
+	// Mat is 1 for adult or suggestive content (MAME's catver.ini "Mature"
+	// marker plus the site's own overrides); a local row inherits it from a
+	// mature catalogue game of its family.
+	Mat int `json:"mat,omitempty"`
 	// Standin marks a local row whose game the catalogue does list, but only
 	// for cores this card has not got: the file stands in for them, so the
 	// merge keeps the row although the catalogue names the setname. The card

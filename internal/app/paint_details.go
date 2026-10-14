@@ -361,7 +361,7 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 	body.Min.Y = l.Root.Min.Y // no status bar here: the room goes to the specs
 	if key, slot := cabShot(row); key != "" && a.transition.enabled {
 		// the launch animation's monitor picture, decoded before Start
-		a.want(ImageReq{Key: key, Slot: slot, W: cabTexW, H: cabTexH, Stretch: slot != "system" && row.ImgW > row.ImgH})
+		a.want(ImageReq{Key: key, Slot: slot, W: cabTexW, H: cabTexH, Stretch: slot != "system" && row.ImgW > row.ImgH, Pixelate: a.pixelated(row)})
 	}
 	cols := a.body.Cols(body.Dx())
 	y := body.Min.Y
@@ -413,7 +413,7 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 			if s == "system" {
 				key = row.Core
 			}
-			a.paintImageBox(c, box, key, s, stretch)
+			a.paintImageBox(c, box, key, s, stretch, s != "system" && a.pixelated(row))
 			x += w + 4
 		}
 		y += bh + 4
@@ -573,8 +573,8 @@ func shotSlots(row *data.Row) []string {
 	return nil
 }
 
-func (a *App) paintImageBox(c *gfx.Canvas, box image.Rectangle, key, slot string, stretch bool) {
-	req := ImageReq{Key: key, Slot: slot, W: box.Dx(), H: box.Dy(), Stretch: stretch}
+func (a *App) paintImageBox(c *gfx.Canvas, box image.Rectangle, key, slot string, stretch, pixelate bool) {
+	req := ImageReq{Key: key, Slot: slot, W: box.Dx(), H: box.Dy(), Stretch: stretch, Pixelate: pixelate}
 	img, st := a.cfg.Images.Get(req)
 	if img == nil {
 		a.want(req)

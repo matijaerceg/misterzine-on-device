@@ -24,6 +24,7 @@ type Settings struct {
 	ArcadeIntroPending   bool          `json:"arcade_intro_pending"`
 	ArcadeBackAsked      bool          `json:"arcade_back_asked,omitempty"` // the free build asked once whether to go back to MisterZine Arcade
 	ShowDeprecated       bool          `json:"show_deprecated"`
+	Mature               string        `json:"mature,omitempty"` // show (default), pixelate or hide
 	Schema               int           `json:"schema"`
 	Rotation             string        `json:"rotation"` // auto, left, right, off
 	FollowRotation       bool          `json:"follow_ini_rotation"`

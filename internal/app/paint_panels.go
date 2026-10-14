@@ -534,6 +534,8 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Include console, computer and other cores. Off (default): browse arcade games only. Saved favorites are kept."},
 		{text: "Show deprecated cores", kind: "show-deprecated", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ShowDeprecated],
 			help: "Include cores marked deprecated in the catalogue."},
+		{text: "Mature games", kind: "mature", vals: []string{MatureShow, MaturePixelate, MatureHide}, idx: map[string]int{MatureShow: 0, MaturePixelate: 1, MatureHide: 2}[a.Mature()],
+			help: "Adult games, as MAME's category list marks them. Pixelate: blocks over their shots. Hide: off the list, search and screensaver."},
 		{text: "Filter by rotation", kind: "filter-rotation", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.FilterRotation()],
 			help: "Show only games made for the current orientation (INI or manual); unknowns hidden. Off restores manual filters."},
 		{text: "Views (" + a.viewsSummary() + ")", kind: "views", opensPage: true,
@@ -1195,6 +1197,9 @@ func (a *App) stepValue(d int) bool {
 	case "show-deprecated":
 		a.cfg.ShowDeprecated = i == 1
 		a.Refilter()
+	case "mature":
+		a.cfg.Mature = []string{MatureShow, MaturePixelate, MatureHide}[i]
+		a.Refilter()
 	case "sources":
 		a.cfg.InstalledOnly = i == 1
 		a.Refilter()
@@ -1438,7 +1443,7 @@ func (a *App) togglePanel() bool {
 		if !e.header {
 			f.Since = !f.Since
 		}
-	case "page-transitions", "rotation", "follow-rotation", "filter-rotation", "sources", "show-deprecated", "launcher", "scroll", "smooth-scroll", "hold-delay", "remember-sort", "default-view", "prefetch", "title-font", "list-shot", "date-format", "list-layout", "button-labels", "ok-button":
+	case "page-transitions", "rotation", "follow-rotation", "filter-rotation", "sources", "show-deprecated", "mature", "launcher", "scroll", "smooth-scroll", "hold-delay", "remember-sort", "default-view", "prefetch", "title-font", "list-shot", "date-format", "list-layout", "button-labels", "ok-button":
 		return true // Left/Right pick these
 	case "inset":
 		a.screen = ScreenCalibrate

@@ -740,7 +740,8 @@ func (a *App) saverPool() []saverPick {
 	var pool []saverPick
 	for i := range a.ds.Rows {
 		r := &a.ds.Rows[i]
-		if !r.IsArcade() || r.Img == "" || (a.cfg.SaverCard && !a.status(i).Found()) || (a.cfg.SaverFavorites && !a.cfg.Favorites[r.K]) {
+		// a mature game is never screensaver décor unless its shots are shown
+		if !r.IsArcade() || r.Img == "" || (r.Mat != 0 && a.Mature() != MatureShow) || (a.cfg.SaverCard && !a.status(i).Found()) || (a.cfg.SaverFavorites && !a.cfg.Favorites[r.K]) {
 			continue
 		}
 

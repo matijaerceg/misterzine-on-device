@@ -209,6 +209,20 @@ func MergeLocal(catalogue, local []Row) []Row {
 			}
 		}
 	}
+	// a local copy of a mature catalogue game, a clone or the game itself,
+	// is mature too: the card's MRA carries no such mark
+	mature := map[string]bool{}
+	for i := range catalogue {
+		r := &catalogue[i]
+		if r.Mat == 0 || !r.IsArcade() {
+			continue
+		}
+		for _, id := range append([]string{r.SN, r.Family}, r.FamilySets...) {
+			if id != "" {
+				mature[id] = true
+			}
+		}
+	}
 	kept := make([]Row, 0, len(local))
 	seen := map[string]bool{}
 	for i := range local {
@@ -217,7 +231,11 @@ func MergeLocal(catalogue, local []Row) []Row {
 			continue
 		}
 		seen[r.K] = true
-		kept = append(kept, *r)
+		row := *r
+		if mature[row.SN] || (row.Family != "" && mature[row.Family]) {
+			row.Mat = 1
+		}
+		kept = append(kept, row)
 	}
 	sort.Slice(kept, func(i, j int) bool { return kept[i].K < kept[j].K })
 	out := make([]Row, 0, len(catalogue)+len(kept))

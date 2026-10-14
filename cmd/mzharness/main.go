@@ -84,6 +84,7 @@ func main() {
 	viewsOff := flag.String("views-off", "", "views left out of the Y cycle, comma separated names (updated, debut, year, alphabetical, maker, core, favorites, recents); Recents is off unless -recents is given")
 	installed := flag.String("installed", "", "Downloader database ids the card has, comma separated (e.g. distribution_mister,jtcores): Sources starts on installed only and the other sources are hidden")
 	showNonArcade := flag.Bool("show-non-arcade", false, "include console, computer and other cores")
+	mature := flag.String("mature", "show", "Options -> Mature games for rows the data marks \"mat\": show, pixelate or hide")
 	arcadeIntro := flag.Bool("arcade-intro", false, "show upgrade explanation")
 	splash := flag.Bool("splash", false, "show the startup logo fade")
 	localPath := flag.String("local", "", "local rows fixture (a data.json-shaped array of rows the card scan would add)")
@@ -149,6 +150,7 @@ func main() {
 		FollowRotation: true,
 		FilterRotation: *filterRotation,
 		InstalledOnly:  *installed != "",
+		Mature:         *mature,
 		ViewsOff:       viewsOffList(*viewsOff, *recents > 0),
 		TitleFont:      *titleFont,
 		ListShot:       *listShot,

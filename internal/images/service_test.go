@@ -76,7 +76,7 @@ func TestCloseWithUnreadableCachedImage(t *testing.T) {
 	s := New(t.TempDir(), nil, log.New(io.Discard, "", 0), 0)
 	closeAndCheck := closeCheck(t, s)
 	req := app.ImageReq{Key: "unreadable", Slot: "snap", W: 32, H: 32}
-	k := scaledKey{Pic{req.Key, req.Slot}, req.W, req.H, false, false}
+	k := keyFor(req)
 	// A directory deterministically models stat succeeding but ReadFile
 	// failing, on both Windows and Linux, without requiring a damaged card.
 	if err := os.Mkdir(s.path(k.Pic), 0755); err != nil {

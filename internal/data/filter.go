@@ -63,6 +63,7 @@ const (
 type Filters struct {
 	ArcadeOnly     bool            `json:"-"`                 // runtime catalogue preference
 	HideDeprecated bool            `json:"-"`                 // runtime catalogue preference
+	HideMature     bool            `json:"-"`                 // runtime catalogue preference
 	MatchRotation  string          `json:"-"`                 // runtime INI rule; includes system/unknown rows
 	SrcHidden      map[string]bool `json:"-"`                 // runtime rule: sources whose Downloader database the card lacks
 	ResOff         map[string]bool `json:"res_off,omitempty"` // raw resolution, "" = unknown
@@ -86,7 +87,7 @@ func (f *Filters) Active() bool {
 	if f == nil {
 		return false
 	}
-	return f.ArcadeOnly || f.HideDeprecated || f.MatchRotation != "" || len(f.SrcHidden) > 0 || len(f.YearOff) > 0 || len(f.BaseOff) > 0 || len(f.BetaOff) > 0 || len(f.SrcOff) > 0 || len(f.RotOff) > 0 || len(f.PlrOff) > 0 ||
+	return f.ArcadeOnly || f.HideDeprecated || f.HideMature || f.MatchRotation != "" || len(f.SrcHidden) > 0 || len(f.YearOff) > 0 || len(f.BaseOff) > 0 || len(f.BetaOff) > 0 || len(f.SrcOff) > 0 || len(f.RotOff) > 0 || len(f.PlrOff) > 0 ||
 		len(f.ResOff) > 0 || len(f.GenreOff) > 0 || len(f.DirectionsOff) > 0 || len(f.ButtonsOff) > 0 || (f.Install != "" && f.Install != InstallAll) || f.FavOnly || f.Since || f.ROMActive()
 }
 
@@ -115,6 +116,9 @@ func (f *Filters) Why(r *Row, d *Derived, st Status, fav, unseen bool, rom ROMSt
 	}
 	if f.HideDeprecated && r.Deprecated {
 		return "a deprecated core (Options: deprecated hidden)"
+	}
+	if f.HideMature && r.Mat != 0 {
+		return "a mature game (Options: mature games hidden)"
 	}
 	if f.BaseOff[r.Base] {
 		return "Filters -> Type (" + r.Base + " off)"

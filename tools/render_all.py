@@ -93,7 +93,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     for inset in (15, 40):
         scenarios.append([*rotation, "-inset", str(inset), "-status", "missing",
                           "-out", f"out/browsing-{orientation}-{inset}", "-script",
-                          "back; home; pagedown; right; down*6; shot remember-on; left; shot remember-off; back; "
+                          "back; home; pagedown; right; down*7; shot remember-on; left; shot remember-off; back; "
                           "space*3; home; pagedown; shot letter-jump; enter; enter; start; shot launch-failure; "
                           "back; back; wait 3200; end; pageup; pagedown; shot last-letter; "
                           "space*4; home; pagedown; shot updated-month; wait 2200; shot updated-month-settled; "
@@ -122,8 +122,8 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     scenarios.append([*rotation, "-inset", "40",
                       "-out", f"out/rotation-filter-{orientation}", "-script",
-                      "back; home; pagedown; right; down*4; shot off; right; shot on; back; shot list; "
-                      "tab; shot filters; back; back; home; pagedown; right; down*4; left; back; shot restored"])
+                      "back; home; pagedown; right; down*5; shot off; right; shot on; back; shot list; "
+                      "tab; shot filters; back; back; home; pagedown; right; down*5; left; back; shot restored"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):
@@ -148,13 +148,13 @@ for rotation in ([], ["-rot", "left", "-logical"]):
         # a Filters heading
         scenarios.append([*rotation, "-inset", str(inset),
                           "-out", f"out/list-polish-{orientation}-{inset}", "-script",
-                          "type gradius; shot beta-tall; back; back; home; pagedown; right; down*7; shot title-font; left; back; "
-                          "type gradius; shot beta-narrow; back; back; home; pagedown; right; down*7; left; back; "
-                          "type gradius; shot beta-normal; back; back; home; pagedown; right; down*7; right; right; "
-                          "down; shot list-shots; right; back; shot title-shot; back; home; pagedown; right; down*8; left; "
-                          "down; right; shot date-dd-mm; back; shot list-dd-mm; back; home; pagedown; right; down*9; right; shot date-mon-d; back; shot list-mon-d; "
-                          "back; home; pagedown; right; down*9; right; shot date-d-mon; back; shot list-d-mon; back; home; pagedown; right; down*9; right; shot date-yymmdd; back; shot list-yymmdd; "
-                          "back; home; pagedown; right; down*9; left*4; back; "
+                          "type gradius; shot beta-tall; back; back; home; pagedown; right; down*8; shot title-font; left; back; "
+                          "type gradius; shot beta-narrow; back; back; home; pagedown; right; down*8; left; back; "
+                          "type gradius; shot beta-normal; back; back; home; pagedown; right; down*8; right; right; "
+                          "down; shot list-shots; right; back; shot title-shot; back; home; pagedown; right; down*9; left; "
+                          "down; right; shot date-dd-mm; back; shot list-dd-mm; back; home; pagedown; right; down*10; right; shot date-mon-d; back; shot list-mon-d; "
+                          "back; home; pagedown; right; down*10; right; shot date-d-mon; back; shot list-d-mon; back; home; pagedown; right; down*10; right; shot date-yymmdd; back; shot list-yymmdd; "
+                          "back; home; pagedown; right; down*10; left*4; back; "
                           "type galaga; down*2; enter; right*2; shot alt-start; wait 1200; shot alt-mid; wait 1200; shot alt-end; "
                           "down; shot info-page; wait 400; shot info-sliding; wait 2000; shot info-paged; "
                           "back; tab; shot heading; enter; shot heading-open; enter; shot heading-closed; "
@@ -175,7 +175,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     scenarios.append([*rotation, "-recents", "9",
                       "-out", f"out/recents-{orientation}", "-script",
                       "space*7; shot recents; home; pagedown; shot month-jump; wait 2200; "
-                      "back; home; pagedown; right; down*5; shot option; enter; end; shot views-on; enter; back; back; shot off"])
+                      "back; home; pagedown; right; down*6; shot option; enter; end; shot views-on; enter; back; back; shot off"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):
@@ -262,7 +262,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     scenarios.append([*rotation,
                       "-out", f"out/maker-{orientation}", "-script",
                       "space*4; shot maker; pagedown*3; shot maker-jump; down*2; shot maker-rows; home; down*48; shot maker-pinned; "
-                      "back; home; pagedown; right; down*5; shot options-views; enter; shot views; down*4; enter; shot views-off; "
+                      "back; home; pagedown; right; down*6; shot options-views; enter; shot views; down*4; enter; shot views-off; "
                       "up*4; enter; down; enter; down; enter; down; enter; down*2; enter; down; enter; shot views-last; "
                       "enter; back; back"])
     # the Core view: a header per core, a core jump, a core name pinned over
@@ -271,7 +271,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     scenarios.append([*rotation,
                       "-out", f"out/core-{orientation}", "-script",
                       "space*5; shot core; pagedown*3; shot core-jump; home; down*12; shot core-pinned; end; shot single-game; "
-                      "back; home; pagedown; right; down*5; shot options-views; enter; shot views; back; down; left; down; right*5; shot default-core"])
+                      "back; home; pagedown; right; down*6; shot options-views; enter; shot views; back; down; left; down; right*5; shot default-core"])
     # with the non-arcade cores grouped by kind, in the picture and text layouts
     scenarios.append([*rotation, "-show-non-arcade", "-layout", "picture",
                       "-out", f"out/core-layouts-{orientation}", "-script",
@@ -300,7 +300,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):
         scenarios.append([*rotation, "-inset", str(inset), "-out", f"out/option-samples-{orientation}-{inset}", "-script",
-                          "back; home; pagedown; right; down*7; shot font; left; shot font-narrow; left; shot font-normal; "
+                          "back; home; pagedown; right; down*8; shot font; left; shot font-narrow; left; shot font-normal; "
                           "home; pagedown*3; right; down*4; shot speed; wait 200; shot speed-moving; down; shot smooth-on; wait 17; shot smooth-moving; left; shot smooth-off; down; shot delay; "
                           "wait 250; shot delay-short; wait 400; shot delay-reverse; down; shot dismissed"])
         # the 10 Hz scroll speed, and the smooth and hold-delay samples at its pace
@@ -311,7 +311,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):
         scenarios.append([*rotation, "-inset", str(inset), "-out", f"out/default-view-{orientation}-{inset}", "-script",
-                          "back; home; pagedown; right; down*6; shot remember-on; left; shot remember-off; down; shot default; right*3; shot alphabetical; up; right; shot hidden"])
+                          "back; home; pagedown; right; down*7; shot remember-on; left; shot remember-off; down; shot default; right*3; shot alphabetical; up; right; shot hidden"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     scenarios.append([*rotation, "-show-non-arcade", "-out", f"out/deprecated-{orientation}", "-script",
@@ -325,7 +325,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     # Options -> Layout: the four diagrams in the help box, the chosen one framed
     scenarios.append([*rotation, "-out", f"out/layout-previews-{orientation}", "-script",
-                      "back; home; pagedown; right; down*10; shot list; right; shot split; right; shot picture; right; shot text; down; shot dismissed"])
+                      "back; home; pagedown; right; down*11; shot list; right; shot split; right; shot picture; right; shot text; down; shot dismissed"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):

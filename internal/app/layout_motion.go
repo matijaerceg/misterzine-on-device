@@ -159,7 +159,7 @@ func (a *App) startLayoutMotion(m layoutMotion) {
 	m.toCaption = copyLayoutPixels(c.RGBA, m.toText)
 	if row, _, _ := a.current(); row != nil && !a.lay.Thumb.Empty() {
 		key, slot := thumbSlot(row, a.ListShot())
-		m.request = ImageReq{Key: key, Slot: slot, W: a.lay.Thumb.Dx(), H: a.lay.Thumb.Dy(), Stretch: slot != "system" && row.ImgW > row.ImgH}
+		m.request = ImageReq{Key: key, Slot: slot, W: a.lay.Thumb.Dx(), H: a.lay.Thumb.Dy(), Stretch: slot != "system" && row.ImgW > row.ImgH, Pixelate: a.pixelated(row)}
 	}
 	if m.request.Key != "" && m.request.Slot != "system" {
 		// the picture the settled layout shows, when it is ready: scaled

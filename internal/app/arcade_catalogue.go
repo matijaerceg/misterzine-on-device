@@ -10,7 +10,8 @@ import (
 
 // catalogueIncludes ignores temporary filters and search, but respects Options.
 func (a *App) catalogueIncludes(r *data.Row) bool {
-	return (a.cfg.ShowNonArcade || r.IsArcade()) && (a.cfg.ShowDeprecated || !r.Deprecated) && !(a.cfg.InstalledOnly && a.hiddenSrc[r.Src])
+	return (a.cfg.ShowNonArcade || r.IsArcade()) && (a.cfg.ShowDeprecated || !r.Deprecated) && !(a.cfg.InstalledOnly && a.hiddenSrc[r.Src]) &&
+		!(r.Mat != 0 && a.Mature() == MatureHide)
 }
 
 // CatalogueNews describes changes within the enabled catalogue only. The

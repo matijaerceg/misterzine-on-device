@@ -456,11 +456,20 @@ Operation), stopping at either end; keyboard Home/End still go to the first
 and last row. Rows marked ↗ open another screen or editor.
 
 - **Prefetch shots:** downloads the full picture set in the background.
-  Off downloads pictures as you browse. The tally shows cached pictures.
+  Off downloads pictures as you browse. The tally counts pictures, not games:
+  a game can have a gameplay, title and third shot, and a picture two games
+  share counts once. A picture the image service does not have never arrives,
+  so a finished tally can stay a few short.
 - **Clear image cache:** removes downloaded pictures, which return as needed.
 - **Show deprecated cores:** off by default. Turn it on to include cores marked
   deprecated in the catalogue. This choice is remembered and is unaffected by
   Clear all filters. Hidden cores keep their saved favourites.
+- **Mature games:** show by default. Games with adult or suggestive content,
+  as MAME's category list marks them plus a few the catalogue adds, are
+  covered. Pixelate turns their screenshots into coarse blocks everywhere and
+  keeps them out of the screensaver. Hide removes them from every view,
+  search, the counts and the screensaver, and Clear all filters leaves this
+  choice alone. A local copy of a mature game is covered too.
 - **Show non-arcade cores:** off by default, including after upgrading an older
   installation. Turn on to include console, computer and other cores. This
   preference applies to every browsing view, search, Favorites, catalogue counts

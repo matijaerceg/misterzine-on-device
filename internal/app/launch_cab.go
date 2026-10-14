@@ -127,7 +127,7 @@ func (a *App) previewLaunchCab() {
 // renders ahead, starts the frame producer.
 func (a *App) cabShotAndFrames(row *data.Row) {
 	if key, slot := cabShot(row); key != "" {
-		a.cab.req = ImageReq{Key: key, Slot: slot, W: cabTexW, H: cabTexH, Stretch: slot != "system" && row.ImgW > row.ImgH}
+		a.cab.req = ImageReq{Key: key, Slot: slot, W: cabTexW, H: cabTexH, Stretch: slot != "system" && row.ImgW > row.ImgH, Pixelate: a.pixelated(row)}
 		a.cab.tex, _ = a.cfg.Images.Get(a.cab.req)
 		if a.cab.tex == nil {
 			a.cfg.Images.Want([]ImageReq{a.cab.req})

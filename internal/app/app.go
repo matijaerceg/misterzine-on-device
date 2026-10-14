@@ -157,6 +157,10 @@ type Config struct {
 	// can take it back (arcade_back.go).
 	ArcadeBack     bool
 	ShowDeprecated bool // Include catalogue rows marked deprecated.
+	// Mature is Options -> Mature games: MatureShow (""), MaturePixelate
+	// (screenshots of rows marked mature are pixelated) or MatureHide (the
+	// rows leave every view, the counts and the screensaver).
+	Mature string
 	// ViewsOff names the views Options -> Views left out of the Y cycle
 	// (data.SortMode.Name); a fresh install lists only "recents".
 	ViewsOff    []string
@@ -502,7 +506,7 @@ func (a *App) rebuild() {
 		filters.FavOnly = true
 	}
 	a.total = len(a.ds.Rows)
-	if len(filters.SrcHidden) > 0 || filters.HideDeprecated || filters.ArcadeOnly {
+	if len(filters.SrcHidden) > 0 || filters.HideDeprecated || filters.HideMature || filters.ArcadeOnly {
 		a.total = 0
 		for i := range a.ds.Rows {
 			if a.catalogueIncludes(&a.ds.Rows[i]) {
@@ -624,6 +628,27 @@ func (a *App) ShowNonArcade() bool      { return a.cfg.ShowNonArcade }
 func (a *App) ArcadeIntroPending() bool { return a.cfg.ArcadeIntro }
 
 func (a *App) ShowDeprecated() bool { return a.cfg.ShowDeprecated }
+
+// Options -> Mature games values.
+const (
+	MatureShow     = "show"
+	MaturePixelate = "pixelate"
+	MatureHide     = "hide"
+)
+
+// Mature reports Options -> Mature games, MatureShow when unset or unknown.
+func (a *App) Mature() string {
+	switch a.cfg.Mature {
+	case MaturePixelate, MatureHide:
+		return a.cfg.Mature
+	}
+	return MatureShow
+}
+
+// pixelated reports whether a row's screenshots are drawn pixelated.
+func (a *App) pixelated(r *data.Row) bool {
+	return r != nil && r.Mat != 0 && a.Mature() == MaturePixelate
+}
 
 // SetInstalledOnly is the Sources option; the host calls Refilter after.
 func (a *App) SetInstalledOnly(on bool) { a.cfg.InstalledOnly = on }
@@ -1376,7 +1401,7 @@ func (a *App) neighbourhood() {
 			row := &a.ds.Rows[a.view[pos]]
 			key, slot := thumbSlot(row, a.ListShot())
 			if key != "" {
-				a.want(ImageReq{Key: key, Slot: slot, W: box.Dx(), H: box.Dy(), Stretch: slot != "system" && row.ImgW > row.ImgH})
+				a.want(ImageReq{Key: key, Slot: slot, W: box.Dx(), H: box.Dy(), Stretch: slot != "system" && row.ImgW > row.ImgH, Pixelate: a.pixelated(row)})
 			}
 		}
 	}

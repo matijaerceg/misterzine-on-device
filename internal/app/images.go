@@ -17,6 +17,9 @@ type ImageReq struct {
 	Native bool
 	// Stretch: fill the box exactly, aspect be damned (4:3 thumbnails)
 	Stretch bool
+	// Pixelate: flat blocks instead of the picture (Options -> Mature
+	// games: pixelate, for a row marked mature)
+	Pixelate bool
 }
 
 // ImageState says why Get returned nil.
