@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.2.7 — 2026-10-14
+
+- Launch games whose MRA name ends in a dot. Dragon Ball Z V.R. V.S. (`Dragon Ball Z V.R. V.S..mra`) and S.O.S. (`S.O.S..mra`) said "Cannot launch: target missing or invalid" on Start although their details listed the file, while MiSTer's own menu started them (issue #12, reported by dominiquepayton-arch). The check that keeps a launch on the card refused any path containing two dots in a row, which these names have before `.mra`; it now refuses only a path element that is exactly `..`. Confirmed on a MiSTer Pi, where both games start.
+- List a game set that names its BIOS set as a local game. Local MRAs whose name carries the word BIOS are skipped as system BIOS files, and Street Fighter III New Generation's set is called "(Asia 970204, NO CD, BIOS set 1)", so a copy on another CPS3 core (Jvcps3) never stood in under the catalogue's jtcps3 row, while that core's 2nd Impact and 3rd Strike did (issue #13, reported by dominiquepayton-arch). The word in brackets now does not count; files such as "PGM (Polygame Master) System BIOS" are still skipped. Confirmed on a MiSTer Pi with a copy on another core.
+- Fold accents in the Credits page's names. Supporter names come from Patreon as typed, and the bitmap font has no accented letters, so "Anders Öhlund" read "Anders ??hlund"; the page now folds them as the list and details already do ("Anders Ohlund"). The app fetches the supporters list from the site, so v1.2.6 and earlier showed it that way already.
+- Credits: Ambalek, Anders Öhlund, Cameron Tinker, David, David Broadwick, Imran Ladha, Joe Musso, Jordan Rich, Karl Otty, Rory Clare and Tiffany Salem join the Patreon supporters.
+- Embedded catalogue snapshot refreshed (1,508 rows, 2026-10-14).
+
 ## v1.2.6 — 2026-10-13
 
 - Fix MiSTercade V2 directions being ignored during Button mapping setup with beta features enabled (reported by ctrain1985). Its firmware reports each direction as both a button and a directional axis, which setup mistook for two controls pressed together. Setup and hold gestures now recognize those paired reports as one direction, while keeping genuinely separate buttons separate. Existing mappings, including mappings saved using the directional axes, remain usable. Verified on a MiSTer Pi with emulated MiSTercade V2 input reports and the attached Brook controller; a physical MiSTercade V2 was not available.

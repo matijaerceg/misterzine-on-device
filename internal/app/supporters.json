@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-11",
+  "updated": "2026-10-14",
   "current": [
     {
       "name": "Aaron Whitmore",
@@ -12,6 +12,14 @@
     {
       "name": "Alec Peden",
       "since": "2026-09"
+    },
+    {
+      "name": "Ambalek",
+      "since": "2026-10"
+    },
+    {
+      "name": "Anders Öhlund",
+      "since": "2026-10"
     },
     {
       "name": "Andrew Nolte",
@@ -32,6 +40,10 @@
     {
       "name": "Bob",
       "since": "2026-09"
+    },
+    {
+      "name": "Cameron Tinker",
+      "since": "2026-10"
     },
     {
       "name": "Charles Dreiss",
@@ -60,6 +72,14 @@
     {
       "name": "Daniel oldaker",
       "since": "2026-09"
+    },
+    {
+      "name": "David",
+      "since": "2026-10"
+    },
+    {
+      "name": "David Broadwick",
+      "since": "2026-10"
     },
     {
       "name": "DeaconBlooze",
@@ -102,6 +122,10 @@
       "since": "2026-10"
     },
     {
+      "name": "Imran Ladha",
+      "since": "2026-10"
+    },
+    {
       "name": "Infamous",
       "since": "2026-09"
     },
@@ -134,6 +158,10 @@
       "since": "2026-10"
     },
     {
+      "name": "Joe Musso",
+      "since": "2026-10"
+    },
+    {
       "name": "John Blackburn",
       "since": "2026-10"
     },
@@ -143,6 +171,14 @@
     },
     {
       "name": "Jon Anderson",
+      "since": "2026-10"
+    },
+    {
+      "name": "Jordan Rich",
+      "since": "2026-10"
+    },
+    {
+      "name": "Karl Otty",
       "since": "2026-10"
     },
     {
@@ -242,6 +278,10 @@
       "since": "2026-09"
     },
     {
+      "name": "Rory Clare",
+      "since": "2026-10"
+    },
+    {
       "name": "Sky B",
       "since": "2026-09"
     },
@@ -260,6 +300,10 @@
     {
       "name": "The Shoe",
       "since": "2026-09"
+    },
+    {
+      "name": "Tiffany Salem",
+      "since": "2026-10"
     },
     {
       "name": "Tim Hendrix",
