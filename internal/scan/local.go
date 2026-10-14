@@ -343,10 +343,13 @@ func DiscoverLocal(card, cachePath string, catalogue []data.Row, idx *Index, sta
 		}
 		if snap {
 			r.Img, r.ImgSlots = sn, []string{SlotLocalSnap}
+			// a stand-in size of the right shape: the image service's real
+			// size is unknown here, and every box that fits a picture caps
+			// it at twice these, so a bare 3:4 made a 6-pixel-wide box
 			if r.RotGroup() == "v" {
-				r.ImgW, r.ImgH = 3, 4
+				r.ImgW, r.ImgH = 240, 320
 			} else {
-				r.ImgW, r.ImgH = 4, 3
+				r.ImgW, r.ImgH = 320, 240
 			}
 		}
 		res.Rows = append(res.Rows, r)

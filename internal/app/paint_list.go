@@ -631,7 +631,7 @@ func (a *App) paintThumb(c *gfx.Canvas, box image.Rectangle, row *data.Row) imag
 	}
 	// a horizontal game fills the 4:3 box like on the site; a vertical one
 	// keeps its shape and sits on the left edge with the text
-	req := ImageReq{Key: key, Slot: slot, W: box.Dx(), H: box.Dy(), Stretch: slot != "system" && row.ImgW > row.ImgH}
+	req := ImageReq{Key: key, Slot: slot, W: box.Dx(), H: box.Dy(), Stretch: slot != "system" && row.ImgW > row.ImgH, Pixelate: a.pixelated(row)}
 	img, st := a.cfg.Images.Get(req)
 	if img == nil {
 		a.want(req)
@@ -667,6 +667,9 @@ func (a *App) paintThumb(c *gfx.Canvas, box image.Rectangle, row *data.Row) imag
 func (a *App) placeholder(c *gfx.Canvas, box image.Rectangle, text string) {
 	c.Fill(box, rgb{R: 0, G: 0, B: 0, A: 255})
 	w := a.sm.Width(text)
+	if w > box.Dx() {
+		return // a clipped word reads worse than an empty box
+	}
 	c.Text(box.Min.X+(box.Dx()-w)/2, box.Min.Y+(box.Dy()-a.sm.H)/2, a.sm, text, pal.Muted)
 }
 

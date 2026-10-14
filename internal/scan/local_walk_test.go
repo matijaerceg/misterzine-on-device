@@ -167,7 +167,7 @@ func TestDiscoverLocalMatchesCatalogue(t *testing.T) {
 
 	with := DiscoverLocal(card, "", catalogue, ScanCores(card), nil, alts, attached, true)
 	g := with.Rows[0]
-	if g.Img != "galaxloc" || !reflect.DeepEqual(g.ImgSlots, []string{SlotLocalSnap}) || g.ImgW != 3 || g.ImgH != 4 {
+	if g.Img != "galaxloc" || !reflect.DeepEqual(g.ImgSlots, []string{SlotLocalSnap}) || g.ImgW != 240 || g.ImgH != 320 {
 		t.Fatalf("service picture: %+v", g)
 	}
 }
