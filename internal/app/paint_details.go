@@ -346,6 +346,65 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 		L = append(L, paneLine{data.GateLine(row), mu})
 	}
 	add("Note", row.Note, fg)
+	L = append(L, a.patchLines(row, i)...)
+	return L
+}
+
+// patchLines is the Details group for the fan patches arcadepatches.com
+// publishes for the game: one line per patch, saying whether a build of it
+// is among the game's versions on the card. The kits are built on a PC, so
+// a patch not on the card points at the site.
+func (a *App) patchLines(row *data.Row, i int) []paneLine {
+	if len(row.PT) == 0 {
+		return nil
+	}
+	// the setnames of the versions that launch here
+	sets := map[string]bool{}
+	for _, e := range a.launchEntries(row, i) {
+		if !e.ok {
+			continue
+		}
+		sn := ""
+		if e.path == row.MRA {
+			sn = row.SN
+		} else if a.cfg.AltSetname != nil {
+			sn = a.cfg.AltSetname(e.path)
+		}
+		if sn != "" {
+			sets[strings.ToLower(sn)] = true
+		}
+	}
+	family := map[string]bool{}
+	for _, v := range row.FamilySets {
+		family[strings.ToLower(v)] = true
+	}
+	onCard := func(p data.Patch) bool {
+		if p.SN != "" {
+			return sets[strings.ToLower(p.SN)]
+		}
+		// no setname given: any family set but the game's own counts
+		for sn := range sets {
+			if family[sn] && sn != strings.ToLower(row.SN) {
+				return true
+			}
+		}
+		return false
+	}
+	L := []paneLine{{"", pal.Fg}, {"Patches: Arcade Patches (strygo)", pal.Muted}}
+	for _, p := range row.PT {
+		t := data.PatchLabel(p.T) + ": " + p.N
+		if p.V != "" {
+			t += " " + p.V
+		}
+		if p.D != "" {
+			t += " (" + p.D + ")"
+		}
+		if onCard(p) {
+			L = append(L, paneLine{data.ASCII(t + ", on card"), pal.Fg})
+		} else {
+			L = append(L, paneLine{data.ASCII(t + ", not on card, arcadepatches.com"), pal.Muted})
+		}
+	}
 	return L
 }
 

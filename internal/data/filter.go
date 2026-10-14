@@ -73,6 +73,7 @@ type Filters struct {
 	RotOff         map[string]bool `json:"rot_off,omitempty"`   // "h", "v", ""
 	PlrOff         map[string]bool `json:"plr_off,omitempty"`   // raw plr, "" = unknown
 	GenreOff       map[string]bool `json:"genre_off,omitempty"` // raw genre, "" = no genre
+	PatchOff       map[string]bool `json:"patch_off,omitempty"` // patch kind, "" = no patch
 	DirectionsOff  map[string]bool `json:"directions_off,omitempty"`
 	ButtonsOff     map[string]bool `json:"buttons_off,omitempty"`
 	YearOff        map[string]bool `json:"year_off,omitempty"` // original arcade release year; "" = unknown
@@ -88,7 +89,7 @@ func (f *Filters) Active() bool {
 		return false
 	}
 	return f.ArcadeOnly || f.HideDeprecated || f.HideMature || f.MatchRotation != "" || len(f.SrcHidden) > 0 || len(f.YearOff) > 0 || len(f.BaseOff) > 0 || len(f.BetaOff) > 0 || len(f.SrcOff) > 0 || len(f.RotOff) > 0 || len(f.PlrOff) > 0 ||
-		len(f.ResOff) > 0 || len(f.GenreOff) > 0 || len(f.DirectionsOff) > 0 || len(f.ButtonsOff) > 0 || (f.Install != "" && f.Install != InstallAll) || f.FavOnly || f.Since || f.ROMActive()
+		len(f.ResOff) > 0 || len(f.GenreOff) > 0 || len(f.PatchOff) > 0 || len(f.DirectionsOff) > 0 || len(f.ButtonsOff) > 0 || (f.Install != "" && f.Install != InstallAll) || f.FavOnly || f.Since || f.ROMActive()
 }
 
 // ROMActive reports whether the ROM check narrows the list.
@@ -143,6 +144,8 @@ func (f *Filters) Why(r *Row, d *Derived, st Status, fav, unseen bool, rom ROMSt
 			return "Filters -> Players (" + orUnknown(r.Plr) + " off)"
 		case f.GenreOff[r.Genre]:
 			return "Filters -> Genre (" + orUnknown(r.Genre) + " off)"
+		case f.PatchOff != nil && !anyPatchOn(r, f.PatchOff):
+			return "Filters -> Patches (" + patchWhy(r) + " off)"
 		case f.DirectionsOff[d.Directions]:
 			return "Filters -> Controls (" + orUnknown(d.Directions) + " off)"
 		case f.ButtonsOff[d.Buttons]:
@@ -192,6 +195,25 @@ func (f *Filters) Why(r *Row, d *Derived, st Status, fav, unseen bool, rom ROMSt
 		}
 	}
 	return ""
+}
+
+// anyPatchOn reports whether one of a row's patch kinds is still checked: a
+// game with a translation and an arrangement hides only when both are off.
+func anyPatchOn(r *Row, off map[string]bool) bool {
+	for _, v := range r.PatchValues() {
+		if !off[v] {
+			return true
+		}
+	}
+	return false
+}
+
+func patchWhy(r *Row) string {
+	var parts []string
+	for _, v := range r.PatchValues() {
+		parts = append(parts, PatchLabel(v))
+	}
+	return strings.Join(parts, ", ")
 }
 
 func rotWord(g string) string {

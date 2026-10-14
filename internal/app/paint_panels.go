@@ -28,7 +28,7 @@ type panelEntry struct {
 	accessStatus  string   // read-only right column on Your access
 	lockedHelp    string   // concise feature description beside code coverage
 	help          string   // shown in the help area while selected
-	kind          string   // filter section: "base","src","rot","plr","genre","install","fav"; settings: "rotation","inset","prefetch","rescan","refresh","clear","about","settings","back"
+	kind          string   // filter section: "base","src","rot","plr","genre","patch","install","fav"; settings: "rotation","inset","prefetch","rescan","refresh","clear","about","settings","back"
 	value         string   // facet value for filter entries
 	vals          []string // settings: the choices, Left/Right pick one
 	idx           int      // settings: the current choice
@@ -217,6 +217,15 @@ func (a *App) facetCounts(kind string) map[string]int {
 	case "genre":
 		f.GenreOff = nil
 		value = func(r *data.Row, d *data.Derived) string { return r.Genre }
+	case "patch": // a row counts under each of its kinds
+		f.PatchOff = nil
+		counts := map[string]int{}
+		a.facetRows(f, true, func(i int) {
+			for _, v := range a.ds.Rows[i].PatchValues() {
+				counts[v]++
+			}
+		})
+		return counts
 	case "directions":
 		f.DirectionsOff = nil
 		value = func(r *data.Row, d *data.Derived) string { return d.Directions }
@@ -437,6 +446,18 @@ func (a *App) rawFilterEntries() []panelEntry {
 		}
 		return s
 	})
+	// Patches: arcadepatches.com's kinds in a fixed order, shown once the
+	// catalogue names any patch at all
+	if a.anyPatch() {
+		counts := a.facetCounts("patch")
+		E = append(E, panelEntry{text: "Patches", header: true, kind: "patch"})
+		for _, v := range data.PatchKinds {
+			if _, ok := a.ds.Facets.Patch[v]; !ok {
+				continue
+			}
+			E = append(E, panelEntry{text: data.PatchLabel(v), kind: "patch", value: v, checked: !f.PatchOff[v], count: counts[v], showCount: true})
+		}
+	}
 	section("Controls", "directions", a.ds.Facets.Directions, f.DirectionsOff, func(s string) string {
 		if s == "" {
 			return "Unknown"
@@ -459,6 +480,16 @@ func (a *App) rawFilterEntries() []panelEntry {
 		return s
 	})
 	return E
+}
+
+// anyPatch reports whether some arcade row lists a patch.
+func (a *App) anyPatch() bool {
+	for v := range a.ds.Facets.Patch {
+		if v != data.PatchNone {
+			return true
+		}
+	}
+	return false
 }
 
 // canUpdateApp reports whether this card could fetch a new MisterZine by
@@ -792,7 +823,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, cols), pal.Muted)
 		case e.header:
 			c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, cols), pal.Accent)
-		case e.kind == "year" || e.kind == "decade" || e.kind == "res" || e.kind == "base" || e.kind == "beta" || e.kind == "src" || e.kind == "rot" || e.kind == "plr" || e.kind == "genre" || e.kind == "directions" || e.kind == "buttons" || e.kind == "install" || e.kind == "rom" || e.kind == "fav" || e.kind == "since" || e.kind == "view":
+		case e.kind == "year" || e.kind == "decade" || e.kind == "res" || e.kind == "base" || e.kind == "beta" || e.kind == "src" || e.kind == "rot" || e.kind == "plr" || e.kind == "genre" || e.kind == "patch" || e.kind == "directions" || e.kind == "buttons" || e.kind == "install" || e.kind == "rom" || e.kind == "fav" || e.kind == "since" || e.kind == "view":
 			mark := "[ ] "
 			if e.checked {
 				mark = "[x] "
@@ -1379,7 +1410,7 @@ func (a *App) togglePanel() bool {
 		a.buildPanel()
 		a.skipDisabled() // the row just greyed out; move on to the first heading
 		return true
-	case "base", "src", "rot", "plr", "genre", "directions", "buttons", "res":
+	case "base", "src", "rot", "plr", "genre", "patch", "directions", "buttons", "res":
 		var m map[string]bool
 		var facet map[string]int
 		switch e.kind {
@@ -1395,6 +1426,8 @@ func (a *App) togglePanel() bool {
 			m, facet = off(f.ResOff), a.ds.Facets.Res
 		case "genre":
 			m, facet = off(f.GenreOff), a.ds.Facets.Genre
+		case "patch":
+			m, facet = off(f.PatchOff), a.ds.Facets.Patch
 		case "directions":
 			m, facet = off(f.DirectionsOff), a.ds.Facets.Directions
 		case "buttons":
@@ -1419,6 +1452,8 @@ func (a *App) togglePanel() bool {
 			f.ResOff = m
 		case "genre":
 			f.GenreOff = m
+		case "patch":
+			f.PatchOff = m
 		case "directions":
 			f.DirectionsOff = m
 		case "buttons":

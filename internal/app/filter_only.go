@@ -19,6 +19,8 @@ func (a *App) onlyFacet(kind string) map[string]int {
 		return a.ds.Facets.Res
 	case "genre":
 		return a.ds.Facets.Genre
+	case "patch":
+		return a.ds.Facets.Patch
 	case "directions":
 		return a.ds.Facets.Directions
 	case "buttons":
@@ -66,6 +68,8 @@ func (a *App) onlyFilter() bool {
 		f.ResOff = off
 	case "genre":
 		f.GenreOff = off
+	case "patch":
+		f.PatchOff = off
 	case "directions":
 		f.DirectionsOff = off
 	case "buttons":
@@ -104,6 +108,8 @@ func copySection(kind string, to *data.Filters, from data.Filters) {
 		to.ResOff = from.ResOff
 	case "genre":
 		to.GenreOff = from.GenreOff
+	case "patch":
+		to.PatchOff = from.PatchOff
 	case "directions":
 		to.DirectionsOff = from.DirectionsOff
 	case "buttons":

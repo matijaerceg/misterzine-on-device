@@ -47,6 +47,7 @@ type Facets struct {
 	Rot        map[string]int // "h", "v", ""
 	Plr        map[string]int // raw plr strings, "" = unknown
 	Genre      map[string]int // raw genre strings, "" = no genre
+	Patch      map[string]int // patch kinds, "" = no patch; a row counts once per kind
 	Directions map[string]int
 	Buttons    map[string]int
 	Year       map[string]int
@@ -92,7 +93,7 @@ func Ingest(rows []Row, hash string, updated time.Time) *Dataset {
 		cluster: map[string]int{},
 		Facets: Facets{
 			Base: map[string]int{}, Src: map[string]int{}, Rot: map[string]int{},
-			Plr: map[string]int{}, Genre: map[string]int{},
+			Plr: map[string]int{}, Genre: map[string]int{}, Patch: map[string]int{},
 			Directions: map[string]int{}, Buttons: map[string]int{}, Res: map[string]int{}, Year: map[string]int{},
 		},
 	}
@@ -110,6 +111,9 @@ func Ingest(rows []Row, hash string, updated time.Time) *Dataset {
 			ds.Facets.Rot[r.RotGroup()]++
 			ds.Facets.Plr[r.Plr]++
 			ds.Facets.Genre[r.Genre]++
+			for _, v := range r.PatchValues() {
+				ds.Facets.Patch[v]++
+			}
 			ds.Facets.Res[r.Res]++
 		}
 	}

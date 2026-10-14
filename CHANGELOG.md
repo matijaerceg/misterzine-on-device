@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Show fan patches from Arcade Patches (arcadepatches.com, by strygo). Games with an English translation, restoration, enhanced edition or arranged soundtrack patch, such as Vampire Hunter 2 (Night Warriors 2), list them at the end of Details with version and date, and say whether the built patch is on the card or where to get it. A patch you have built and copied under `_Arcade/_Arcade Patches` now appears as a version of its game, picked with Left/Right, instead of as a separate game. Filters gains a Patches section (Translation, Restoration, Enhanced, Arranged soundtrack, None) after Genre. Needs the catalogue to carry the patch data; until it does, nothing changes.
+
 ## v1.2.8 — 2026-10-14
 
 - Options -> List -> Mature games: show, pixelate or hide. The catalogue now marks games with adult content, from the Mature marker in MAME's category list (catver.ini) plus the site's own corrections, 29 games at release, mostly strip puzzle and mahjong games such as Gals Panic, Fantasia and Super Model. Show is the default and changes nothing. Pixelate draws their screenshots as coarse blocks everywhere they appear: the list, Details, the full-screen shot and the launch cabinet. Hide removes them from every view, search, the counts and the What's new line. Both keep them out of the screensaver. A copy of a mature game from your card's own MRAs, matched by setname or parent, is covered too. The setting is saved with the other Options and named in Send a report. The release tracker on the site has the same switch in its Menu.

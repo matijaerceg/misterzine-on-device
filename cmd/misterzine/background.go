@@ -97,7 +97,7 @@ func (h *host) receiveScan(r scanResult) {
 				h.lg.Printf("scan: %d local keys moved to the catalogue rows that now list them", len(moves))
 			}
 		}
-		h.alts, h.altCores = r.alts, r.altCores
+		h.alts, h.altCores, h.altSets = r.alts, r.altCores, r.altSets
 		h.altGen = h.a.Data().Gen
 		// before the sweep, so its answers go by this catalogue and card
 		h.roms.SetAccess(r.access)

@@ -181,7 +181,19 @@ func main() {
 			if r.K == "local:orphanf" {
 				return []string{"_Arcade/_Extra/Orphan Fighter (set 2).mra"}
 			}
+			// a data file whose game lists a fan patch: its first patch is built and on the card
+			if len(r.PT) > 0 && r.PT[0].SN != "" {
+				return []string{harnessPatchPath(r.PT[0])}
+			}
 			return nil
+		},
+		AltSetname: func(p string) string {
+			for i := range rows {
+				if pt := rows[i].PT; len(pt) > 0 && pt[0].SN != "" && harnessPatchPath(pt[0]) == p {
+					return pt[0].SN
+				}
+			}
+			return ""
 		},
 	}
 	if *betaBuild {
@@ -592,4 +604,9 @@ func viewsOffList(names string, recents bool) []string {
 func die(err error) {
 	fmt.Fprintln(os.Stderr, "mzharness:", err)
 	os.Exit(1)
+}
+
+// harnessPatchPath is where a built arcadepatches.com kit puts patch p.
+func harnessPatchPath(p data.Patch) string {
+	return "_Arcade/_Arcade Patches/_Restorations/" + p.N + " (USA) [English Translation].mra"
 }

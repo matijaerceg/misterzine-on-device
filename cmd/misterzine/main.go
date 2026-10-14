@@ -97,6 +97,7 @@ type host struct {
 	owners                        map[string]string // row key -> the row whose file sits at its MRA path (scan.Statuses)
 	alts                          map[string][]string
 	altCores                      map[string]string // version path -> its own core, for versions on other cores (scanResult.altCores)
+	altSets                       map[string]string // version path -> its setname, for the same versions (scanResult.altSets)
 	altGen                        string            // the dataset generation alts belongs to
 	localSaved                    bool              // UI-owned: the local rows on show are the last run's (local_cache.go), not yet confirmed by a complete scan
 	familyCache                   scan.FamilyCache
@@ -323,6 +324,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		},
 		Alternatives: h.alternatives,
 		AltCore:      func(p string) string { return h.altCores[p] },
+		AltSetname:   func(p string) string { return h.altSets[p] },
 		Versions:     h.state.Versions,
 		Exists: func(rel string) bool {
 			_, err := os.Stat(filepath.Join(card, filepath.FromSlash(rel)))
@@ -1377,6 +1379,7 @@ type scanResult struct {
 	// altCores are the own cores of the versions that run on another core
 	// than their row's, or sit outside the _alternatives folders
 	altCores map[string]string
+	altSets  map[string]string // the same versions' setnames
 	// access is the catalogue's word on each core, read against this
 	// scan's cores; the final pass hands it to the ROM check
 	access *scan.CoreAccess
@@ -1567,7 +1570,7 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 	for _, a := range local.Accounted {
 		diag.files = append(diag.files, report.File{Path: a.Path, Reason: a.Reason + " (catalogue row " + a.K + ")"})
 	}
-	res := scanResult{index: idx, status: st, owners: owners, gen: gen, alts: resolved, altCores: local.VersionCores, notice: notice, final: true, hidden: hidden, iniFound: iniFound, diag: diag,
+	res := scanResult{index: idx, status: st, owners: owners, gen: gen, alts: resolved, altCores: local.VersionCores, altSets: local.VersionSets, notice: notice, final: true, hidden: hidden, iniFound: iniFound, diag: diag,
 		access: scan.NewCoreAccess(catalogue, idx), complete: err == nil && local.Err == nil}
 	if res.complete {
 		// only a scan that read the whole card knows every local row

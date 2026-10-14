@@ -53,7 +53,10 @@ type LocalResult struct {
 	// drop one whose core leaves the card; VersionOwner is the first row
 	// that offers it, where a stand-in that gives way hands its records.
 	VersionCores, VersionOwner map[string]string
-	Err                        error
+	// VersionSets names each of those files' setname, so Details can tell
+	// which fan patch of a game is on the card.
+	VersionSets map[string]string
+	Err         error
 }
 
 // Accounted is one card file that is no row of its own, for the diagnostic
@@ -195,7 +198,7 @@ func scanArcadeMRAs(card, cachePath string) ([]Alt, []Skipped, []Skipped, error)
 func DiscoverLocal(card, cachePath string, catalogue []data.Row, idx *Index, status []data.Status, alts []Alt, attached map[string]bool, snap bool) LocalResult {
 	walked, skipped, dirs, err := scanArcadeMRAs(card, cachePath)
 	res := LocalResult{Alts: map[string][]string{}, Files: len(walked), Skipped: skipped, SkippedDirs: dirs, Err: err,
-		Versions: map[string][]string{}, VersionCores: map[string]string{}, VersionOwner: map[string]string{}}
+		Versions: map[string][]string{}, VersionCores: map[string]string{}, VersionOwner: map[string]string{}, VersionSets: map[string]string{}}
 	own := catalogueOwners(catalogue)
 	access := NewCoreAccess(catalogue, idx)
 	cores := map[string]bool{}
@@ -227,6 +230,7 @@ func DiscoverLocal(card, cachePath string, catalogue []data.Row, idx *Index, sta
 			k := catalogue[i].K
 			res.Versions[k] = append(res.Versions[k], a.Path)
 			res.VersionCores[a.Path] = a.RBF
+			res.VersionSets[a.Path] = identity(a.Setname)
 			if res.VersionOwner[a.Path] == "" {
 				res.VersionOwner[a.Path] = k
 			}

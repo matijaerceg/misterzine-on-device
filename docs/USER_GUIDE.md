@@ -335,6 +335,16 @@ the legend mentions Left/Right only when a game has more than one version
 and Up/Down only when there is more to read.
 Returning from artwork preserves the selected version and information position.
 
+**Patches.** For games that have fan patches on
+[Arcade Patches](https://arcadepatches.com) by strygo (English translations,
+restorations, enhanced editions and arranged soundtracks for Capcom CPS-1 and
+CPS-2 games), Details ends with a Patches group: one line per patch with its
+kind, name, version and date, and whether a build of it is on your card. The
+patches are kits you build on a PC from your own ROMs; once the built MRAs are
+copied to the card (under `_Arcade/_Arcade Patches`), each one joins its game
+as a version you pick with Left/Right instead of showing as a separate game.
+A patch that is not on the card points to arcadepatches.com.
+
 Artwork starts at the first image each time it is opened. Left/Right chooses a
 shot and B returns; A and X have no action in artwork. Start launches the version
 selected in Details. Any launch failure appears over the artwork.
@@ -787,12 +797,12 @@ everything else. Offline checks stay quiet. This is
 separate from automatically refreshing the games catalogue; prerelease and
 development builds do not advertise stable downgrades.
 By default, **Type** offers Stable and Beta directly and the **Game filters**
-section contains Rotation, Resolution, Genre, Controls, Buttons and Players.
-Enable **Options > List > Show non-arcade cores** to restore the broader Type
+section contains Rotation, Resolution, Genre, Patches, Controls, Buttons and
+Players. Enable **Options > List > Show non-arcade cores** to restore the broader Type
 choices and the **Arcade game filters** heading.
 
 With non-arcade cores enabled, the **Arcade game filters** section contains Rotation, Resolution, Genre,
-Controls, Buttons and Players. These choices affect arcade games only; Type
+Patches, Controls, Buttons and Players. These choices affect arcade games only; Type
 controls whether console, computer and other cores appear. Excluding Arcade
 hides its filter section while retaining your choices for later. Under Type,
 Arcade opens (Right, or X) into Stable and Beta, the Patreon early-access
@@ -811,6 +821,12 @@ is missing. Controls includes separately recorded special controls such as
 spinners, paddles and trackballs. A button count alone does not identify a
 buttons-only game. **0 buttons** requires an explicit zero in the catalogue;
 older feeds that omitted zero counts still show those entries as Unknown.
+
+**Patches** lists the kinds of fan patch Arcade Patches publishes:
+Translation, Restoration, Enhanced and Arranged soundtrack, plus None for games
+without one. A game with patches of two kinds stays listed while either kind is
+checked; turn None off to see only patched games. The section appears once the
+catalogue lists any patch.
 
 Provisional values are supplied from fallback sources pending the curated
 Arcade Database. They match their ordinary filter categories and are marked

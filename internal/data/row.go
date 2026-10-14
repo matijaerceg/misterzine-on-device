@@ -65,6 +65,69 @@ type Row struct {
 	// merge keeps the row although the catalogue names the setname. The card
 	// decides it, so the site never emits it.
 	Standin bool `json:"standin,omitempty"`
+	// PT lists the fan patches arcadepatches.com (strygo) publishes for this
+	// game, newest first. The kits are built on a PC, so nothing here is
+	// shipped by update_all; a built patch's setname is in FamilySets.
+	PT []Patch `json:"pt,omitempty"`
+}
+
+// Patch is one arcadepatches.com patch of a row's game.
+type Patch struct {
+	T  string `json:"t"`  // PatchTranslation, PatchRestoration, PatchEnhanced, PatchArrange
+	N  string `json:"n"`  // patch title, "Night Warriors 2"
+	S  string `json:"s"`  // subtitle, "English translation"; may be ""
+	V  string `json:"v"`  // version, "rc3"; may be ""
+	D  string `json:"d"`  // ISO date; may be ""
+	U  string `json:"u"`  // the patch's page
+	SN string `json:"sn"` // patched MRA setname; may be ""
+}
+
+// Patch kinds, and "" for the Filters choice of games without a patch.
+const (
+	PatchTranslation = "translation"
+	PatchRestoration = "restoration"
+	PatchEnhanced    = "enhanced"
+	PatchArrange     = "arrange"
+	PatchNone        = ""
+)
+
+// PatchKinds is the order the Patches filter lists its choices in.
+var PatchKinds = []string{PatchTranslation, PatchRestoration, PatchEnhanced, PatchArrange, PatchNone}
+
+// PatchLabel names a patch kind for a player.
+func PatchLabel(t string) string {
+	switch t {
+	case PatchTranslation:
+		return "Translation"
+	case PatchRestoration:
+		return "Restoration"
+	case PatchEnhanced:
+		return "Enhanced"
+	case PatchArrange:
+		return "Arranged soundtrack"
+	case PatchNone:
+		return "None"
+	}
+	return t
+}
+
+// PatchValues are a row's distinct patch kinds for the filter, PatchNone
+// alone when it has none.
+func (r *Row) PatchValues() []string {
+	if len(r.PT) == 0 {
+		return []string{PatchNone}
+	}
+	var out []string
+	for _, p := range r.PT {
+		dup := false
+		for _, v := range out {
+			dup = dup || v == p.T
+		}
+		if !dup {
+			out = append(out, p.T)
+		}
+	}
+	return out
 }
 
 // Meta is docs/releases/meta.json.
