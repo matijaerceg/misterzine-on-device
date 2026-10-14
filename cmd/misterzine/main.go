@@ -633,7 +633,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			h.frameLoop()
 		} else if h.a.SaverRunning() {
 			h.saverLoop()
-		} else if h.a.ControlsAnimating() || h.a.OptionSamplesRunning() || h.a.PageTransitionRunning() || h.a.LayoutTransitionRunning() || h.a.DetailScrollRunning() || h.a.ListScrollRunning() || h.a.LaunchCabRunning() {
+		} else if h.a.ControlsAnimating() || h.a.OptionSamplesRunning() || h.a.PageTransitionRunning() || h.a.LayoutTransitionRunning() || h.a.DetailScrollRunning() || h.a.MarqueeRunning() || h.a.ListScrollRunning() || h.a.LaunchCabRunning() {
 			h.optionSampleLoop()
 		}
 		h.autosave(time.Now(), false)
@@ -799,14 +799,15 @@ func (h *host) frameLoop() {
 	}
 }
 
-// optionSampleLoop drives previews, page wipes and detail scrolling at vertical blank.
+// optionSampleLoop drives previews, page wipes, detail scrolling and the
+// version marquee at vertical blank.
 // Keep servicing events and saves, and allow inactivity to start the screensaver.
 func (h *host) optionSampleLoop() {
 	h.roms.SetPaused(true) // the sweep and the card scan wait for the motion to end
 	defer h.roms.SetPaused(false)
 	scan.Motion.SetPaused(true)
 	defer scan.Motion.SetPaused(false)
-	for (h.a.ControlsAnimating() || h.a.OptionSamplesRunning() || h.a.PageTransitionRunning() || h.a.LayoutTransitionRunning() || h.a.DetailScrollRunning() || h.a.ListScrollRunning() || h.a.LaunchCabRunning()) && !h.a.Repeating() {
+	for (h.a.ControlsAnimating() || h.a.OptionSamplesRunning() || h.a.PageTransitionRunning() || h.a.LayoutTransitionRunning() || h.a.DetailScrollRunning() || h.a.MarqueeRunning() || h.a.ListScrollRunning() || h.a.LaunchCabRunning()) && !h.a.Repeating() {
 		if !h.pump() {
 			return
 		}
@@ -815,6 +816,7 @@ func (h *host) optionSampleLoop() {
 		wasLayout := h.a.LayoutTransitionRunning()
 		h.a.ListScrollFrame(now)
 		h.a.DetailScrollFrame(now)
+		h.a.MarqueeFrame(now)
 		h.a.LayoutMotionFrame() // the layout motion: one step per blank
 		h.a.Tick(now)
 		// Input may have left the preview and armed key repeat. Paint that

@@ -291,26 +291,33 @@ func TestVersionLineMarqueeScrolls(t *testing.T) {
 	if a.marquee.key == "" || a.marquee.span <= 0 {
 		t.Fatalf("overlong alternative must start the marquee: %+v", a.marquee)
 	}
-	if next := a.NextTick(); next.IsZero() || next.Sub(clock) > marqueeFrame {
-		t.Fatalf("next tick %v, want within a frame", next)
+	if next := a.NextTick(); next.IsZero() || next.Sub(clock) != marqueePause || a.MarqueeRunning() {
+		t.Fatalf("next tick %v, want the end of the opening rest", next)
 	}
 	clock = clock.Add(marqueePause + 400*time.Millisecond)
 	if !a.Tick(clock) {
 		t.Fatal("a due frame must repaint")
 	}
-	before := a.marquee
 	a.Paint()
-	off := marqueeOffset(clock.Sub(before.start), before.span)
-	if off != 16 { // 400 ms at 40 px/s
-		t.Fatalf("offset %d after the pause, want 16", off)
+	if a.marquee.offset != 1 || !a.MarqueeRunning() {
+		t.Fatalf("after the pause the label travels one pixel per frame: %+v", a.marquee)
 	}
-	span := before.span
-	if marqueeOffset(marqueePause+time.Duration(span)*time.Second/marqueeSpeed+100*time.Millisecond, span) != span {
-		t.Fatal("must rest at the far end")
+	span := a.marquee.span
+	// the vsync path: one pixel every second refresh, to the far end and a rest
+	for n := 0; n < 2*span; n++ {
+		clock = clock.Add(time.Second / 60)
+		a.MarqueeFrame(clock)
+		a.Tick(clock) // must not step it a second time
 	}
-	if marqueeOffset(2*marqueePause+time.Duration(span)*time.Second/marqueeSpeed+time.Second, span) >= span {
-		t.Fatal("must return after resting")
+	if a.marquee.offset != span || a.MarqueeRunning() {
+		t.Fatalf("must rest at the far end: %+v", a.marquee)
 	}
+	clock = clock.Add(marqueePause)
+	a.Tick(clock)
+	if a.marquee.offset != span-1 || a.marquee.dir != -1 {
+		t.Fatalf("must return after resting: %+v", a.marquee)
+	}
+	a.Paint()
 	// the drawn label stays inside its line: nothing lands on the tally
 	body := a.lay.Body
 	body.Min.Y = a.lay.Root.Min.Y

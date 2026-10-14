@@ -12,37 +12,46 @@ import (
 )
 
 // The version line scrolls a label that does not fit: a short pause at
-// each end, then a steady pixel-by-pixel pass to the other end and back.
+// each end, then a steady pass to the other end and back, one pixel every
+// two display refreshes. The host runs its vsync loop while the label
+// travels (MarqueeRunning), so each step lands on a blank; a 30 fps timer
+// drifts against the blanks and shows as a hitch. The timer path below
+// serves the harness and tests at the same nominal pace.
 const (
 	marqueeFrame = time.Second / 30
-	marqueeSpeed = 40 // pixels per second
 	marqueePause = 500 * time.Millisecond
 )
 
 type marqueeState struct {
 	key    string    // the row and version scrolling, "" when idle
-	start  time.Time // when the scroll began
-	next   time.Time // the next frame
 	span   int       // pixels the label overflows the line by
 	offset int       // offset in the last painted frame
+	dir    int       // +1 scrolling left, -1 scrolling back
+	until  time.Time // end of a rest at either end, zero while travelling
+	next   time.Time // the next timer frame
+	skip   bool      // the refresh between two steps in the vsync loop
 }
 
-// marqueeOffset is how far the label has scrolled left at elapsed.
-func marqueeOffset(elapsed time.Duration, span int) int {
-	if span <= 0 {
-		return 0
+// marqueeStep moves the label one pixel if it is not resting, turning it
+// around at either end, and reports whether it moved.
+func (m *marqueeState) marqueeStep(now time.Time) bool {
+	if !m.until.IsZero() {
+		if now.Before(m.until) {
+			return false
+		}
+		m.until = time.Time{}
 	}
-	travel := time.Duration(span) * time.Second / marqueeSpeed
-	t := elapsed % (2 * (marqueePause + travel))
+	if m.span <= 0 {
+		return false
+	}
+	m.offset += m.dir
 	switch {
-	case t < marqueePause:
-		return 0
-	case t < marqueePause+travel:
-		return int((t - marqueePause) * marqueeSpeed / time.Second)
-	case t < 2*marqueePause+travel:
-		return span
+	case m.offset >= m.span:
+		m.offset, m.dir, m.until = m.span, -1, now.Add(marqueePause)
+	case m.offset <= 0:
+		m.offset, m.dir, m.until = 0, 1, now.Add(marqueePause)
 	}
-	return span - int((t-2*marqueePause-travel)*marqueeSpeed/time.Second)
+	return true
 }
 
 // runMarquee starts or continues the scroll of key, a label span pixels
@@ -50,18 +59,57 @@ func marqueeOffset(elapsed time.Duration, span int) int {
 func (a *App) runMarquee(key string, span int) int {
 	now := a.cfg.TimerNow()
 	if a.marquee.key != key {
-		a.marquee = marqueeState{key: key, start: now, next: now.Add(marqueeFrame)}
+		a.marquee = marqueeState{key: key, dir: 1, until: now.Add(marqueePause), next: now.Add(marqueeFrame)}
 	}
 	a.marquee.span = span
-	a.marquee.offset = marqueeOffset(now.Sub(a.marquee.start), span)
+	if a.marquee.offset > span {
+		a.marquee.offset = span
+	}
 	return a.marquee.offset
 }
 
+func (a *App) marqueeActive() bool {
+	return a.marquee.key != "" && a.screen == ScreenDetails && !a.saver.active && !a.PageTransitionRunning()
+}
+
 func (a *App) nextMarqueeTick() time.Time {
-	if a.marquee.key == "" || a.screen != ScreenDetails || a.saver.active || a.PageTransitionRunning() {
+	if !a.marqueeActive() {
 		return time.Time{}
 	}
+	if !a.marquee.until.IsZero() {
+		return a.marquee.until
+	}
 	return a.marquee.next
+}
+
+// MarqueeRunning keeps the host in its display-paced loop while the label
+// travels; the rests at either end go back to the timer.
+func (a *App) MarqueeRunning() bool {
+	return a.marqueeActive() && a.marquee.until.IsZero()
+}
+
+func (a *App) invalidateMarquee() {
+	if a.detail.clip.Empty() {
+		a.all = true
+	} else {
+		a.detail.versionDirty = true
+	}
+}
+
+// MarqueeFrame is one display refresh of the travelling label: every
+// second refresh moves it a pixel. It pushes the timer deadline out so
+// Tick does not step the label a second time in the same loop.
+func (a *App) MarqueeFrame(now time.Time) bool {
+	if !a.MarqueeRunning() {
+		return false
+	}
+	a.marquee.next = now.Add(marqueeFrame)
+	a.marquee.skip = !a.marquee.skip
+	if a.marquee.skip || !a.marquee.marqueeStep(now) {
+		return false
+	}
+	a.invalidateMarquee()
+	return true
 }
 
 func (a *App) tickMarquee(now time.Time) bool {
@@ -70,14 +118,10 @@ func (a *App) tickMarquee(now time.Time) bool {
 		return false
 	}
 	a.marquee.next = now.Add(marqueeFrame)
-	if marqueeOffset(now.Sub(a.marquee.start), a.marquee.span) == a.marquee.offset {
+	if !a.marquee.marqueeStep(now) {
 		return false
 	}
-	if a.detail.clip.Empty() {
-		a.all = true
-	} else {
-		a.detail.versionDirty = true
-	}
+	a.invalidateMarquee()
 	return true
 }
 
