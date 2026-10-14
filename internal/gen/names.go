@@ -14,6 +14,7 @@ var CoreNames = map[string]string{
 	"Arcade-SSV":               "Sammy/Seta/Visco SSV",
 	"Arcade-SegaSystem32":      "Sega System 32",
 	"Arcade-SegaSystem32Multi": "Sega Multi 32",
+	"Arcade-SegaYBoard":        "Sega Y Board",
 	"Arcade-Segas24":           "Sega System 24",
 	"Athena":                   "SNK (Athena HW)",
 	"BattleZone":               "Atari (Battlezone HW)",
@@ -43,6 +44,7 @@ var CoreNames = map[string]string{
 	"ST-V":                     "Sega ST-V",
 	"Salamander":               "Konami (Salamander)",
 	"SegaVICZ80":               "Sega VIC Dual",
+	"SegaXBoard":               "Sega X Board",
 	"SlapFight":                "Toaplan (Slap Fight HW)",
 	"StarWars":                 "Atari (Star Wars HW)",
 	"TNKIII":                   "SNK (T.A.N.K III)",
@@ -151,6 +153,7 @@ var SrcNames = map[string]string{
 	"kuzecores":                          "kuzecores (kuzearcade)",
 	"meathax":                            "Meathax (MeatCores)",
 	"rmcores":                            "rmCores (rmonic79)",
+	"rossops":                            "rossops (Sega Y Board)",
 	"slopcore":                           "Slop Cores (TheJesusFish)",
 	"theypsilon_unofficial_distribution": "theypsilon Unofficial Distribution",
 }
@@ -171,6 +174,7 @@ var SrcDBs = map[string]SrcDB{
 	"kuzecores":                          {Section: "kuzearcade/kuzecores", URL: "https://raw.githubusercontent.com/kuzearcade/kuzecores/db/db.json.zip"},
 	"meathax":                            {Section: "meathax/meatcores", URL: "https://raw.githubusercontent.com/meathax/meatcores/db/db.json.zip"},
 	"rmcores":                            {Section: "rmonic79/rmcores", URL: "https://raw.githubusercontent.com/rmonic79/rmcores/db/db.json.zip"},
+	"rossops":                            {Section: "rossops/Arcade-SegaYBoard_MiSTer", URL: "https://raw.githubusercontent.com/rossops/Arcade-SegaYBoard_MiSTer/main/db.json.zip"},
 	"slopcore":                           {Section: "TheJesusFish/Slop-Core", URL: "https://raw.githubusercontent.com/TheJesusFish/Slop-Core/db/db.json.zip"},
 	"theypsilon_unofficial_distribution": {Section: "theypsilon_unofficial_distribution", URL: ""},
 }

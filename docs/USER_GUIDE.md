@@ -481,7 +481,7 @@ and last row. Rows marked ↗ open another screen or editor.
   listed in the card's `downloader.ini`, the file Update All rewrites on every
   run, or in the drop-in files Downloader reads beside it (`downloader_*.ini`
   and the `downloader` folder, such as blahm1d's `downloader_blahm1d.ini`),
-  so a source you never enabled (Coin-Op, Meathax, rmCores, Jotego, Slop Cores, kuzecores, blahm1d or bazset) stays out of
+  so a source you never enabled (Coin-Op, Meathax, rmCores, Jotego, Slop Cores, kuzecores, blahm1d, bazset or rossops) stays out of
   the list, search, Favorites and the Filters panel, and the release count
   leaves it out too. The file is read at every card scan: launch, Rescan card
   and the rescan after Update All. Without database sections Downloader
