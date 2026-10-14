@@ -1,11 +1,17 @@
-**Dragon Ball Z V.R. V.S. and S.O.S. launch fix**
+**Mature games setting**
+
+A new **Mature games** row in Options can pixelate the screenshots of games MAME marks as adult, or hide those games from the list, search and screensaver.
+
+**Added**
+
+- **Mature games** in Options: show, pixelate or hide.
+- rossops' Sega Y Board database is recognized as a source.
 
 **Fixed**
 
-- Dragon Ball Z V.R. V.S. and S.O.S. start from MisterZine instead of saying they cannot launch.
-- Street Fighter III: New Generation on a second CPS3 core is listed beside the catalogue's, like 2nd Impact and 3rd Strike. Thanks to dominiquepayton-arch for reporting both.
-- Names with accents show properly in Credits.
+- The **Prefetch shots** count reaches its total without a restart.
+- Vertical games from your own MRAs that have no screenshot, such as Andromeda, show a proper picture box in their details. Thanks to Gadget for reporting both.
 
-Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v127--2026-10-14).
+Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v128--2026-10-14).
 Existing installations update through Update All, or through Update MisterZine only. New installation:
 [installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once).

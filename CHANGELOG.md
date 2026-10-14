@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.2.8 — 2026-10-14
+
+- Options -> List -> Mature games: show, pixelate or hide. The catalogue now marks games with adult content, from the Mature marker in MAME's category list (catver.ini) plus the site's own corrections, 29 games at release, mostly strip puzzle and mahjong games such as Gals Panic, Fantasia and Super Model. Show is the default and changes nothing. Pixelate draws their screenshots as coarse blocks everywhere they appear: the list, Details, the full-screen shot and the launch cabinet. Hide removes them from every view, search, the counts and the What's new line. Both keep them out of the screensaver. A copy of a mature game from your card's own MRAs, matched by setname or parent, is covered too. The setting is saved with the other Options and named in Send a report. The release tracker on the site has the same switch in its Menu.
+- Make Options -> Prefetch shots reach its total without a restart (reported by Gadget). The count is of pictures, not games, and pictures two games share (86 in the catalogue, such as Kickle Cubicle and Meikyu Jima) were listed twice: the total counted both, the download only one. A refreshed list of the same length also kept the old list's count, and a recount racing a download could drop one. The list is now deduplicated, any change recounts, a stale recount is discarded and downloads during a recount are kept. The User Guide explains what the count is.
+- Give vertical local games without a screenshot a readable Details box (reported by Gadget). Andromeda, an HBMame set on the card with no shot on the image service, carried a bare 3:4 picture size, and the rule that never enlarges a picture past twice its size made its box 6 pixels wide, so "no shot" spilled out of it. Local games now get a 240x320 or 320x240 stand-in size, and a placeholder whose word does not fit its box stays empty.
+- Recognize rossops' Sega Y Board database as a source. Like the other opt-in sources it is hidden until its section is in downloader.ini. The Sega X Board core's name follows the site ("Sega X Board").
+- Credits: Leetirl, Nero, pagename? and unastrike join the Patreon supporters.
+- Embedded catalogue snapshot refreshed (1,516 rows, 2026-10-14).
+
 ## v1.2.7 — 2026-10-14
 
 - Launch games whose MRA name ends in a dot. Dragon Ball Z V.R. V.S. (`Dragon Ball Z V.R. V.S..mra`) and S.O.S. (`S.O.S..mra`) said "Cannot launch: target missing or invalid" on Start although their details listed the file, while MiSTer's own menu started them (issue #12, reported by dominiquepayton-arch). The check that keeps a launch on the card refused any path containing two dots in a row, which these names have before `.mra`; it now refuses only a path element that is exactly `..`. Confirmed on a MiSTer Pi, where both games start.
