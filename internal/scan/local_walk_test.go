@@ -172,6 +172,47 @@ func TestDiscoverLocalMatchesCatalogue(t *testing.T) {
 	}
 }
 
+// A game set that names the BIOS it boots is a game, not a BIOS (issue #13:
+// the Jvcps3 New Generation file never stood in for the jtcps3 row).
+func TestDiscoverLocalBIOSSetIsAGame(t *testing.T) {
+	for name, want := range map[string]bool{
+		"PGM (Polygame Master) System BIOS": true,
+		"Pleiads BIOS":                      true,
+		"Street Fighter III New Generation (Asia 970204, NO CD, BIOS set 1)": false,
+		"Game [bios v2]": false,
+	} {
+		if got := isBIOS(Alt{Name: name, Path: "_Arcade/" + name + ".mra"}); got != want {
+			t.Errorf("isBIOS(%q) = %v", name, got)
+		}
+	}
+	card := fakeCard(t)
+	name := "Street Fighter III New Generation (Asia 970204, NO CD, BIOS set 1)"
+	for rel, content := range map[string]string{
+		"_Arcade/cores/Jvcps3_20261001.rbf": "x",
+		"_Arcade/" + name + ".mra":          mra(name, "sfiiin", "jtcps3", ""),
+		"_Arcade/_CPS3/" + name + ".mra":    mra(name, "sfiiin", "Jvcps3", ""),
+	} {
+		p := filepath.Join(card, filepath.FromSlash(rel))
+		os.MkdirAll(filepath.Dir(p), 0755)
+		if err := os.WriteFile(p, []byte(content), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	catalogue := []data.Row{{K: "sfiiin", Title: "Street Fighter III: New Generation", Base: "Arcade", Core: "jtcps3", SN: "sfiiin", MRA: "_Arcade/" + name + ".mra"}}
+	alts, _, _ := ScanAlternativesWithError(card, "")
+	var fc FamilyCache
+	res := DiscoverLocal(card, "", catalogue, ScanCores(card), nil, alts, AttachedPaths(fc.Resolve(card, alts, catalogue)), false)
+	for _, r := range res.Rows {
+		if r.K == "local:sfiiin" {
+			if !r.Standin || r.MRA != "_Arcade/_CPS3/"+name+".mra" {
+				t.Fatalf("row %+v", r)
+			}
+			return
+		}
+	}
+	t.Fatalf("no row: %+v skipped %+v", res.Rows, res.Skipped)
+}
+
 // A game the catalogue knows only through a core the card has not got:
 // the file that does run it stands in, rather than falling between the
 // greyed catalogue row and the setname rule.

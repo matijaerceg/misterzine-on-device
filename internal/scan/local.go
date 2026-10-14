@@ -520,10 +520,12 @@ func coreOnCard(idx *Index, core string) bool {
 
 // isBIOS recognises a system BIOS MRA (MiSTer ships one per platform core,
 // e.g. "PGM (Polygame Master) System BIOS") by the word in its name or file
-// name; it is not a game to list.
+// name; it is not a game to list. The word in brackets only names the BIOS a
+// game set boots ("Street Fighter III New Generation (Asia 970204, NO CD,
+// BIOS set 1)"), so bracketed text does not count.
 func isBIOS(a Alt) bool {
 	for _, s := range []string{a.Name, path.Base(a.Path)} {
-		for _, w := range strings.FieldsFunc(strings.ToLower(s), func(r rune) bool {
+		for _, w := range strings.FieldsFunc(strings.ToLower(unbracketed(s)), func(r rune) bool {
 			return !(r >= 'a' && r <= 'z' || r >= '0' && r <= '9')
 		}) {
 			if w == "bios" {
@@ -532,6 +534,23 @@ func isBIOS(a Alt) bool {
 		}
 	}
 	return false
+}
+
+// unbracketed is s without its (...) and [...] parts.
+func unbracketed(s string) string {
+	var b strings.Builder
+	depth := 0
+	for _, r := range s {
+		switch {
+		case r == '(' || r == '[':
+			depth++
+		case (r == ')' || r == ']') && depth > 0:
+			depth--
+		case depth == 0:
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
 }
 
 // AttachedPaths flattens a family resolver result into the set of paths it
