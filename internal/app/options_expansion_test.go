@@ -85,7 +85,7 @@ func TestOptionsExpansion(t *testing.T) {
 	}
 }
 
-// Access controls belong to Operation; ROM report belongs to Data even locked.
+// Access controls belong to Operation; ROM report (graduated, free) belongs to Data.
 func TestAccessOptionsSections(t *testing.T) {
 	a, _, _, _ := shotsApp()
 	a.cfg.ShowBetaFeatures = true
@@ -115,10 +115,10 @@ func TestAccessOptionsSections(t *testing.T) {
 	}
 	a.optionsOpen = map[string]bool{"Data": true}
 	if !has("ROM report") {
-		t.Fatal("Data lacks locked ROM report")
+		t.Fatal("Data lacks ROM report")
 	}
 	a.cfg.ShowBetaFeatures = false
-	if has("ROM report") {
-		t.Fatal("beta-off exposes ROM report")
+	if !has("ROM report") {
+		t.Fatal("beta-off hides the graduated ROM report")
 	}
 }

@@ -8,7 +8,7 @@ func TestCoverageSurvivesGraduation(t *testing.T) {
 		if f.Fancy && (f.Covered(f.Since-1) || !f.Covered(f.Since) || !f.Covered(f.Since+1)) {
 			t.Fatalf("bad boundary: %s", named.Name)
 		}
-		if f.Allowed(f.Since, false) {
+		if f.Beta && f.Allowed(f.Since, false) {
 			t.Fatal("beta enabled without preference")
 		}
 		f.Beta = false

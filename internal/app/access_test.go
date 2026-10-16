@@ -46,11 +46,11 @@ func TestOptionalCodeAccess(t *testing.T) {
 		t.Fatal("unlock failed or enabled beta")
 	}
 	a.cfg.ShowBetaFeatures = true
-	if !a.featureAllowed(access.ROMReport) {
+	if !a.featureAllowed(access.Groups) {
 		t.Fatal("qualified beta not enabled")
 	}
 	a.cfg.ShowBetaFeatures = false
-	if a.featureAllowed(access.ROMReport) {
+	if a.featureAllowed(access.Groups) {
 		t.Fatal("beta remains active after toggle off")
 	}
 }
@@ -107,7 +107,7 @@ func TestLockedOptionSelectionSurvivesRebuild(t *testing.T) {
 
 func TestFreeBetaDoesNotOfferCodeEntry(t *testing.T) {
 	a := New(Config{PhysW: 320, PhysH: 240, ShowBetaFeatures: true}, data.Ingest(nil, "", time.Now()), nil)
-	for _, f := range []access.Feature{access.ROMReport, access.Controls} {
+	for _, f := range []access.Feature{access.Groups, access.Controls} {
 		row := a.gatedOption(panelEntry{text: "Example", kind: "example", help: "Explains the feature."}, f)
 		if row.kind != "example" || row.requiredMonth != 0 || row.disabled || !a.featureAllowed(f) {
 			t.Fatal("free beta asks for a code")
@@ -200,7 +200,7 @@ func TestAccessOverviewAndReturn(t *testing.T) {
 						break
 					}
 				}
-				if !f.Fancy && !beta {
+				if !f.Fancy && (!beta || !f.Beta) {
 					if found >= 0 {
 						t.Fatal("free beta shown with toggle off")
 					}

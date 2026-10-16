@@ -15,6 +15,7 @@ func Catalog() []NamedFeature {
 		{"group-tallies", "Group tallies", Tallies},
 		{"rom-report", "ROM report", ROMReport},
 		{"button-mapping", "Button mapping", Controls},
+		{"same-game-groups", "Same-game groups", Groups},
 	}
 }
 

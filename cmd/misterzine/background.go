@@ -183,7 +183,7 @@ func (h *host) sweepROMs() {
 }
 
 // romListPath is where a finished sweep writes its list of ROM problems:
-// only when the ROM report is visible and unlocked.
+// whenever the ROM report is allowed (it is free for everyone now).
 func romListPath(root string, month access.Month, showBeta bool) string {
 	if !access.ROMReport.Allowed(month, showBeta) {
 		return ""

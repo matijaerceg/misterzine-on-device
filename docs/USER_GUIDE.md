@@ -118,6 +118,9 @@ only one version, it shows as a normal entry. The Core, Favorites and Recents
 views never group. Groups start closed each time the app starts or the
 catalogue refreshes.
 
+Grouping is a beta feature for now: it shows when Show beta features is on
+in Options -> Operation. With it off, every version is its own entry.
+
 ### Games only on your card
 
 Arcade games on the card that the catalogue does not list appear as well, with

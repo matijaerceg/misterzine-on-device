@@ -23,7 +23,7 @@ func umbrellaRows() []data.Row {
 
 func umbrellaApp(stored *data.SeenRecord) *App {
 	now := time.Date(2026, 10, 15, 12, 0, 0, 0, time.UTC)
-	return New(Config{PhysW: 320, PhysH: 240, ClockTrusted: true, Now: func() time.Time { return now }},
+	return New(Config{PhysW: 320, PhysH: 240, ClockTrusted: true, ShowBetaFeatures: true, Now: func() time.Time { return now }},
 		data.Ingest(umbrellaRows(), "h", now), stored)
 }
 
@@ -176,5 +176,40 @@ func TestMemberLinesSitUnderTheirOpenUmbrella(t *testing.T) {
 		if got := a.memberAt(pos); got != want[a.keyAt(pos)] {
 			t.Fatalf("open umbrella: line %d (%s) member=%v", pos, a.keyAt(pos), got)
 		}
+	}
+}
+
+// Same-game groups are a free beta: with beta features hidden the same rows
+// stay flat, and toggling the preference refolds or flattens the list,
+// keeping the cursor on its game.
+func TestUmbrellaNeedsBeta(t *testing.T) {
+	now := time.Date(2026, 10, 15, 12, 0, 0, 0, time.UTC)
+	a := New(Config{PhysW: 320, PhysH: 240, ClockTrusted: true, Now: func() time.Time { return now }},
+		data.Ingest(umbrellaRows(), "h", now), nil)
+	a.SetSort(data.SortUpdated)
+	flat := func() {
+		t.Helper()
+		if len(a.groups) != 0 || len(a.view) != 4 {
+			t.Fatalf("beta off folded: groups %d view %v", len(a.groups), viewKeys(a))
+		}
+		for _, k := range viewKeys(a) {
+			if strings.HasPrefix(k, data.GroupKeyPrefix) {
+				t.Fatalf("umbrella key %q with beta off", k)
+			}
+		}
+	}
+	flat()
+	a.cfg.ShowBetaFeatures = true
+	a.accessChanged()
+	// the cursor stayed on its row, so its umbrella opened around it
+	if got := strings.Join(viewKeys(a), " "); !strings.HasPrefix(got, "g:bub ") || len(a.groups) != 1 {
+		t.Fatalf("beta on view %q", got)
+	}
+	a.cursor = 0
+	a.cfg.ShowBetaFeatures = false
+	a.accessChanged()
+	flat()
+	if a.expanded != nil || strings.HasPrefix(a.CursorKey(), data.GroupKeyPrefix) || a.CursorKey() == "" {
+		t.Fatalf("cursor %q expanded %v after flattening", a.CursorKey(), a.expanded)
 	}
 }

@@ -11,6 +11,6 @@ The codes themselves are shared only in the Patreon posts. This page lists what 
 | --- | --- | --- |
 | **Oct 2026** | - Color Themes: presets or customize.<br>- Group tallies: the number of games in header of each group. | v1.2.3 |
 
-Initially features will be Beta, so they also need **Show beta features** switched on, in Options -> Operation. Free betas such as Button mapping and the ROM report need only that switch and no code.
+Initially features will be Beta, so they also need **Show beta features** switched on, in Options -> Operation. Free betas such as Button mapping and Same-game groups need only that switch and no code.
 
 More in the [user guide](USER_GUIDE.md#misterzine-codes-and-optional-features).

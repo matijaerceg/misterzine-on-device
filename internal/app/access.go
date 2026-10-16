@@ -48,6 +48,7 @@ func (a *App) gatedOption(row panelEntry, f access.Feature) panelEntry {
 
 func (a *App) accessChanged() {
 	a.controlsChanged()
+	a.relist()
 	selected := ""
 	if a.panel.cursor < len(a.panel.entries) {
 		selected = a.panel.entries[a.panel.cursor].text
@@ -175,4 +176,21 @@ func (a *App) featureAccessStatus(f access.Feature) string {
 		return "Available"
 	}
 	return "Unlocked"
+}
+
+// relist rebuilds the list after an access change: same-game umbrellas fold
+// only with their beta feature shown, so the cursor keeps its game, an
+// umbrella's preview member when the fold goes away.
+func (a *App) relist() {
+	if a.ds == nil {
+		return
+	}
+	k := a.CursorKey()
+	if u := a.umbrellaAt(a.cursor); u != nil {
+		k = a.ds.Rows[u.Preview(a.ds)].K
+	}
+	a.rebuild()
+	if k != "" {
+		a.moveToKey(k)
+	}
 }

@@ -537,7 +537,14 @@ func (a *App) rebuild() {
 		a.view = matched
 	}
 	a.shown = len(a.view)
-	a.view, a.groups = a.ds.Fold(a.view, a.mode, func(g string) bool { return a.expanded[g] })
+	// same-game umbrellas are a beta feature: with it hidden the list stays
+	// flat, every row its own line
+	a.groups = nil
+	if a.featureAllowed(access.Groups) {
+		a.view, a.groups = a.ds.Fold(a.view, a.mode, func(g string) bool { return a.expanded[g] })
+	} else {
+		a.expanded = nil
+	}
 	a.marker = a.seen != nil
 	a.sinceAdded, a.sinceUpdated = a.seen.Since(a.ds, a.catalogueIncludes)
 	a.rebuildMarks()

@@ -661,13 +661,11 @@ func (a *App) optionsEntries() []panelEntry {
 			}
 		}
 	}
-	if a.featureVisible(access.ROMReport) {
-		for i, e := range E {
-			if e.kind == "rescan" {
-				row := a.gatedOption(panelEntry{text: "ROM report", child: true, kind: "rom-report", lockedHelp: "Save a list of ROM problems.", help: "Lists ROM problems in misterzine/rom_problems.txt. Rescan card refreshes it."}, access.ROMReport)
-				E = append(E[:i+1], append([]panelEntry{row}, E[i+1:]...)...)
-				break
-			}
+	for i, e := range E {
+		if e.kind == "rescan" {
+			row := panelEntry{text: "ROM report", child: true, kind: "rom-report", help: "Lists ROM problems in misterzine/rom_problems.txt. Rescan card refreshes it."}
+			E = append(E[:i+1], append([]panelEntry{row}, E[i+1:]...)...)
+			break
 		}
 	}
 	return a.membersOptions(a.controlsOptions(E))
