@@ -123,6 +123,26 @@ func coresChip(u *data.Group) string {
 	return itoa(u.Cores) + " cores"
 }
 
+// paintCountedTitle draws an umbrella's name into w pixels with its member
+// count right after it, "(2)", in the title's font but muted; the count is
+// always shown, so a long name gives way to it.
+func (a *App) paintCountedTitle(c *gfx.Canvas, x, y, w int, u *data.Group, col rgb) {
+	count := "(" + itoa(u.Cores) + ")"
+	title := u.Title(a.ds)
+	if f := a.titleFont(); f != nil {
+		y-- // scientifica's baseline is one pixel lower than the body font's
+		gap := f.Advance(' ')
+		cw := f.PropWidth(count)
+		tw := c.TextProp(x, y, f, gfx.FitProp(f, title, w-gap-cw), col)
+		c.TextProp(x+tw+gap, y, f, count, pal.Muted)
+		return
+	}
+	cols := a.body.Cols(w) - len(count) - 1
+	s := gfx.Fit(title, cols)
+	c.Text(x, y, a.body, s, col)
+	c.Text(x+a.body.Width(s)+a.body.W, y, a.body, count, pal.Muted)
+}
+
 // paintUmbrella draws an umbrella line: the chevron in the star's column,
 // the game's name with its core count, and the group's date (the newest
 // build, or the first debut) or the original year, as rows show theirs.
@@ -148,16 +168,12 @@ func (a *App) paintUmbrella(c *gfx.Canvas, r image.Rectangle, pos int, u *data.G
 	if a.mode == data.SortYear && !l.PictureColumns {
 		tw += a.dateCols() * rf.W
 	}
-	// the chip sits at the title column's end; the name takes what is left
-	chip := coresChip(u)
-	cw := a.sm.Width(chip) + a.sm.W
+	// the count follows the name, "(2)", and the name takes the rest
 	if fit := tw + a.restLayout().TitleW - l.TitleW; fit != tw {
 		col := &gfx.Canvas{RGBA: c.Sub(image.Rect(x, c.Rect.Min.Y, x+tw, c.Rect.Max.Y))}
-		a.paintTitle(col, x, y, fit-cw, u.Title(a.ds), false, titleCol)
-		col.Text(x+fit-cw+a.sm.W, y+1, a.sm, chip, pal.Muted)
+		a.paintCountedTitle(col, x, y, fit, u, titleCol)
 	} else {
-		a.paintTitle(c, x, y, tw-cw, u.Title(a.ds), false, titleCol)
-		c.Text(x+tw-cw+a.sm.W, y+1, a.sm, chip, pal.Muted)
+		a.paintCountedTitle(c, x, y, tw, u, titleCol)
 	}
 	if l.PictureColumns || a.mode == data.SortYear {
 		return

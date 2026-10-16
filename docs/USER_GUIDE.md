@@ -108,8 +108,8 @@ at the top of the view you left.
 
 When the catalogue has the same arcade game on two or three different cores
 (for example a MiSTer core and a Coin-Op Collection core), the list shows it
-once, as one closed entry with an arrow, the game's name and a "2 cores" or
-"3 cores" tag. Press A on it to open it: each core's version appears right
+once, as one closed entry with an arrow and the game's name followed by how
+many versions it holds, "(2)". Press A on it to open it: each core's version appears right
 below it, and A on one of those opens its Details as usual. A on the open entry
 closes it again. The grouped entry has no Details, favorite or launch of its
 own; those stay on each version. Its date is green when any version inside it
