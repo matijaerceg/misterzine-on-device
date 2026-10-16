@@ -95,7 +95,7 @@ func (a *App) markLine(k int) int {
 // order has no group headers.
 func (a *App) pinnedHeader() string {
 	if pos := a.pinnedPos(); pos >= 0 {
-		return a.groupLabel(a.view[pos])
+		return a.groupLabel(a.placeRow(pos))
 	}
 	return ""
 }
@@ -132,7 +132,7 @@ func (a *App) markText(k int) string {
 	}
 	if a.groupHeaders() {
 		if pos := a.marks[k]; pos < len(a.view) {
-			return a.groupLabel(a.view[pos])
+			return a.groupLabel(a.placeRow(pos))
 		}
 	}
 	return ""

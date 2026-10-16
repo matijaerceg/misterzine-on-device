@@ -148,7 +148,7 @@ func (a *App) startLayoutMotion(m layoutMotion) {
 	images := a.cfg.Images
 	if m.art != nil {
 		size := image.Point{}
-		if row, _, _ := a.current(); row != nil {
+		if row := a.paneRow(); row != nil {
 			size = image.Pt(row.ImgW, row.ImgH)
 		}
 		a.cfg.Images = layoutFallbackImages{Images: images, art: m.art, size: size}
@@ -157,7 +157,7 @@ func (a *App) startLayoutMotion(m layoutMotion) {
 	a.cfg.Images = images
 	m.toThumb, m.toText = a.paintedThumb, a.paintedPaneText
 	m.toCaption = copyLayoutPixels(c.RGBA, m.toText)
-	if row, _, _ := a.current(); row != nil && !a.lay.Thumb.Empty() {
+	if row := a.paneRow(); row != nil && !a.lay.Thumb.Empty() {
 		key, slot := thumbSlot(row, a.ListShot())
 		m.request = ImageReq{Key: key, Slot: slot, W: a.lay.Thumb.Dx(), H: a.lay.Thumb.Dy(), Stretch: slot != "system" && row.ImgW > row.ImgH, Pixelate: a.pixelated(row)}
 	}
@@ -277,7 +277,7 @@ func (a *App) paintLayoutMotion(c *gfx.Canvas) {
 	if pos := a.pinnedPos(); pos >= 0 {
 		r := l.lineRect(0)
 		rows.Fill(r, pal.Bg)
-		a.paintMarker(rows, r, a.groupLabel(a.view[pos]), a.headerNote(pos))
+		a.paintMarker(rows, r, a.groupLabel(a.placeRow(pos)), a.headerNote(pos))
 	}
 	a.paintScrollbar(c)
 	// Keep the pane opaque while its contents move with it; nothing of it

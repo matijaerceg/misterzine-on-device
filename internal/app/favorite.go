@@ -8,8 +8,8 @@ import "time"
 // again where it still shows, and the cursor stays in range where it has
 // gone. True when the row left the view.
 func (a *App) toggleFavorite() (left bool) {
-	if a.cursor >= len(a.view) {
-		return false
+	if a.cursor >= len(a.view) || a.umbrellaAt(a.cursor) != nil {
+		return false // an umbrella takes no star: its members do
 	}
 	if a.cfg.FavoritesUnavailable {
 		a.Notice(FavoritesUnavailableNotice, 8*time.Second)
@@ -31,7 +31,7 @@ func (a *App) toggleFavorite() (left bool) {
 	}
 	a.rebuild()
 	a.moveToKey(k)
-	left = a.cursor >= len(a.view) || a.ds.Rows[a.view[a.cursor]].K != k
+	left = a.CursorKey() != k
 	if left {
 		a.cursor = max(0, min(a.cursor, len(a.view)-1))
 		a.ensureVisible()

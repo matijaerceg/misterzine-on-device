@@ -104,6 +104,20 @@ A date highlighted in green marks an entry added or rebuilt since your previous
 visit, in every view, and the first line of the list counts them. Visits start
 at the top of the view you left.
 
+### Same game on several cores
+
+When the catalogue has the same arcade game on two or three different cores
+(for example a MiSTer core and a Coin-Op Collection core), the list shows it
+once, as one closed entry with an arrow, the game's name and a "2 cores" or
+"3 cores" tag. Press A on it to open it: each core's version appears right
+below it, and A on one of those opens its Details as usual. A on the open entry
+closes it again. The grouped entry has no Details, favorite or launch of its
+own; those stay on each version. Its date is green when any version inside it
+is new or rebuilt since your previous visit. If your filters or search leave
+only one version, it shows as a normal entry. The Core, Favorites and Recents
+views never group. Groups start closed each time the app starts or the
+catalogue refreshes.
+
 ### Games only on your card
 
 Arcade games on the card that the catalogue does not list appear as well, with

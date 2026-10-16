@@ -59,6 +59,19 @@ scenarios = [
     ["-out", "out/search-h", "-script", "type 1943; shot matches; type xyz; shot empty"],
     ["-rot", "left", "-logical", "-out", "out/search-t",
      "-script", "type 1943; shot matches; type xyz; shot empty"],
+    # Same-game umbrellas: Turtles in Time is on two cores and folds into one
+    # closed line; A opens it onto its members, a member's A is Details as
+    # ever, and A on the umbrella closes it again. Caveman Ninja shows A-Z.
+    ["-out", "out/umbrella-h", "-script",
+     "type turtles; shot collapsed; enter; shot expanded; down; shot member; enter; shot member-details; back; up; enter; shot closed-again; back; space*3; type caveman; shot alphabetical"],
+    ["-rot", "left", "-logical", "-out", "out/umbrella-t", "-script",
+     "type turtles; shot collapsed; enter; shot expanded; down; shot member; enter; shot member-details; back; up; enter; shot closed-again; back; space*3; type caveman; shot alphabetical"],
+    # one member the last visit has not seen: the closed umbrella carries its
+    # green date, which the member keeps once the umbrella opens
+    ["-unseen", "teenage-mutant-ninja-turtles-turtles-in-time", "-out", "out/umbrella-dot-h", "-script",
+     "type turtles; shot collapsed; enter; shot expanded"],
+    ["-unseen", "teenage-mutant-ninja-turtles-turtles-in-time", "-rot", "left", "-logical", "-out", "out/umbrella-dot-t", "-script",
+     "type turtles; shot collapsed; enter; shot expanded"],
     ["-out", "out/saver-h", "-script",
      "back; home; pagedown*2; right; down*3; enter; down; shot option; enter; wait 12000; shot preview; back; wait 300; back; home; up; shot wrap; down; shot top"],
     ["-rot", "left", "-logical", "-out", "out/saver-t", "-script",

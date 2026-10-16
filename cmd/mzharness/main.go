@@ -67,6 +67,7 @@ func main() {
 	scanResult := flag.Bool("scan-result", false, "show completed card scan fixture")
 	scanChanges := flag.Bool("scan-changes", false, "with -scan-result or -update-state: the card changed since the statuses on show (9 releases older and 3 not found are up to date now, 1 up to date is gone), and the scan finishes, which says what it changed")
 	unchanged := flag.Bool("unchanged", false, "previous visit saw every release")
+	unseenKeys := flag.String("unseen", "", "comma-separated row keys the previous visit also had not seen")
 	filterRotation := flag.Bool("filter-rotation", false, "start with the strict current-rotation filter on")
 	titleFont := flag.String("title-font", "tall", "list title font: tall, narrow or normal")
 	listShot := flag.String("list-shot", "gameplay", "list thumbnail preference: gameplay or title")
@@ -325,7 +326,10 @@ func main() {
 			}
 			cur[rows[i].K] = rows[i].Updated
 		}
-		stored = &data.SeenRecord{T: now.Add(-*seenAge).UTC().Format(time.RFC3339), Cur: cur}
+		for _, k := range strings.Split(*unseenKeys, ",") {
+			delete(cur, k)
+		}
+		stored =&data.SeenRecord{T: now.Add(-*seenAge).UTC().Format(time.RFC3339), Cur: cur}
 	}
 	controlPads := controlFixtures()
 	if *controlsPreview || *controlsAuto {

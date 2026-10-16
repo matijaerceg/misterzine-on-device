@@ -69,6 +69,11 @@ type Row struct {
 	// game, newest first. The kits are built on a PC, so nothing here is
 	// shipped by update_all; a built patch's setname is in FamilySets.
 	PT []Patch `json:"pt,omitempty"`
+	// G names the same-game group of an arcade row whose game the catalogue
+	// also lists on another core: the members share the group's MAME parent
+	// setname, and the list folds them into one umbrella line (samegame.go).
+	// The site's pipeline decides the groups; "" is no group.
+	G string `json:"g,omitempty"`
 }
 
 // Patch is one arcadepatches.com patch of a row's game.

@@ -36,7 +36,14 @@ func (a *App) paintList(c *gfx.Canvas) {
 // of them in the text layout, which has no picture for Art type to change.
 func (a *App) listHint() string {
 	var parts []string
-	if len(a.view) > 0 {
+	if u := a.umbrellaAt(a.cursor); u != nil {
+		// an umbrella opens and closes; its members have the Details
+		if u.Open {
+			parts = append(parts, "A Collapse")
+		} else {
+			parts = append(parts, "A Expand")
+		}
+	} else if len(a.view) > 0 {
 		parts = append(parts, "A Details")
 	}
 	back := "B Options"
@@ -50,8 +57,8 @@ func (a *App) listHint() string {
 	parts = append(parts, "Select +")
 	if a.quickHeld() {
 		parts = nil
-		if len(a.view) > 0 {
-			parts = append(parts, "A Favorite")
+		if len(a.view) > 0 && a.umbrellaAt(a.cursor) == nil {
+			parts = append(parts, "A Favorite") // stars stay on the members
 		}
 		if a.listShowsArt() {
 			parts = append(parts, "X Shots")
@@ -148,7 +155,7 @@ var (
 
 func (a *App) statusBar() statusBar {
 	if a.query != "" {
-		return statusBar{query: a.query, shown: len(a.view)}
+		return statusBar{query: a.query, shown: a.shown}
 	}
 	if a.appUpdate != "" {
 		return statusBar{view: statusViewsShort[a.mode], update: true}
@@ -158,7 +165,7 @@ func (a *App) statusBar() statusBar {
 		s.view = v
 	}
 	if a.filtersActive() || a.mode == data.SortFavorites || a.mode == data.SortRecents {
-		s.shown, s.narrow = len(a.view), true
+		s.shown, s.narrow = a.shown, true
 	}
 	return s
 }
@@ -326,7 +333,7 @@ func (a *App) paintRows(c *gfx.Canvas) {
 	if pos := a.pinnedPos(); pos >= 0 {
 		r := l.lineRect(0)
 		c.Fill(r, pal.Bg)
-		a.paintMarker(c, r, a.groupLabel(a.view[pos]), a.headerNote(pos))
+		a.paintMarker(c, r, a.groupLabel(a.placeRow(pos)), a.headerNote(pos))
 	}
 }
 
@@ -362,7 +369,7 @@ func (a *App) paintRowsStill(c *gfx.Canvas) {
 	if pos := a.pinnedPos(); pos >= 0 {
 		r := l.lineRect(0)
 		c.Fill(r, pal.Bg)
-		a.paintMarker(c, r, a.groupLabel(a.view[pos]), a.headerNote(pos))
+		a.paintMarker(c, r, a.groupLabel(a.placeRow(pos)), a.headerNote(pos))
 	}
 }
 
@@ -409,6 +416,10 @@ func (a *App) paintMarker(c *gfx.Canvas, r image.Rectangle, text, note string) {
 }
 
 func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {
+	if u := a.umbrellaAt(pos); u != nil {
+		a.paintUmbrella(c, r, pos, u)
+		return
+	}
 	l := &a.lay
 	i := a.view[pos]
 	row := &a.ds.Rows[i]
@@ -524,7 +535,7 @@ func (a *App) paintPane(c *gfx.Canvas) {
 		a.paintedThumbImage = nil // the text layout: rows only
 		return
 	}
-	row, d, i := a.current()
+	row := a.paneRow()
 	if row == nil {
 		return
 	}
@@ -539,7 +550,13 @@ func (a *App) paintPane(c *gfx.Canvas) {
 		}
 	}
 	a.paintedThumb, a.paintedPaneText = drawn, text
-	lines := a.paneLines(row, d, i, a.sm.Cols(text.Dx()))
+	var lines []paneLine
+	if u := a.umbrellaAt(a.cursor); u != nil {
+		lines = a.umbrellaPaneLines(u, a.sm.Cols(text.Dx()))
+	} else {
+		_, d, i := a.current()
+		lines = a.paneLines(row, d, i, a.sm.Cols(text.Dx()))
+	}
 	if l.PictureColumns {
 		// The fixed right column is narrow but tall: wrap information rather
 		// than losing it to the ellipsis used by the smaller classic panes.

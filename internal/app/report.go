@@ -22,7 +22,7 @@ func (a *App) ReportPart() report.AppPart {
 		Rotation:  a.Rotation().String(),
 		Rows:      len(a.ds.Rows),
 		Catalogue: a.ds.NCat,
-		Shown:     len(a.view),
+		Shown:     a.shown,
 	}
 	filters := a.effectiveFilters()
 	if a.mode == data.SortFavorites {

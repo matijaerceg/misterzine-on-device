@@ -248,8 +248,14 @@ type App struct {
 	query   string // keyboard title search, kept only for this session
 	filters data.Filters
 	order   []int // ds.Order(mode)
-	view    []int // after filters
+	view    []int // the list's lines after filters, search and the same-game fold (umbrella.go)
 	total   int   // rows the sources rule leaves, the list's "N releases"
+	shown   int   // the rows filters and search leave, umbrellas' members counted, never the umbrellas
+	// groups are the umbrella lines of this view: view entry len(ds.Rows)+n
+	// is groups[n]. expanded holds the open ones by G; it lives for the
+	// session and the dataset, never saved.
+	groups   []data.Group
+	expanded map[string]bool
 	// hiddenSrc are the sources without a Downloader database on the card,
 	// nil until a card scan reports; iniKnown/iniFound say whether that
 	// report found a downloader.ini at all.
@@ -462,11 +468,14 @@ func (a *App) Inset() (x, y int)      { return a.cfg.SafeInsetX, a.cfg.SafeInset
 // on the same key. stored is the persisted seen record, nil on first ever run.
 func (a *App) SetData(ds *data.Dataset, stored *data.SeenRecord) {
 	var curK string
-	if a.ds != nil && a.cursor < len(a.view) {
-		curK = a.ds.Rows[a.view[a.cursor]].K
+	if a.ds != nil {
+		curK = a.CursorKey()
 	}
 	first := a.ds == nil
 	a.ds = ds
+	// a new dataset starts with every umbrella closed; a member under the
+	// cursor opens its own again as moveToKey finds it
+	a.expanded = nil
 	if first {
 		a.seen = data.InitSeen(stored, ds.Rows, a.cfg.Now(), a.cfg.ClockTrusted)
 	} else if a.seen != nil {
@@ -527,6 +536,8 @@ func (a *App) rebuild() {
 		}
 		a.view = matched
 	}
+	a.shown = len(a.view)
+	a.view, a.groups = a.ds.Fold(a.view, a.mode, func(g string) bool { return a.expanded[g] })
 	a.marker = a.seen != nil
 	a.sinceAdded, a.sinceUpdated = a.seen.Since(a.ds, a.catalogueIncludes)
 	a.rebuildMarks()
@@ -542,19 +553,38 @@ func (a *App) rebuild() {
 
 func (a *App) moveToKey(k string) {
 	a.listMotion = listMotion{}
-	for i, idx := range a.view {
-		if a.ds.Rows[idx].K == k {
-			a.cursor = i
-			a.ensureVisible()
-			return
+	pos := a.viewPos(k)
+	if pos < 0 {
+		// a member folded under a closed umbrella opens it, the way the
+		// site expands the group of a member reached by any route
+		if g := a.foldedUnder(k); g != "" {
+			a.setExpanded(g, true)
+			a.rebuild()
+			pos = a.viewPos(k)
 		}
+	}
+	if pos >= 0 {
+		a.cursor = pos
+		a.ensureVisible()
 	}
 }
 
-// CursorKey is the key under the cursor, "" when the view is empty.
+// viewPos is the list line showing key k (a row's K or an umbrella's
+// GroupKey), -1 when none does.
+func (a *App) viewPos(k string) int {
+	for pos := range a.view {
+		if a.keyAt(pos) == k {
+			return pos
+		}
+	}
+	return -1
+}
+
+// CursorKey is the key under the cursor, "" when the view is empty: a row's
+// K, or an umbrella's data.GroupKey.
 func (a *App) CursorKey() string {
 	if a.cursor < len(a.view) {
-		return a.ds.Rows[a.view[a.cursor]].K
+		return a.keyAt(a.cursor)
 	}
 	return ""
 }
@@ -669,7 +699,7 @@ func (a *App) SetHiddenSources(hidden map[string]bool, found bool) {
 }
 
 // Visible is the number of rows the list shows.
-func (a *App) Visible() int { return len(a.view) }
+func (a *App) Visible() int { return a.shown }
 
 // titleFonts are the list title choices, in Options order.
 var titleFonts = []string{"normal", "narrow", "tall"}
@@ -1256,6 +1286,14 @@ func (a *App) actList(k platform.Key) bool {
 			a.toggleFavorite()
 			return true
 		}
+		if u := a.umbrellaAt(a.cursor); u != nil {
+			// an umbrella has no Details: A opens or closes it, the cursor staying on it
+			a.setExpanded(u.G, !u.Open)
+			k := data.GroupKey(u.G)
+			a.rebuild()
+			a.moveToKey(k)
+			return true
+		}
 		if n > 0 {
 			a.screen = ScreenDetails
 			a.detail = detailState{from: ScreenList, pick: a.rememberedPick()}
@@ -1308,9 +1346,10 @@ func (a *App) pageBy(dir int) {
 	a.top = centeredTop(a.screenLine(a.cursor), a.totalLines(), a.lay.Lines)
 }
 
-// current returns the row under the cursor, nil when the view is empty.
+// current returns the row under the cursor, nil when the view is empty or
+// the cursor is on an umbrella, which has nothing to launch or detail.
 func (a *App) current() (*data.Row, *data.Derived, int) {
-	if a.cursor >= len(a.view) {
+	if a.cursor >= len(a.view) || a.umbrellaAt(a.cursor) != nil {
 		return nil, nil, -1
 	}
 	i := a.view[a.cursor]
@@ -1401,7 +1440,7 @@ func (a *App) neighbourhood() {
 			if pos < 0 || pos >= len(a.view) || (d > 6 && pos < a.cursor) {
 				continue
 			}
-			row := &a.ds.Rows[a.view[pos]]
+			row := &a.ds.Rows[a.previewRow(pos)]
 			key, slot := thumbSlot(row, a.ListShot())
 			if key != "" {
 				a.want(ImageReq{Key: key, Slot: slot, W: box.Dx(), H: box.Dy(), Stretch: slot != "system" && row.ImgW > row.ImgH, Pixelate: a.pixelated(row)})

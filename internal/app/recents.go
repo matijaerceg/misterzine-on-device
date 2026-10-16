@@ -54,14 +54,10 @@ func (a *App) ResumeAt(r data.Recent) bool {
 	return false
 }
 
-// keyInView reports whether the current view lists the row.
+// keyInView reports whether the current view lists the row, a member
+// folded under a closed umbrella included: MoveToKey opens it.
 func (a *App) keyInView(k string) bool {
-	for _, idx := range a.view {
-		if a.ds.Rows[idx].K == k {
-			return true
-		}
-	}
-	return false
+	return a.viewPos(k) >= 0 || a.foldedUnder(k) != ""
 }
 
 // launchedAt is the row's latest launch as a local ISO date ("" when it was

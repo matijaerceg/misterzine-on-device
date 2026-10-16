@@ -46,7 +46,7 @@ func (a *App) jumpGroup(direction int) {
 }
 
 func (a *App) jumpGroupKey(pos int) string {
-	i := a.view[pos]
+	i := a.placeRow(pos)
 	if a.mode.Anchored() {
 		i = a.ds.SortRow(i) // a standin belongs to its catalogue row's group
 	}
