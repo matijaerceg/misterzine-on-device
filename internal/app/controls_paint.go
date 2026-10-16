@@ -57,7 +57,7 @@ func (a *App) paintControls(c *gfx.Canvas) {
 	if v.roleOptions && (v.mode == "devices" || v.mode == "role") {
 		title = "Keyboard use"
 	}
-	c.Text(l.Status.Min.X+2, l.Status.Min.Y+2, f, title+" "+gfx.Beta, pal.Accent)
+	c.Text(l.Status.Min.X+2, l.Status.Min.Y+2, f, title, pal.Accent)
 	c.Fill(l.Body, pal.Bg)
 	c.Fill(l.Hint, pal.Surface)
 	write := func(s string, col rgb) { c.Text(box.Min.X, y, f, gfx.Fit(s, cols), col); y += line }
