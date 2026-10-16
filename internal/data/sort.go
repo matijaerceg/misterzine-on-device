@@ -36,10 +36,57 @@ const (
 	// value because the value is saved; it sits after Maker in the browsing
 	// cycle.
 	SortCore
+	// The genre views list one genre of the catalogue A-Z, letters and
+	// umbrellas as under Alphabetical (Genre names the Row.Genre each
+	// shows). They follow Recents in the browsing cycle and are off until
+	// Options -> Genre views turns them on.
+	SortShmups
+	SortFighting
+	SortBeatEmUps
+	SortRunNGuns
 )
 
 // Valid reports whether m is a sort mode the app knows.
-func (m SortMode) Valid() bool { return m >= SortUpdated && m <= SortCore }
+func (m SortMode) Valid() bool { return m >= SortUpdated && m <= SortRunNGuns }
+
+// GenreViews are the genre views, in cycle order.
+var GenreViews = []SortMode{SortShmups, SortFighting, SortBeatEmUps, SortRunNGuns}
+
+var genreOf = map[SortMode]string{SortShmups: "Shoot 'em up", SortFighting: "Fighting", SortBeatEmUps: "Beat 'em up", SortRunNGuns: "Run 'n gun"}
+
+// Genre is the Row.Genre a genre view shows, "" for the other views.
+func (m SortMode) Genre() string { return genreOf[m] }
+
+// Alphabetical reports whether the view runs A-Z with a header line per
+// letter: the A-Z view and the genre views.
+func (m SortMode) Alphabetical() bool { return m == SortAlphabetical || m.Genre() != "" }
+
+// ViewsOn counts the views a saved choice leaves in the cycle: the views
+// off by name, and the genre views on by name (they are off unless
+// listed). Zero means the choice would leave nothing on and is ignored.
+func ViewsOn(off, genreOn []string) int {
+	set := func(names []string) map[SortMode]bool {
+		m := map[SortMode]bool{}
+		for _, n := range names {
+			if v, ok := ParseSort(n); ok {
+				m[v] = true
+			}
+		}
+		return m
+	}
+	offSet, onSet := set(off), set(genreOn)
+	n := 0
+	for _, m := range ViewOrder {
+		if m.Genre() != "" {
+			if onSet[m] {
+				n++
+			}
+		} else if !offSet[m] {
+			n++
+		}
+	}
+	return n
+}
 
 // Anchored reports whether the mode orders the whole catalogue, where a
 // standin row sorts, groups and jumps as part of the row it stands in for
@@ -47,10 +94,12 @@ func (m SortMode) Valid() bool { return m >= SortUpdated && m <= SortCore }
 // keep every row to its own title and launches.
 func (m SortMode) Anchored() bool { return m != SortFavorites && m != SortRecents }
 
-// ViewOrder is every view in the order Y walks them, Recents included.
-var ViewOrder = []SortMode{SortUpdated, SortDebut, SortYear, SortAlphabetical, SortMaker, SortCore, SortFavorites, SortRecents}
+// ViewOrder is every view in the order Y walks them, Recents and the genre
+// views included.
+var ViewOrder = []SortMode{SortUpdated, SortDebut, SortYear, SortAlphabetical, SortMaker, SortCore, SortFavorites, SortRecents, SortShmups, SortFighting, SortBeatEmUps, SortRunNGuns}
 
-var sortNames = map[SortMode]string{SortUpdated: "updated", SortDebut: "debut", SortYear: "year", SortAlphabetical: "alphabetical", SortMaker: "maker", SortCore: "core", SortFavorites: "favorites", SortRecents: "recents"}
+var sortNames = map[SortMode]string{SortUpdated: "updated", SortDebut: "debut", SortYear: "year", SortAlphabetical: "alphabetical", SortMaker: "maker", SortCore: "core", SortFavorites: "favorites", SortRecents: "recents",
+	SortShmups: "shmups", SortFighting: "fighting", SortBeatEmUps: "beatemups", SortRunNGuns: "runnguns"}
 
 // Name is the mode's settings name (Options -> Views keeps the ones left
 // out of the cycle by name).
@@ -125,6 +174,14 @@ func (m SortMode) String() string {
 		return "Manufacturer"
 	case SortCore:
 		return "Core"
+	case SortShmups:
+		return "Shoot 'em ups"
+	case SortFighting:
+		return "Fighting"
+	case SortBeatEmUps:
+		return "Beat 'em ups"
+	case SortRunNGuns:
+		return "Run 'n guns"
 	}
 	return "Updated"
 }
@@ -192,7 +249,7 @@ func (ds *Dataset) less(mode SortMode, a, b int) bool {
 func (ds *Dataset) lessRow(mode SortMode, a, b int) bool {
 	ra, rb := &ds.Rows[a], &ds.Rows[b]
 	da, db := &ds.Der[a], &ds.Der[b]
-	if mode == SortAlphabetical || mode == SortFavorites || mode == SortRecents {
+	if mode.Alphabetical() || mode == SortFavorites || mode == SortRecents {
 		return CompareKeys(da.titleKey, db.titleKey) < 0
 	}
 	if mode == SortMaker {

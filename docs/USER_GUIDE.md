@@ -170,7 +170,8 @@ year, A-Z, manufacturer, core or Favorites A-Z. Options -> Views can leave any
 of them out of the cycle.
 With Recents on there, Recents follows Favorites: the games launched from
 MisterZine, latest launch first, with the launch date in the date column
-and L/R jumping between launch months.
+and L/R jumping between launch months. The genre views from Options ->
+Genre views, described below, come after Recents.
 Year orders games
 by their original release year, newest first, with titles alphabetical within
 a year and unknown or uncertain years last; a header line names each year,
@@ -198,6 +199,14 @@ scrolled off the top keeps its name pinned on the top line until its last
 row has gone.
 Favorites shows only your starred entries in alphabetical order, with the same
 letter jumps as A-Z. Star a game with Y in Details or Select + A on the list.
+Four genre views, off until Options -> Genre views turns them on, follow
+Favorites and Recents in the cycle: Shoot 'em ups, Fighting, Beat 'em ups and
+Run 'n guns. Each lists the games of that one genre, as the catalogue labels
+them, A-Z exactly like the A-Z view: the same letter headers and L/R letter
+jumps, the same same-game grouping, and search and filters narrow it further.
+The top bar names it Shoot 'em ups A-Z and so on, with the count of games
+shown. A genre view that is on takes part in Remember last view and Default
+view like any other.
 Search and filters still apply. Remember last view also remembers Favorites.
 Changing sort keeps the selected title, search and filters. Dates in alphabetical
 order still show the build date, and the green since-visit marks show in every
@@ -450,7 +459,7 @@ Options is in five groups, each under a grey heading with a small mark and
 a rule and an expansion arrow: Data (a diskette: Refresh data now, Run Update All, Last update
 result, Rescan card, Prefetch shots, Clear image cache), List (stacked
 lines: Sources, Filter by rotation, Views (with Remember last view and its
-conditional Default view beneath it), Title font,
+conditional Default view beneath it), Genre views, Title font,
 Art type, Date format, Layout), Display (a monitor: rotation,
 screensaver delay, style, brightness and info, safe zone, HDMI picture), Controls
 (an arcade stick: Button mapping, Menu button, Scroll speed, Hold
@@ -547,6 +556,14 @@ and last row. Rows marked ↗ open another screen or editor.
   with its last launch date, up to 100; search and filters apply. That history
   is MisterZine's own, kept in its state.json whether the view is on or off,
   and separate from MiSTer's recent lists.
+- **Genre views:** the four genre views (Shoot 'em ups, Fighting, Beat 'em
+  ups, Run 'n guns) as a checkbox page like Views, each off by default. A
+  toggles one; a view turned on joins the Y cycle after Favorites and
+  Recents, and turning off the view you are in moves the list to the next
+  one on. The row counts them, such as "Genre views (0 of 4)". They are not
+  listed on the Views page, and the last view on anywhere, a genre view
+  included, cannot be turned off. The choice is saved with the other view
+  settings.
 - **Title font:** narrow tall by default, a condensed proportional font that
   fits about a third more of each title on a row, made one pixel taller so
   its capitals and lowercase match the body font's height. Narrow is the

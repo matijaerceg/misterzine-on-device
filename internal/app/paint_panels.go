@@ -264,6 +264,7 @@ func (a *App) facetRows(f data.Filters, arcade bool, fn func(i int)) {
 	if a.mode == data.SortFavorites {
 		f.FavOnly = true
 	}
+	f.Genre = a.mode.Genre()
 	query := searchText(a.query)
 	for i := range a.ds.Rows {
 		r, d := &a.ds.Rows[i], &a.ds.Der[i]
@@ -573,6 +574,8 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Which views " + a.btn("Y") + " cycles through: build date, MiSTer debut, original year, A-Z, manufacturer, core, Favorites, Recents (launches from here). " + a.btn("A") + " opens the list."},
 		{text: "Remember last view", kind: "remember-sort", child: true, vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.RememberSort()],
 			help: "On: reopen in the last view used. Off: use Default view. Takes effect next time MisterZine opens."},
+		{text: "Genre views (" + a.genreViewsSummary() + ")", kind: "genre-views", opensPage: true,
+			help: "Extra views of one genre each, A-Z: Shoot 'em ups, Fighting, Beat 'em ups, Run 'n guns. " + a.btn("Y") + " reaches the ones on after Recents. " + a.btn("A") + " opens the list."},
 		{text: "Title font", kind: "title-font", vals: []string{"normal", "narrow", "narrow tall"}, idx: map[string]int{"normal": 0, "narrow": 1, "tall": 2}[a.TitleFont()],
 			help: "Narrow fonts fit a third more title; tall (default) matches the body font height. Normal: body font."},
 		{text: "Art type", kind: "list-shot", vals: []string{"gameplay", "title"}, idx: map[string]int{"gameplay": 0, "title": 1}[a.ListShot()],
@@ -721,7 +724,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 				title = "Screensaver"
 			}
 		} else if a.screen == ScreenViews {
-			title = "Views"
+			title = a.viewsTitle()
 		} else if a.screen == ScreenAccess {
 			title = "Your access"
 		} else if a.screen == ScreenCredits {
@@ -864,7 +867,8 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			}
 			value := e.vals[e.idx]
 			if e.kind == "default-view" && font.Width(e.label()+" "+la+" "+value+" "+ra) > edge-inner.Min.X-2 {
-				value = map[data.SortMode]string{data.SortUpdated: "Updated", data.SortDebut: "Debut", data.SortYear: "Year", data.SortAlphabetical: "A-Z", data.SortMaker: "Maker", data.SortCore: "Core", data.SortFavorites: "Favorites", data.SortRecents: "Recents"}[a.DefaultView()]
+				value = map[data.SortMode]string{data.SortUpdated: "Updated", data.SortDebut: "Debut", data.SortYear: "Year", data.SortAlphabetical: "A-Z", data.SortMaker: "Maker", data.SortCore: "Core", data.SortFavorites: "Favorites", data.SortRecents: "Recents",
+					data.SortShmups: "Shmups", data.SortFighting: "Fighting", data.SortBeatEmUps: "Beat 'em ups", data.SortRunNGuns: "Run 'n guns"}[a.DefaultView()]
 			}
 
 			cells := 0
@@ -998,7 +1002,7 @@ var optionsActs = map[string]string{
 	"rom-report":         "Info",
 	"show-beta-features": "Toggle",
 	"refresh":            "Refresh", "update": "Run", "update-app": "Run", "update-result": "Open", "rescan": "Rescan", "clearimg": "Clear",
-	"views": "Open", "saver-options": "Open", "saver-preview": "Preview", "screensaver": "Preview", "launch-transition": "Preview", "saver-style": "Preview", "saver-bright": "Preview", "saver-dim": "Preview", "saver-info": "Preview",
+	"views": "Open", "genre-views": "Open", "saver-options": "Open", "saver-preview": "Preview", "screensaver": "Preview", "launch-transition": "Preview", "saver-style": "Preview", "saver-bright": "Preview", "saver-dim": "Preview", "saver-info": "Preview",
 	"inset": "Edit", "troubleshooting": "Open", "credits": "Open", "quit": "Quit",
 }
 
@@ -1341,8 +1345,8 @@ func (a *App) togglePanel() bool {
 		a.buildPanel()
 		a.all = true
 		return true
-	case "views":
-		a.openViews()
+	case "views", "genre-views":
+		a.openViews(e.kind)
 		return true
 	case "rom-report":
 		a.Notice("Rescan card to refresh the ROM report", 4*time.Second)

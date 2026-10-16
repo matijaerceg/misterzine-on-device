@@ -50,7 +50,7 @@ func (a *App) jumpGroupKey(pos int) string {
 	if a.mode.Anchored() {
 		i = a.ds.SortRow(i) // a standin belongs to its catalogue row's group
 	}
-	if a.mode == data.SortAlphabetical || a.mode == data.SortFavorites {
+	if a.mode.Alphabetical() || a.mode == data.SortFavorites {
 		return string(a.ds.Der[i].TitleInitial())
 	}
 	if a.mode == data.SortMaker {

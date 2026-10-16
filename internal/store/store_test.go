@@ -335,6 +335,46 @@ func TestViewsOffMigrationAndSave(t *testing.T) {
 	}
 }
 
+// The genre views are off unless named in genre_views_on; unknown and
+// non-genre names are dropped, and with every other view off the genre
+// views on are the cycle.
+func TestGenreViewsOnPersist(t *testing.T) {
+	for _, tc := range []struct {
+		body string
+		on   []string
+		off  []string
+	}{
+		{`{}`, nil, []string{"recents"}},
+		{`{"genre_views_on":["shmups","runnguns"]}`, []string{"shmups", "runnguns"}, []string{"recents"}},
+		{`{"genre_views_on":["bogus","alphabetical","fighting"]}`, []string{"fighting"}, []string{"recents"}},
+		{`{"views_off":["shmups","year"]}`, nil, []string{"year"}}, // a genre view is never in views_off
+		{`{"views_off":["updated","debut","year","alphabetical","maker","core","favorites","recents"],"genre_views_on":["beatemups"]}`, []string{"beatemups"}, []string{"updated", "debut", "year", "alphabetical", "maker", "core", "favorites", "recents"}},
+	} {
+		s, err := LoadSettings(writeSettings(t, tc.body))
+		if err != nil || !reflect.DeepEqual(s.GenreViewsOn, tc.on) || !reflect.DeepEqual(s.ViewsOff, tc.off) {
+			t.Fatalf("load %s: genre views on %v off %v, want %v %v (%v)", tc.body, s.GenreViewsOn, s.ViewsOff, tc.on, tc.off, err)
+		}
+	}
+	path := writeSettings(t, `{}`)
+	s := DefaultSettings()
+	if err := Save(path, s); err != nil {
+		t.Fatal(err)
+	}
+	if b, _ := os.ReadFile(path); strings.Contains(string(b), "genre_views_on") {
+		t.Fatalf("none on saved as %s", b)
+	}
+	s.GenreViewsOn = []string{"fighting"}
+	if err := Save(path, s); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := LoadSettings(path); err != nil || !reflect.DeepEqual(got.GenreViewsOn, []string{"fighting"}) {
+		t.Fatalf("restart lost the genre views: %v, %v", got.GenreViewsOn, err)
+	}
+	if s, err := LoadSettings(writeSettings(t, `{"last_sort":11,"default_sort":10}`)); err != nil || s.LastSort != data.SortRunNGuns || s.DefaultSort != data.SortBeatEmUps || int(data.SortShmups) != 8 {
+		t.Fatalf("genre view values: last %v default %v (%v)", s.LastSort, s.DefaultSort, err)
+	}
+}
+
 func TestScreensaverFilterPersistence(t *testing.T) {
 	path := writeSettings(t, `{"screensaver_on_card":true,"screensaver_match_rotation":true,"screensaver_favorites":true,"screensaver_resolution":"15kHz"}`)
 	s, err := LoadSettings(path)

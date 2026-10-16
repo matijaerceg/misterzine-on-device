@@ -61,7 +61,7 @@ func TestRecentsViewLifecycle(t *testing.T) {
 
 	// taking the view out on the Views page while in it moves on to the next view on
 	a.SetSort(data.SortRecents)
-	a.openViews()
+	a.openViews("views")
 	for i, e := range a.panel.entries {
 		if e.kind == "view" && e.value == "recents" {
 			a.panel.cursor = i
@@ -125,7 +125,7 @@ func TestResumeLandsOnTheLaunchedGameInItsView(t *testing.T) {
 		t.Fatalf("an unrecorded launch view moved the list: view %v", a.Sort())
 	}
 	a.cfg.ViewsOff = []string{"alphabetical"}
-	a.viewsOff = parseViewsOff(a.cfg.ViewsOff)
+	a.viewsOff = parseViewsOff(a.cfg.ViewsOff, nil)
 	if a.ResumeAt(data.Recent{K: "b", View: "alphabetical"}) || a.Sort() != data.SortFavorites {
 		t.Fatalf("a launch view turned off was reopened: view %v", a.Sort())
 	}

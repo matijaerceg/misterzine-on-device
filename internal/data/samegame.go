@@ -19,16 +19,17 @@ const GroupKeyPrefix = "g:"
 func GroupKey(g string) string { return GroupKeyPrefix + g }
 
 // Folds reports whether the order folds same-game rows into umbrellas: the
-// date orders and the browsing orders that run over the whole catalogue.
-// The Core order lists the games under the cores that run them, and the
-// members are different cores by definition; Favorites and Recents are the
-// player's own lists, where each star and launch is one core's.
+// date orders and the browsing orders that run over the whole catalogue,
+// the genre views among them (one genre of it, A-Z). The Core order lists
+// the games under the cores that run them, and the members are different
+// cores by definition; Favorites and Recents are the player's own lists,
+// where each star and launch is one core's.
 func (m SortMode) Folds() bool {
 	switch m {
 	case SortUpdated, SortDebut, SortAlphabetical, SortMaker, SortYear:
 		return true
 	}
-	return false
+	return m.Genre() != ""
 }
 
 // GroupOf is the group row i folds under, "" for none. A standin folds with

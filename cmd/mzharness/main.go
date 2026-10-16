@@ -83,6 +83,7 @@ func main() {
 	rememberAlt := flag.Int("remember-alt", 0, "start with galagamw's alternative N (1 or 2) remembered as its version")
 	recents := flag.Int("recents", 0, "pretend the first N rows were launched, the last one most recently; turns the Recents view on")
 	viewsOff := flag.String("views-off", "", "views left out of the Y cycle, comma separated names (updated, debut, year, alphabetical, maker, core, favorites, recents); Recents is off unless -recents is given")
+	genreViews := flag.String("genre-views", "", "genre views put into the Y cycle, comma separated names (shmups, fighting, beatemups, runnguns); all off unless given")
 	installed := flag.String("installed", "", "Downloader database ids the card has, comma separated (e.g. distribution_mister,jtcores): Sources starts on installed only and the other sources are hidden")
 	showNonArcade := flag.Bool("show-non-arcade", false, "include console, computer and other cores")
 	mature := flag.String("mature", "show", "Options -> Mature games for rows the data marks \"mat\": show, pixelate or hide")
@@ -153,6 +154,7 @@ func main() {
 		InstalledOnly:  *installed != "",
 		Mature:         *mature,
 		ViewsOff:       viewsOffList(*viewsOff, *recents > 0),
+		GenreViewsOn:   viewsOffList(*genreViews, true),
 		TitleFont:      *titleFont,
 		ListShot:       *listShot,
 		DateFormat:     *dateFormat,

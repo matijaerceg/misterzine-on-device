@@ -161,13 +161,13 @@ for rotation in ([], ["-rot", "left", "-logical"]):
         # a Filters heading
         scenarios.append([*rotation, "-inset", str(inset),
                           "-out", f"out/list-polish-{orientation}-{inset}", "-script",
-                          "type gradius; shot beta-tall; back; back; home; pagedown; right; down*8; shot title-font; left; back; "
-                          "type gradius; shot beta-narrow; back; back; home; pagedown; right; down*8; left; back; "
-                          "type gradius; shot beta-normal; back; back; home; pagedown; right; down*8; right; right; "
-                          "down; shot list-shots; right; back; shot title-shot; back; home; pagedown; right; down*9; left; "
-                          "down; right; shot date-dd-mm; back; shot list-dd-mm; back; home; pagedown; right; down*10; right; shot date-mon-d; back; shot list-mon-d; "
-                          "back; home; pagedown; right; down*10; right; shot date-d-mon; back; shot list-d-mon; back; home; pagedown; right; down*10; right; shot date-yymmdd; back; shot list-yymmdd; "
-                          "back; home; pagedown; right; down*10; left*4; back; "
+                          "type gradius; shot beta-tall; back; back; home; pagedown; right; down*9; shot title-font; left; back; "
+                          "type gradius; shot beta-narrow; back; back; home; pagedown; right; down*9; left; back; "
+                          "type gradius; shot beta-normal; back; back; home; pagedown; right; down*9; right; right; "
+                          "down; shot list-shots; right; back; shot title-shot; back; home; pagedown; right; down*10; left; "
+                          "down; right; shot date-dd-mm; back; shot list-dd-mm; back; home; pagedown; right; down*11; right; shot date-mon-d; back; shot list-mon-d; "
+                          "back; home; pagedown; right; down*11; right; shot date-d-mon; back; shot list-d-mon; back; home; pagedown; right; down*11; right; shot date-yymmdd; back; shot list-yymmdd; "
+                          "back; home; pagedown; right; down*11; left*4; back; "
                           "type galaga; down*2; enter; right*2; shot alt-start; wait 1200; shot alt-mid; wait 1200; shot alt-end; "
                           "down; shot info-page; wait 400; shot info-sliding; wait 2000; shot info-paged; "
                           "back; tab; shot heading; enter; shot heading-open; enter; shot heading-closed; "
@@ -189,6 +189,13 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                       "-out", f"out/recents-{orientation}", "-script",
                       "space*7; shot recents; home; pagedown; shot month-jump; wait 2200; "
                       "back; home; pagedown; right; down*6; shot option; enter; end; shot views-on; enter; back; back; shot off"])
+    # the Genre views row and page, one turned on, and the view it adds to
+    # the cycle after Favorites (the harness catalogue carries no genre
+    # labels, so the view is empty)
+    scenarios.append([*rotation,
+                      "-out", f"out/genre-views-{orientation}", "-script",
+                      "back; home; pagedown; right; down*8; shot option; enter; shot page; enter; shot page-on; back; shot option-on; back; "
+                      "space*7; shot shmups"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):
@@ -309,7 +316,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):
         scenarios.append([*rotation, "-inset", str(inset), "-out", f"out/option-samples-{orientation}-{inset}", "-script",
-                          "back; home; pagedown; right; down*8; shot font; left; shot font-narrow; left; shot font-normal; "
+                          "back; home; pagedown; right; down*9; shot font; left; shot font-narrow; left; shot font-normal; "
                           "home; pagedown*3; right; down*3; shot speed; wait 200; shot speed-moving; down; shot smooth-on; wait 17; shot smooth-moving; left; shot smooth-off; down; shot delay; "
                           "wait 250; shot delay-short; wait 400; shot delay-reverse; down; shot dismissed"])
         # the 10 Hz scroll speed, and the smooth and hold-delay samples at its pace
@@ -334,7 +341,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     # Options -> Layout: the four diagrams in the help box, the chosen one framed
     scenarios.append([*rotation, "-out", f"out/layout-previews-{orientation}", "-script",
-                      "back; home; pagedown; right; down*11; shot list; right; shot split; right; shot picture; right; shot text; down; shot dismissed"])
+                      "back; home; pagedown; right; down*12; shot list; right; shot split; right; shot picture; right; shot text; down; shot dismissed"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):

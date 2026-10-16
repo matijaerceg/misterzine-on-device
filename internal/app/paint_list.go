@@ -149,8 +149,10 @@ type statusBar struct {
 // the one missing. statusViewsShort are the names beside App update:
 // they leave it room even on narrow tate screens.
 var (
-	statusViews      = map[data.SortMode]string{data.SortDebut: "by: MiSTer debut", data.SortYear: "by: original year", data.SortAlphabetical: "by: A-Z", data.SortMaker: "by: manufacturer", data.SortCore: "by: core", data.SortFavorites: "Favorites A-Z", data.SortRecents: "Recents"}
-	statusViewsShort = map[data.SortMode]string{data.SortUpdated: "Build date", data.SortDebut: "MiSTer debut", data.SortYear: "Original year", data.SortAlphabetical: "A-Z", data.SortMaker: "Manufacturer A-Z", data.SortCore: "Core A-Z", data.SortFavorites: "Favorites A-Z", data.SortRecents: "Recents"}
+	statusViews = map[data.SortMode]string{data.SortDebut: "by: MiSTer debut", data.SortYear: "by: original year", data.SortAlphabetical: "by: A-Z", data.SortMaker: "by: manufacturer", data.SortCore: "by: core", data.SortFavorites: "Favorites A-Z", data.SortRecents: "Recents",
+		data.SortShmups: "Shoot 'em ups A-Z", data.SortFighting: "Fighting A-Z", data.SortBeatEmUps: "Beat 'em ups A-Z", data.SortRunNGuns: "Run 'n guns A-Z"}
+	statusViewsShort = map[data.SortMode]string{data.SortUpdated: "Build date", data.SortDebut: "MiSTer debut", data.SortYear: "Original year", data.SortAlphabetical: "A-Z", data.SortMaker: "Manufacturer A-Z", data.SortCore: "Core A-Z", data.SortFavorites: "Favorites A-Z", data.SortRecents: "Recents",
+		data.SortShmups: "Shoot 'em ups A-Z", data.SortFighting: "Fighting A-Z", data.SortBeatEmUps: "Beat 'em ups A-Z", data.SortRunNGuns: "Run 'n guns A-Z"}
 )
 
 func (a *App) statusBar() statusBar {
@@ -164,7 +166,7 @@ func (a *App) statusBar() statusBar {
 	if v, ok := statusViews[a.mode]; ok {
 		s.view = v
 	}
-	if a.filtersActive() || a.mode == data.SortFavorites || a.mode == data.SortRecents {
+	if a.filtersActive() || a.mode == data.SortFavorites || a.mode == data.SortRecents || a.mode.Genre() != "" {
 		s.shown, s.narrow = a.shown, true
 	}
 	return s
@@ -264,6 +266,9 @@ func (a *App) emptyListMessage() string {
 	}
 	if a.mode == data.SortRecents && len(a.cfg.RecentLaunches) == 0 {
 		return "No launches yet"
+	}
+	if a.mode.Genre() != "" && a.query == "" && !a.filtersActive() {
+		return "No " + a.mode.String() + " listed"
 	}
 	if a.query != "" {
 		return "no matches, " + a.btn("B") + ": clear find"

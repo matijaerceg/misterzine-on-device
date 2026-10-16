@@ -66,6 +66,7 @@ type Filters struct {
 	HideMature     bool            `json:"-"`                 // runtime catalogue preference
 	MatchRotation  string          `json:"-"`                 // runtime INI rule; includes system/unknown rows
 	SrcHidden      map[string]bool `json:"-"`                 // runtime rule: sources whose Downloader database the card lacks
+	Genre          string          `json:"-"`                 // runtime rule: a genre view shows this Row.Genre alone
 	ResOff         map[string]bool `json:"res_off,omitempty"` // raw resolution, "" = unknown
 	BaseOff        map[string]bool `json:"base_off,omitempty"`
 	BetaOff        map[string]bool `json:"beta_off,omitempty"` // arcade sub-type: "stable", "beta"
@@ -88,7 +89,7 @@ func (f *Filters) Active() bool {
 	if f == nil {
 		return false
 	}
-	return f.ArcadeOnly || f.HideDeprecated || f.HideMature || f.MatchRotation != "" || len(f.SrcHidden) > 0 || len(f.YearOff) > 0 || len(f.BaseOff) > 0 || len(f.BetaOff) > 0 || len(f.SrcOff) > 0 || len(f.RotOff) > 0 || len(f.PlrOff) > 0 ||
+	return f.ArcadeOnly || f.HideDeprecated || f.HideMature || f.MatchRotation != "" || len(f.SrcHidden) > 0 || f.Genre != "" || len(f.YearOff) > 0 || len(f.BaseOff) > 0 || len(f.BetaOff) > 0 || len(f.SrcOff) > 0 || len(f.RotOff) > 0 || len(f.PlrOff) > 0 ||
 		len(f.ResOff) > 0 || len(f.GenreOff) > 0 || len(f.PatchOff) > 0 || len(f.DirectionsOff) > 0 || len(f.ButtonsOff) > 0 || (f.Install != "" && f.Install != InstallAll) || f.FavOnly || f.Since || f.ROMActive()
 }
 
@@ -120,6 +121,9 @@ func (f *Filters) Why(r *Row, d *Derived, st Status, fav, unseen bool, rom ROMSt
 	}
 	if f.HideMature && r.Mat != 0 {
 		return "a mature game (Options: mature games hidden)"
+	}
+	if f.Genre != "" && r.Genre != f.Genre {
+		return "the " + f.Genre + " view (this genre is " + orUnknown(r.Genre) + ")"
 	}
 	if f.BaseOff[r.Base] {
 		return "Filters -> Type (" + r.Base + " off)"

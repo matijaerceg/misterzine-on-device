@@ -297,6 +297,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		ArcadeIntro:          h.settings.ArcadeIntroPending,
 		ArcadeBack:           h.arcadeBack,
 		ViewsOff:             h.settings.ViewsOff,
+		GenreViewsOn:         h.settings.GenreViewsOn,
 		RecentLaunches:       h.state.Recents,
 		LastSort:             h.settings.LastSort,
 		DefaultSort:          h.settings.DefaultSort,
@@ -1109,6 +1110,7 @@ func (h *host) saveAll(final bool) {
 			h.settings.ArcadeBackAsked = true // answered, either way: never again
 		}
 		h.settings.ViewsOff = h.a.ViewsOff()
+		h.settings.GenreViewsOn = h.a.GenreViewsOn()
 		h.settings.LastSort = h.a.Sort()
 		h.settings.DefaultSort = h.a.DefaultView()
 		h.settings.OpenAtBoot = h.a.OpenAtBoot()

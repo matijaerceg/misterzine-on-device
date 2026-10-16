@@ -55,7 +55,7 @@ func TestCoreGroupsAndOrder(t *testing.T) {
 // The Core view follows Manufacturer in the cycle and is known by value and
 // by name.
 func TestCoreViewIsAView(t *testing.T) {
-	want := []SortMode{SortUpdated, SortDebut, SortYear, SortAlphabetical, SortMaker, SortCore, SortFavorites, SortRecents}
+	want := []SortMode{SortUpdated, SortDebut, SortYear, SortAlphabetical, SortMaker, SortCore, SortFavorites, SortRecents, SortShmups, SortFighting, SortBeatEmUps, SortRunNGuns}
 	if !SortCore.Valid() || !reflect.DeepEqual(ViewOrder, want) {
 		t.Fatalf("core valid %v, views %v", SortCore.Valid(), ViewOrder)
 	}
@@ -64,7 +64,7 @@ func TestCoreViewIsAView(t *testing.T) {
 			t.Errorf("%v named %q parses to %v %v", m, m.Name(), back, ok)
 		}
 	}
-	if SortMode(SortCore+1).Valid() || SortCore.String() != "Core" {
-		t.Fatal("nothing past Core, and Core is its name")
+	if SortMode(SortRunNGuns+1).Valid() || SortCore.String() != "Core" {
+		t.Fatal("nothing past the genre views, and Core is its name")
 	}
 }

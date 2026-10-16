@@ -47,7 +47,8 @@ type Settings struct {
 	RememberSort         bool          `json:"remember_sort"`
 	LastSort             data.SortMode `json:"last_sort"`
 	DefaultSort          data.SortMode `json:"default_sort"`
-	ViewsOff             []string      `json:"views_off"` // Options -> Views: the list orders left out of the Y cycle, by name (updated, debut, year, alphabetical, maker, favorites, recents)
+	ViewsOff             []string      `json:"views_off"`                // Options -> Views: the list orders left out of the Y cycle, by name (updated, debut, year, alphabetical, maker, favorites, recents)
+	GenreViewsOn         []string      `json:"genre_views_on,omitempty"` // Options -> Genre views: the genre views put into the cycle, by name (shmups, fighting, beatemups, runnguns); off unless listed
 	// OpenAtBoot and ReturnAfterGame are carried out by the resident menu
 	// launcher (misterzine launcher watch), which reads this file itself.
 	OpenAtBoot      bool   `json:"open_at_boot"`      // Options -> Open at boot: pick the menu entry once Main's menu is up
@@ -133,14 +134,20 @@ func (s *Settings) Migrate(legacy bool) {
 	}
 	views := []string{} // never nil: an empty set saves as [] and reloads as every view on
 	for _, n := range s.ViewsOff {
-		if _, ok := data.ParseSort(n); ok {
+		if m, ok := data.ParseSort(n); ok && m.Genre() == "" {
 			views = append(views, n)
 		}
 	}
-	if len(views) >= len(data.ViewOrder) {
+	var genres []string
+	for _, n := range s.GenreViewsOn {
+		if m, ok := data.ParseSort(n); ok && m.Genre() != "" {
+			genres = append(genres, n)
+		}
+	}
+	if data.ViewsOn(views, genres) == 0 {
 		views = []string{} // nothing left on: back to every view
 	}
-	s.ViewsOff = views
+	s.ViewsOff, s.GenreViewsOn = views, genres
 	if s.Screensaver == "off" {
 		s.SaverDisabled, s.Screensaver = true, "1"
 	}

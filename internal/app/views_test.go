@@ -54,9 +54,9 @@ func TestViewsCycleSkipsTheOnesOff(t *testing.T) {
 	if a.mode != data.SortDebut {
 		t.Fatal("a view that is off must be refused")
 	}
-	// leaving nothing on is ignored
+	// leaving nothing on is ignored; the genre views stay off
 	a, _ = viewsApp("updated", "debut", "year", "alphabetical", "maker", "core", "favorites", "recents")
-	if a.viewsOnCount() != 8 || a.mode != data.SortUpdated {
+	if a.viewsOnCount() != 8 || a.mode != data.SortUpdated || len(a.GenreViewsOn()) != 0 {
 		t.Fatalf("every view off: %d on, mode %v", a.viewsOnCount(), a.mode)
 	}
 }
@@ -76,7 +76,7 @@ func TestViewsPageTogglesAndKeepsTheLastOne(t *testing.T) {
 	}
 	a.panel.cursor = row
 	tap(platform.KeyEnter)
-	if a.screen != ScreenViews || len(a.panel.entries) != len(data.ViewOrder) {
+	if a.screen != ScreenViews || len(a.panel.entries) != len(a.viewsPageOrder()) {
 		t.Fatalf("Views page: screen %v entries %d", a.screen, len(a.panel.entries))
 	}
 	if e := a.panel.entries[a.panel.cursor]; e.kind != "view" || e.value != "updated" || !e.checked {

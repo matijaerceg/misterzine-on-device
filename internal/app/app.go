@@ -166,9 +166,12 @@ type Config struct {
 	Mature string
 	// ViewsOff names the views Options -> Views left out of the Y cycle
 	// (data.SortMode.Name); a fresh install lists only "recents".
-	ViewsOff    []string
-	LastSort    data.SortMode
-	DefaultSort data.SortMode
+	// GenreViewsOn names the genre views Options -> Genre views put in;
+	// none to start.
+	ViewsOff     []string
+	GenreViewsOn []string
+	LastSort     data.SortMode
+	DefaultSort  data.SortMode
 	// OpenAtBoot and ReturnAfterGame are Options -> Operation switches the
 	// host's resident launcher acts on; both need the launcher enabled.
 	OpenAtBoot      bool
@@ -269,6 +272,7 @@ type App struct {
 	sinceUpdated       int                    // rows rebuilt since the last visit, over the enabled catalogue
 	marks              []int                  // every marker line, by the view position it precedes (marks.go)
 	viewsOff           map[data.SortMode]bool // views left out of the Y cycle (views.go)
+	viewsPage          string                 // the Options row the open ScreenViews page belongs to: "views" or "genre-views"
 
 	screen       Screen
 	cursor       int  // index into view
@@ -368,7 +372,7 @@ func New(cfg Config, ds *data.Dataset, stored *data.SeenRecord) *App {
 		cfg.Versions = map[string]string{}
 	}
 	a := &App{cfg: cfg, body: fonts.Body(), sm: fonts.Small(), narrow: fonts.Narrow(), tall: fonts.NarrowTall(), rot: cfg.Rotation, down: map[platform.Key]bool{}, released: map[platform.Key]time.Time{}, look: DefaultSaverLook, supporters: defaultSupporters()}
-	a.viewsOff = parseViewsOff(cfg.ViewsOff)
+	a.viewsOff = parseViewsOff(cfg.ViewsOff, cfg.GenreViewsOn)
 	a.mode = a.DefaultView()
 	if cfg.RememberSort && a.viewOn(cfg.LastSort) {
 		a.mode = cfg.LastSort
@@ -518,6 +522,7 @@ func (a *App) rebuild() {
 	if a.mode == data.SortFavorites {
 		filters.FavOnly = true
 	}
+	filters.Genre = a.mode.Genre()
 	a.total = len(a.ds.Rows)
 	if len(filters.SrcHidden) > 0 || filters.HideDeprecated || filters.HideMature || filters.ArcadeOnly {
 		a.total = 0

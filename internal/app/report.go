@@ -28,6 +28,7 @@ func (a *App) ReportPart() report.AppPart {
 	if a.mode == data.SortFavorites {
 		filters.FavOnly = true
 	}
+	filters.Genre = a.mode.Genre()
 	p.Effective = fmt.Sprintf("arcade only %v, deprecated hidden %v, mature games %s, filter by rotation %q", filters.ArcadeOnly, filters.HideDeprecated, a.Mature(), filters.MatchRotation)
 	if b, err := json.Marshal(a.filters); err == nil && string(b) != "{}" {
 		p.Saved = string(b)

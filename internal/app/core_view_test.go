@@ -89,7 +89,7 @@ func TestCoreView(t *testing.T) {
 	if e.text != "Views (7 of 8)" || !strings.Contains(e.help, "manufacturer, core, Favorites") {
 		t.Fatalf("Views row %q, help %q", e.text, e.help)
 	}
-	a.openViews()
+	a.openViews("views")
 	if len(a.panel.entries) != 8 || a.panel.entries[5].value != "core" || a.panel.entries[5].text != "Core" || !a.panel.entries[5].checked {
 		t.Fatalf("Views page %+v", a.panel.entries)
 	}
