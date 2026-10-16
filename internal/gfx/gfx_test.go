@@ -193,3 +193,30 @@ func BenchmarkRotateFrame(b *testing.B) {
 		RotateAll(dst, src, RotLeft)
 	}
 }
+
+// The collapse sign is the expand sign's crossbar alone, on the same row and
+// columns, so a closed entry's plus and an open one's minus line up.
+func TestCollapseIsThePlusCrossbar(t *testing.T) {
+	for _, name := range []string{"spleen-6x12.bdf", "spleen-5x8.bdf"} {
+		f := loadFont(t, name)
+		hyphen := string(f.Glyph('-'))
+		f.AddArrows()
+		plus, minus := f.Glyph(Expand[0]), f.Glyph(Collapse[0])
+		bar := -1
+		for y, r := range minus {
+			if r == 0 {
+				continue
+			}
+			if bar >= 0 {
+				t.Fatalf("%s: minus has ink on rows %d and %d", name, bar, y)
+			}
+			bar = y
+		}
+		if bar < 1 || bar >= len(plus)-1 || minus[bar] != plus[bar] || plus[bar-1] == 0 || plus[bar+1] == 0 {
+			t.Fatalf("%s: minus row %d %08b is not the plus's crossbar %v", name, bar, minus[bar], plus)
+		}
+		if string(f.Glyph('-')) != hyphen {
+			t.Fatalf("%s: the hyphen changed", name)
+		}
+	}
+}

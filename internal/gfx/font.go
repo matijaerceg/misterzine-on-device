@@ -250,6 +250,12 @@ const (
 	ChildMark = "\x10"
 	OpenPage  = "\x0f" // northeast arrow: opens another screen/editor
 	Star      = "\x0e" // marks a MisterZine Arcade extra
+	// An entry that holds others, closed and open: the font's plus, and a
+	// minus that is the plus's crossbar alone so the two line up ('-' is a
+	// wider hyphen sitting lower). Not on 0x09-0x0d, which
+	// strings.TrimSpace and friends treat as whitespace.
+	Expand   = "+"
+	Collapse = "\x08"
 )
 
 // SetGlyph installs a glyph (rows top to bottom, MSB = leftmost pixel).
@@ -296,6 +302,9 @@ func (f *Font) AddArrows() {
 	top := (f.H-3)/2 + 1
 	plus[top], plus[top+1], plus[top+2] = 0x20, 0x70, 0x20
 	f.SetGlyph('+', plus)
+	minus := make([]byte, f.H)
+	minus[top+1] = plus[top+1]
+	f.SetGlyph(Collapse[0], minus)
 	// a beta sign: two loops on a stem that reaches below the baseline
 	beta := make([]byte, f.H)
 	if f.H >= 12 {

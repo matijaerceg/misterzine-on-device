@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
+	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
 
@@ -211,5 +212,19 @@ func TestUmbrellaNeedsBeta(t *testing.T) {
 	flat()
 	if a.expanded != nil || strings.HasPrefix(a.CursorKey(), data.GroupKeyPrefix) || a.CursorKey() == "" {
 		t.Fatalf("cursor %q expanded %v after flattening", a.CursorKey(), a.expanded)
+	}
+}
+
+// A closed umbrella shows a plus and an open one a minus, never an arrow,
+// which would read as a pointer at the selected row.
+func TestUmbrellaMarkIsPlusOrMinus(t *testing.T) {
+	if umbrellaMark(false) != gfx.Expand || umbrellaMark(true) != gfx.Collapse {
+		t.Fatalf("marks %q %q", umbrellaMark(false), umbrellaMark(true))
+	}
+	for _, m := range []string{umbrellaMark(false), umbrellaMark(true)} {
+		switch m {
+		case gfx.ArrowRight, gfx.ArrowDown, gfx.ArrowLeft, gfx.ArrowUp, "-":
+			t.Fatalf("mark %q is an arrow or the hyphen", m)
+		}
 	}
 }

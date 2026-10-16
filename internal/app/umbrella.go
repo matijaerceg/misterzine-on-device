@@ -143,7 +143,17 @@ func (a *App) paintCountedTitle(c *gfx.Canvas, x, y, w int, u *data.Group, col r
 	c.Text(x+a.body.Width(s)+a.body.W, y, a.body, count, pal.Muted)
 }
 
-// paintUmbrella draws an umbrella line: the chevron in the star's column,
+// umbrellaMark is the sign in an umbrella's star column: a plus while it is
+// closed, a minus once open. Not an arrow, which reads as a pointer at the
+// selected row.
+func umbrellaMark(open bool) string {
+	if open {
+		return gfx.Collapse
+	}
+	return gfx.Expand
+}
+
+// paintUmbrella draws an umbrella line: the plus or minus in the star's column,
 // the game's name with its core count, and the group's date (the newest
 // build, or the first debut) or the original year, as rows show theirs.
 func (a *App) paintUmbrella(c *gfx.Canvas, r image.Rectangle, pos int, u *data.Group) {
@@ -153,11 +163,7 @@ func (a *App) paintUmbrella(c *gfx.Canvas, r image.Rectangle, pos int, u *data.G
 		c.Fill(r, pal.Surface)
 	}
 	x, y := r.Min.X, r.Min.Y
-	chevron := gfx.ArrowRight
-	if u.Open {
-		chevron = gfx.ArrowDown
-	}
-	c.Text(x, y, a.body, chevron, pal.Muted)
+	c.Text(x, y, a.body, umbrellaMark(u.Open), pal.Muted)
 	x += a.body.W
 	titleCol := pal.Fg
 	if selected {
