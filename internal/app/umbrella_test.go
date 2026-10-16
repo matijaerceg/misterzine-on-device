@@ -160,3 +160,21 @@ func TestUmbrellaTakesNoStar(t *testing.T) {
 	a.all = true
 	a.Paint() // the row and pane draw the umbrella from its members
 }
+
+func TestMemberLinesSitUnderTheirOpenUmbrella(t *testing.T) {
+	a := umbrellaApp(nil)
+	a.SetSort(data.SortUpdated)
+	for pos := range a.view {
+		if a.memberAt(pos) {
+			t.Fatalf("closed umbrella: line %d (%s) counts as a member", pos, a.keyAt(pos))
+		}
+	}
+	a.cursor = 0
+	a.act(platform.KeyEnter)
+	want := map[string]bool{"bub": true, "bub-a": true, "local:buba": true}
+	for pos := range a.view {
+		if got := a.memberAt(pos); got != want[a.keyAt(pos)] {
+			t.Fatalf("open umbrella: line %d (%s) member=%v", pos, a.keyAt(pos), got)
+		}
+	}
+}

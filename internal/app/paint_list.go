@@ -436,6 +436,12 @@ func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {
 		c.Text(x, y, a.body, "*", pal.Accent)
 	}
 	x += fw
+	// a member under its open umbrella starts one glyph in, so it reads as
+	// the umbrella's child; the column keeps its width, the name gives way
+	indent := 0
+	if a.memberAt(pos) {
+		indent = fw
+	}
 	// title
 	st := a.status(i)
 	titleCol := pal.Fg
@@ -456,9 +462,9 @@ func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {
 		// a framed layout motion: the title as it reads at rest, cut by
 		// its column's moving edge
 		col := &gfx.Canvas{RGBA: c.Sub(image.Rect(x, c.Rect.Min.Y, x+tw, c.Rect.Max.Y))}
-		a.paintTitle(col, x, y, fit, d.Title, row.Beta, titleCol)
+		a.paintTitle(col, x+indent, y, fit-indent, d.Title, row.Beta, titleCol)
 	} else {
-		a.paintTitle(c, x, y, tw, d.Title, row.Beta, titleCol)
+		a.paintTitle(c, x+indent, y, tw-indent, d.Title, row.Beta, titleCol)
 	}
 	if l.PictureColumns {
 		return

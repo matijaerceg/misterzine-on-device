@@ -28,6 +28,18 @@ func (a *App) umbrellaAt(pos int) *data.Group {
 	return nil
 }
 
+// memberAt reports whether view line pos is a member shown under its open
+// umbrella: the members follow the umbrella line in order, so pos is one
+// while the nearest umbrella above it is open and pos is within its span.
+func (a *App) memberAt(pos int) bool {
+	for p := pos - 1; p >= 0; p-- {
+		if u := a.umbrellaAt(p); u != nil {
+			return u.Open && pos-p <= len(u.Members)
+		}
+	}
+	return false
+}
+
 // keyAt is the key line pos is remembered by: the row's K, or the
 // umbrella's data.GroupKey.
 func (a *App) keyAt(pos int) string {
