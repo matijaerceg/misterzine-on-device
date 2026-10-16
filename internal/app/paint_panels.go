@@ -598,9 +598,6 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "Launch transition", kind: "launch-transition", vals: []string{"always", "hold Start"}, idx: map[string]int{"always": 0, "hold": 1}[a.LaunchTransition()],
 			help: "Always: every launch plays the cabinet animation. Hold Start (default): a tap launches at once; holding Start plays it. " + a.btn("A") + " previews it."},
 		spacer, group(gfx.SectionControls, "Controls"),
-		{text: "Button labels", kind: "button-labels", vals: buttonLabelValues(), idx: map[string]int{"mister": 0, "xbox": 1, "playstation": 2, "numbers": 3}[a.ButtonLabels()],
-			help: "How the legends name the pad buttons, in MiSTer's A B X Y order as set in its define buttons screen. Xbox and PlayStation names go by position."},
-		a.okButtonRow(),
 		{text: "Menu button", kind: "menu-button", vals: []string{"Options", "quit MisterZine"}, idx: map[bool]int{false: 0, true: 1}[a.MenuButton() == "leave"],
 			help: "What the pad button defined as MiSTer's menu (OSD) button does here: Options (default; held 2 s it quits) or quit at once. Keyboard F12 still quits."},
 		{text: "Scroll speed", kind: "scroll", vals: scrollVals, idx: scrollIdx,
@@ -1265,10 +1262,6 @@ func (a *App) stepValue(d int) bool {
 	case "list-layout":
 		a.cfg.ListLayout = listLayouts[i]
 		a.setRotation(a.rot) // the rows and the pane change shape
-	case "button-labels":
-		a.cfg.ButtonLabels = buttonLabelSets[i]
-	case "ok-button":
-		a.setOKButton([]string{"", "a", "b"}[i])
 	case "page-transitions":
 		a.cfg.TransitionsDisabled = i == 0
 	case "launch-transition":
@@ -1333,6 +1326,9 @@ func (a *App) togglePanel() bool {
 
 	case "controls":
 		a.OpenControls()
+		return true
+	case "controls-role":
+		a.openControlRole()
 		return true
 	case "troubleshooting":
 		a.OpenTroubleshooting()
@@ -1476,7 +1472,7 @@ func (a *App) togglePanel() bool {
 		if !e.header {
 			f.Since = !f.Since
 		}
-	case "page-transitions", "rotation", "follow-rotation", "filter-rotation", "sources", "show-deprecated", "mature", "launcher", "scroll", "smooth-scroll", "hold-delay", "remember-sort", "default-view", "prefetch", "title-font", "list-shot", "date-format", "list-layout", "button-labels", "ok-button":
+	case "page-transitions", "rotation", "follow-rotation", "filter-rotation", "sources", "show-deprecated", "mature", "launcher", "scroll", "smooth-scroll", "hold-delay", "remember-sort", "default-view", "prefetch", "title-font", "list-shot", "date-format", "list-layout":
 		return true // Left/Right pick these
 	case "inset":
 		a.screen = ScreenCalibrate

@@ -172,29 +172,12 @@ func (a *App) OKButtons() map[string]string {
 	return out
 }
 
-// setOKButton is the Options row's choice for the current pad: "" for
-// auto, "a" or "b".
-func (a *App) setOKButton(v string) {
-	p, ok := a.currentPad()
-	if !ok {
-		return
-	}
-	if v == "" {
-		delete(a.cfg.OKButtons, padID(p))
-		return
-	}
-	if a.cfg.OKButtons == nil {
-		a.cfg.OKButtons = map[string]string{}
-	}
-	a.cfg.OKButtons[padID(p)] = v
-}
-
 // okNote says where the pad's OK button comes from, for the tester and the
 // Options hint: MiSTer's definition, or an override, and when MiSTer's
 // MENU OK could not be followed, why.
 func (a *App) okNote(p support.Pad) string {
 	if _, auto := a.okButton(p); !auto {
-		return "set in Options"
+		return "saved choice"
 	}
 	if !p.Mapped {
 		return "Linux default layout"
@@ -223,64 +206,4 @@ func (a *App) okLine(p support.Pad) string {
 	}
 	ok, _ := a.okButton(p)
 	return "OK button: " + a.label(ok) + " (" + a.okNote(p) + ")"
-}
-
-// okButtonRow is the Options row. It is muted with the reason when no pad
-// has pressed anything yet, when the current pad comes through MiSTer's
-// translation, or when its A and B are one button.
-func (a *App) okButtonRow() panelEntry {
-	row := panelEntry{text: "OK button", kind: "ok-button"}
-	p, ok := a.currentPad()
-	if !ok {
-		row.vals, row.disabled = []string{"no pad used yet"}, true
-		row.help = "Which pad button confirms, set per pad with the pad in hand. Auto follows the MENU OK in its MiSTer definition. Press a pad button first."
-		return row
-	}
-	name := shortName(p.Name, 14)
-	if profile := a.controlProfile(padID(p)); len(profile.Bindings) > 0 {
-		row.vals, row.disabled = []string{"see Button mapping"}, true
-		row.help = "This pad has custom actions. Change Open / confirm and Back on its Button mapping page."
-		return row
-	}
-	if !p.Direct {
-		row.vals, row.disabled = []string{"via MiSTer"}, true
-		row.help = name + ": A or B is not in its MiSTer definition, so its buttons come through MiSTer's translation. Define it in the MiSTer menu."
-		if !p.Mapped {
-			row.help = name + ": not defined in MiSTer and no standard gamepad layout, so it comes through MiSTer's translation. Define it in the MiSTer menu."
-		}
-		return row
-	}
-	if sameAB(p) {
-		row.vals, row.disabled = []string{"A = B"}, true
-		row.help = name + ": A and B are the same button in its MiSTer definition, so it has no back button here. Define it again in the MiSTer menu."
-		return row
-	}
-	auto := "A"
-	if p.OK == "B" {
-		auto = "B"
-	}
-	from := "MiSTer"
-	if !p.Mapped {
-		from = "Linux"
-	}
-	row.vals = []string{"Auto from " + from + " (" + a.label(auto) + ")", a.label("A"), a.label("B")}
-	switch a.cfg.OKButtons[padID(p)] {
-	case "a":
-		row.idx = 1
-	case "b":
-		row.idx = 2
-	}
-	if !p.Mapped {
-		row.help = name + ": not defined in MiSTer; the Linux layout puts OK on the bottom button, so Auto is " + a.label(auto) + ". " + a.label("A") + " or " + a.label("B") + " overrides, for this pad only."
-		return row
-	}
-	why := "Auto follows the MENU OK in its MiSTer definition."
-	switch {
-	case p.OK == "":
-		why = "Its MiSTer definition sets no MENU OK, so Auto is " + a.label("A") + "."
-	case p.OK != "A" && p.OK != "B":
-		why = "Its MiSTer MENU OK is on " + a.label(p.OK) + ", so Auto is " + a.label("A") + "."
-	}
-	row.help = name + ": " + why + " " + a.label("A") + " or " + a.label("B") + " overrides, for this pad only. Change it with the pad in hand."
-	return row
 }

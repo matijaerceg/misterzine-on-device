@@ -49,6 +49,10 @@ jobs:
         run: python3 tools/render_all.py
       - name: Verify golden renders
         run: python3 tools/render_golden.py out testdata/render_golden.json
+      - name: Button mapping renders
+        run: python3 tools/render_controls.py
+      - name: Verify Button mapping golden renders
+        run: python3 tools/render_golden.py out-controls testdata/render_golden_controls.json
       - uses: actions/upload-artifact@v4
         with:
           name: renders

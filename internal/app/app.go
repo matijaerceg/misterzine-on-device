@@ -197,7 +197,8 @@ type Config struct {
 	// ButtonLabels names the pad buttons in the legends: "mister" (default:
 	// A B X Y), "xbox", "playstation" or "numbers" (see buttons.go).
 	ButtonLabels string
-	// OKButtons is Options -> OK button per pad, keyed by the pad's
+	// OKButtons is the saved OK button choice per pad (the old Options row,
+	// now replaced by Button mapping), keyed by the pad's
 	// vendor_product as in MiSTer's map file name: "a" or "b" overrides
 	// the MENU OK choice read from that map; absent means auto (okbutton.go).
 	OKButtons map[string]string

@@ -17,7 +17,7 @@ func TestRawIdentitySeparatesSameNamedPads(t *testing.T) {
 	if p, ok := a.currentPad(); !ok || p.Vendor != 3 {
 		t.Fatal("Options follows wrong controller", p)
 	}
-	a.setOKButton("a")
+	a.cfg.OKButtons = map[string]string{padID(pads[1]): "a"}
 	if a.cfg.OKButtons["0003_0004"] != "a" || a.cfg.OKButtons["0001_0002"] != "" {
 		t.Fatal("changed wrong profile")
 	}

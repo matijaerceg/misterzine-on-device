@@ -1,11 +1,10 @@
-# Controller setup and check (beta)
+# Controller setup and check
 
-Enable **Show beta features**, then open **Options → Controls → Button mapping**.
-Controller setup is a free beta: no supporter code is required. Public-source
-builds retain inert hooks; the implementation is provided by the private overlay.
-These mappings affect MisterZine only, never MiSTer's global settings or games.
-With beta enabled, Button mapping replaces the older OK button and Button labels
-options. Turning beta off restores those options and their saved preferences.
+Open **Options → Controls → Button mapping**. It is free for everyone, with no
+beta switch or supporter code. These mappings affect MisterZine only, never
+MiSTer's global settings or games. Button mapping replaces the older OK button
+and Button labels options; a choice saved in either still applies to a pad until
+you map that pad here.
 
 ## Six basic controls
 
@@ -96,8 +95,7 @@ The screensaver stays out of setup/checking and gets a fresh idle period on exit
 Existing valid profiles remain familiar. Old custom names, label styles and
 OK/Back preferences retain their appearance and behavior when converted. Names
 belong to physical inputs and survive action changes. The old separate naming,
-preset, and OK-button screens are replaced by this flow while controller beta is
-enabled. With beta off, the global Button labels and OK button options return.
+preset, and OK-button screens are replaced by this flow.
 
 Existing MiSTer Menu chords remain compatible. Assigning an explicit Menu input
 replaces that inherited chord. The table identifies an inherited chord separately.
@@ -106,8 +104,7 @@ through MiSTer's controller setup; support is not universal.
 
 Profiles live in `/media/fat/misterzine/controls.json`. Back up this file before
 resetting or rolling back a build. New fields are versioned; incompatible or
-damaged files are preserved rather than overwritten. Turning beta features off
-retains saved profiles but disables their mappings and labels.
+damaged files are preserved rather than overwritten.
 
 Physical identity uses a hardware identifier when available, otherwise the USB
 connection path. Moving a port-backed device can produce a new invitation.

@@ -6,3 +6,4 @@ out/
 .claude/
 /CLAUDE.md
 __pycache__/
+out-controls/

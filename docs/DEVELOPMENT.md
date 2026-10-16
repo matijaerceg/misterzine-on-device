@@ -157,17 +157,15 @@ debug argument, and restart. Removing the file cannot stop an already running se
 
 ### Controller setup hooks
 
-The controller beta is supplied by the private overlay. The public side exposes
-raw event identity (`DeviceID`, `Node`, `Direct`, `Keyboard`, `Cancelled`), device
-discovery, a panel translation-suppression hook, and an inert Controls UI/host
-contract. `internal/controls` holds only the shared profile data types. Without
-the overlay, the screen and persistence hooks are no-ops and controls.json is
-never read or written. See [Button mapping](BUTTON_MAPPING.md) for the user flow
-and hardware checklist. The overlay's tests and `tools/render_controls.py`
-exercise capture, rollback, persistence and both orientations.
+Button mapping lives in `internal/app/controls*.go`, with its saved profiles in
+`internal/controls` and the host side (controls.json, panel suppression) in
+`cmd/misterzine/controls.go`. Input events carry raw identity (`DeviceID`,
+`Node`, `Direct`, `Keyboard`, `Cancelled`). See [Button mapping](BUTTON_MAPPING.md)
+for the user flow and hardware checklist. Its tests and `tools/render_controls.py`
+(checked against `testdata/render_golden_controls.json` in CI) exercise capture,
+rollback, persistence and both orientations.
 
-The harness supports `-controls` with `-show-beta -access-month 202610` in an
-assembled build. `raw 0 307` taps raw button 307 on the first fixture;
+The harness opens it with `-controls`. `raw 0 307` taps raw button 307 on the first fixture;
 `rawpress`/`rawrelease` supply individual edges. Device 0 is an Xbox pad and
 device 1 is a keyboard encoder. `unplug` removes the fixtures. Ordinary keyboard
 script commands remain independent recovery input. These fixtures never open

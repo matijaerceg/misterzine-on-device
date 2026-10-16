@@ -23,7 +23,7 @@ func TestOptionsGroups(t *testing.T) {
 		{gfx.SectionData, "Data", []string{"refresh", "update", "update-result", "rescan", "rom-report", "prefetch", "clearimg"}},
 		{gfx.SectionList, "List", []string{"sources", "show-non-arcade", "show-deprecated", "mature", "filter-rotation", "views", "remember-sort", "default-view", "title-font", "list-shot", "date-format", "list-layout"}},
 		{gfx.SectionDisplay, "Display", []string{"follow-rotation", "rotation", "saver-options", "inset", "canvas", "page-transitions", "launch-transition"}},
-		{gfx.SectionControls, "Controls", []string{"button-labels", "ok-button", "menu-button", "scroll", "smooth-scroll", "hold-delay"}},
+		{gfx.SectionControls, "Controls", []string{"controls", "menu-button", "scroll", "smooth-scroll", "hold-delay"}},
 		{gfx.SectionOperation, "Operation", []string{"launcher", "open-at-boot", "return-after-game", "exit-chord", "your-access", "show-beta-features", "troubleshooting", "credits", "quit"}},
 	}
 	var got []struct {

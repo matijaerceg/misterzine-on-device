@@ -227,10 +227,10 @@ filter choices are saved.
 
 ## Controls
 
-The experimental [Button mapping screen](BUTTON_MAPPING.md) requires six basic
+The [Button mapping screen](BUTTON_MAPPING.md) (Options -> Controls) asks for six basic
 assignments for controllers when first used and on manual entry, then combines input checking, action changes
 and button naming in one table. Keyboard devices can retain typing or act as
-arcade controls. Enable Show beta features; no supporter code is required.
+arcade controls. It is free and needs no beta switch or code.
 
 | Pad | Keyboard | List | Details | Artwork | Filters | Options |
 |---|---|---|---|---|---|---|
@@ -245,8 +245,9 @@ arcade controls. Enable Show beta features; no supporter code is required.
 | Select (held) | | + Y: Layout, + X: Art type, + Left/Right: rotation, + A: favorite | | | | |
 | Menu | | Options; held 2 s: quit MisterZine (or quit at once: Options -> Menu button) | Options | Options | Options | back to the screen it was opened over |
 
-A, B, X and Y are MiSTer's names from its define buttons screen. Options ->
-Button labels can print them as Xbox letters, PlayStation symbols or numbers.
+A, B, X and Y are MiSTer's names from its define buttons screen. Button
+mapping can rename them per pad, for example as Xbox letters, PlayStation
+symbols or numbers.
 
 A pad that has been defined in the MiSTer menu is read by MisterZine
 directly, slot by slot: D-pad, A B X Y, L R, Start, and the stick you gave
@@ -451,7 +452,7 @@ lines: Sources, Filter by rotation, Views (with Remember last view and its
 conditional Default view beneath it), Title font,
 Art type, Date format, Layout), Display (a monitor: rotation,
 screensaver delay, style, brightness and info, safe zone, HDMI picture), Controls
-(an arcade stick: Button labels, Button mapping, Menu button, Scroll speed, Hold
+(an arcade stick: Button mapping, Menu button, Scroll speed, Hold
 delay) and Operation (sliders: the main menu shortcut, Open at boot, Return
 after game, Exit chord). Troubleshooting, Credits and Quit sit below the sections and
 are never hidden by collapsing one. Only Data starts expanded. Select a
@@ -657,20 +658,14 @@ screenshots match, lettering runs instead and the Preview help explains why.
   Hold Start (default) launches at once on a tap and plays the animation only
   while Start is held. A previews it from the row.
   Safe-zone margins still apply.
-- **Button labels (beta off):** how the legends name the pad's face buttons, in MiSTer's
-  A B X Y order: A B X Y (default), B A Y X for an Xbox-lettered pad mapped by
-  position, the PlayStation circle, cross, triangle and square by position, or
-  1 2 3 4 in MiSTer's define order. Only the names change. Which physical
-  button MiSTer calls A, B, X or Y comes from its define buttons screen; this
-  guide uses those names.
-- **Button mapping (beta):** six basic controls, then a controller-check table.
+- **Button mapping:** six basic controls, then a controller-check table.
   Press an input to identify it; hold for one second to change its action or OSD name.
   New keyboards can instead be accepted for ordinary typing without remapping.
-  Replaces the separate OK button and Button labels options while beta is on.
-  With beta off, those options return with their previous preferences.
+  It replaces the old OK button and Button labels options. A label set or OK
+  button saved with those still applies to a pad until you map it here.
   Choosing the paired action (OK/Back, Left/Right, Up/Down) previews an explicit
   swap between two tested buttons before saving both changes together.
-- **Keyboard use (beta):** shown when a keyboard is connected. Choose Keyboard
+- **Keyboard use:** shown when a keyboard is connected. Choose Keyboard
   to let unassigned keys type, or Controller / pad to keep them from typing.
   Existing assignments stay intact; an unconfigured controller needs six basics.
 - **Menu button:** what the pad button you defined as MiSTer's menu (OSD)

@@ -213,14 +213,15 @@ for rotation in ([], ["-rot", "left", "-logical"]):
 
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
-    # Options -> Button labels: PlayStation symbols on the list, Details and
-    # Filters legends, the option row, then numbers on the list and a search
-    # miss, and the Xbox set's swapped letters
+    # The saved button_labels setting (its Options row gave way to Button
+    # mapping): PlayStation symbols on the list, Details and Filters legends,
+    # numbers on the list and a search miss, and the Xbox set's swapped letters
     scenarios.append([*rotation, "-button-labels", "playstation",
                       "-out", f"out/button-labels-{orientation}", "-script",
-                      "shot list; enter; shot details; back; tab; shot filters; back; "
-                      "back; home; pagedown*3; right; down; shot option; right; shot option-numbers; back; shot list-numbers; "
-                      "type xyz; shot empty-numbers; back; back; home; pagedown*3; right; down; left*3; shot option-mister; left; back; shot list-mister"])
+                      "shot list; enter; shot details; back; tab; shot filters"])
+    scenarios.append([*rotation, "-button-labels", "numbers",
+                      "-out", f"out/button-labels-numbers-{orientation}", "-script",
+                      "shot list-numbers; type xyz; shot empty-numbers"])
     scenarios.append([*rotation, "-button-labels", "xbox",
                       "-out", f"out/button-labels-xbox-{orientation}", "-script", "shot list; enter; shot details"])
 for rotation in ([], ["-rot", "left", "-logical"]):
@@ -231,11 +232,6 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                       "-out", f"out/pad-test-{orientation}", "-script",
                       "back; home; pagedown*4; right; end; up*2; enter; down; shot menu; enter; shot empty; enter; space; tab; start; shot presses; "
                       "press back; wait 1000; shot leave-hold; release back; hold back 2200; shot left"])
-    # Options -> OK button with the defined pad (MENU OK on B) as the current
-    # pad: auto, the A override, the B override, and back to auto
-    scenarios.append([*rotation, "-support-report", "testdata/support-controller.json",
-                      "-out", f"out/ok-button-{orientation}", "-script",
-                      "back; home; pagedown*3; right; down*2; shot option; right; shot option-a; right; shot option-b; left*2; shot option-auto"])
 for canvas in ("360x270", "400x300"):
     for rotation in ([], ["-rot", "left", "-logical"]):
         orientation = "t" if rotation else "h"
@@ -306,7 +302,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     scenarios.append([*rotation,
                       "-out", f"out/menu-{orientation}", "-script",
                       "menu; shot options; menu; shot list; enter; menu; shot options-from-details; "
-                      "home; pagedown*3; right; down*3; shot option-row; right; shot option-leave; left; back; shot details-back; "
+                      "home; pagedown*3; right; down*2; shot option-row; right; shot option-leave; left; back; shot details-back; "
                       "back; tab; down*2; menu; shot options-over-filters; back; shot filters-back; "
                       "press menu; wait 700; shot menu-hint; wait 900; shot menu-hold; release menu; shot menu-released; back; back"])
 for rotation in ([], ["-rot", "left", "-logical"]):
@@ -314,11 +310,11 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     for inset in (15, 40):
         scenarios.append([*rotation, "-inset", str(inset), "-out", f"out/option-samples-{orientation}-{inset}", "-script",
                           "back; home; pagedown; right; down*8; shot font; left; shot font-narrow; left; shot font-normal; "
-                          "home; pagedown*3; right; down*4; shot speed; wait 200; shot speed-moving; down; shot smooth-on; wait 17; shot smooth-moving; left; shot smooth-off; down; shot delay; "
+                          "home; pagedown*3; right; down*3; shot speed; wait 200; shot speed-moving; down; shot smooth-on; wait 17; shot smooth-moving; left; shot smooth-off; down; shot delay; "
                           "wait 250; shot delay-short; wait 400; shot delay-reverse; down; shot dismissed"])
         # the 10 Hz scroll speed, and the smooth and hold-delay samples at its pace
         scenarios.append([*rotation, "-inset", str(inset), "-out", f"out/scroll-{orientation}-{inset}", "-script",
-                          "back; home; pagedown*3; right; down*4; left*2; shot speed-10; wait 200; shot speed-10-moving; "
+                          "back; home; pagedown*3; right; down*3; left*2; shot speed-10; wait 200; shot speed-10-moving; "
                           "down; wait 50; shot smooth-moving; down; wait 400; shot delay-moving"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"

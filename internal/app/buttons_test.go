@@ -7,7 +7,6 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/fonts"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
-	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
 
 func TestButtonLabelSets(t *testing.T) {
@@ -45,9 +44,6 @@ func TestButtonLabelSets(t *testing.T) {
 				t.Errorf("%s: %q became %q", set, same, got)
 			}
 		}
-		if len(buttonLabelValue(set)) != 7 {
-			t.Errorf("%s: value %q is not four cells with gaps", set, buttonLabelValue(set))
-		}
 	}
 	// the PlayStation symbols exist in every font at one cell each
 	for name, f := range map[string]*gfx.Font{"body": fonts.Body(), "small": fonts.Small(), "narrow": fonts.Narrow(), "tall": fonts.NarrowTall()} {
@@ -65,40 +61,5 @@ func TestButtonLabelSets(t *testing.T) {
 				t.Errorf("%s font: glyph %x is %d px wide", name, g[0], f.Width(g))
 			}
 		}
-	}
-}
-
-func TestButtonLabelsOption(t *testing.T) {
-	now := time.Date(2026, 9, 12, 12, 0, 0, 0, time.UTC)
-	rows := []data.Row{{Base: "Arcade", K: "a", Title: "Alpha", Updated: "2026-09-07"}}
-	a := New(Config{PhysW: 320, PhysH: 240, Now: func() time.Time { return now }}, data.Ingest(rows, "", now), nil)
-	a.openPanel(ScreenOptions)
-	found := false
-	expandOptionsForTest(a)
-	for i, e := range a.panel.entries {
-		if e.kind == "button-labels" {
-			a.panel.cursor, found = i, true
-			if e.vals[e.idx] != "A B X Y" {
-				t.Fatalf("default value %q", e.vals[e.idx])
-			}
-		}
-	}
-	if !found {
-		t.Fatal("no Button labels row")
-	}
-	for _, want := range []struct{ set, value, back string }{
-		{"xbox", "B A Y X", "A"}, {"playstation", gfx.Circle + " " + gfx.Cross + " " + gfx.Triangle + " " + gfx.Square, gfx.Cross}, {"numbers", "1 2 3 4", "2"},
-	} {
-		a.actPanel(platform.KeyRight)
-		e := a.panel.entries[a.panel.cursor]
-		if a.ButtonLabels() != want.set || e.vals[e.idx] != want.value {
-			t.Fatalf("set %q value %q, want %q %q", a.ButtonLabels(), e.vals[e.idx], want.set, want.value)
-		}
-		if got := a.btn("B"); got != want.back {
-			t.Fatalf("%s: B prints as %q", want.set, got)
-		}
-	}
-	if a.actPanel(platform.KeyRight) {
-		t.Fatal("no set past the last")
 	}
 }
