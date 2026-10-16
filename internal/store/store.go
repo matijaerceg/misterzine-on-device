@@ -48,7 +48,7 @@ type Settings struct {
 	LastSort             data.SortMode `json:"last_sort"`
 	DefaultSort          data.SortMode `json:"default_sort"`
 	ViewsOff             []string      `json:"views_off"`                // Options -> Views: the list orders left out of the Y cycle, by name (updated, debut, year, alphabetical, maker, favorites, recents)
-	GenreViewsOn         []string      `json:"genre_views_on,omitempty"` // Options -> Genre views: the genre views put into the cycle, by name (shmups, fighting, beatemups, runnguns); off unless listed
+	GenreViewsOn         []string      `json:"genre_views_on,omitempty"` // Options -> Genre views: the genre views put into the cycle, by name (shmups, fighting, beatemups, runnguns, platformers and so on, see data.GenreViews); off unless listed
 	// OpenAtBoot and ReturnAfterGame are carried out by the resident menu
 	// launcher (misterzine launcher watch), which reads this file itself.
 	OpenAtBoot      bool   `json:"open_at_boot"`      // Options -> Open at boot: pick the menu entry once Main's menu is up

@@ -149,11 +149,17 @@ type statusBar struct {
 // the one missing. statusViewsShort are the names beside App update:
 // they leave it room even on narrow tate screens.
 var (
-	statusViews = map[data.SortMode]string{data.SortDebut: "by: MiSTer debut", data.SortYear: "by: original year", data.SortAlphabetical: "by: A-Z", data.SortMaker: "by: manufacturer", data.SortCore: "by: core", data.SortFavorites: "Favorites A-Z", data.SortRecents: "Recents",
-		data.SortShmups: "Shoot 'em ups A-Z", data.SortFighting: "Fighting A-Z", data.SortBeatEmUps: "Beat 'em ups A-Z", data.SortRunNGuns: "Run 'n guns A-Z"}
-	statusViewsShort = map[data.SortMode]string{data.SortUpdated: "Build date", data.SortDebut: "MiSTer debut", data.SortYear: "Original year", data.SortAlphabetical: "A-Z", data.SortMaker: "Manufacturer A-Z", data.SortCore: "Core A-Z", data.SortFavorites: "Favorites A-Z", data.SortRecents: "Recents",
-		data.SortShmups: "Shoot 'em ups A-Z", data.SortFighting: "Fighting A-Z", data.SortBeatEmUps: "Beat 'em ups A-Z", data.SortRunNGuns: "Run 'n guns A-Z"}
+	statusViews      = map[data.SortMode]string{data.SortDebut: "by: MiSTer debut", data.SortYear: "by: original year", data.SortAlphabetical: "by: A-Z", data.SortMaker: "by: manufacturer", data.SortCore: "by: core", data.SortFavorites: "Favorites A-Z", data.SortRecents: "Recents"}
+	statusViewsShort = map[data.SortMode]string{data.SortUpdated: "Build date", data.SortDebut: "MiSTer debut", data.SortYear: "Original year", data.SortAlphabetical: "A-Z", data.SortMaker: "Manufacturer A-Z", data.SortCore: "Core A-Z", data.SortFavorites: "Favorites A-Z", data.SortRecents: "Recents"}
 )
+
+// the genre views read "Shoot 'em ups A-Z" and so on in both
+func init() {
+	for _, m := range data.GenreViews {
+		statusViews[m] = m.String() + " A-Z"
+		statusViewsShort[m] = m.String() + " A-Z"
+	}
+}
 
 func (a *App) statusBar() statusBar {
 	if a.query != "" {

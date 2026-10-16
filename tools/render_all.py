@@ -189,12 +189,12 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                       "-out", f"out/recents-{orientation}", "-script",
                       "space*7; shot recents; home; pagedown; shot month-jump; wait 2200; "
                       "back; home; pagedown; right; down*6; shot option; enter; end; shot views-on; enter; back; back; shot off"])
-    # the Genre views row and page, one turned on, and the view it adds to
-    # the cycle after Favorites (the harness catalogue carries no genre
-    # labels, so the view is empty)
+    # the Genre views row and page (fifteen rows, scrolled to its end), one
+    # turned on, and the view it adds to the cycle after Favorites (the
+    # harness catalogue carries no genre labels, so the view is empty)
     scenarios.append([*rotation,
                       "-out", f"out/genre-views-{orientation}", "-script",
-                      "back; home; pagedown; right; down*8; shot option; enter; shot page; enter; shot page-on; back; shot option-on; back; "
+                      "back; home; pagedown; right; down*8; shot option; enter; shot page; end; shot page-end; home; enter; shot page-on; back; shot option-on; back; "
                       "space*7; shot shmups"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"

@@ -73,8 +73,16 @@ func (a *App) mapControlEvent(ev platform.Event) platform.Event {
 			return ev
 		}
 		if id := p.Inputs[ev.Code]; id != "" {
+			// A typing keyboard's profile that restates a key's keyboard
+			// meaning (Space as Y, the default) keeps the key's text, so
+			// Space still types once a search has begun (Handle). A
+			// Logitech receiver's keyboard and Consumer Control nodes share
+			// one identity, so a profile set up on either covers both.
+			typed := ev.Keyboard && !p.Panel && controls.Key(id) == ev.Key
 			ev.Key = controls.Key(id)
-			ev.Text = 0
+			if !typed {
+				ev.Text = 0
+			}
 			ev.ObservationOnly = false
 			return ev
 		}

@@ -575,7 +575,7 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "Remember last view", kind: "remember-sort", child: true, vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.RememberSort()],
 			help: "On: reopen in the last view used. Off: use Default view. Takes effect next time MisterZine opens."},
 		{text: "Genre views (" + a.genreViewsSummary() + ")", kind: "genre-views", opensPage: true,
-			help: "Extra views of one genre each, A-Z: Shoot 'em ups, Fighting, Beat 'em ups, Run 'n guns. " + a.btn("Y") + " reaches the ones on after Recents. " + a.btn("A") + " opens the list."},
+			help: "Extra views of one genre each, A-Z: Shoot 'em ups, Fighting, Platformers, Racing and so on. " + a.btn("Y") + " reaches the ones on after Recents. " + a.btn("A") + " opens the list."},
 		{text: "Title font", kind: "title-font", vals: []string{"normal", "narrow", "narrow tall"}, idx: map[string]int{"normal": 0, "narrow": 1, "tall": 2}[a.TitleFont()],
 			help: "Narrow fonts fit a third more title; tall (default) matches the body font height. Normal: body font."},
 		{text: "Art type", kind: "list-shot", vals: []string{"gameplay", "title"}, idx: map[string]int{"gameplay": 0, "title": 1}[a.ListShot()],
@@ -867,8 +867,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			}
 			value := e.vals[e.idx]
 			if e.kind == "default-view" && font.Width(e.label()+" "+la+" "+value+" "+ra) > edge-inner.Min.X-2 {
-				value = map[data.SortMode]string{data.SortUpdated: "Updated", data.SortDebut: "Debut", data.SortYear: "Year", data.SortAlphabetical: "A-Z", data.SortMaker: "Maker", data.SortCore: "Core", data.SortFavorites: "Favorites", data.SortRecents: "Recents",
-					data.SortShmups: "Shmups", data.SortFighting: "Fighting", data.SortBeatEmUps: "Beat 'em ups", data.SortRunNGuns: "Run 'n guns"}[a.DefaultView()]
+				value = shortViewLabel(a.DefaultView())
 			}
 
 			cells := 0
@@ -1636,4 +1635,14 @@ func (a *App) saverResValues() []string {
 		}
 	}
 	return values
+}
+
+// shortViewLabel names a view when the Default view row's value must be
+// shorter than viewLabels; a genre view keeps its label but Shoot 'em ups.
+func shortViewLabel(m data.SortMode) string {
+	if s, ok := map[data.SortMode]string{data.SortUpdated: "Updated", data.SortDebut: "Debut", data.SortYear: "Year", data.SortAlphabetical: "A-Z", data.SortMaker: "Maker", data.SortCore: "Core", data.SortFavorites: "Favorites", data.SortRecents: "Recents",
+		data.SortShmups: "Shmups"}[m]; ok {
+		return s
+	}
+	return m.String()
 }

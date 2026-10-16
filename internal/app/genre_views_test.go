@@ -142,7 +142,62 @@ func TestGenreViewListsItsGenreAZ(t *testing.T) {
 	}
 }
 
-// Options -> List -> Genre views is a checkbox page of the four, counted on
+// genreViewLabels is the Genre views page top to bottom, which is also the
+// order Y walks the views on after Recents.
+var genreViewLabels = []string{"Shoot 'em ups", "Fighting", "Beat 'em ups", "Run 'n guns", "Platformers", "Arena shooters", "Fixed shooters", "Rail shooters",
+	"Light gun", "Racing", "Maze", "Puzzle", "Sports", "Tabletop & quiz", "Other"}
+
+// Every catalogue genre has a view: its settings name, the genre label it
+// matches exactly, its page label and its top-bar name, and the view lists
+// that genre alone.
+func TestEveryGenreHasAView(t *testing.T) {
+	table := []struct{ name, genre, label string }{
+		{"shmups", "Shoot 'em up", "Shoot 'em ups"}, {"fighting", "Fighting", "Fighting"}, {"beatemups", "Beat 'em up", "Beat 'em ups"}, {"runnguns", "Run 'n gun", "Run 'n guns"},
+		{"platformers", "Platformer", "Platformers"}, {"arenashooters", "Arena shooter", "Arena shooters"}, {"fixedshooters", "Fixed shooter", "Fixed shooters"}, {"railshooters", "Rail shooter", "Rail shooters"},
+		{"lightgun", "Light gun", "Light gun"}, {"racing", "Racing", "Racing"}, {"maze", "Maze", "Maze"}, {"puzzle", "Puzzle", "Puzzle"}, {"sports", "Sports", "Sports"},
+		{"tabletopquiz", "Tabletop & quiz", "Tabletop & quiz"}, {"other", "Other", "Other"},
+	}
+	if len(data.GenreViews) != len(table) || len(genreViewLabels) != len(table) {
+		t.Fatalf("%d genre views, want %d", len(data.GenreViews), len(table))
+	}
+	clock := time.Date(2026, 10, 16, 12, 0, 0, 0, time.UTC)
+	var rows []data.Row
+	var names []string
+	for i, tc := range table {
+		rows = append(rows, data.Row{K: tc.name, Title: string(rune('A'+i)) + " " + tc.genre, Base: "Arcade", Genre: tc.genre, Updated: "2026-01-01", Date: "2020-01-01"})
+		names = append(names, tc.name)
+	}
+	rows = append(rows, data.Row{K: "none", Title: "No genre", Base: "Arcade", Updated: "2026-01-01", Date: "2020-01-01"})
+	a := New(Config{PhysW: 320, PhysH: 240, ViewsOff: []string{"recents"}, GenreViewsOn: names, Now: func() time.Time { return clock }}, data.Ingest(rows, "h", clock), nil)
+	for i, tc := range table {
+		m := data.GenreViews[i]
+		if m.Name() != tc.name || m.Genre() != tc.genre || m.String() != tc.label || viewLabels[m] != tc.label || genreViewLabels[i] != tc.label || !m.Alphabetical() || !m.Valid() {
+			t.Errorf("%d: name %q genre %q label %q (page %q)", i, m.Name(), m.Genre(), m.String(), viewLabels[m])
+		}
+		if back, ok := data.ParseSort(tc.name); !ok || back != m {
+			t.Errorf("%q parses to %v %v", tc.name, back, ok)
+		}
+		a.SetSort(m)
+		if got := strings.Join(viewKeys(a), " "); got != tc.name || a.statusBar().view != tc.label+" A-Z" || statusViewsShort[m] != tc.label+" A-Z" {
+			t.Errorf("%s view lists %q, top bar %q", tc.name, got, a.statusBar().view)
+		}
+	}
+	// the Y cycle walks them in page order after Favorites
+	a.SetSort(data.SortFavorites)
+	for _, m := range data.GenreViews {
+		a.Handle(platform.Event{Key: platform.KeySpace, Pressed: true, At: clock})
+		a.Handle(platform.Event{Key: platform.KeySpace, Pressed: false, At: clock})
+		if a.mode != m {
+			t.Fatalf("Y reached %v, want %v", a.mode, m)
+		}
+	}
+	// the first four keep their saved values; the rest follow in order
+	if int(data.SortShmups) != 8 || int(data.SortRunNGuns) != 11 || int(data.SortPlatformers) != 12 || int(data.SortOther) != 22 || data.SortMode(23).Valid() {
+		t.Fatalf("values: shmups %d runnguns %d platformers %d other %d", data.SortShmups, data.SortRunNGuns, data.SortPlatformers, data.SortOther)
+	}
+}
+
+// Options -> List -> Genre views is a checkbox page of the fifteen, counted on
 // its row and kept off the Views page; turning the current one off moves
 // the list to the next view on, and the choice persists by name.
 func TestGenreViewsPage(t *testing.T) {
@@ -158,7 +213,7 @@ func TestGenreViewsPage(t *testing.T) {
 			viewsRow = i
 		}
 	}
-	if row < 0 || a.panel.entries[row].text != "Genre views (0 of 4)" || viewsRow < 0 || a.panel.entries[viewsRow].text != "Views (7 of 8)" {
+	if row < 0 || a.panel.entries[row].text != "Genre views (0 of 15)" || viewsRow < 0 || a.panel.entries[viewsRow].text != "Views (7 of 8)" {
 		t.Fatalf("Options rows: %+v", a.panel.entries)
 	}
 	a.panel.cursor = viewsRow
@@ -174,10 +229,10 @@ func TestGenreViewsPage(t *testing.T) {
 	}
 	a.panel.cursor = row
 	tap(platform.KeyEnter)
-	if a.screen != ScreenViews || a.viewsTitle() != "Genre views" || len(a.panel.entries) != 4 {
+	if a.screen != ScreenViews || a.viewsTitle() != "Genre views" || len(a.panel.entries) != 15 {
 		t.Fatalf("Genre views page: screen %v title %q entries %d", a.screen, a.viewsTitle(), len(a.panel.entries))
 	}
-	for i, want := range []string{"Shoot 'em ups", "Fighting", "Beat 'em ups", "Run 'n guns"} {
+	for i, want := range genreViewLabels {
 		if e := a.panel.entries[i]; e.kind != "view" || e.text != want || e.checked || e.disabled {
 			t.Fatalf("entry %d %+v", i, e)
 		}
@@ -193,7 +248,7 @@ func TestGenreViewsPage(t *testing.T) {
 		t.Fatalf("after two on: %v, %d changes, %+v", a.GenreViewsOn(), changed, a.panel.entries)
 	}
 	tap(platform.KeyBack)
-	if a.screen != ScreenOptions || a.panel.entries[a.panel.cursor].kind != "genre-views" || a.panel.entries[a.panel.cursor].text != "Genre views (2 of 4)" {
+	if a.screen != ScreenOptions || a.panel.entries[a.panel.cursor].kind != "genre-views" || a.panel.entries[a.panel.cursor].text != "Genre views (2 of 15)" {
 		t.Fatalf("back to Options: screen %v row %+v", a.screen, a.panel.entries[a.panel.cursor])
 	}
 	if e := a.panel.entries[viewsRow]; e.text != "Views (7 of 8)" {

@@ -8,8 +8,8 @@ import (
 // is kept as the names of the views left out (settings.json "views_off"),
 // so a view added later is on for everyone; a fresh install leaves only
 // Recents out. The genre views (Options -> Genre views) go the other way:
-// off unless named in "genre_views_on", since nobody asked for four more
-// stops in the cycle. In the app both pages share one set, viewsOff.
+// off unless named in "genre_views_on", since nobody asked for fifteen
+// more stops in the cycle. In the app both pages share one set, viewsOff.
 
 // viewOn reports whether a view is in the Y cycle.
 func (a *App) viewOn(m data.SortMode) bool { return m.Valid() && !a.viewsOff[m] }
@@ -144,7 +144,12 @@ func (a *App) setViewOn(m data.SortMode, on bool) bool {
 var viewLabels = map[data.SortMode]string{
 	data.SortUpdated: "Build date", data.SortDebut: "MiSTer debut", data.SortYear: "Original year",
 	data.SortAlphabetical: "A-Z", data.SortMaker: "Manufacturer", data.SortCore: "Core", data.SortFavorites: "Favorites", data.SortRecents: "Recents",
-	data.SortShmups: "Shoot 'em ups", data.SortFighting: "Fighting", data.SortBeatEmUps: "Beat 'em ups", data.SortRunNGuns: "Run 'n guns",
+}
+
+func init() {
+	for _, m := range data.GenreViews {
+		viewLabels[m] = m.String()
+	}
 }
 
 // viewsPageViews are the views the open checkbox page lists: the Views
@@ -182,7 +187,7 @@ func (a *App) viewsSummary() string {
 	return itoa(n) + " of " + itoa(len(a.viewsPageOrder()))
 }
 
-// genreViewsSummary is the Genre views row's tally, "0 of 4".
+// genreViewsSummary is the Genre views row's tally, "0 of 15".
 func (a *App) genreViewsSummary() string {
 	return itoa(len(a.GenreViewsOn())) + " of " + itoa(len(data.GenreViews))
 }

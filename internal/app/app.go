@@ -291,6 +291,7 @@ type App struct {
 	rep        repeater
 	look       SaverLook                  // the saver ground's tuning (screensaver.go)
 	released   map[platform.Key]time.Time // when each key last came up, for the bounce guard
+	spaceTyped time.Time                  // when a keyboard's Space last went into the search, for the echo guard
 	down       map[platform.Key]bool      // keys currently held, across all devices
 	oks        okButtons                  // which pad pressed last and what its OK button is (okbutton.go)
 	menuAt     time.Time                  // when the Menu button went down in Options mode; zero while up
@@ -945,8 +946,19 @@ func (a *App) Handle(ev platform.Event) (repaint bool) {
 	if ev.Pressed && ev.Text != 0 && a.screen == ScreenList {
 		// Space still sorts before a search begins; while searching it is text.
 		if ev.Text != ' ' || a.query != "" {
+			if ev.Key == platform.KeySpace {
+				// Main re-types a keyboard's Space on its virtual input as a
+				// textless Space: hold the key down so the echo folds into
+				// this press, and remember when, for an echo that lands
+				// after a quick tap's release.
+				a.down[ev.Key] = true
+				a.spaceTyped = ev.At
+			}
 			return a.typeSearch(ev.Text)
 		}
+	}
+	if ev.Pressed && ev.Key == platform.KeySpace && ev.Text == 0 && a.screen == ScreenList && a.query != "" && !a.spaceTyped.IsZero() && !ev.At.Before(a.spaceTyped) && ev.At.Sub(a.spaceTyped) < spaceEcho {
+		return false
 	}
 	if ev.Key == platform.KeyNone || ev.Key == platform.KeyOther {
 		return false
@@ -986,6 +998,11 @@ func (a *App) Handle(ev platform.Event) (repaint bool) {
 	}
 	return a.act(ev.Key)
 }
+
+// spaceEcho is how long after a keyboard's Space went into the search a
+// textless Space press still counts as Main's echo of it rather than a
+// pad's Y: the echo follows within milliseconds, a deliberate Y never does.
+const spaceEcho = 150 * time.Millisecond
 
 // debounce is the window after a key comes up in which a new press of the
 // same key is taken for contact bounce and dropped. Worn arcade

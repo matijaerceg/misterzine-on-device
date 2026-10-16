@@ -38,24 +38,81 @@ const (
 	SortCore
 	// The genre views list one genre of the catalogue A-Z, letters and
 	// umbrellas as under Alphabetical (Genre names the Row.Genre each
-	// shows). They follow Recents in the browsing cycle and are off until
-	// Options -> Genre views turns them on.
+	// shows). They follow Recents in the browsing cycle, in this order,
+	// and are off until Options -> Genre views turns them on. The values
+	// are saved (last_sort, default_sort), so the first four keep theirs
+	// and new ones go on the end; genreViews defines each one.
 	SortShmups
 	SortFighting
 	SortBeatEmUps
 	SortRunNGuns
+	SortPlatformers
+	SortArenaShooters
+	SortFixedShooters
+	SortRailShooters
+	SortLightGun
+	SortRacing
+	SortMaze
+	SortPuzzle
+	SortSports
+	SortTabletopQuiz
+	SortOther
+	sortEnd // one past the last mode
 )
 
+// genreView defines one genre view: its settings name, the Row.Genre it
+// shows and its label on the Genre views page (the top bar adds "A-Z").
+type genreView struct {
+	name, genre, label string
+}
+
+// genreViews are the genre views in the order of their constants, which
+// is the cycle and page order: one per catalogue genre.
+var genreViews = [...]genreView{
+	SortShmups - SortShmups:        {"shmups", "Shoot 'em up", "Shoot 'em ups"},
+	SortFighting - SortShmups:      {"fighting", "Fighting", "Fighting"},
+	SortBeatEmUps - SortShmups:     {"beatemups", "Beat 'em up", "Beat 'em ups"},
+	SortRunNGuns - SortShmups:      {"runnguns", "Run 'n gun", "Run 'n guns"},
+	SortPlatformers - SortShmups:   {"platformers", "Platformer", "Platformers"},
+	SortArenaShooters - SortShmups: {"arenashooters", "Arena shooter", "Arena shooters"},
+	SortFixedShooters - SortShmups: {"fixedshooters", "Fixed shooter", "Fixed shooters"},
+	SortRailShooters - SortShmups:  {"railshooters", "Rail shooter", "Rail shooters"},
+	SortLightGun - SortShmups:      {"lightgun", "Light gun", "Light gun"},
+	SortRacing - SortShmups:        {"racing", "Racing", "Racing"},
+	SortMaze - SortShmups:          {"maze", "Maze", "Maze"},
+	SortPuzzle - SortShmups:        {"puzzle", "Puzzle", "Puzzle"},
+	SortSports - SortShmups:        {"sports", "Sports", "Sports"},
+	SortTabletopQuiz - SortShmups:  {"tabletopquiz", "Tabletop & quiz", "Tabletop & quiz"},
+	SortOther - SortShmups:         {"other", "Other", "Other"},
+}
+
 // Valid reports whether m is a sort mode the app knows.
-func (m SortMode) Valid() bool { return m >= SortUpdated && m <= SortRunNGuns }
+func (m SortMode) Valid() bool { return m >= SortUpdated && m < sortEnd }
 
 // GenreViews are the genre views, in cycle order.
-var GenreViews = []SortMode{SortShmups, SortFighting, SortBeatEmUps, SortRunNGuns}
+var GenreViews = func() []SortMode {
+	out := make([]SortMode, len(genreViews))
+	for i := range genreViews {
+		out[i] = SortShmups + SortMode(i)
+	}
+	return out
+}()
 
-var genreOf = map[SortMode]string{SortShmups: "Shoot 'em up", SortFighting: "Fighting", SortBeatEmUps: "Beat 'em up", SortRunNGuns: "Run 'n gun"}
+// genreView is the definition of a genre view, nil for the other modes.
+func (m SortMode) genreView() *genreView {
+	if m < SortShmups || m >= SortShmups+SortMode(len(genreViews)) {
+		return nil
+	}
+	return &genreViews[m-SortShmups]
+}
 
 // Genre is the Row.Genre a genre view shows, "" for the other views.
-func (m SortMode) Genre() string { return genreOf[m] }
+func (m SortMode) Genre() string {
+	if g := m.genreView(); g != nil {
+		return g.genre
+	}
+	return ""
+}
 
 // Alphabetical reports whether the view runs A-Z with a header line per
 // letter: the A-Z view and the genre views.
@@ -96,19 +153,28 @@ func (m SortMode) Anchored() bool { return m != SortFavorites && m != SortRecent
 
 // ViewOrder is every view in the order Y walks them, Recents and the genre
 // views included.
-var ViewOrder = []SortMode{SortUpdated, SortDebut, SortYear, SortAlphabetical, SortMaker, SortCore, SortFavorites, SortRecents, SortShmups, SortFighting, SortBeatEmUps, SortRunNGuns}
+var ViewOrder = append([]SortMode{SortUpdated, SortDebut, SortYear, SortAlphabetical, SortMaker, SortCore, SortFavorites, SortRecents}, GenreViews...)
 
-var sortNames = map[SortMode]string{SortUpdated: "updated", SortDebut: "debut", SortYear: "year", SortAlphabetical: "alphabetical", SortMaker: "maker", SortCore: "core", SortFavorites: "favorites", SortRecents: "recents",
-	SortShmups: "shmups", SortFighting: "fighting", SortBeatEmUps: "beatemups", SortRunNGuns: "runnguns"}
+var sortNames = map[SortMode]string{SortUpdated: "updated", SortDebut: "debut", SortYear: "year", SortAlphabetical: "alphabetical", SortMaker: "maker", SortCore: "core", SortFavorites: "favorites", SortRecents: "recents"}
 
 // Name is the mode's settings name (Options -> Views keeps the ones left
-// out of the cycle by name).
-func (m SortMode) Name() string { return sortNames[m] }
+// out of the cycle by name, Genre views the ones put in).
+func (m SortMode) Name() string {
+	if g := m.genreView(); g != nil {
+		return g.name
+	}
+	return sortNames[m]
+}
 
 // ParseSort is the inverse of Name.
 func ParseSort(name string) (SortMode, bool) {
 	for m, n := range sortNames {
 		if n == name {
+			return m, true
+		}
+	}
+	for _, m := range GenreViews {
+		if m.Name() == name {
 			return m, true
 		}
 	}
@@ -174,14 +240,9 @@ func (m SortMode) String() string {
 		return "Manufacturer"
 	case SortCore:
 		return "Core"
-	case SortShmups:
-		return "Shoot 'em ups"
-	case SortFighting:
-		return "Fighting"
-	case SortBeatEmUps:
-		return "Beat 'em ups"
-	case SortRunNGuns:
-		return "Run 'n guns"
+	}
+	if g := m.genreView(); g != nil {
+		return g.label
 	}
 	return "Updated"
 }
