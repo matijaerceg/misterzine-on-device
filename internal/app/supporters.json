@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-16",
+  "updated": "2026-10-17",
   "current": [
     {
       "name": "Aaron Whitmore",
@@ -38,6 +38,10 @@
       "since": "2026-09"
     },
     {
+      "name": "Bert",
+      "since": "2026-10"
+    },
+    {
       "name": "Bob",
       "since": "2026-09"
     },
@@ -71,6 +75,10 @@
     },
     {
       "name": "cinestubborn",
+      "since": "2026-10"
+    },
+    {
+      "name": "coribald",
       "since": "2026-10"
     },
     {

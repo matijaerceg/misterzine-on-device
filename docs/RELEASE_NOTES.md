@@ -1,19 +1,11 @@
-**Genre views**
+**Leave a game from two controllers**
 
-Every genre in the catalogue can now be a view of its own, listing its games A-Z: Shoot 'em ups, Beat 'em ups, Run 'n guns, Platformers and eleven more. Turn on the ones you want in Options -> List -> **Genre views**.
-
-For example: beat 'em ups such as Final Fight used to be filed under Fighter with Street Fighter II; now each has a view of its own.
+The Exit chord can now be Start, or the coin button, held on two controllers at the same time, the way a cabinet's two Start buttons leave a frontend. Pick **Start on two pads** or **Coin on two pads** in Options -> Main menu shortcut -> **Exit chord**.
 
 **Added**
 
-- Genre views in Options -> List: one view per genre, A-Z, off until you turn it on.
-- Finer genres in the catalogue, fifteen in all: beat 'em ups, run 'n guns, fixed shooters, light gun games and more are no longer lumped under Fighter, Platform and Shooter.
+- Start on two pads and Coin on two pads as Exit chord choices.
 
-**Fixed**
-
-- A Genre filter saved under the old genre names no longer applies, so every genre shows until you untick again.
-- On a keyboard with a Button mapping profile, Space typed into a search changed the view instead of typing; it now types once a search has begun.
-
-Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1211--2026-10-17).
+Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1212--2026-10-17).
 Existing installations update through Update All, or through Update MisterZine only. New installation:
 [installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once).

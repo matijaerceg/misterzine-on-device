@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.2.12 — 2026-10-17
+
+- Add two more Exit chord choices in Options -> Main menu shortcut: Start on two pads and Coin on two pads. Start, or the coin button (the Select slot in MiSTer's define-buttons screen), held for one second on two controllers at the same time leaves the game, the way a cabinet's P1 Start + P2 Start leaves a frontend; no game asks for either hold, so neither can go off by accident during play. The two one-pad chords stay as they were. The watcher counts the pads holding the button and runs one hold timer across them instead of one per pad, so the chord fires on any two of the connected pads; a pad whose button sits on an axis is skipped as before, and a two-player stick that MiSTer sees as one pad cannot use them. Saved as `start-two-pads` and `coin-two-pads` in `exit_chord`. Tested on a MiSTer Pi.
+- Credits: Bert and coribald join the Patreon supporters.
+- Embedded catalogue snapshot refreshed (1,531 rows, 2026-10-17).
+
 ## v1.2.11 — 2026-10-17
 
 - Add a view for every catalogue genre, off by default: Shoot 'em ups, Fighting, Beat 'em ups, Run 'n guns, Platformers, Arena shooters, Fixed shooters, Rail shooters, Light gun, Racing, Maze, Puzzle, Sports, Tabletop & quiz and Other. Each lists the games the catalogue labels with that one genre, A-Z like the A-Z view (letter headers, L/R letter jumps, same-game groups), with search and filters applied on top, and the top bar names it "Shoot 'em ups A-Z" and so on with the count of games shown. A new Genre views row in Options -> List opens a checkbox page like Views that counts "Genre views (N of 15)"; a view turned on joins the Y cycle after Favorites and Recents, takes part in Remember last view and Default view, and turning off the one the list is in moves to the next view on. The choice is saved as `genre_views_on` in settings.json, on by name, so a fresh or upgraded install gets none. The views come from a table in `data/sort.go` (settings name, catalogue label, page label), the harness takes `-genre-views`, and the new Options row shifts the positional walks in `render_all.py` and the Linux list_prefs test, with the affected Options goldens rerecorded after a pixel diff.
