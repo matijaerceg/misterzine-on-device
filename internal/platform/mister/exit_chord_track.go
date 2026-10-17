@@ -55,7 +55,7 @@ func ExitChordName(variant string) string {
 	case ExitChordStartTwoPads:
 		return "Start on two pads"
 	case ExitChordCoinTwoPads:
-		return "Coin on two pads"
+		return "Select on two pads"
 	}
 	return "off"
 }

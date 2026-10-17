@@ -49,12 +49,12 @@ func TestExitChordSlots(t *testing.T) {
 		t.Fatalf("Start on two pads: slots %v, pads %d", got, ExitChordPads(ExitChordStartTwoPads))
 	}
 	if got := ExitChordSlots(ExitChordCoinTwoPads); len(got) != 1 || got[0] != "Select" || ExitChordPads(ExitChordCoinTwoPads) != 2 {
-		t.Fatalf("Coin on two pads: slots %v, pads %d", got, ExitChordPads(ExitChordCoinTwoPads))
+		t.Fatalf("Select on two pads: slots %v, pads %d", got, ExitChordPads(ExitChordCoinTwoPads))
 	}
 	if ExitChordPads(ExitChordSelectStart) != 1 || ExitChordPads(ExitChordShouldersSelect) != 1 || ExitChordPads(ExitChordOff) != 1 {
 		t.Fatal("one-pad variants need one pad")
 	}
-	if ExitChordName(ExitChordStartTwoPads) != "Start on two pads" || ExitChordName(ExitChordCoinTwoPads) != "Coin on two pads" {
+	if ExitChordName(ExitChordStartTwoPads) != "Start on two pads" || ExitChordName(ExitChordCoinTwoPads) != "Select on two pads" {
 		t.Fatal("two-pad names")
 	}
 	if ExitChordName(ExitChordOff) != "off" || ExitChordName(ExitChordSelectStart) != "Select+Start" || ExitChordName(ExitChordShouldersSelect) != "L+R+Select+Start" {

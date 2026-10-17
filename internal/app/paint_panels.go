@@ -614,7 +614,7 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "On: once the MiSTer menu is up after power-on or reboot, MisterZine opens as if picked from it. A bootcore in the INI wins. Needs the shortcut."},
 		{text: "Return after game", kind: "return-after-game", child: true, vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ReturnAfterGame], disabled: launcherIdx == 0,
 			help: "On: when a game started here exits to the MiSTer menu, MisterZine reopens on that game. Not after quitting with the Menu button. Needs the shortcut."},
-		{text: "Exit chord", kind: "exit-chord", child: true, vals: []string{"off", "Select+Start", "L+R+Select+Start", "Start on two pads", "Coin on two pads"}, idx: map[string]int{"": 0, "select-start": 1, "lr-select-start": 2, "start-two-pads": 3, "coin-two-pads": 4}[a.ExitChord()], disabled: launcherIdx == 0,
+		{text: "Exit chord", kind: "exit-chord", child: true, vals: []string{"off", "Select+Start", "L+R+Select+Start", "Start on two pads", "Select on two pads"}, idx: map[string]int{"": 0, "select-start": 1, "lr-select-start": 2, "start-two-pads": 3, "coin-two-pads": 4}[a.ExitChord()], disabled: launcherIdx == 0,
 			help: "Hold these MiSTer-defined pad buttons one second in a game started here: it exits to the MiSTer menu, and Return after game reopens MisterZine."},
 		{text: yourAccessRow, kind: "your-access", opensPage: true, help: "Your access: " + a.cfg.AccessMonth.Short() + ". See covered features or enter a code. No need to stay subscribed."},
 		{text: "Show beta features", kind: "show-beta-features", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ShowBetaFeatures], help: "Try free betas without a code. Supporter betas also need a code. Off hides and stops all betas."},
