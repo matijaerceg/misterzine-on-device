@@ -739,8 +739,12 @@ screenshots match, lettering runs instead and the Preview help explains why.
   read from the pad while the core runs, so it never reaches the game. A quick
   pass over the buttons does nothing; a wireless pad's own power-off hold is
   longer. SNAC controllers and pads whose Select or Start sit on an axis are
-  not seen. Needs the Main menu shortcut, also when you opened MisterZine
-  through Scripts -> MisterZine-Run.
+  not seen. Start on two pads and Coin on two pads are the cabinet's way:
+  Start, or the coin button (Select), held for one second on two controllers
+  at the same time, which no game asks for. They need two controllers that
+  MiSTer sees as separate pads, so a two-player stick that shows up as one pad
+  cannot use them. Needs the Main menu shortcut, also when you opened
+  MisterZine through Scripts -> MisterZine-Run.
 - **Troubleshooting:** a guided Start-button test, a pad tester, and an
   A/Enter game-launch test, with results you can photograph. The last result
   survives restarting. The pad tester lists every connected pad with the raw

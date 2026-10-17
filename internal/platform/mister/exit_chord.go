@@ -73,12 +73,16 @@ func (p *chordPad) allDown() bool {
 
 // WatchExitChord polls the connected pads for the chord until stop closes
 // and calls fire the first time it is held for ExitChordHold while armed
-// says the moment is right (a game is on the screen). Pads that come and
-// go are picked up every couple of seconds. It returns once stopped.
+// says the moment is right (a game is on the screen). A one-pad chord is
+// timed on each pad alone; a two-pad chord (ExitChordPads) is timed once,
+// over the count of pads holding it. Pads that come and go are picked up
+// every couple of seconds. It returns once stopped.
 func WatchExitChord(stop <-chan struct{}, variant string, armed func() bool, fire func(), lg *log.Logger) {
 	if ExitChordSlots(variant) == nil {
 		return
 	}
+	need := ExitChordPads(variant)
+	together := chordHold{hold: ExitChordHold} // the two-pad timer
 	pads := map[string]*chordPad{}
 	defer func() {
 		for _, p := range pads {
@@ -131,6 +135,20 @@ func WatchExitChord(stop <-chan struct{}, variant string, armed func() bool, fir
 			rescan()
 		case now := <-poll.C:
 			if fired {
+				continue
+			}
+			if need > 1 {
+				holding := 0
+				for _, p := range pads {
+					if p.allDown() {
+						holding++
+					}
+				}
+				if together.update(holding >= need, now) && armed() {
+					lg.Printf("exit chord: held on %d pads; leaving the game", holding)
+					fired = true
+					fire()
+				}
 				continue
 			}
 			for _, p := range pads {

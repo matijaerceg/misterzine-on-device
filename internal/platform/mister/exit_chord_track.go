@@ -10,6 +10,8 @@ const (
 	ExitChordOff             = ""                // Options -> Exit chord: off
 	ExitChordSelectStart     = "select-start"    // Select+Start
 	ExitChordShouldersSelect = "lr-select-start" // L+R+Select+Start
+	ExitChordStartTwoPads    = "start-two-pads"  // Start held on two pads at once (the cabinet's P1+P2 Start)
+	ExitChordCoinTwoPads     = "coin-two-pads"   // Select (coin, in arcade cores) held on two pads at once
 
 	// ExitChordHold is how long the chord is held before it fires: long
 	// enough that a pass over the buttons does nothing, short enough to
@@ -25,8 +27,22 @@ func ExitChordSlots(variant string) []string {
 		return []string{"Select", "Start"}
 	case ExitChordShouldersSelect:
 		return []string{"L", "R", "Select", "Start"}
+	case ExitChordStartTwoPads:
+		return []string{"Start"}
+	case ExitChordCoinTwoPads:
+		return []string{"Select"}
 	}
 	return nil
+}
+
+// ExitChordPads is how many pads must hold the chord at once: two for the
+// two-pad variants, one otherwise.
+func ExitChordPads(variant string) int {
+	switch variant {
+	case ExitChordStartTwoPads, ExitChordCoinTwoPads:
+		return 2
+	}
+	return 1
 }
 
 // ExitChordName is the Options value for a variant.
@@ -36,6 +52,10 @@ func ExitChordName(variant string) string {
 		return "Select+Start"
 	case ExitChordShouldersSelect:
 		return "L+R+Select+Start"
+	case ExitChordStartTwoPads:
+		return "Start on two pads"
+	case ExitChordCoinTwoPads:
+		return "Coin on two pads"
 	}
 	return "off"
 }

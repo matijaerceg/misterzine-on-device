@@ -177,8 +177,9 @@ type Config struct {
 	OpenAtBoot      bool
 	ReturnAfterGame bool
 	// ExitChord is Options -> Exit chord, the pad buttons that leave a
-	// launched game for the menu: "" (off), "select-start" or
-	// "lr-select-start"; the launcher watches for it.
+	// launched game for the menu: "" (off), "select-start",
+	// "lr-select-start", "start-two-pads" or "coin-two-pads"; the launcher
+	// watches for it.
 	ExitChord string
 	// TitleFont draws list titles in "tall" (default: the narrow font at the
 	// body font's height), "narrow" or "normal" (the body font).
@@ -656,11 +657,12 @@ func (a *App) Canvas() string {
 }
 func (a *App) ReturnAfterGame() bool { return a.cfg.ReturnAfterGame }
 
-// ExitChord is the Options -> Exit chord choice: "" (off), "select-start"
-// or "lr-select-start"; anything else reads as off.
+// ExitChord is the Options -> Exit chord choice: "" (off), "select-start",
+// "lr-select-start", "start-two-pads" or "coin-two-pads"; anything else
+// reads as off.
 func (a *App) ExitChord() string {
 	switch a.cfg.ExitChord {
-	case "select-start", "lr-select-start":
+	case "select-start", "lr-select-start", "start-two-pads", "coin-two-pads":
 		return a.cfg.ExitChord
 	}
 	return ""
