@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.2.13 — 2026-10-18
+
+- Add Ongo's arcade database as a catalogue source, including its source name, core names and Downloader database details, so its listings can appear in MisterZine.
+- Name the two-pad coin-button Exit chord "Select on two pads", matching the MiSTer button slot it reads; explain that Select is the coin button in most arcade cores.
+- Embedded catalogue snapshot refreshed (2,148 rows, 2026-10-18).
+
 ## v1.2.12 — 2026-10-17
 
 - Add two more Exit chord choices in Options -> Main menu shortcut: Start on two pads and Coin on two pads. Start, or the coin button (the Select slot in MiSTer's define-buttons screen), held for one second on two controllers at the same time leaves the game, the way a cabinet's P1 Start + P2 Start leaves a frontend; no game asks for either hold, so neither can go off by accident during play. The two one-pad chords stay as they were. The watcher counts the pads holding the button and runs one hold timer across them instead of one per pad, so the chord fires on any two of the connected pads; a pad whose button sits on an axis is skipped as before, and a two-player stick that MiSTer sees as one pad cannot use them. Saved as `start-two-pads` and `coin-two-pads` in `exit_chord`. Tested on a MiSTer Pi.
