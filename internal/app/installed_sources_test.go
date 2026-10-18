@@ -20,6 +20,7 @@ func TestInstalledSourcesLeaveEveryView(t *testing.T) {
 		{K: "x", Title: "Meathax game", Base: "Arcade", Src: "meathax"},
 		{K: "r", Title: "rmCores game", Base: "Arcade", Src: "rmcores"},
 		{K: "n", Title: "New source game", Base: "Arcade", Src: "newsource"},
+		{K: "o", Title: "Ongo game", Base: "Arcade", Src: "ongo"},
 	}
 	changes := 0
 	a := New(Config{PhysW: 320, PhysH: 240, InstalledOnly: true, Favorites: map[string]bool{"x": true, "m": true},
@@ -33,18 +34,18 @@ func TestInstalledSourcesLeaveEveryView(t *testing.T) {
 		sort.Strings(ks)
 		return strings.Join(ks, " ")
 	}
-	if keys() != "c j m n r x" || a.total != 6 {
+	if keys() != "c j m n o r x" || a.total != 7 {
 		t.Fatalf("nothing is hidden before the card scan reports: %q total %d", keys(), a.total)
 	}
-	a.SetHiddenSources(data.HiddenSources([]data.DB{{ID: "distribution_mister"}, {ID: "jtcores"}}), true)
+	a.SetHiddenSources(data.HiddenSources([]data.DB{{ID: "distribution_mister"}, {ID: "jtcores"}, {ID: "OngoGablogian/MiSTer_Ongo"}}), true)
 	a.Refilter()
-	if keys() != "j m n" || a.total != 3 {
+	if keys() != "j m n o" || a.total != 4 {
 		t.Fatalf("installed only: %q total %d", keys(), a.total)
 	}
 	if a.filtersActive() || a.filters.Active() {
 		t.Fatal("the sources rule must not read as a filter")
 	}
-	if got := a.cardCounts(); got[data.StatusNotFound] != 3 {
+	if got := a.cardCounts(); got[data.StatusNotFound] != 4 {
 		t.Fatalf("card counts include hidden sources: %v", got)
 	}
 	a.SetSort(data.SortFavorites)
@@ -65,7 +66,7 @@ func TestInstalledSourcesLeaveEveryView(t *testing.T) {
 			sources = append(sources, e.value)
 		}
 	}
-	if got := strings.Join(sources, " "); got != "distribution_mister jtbindb newsource" {
+	if got := strings.Join(sources, " "); got != "distribution_mister jtbindb newsource ongo" {
 		t.Fatalf("Source section: %q", got)
 	}
 	a.screen = ScreenList
@@ -82,11 +83,11 @@ func TestInstalledSourcesLeaveEveryView(t *testing.T) {
 	}
 	a.panel.cursor = row
 	a.stepValue(-1)
-	if a.InstalledOnly() || changes != 3 || keys() != "c j m n r x" || a.total != 6 {
+	if a.InstalledOnly() || changes != 3 || keys() != "c j m n o r x" || a.total != 7 {
 		t.Fatalf("all: %q total %d changes %d", keys(), a.total, changes)
 	}
 	a.stepValue(1)
-	if !a.InstalledOnly() || keys() != "j m n" {
+	if !a.InstalledOnly() || keys() != "j m n o" {
 		t.Fatalf("installed again: %q", keys())
 	}
 	if help := a.panel.entries[row].help; strings.Contains(help, "No downloader.ini") {
@@ -94,7 +95,7 @@ func TestInstalledSourcesLeaveEveryView(t *testing.T) {
 	}
 	a.SetHiddenSources(nil, false)
 	a.Refilter()
-	if keys() != "c j m n r x" {
+	if keys() != "c j m n o r x" {
 		t.Fatalf("no downloader.ini must hide nothing: %q", keys())
 	}
 	if help := a.panel.entries[row].help; !strings.Contains(help, "No downloader.ini was found") {
