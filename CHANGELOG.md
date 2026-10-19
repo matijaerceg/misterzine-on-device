@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.2.14 — 2026-10-19
+
+- Add four arcade databases the site now tracks as catalogue sources: TomSVR (TomSVR-Arcade-Cores), decoryah, ppriest and Gm0rk, with their source names, Downloader database details and the names of their multi-game cores (PlayChoice-10, Bally/Sente, Seta, Konami GX, Metro, Taito L, IGS PGM2 and others). Their games now show only on cards that have the database, as with the other opt-in sources, instead of on every card under a raw source id.
+- Read build dates that end in a letter. A core rebuilt on the same day ships as, for example, `metro_20261018c.rbf` or `PGM2_20261017e.rbf`; such files counted as undated. They now count as dated builds of their core, the later letter is the newer build, and the list compares them with the catalogue's build date as usual.
+- Match ppriest's PlayChoice-10 MRAs to their own games. Each names the PlayChoice-10 BIOS (`playch10`) as its setname and the game only in its ROM zip list, so a card's own copies all collapsed into one game. A BIOS setname now gives way to the one other set the file loads, as on the site; "PlayChoice-10 (three channels)", which loads three games, stays the BIOS. Cached MRA headers are reread once after the update.
+- Credits: Dr. Octagon, jason miller, Landork, Malcove, Mike the Janitor, Raphael, Samantha and Trey S. join the Patreon supporters.
+- Embedded catalogue snapshot refreshed (2,564 rows, 2026-10-19).
+
 ## v1.2.13 — 2026-10-18
 
 - Add Ongo's arcade database as a catalogue source, including its source name, core names and Downloader database details, so its listings can appear in MisterZine.
