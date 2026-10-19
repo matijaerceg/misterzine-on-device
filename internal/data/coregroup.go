@@ -43,12 +43,22 @@ func coreGroupOf(r *Row, games int, label string) (rank int, group string) {
 // coreGroups sets each row's Core view group. A game counts toward its own
 // core, except a standin: it sorts and groups under the catalogue row it
 // stands in for (SortRow), so it leaves that core's count alone.
+// Filters gathers single-game cores per source instead (Derived.SoloCore):
+// a core one source ships a single game of is single there, whatever other
+// sources ship for it.
 func (ds *Dataset) coreGroups() {
-	games := map[string]int{}
+	games, inSrc := map[string]int{}, map[string]int{}
 	for i := range ds.Rows {
-		if ds.Der[i].anchor == 0 && ds.Rows[i].IsArcade() {
+		if !ds.Rows[i].IsArcade() {
+			continue
+		}
+		inSrc[CoreKey(&ds.Rows[i])]++ // a standin is a Local game like any other here
+		if ds.Der[i].anchor == 0 {
 			games[ds.Der[i].CoreLabel]++
 		}
+	}
+	for i := range ds.Rows {
+		ds.Der[i].SoloCore = ds.Rows[i].IsArcade() && inSrc[CoreKey(&ds.Rows[i])] < 2
 	}
 	keys := map[string][]elem{}
 	for i := range ds.Rows {

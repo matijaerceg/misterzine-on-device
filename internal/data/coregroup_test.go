@@ -68,3 +68,24 @@ func TestCoreViewIsAView(t *testing.T) {
 		t.Fatal("nothing past the genre views, and Core is its name")
 	}
 }
+
+// Filters counts a core's games within each source: a core two sources
+// ship one game each of is single-game in both, though the Core view
+// groups the two games together.
+func TestSoloCorePerSource(t *testing.T) {
+	ds := Ingest([]Row{
+		{K: "wolf", Title: "Wolf Unit", Base: "Arcade", Src: "blahm1d", Core: "blahm1d_wolfunit"},
+		{K: "wolf2", Title: "Wolf Unit (Ongo)", Base: "Arcade", Src: "ongo", Core: "blahm1d_wolfunit"},
+		{K: "sf2", Title: "Street Fighter II", Base: "Arcade", Src: "jtbindb", Core: "jtcps1"},
+		{K: "ffight", Title: "Final Fight", Base: "Arcade", Src: "jtbindb", Core: "jtcps1"},
+		{K: "snes", Title: "SNES", Base: "Console", Src: "distribution_mister", Core: "SNES"},
+	}, "h", time.Time{})
+	for k, want := range map[string]bool{"wolf": true, "wolf2": true, "sf2": false, "ffight": false, "snes": false} {
+		if got := ds.Der[ds.Index(k)].SoloCore; got != want {
+			t.Errorf("%s: solo %v, want %v", k, got, want)
+		}
+	}
+	if g := ds.Der[ds.Index("wolf")].CoreGroup; g == CoreSingleGame {
+		t.Errorf("the Core view still counts both sources' games: %q", g)
+	}
+}

@@ -8,9 +8,9 @@ import (
 )
 
 // Filters > Source/core opens into the arcade cores each source ships, the
-// way Type > Arcade opens into Stable and Beta: one row per core that runs
-// two games or more, then one row for all its single-game cores (the Core
-// view's gathering, data.CoreSingleGame). SrcOff hides a whole source,
+// way Type > Arcade opens into Stable and Beta: one row for all its
+// single-game cores (one game within this source, data.Derived.SoloCore),
+// then one row per core that runs more. SrcOff hides a whole source,
 // CoreOff one core of it (data.CoreKey), SinglesOff its single-game cores.
 // Every row of a source off collapses into the source off, so the two never
 // say the same thing twice. A source with fewer than two rows to show has
@@ -38,7 +38,7 @@ func (a *App) buildSourceCores() {
 			continue
 		}
 		label[key] = d.CoreLabel
-		if d.CoreGroup == data.CoreSingleGame {
+		if d.SoloCore {
 			singles[r.Src] = append(singles[r.Src], key)
 		} else {
 			multi[r.Src] = append(multi[r.Src], key)

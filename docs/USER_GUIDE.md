@@ -853,8 +853,7 @@ shows `[-]` on Arcade. Turning both off is the same as turning Arcade off.
 
 Under Source/core, a source opens (Right, or X) into its arcade cores, named as
 in the Core view, the same way: first **Single-game cores**, one choice for all
-its cores that run one game (the Core view's group of that name), then each
-core that runs more. A toggles one row, Y shows only that row, and a source
+its cores that run one game in that source, then each core that runs more. A toggles one row, Y shows only that row, and a source
 with some rows off shows `[-]`. A source with only one row to show (a single
 core, or only single-game cores) does not open. Single-game cores turned off
 stay off as the catalogue adds more; a core that gains a second game moves to

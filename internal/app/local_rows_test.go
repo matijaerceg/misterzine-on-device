@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
-	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
 
@@ -169,7 +168,7 @@ func TestFiltersSourceLocal(t *testing.T) {
 	found := false
 	for _, e := range a.panel.entries {
 		if e.kind == "src" && e.value == data.SrcLocal && !e.header {
-			found = e.text == gfx.ArrowRight+" Local" && e.count == 2 && e.checked // two cores: it opens
+			found = e.text == "Local" && e.count == 2 && e.checked // two single-game cores: nothing to open
 		}
 	}
 	if !found {
