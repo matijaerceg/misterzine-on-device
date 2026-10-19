@@ -1,16 +1,11 @@
-**Four more arcade sources**
+**Filter by core**
 
-MisterZine now recognizes the TomSVR, decoryah, ppriest and Gm0rk arcade databases as sources.
+Under Filters, **Source/core** now opens each source into its cores, so you can choose which cores' games to show. Cores that run a single game are grouped as **Single-game cores**.
 
 **Added**
 
-- TomSVR, decoryah, ppriest and Gm0rk listings and source filtering.
+- Filtering by core within each source.
 
-**Fixed**
-
-- Cores rebuilt on the same day now show their build date.
-- PlayChoice-10 games on your card are listed as separate games.
-
-Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1214--2026-10-19).
+Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1215--2026-10-19).
 Existing installations update through Update All, or through Update MisterZine only. New installation:
 [installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once).

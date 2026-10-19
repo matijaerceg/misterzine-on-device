@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.2.15 — 2026-10-19
+
+- Filter by core. Filters -> Source is now **Source/core**, and a source opens (Right, or X) into its arcade cores, the way a decade opens into years: first one **Single-game cores** row for all its cores that run one game in that source, then each core that runs more, A-Z and named as in the Core view. A toggles a row, Y shows only that row, a source with some rows off shows `[-]`, and turning every row off is the same as turning the source off. A source with only one row to show (a single core, or only single-game cores) does not open. Single-game cores turned off stay off as the catalogue adds more, and a core that gains a second game moves to its own row and keeps its choice. A core two sources ship, as Ongo repackages blahm1d's, is a separate choice under each. Console and computer cores stay under Type. Tested on a MiSTer Pi.
+- Credits: Brian joins the Patreon supporters.
+
 ## v1.2.14 — 2026-10-19
 
 - Add four arcade databases the site now tracks as catalogue sources: TomSVR (TomSVR-Arcade-Cores), decoryah, ppriest and Gm0rk, with their source names, Downloader database details and the names of their multi-game cores (PlayChoice-10, Bally/Sente, Seta, Konami GX, Metro, Taito L, IGS PGM2 and others). Their games now carry their own source names instead of a raw source id, and Options -> Sources set to Installed only hides them on cards without the database, as for the other opt-in sources; before, that setting could not hide them. Tested on a MiSTer Pi.
