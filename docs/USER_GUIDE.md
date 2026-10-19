@@ -139,7 +139,7 @@ Space Invaders Part II (Midway, Cocktail).
 Local games carry no release dates, so they sit at the end of the date views
 (except a copy standing in for a greyed game, described below) and never count
 as new since your last look. To hide them, turn the Local
-source off in Filters -> Source; "Installed only" in Options never hides them.
+source off in Filters -> Source/core; "Installed only" in Options never hides them.
 Pictures for local games are fetched from images.misterzine.fyi by MAME set
 name, the only thing sent about the game; a game without a known screenshot
 shows a placeholder, and the app asks again after a week. Local games with a
@@ -772,7 +772,7 @@ screenshots match, lettering runs instead and the Preview help explains why.
   seconds does the same.
 
 Filters start with Clear all filters, greyed out until a filter is active,
-then On the card, ROM check, Since last look, Type and Source. Pressing Clear all filters
+then On the card, ROM check, Since last look, Type and Source/core. Pressing Clear all filters
 moves the selection to the first heading. The same edge arrows as in Options
 show when the list continues above or below.
 Favorites is a main-view mode and still respects all these filters.
@@ -851,7 +851,7 @@ cores (alphas included), like
 a decade opens into years: A toggles one, Y shows only one, and a mixed choice
 shows `[-]` on Arcade. Turning both off is the same as turning Arcade off.
 
-Under Source, a source that ships more than one core opens (Right, or X) into
+Under Source/core, a source that ships more than one core opens (Right, or X) into
 its cores, named as in the Core view, the same way: A toggles one core, Y shows
 only that core, and a source with some cores off shows `[-]`. A core two
 sources ship is a separate choice under each. Turning every core of a source

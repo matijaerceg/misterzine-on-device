@@ -426,7 +426,7 @@ func (a *App) rawFilterEntries() []panelEntry {
 			E = append(E, panelEntry{text: v.text, kind: "beta", value: v.value, checked: !f.BaseOff["Arcade"] && !f.BetaOff[v.value], count: counts[v.value], showCount: true})
 		}
 	}
-	section("Source", "src", a.ds.Facets.Src, f.SrcOff, func(s string) string {
+	section("Source/core", "src", a.ds.Facets.Src, f.SrcOff, func(s string) string {
 		if s == "" {
 			return "Unknown"
 		}

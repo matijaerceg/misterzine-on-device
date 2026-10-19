@@ -62,7 +62,7 @@ func TestSourceOpensIntoCores(t *testing.T) {
 	if e := a.panel.entries[find("src", "ongo")]; !e.partial || e.checked || e.count != 3 {
 		t.Fatalf("source must show partial with the full tally: %+v", e)
 	}
-	if why := a.filters.Why(&a.ds.Rows[0], &a.ds.Der[0], data.StatusUnknown, false, false, data.ROMUnknown); why != "Filters -> Source (ongo: Seta 1st gen off)" {
+	if why := a.filters.Why(&a.ds.Rows[0], &a.ds.Der[0], data.StatusUnknown, false, false, data.ROMUnknown); why != "Filters -> Source/core (ongo: Seta 1st gen off)" {
 		t.Fatalf("why %q", why)
 	}
 	saved, _ := json.Marshal(a.filters)

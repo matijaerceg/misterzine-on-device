@@ -130,10 +130,10 @@ func (f *Filters) Why(r *Row, d *Derived, st Status, fav, unseen bool, rom ROMSt
 		return "Filters -> Type (" + r.Base + " off)"
 	}
 	if f.SrcOff[r.Src] {
-		return "Filters -> Source (" + r.Src + " off)"
+		return "Filters -> Source/core (" + r.Src + " off)"
 	}
 	if f.CoreOff[CoreKey(r)] {
-		return "Filters -> Source (" + r.Src + ": " + d.CoreLabel + " off)"
+		return "Filters -> Source/core (" + r.Src + ": " + d.CoreLabel + " off)"
 	}
 	if f.SrcHidden[r.Src] {
 		return "Options -> Sources: installed only (" + r.Src + " is not in downloader.ini)"
