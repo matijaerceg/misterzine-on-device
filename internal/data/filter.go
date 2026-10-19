@@ -71,7 +71,8 @@ type Filters struct {
 	BaseOff        map[string]bool `json:"base_off,omitempty"`
 	BetaOff        map[string]bool `json:"beta_off,omitempty"` // arcade sub-type: "stable", "beta"
 	SrcOff         map[string]bool `json:"src_off,omitempty"`
-	RotOff         map[string]bool `json:"rot_off,omitempty"`   // "h", "v", ""
+	CoreOff        map[string]bool `json:"core_off,omitempty"` // CoreKey: one source's core, "ongo/Seta"
+	RotOff        map[string]bool `json:"rot_off,omitempty"`   // "h", "v", ""
 	PlrOff         map[string]bool `json:"plr_off,omitempty"`   // raw plr, "" = unknown
 	GenreOff       map[string]bool `json:"genre_off,omitempty"` // raw genre, "" = no genre
 	PatchOff       map[string]bool `json:"patch_off,omitempty"` // patch kind, "" = no patch
@@ -89,7 +90,7 @@ func (f *Filters) Active() bool {
 	if f == nil {
 		return false
 	}
-	return f.ArcadeOnly || f.HideDeprecated || f.HideMature || f.MatchRotation != "" || len(f.SrcHidden) > 0 || f.Genre != "" || len(f.YearOff) > 0 || len(f.BaseOff) > 0 || len(f.BetaOff) > 0 || len(f.SrcOff) > 0 || len(f.RotOff) > 0 || len(f.PlrOff) > 0 ||
+	return f.ArcadeOnly || f.HideDeprecated || f.HideMature || f.MatchRotation != "" || len(f.SrcHidden) > 0 || f.Genre != "" || len(f.YearOff) > 0 || len(f.BaseOff) > 0 || len(f.BetaOff) > 0 || len(f.SrcOff) > 0 || len(f.CoreOff) > 0 || len(f.RotOff) > 0 || len(f.PlrOff) > 0 ||
 		len(f.ResOff) > 0 || len(f.GenreOff) > 0 || len(f.PatchOff) > 0 || len(f.DirectionsOff) > 0 || len(f.ButtonsOff) > 0 || (f.Install != "" && f.Install != InstallAll) || f.FavOnly || f.Since || f.ROMActive()
 }
 
@@ -130,6 +131,9 @@ func (f *Filters) Why(r *Row, d *Derived, st Status, fav, unseen bool, rom ROMSt
 	}
 	if f.SrcOff[r.Src] {
 		return "Filters -> Source (" + r.Src + " off)"
+	}
+	if f.CoreOff[CoreKey(r)] {
+		return "Filters -> Source (" + r.Src + ": " + d.CoreLabel + " off)"
 	}
 	if f.SrcHidden[r.Src] {
 		return "Options -> Sources: installed only (" + r.Src + " is not in downloader.ini)"

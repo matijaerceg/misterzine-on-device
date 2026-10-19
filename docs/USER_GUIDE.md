@@ -851,6 +851,12 @@ cores (alphas included), like
 a decade opens into years: A toggles one, Y shows only one, and a mixed choice
 shows `[-]` on Arcade. Turning both off is the same as turning Arcade off.
 
+Under Source, a source that ships more than one core opens (Right, or X) into
+its cores, named as in the Core view, the same way: A toggles one core, Y shows
+only that core, and a source with some cores off shows `[-]`. A core two
+sources ship is a separate choice under each. Turning every core of a source
+off is the same as turning the source off.
+
 Counts reflect your search and the other filter sections. A choice's count
 ignores its own section, so unchecked choices still show how many entries they
 could include. Choices remain selectable at zero. Y on a value twice enables

@@ -102,6 +102,10 @@ type panelState struct {
 	top           int
 	yearOpen      map[string]bool // expanded decades; browsing state only
 	sectionClosed map[string]bool // section browsing state; filters stay unchanged
+	// srcCores lists each source's cores (data.CoreKey) for the Filters
+	// page being built, coreLabel names them; see buildSourceCores
+	srcCores  map[string][]string
+	coreLabel map[string]string
 	// settings snapshot
 	prefetch bool
 	lines    int // entries that fit, from the last paint (paging)
@@ -206,8 +210,11 @@ func (a *App) facetCounts(kind string) map[string]int {
 		f.BaseOff = base
 		value = func(r *data.Row, d *data.Derived) string { return data.BetaKind(r) }
 	case "src":
-		f.SrcOff = nil
+		f.SrcOff, f.CoreOff = nil, nil
 		value = func(r *data.Row, d *data.Derived) string { return r.Src }
+	case "core": // a source's cores count as if the source were on
+		f.SrcOff, f.CoreOff = nil, nil
+		value = func(r *data.Row, d *data.Derived) string { return data.CoreKey(r) }
 	case "rot":
 		f.RotOff = nil
 		value = func(r *data.Row, d *data.Derived) string { return d.RotGroup }
@@ -240,7 +247,7 @@ func (a *App) facetCounts(kind string) map[string]int {
 		value = func(r *data.Row, d *data.Derived) string { return d.Year }
 	}
 	counts := map[string]int{}
-	a.facetRows(f, kind != "base" && kind != "src", func(i int) { counts[value(&a.ds.Rows[i], &a.ds.Der[i])]++ })
+	a.facetRows(f, kind != "base" && kind != "src" && kind != "core", func(i int) { counts[value(&a.ds.Rows[i], &a.ds.Der[i])]++ })
 	return counts
 }
 
@@ -382,8 +389,13 @@ func (a *App) rawFilterEntries() []panelEntry {
 		E = append(E, panelEntry{text: "only rows changed since my last look", kind: "since", checked: f.Since})
 	}
 	hiddenSrc := a.effectiveFilters().SrcHidden
+	a.panel.srcCores = a.buildSourceCores()
 	section := func(title, kind string, facet map[string]int, off map[string]bool, label func(string) string) {
 		counts := a.facetCounts(kind)
+		var coreCounts map[string]int
+		if kind == "src" {
+			coreCounts = a.facetCounts("core")
+		}
 		E = append(E, panelEntry{text: title, header: true, kind: kind})
 		if kind == "rot" && a.rotationFilter() != "" {
 			E = append(E, panelEntry{text: a.rotationFilterLabel(), info: true})
@@ -396,6 +408,10 @@ func (a *App) rawFilterEntries() []panelEntry {
 			}
 			if kind == "src" && hiddenSrc[v] {
 				continue // Options -> Sources: installed; not a choice here
+			}
+			if kind == "src" {
+				E = append(E, a.sourceEntries(v, label(v), counts[v], coreCounts)...)
+				continue
 			}
 			E = append(E, panelEntry{text: label(v), kind: kind, value: v, checked: !off[v], count: counts[v], showCount: true})
 		}
@@ -821,7 +837,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, cols), pal.Muted)
 		case e.header:
 			c.Text(inner.Min.X+2, y, font, gfx.Fit(e.text, cols), pal.Accent)
-		case e.kind == "year" || e.kind == "decade" || e.kind == "res" || e.kind == "base" || e.kind == "beta" || e.kind == "src" || e.kind == "rot" || e.kind == "plr" || e.kind == "genre" || e.kind == "patch" || e.kind == "directions" || e.kind == "buttons" || e.kind == "install" || e.kind == "rom" || e.kind == "fav" || e.kind == "since" || e.kind == "view":
+		case e.kind == "year" || e.kind == "decade" || e.kind == "res" || e.kind == "base" || e.kind == "beta" || e.kind == "src" || e.kind == "core" || e.kind == "rot" || e.kind == "plr" || e.kind == "genre" || e.kind == "patch" || e.kind == "directions" || e.kind == "buttons" || e.kind == "install" || e.kind == "rom" || e.kind == "fav" || e.kind == "since" || e.kind == "view":
 			mark := "[ ] "
 			if e.checked {
 				mark = "[x] "
@@ -1323,6 +1339,9 @@ func (a *App) togglePanel() bool {
 	if e.kind == "beta" || (e.kind == "base" && e.value == "Arcade") {
 		return a.toggleArcade(false)
 	}
+	if e.kind == "src" || e.kind == "core" {
+		return a.toggleSource(false)
+	}
 	switch e.kind {
 	case "year", "decade":
 		return a.toggleYears(false)
@@ -1407,14 +1426,12 @@ func (a *App) togglePanel() bool {
 		a.buildPanel()
 		a.skipDisabled() // the row just greyed out; move on to the first heading
 		return true
-	case "base", "src", "rot", "plr", "genre", "patch", "directions", "buttons", "res":
+	case "base", "rot", "plr", "genre", "patch", "directions", "buttons", "res":
 		var m map[string]bool
 		var facet map[string]int
 		switch e.kind {
 		case "base":
 			m, facet = off(f.BaseOff), a.ds.Facets.Base
-		case "src":
-			m, facet = off(f.SrcOff), a.ds.Facets.Src
 		case "rot":
 			m, facet = off(f.RotOff), a.ds.Facets.Rot
 		case "plr":
@@ -1439,8 +1456,6 @@ func (a *App) togglePanel() bool {
 		switch e.kind {
 		case "base":
 			f.BaseOff = m
-		case "src":
-			f.SrcOff = m
 		case "rot":
 			f.RotOff = m
 		case "plr":

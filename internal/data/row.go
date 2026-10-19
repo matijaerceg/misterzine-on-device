@@ -182,6 +182,13 @@ const SrcLocal = "local"
 // than from the catalogue.
 func (r *Row) IsLocal() bool { return r.Src == SrcLocal }
 
+// CoreKey names the row's core within its source, "ongo/Seta": the Source
+// filter opens into cores, and a core two sources ship stays two choices.
+func CoreKey(r *Row) string { return r.Src + "/" + r.Core }
+
+// CoreKeySrc is the source half of a CoreKey; core names never hold a slash.
+func CoreKeySrc(key string) string { return key[:max(0, strings.LastIndexByte(key, '/'))] }
+
 // LocalKey is the K of a local row: "local:" plus the lowercase setname, so
 // favorites and remembered versions survive a move of the file.
 func LocalKey(setname string) string { return "local:" + strings.ToLower(setname) }

@@ -58,6 +58,13 @@ func (a *App) selectedDecade() string {
 	if a.cfg.ShowNonArcade && (e.kind == "beta" || (e.kind == "base" && e.value == "Arcade" && !e.header)) {
 		return "Arcade"
 	}
+	// a source opens into its cores, when it has more than one
+	if e.kind == "core" {
+		return srcGroup(data.CoreKeySrc(e.value))
+	}
+	if e.kind == "src" && !e.header && len(a.panel.srcCores[e.value]) > 1 {
+		return srcGroup(e.value)
+	}
 	return ""
 }
 
@@ -82,7 +89,7 @@ func (a *App) expandYears(open bool) bool {
 	// selection pointing at an unrelated filter further down the panel.
 	if !open {
 		for i, parent := range a.panel.entries {
-			if (parent.kind == "decade" || parent.kind == "base") && parent.value == decade && !parent.header {
+			if ((parent.kind == "decade" || parent.kind == "base") && parent.value == decade || parent.kind == "src" && srcGroup(parent.value) == decade) && !parent.header {
 				a.panel.cursor = i
 				break
 			}

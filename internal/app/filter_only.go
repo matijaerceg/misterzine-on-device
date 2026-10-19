@@ -34,7 +34,7 @@ func (a *App) canOnlyFilter() bool {
 		return false
 	}
 	e := a.panel.entries[a.panel.cursor]
-	return !e.header && !e.info && (e.kind == "year" || e.kind == "decade" || e.kind == "beta" || a.onlyFacet(e.kind) != nil || e.kind == "install" || e.kind == "rom" || e.kind == "fav" || e.kind == "since")
+	return !e.header && !e.info && (e.kind == "year" || e.kind == "decade" || e.kind == "beta" || e.kind == "core" || a.onlyFacet(e.kind) != nil || e.kind == "install" || e.kind == "rom" || e.kind == "fav" || e.kind == "since")
 }
 
 func (a *App) onlyFilter() bool {
@@ -48,6 +48,9 @@ func (a *App) onlyFilter() bool {
 	if e.kind == "beta" || (e.kind == "base" && e.value == "Arcade") {
 		return a.toggleArcade(true)
 	}
+	if e.kind == "src" || e.kind == "core" {
+		return a.toggleSource(true)
+	}
 	f := a.filters
 	off := map[string]bool{}
 	for value := range a.onlyFacet(e.kind) {
@@ -58,8 +61,6 @@ func (a *App) onlyFilter() bool {
 	switch e.kind {
 	case "base":
 		f.BaseOff = off
-	case "src":
-		f.SrcOff = off
 	case "rot":
 		f.RotOff = off
 	case "plr":
@@ -99,7 +100,7 @@ func copySection(kind string, to *data.Filters, from data.Filters) {
 	case "base":
 		to.BaseOff, to.BetaOff = from.BaseOff, from.BetaOff
 	case "src":
-		to.SrcOff = from.SrcOff
+		to.SrcOff, to.CoreOff = from.SrcOff, from.CoreOff
 	case "rot":
 		to.RotOff = from.RotOff
 	case "plr":

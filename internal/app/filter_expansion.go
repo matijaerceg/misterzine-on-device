@@ -22,6 +22,16 @@ func (a *App) resetFilterExpansion() {
 	if len(a.filters.BetaOff) > 0 {
 		a.panel.yearOpen["Arcade"] = true // reveal the Stable/Beta choice
 	}
+	// and a source with some of its listed cores off; rawFilterEntries
+	// above listed them
+	for k := range a.filters.CoreOff {
+		if _, listed := a.panel.coreLabel[k]; !listed {
+			continue
+		}
+		if src := data.CoreKeySrc(k); !a.filters.SrcOff[src] && len(a.panel.srcCores[src]) > 1 {
+			a.panel.yearOpen[srcGroup(src)] = true
+		}
+	}
 	// Reveal individual years only for partially selected decades.
 	total, hidden := map[string]int{}, map[string]int{}
 	for year := range a.ds.Facets.Year {
