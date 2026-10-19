@@ -34,7 +34,7 @@ func (a *App) canOnlyFilter() bool {
 		return false
 	}
 	e := a.panel.entries[a.panel.cursor]
-	return !e.header && !e.info && (e.kind == "year" || e.kind == "decade" || e.kind == "beta" || e.kind == "core" || a.onlyFacet(e.kind) != nil || e.kind == "install" || e.kind == "rom" || e.kind == "fav" || e.kind == "since")
+	return !e.header && !e.info && (e.kind == "year" || e.kind == "decade" || e.kind == "beta" || e.kind == "core" || e.kind == "singles" || a.onlyFacet(e.kind) != nil || e.kind == "install" || e.kind == "rom" || e.kind == "fav" || e.kind == "since")
 }
 
 func (a *App) onlyFilter() bool {
@@ -48,7 +48,7 @@ func (a *App) onlyFilter() bool {
 	if e.kind == "beta" || (e.kind == "base" && e.value == "Arcade") {
 		return a.toggleArcade(true)
 	}
-	if e.kind == "src" || e.kind == "core" {
+	if e.kind == "src" || e.kind == "core" || e.kind == "singles" {
 		return a.toggleSource(true)
 	}
 	f := a.filters
@@ -100,7 +100,7 @@ func copySection(kind string, to *data.Filters, from data.Filters) {
 	case "base":
 		to.BaseOff, to.BetaOff = from.BaseOff, from.BetaOff
 	case "src":
-		to.SrcOff, to.CoreOff = from.SrcOff, from.CoreOff
+		to.SrcOff, to.CoreOff, to.SinglesOff = from.SrcOff, from.CoreOff, from.SinglesOff
 	case "rot":
 		to.RotOff = from.RotOff
 	case "plr":

@@ -851,11 +851,16 @@ cores (alphas included), like
 a decade opens into years: A toggles one, Y shows only one, and a mixed choice
 shows `[-]` on Arcade. Turning both off is the same as turning Arcade off.
 
-Under Source/core, a source that ships more than one core opens (Right, or X) into
-its cores, named as in the Core view, the same way: A toggles one core, Y shows
-only that core, and a source with some cores off shows `[-]`. A core two
-sources ship is a separate choice under each. Turning every core of a source
-off is the same as turning the source off.
+Under Source/core, a source opens (Right, or X) into its arcade cores, named as
+in the Core view, the same way: first **Single-game cores**, one choice for all
+its cores that run one game (the Core view's group of that name), then each
+core that runs more. A toggles one row, Y shows only that row, and a source
+with some rows off shows `[-]`. A source with only one row to show (a single
+core, or only single-game cores) does not open. Single-game cores turned off
+stay off as the catalogue adds more; a core that gains a second game moves to
+its own row and keeps its choice. A core two sources ship is a separate choice
+under each. Turning every row of a source off is the same as turning the
+source off.
 
 Counts reflect your search and the other filter sections. A choice's count
 ignores its own section, so unchecked choices still show how many entries they

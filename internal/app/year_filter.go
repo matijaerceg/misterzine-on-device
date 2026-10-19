@@ -58,11 +58,11 @@ func (a *App) selectedDecade() string {
 	if a.cfg.ShowNonArcade && (e.kind == "beta" || (e.kind == "base" && e.value == "Arcade" && !e.header)) {
 		return "Arcade"
 	}
-	// a source opens into its cores, when it has more than one
+	// a source opens into its cores, when it has two rows of them or more
 	if e.kind == "core" {
 		return srcGroup(data.CoreKeySrc(e.value))
 	}
-	if e.kind == "src" && !e.header && len(a.panel.srcCores[e.value]) > 1 {
+	if e.kind == "singles" || e.kind == "src" && !e.header && a.sourceOpens(e.value) {
 		return srcGroup(e.value)
 	}
 	return ""

@@ -28,7 +28,12 @@ func (a *App) resetFilterExpansion() {
 		if _, listed := a.panel.coreLabel[k]; !listed {
 			continue
 		}
-		if src := data.CoreKeySrc(k); !a.filters.SrcOff[src] && len(a.panel.srcCores[src]) > 1 {
+		if src := data.CoreKeySrc(k); !a.filters.SrcOff[src] && a.sourceOpens(src) {
+			a.panel.yearOpen[srcGroup(src)] = true
+		}
+	}
+	for src := range a.filters.SinglesOff {
+		if !a.filters.SrcOff[src] && a.sourceOpens(src) {
 			a.panel.yearOpen[srcGroup(src)] = true
 		}
 	}

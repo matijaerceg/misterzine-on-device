@@ -72,6 +72,11 @@ type Filters struct {
 	BetaOff        map[string]bool `json:"beta_off,omitempty"` // arcade sub-type: "stable", "beta"
 	SrcOff         map[string]bool `json:"src_off,omitempty"`
 	CoreOff        map[string]bool `json:"core_off,omitempty"` // CoreKey: one source's core, "ongo/Seta"
+	// SinglesOff hides a source's single-game cores (the Core view's
+	// gathering), those the catalogue gains later included; the ones off
+	// when it was set are in CoreOff too, so a core that gains a second
+	// game stays off
+	SinglesOff map[string]bool `json:"singles_off,omitempty"`
 	RotOff        map[string]bool `json:"rot_off,omitempty"`   // "h", "v", ""
 	PlrOff         map[string]bool `json:"plr_off,omitempty"`   // raw plr, "" = unknown
 	GenreOff       map[string]bool `json:"genre_off,omitempty"` // raw genre, "" = no genre
@@ -90,7 +95,7 @@ func (f *Filters) Active() bool {
 	if f == nil {
 		return false
 	}
-	return f.ArcadeOnly || f.HideDeprecated || f.HideMature || f.MatchRotation != "" || len(f.SrcHidden) > 0 || f.Genre != "" || len(f.YearOff) > 0 || len(f.BaseOff) > 0 || len(f.BetaOff) > 0 || len(f.SrcOff) > 0 || len(f.CoreOff) > 0 || len(f.RotOff) > 0 || len(f.PlrOff) > 0 ||
+	return f.ArcadeOnly || f.HideDeprecated || f.HideMature || f.MatchRotation != "" || len(f.SrcHidden) > 0 || f.Genre != "" || len(f.YearOff) > 0 || len(f.BaseOff) > 0 || len(f.BetaOff) > 0 || len(f.SrcOff) > 0 || len(f.CoreOff) > 0 || len(f.SinglesOff) > 0 || len(f.RotOff) > 0 || len(f.PlrOff) > 0 ||
 		len(f.ResOff) > 0 || len(f.GenreOff) > 0 || len(f.PatchOff) > 0 || len(f.DirectionsOff) > 0 || len(f.ButtonsOff) > 0 || (f.Install != "" && f.Install != InstallAll) || f.FavOnly || f.Since || f.ROMActive()
 }
 
@@ -134,6 +139,9 @@ func (f *Filters) Why(r *Row, d *Derived, st Status, fav, unseen bool, rom ROMSt
 	}
 	if f.CoreOff[CoreKey(r)] {
 		return "Filters -> Source/core (" + r.Src + ": " + d.CoreLabel + " off)"
+	}
+	if f.SinglesOff[r.Src] && d.CoreGroup == CoreSingleGame {
+		return "Filters -> Source/core (" + r.Src + ": single-game cores off)"
 	}
 	if f.SrcHidden[r.Src] {
 		return "Options -> Sources: installed only (" + r.Src + " is not in downloader.ini)"
