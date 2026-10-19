@@ -31,8 +31,11 @@ import (
 var coreDirs = []string{"_Arcade/cores", "_Console", "_Computer", "_Other", "_Utility"}
 
 // rbfName matches "<Core>_YYYYMMDD[_anything].rbf"; undated rbfs (Jotego
-// ships e.g. jt1942.rbf) simply do not match and count as undated.
-var rbfName = regexp.MustCompile(`^(?i)(.+?)_(\d{8})(?:_[^/]*)?\.rbf$`)
+// ships e.g. jt1942.rbf) simply do not match and count as undated. A
+// same-day rebuild adds a letter (decoryah's metro_20261018c.rbf); it stays
+// on the date, lowercased, so later letters sort newer and the date still
+// compares >= the plain YYYYMMDD the feed ships.
+var rbfName = regexp.MustCompile(`^(?i)(.+?)_(\d{8}[a-z]?)(?:_[^/]*)?\.rbf$`)
 
 // Core is one installed core: its newest build date and file.
 type Core struct {
@@ -92,7 +95,7 @@ func ScanCores(card string) *Index {
 			stem := strings.ToLower(strings.TrimSuffix(name, filepath.Ext(name)))
 			base, date := stem, ""
 			if m := rbfName.FindStringSubmatch(name); m != nil {
-				base, date = strings.ToLower(m[1]), m[2]
+				base, date = strings.ToLower(m[1]), strings.ToLower(m[2])
 			}
 			rel := path.Join(dir, name)
 			if dir == "_Arcade/cores" {
@@ -427,9 +430,10 @@ type altDir struct {
 }
 
 // Version 4 added parent metadata, version 5 the descriptive header fields,
-// version 6 <version>, version 7 the other archives a file loads; older
-// entries must be reparsed.
-const altCacheVersion = 7
+// version 6 <version>, version 7 the other archives a file loads, version 8
+// the game's own set for a BIOS setname (gameSetname); older entries must be
+// reparsed.
+const altCacheVersion = 8
 
 // altDepth is how many folders below a game's own the alternatives scan
 // enters (_alternatives/_Game/_trainer/_old is the last read).
@@ -734,6 +738,47 @@ var headerText = map[string]bool{
 // ROM data) still yields the header, while a file cut short before any
 // <rom> is reported as unreadable, as before.
 func parseMRAResult(r io.Reader) (Alt, bool, error) {
+	a, ok, err := readMRAHeader(r)
+	if ok {
+		a.Setname = gameSetname(a.Setname, a.Zips, a.OtherZips)
+	}
+	return a, ok, err
+}
+
+// biosSetnames are MAME BIOS sets an MRA may name as its <setname> while the
+// game's own set rides in the ROM zip list instead: ppriest's PlayChoice-10
+// MRAs say <setname>playch10</setname> with zip="pc_bfght.zip|playch10.zip".
+// Mirrors the site's BIOS_SETNAMES.
+var biosSetnames = map[string]bool{"playch10": true}
+
+// gameSetname mirrors the site's _game_setname: a BIOS setname gives way to
+// the one other set the file's archives name. Several (ppriest's
+// "PlayChoice-10 (three channels)" loads three games) mean the file really is
+// the BIOS, so it keeps the BIOS set.
+func gameSetname(setname string, zips ...[]string) string {
+	if !biosSetnames[strings.ToLower(strings.TrimSpace(setname))] {
+		return setname
+	}
+	game := ""
+	for _, list := range zips {
+		for _, z := range list {
+			stem := strings.TrimSuffix(z, ".zip")
+			if stem == "" || biosSetnames[stem] || stem == game {
+				continue
+			}
+			if game != "" {
+				return setname
+			}
+			game = stem
+		}
+	}
+	if game == "" {
+		return setname
+	}
+	return game
+}
+
+func readMRAHeader(r io.Reader) (Alt, bool, error) {
 	var a Alt
 	dec := xml.NewDecoder(&mraReader{br: bufio.NewReader(r)})
 	dec.Strict = false

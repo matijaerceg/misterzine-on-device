@@ -18,7 +18,7 @@ func TestHiddenSourcesFollowDownloaderDatabases(t *testing.T) {
 		{ID: "jtcores"},
 		{ID: "other/db", URL: "https://example.com/db.json.zip"},
 	})
-	if want := map[string]bool{"bazset": true, "blahm1d": true, "coinop": true, "kuzecores": true, "meathax": true, "ongo": true, "rmcores": true, "rossops": true, "slopcore": true, "theypsilon_unofficial_distribution": true}; !reflect.DeepEqual(got, want) {
+	if want := map[string]bool{"bazset": true, "blahm1d": true, "coinop": true, "decoryah": true, "gm0rk": true, "kuzecores": true, "meathax": true, "ongo": true, "ppriest": true, "rmcores": true, "rossops": true, "slopcore": true, "theypsilon_unofficial_distribution": true, "tomsvr": true}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("hidden = %v, want %v", got, want)
 	}
 	// the db_url identifies a renamed section; the old Coin-Op name still counts
@@ -26,10 +26,10 @@ func TestHiddenSourcesFollowDownloaderDatabases(t *testing.T) {
 		{ID: "mine", URL: "https://raw.githubusercontent.com/meathax/meatcores/db/db.json.zip"},
 		{ID: "atrac17/coin-op_collection"},
 	})
-	if want := map[string]bool{"bazset": true, "blahm1d": true, "distribution_mister": true, "jtbindb": true, "kuzecores": true, "ongo": true, "rmcores": true, "rossops": true, "slopcore": true, "theypsilon_unofficial_distribution": true}; !reflect.DeepEqual(got, want) {
+	if want := map[string]bool{"bazset": true, "blahm1d": true, "decoryah": true, "distribution_mister": true, "gm0rk": true, "jtbindb": true, "kuzecores": true, "ongo": true, "ppriest": true, "rmcores": true, "rossops": true, "slopcore": true, "theypsilon_unofficial_distribution": true, "tomsvr": true}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("hidden = %v, want %v", got, want)
 	}
-	got = HiddenSources([]DB{{ID: "distribution_mister"}, {ID: "jtcores"}, {ID: "coin-opcollection/distribution-misterfpga"}, {ID: "meathax/meatcores"}, {ID: "rmonic79/rmcores"}, {ID: "TheJesusFish/Slop-Core"}, {ID: "kuzearcade/kuzecores"}, {ID: "blahm1d"}, {ID: "bazset/MiSTer_BAZSET"}, {ID: "rossops/Arcade-SegaYBoard_MiSTer"}, {ID: "OngoGablogian/MiSTer_Ongo"}, {ID: "theypsilon_unofficial_distribution"}})
+	got = HiddenSources([]DB{{ID: "distribution_mister"}, {ID: "jtcores"}, {ID: "coin-opcollection/distribution-misterfpga"}, {ID: "meathax/meatcores"}, {ID: "rmonic79/rmcores"}, {ID: "TheJesusFish/Slop-Core"}, {ID: "kuzearcade/kuzecores"}, {ID: "blahm1d"}, {ID: "bazset/MiSTer_BAZSET"}, {ID: "rossops/Arcade-SegaYBoard_MiSTer"}, {ID: "OngoGablogian/MiSTer_Ongo"}, {ID: "TomSVR-Mister/TomSVR-Arcade-Cores"}, {ID: "decoryah/MiSTer_decoryah"}, {ID: "ppriest/MiSTer_ppriest"}, {ID: "Gm0rk/Gm0rkCores"}, {ID: "theypsilon_unofficial_distribution"}})
 	if got == nil || len(got) != 0 {
 		t.Fatalf("every database present must hide nothing: %v", got)
 	}
@@ -229,23 +229,30 @@ func TestBazsetSource(t *testing.T) {
 	}
 }
 
-// Ongo is tracked by the site tables, so its Downloader identity and display
-// name must flow through mzgen without hand-maintained app metadata.
-func TestOngoSource(t *testing.T) {
-	const src = "ongo"
-	for _, db := range []DB{
-		{ID: "OngoGablogian/MiSTer_Ongo"},
-		{ID: "ongogablogian/mister_ongo"},
-		{ID: "custom", URL: "https://raw.githubusercontent.com/OngoGablogian/MiSTer_Ongo/db/db.json.zip"},
+// Opt-in sources tracked by the site tables: their Downloader identity and
+// display name must flow through mzgen without hand-maintained app metadata.
+func TestOptInSiteSources(t *testing.T) {
+	for _, c := range []struct{ src, section, short, full string }{
+		{"ongo", "OngoGablogian/MiSTer_Ongo", "Ongo", "Ongo"},
+		{"tomsvr", "TomSVR-Mister/TomSVR-Arcade-Cores", "TomSVR", "TomSVR"},
+		{"decoryah", "decoryah/MiSTer_decoryah", "decoryah", "decoryah"},
+		{"ppriest", "ppriest/MiSTer_ppriest", "ppriest", "ppriest"},
+		{"gm0rk", "Gm0rk/Gm0rkCores", "Gm0rk", "Gm0rk"},
 	} {
-		if HiddenSources([]DB{db})[src] {
-			t.Fatalf("installed source hidden: %+v", db)
+		for _, db := range []DB{
+			{ID: c.section},
+			{ID: strings.ToLower(c.section)},
+			{ID: "custom", URL: "https://raw.githubusercontent.com/" + c.section + "/db/db.json.zip"},
+		} {
+			if HiddenSources([]DB{db})[c.src] {
+				t.Fatalf("%s: installed source hidden: %+v", c.src, db)
+			}
 		}
-	}
-	if !HiddenSources([]DB{{ID: "distribution_mister"}})[src] {
-		t.Fatal("absent source must be hidden")
-	}
-	if SrcShort(src) != "Ongo" || SrcFull(src) != "Ongo" {
-		t.Fatalf("source labels: %q %q", SrcShort(src), SrcFull(src))
+		if !HiddenSources([]DB{{ID: "distribution_mister"}})[c.src] {
+			t.Fatalf("%s: absent source must be hidden", c.src)
+		}
+		if SrcShort(c.src) != c.short || SrcFull(c.src) != c.full {
+			t.Fatalf("%s: source labels: %q %q", c.src, SrcShort(c.src), SrcFull(c.src))
+		}
 	}
 }

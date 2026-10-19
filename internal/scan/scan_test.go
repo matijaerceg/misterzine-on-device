@@ -359,6 +359,75 @@ func TestStatusShippedBuild(t *testing.T) {
 	}
 }
 
+// A same-day rebuild carries a letter after the date (decoryah's
+// metro_20261018c.rbf). It is a dated build of its core, the later letter
+// wins, and it is current against the plain date the feed ships.
+func TestStatusLetteredBuildDate(t *testing.T) {
+	card := fakeCard(t)
+	mk := func(rel string) {
+		p := filepath.Join(card, filepath.FromSlash(rel))
+		os.MkdirAll(filepath.Dir(p), 0755)
+		os.WriteFile(p, []byte("x"), 0644)
+	}
+	mk("_Arcade/cores/metro_20261018a.rbf")
+	mk("_Arcade/cores/metro_20261018c.rbf")
+	mk("_Arcade/cores/PGM2_20261017E.rbf")
+	mk("_Arcade/Mouja.mra")
+	idx := ScanCores(card)
+	if c, ok := idx.Lookup("metro"); !ok || c.Date != "20261018c" || path.Base(c.Path) != "metro_20261018c.rbf" {
+		t.Fatalf("metro = %+v %v", c, ok)
+	}
+	if c, ok := idx.Lookup("PGM2_20261017e"); !ok || c.Date != "20261017e" {
+		t.Fatalf("lettered core value = %+v %v", c, ok)
+	}
+	if got := coreStem("PGM2_20261017e"); got != "pgm2" {
+		t.Fatalf("coreStem = %q", got)
+	}
+	row := func(bd, updated string) data.Row {
+		return data.Row{Base: "Arcade", MRA: "_Arcade/Mouja.mra", Core: "metro", BD: bd, Updated: updated}
+	}
+	cases := []struct {
+		name string
+		row  data.Row
+		want data.Status
+	}{
+		{"same day", row("2026-10-18", ""), data.StatusCurrent},
+		{"earlier day", row("2026-10-13", ""), data.StatusCurrent},
+		{"feed without bd falls back to updated", row("", "2026-10-13"), data.StatusCurrent},
+		{"next day is newer", row("2026-10-19", ""), data.StatusOutdated},
+	}
+	for _, c := range cases {
+		if got := Status(card, idx, &c.row); got != c.want {
+			t.Errorf("%s: status %v, want %v", c.name, got, c.want)
+		}
+	}
+}
+
+// ppriest's PlayChoice-10 MRAs all say <setname>playch10</setname> (the
+// BIOS) and name the game only in the zip lists, with no rom index 0. The
+// game's own set is the identity; a file loading several games is the BIOS.
+func TestBIOSSetnameTakesTheGame(t *testing.T) {
+	parse := func(roms string) string {
+		a, ok := parseMRA(strings.NewReader(`<misterromdescription><setname>playch10</setname><rbf>PlayChoice10</rbf>` + roms + `</misterromdescription>`))
+		if !ok {
+			t.Fatal("header not read")
+		}
+		return a.Setname
+	}
+	if got := parse(`<rom index="4" zip="pc_bfght.zip|playch10.zip"/><rom index="1" zip="pc_bfght.zip|playch10.zip"/>`); got != "pc_bfght" {
+		t.Errorf("one game: %q", got)
+	}
+	if got := parse(`<rom index="4" zip="pc_smb.zip|playch10.zip"/><rom index="17" zip="pc_smb3.zip|playch10.zip"/><rom index="18" zip="pc_mtoid.zip|PlayCh10.zip"/>`); got != "playch10" {
+		t.Errorf("three channels: %q", got)
+	}
+	if got := parse(`<rom index="1" zip="playch10.zip"/>`); got != "playch10" {
+		t.Errorf("BIOS alone: %q", got)
+	}
+	if got := gameSetname("pc_smb", []string{"pc_smb.zip", "playch10.zip"}); got != "pc_smb" {
+		t.Errorf("a game setname is kept: %q", got)
+	}
+}
+
 func TestStatusDownloaderStore(t *testing.T) {
 	card := fakeCard(t)
 	mk := func(rel string, content string) {
