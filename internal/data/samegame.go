@@ -38,9 +38,9 @@ func (ds *Dataset) GroupOf(i int) string { return ds.Rows[ds.SortRow(i)].G }
 
 // Group is one umbrella line of a folded view.
 type Group struct {
-	G       string
-	Members []int // the member rows the view shows, in its order, standins included
-	Cores   int   // the catalogue members among them, the "2 cores" chip
+	G        string
+	Members  []int // the member rows the view shows, in its order, standins included
+	Versions int   // the catalogue members among them, the "2 versions" chip
 	// Anchor is the member whose place in the order the umbrella takes: the
 	// first one, which holds the group's newest build under Updated, except
 	// under Debut, where the umbrella dates from the group's first debut.
@@ -82,7 +82,7 @@ func (ds *Dataset) Fold(view []int, mode SortMode, open func(g string) bool) ([]
 		gr := &groups[n]
 		gr.Members = append(gr.Members, i)
 		if ds.SortRow(i) == i {
-			gr.Cores++
+			gr.Versions++
 		}
 		if mode == SortDebut && earlierDate(ds.Rows[ds.SortRow(i)].Date, ds.Rows[ds.SortRow(gr.Anchor)].Date) {
 			gr.Anchor = i

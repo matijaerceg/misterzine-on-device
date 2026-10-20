@@ -292,6 +292,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		FilterRotation:       h.settings.FilterRotation,
 		InstalledOnly:        h.settings.InstalledOnly,
 		ShowDeprecated:       h.settings.ShowDeprecated,
+		VersionCounts:        h.settings.VersionCounts,
 		Mature:               h.settings.Mature,
 		ShowNonArcade:        h.settings.ShowNonArcade,
 		ArcadeIntro:          h.settings.ArcadeIntroPending,
@@ -1100,6 +1101,7 @@ func (h *host) saveAll(final bool) {
 		h.settings.FilterRotation = h.a.FilterRotation()
 		h.settings.InstalledOnly = h.a.InstalledOnly()
 		h.settings.ShowDeprecated = h.a.ShowDeprecated()
+		h.settings.VersionCounts = h.a.VersionCounts()
 		h.settings.Mature = h.a.Mature()
 		if h.settings.Mature == app.MatureShow {
 			h.settings.Mature = "" // the default stays out of settings.json

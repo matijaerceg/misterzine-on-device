@@ -118,23 +118,31 @@ func (a *App) umbrellaUnseen(u *data.Group) bool {
 	return false
 }
 
-// coresChip is the umbrella's member count as the row and pane show it.
-func coresChip(u *data.Group) string {
-	return itoa(u.Cores) + " cores"
+// versionsChip is the umbrella's member count as the pane shows it.
+func versionsChip(u *data.Group) string {
+	return itoa(u.Versions) + " versions"
 }
 
 // paintCountedTitle draws an umbrella's name into w pixels with its member
-// count right after it, "(2)", in the title's font but muted; the count is
-// always shown, so a long name gives way to it.
+// count right after it, "(2)", in the title's font but muted, when Options
+// -> Version counts is on; a long name then gives way to the count.
 func (a *App) paintCountedTitle(c *gfx.Canvas, x, y, w int, u *data.Group, col rgb) {
-	count := "(" + itoa(u.Cores) + ")"
+	count := "(" + itoa(u.Versions) + ")"
 	title := u.Title(a.ds)
 	if f := a.titleFont(); f != nil {
 		y-- // scientifica's baseline is one pixel lower than the body font's
+		if !a.VersionCounts() {
+			c.TextProp(x, y, f, gfx.FitProp(f, title, w), col)
+			return
+		}
 		gap := f.Advance(' ')
 		cw := f.PropWidth(count)
 		tw := c.TextProp(x, y, f, gfx.FitProp(f, title, w-gap-cw), col)
 		c.TextProp(x+tw+gap, y, f, count, pal.Muted)
+		return
+	}
+	if !a.VersionCounts() {
+		c.Text(x, y, a.body, gfx.Fit(title, a.body.Cols(w)), col)
 		return
 	}
 	cols := a.body.Cols(w) - len(count) - 1
@@ -204,14 +212,14 @@ func (a *App) paintUmbrella(c *gfx.Canvas, r image.Rectangle, pos int, u *data.G
 }
 
 // umbrellaPaneLines is what the pane says about an umbrella: its name, the
-// core count, each member's core, and the year and maker when the members
+// version count, each member's core, and the year and maker when the members
 // agree on them.
 func (a *App) umbrellaPaneLines(u *data.Group, cols int) []paneLine {
 	var lines []paneLine
 	for _, t := range gfx.Wrap(u.Title(a.ds), cols, 2) {
 		lines = append(lines, paneLine{t, pal.Fg})
 	}
-	lines = append(lines, paneLine{"Arcade / " + coresChip(u), pal.TypeArcade})
+	lines = append(lines, paneLine{"Arcade / " + versionsChip(u), pal.TypeArcade})
 	// each member's core, by its source where the core is named after the
 	// game, as the site's Core cell has it
 	for _, i := range u.Members {

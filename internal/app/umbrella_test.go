@@ -1,6 +1,7 @@
 package app
 
 import (
+	"image"
 	"strings"
 	"testing"
 	"time"
@@ -212,6 +213,60 @@ func TestUmbrellaNeedsBeta(t *testing.T) {
 	flat()
 	if a.expanded != nil || strings.HasPrefix(a.CursorKey(), data.GroupKeyPrefix) || a.CursorKey() == "" {
 		t.Fatalf("cursor %q expanded %v after flattening", a.CursorKey(), a.expanded)
+	}
+}
+
+// Options -> Version counts is there only while groups are, and off (the
+// default) it leaves the "(2)" off the umbrella's line: nothing muted
+// between the plus and the date column.
+func TestVersionCounts(t *testing.T) {
+	a := umbrellaApp(nil)
+	a.SetSort(data.SortUpdated)
+	hasRow := func() bool {
+		for _, e := range a.optionsEntries() {
+			if e.kind == "version-counts" {
+				return true
+			}
+		}
+		return false
+	}
+	if !hasRow() {
+		t.Fatal("no Version counts row with groups on")
+	}
+	pos := -1
+	for p := range a.view {
+		if a.umbrellaAt(p) != nil {
+			pos = p
+		}
+	}
+	if pos < 0 {
+		t.Fatalf("no umbrella in %v", viewKeys(a))
+	}
+	muted := func() int {
+		c := gfx.New(320, 240)
+		r := image.Rect(0, 0, a.lay.List.Dx(), a.lay.Line)
+		a.paintUmbrella(c, r, pos, a.umbrellaAt(pos))
+		n := 0
+		for x := r.Min.X + a.body.W; x < r.Max.X-a.dateCols()*a.rowFont().W; x++ {
+			for y := r.Min.Y; y < r.Max.Y; y++ {
+				if c.RGBAAt(x, y) == pal.Muted {
+					n++
+				}
+			}
+		}
+		return n
+	}
+	if n := muted(); n != 0 {
+		t.Fatalf("%d muted pixels beside the name with the count off by default", n)
+	}
+	a.cfg.VersionCounts = true
+	if muted() == 0 {
+		t.Fatal("the count is missing with Version counts on")
+	}
+	a.cfg.ShowBetaFeatures = false
+	a.accessChanged()
+	if hasRow() {
+		t.Fatal("Version counts row with groups off")
 	}
 }
 

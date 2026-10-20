@@ -679,6 +679,18 @@ func (a *App) optionsEntries() []panelEntry {
 			}
 		}
 	}
+	if a.featureAllowed(access.Groups) {
+		// only while same-game groups are on: the free beta's own row, last
+		// in List so the rows walked by position above it stay put
+		for i, e := range E {
+			if e.kind == "list-layout" {
+				row := panelEntry{text: "Version counts", kind: "version-counts", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.VersionCounts()],
+					help: "On: a game with several versions shows how many after its name, (2). Off (default): its plus alone marks it; the picture pane keeps the count."}
+				E = append(E[:i+1], append([]panelEntry{row}, E[i+1:]...)...)
+				break
+			}
+		}
+	}
 	for i, e := range E {
 		if e.kind == "rescan" {
 			row := panelEntry{text: "ROM report", child: true, kind: "rom-report", help: "Lists ROM problems in misterzine/rom_problems.txt. Rescan card refreshes it."}
@@ -1244,6 +1256,8 @@ func (a *App) stepValue(d int) bool {
 	case "show-deprecated":
 		a.cfg.ShowDeprecated = i == 1
 		a.Refilter()
+	case "version-counts":
+		a.cfg.VersionCounts = i == 1
 	case "mature":
 		a.cfg.Mature = []string{MatureShow, MaturePixelate, MatureHide}[i]
 		a.Refilter()
@@ -1492,7 +1506,7 @@ func (a *App) togglePanel() bool {
 		if !e.header {
 			f.Since = !f.Since
 		}
-	case "page-transitions", "rotation", "follow-rotation", "filter-rotation", "sources", "show-deprecated", "mature", "launcher", "scroll", "smooth-scroll", "hold-delay", "remember-sort", "default-view", "prefetch", "title-font", "list-shot", "date-format", "list-layout":
+	case "page-transitions", "rotation", "follow-rotation", "filter-rotation", "sources", "show-deprecated", "mature", "launcher", "scroll", "smooth-scroll", "hold-delay", "remember-sort", "default-view", "prefetch", "title-font", "list-shot", "date-format", "list-layout", "version-counts":
 		return true // Left/Right pick these
 	case "inset":
 		a.screen = ScreenCalibrate

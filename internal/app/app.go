@@ -160,6 +160,10 @@ type Config struct {
 	// can take it back (arcade_back.go).
 	ArcadeBack     bool
 	ShowDeprecated bool // Include catalogue rows marked deprecated.
+	// VersionCounts is Options -> Version counts: a same-game group's line
+	// shows how many versions it holds after its name, "(2)"; off (the
+	// default), its plus marks it alone.
+	VersionCounts bool
 	// Mature is Options -> Mature games: MatureShow (""), MaturePixelate
 	// (screenshots of rows marked mature are pixelated) or MatureHide (the
 	// rows leave every view, the counts and the screensaver).
@@ -677,6 +681,8 @@ func (a *App) ShowNonArcade() bool      { return a.cfg.ShowNonArcade }
 func (a *App) ArcadeIntroPending() bool { return a.cfg.ArcadeIntro }
 
 func (a *App) ShowDeprecated() bool { return a.cfg.ShowDeprecated }
+
+func (a *App) VersionCounts() bool { return a.cfg.VersionCounts }
 
 // Options -> Mature games values.
 const (

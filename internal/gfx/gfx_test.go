@@ -218,5 +218,10 @@ func TestCollapseIsThePlusCrossbar(t *testing.T) {
 		if string(f.Glyph('-')) != hyphen {
 			t.Fatalf("%s: the hyphen changed", name)
 		}
+		// the body font's sign is wider than the '+' that text such as
+		// "Select+Start" keeps
+		if f.W >= 6 && (plus[bar] != 0xF8 || f.Glyph('+')[bar] != 0x70) {
+			t.Fatalf("%s: expand crossbar %08b, '+' crossbar %08b", name, plus[bar], f.Glyph('+')[bar])
+		}
 	}
 }

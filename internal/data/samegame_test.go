@@ -24,7 +24,7 @@ func TestFoldUmbrellaTakesFirstMembersPlace(t *testing.T) {
 	ds := sameGameSet()
 	view := ds.Order(SortUpdated) // bub, solo, bub-a, standin
 	out, groups := ds.Fold(view, SortUpdated, nil)
-	if len(groups) != 1 || groups[0].G != "bub" || groups[0].Cores != 2 || len(groups[0].Members) != 3 {
+	if len(groups) != 1 || groups[0].G != "bub" || groups[0].Versions != 2 || len(groups[0].Members) != 3 {
 		t.Fatalf("groups %+v", groups)
 	}
 	if want := []int{len(ds.Rows), ds.Index("solo")}; !slices.Equal(out, want) {
@@ -89,8 +89,8 @@ func TestFixtureCarriesGroups(t *testing.T) {
 		t.Fatalf("fixture folds into %d groups", len(groups))
 	}
 	for _, g := range groups {
-		if g.Cores < 2 || g.Title(ds) == "" {
-			t.Errorf("group %s: %d cores, title %q", g.G, g.Cores, g.Title(ds))
+		if g.Versions < 2 || g.Title(ds) == "" {
+			t.Errorf("group %s: %d versions, title %q", g.G, g.Versions, g.Title(ds))
 		}
 	}
 }

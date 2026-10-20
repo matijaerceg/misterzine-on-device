@@ -66,6 +66,12 @@ scenarios = [
      "type turtles; shot collapsed; enter; shot expanded; down; shot member; enter; shot member-details; back; up; enter; shot closed-again; back; space*3; type caveman; shot alphabetical"],
     ["-show-beta", "-rot", "left", "-logical", "-out", "out/umbrella-t", "-script",
      "type turtles; shot collapsed; enter; shot expanded; down; shot member; enter; shot member-details; back; up; enter; shot closed-again; back; space*3; type caveman; shot alphabetical"],
+    # Options -> Version counts on, the last List row while groups are on:
+    # the umbrella's name is followed by its (2)
+    ["-show-beta", "-out", "out/umbrella-count-h", "-script",
+     "back; home; pagedown; right; down*13; shot option; right; shot option-on; back; type turtles; shot collapsed; enter; shot expanded"],
+    ["-show-beta", "-rot", "left", "-logical", "-out", "out/umbrella-count-t", "-script",
+     "back; home; pagedown; right; down*13; shot option; right; shot option-on; back; type turtles; shot collapsed; enter; shot expanded"],
     # one member the last visit has not seen: the closed umbrella carries its
     # green date, which the member keeps once the umbrella opens
     ["-show-beta", "-unseen", "teenage-mutant-ninja-turtles-turtles-in-time", "-out", "out/umbrella-dot-h", "-script",

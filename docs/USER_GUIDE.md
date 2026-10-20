@@ -108,8 +108,10 @@ at the top of the view you left.
 
 When the catalogue has the same arcade game on two or three different cores
 (for example a MiSTer core and a Coin-Op Collection core), the list shows it
-once, as one closed entry with a plus and the game's name followed by how
-many versions it holds, "(2)". Press A on it to open it: the plus turns into a
+once, as one closed entry with a plus and the game's name; the picture pane
+says how many versions it holds ("2 versions"), and Options -> List ->
+Version counts puts that number after the name too, "(2)". Press A on it to
+open it: the plus turns into a
 minus and each core's version appears right below it, and A on one of those
 opens its Details as usual. A on the open entry closes it again. The grouped
 entry has no Details, favorite or launch of its own; those stay on each
@@ -588,6 +590,10 @@ and last row. Rows marked ↗ open another screen or editor.
   D Mon (7 Sep) or YYMMDD (260907). The help line shows today's date in the
   chosen format. Rows from earlier years show the year alone, except with
   YYMMDD, which always carries the full date.
+- **Version counts:** shown while same-game grouping is on (a beta). Off
+  (default): a grouped game's entry shows its plus and name only. On: the
+  name is followed by how many versions the entry holds, "(2)". The picture
+  pane says "2 versions" either way.
 - **Follow INI rotation:** on by default, including after upgrading. Every
   startup reads `osd_rotate` from the MiSTer INI that is currently active: the
   main MiSTer.ini, or the alternative INI (`MiSTer_*.ini`) you selected in the
