@@ -1,11 +1,10 @@
-**Filter by core**
+**Tidier same-game groups**
 
-Under Filters, **Source/core** now opens each source into its cores, so you can choose which cores' games to show. Cores that run a single game are grouped as **Single-game cores**.
+**Fixed**
 
-**Added**
+- Same-game groups (a beta) mark their line with a bigger plus and leave out the number of versions; turn on **Version counts** in Options -> List to bring it back. Their details now say "2 versions" instead of "2 cores".
+- Pressing F9 on a keyboard just after the menu button no longer freezes MiSTer until a reboot.
 
-- Filtering by core within each source.
-
-Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1215--2026-10-19).
+Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1216--2026-10-20).
 Existing installations update through Update All, or through Update MisterZine only. New installation:
 [installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once).
