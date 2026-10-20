@@ -910,7 +910,30 @@ func runFromMenu(lg *log.Logger, kbd *mister.VKeyboard, resume bool, selected ti
 	cmd := exec.Command("/sbin/agetty", "-a", "root", "-l", "/tmp/script", "--nohostname", "-L", "tty2", "linux")
 	err = cmd.Run()
 	lg.Printf("watch: app finished after %v (err=%v)", time.Since(t0).Round(time.Second), err)
+	unwedgeMain(lg)
 	return nil
+}
+
+// unwedgeMain makes a console switch Main is still waiting for. Main's F9
+// (its terminal) switches to tty1 and waits for it without a bound; pressed
+// just after the menu button, while the app is leaving but tty2 is still in
+// graphics mode, the kernel drops the switch and Main waits for good, deaf
+// to its menu and to MiSTer_cmd. With the app gone tty2 is back in text
+// mode, so the same switch now goes through.
+func unwedgeMain(lg *log.Logger) {
+	for _, name := range []string{"MiSTer", consoleModeMain, "MiSTer_Degauss"} {
+		for _, p := range pidsOf(name) {
+			b, _ := os.ReadFile(fmt.Sprintf("/proc/%d/syscall", p))
+			n, ok := mister.VTWaitTarget(string(b))
+			if !ok {
+				continue
+			}
+			lg.Printf("watch: Main (pid %d) is stuck waiting for tty%d with %s active; switching to it", p, n, mister.ActiveTTY())
+			if err := mister.Chvt(n); err != nil {
+				lg.Printf("watch: %v", err)
+			}
+		}
+	}
 }
 
 // openConsoleF9 is Remote's trick for the stock Main: park on tty3, press
