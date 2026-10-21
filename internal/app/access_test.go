@@ -217,10 +217,10 @@ func TestAccessOverviewAndReturn(t *testing.T) {
 				}
 				want := "Available"
 				if f.Fancy {
-					want = "Needs Oct 2026+"
+					want = "Needs " + f.Since.Short() + "+"
 					if f.Covered(month) {
 						want = "Unlocked"
-						if !beta {
+						if f.Beta && !beta {
 							want = "Beta off"
 						}
 					}
