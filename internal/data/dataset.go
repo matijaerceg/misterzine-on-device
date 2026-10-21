@@ -67,6 +67,10 @@ type Dataset struct {
 	cluster map[string]int
 	Facets  Facets
 
+	// catalogue-wide counts for core batches (batches.go): rows per
+	// same-game group, and games per batch under Updated and Debut
+	groupSize, buildBatch, debutBatch map[string]int
+
 	orderMu sync.Mutex
 	orders  map[SortMode][]int // Order's result per mode, sorted on first use
 }
@@ -163,6 +167,7 @@ func Ingest(rows []Row, hash string, updated time.Time) *Dataset {
 		}
 	}
 	ds.coreGroups()
+	ds.countBatches()
 	return ds
 }
 

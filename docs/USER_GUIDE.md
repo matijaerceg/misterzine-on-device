@@ -124,6 +124,19 @@ catalogue refreshes.
 Grouping is a beta feature for now: it shows when Show beta features is on
 in Options -> Operation. With it off, every version is its own entry.
 
+### Core batches
+
+One core build often updates every game the core runs on the same day, and a
+new core's games often arrive together. In the Build date and MiSTer debut
+views, three or more games on one core with the same date fold into one closed
+entry named after the core, such as "Capcom CPS-2 update (40)" (or "debut"
+when the games are new). It opens and closes with A like a same-game group,
+and its picture pane lists the games. A game grouped with its other versions
+stays in that group instead. While you search, each match shows under its
+core's entry, which starts open and reads "(1/40)" when only some of its games
+match; A closes it for the rest of that search. Core batches are a beta
+feature too, shown with Show beta features on.
+
 ### Games only on your card
 
 Arcade games on the card that the catalogue does not list appear as well, with

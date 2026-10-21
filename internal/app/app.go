@@ -265,6 +265,10 @@ type App struct {
 	// session and the dataset, never saved.
 	groups   []data.Group
 	expanded map[string]bool
+	// searchShut holds the core batches closed by hand during the search in
+	// shutQuery: a search opens every batch (umbrellaOpen) until then.
+	searchShut map[string]bool
+	shutQuery  string
 	// hiddenSrc are the sources without a Downloader database on the card,
 	// nil until a card scan reports; iniKnown/iniFound say whether that
 	// report found a downloader.ini at all.
@@ -549,11 +553,14 @@ func (a *App) rebuild() {
 		a.view = matched
 	}
 	a.shown = len(a.view)
-	// same-game umbrellas are a beta feature: with it hidden the list stays
-	// flat, every row its own line
+	// same-game umbrellas and core batches are beta features: with both
+	// hidden the list stays flat, every row its own line
 	a.groups = nil
-	if a.featureAllowed(access.Groups) {
-		a.view, a.groups = a.ds.Fold(a.view, a.mode, func(g string) bool { return a.expanded[g] })
+	if groups, batches := a.featureAllowed(access.Groups), a.featureAllowed(access.Batches); groups || batches {
+		if a.query != a.shutQuery {
+			a.searchShut, a.shutQuery = nil, a.query // a new search opens every batch again
+		}
+		a.view, a.groups = a.ds.Fold(a.view, a.mode, data.FoldOpts{Groups: groups, Batches: batches, Search: a.searching(), Open: a.umbrellaOpen})
 	} else {
 		a.expanded = nil
 	}
@@ -1327,7 +1334,7 @@ func (a *App) actList(k platform.Key) bool {
 		if u := a.umbrellaAt(a.cursor); u != nil {
 			// an umbrella has no Details: A opens or closes it, the cursor staying on it
 			a.setExpanded(u.G, !u.Open)
-			k := data.GroupKey(u.G)
+			k := u.Key()
 			a.rebuild()
 			a.moveToKey(k)
 			return true

@@ -10,7 +10,9 @@ import (
 
 // Umbrella lines are the list's form of the site's same-game groups
 // (data.Fold): one cursor stop for a game the catalogue ships on two cores
-// or more, A opening it onto its members and closing it again. The view
+// or more, A opening it onto its members and closing it again. Core batches
+// (data/batches.go) use the same lines for the games one core build or
+// debut brought together, under the date orders. The view
 // stays the one list of lines, an umbrella sitting in it as an index past
 // the rows (len(ds.Rows)+n for groups[n]); everything that walks the view
 // asks the helpers below for a line's key, the row that places it in the
@@ -41,10 +43,10 @@ func (a *App) memberAt(pos int) bool {
 }
 
 // keyAt is the key line pos is remembered by: the row's K, or the
-// umbrella's data.GroupKey.
+// umbrella's Key.
 func (a *App) keyAt(pos int) string {
 	if u := a.umbrellaAt(pos); u != nil {
-		return data.GroupKey(u.G)
+		return u.Key()
 	}
 	return a.ds.Rows[a.view[pos]].K
 }
@@ -74,8 +76,33 @@ func (a *App) paneRow() *data.Row {
 	return &a.ds.Rows[a.previewRow(a.cursor)]
 }
 
+// searching reports whether a title search narrows the list.
+func (a *App) searching() bool { return searchText(a.query) != "" }
+
+// umbrellaOpen reports whether the umbrella of group g is expanded. A
+// search opens every core batch, whose name is its core's and would
+// otherwise hide the games that matched, until one is closed by hand; the
+// open batches the player chose wait in expanded for the search to end.
+func (a *App) umbrellaOpen(g string) bool {
+	if data.IsBatch(g) && a.searching() {
+		return !a.searchShut[g]
+	}
+	return a.expanded[g]
+}
+
 // setExpanded opens or closes the umbrella of group g.
 func (a *App) setExpanded(g string, open bool) {
+	if data.IsBatch(g) && a.searching() {
+		if open {
+			delete(a.searchShut, g)
+			return
+		}
+		if a.searchShut == nil {
+			a.searchShut = map[string]bool{}
+		}
+		a.searchShut[g] = true
+		return
+	}
 	if !open {
 		delete(a.expanded, g)
 		return
@@ -123,15 +150,47 @@ func versionsChip(u *data.Group) string {
 	return itoa(u.Versions) + " versions"
 }
 
-// paintCountedTitle draws an umbrella's name into w pixels with its member
-// count right after it, "(2)", in the title's font but muted, when Options
-// -> Version counts is on; a long name then gives way to the count.
+// umbrellaTail is what follows an umbrella's name, muted: a core batch's
+// "update (22)" always, "(3/22)" when a search shows only some of its games,
+// and a same-game group's "(2)" while Options -> Version counts is on.
+func (a *App) umbrellaTail(u *data.Group) string {
+	if u.Batch() {
+		n := itoa(u.Versions)
+		if u.Total > u.Versions {
+			n += "/" + itoa(u.Total)
+		}
+		return a.batchWord(u) + " (" + n + ")"
+	}
+	if a.VersionCounts() {
+		return "(" + itoa(u.Versions) + ")"
+	}
+	return ""
+}
+
+// batchWord says what a core batch is: its games' debut under the debut
+// order, and under the build order too when every game's build is its debut
+// (a new core's first wave, as the site reads it); else an update.
+func (a *App) batchWord(u *data.Group) string {
+	if a.mode == data.SortDebut {
+		return "debut"
+	}
+	for _, i := range u.Members {
+		if r := &a.ds.Rows[a.ds.SortRow(i)]; r.Updated != r.Date {
+			return "update"
+		}
+	}
+	return "debut"
+}
+
+// paintCountedTitle draws an umbrella's name into w pixels with its tail
+// (umbrellaTail) right after it in the title's font but muted; a long name
+// gives way to the tail.
 func (a *App) paintCountedTitle(c *gfx.Canvas, x, y, w int, u *data.Group, col rgb) {
-	count := "(" + itoa(u.Versions) + ")"
+	count := a.umbrellaTail(u)
 	title := u.Title(a.ds)
 	if f := a.titleFont(); f != nil {
 		y-- // scientifica's baseline is one pixel lower than the body font's
-		if !a.VersionCounts() {
+		if count == "" {
 			c.TextProp(x, y, f, gfx.FitProp(f, title, w), col)
 			return
 		}
@@ -141,7 +200,7 @@ func (a *App) paintCountedTitle(c *gfx.Canvas, x, y, w int, u *data.Group, col r
 		c.TextProp(x+tw+gap, y, f, count, pal.Muted)
 		return
 	}
-	if !a.VersionCounts() {
+	if count == "" {
 		c.Text(x, y, a.body, gfx.Fit(title, a.body.Cols(w)), col)
 		return
 	}
@@ -215,6 +274,9 @@ func (a *App) paintUmbrella(c *gfx.Canvas, r image.Rectangle, pos int, u *data.G
 // version count, each member's core, and the year and maker when the members
 // agree on them.
 func (a *App) umbrellaPaneLines(u *data.Group, cols int) []paneLine {
+	if u.Batch() {
+		return a.batchPaneLines(u, cols)
+	}
 	var lines []paneLine
 	for _, t := range gfx.Wrap(u.Title(a.ds), cols, 2) {
 		lines = append(lines, paneLine{t, pal.Fg})
@@ -241,6 +303,47 @@ func (a *App) umbrellaPaneLines(u *data.Group, cols int) []paneLine {
 	}
 	if s := year + " " + data.ASCII(maker); s != " " {
 		lines = append(lines, paneLine{strings.TrimSpace(s), pal.Fg})
+	}
+	return lines
+}
+
+// batchPaneLines is what the pane says about a core batch: its core, its
+// type and source, how many games shipped together and on which date, then
+// the games themselves as the list shows them.
+func (a *App) batchPaneLines(u *data.Group, cols int) []paneLine {
+	var lines []paneLine
+	for _, t := range gfx.Wrap(u.Title(a.ds), cols, 2) {
+		lines = append(lines, paneLine{t, pal.Fg})
+	}
+	first := a.ds.SortRow(u.Anchor)
+	kind := a.ds.Der[first].TypeLabel
+	if r := &a.ds.Rows[first]; r.IsArcade() {
+		kind = "Arcade"
+		src := r.Src
+		for _, i := range u.Members {
+			if a.ds.Rows[a.ds.SortRow(i)].Src != src {
+				src = ""
+			}
+		}
+		if src != "" {
+			kind += " / " + a.ds.Der[first].SrcShort
+		}
+	}
+	lines = append(lines, paneLine{kind, typeHue(a.ds.Rows[first].Base)})
+	games := itoa(u.Versions) + " games"
+	if u.Total > u.Versions {
+		games = itoa(u.Versions) + " of " + itoa(u.Total) + " games"
+	}
+	lines = append(lines, paneLine{games, pal.Fg})
+	day := "Build " + u.Day
+	if a.mode == data.SortDebut {
+		day = "Debut " + u.Day
+	}
+	lines = append(lines, paneLine{day, pal.Fg})
+	for _, i := range u.Members {
+		if a.ds.SortRow(i) == i {
+			lines = append(lines, paneLine{a.ds.Der[i].Title, pal.Muted})
+		}
 	}
 	return lines
 }

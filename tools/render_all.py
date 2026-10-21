@@ -74,6 +74,15 @@ scenarios = [
      "back; home; pagedown; right; down*13; shot option; right; shot option-on; back; type turtles; shot collapsed; enter; shot expanded"],
     # one member the last visit has not seen: the closed umbrella carries its
     # green date, which the member keeps once the umbrella opens
+    # Core batches: under Build date the games one core build shipped
+    # together fold into "<core> update (N)" (Arcade-MCR68's four on 09-05);
+    # A opens it, a member's A is Details. MiSTer debut folds each core's
+    # same-day debuts; a search keeps every match under its batch, open,
+    # until A closes one.
+    ["-show-beta", "-out", "out/batch-h", "-script",
+     "down*22; shot collapsed; enter; shot expanded; down; enter; shot member-details; back; up; enter; shot closed-again; space; shot debut; type alien; shot search; enter; shot search-closed"],
+    ["-show-beta", "-rot", "left", "-logical", "-out", "out/batch-t", "-script",
+     "down*22; shot collapsed; enter; shot expanded; down; enter; shot member-details; back; up; enter; shot closed-again; space; shot debut; type alien; shot search; enter; shot search-closed"],
     ["-show-beta", "-unseen", "teenage-mutant-ninja-turtles-turtles-in-time", "-out", "out/umbrella-dot-h", "-script",
      "type turtles; shot collapsed; enter; shot expanded"],
     ["-show-beta", "-unseen", "teenage-mutant-ninja-turtles-turtles-in-time", "-rot", "left", "-logical", "-out", "out/umbrella-dot-t", "-script",

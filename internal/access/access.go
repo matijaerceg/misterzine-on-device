@@ -50,6 +50,7 @@ var (
 	Tallies   = Feature{Fancy: true, Beta: true, Since: 202610}
 	ROMReport = Feature{}
 	Groups    = Feature{Beta: true}
+	Batches   = Feature{Beta: true}
 	ErrCode   = errors.New("access: unrecognised MisterZine code")
 )
 

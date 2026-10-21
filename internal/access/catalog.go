@@ -16,6 +16,7 @@ func Catalog() []NamedFeature {
 		{"rom-report", "ROM report", ROMReport},
 		{"button-mapping", "Button mapping", Controls},
 		{"same-game-groups", "Same-game groups", Groups},
+		{"core-batches", "Core batches", Batches},
 	}
 }
 

@@ -23,7 +23,7 @@ func sameGameSet() *Dataset { return Ingest(sameGameRows(), "h", time.Time{}) }
 func TestFoldUmbrellaTakesFirstMembersPlace(t *testing.T) {
 	ds := sameGameSet()
 	view := ds.Order(SortUpdated) // bub, solo, bub-a, standin
-	out, groups := ds.Fold(view, SortUpdated, nil)
+	out, groups := ds.Fold(view, SortUpdated, FoldOpts{Groups: true})
 	if len(groups) != 1 || groups[0].G != "bub" || groups[0].Versions != 2 || len(groups[0].Members) != 3 {
 		t.Fatalf("groups %+v", groups)
 	}
@@ -34,7 +34,7 @@ func TestFoldUmbrellaTakesFirstMembersPlace(t *testing.T) {
 		t.Fatalf("umbrella values %q %q %q %d", g.Title(ds), g.Updated(ds), g.Date(ds), g.Preview(ds))
 	}
 	// open, the members follow the umbrella in the order's own sequence
-	out, _ = ds.Fold(view, SortUpdated, func(g string) bool { return g == "bub" })
+	out, _ = ds.Fold(view, SortUpdated, FoldOpts{Groups: true, Open: func(g string) bool { return g == "bub" }})
 	want := []int{len(ds.Rows), ds.Index("bub"), ds.Index("bub-a"), ds.Index(LocalKey("buba")), ds.Index("solo")}
 	if !slices.Equal(out, want) {
 		t.Fatalf("open view %v, want %v", out, want)
@@ -43,7 +43,7 @@ func TestFoldUmbrellaTakesFirstMembersPlace(t *testing.T) {
 
 func TestFoldDebutPlacesUmbrellaAtFirstDebut(t *testing.T) {
 	ds := sameGameSet()
-	out, groups := ds.Fold(ds.Order(SortDebut), SortDebut, nil)
+	out, groups := ds.Fold(ds.Order(SortDebut), SortDebut, FoldOpts{Groups: true})
 	if groups[0].Anchor != ds.Index("bub") {
 		t.Fatalf("anchor %d, want the 2024 debut", groups[0].Anchor)
 	}
@@ -56,7 +56,7 @@ func TestFoldSkipsCoreFavoritesRecents(t *testing.T) {
 	ds := sameGameSet()
 	for _, m := range []SortMode{SortCore, SortFavorites, SortRecents} {
 		view := ds.Order(m)
-		if out, groups := ds.Fold(view, m, nil); groups != nil || !slices.Equal(out, view) {
+		if out, groups := ds.Fold(view, m, FoldOpts{Groups: true}); groups != nil || !slices.Equal(out, view) {
 			t.Errorf("%v folded: %v", m, groups)
 		}
 	}
@@ -66,7 +66,7 @@ func TestFoldPromotesALoneMember(t *testing.T) {
 	ds := sameGameSet()
 	// a member and its own standin are one core: no umbrella
 	view := []int{ds.Index("bub-a"), ds.Index(LocalKey("buba")), ds.Index("solo")}
-	if out, groups := ds.Fold(view, SortAlphabetical, nil); groups != nil || !slices.Equal(out, view) {
+	if out, groups := ds.Fold(view, SortAlphabetical, FoldOpts{Groups: true}); groups != nil || !slices.Equal(out, view) {
 		t.Fatalf("lone member folded: %v %v", out, groups)
 	}
 }
@@ -76,7 +76,7 @@ func TestStandinFoldsWithItsCatalogueRow(t *testing.T) {
 	if g := ds.GroupOf(ds.Index(LocalKey("buba"))); g != "bub" {
 		t.Fatalf("standin group %q", g)
 	}
-	_, groups := ds.Fold(ds.Order(SortAlphabetical), SortAlphabetical, nil)
+	_, groups := ds.Fold(ds.Order(SortAlphabetical), SortAlphabetical, FoldOpts{Groups: true})
 	if len(groups) != 1 || !slices.Contains(groups[0].Members, ds.Index(LocalKey("buba"))) {
 		t.Fatalf("standin not folded: %+v", groups)
 	}
@@ -84,7 +84,7 @@ func TestStandinFoldsWithItsCatalogueRow(t *testing.T) {
 
 func TestFixtureCarriesGroups(t *testing.T) {
 	ds, _ := loadFixture(t)
-	_, groups := ds.Fold(ds.Order(SortUpdated), SortUpdated, nil)
+	_, groups := ds.Fold(ds.Order(SortUpdated), SortUpdated, FoldOpts{Groups: true})
 	if len(groups) < 4 {
 		t.Fatalf("fixture folds into %d groups", len(groups))
 	}
