@@ -11,8 +11,9 @@ import (
 
 // The Options legend follows the row under the cursor: Change with the
 // arrow that can still move on a live choice row, A with what it does on
-// a row that answers A, and Back alone on a greyed row; every legend fits
-// the hint bar in both layouts at the widest safe zone.
+// a row that answers A, and Back alone on a greyed row, but for a locked
+// Supporter extra, whose A enters a code; every legend fits the hint bar in
+// both layouts at the widest safe zone.
 func TestOptionsHintFollowsTheRow(t *testing.T) {
 	rows := []data.Row{{Base: "Arcade", K: "a", Title: "Alpha", Src: "jtcores"}}
 	for _, rot := range []gfx.Rotation{gfx.RotNone, gfx.RotRight} {
@@ -50,7 +51,7 @@ func TestOptionsHintFollowsTheRow(t *testing.T) {
 			if acts := optionsActs[e.kind] != ""; strings.Contains(hint, "  A ") != acts && !strings.HasPrefix(hint, "A ") == acts {
 				t.Errorf("%s: %q names A=%v, want %v", e.text, hint, !acts, acts)
 			}
-			if e.disabled && hint != "B Back" {
+			if e.disabled && e.kind != "enter-code" && hint != "B Back" {
 				t.Errorf("%s is greyed yet the legend is %q", e.text, hint)
 			}
 			if !a.hintFits(hint) {
