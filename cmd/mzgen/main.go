@@ -1,14 +1,18 @@
 // mzgen extracts the pieces of the misterzine website that the device app must
-// mirror exactly: the CORE_NAMES, SRC_NAMES, FT_SECTIONS and OPTIN_DBS
-// literals from docs/releases/index.html and the "eva" (Unit-01) palette
-// block from docs/theme.css. It writes Go source into internal/gen. Run it whenever the
-// site changes those tables:
+// mirror exactly: the source and core tables from docs/releases/app.json
+// (which the site's export-web writes from the CORE_NAMES, SRC_NAMES,
+// FT_SECTIONS and OPTIN_DBS literals in its index.html) and the "eva"
+// (Unit-01) palette block from docs/theme.css. It writes Go source into
+// internal/gen. The app also fetches app.json at run time (data.SetTables),
+// so these built-in tables are its fallback: regenerate them for each
+// release, and whenever CI says they are behind the site:
 //
 //	go run ./cmd/mzgen -site ../misterzine -out internal/gen
 package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"go/format"
@@ -19,52 +23,60 @@ import (
 	"strings"
 )
 
+// appTables is releases/app.json as data.DecodeTables reads it; mzgen keeps
+// its own copy so it builds even while internal/gen does not.
+type appTables struct {
+	Version int `json:"version"`
+	Sources map[string]struct {
+		Name    string `json:"name"`
+		Section string `json:"section"`
+		DBURL   string `json:"db_url"`
+	} `json:"sources"`
+	CoreNames map[string]string `json:"core_names"`
+}
+
 func main() {
 	site := flag.String("site", "../misterzine", "path to the misterzine site checkout")
 	out := flag.String("out", "internal/gen", "output directory")
 	flag.Parse()
 
-	html, err := os.ReadFile(filepath.Join(*site, "docs", "releases", "index.html"))
+	raw, err := os.ReadFile(filepath.Join(*site, "docs", "releases", "app.json"))
 	die(err)
 	css, err := os.ReadFile(filepath.Join(*site, "docs", "theme.css"))
 	die(err)
 
-	coreNames := jsObject(string(html), "const CORE_NAMES = {")
-	srcNames := jsObject(string(html), "const SRC_NAMES = {")
-	sections := jsObject(string(html), "const FT_SECTIONS = {")
-	optin := jsObjects(string(html), "const OPTIN_DBS = {")
-	if len(coreNames) < 50 || len(srcNames) < 4 {
-		die(fmt.Errorf("extraction looks wrong: %d core names, %d src names", len(coreNames), len(srcNames)))
+	var t appTables
+	die(json.Unmarshal(raw, &t))
+	if t.Version != 1 {
+		die(fmt.Errorf("app.json version %d; this mzgen reads 1", t.Version))
 	}
+	if len(t.CoreNames) < 50 || len(t.Sources) < 4 {
+		die(fmt.Errorf("app.json looks wrong: %d core names, %d sources", len(t.CoreNames), len(t.Sources)))
+	}
+	srcNames := map[string]string{}
 	dbs := map[string]srcDB{}
-	for src := range srcNames {
-		section, ok := sections[src]
-		if !ok || section == "" {
-			die(fmt.Errorf("source %q has a name but no FT_SECTIONS entry", src))
+	optin := 0
+	for src, s := range t.Sources {
+		if s.Name == "" || s.Section == "" {
+			die(fmt.Errorf("source %q: name %q, section %q", src, s.Name, s.Section))
 		}
-		dbs[src] = srcDB{section: section, url: optin[src]["url"]}
-	}
-	for src := range sections {
-		if _, ok := srcNames[src]; !ok {
-			die(fmt.Errorf("FT_SECTIONS names %q, SRC_NAMES does not", src))
+		if s.DBURL != "" {
+			if !strings.HasPrefix(s.DBURL, "https://") {
+				die(fmt.Errorf("source %q: db_url %q", src, s.DBURL))
+			}
+			optin++
 		}
-	}
-	for src, o := range optin {
-		if _, ok := srcNames[src]; !ok {
-			die(fmt.Errorf("OPTIN_DBS names %q, SRC_NAMES does not", src))
-		}
-		if !strings.HasPrefix(o["url"], "https://") || o["section"] != sections[src] {
-			die(fmt.Errorf("OPTIN_DBS %q: url %q, section %q vs FT_SECTIONS %q", src, o["url"], o["section"], sections[src]))
-		}
+		srcNames[src] = s.Name
+		dbs[src] = srcDB{section: s.Section, url: s.DBURL}
 	}
 	tokens := cssBlock(string(css), `:root[data-theme="eva"] {`)
 	if len(tokens) < 10 {
 		die(fmt.Errorf("eva palette block not found or too small (%d tokens)", len(tokens)))
 	}
 
-	die(writeGo(filepath.Join(*out, "names.go"), namesSource(coreNames, srcNames, dbs)))
+	die(writeGo(filepath.Join(*out, "names.go"), namesSource(t.CoreNames, srcNames, dbs)))
 	die(writeGo(filepath.Join(*out, "palette.go"), paletteSource(tokens)))
-	fmt.Printf("mzgen: %d core names, %d src names (%d opt-in dbs), %d palette tokens\n", len(coreNames), len(srcNames), len(optin), len(tokens))
+	fmt.Printf("mzgen: %d core names, %d src names (%d opt-in dbs), %d palette tokens\n", len(t.CoreNames), len(srcNames), optin, len(tokens))
 }
 
 func die(err error) {
@@ -72,104 +84,6 @@ func die(err error) {
 		fmt.Fprintln(os.Stderr, "mzgen:", err)
 		os.Exit(1)
 	}
-}
-
-// jsObject returns the key/value pairs of a JS object literal that starts at
-// marker and ends at the first "};" line. Keys may be quoted or bare; values
-// may be single- or double-quoted. Line comments are stripped first.
-func jsObject(src, marker string) map[string]string {
-	i := strings.Index(src, marker)
-	if i < 0 {
-		die(fmt.Errorf("marker %q not found", marker))
-	}
-	rest := src[i+len(marker):]
-	j := strings.Index(rest, "\n};")
-	if j < 0 {
-		die(fmt.Errorf("end of %q not found", marker))
-	}
-	body := rest[:j]
-	var lines []string
-	for _, ln := range strings.Split(body, "\n") {
-		if k := strings.Index(ln, "//"); k >= 0 {
-			ln = ln[:k]
-		}
-		lines = append(lines, ln)
-	}
-	body = strings.Join(lines, "\n")
-	re := regexp.MustCompile(`(?:'((?:[^'\\]|\\.)*)'|([A-Za-z_][A-Za-z0-9_]*))\s*:\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")`)
-	m := map[string]string{}
-	for _, g := range re.FindAllStringSubmatch(body, -1) {
-		key := g[1]
-		if key == "" {
-			key = g[2]
-		}
-		val := g[3]
-		if g[3] == "" && g[4] != "" {
-			val = g[4]
-		}
-		m[unescape(key)] = unescape(val)
-	}
-	return m
-}
-
-// jsObjects returns the nested object literals of a JS object of objects
-// (OPTIN_DBS: id -> {section, url, what}) as key -> field -> value. Each
-// entry starts at "<id>: {" on its own line and ends at the next "  }" line.
-func jsObjects(src, marker string) map[string]map[string]string {
-	i := strings.Index(src, marker)
-	if i < 0 {
-		die(fmt.Errorf("marker %q not found", marker))
-	}
-	rest := src[i+len(marker):]
-	j := strings.Index(rest, "\n};")
-	if j < 0 {
-		die(fmt.Errorf("end of %q not found", marker))
-	}
-	body := rest[:j]
-	re := regexp.MustCompile(`(?m)^\s*(?:'([^']+)'|([A-Za-z_][A-Za-z0-9_]*))\s*:\s*\{\s*$`)
-	m := map[string]map[string]string{}
-	for {
-		g := re.FindStringSubmatchIndex(body)
-		if g == nil {
-			break
-		}
-		var key string
-		if g[2] >= 0 {
-			key = body[g[2]:g[3]]
-		} else {
-			key = body[g[4]:g[5]]
-		}
-		after := body[g[1]:]
-		end := strings.Index(after, "\n  }")
-		if end < 0 {
-			die(fmt.Errorf("%s: end of entry %q not found", marker, key))
-		}
-		m[unescape(key)] = jsFields(after[:end])
-		body = after[end:]
-	}
-	if len(m) == 0 {
-		die(fmt.Errorf("%s: no entries found", marker))
-	}
-	return m
-}
-
-// jsFields reads the "field: 'value'" pairs of one nested object, joining
-// values the JS source spreads over several lines with "+".
-func jsFields(body string) map[string]string {
-	body = regexp.MustCompile(`'\s*\+\s*\n\s*'`).ReplaceAllString(body, "")
-	re := regexp.MustCompile(`([A-Za-z_][A-Za-z0-9_]*)\s*:\s*'((?:[^'\\]|\\.)*)'`)
-	m := map[string]string{}
-	for _, g := range re.FindAllStringSubmatch(body, -1) {
-		m[g[1]] = unescape(g[2])
-	}
-	return m
-}
-
-func unescape(s string) string {
-	s = strings.ReplaceAll(s, `\'`, `'`)
-	s = strings.ReplaceAll(s, `\"`, `"`)
-	s = strings.ReplaceAll(s, `\\`, `\`)
-	return s
 }
 
 // cssBlock returns the --token: #hex declarations inside the block that starts

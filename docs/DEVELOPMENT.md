@@ -207,21 +207,30 @@ days. Harness `-report-send sent|failed` renders the screens without uploading.
 replace the coupled sorting fixtures in `testdata/`; those belong to
 `tools/sort_golden.js`. The regular network client updates the on-device cache.
 
-`cmd/mzgen` imports the site's display names, source tables and Unit-01
-palette into `internal/gen/`. Regenerate those files from the website source
+The site's source and core tables reach the app two ways. At run time, after
+each catalogue check, the app fetches `releases/app.json` (the site's
+`export-web` writes it from the `SRC_NAMES`, `FT_SECTIONS`, `OPTIN_DBS` and
+`CORE_NAMES` literals in its `index.html`), caches it as `cache/app.json` and
+lays it over the built-in tables (`internal/data/tables.go`). So a source the
+site starts tracking gets its display name, `downloader.ini` section, opt-in
+`db_url` and core labels on every card without an app release, and
+Options -> Sources: Installed only can hide it. A missing or malformed file
+leaves the tables in use as they are.
+
+At build time `cmd/mzgen` imports the same `app.json`, plus the Unit-01
+palette from `theme.css`, into `internal/gen/`, the fallback for a card that
+has not fetched the file yet. Regenerate those files from the website source
 rather than editing generated values by hand:
 
     go run ./cmd/mzgen -site ../misterzine -out internal/gen
 
-A source the site starts tracking needs nothing else in the app: its display
-name, `downloader.ini` section and, for an opt-in database, its `db_url` all
-arrive with the regeneration, and the short chip derives from the display name
-(`internal/data/labels.go` keeps hand-picked overrides). Only a database that
-Update All has a settings toggle for needs its `db_url` added to
-`sourceExtras` in `internal/data/sources.go`, because the site records URLs
-for the opt-in ones alone. CI clones the public site repository and fails when
-`internal/gen/` is behind it, so a site change that touches these tables shows
-up as a red run rather than a stale device app.
+The short chip derives from the display name (`internal/data/labels.go` keeps
+hand-picked overrides). Only a database that Update All has a settings toggle
+for needs its `db_url` added to `sourceExtras` in `internal/data/sources.go`,
+because the site records URLs for the opt-in ones alone; that, and any new
+file-name or MRA pattern a source brings, still needs a release. CI clones the
+public site repository and fails when `internal/gen/` is behind it, so the next
+push after a site table change regenerates the fallback.
 
 ## Host and updater behavior
 

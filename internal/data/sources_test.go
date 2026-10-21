@@ -79,9 +79,9 @@ func TestSourceTablesComplete(t *testing.T) {
 		if chip := SrcShort(src); chip == "" || len([]rune(chip)) > srcShortMax {
 			t.Errorf("%s: short chip %q is empty or too wide", src, chip)
 		}
-		s, ok := sourceDBs[src]
+		s, ok := tables.Load().dbs[src]
 		if !ok {
-			t.Errorf("%s: no database in sourceDBs", src)
+			t.Errorf("%s: no database in the site tables", src)
 			continue
 		}
 		if !strings.HasPrefix(s.url, "https://") || len(s.ids) == 0 {
@@ -106,8 +106,8 @@ func TestSourceTablesComplete(t *testing.T) {
 			t.Errorf("%s: extras for a source the site does not name", src)
 		}
 	}
-	if len(sourceDBs) != len(gen.SrcNames) {
-		t.Errorf("sourceDBs has %d sources, the site names %d", len(sourceDBs), len(gen.SrcNames))
+	if len(tables.Load().dbs) != len(gen.SrcNames) {
+		t.Errorf("the site tables have %d sources, the site names %d", len(tables.Load().dbs), len(gen.SrcNames))
 	}
 }
 

@@ -2,8 +2,6 @@ package data
 
 import (
 	"strings"
-
-	"github.com/matijaerceg/misterzine-on-device/internal/gen"
 )
 
 // DB is one database section of Downloader's downloader.ini: the section
@@ -32,31 +30,17 @@ var sourceExtras = map[string]sourceDB{
 	"theypsilon_unofficial_distribution": {url: "https://raw.githubusercontent.com/theypsilon/Unofficial_Distribution_MiSTer/main/unofficialdb.json.zip"},
 }
 
-// sourceDBs names the Downloader database behind each feed source, built
-// from the site's tables (gen.SrcDBs, via cmd/mzgen) plus sourceExtras. A
-// source missing here is never hidden, so a source the feed gains before
-// the app is regenerated stays visible until then.
+// The Downloader database behind each feed source comes from the site's
+// tables (tables.go: the fetched app.json over gen.SrcDBs, which cmd/mzgen
+// builds in) plus sourceExtras. A source missing there is never hidden, so a
+// source the feed gains before the app has its table stays visible until
+// then.
 //
-// Adding a source the site starts tracking: run cmd/mzgen. The full name,
-// section and db_url arrive with it; the short chip derives from the full
-// name unless srcShort in labels.go says otherwise. TestSourceTablesComplete
-// fails when a source still lacks a db_url.
-var sourceDBs = buildSourceDBs()
-
-func buildSourceDBs() map[string]sourceDB {
-	m := map[string]sourceDB{}
-	for src, g := range gen.SrcDBs {
-		s := sourceDB{url: g.URL, ids: []string{strings.ToLower(g.Section)}}
-		if x, ok := sourceExtras[src]; ok {
-			if x.url != "" {
-				s.url = x.url
-			}
-			s.ids = append(s.ids, x.ids...)
-		}
-		m[src] = s
-	}
-	return m
-}
+// A source the site starts tracking needs nothing here: the fetched table
+// brings its name, section and db_url, and the next build's mzgen run builds
+// it in. The short chip derives from the full name unless srcShort in
+// labels.go says otherwise. TestSourceTablesComplete fails when a built-in
+// source still lacks a db_url.
 
 // HiddenSources lists the feed sources whose Downloader database is not
 // among dbs, matched by db_url or by section name, case-insensitively. A nil
@@ -76,7 +60,7 @@ func HiddenSources(dbs []DB) map[string]bool {
 		}
 	}
 	hidden := map[string]bool{}
-	for src, s := range sourceDBs {
+	for src, s := range tables.Load().dbs {
 		if have[strings.ToLower(s.url)] {
 			continue
 		}

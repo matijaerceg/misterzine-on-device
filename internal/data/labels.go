@@ -3,8 +3,6 @@ package data
 import (
 	"strings"
 	"unicode"
-
-	"github.com/matijaerceg/misterzine-on-device/internal/gen"
 )
 
 // CoreLabel mirrors the site's coreLabel(core): the CORE_NAMES entry, else
@@ -14,7 +12,7 @@ func CoreLabel(core string, sole map[string]string) string {
 	if core == "" {
 		return ""
 	}
-	if n, ok := gen.CoreNames[core]; ok {
+	if n, ok := tables.Load().coreNames[core]; ok {
 		return n
 	}
 	if t, ok := sole[core]; ok {
@@ -80,7 +78,7 @@ func SrcFull(src string) string {
 	if src == SrcLocal {
 		return SrcLocalFull
 	}
-	if n, ok := gen.SrcNames[src]; ok {
+	if n, ok := tables.Load().srcNames[src]; ok {
 		return n
 	}
 	return src

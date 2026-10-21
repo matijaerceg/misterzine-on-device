@@ -204,7 +204,9 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	}
 	rotation := startupRotation(h.settings, ini)
 
-	// data: cache, else the embedded snapshot
+	// data: cache, else the embedded snapshot; the site's last tables first,
+	// so the rows take their source and core names from them
+	h.loadTables()
 	rows, meta, source := h.loadData()
 	ncat := len(rows)
 	// and the card's own games as the last scan found them, until this
@@ -1273,9 +1275,15 @@ func (h *host) check(current string, trusted bool) {
 		}
 	})
 	h.checkSupporters()
+	// before the swap below, so new rows (a new source's, typically) come in
+	// with their names; tables that change alone relabel the rows in place
+	tablesChanged := h.checkTables()
 	if !fr.Changed {
 		h.lg.Printf("check: current (%.8s)", fr.Meta.Hash)
 		h.sendNet("")
+		if tablesChanged {
+			h.runOnUI(h.relabel)
+		}
 		return
 	}
 	cache := filepath.Join(h.root, "cache")
@@ -1311,6 +1319,60 @@ func (h *host) checkSupporters() {
 	}
 	h.lg.Printf("supporters: %d current, %d past", len(s.Current), len(s.Past))
 	h.runOnUI(func() { h.a.SetSupporters(s) })
+}
+
+// checkTables refreshes the site's source and core tables (app.json) the
+// way checkSupporters does, and reports whether new ones were installed.
+// A file that does not decode leaves the tables in use as they are.
+func (h *host) checkTables() bool {
+	b, err := h.client.Tables(context.Background())
+	if err != nil {
+		h.lg.Printf("tables: %v", err)
+		return false
+	}
+	path := filepath.Join(h.root, "cache", "app.json")
+	if old, err := os.ReadFile(path); err == nil && bytes.Equal(old, b) {
+		return false
+	}
+	t, err := data.DecodeTables(b)
+	if err != nil {
+		h.lg.Printf("tables: %v", err)
+		return false
+	}
+	if err := store.WriteAtomic(path, b); err != nil {
+		h.lg.Printf("tables: %v", err)
+	}
+	data.SetTables(t)
+	h.lg.Printf("tables: %d sources, %d core names from the site", len(t.Sources), len(t.CoreNames))
+	return true
+}
+
+// loadTables installs the cached site tables at startup; without them the
+// app keeps the tables built in by mzgen.
+func (h *host) loadTables() {
+	b, err := os.ReadFile(filepath.Join(h.root, "cache", "app.json"))
+	if err != nil {
+		return
+	}
+	if t, err := data.DecodeTables(b); err == nil {
+		data.SetTables(t)
+	} else {
+		h.lg.Printf("tables cache: %v", err)
+	}
+}
+
+// relabel re-ingests the rows after the site's tables changed on their own:
+// the same rows in the same order, so the statuses still fit, now with the
+// new source and core names, and a rescan so Installed only weighs the new
+// databases.
+func (h *host) relabel() {
+	old := h.a.Data()
+	if old == nil {
+		return
+	}
+	h.a.SetData(data.Ingest(old.Rows, old.Hash, old.Updated), nil)
+	h.requestScan()
+	h.dirty = true
 }
 
 // loadSupporters installs the cached supporters list at startup; without
