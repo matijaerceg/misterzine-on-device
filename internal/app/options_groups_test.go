@@ -41,6 +41,8 @@ func TestOptionsGroups(t *testing.T) {
 			// a spacer, or one of the greyed build and data rows after Quit
 		case e.header:
 			t.Errorf("header %q without a mark", e.text)
+		case e.feature:
+			// a members' extra, which its own tests place
 		default:
 			got[len(got)-1].kinds = append(got[len(got)-1].kinds, e.kind)
 		}
