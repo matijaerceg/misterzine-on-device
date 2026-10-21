@@ -9,8 +9,8 @@ The codes themselves are shared only in the Patreon posts. This page lists what 
 
 | Code | Unlocks | Since |
 | --- | --- | --- |
-| **Oct 2026** | - Color Themes: presets or customize.<br>- Group tallies: the number of games in header of each group. | v1.2.3 |
+| **Oct 2026** | - Color Themes: presets or customize.<br>- Group tallies: the number of games in header of each group.<br>- Background patterns: a faint pattern behind every page, in your theme's colours. | v1.2.3 |
 
-Initially features will be Beta, so they also need **Show beta features** switched on, in Options -> Operation. Free betas such as Same-game groups need only that switch and no code.
+Supporter extras may start as betas, which also need **Show beta features** switched on, in Options -> Operation. None of the extras above is a beta any more. Free betas such as Same-game groups need only that switch and no code.
 
 More in the [user guide](USER_GUIDE.md#misterzine-codes-and-optional-features).

@@ -46,9 +46,9 @@ func (f Feature) Allowed(month Month, showBeta bool) bool {
 
 var (
 	Controls    = Feature{}
-	Themes      = Feature{Fancy: true, Beta: true, Since: 202610}
-	Tallies     = Feature{Fancy: true, Beta: true, Since: 202610}
-	Backgrounds = Feature{Fancy: true, Beta: true, Since: 202610}
+	Themes      = Feature{Fancy: true, Since: 202610}
+	Tallies     = Feature{Fancy: true, Since: 202610}
+	Backgrounds = Feature{Fancy: true, Since: 202610}
 	ROMReport   = Feature{}
 	Groups      = Feature{Beta: true}
 	Batches     = Feature{Beta: true}
