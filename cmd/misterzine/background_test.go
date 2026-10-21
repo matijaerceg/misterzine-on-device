@@ -58,8 +58,8 @@ func TestRefreshUsesInstalledHashAndCoalescesRequests(t *testing.T) {
 	var fail atomic.Bool
 	entered, release := make(chan struct{}), make(chan struct{})
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/supporters.json" {
-			http.NotFound(w, r) // the Credits list rides along after a check; not under test here
+		if r.URL.Path == "/supporters.json" || r.URL.Path == "/releases/app.json" {
+			http.NotFound(w, r) // the Credits list and site tables ride along after a check; not under test here
 			return
 		}
 		if r.URL.Path == "/releases/meta.json" {
@@ -213,6 +213,62 @@ func TestBackgroundDeliveryStopsWhenUIQuits(t *testing.T) {
 	}
 }
 
+// The site's tables change without the catalogue changing: the rows take
+// the new names in place, the same file again leaves them alone, and a
+// broken one changes nothing.
+func TestSiteTablesRelabelWithoutNewData(t *testing.T) {
+	h := backgroundHost(t)
+	t.Cleanup(func() { data.SetTables(nil) })
+	h.a.SetData(data.Ingest([]data.Row{
+		{Base: "Arcade", K: "a", Title: "Alpha", Src: "newdev", Core: "NewBoard"},
+		{Base: "Arcade", K: "b", Title: "Beta", Src: "newdev", Core: "NewBoard"},
+	}, "same", time.Now()), nil)
+	if d := h.a.Data().Der[0]; d.CoreLabel != "New Board" || d.SrcShort != "newdev" {
+		t.Fatalf("built-in labels: %q %q", d.CoreLabel, d.SrcShort)
+	}
+	var tables atomic.Value
+	tables.Store(`{"version":1,"sources":{"newdev":{"name":"Newdev (New Dev)","section":"NewDev/db","db_url":""}},"core_names":{"NewBoard":"New Dev Board"}}`)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/releases/meta.json":
+			fmt.Fprint(w, `{"hash":"same","updated":"2026-09-08T00:00Z"}`)
+		case "/releases/app.json":
+			fmt.Fprint(w, tables.Load().(string))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+	old := fetch.Site
+	fetch.Site = srv.URL
+	defer func() { fetch.Site = old }()
+
+	h.requestCheck()
+	finishBackground(t, h)
+	ds := h.a.Data()
+	if d := ds.Der[0]; d.CoreLabel != "New Dev Board" || d.SrcShort != "Newdev" || ds.Hash != "same" {
+		t.Fatalf("fetched labels not applied: %q %q %q", d.CoreLabel, d.SrcShort, ds.Hash)
+	}
+	cached, err := os.ReadFile(filepath.Join(h.root, "cache", "app.json"))
+	if err != nil || string(cached) != tables.Load().(string) {
+		t.Fatalf("cache: %q, %v", cached, err)
+	}
+	h.requestCheck()
+	finishBackground(t, h)
+	if h.a.Data() != ds {
+		t.Fatal("the same tables relabelled the rows again")
+	}
+	tables.Store(`{"version":1,"sources":{}}`)
+	h.requestCheck()
+	finishBackground(t, h)
+	if h.a.Data() != ds || data.SrcFull("newdev") != "Newdev (New Dev)" {
+		t.Fatal("broken tables replaced working ones")
+	}
+	if b, _ := os.ReadFile(filepath.Join(h.root, "cache", "app.json")); string(b) != string(cached) {
+		t.Fatal("broken tables replaced the cache")
+	}
+}
+
 func TestEmptyRefreshPreservesWorkingDataAndCache(t *testing.T) {
 	for _, raw := range []string{"[]", "null", "[ ]"} {
 		t.Run(raw, func(t *testing.T) {
@@ -229,7 +285,7 @@ func TestEmptyRefreshPreservesWorkingDataAndCache(t *testing.T) {
 			}
 			hash := fmt.Sprintf("%x", sha256.Sum256([]byte(raw)))
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.URL.Path == "/supporters.json" {
+				if r.URL.Path == "/supporters.json" || r.URL.Path == "/releases/app.json" {
 					http.NotFound(w, r)
 					return
 				}
