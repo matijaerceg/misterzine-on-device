@@ -1,10 +1,15 @@
-**Tidier same-game groups**
+**Core updates fold into one line**
 
-**Fixed**
+When one core update rebuilds a stack of games at once, the **Build date** and **MiSTer debut** views now show them as a single line named after the core, so the rest of what changed stays in view. Press A to open it and see the games. It is a beta: turn on **Show beta features** in Options to try it.
 
-- Same-game groups (a beta) mark their line with a bigger plus and leave out the number of versions; turn on **Version counts** in Options -> List to bring it back. Their details now say "2 versions" instead of "2 cores".
-- Pressing F9 on a keyboard just after the menu button no longer freezes MiSTer until a reboot.
+For example: shmupfan's Taito G-NET games, such as Ray Crisis and Psyvariar, arrived together and now sit under one "Taito G-NET debut" line instead of filling the screen.
 
-Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1216--2026-10-20).
+**Added**
+
+- Core updates fold into one line in the date views (a beta).
+- jlrh's and shmupfan's databases are recognized as sources.
+- Sources the site adds later get their names, and Installed only can hide them, without waiting for a MisterZine update.
+
+Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1217--2026-10-21).
 Existing installations update through Update All, or through Update MisterZine only. New installation:
 [installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once).
