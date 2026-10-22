@@ -1508,6 +1508,7 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 		a.paintLaunchCab(a.logical)
 		return a.rotatePaint()
 	}
+	a.membersBeforePaint()
 	a.validateLayoutMotion()
 	if !a.all && a.LayoutTransitionRunning() && a.layoutMotion.dirty {
 		a.wants = a.wants[:0]

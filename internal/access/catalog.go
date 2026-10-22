@@ -13,6 +13,7 @@ func Catalog() []NamedFeature {
 	return []NamedFeature{
 		{"themes", "Themes", Themes},
 		{"group-tallies", "Group tallies", Tallies},
+		{"backgrounds", "Backgrounds", Backgrounds},
 		{"rom-report", "ROM report", ROMReport},
 		{"button-mapping", "Button mapping", Controls},
 		{"same-game-groups", "Same-game groups", Groups},

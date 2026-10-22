@@ -71,6 +71,16 @@ func (c *Canvas) Fill(r image.Rectangle, col color.RGBA) {
 		return
 	}
 	w := r.Dx()
+	if g := ground.img; g != nil && col == ground.col && r.In(g.Rect) {
+		// the ground colour copies the pattern at the same screen place, so
+		// pieces painted at different times line up
+		for y := r.Min.Y; y < r.Max.Y; y++ {
+			off, goff := c.PixOffset(r.Min.X, y), g.PixOffset(r.Min.X, y)
+			copy(c.Pix[off:off+w*4], g.Pix[goff:goff+w*4])
+		}
+		c.Dirty(r)
+		return
+	}
 	first := c.PixOffset(r.Min.X, r.Min.Y)
 	row := c.Pix[first : first+w*4]
 	for x := 0; x < w*4; x += 4 {

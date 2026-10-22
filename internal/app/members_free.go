@@ -25,6 +25,10 @@ func (a *App) membersStep(kind string, i int) {}
 // whether anything happened.
 func (a *App) membersPress(kind string) bool { return false }
 
+// membersBeforePaint readies what the members' extras paint with before
+// each frame.
+func (a *App) membersBeforePaint() {}
+
 // headerNote is the annotation beside a group header for the group
 // that view position pos belongs to.
 func (a *App) headerNote(pos int) string { return "" }
