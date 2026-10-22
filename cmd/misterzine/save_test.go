@@ -195,8 +195,11 @@ func TestRotationIntentSurvivesSaves(t *testing.T) {
 			tap(platform.KeyPageDown)
 			tap(platform.KeyPageDown)
 			tap(platform.KeyRight)
-			for n := 0; n < 5; n++ {
-				tap(platform.KeyDown) // HDMI picture: a value row with no rotation in it
+			// up from Controls, as the members' rows open Display: HDMI
+			// picture, a value row with no rotation in it
+			tap(platform.KeyPageDown)
+			for n := 0; n < 3; n++ {
+				tap(platform.KeyUp)
 			}
 			tap(platform.KeyRight)
 			if !h.setDirty {
@@ -205,10 +208,11 @@ func TestRotationIntentSurvivesSaves(t *testing.T) {
 			h.saveAll(false)
 			check("auto")
 			tap(platform.KeyHome)
-			tap(platform.KeyPageDown)
-			tap(platform.KeyPageDown)
-			for n := 0; n < 2; n++ {
-				tap(platform.KeyDown) // Rotation follows the Data and List groups and Follow INI rotation
+			for n := 0; n < 3; n++ {
+				tap(platform.KeyPageDown) // Controls
+			}
+			for n := 0; n < 6; n++ {
+				tap(platform.KeyUp) // Rotation, sixth from the end of Display
 			}
 			if rotation == gfx.RotLeft {
 				tap(platform.KeyLeft)
@@ -266,8 +270,9 @@ func TestFullDisplayChoiceSurvivesRestart(t *testing.T) {
 	tap(platform.KeyPageDown)
 	tap(platform.KeyPageDown)
 	tap(platform.KeyRight)
-	for n := 0; n < 5; n++ {
-		tap(platform.KeyDown)
+	tap(platform.KeyPageDown)
+	for n := 0; n < 3; n++ {
+		tap(platform.KeyUp) // HDMI picture, up from Controls past the members' rows
 	}
 	tap(platform.KeyLeft)
 	tap(platform.KeyLeft)

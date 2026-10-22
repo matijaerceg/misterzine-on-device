@@ -38,10 +38,13 @@ func TestListPreferencesPersist(t *testing.T) {
 	tap(platform.KeyBack)
 	tap(platform.KeyPageDown)
 	tap(platform.KeyRight)
-	for i := 0; i < 9; i++ {
-		tap(platform.KeyDown)
+	// up from Display, as a members' row can sit higher in List: Layout,
+	// Date format, Art type, Title font
+	tap(platform.KeyPageDown)
+	for i := 0; i < 4; i++ {
+		tap(platform.KeyUp)
 	}
-	tap(platform.KeyLeft) // Title font: narrow, in the List group after Genre views
+	tap(platform.KeyLeft) // Title font: narrow
 	tap(platform.KeyDown)
 	tap(platform.KeyRight) // List shots: title
 	tap(platform.KeyDown)
