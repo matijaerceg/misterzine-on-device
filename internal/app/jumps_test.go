@@ -136,11 +136,11 @@ func TestLetterJumpUsesVisibleCollationGroups(t *testing.T) {
 	step(platform.KeyDown, "beta 2")
 	step(platform.KeyPageUp, "Alpha") // first item of previous group
 	step(platform.KeyPageUp, "!Game")
-	step(platform.KeyPageUp, "!Game")  // no wrapping
+	step(platform.KeyPageUp, "Zoo")    // a fresh press wraps to the last letter
 	step(platform.KeyEnd, "Zoo")       // keyboard end remains end
 	step(platform.KeyPageUp, "Éclair") // accent uses E, like sorting
 	step(platform.KeyPageDown, "Zoo")
-	step(platform.KeyPageDown, "Zoo")
+	step(platform.KeyPageDown, "!Game") // and past Z back to the first
 	step(platform.KeyHome, "!Game")
 	if len(a.marks) != 6 || a.markText(1) != "0-9 and symbols" || a.markText(2) != "A" || a.markText(3) != "B" || a.markText(4) != "E" || a.markText(5) != "Z" {
 		t.Fatalf("letter headers: %v", a.marks)
@@ -189,7 +189,8 @@ func TestMonthJumpsUseSortDateVisibleGroupsAndTopAlignment(t *testing.T) {
 			jump(platform.KeyPageDown, "july", "July 2026")
 			jump(platform.KeyPageDown, "older-july", "July 2025")
 			jump(platform.KeyPageDown, "undated", "Date unknown")
-			jump(platform.KeyPageDown, "undated", "Date unknown")
+			jump(platform.KeyPageDown, "new", "September 2026") // a fresh press wraps to the top
+			jump(platform.KeyPageUp, "undated", "Date unknown") // and back to the end
 			jump(platform.KeyPageUp, "older-july", "July 2025")
 			jump(platform.KeyPageUp, "july", "July 2026")
 			jump(platform.KeyPageUp, "new", "September 2026")

@@ -8,7 +8,8 @@ import (
 
 // jumpGroup moves to the first visible title of the next/previous group: a
 // letter, a maker, a core, a release year or a month. Only filtered/search results
-// count; empty groups are skipped and ends stop. Under an order with group
+// count; empty groups are skipped. A fresh press past either end wraps to
+// the other, a held one stops there. Under an order with group
 // headers the row lands centered like a step, its header right above it;
 // the date orders put the row on the top line and name the month.
 func (a *App) jumpGroup(direction int) {
@@ -21,7 +22,13 @@ func (a *App) jumpGroup(direction int) {
 		i += direction
 	}
 	if i < 0 || i >= len(a.view) {
-		return
+		if a.rep.count > 0 {
+			return
+		}
+		i = 0
+		if direction < 0 {
+			i = len(a.view) - 1 // the last group, found from its first row below
+		}
 	}
 	group := a.jumpGroupKey(i)
 	for i > 0 && a.jumpGroupKey(i-1) == group {

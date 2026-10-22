@@ -1296,10 +1296,14 @@ func (a *App) actList(k platform.Key) bool {
 	case platform.KeyUp:
 		if a.cursor > 0 {
 			a.cursor--
+		} else if a.rep.count == 0 {
+			a.cursor = n - 1 // only a fresh press wraps, as in Options; a held one stops
 		}
 	case platform.KeyDown:
 		if a.cursor < n-1 {
 			a.cursor++
+		} else if a.rep.count == 0 {
+			a.cursor = 0
 		}
 	case platform.KeyPageUp:
 		a.jumpGroup(-1)

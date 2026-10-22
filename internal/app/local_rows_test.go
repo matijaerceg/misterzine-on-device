@@ -155,7 +155,7 @@ func TestStandinGroupsWithItsAnchor(t *testing.T) {
 	for _, mode := range []data.SortMode{data.SortUpdated, data.SortDebut} {
 		a := open(mode, []data.Row{stand})
 		jump(a, "kyustrkr", "zaxxon")
-		jump(a, "zaxxon", "zaxxon") // the last month: nothing undated below it
+		jump(a, "zaxxon", "arkanoid") // the last month: nothing undated below it, so R wraps to the top
 	}
 }
 

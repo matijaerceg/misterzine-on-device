@@ -235,7 +235,11 @@ skipped; numbers and symbols share a group before A. In the date sorts, L/R
 jumps between months: L goes to a newer month, R to an older one. Empty months
 are skipped, each month's first result appears at the top, and its month/year
 briefly appears in the status bar. Unknown dates share a final group. In the
-Year order the same keys jump between release years. Jumps stop at either end.
+Year order the same keys jump between release years. Press L on the first
+group to wrap to the last one, or R on the last group to wrap to the first;
+held, the jumps stop at either end. Up/Down wrap the same way in every view:
+Up on the first title goes to the last, Down on the last back to the top, and
+a held Up/Down stops at the end, as in Options.
 Keyboard Home/End still jumps to the first/last title.
 Hold L/R to keep jumping letters or months with the same Hold delay and Scroll
 speed as Up/Down row scrolling. Releasing the button stops the jumps.
