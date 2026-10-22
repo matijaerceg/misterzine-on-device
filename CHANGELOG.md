@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.2.19 — 2026-10-22
+
+- The list wraps around at its ends, as Options already did. In every view a single Up on the first game goes to the last one and Down on the last game goes back to the top, and the L/R jumps wrap the same way: L on the first letter, month, year, manufacturer or core goes to the first game of the last one, R on the last back to the first, landing as any jump does. Holding the button still stops at the end, so a long held scroll never runs past it; only a fresh press wraps. Asked for on the MiSTer forum for the A-Z view, like the MiSTer menu. Tested on a MiSTer Pi.
+- Embedded catalogue snapshot refreshed (2,546 rows, 2026-10-22). The site no longer lists MeatCores (Meathax), or the games Ongo's database carries on Meathax's cores.
+
 ## v1.2.18 — 2026-10-22
 
 - Background patterns, a new Supporter extra from the October 2026 code: Options -> Display -> **Background** lays a faint pattern wherever the background colour shows, behind every page, in a colour a little off the theme's own so it follows every theme. There are 21: thin, medium and thick lines, a diagonal grid, a checkerboard, crosses, polka dots, hexagons, iso cubes, houndstooth, plaid, argyle, zigzags across and down, ripples from a corner, contours, pulsar (the ridges from Unknown Pleasures), a dither fade, the 10 PRINT maze, a circuit board and the MisterZine logo. **Pattern strength** (faint, light, medium or strong, steps of perceived lightness) and **Pattern direction** (auto, darker or lighter; auto moves away from the panel colour and turns back near black or white) appear once a pattern is picked. Every step repaints the whole screen, so Options is its own preview. Saved under `members` in settings.json as `background`, `background_strength` and `background_direction`. The public build carries only the hook that paints a full-screen picture where the ground colour would go. Tested on a MiSTer Pi: drawing a pattern the first time takes 1 to 44 ms, it is kept after that, and scrolling and page changes take as long as on a plain background.
