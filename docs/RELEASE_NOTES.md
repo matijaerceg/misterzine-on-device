@@ -1,15 +1,19 @@
-**Core updates fold into one line**
+**Background patterns**
 
-When one core update rebuilds a stack of games at once, the **Build date** and **MiSTer debut** views now show them as a single line named after the core, so the rest of what changed stays in view. Press A to open it and see the games. It is a beta: turn on **Show beta features** in Options to try it.
+Supporters can now lay a faint pattern behind every page, from pinstripes and houndstooth to the 10 PRINT maze, in colours that follow the theme. Pick one in Options under **Background**, along with eleven new themes.
 
-For example: shmupfan's Taito G-NET games, such as Ray Crisis and Psyvariar, arrived together and now sit under one "Taito G-NET debut" line instead of filling the screen.
+No code yet? The **Theme** and **Background** rows let you try every look; it all goes back when you leave Options.
 
 **Added**
 
-- Core updates fold into one line in the date views (a beta).
-- jlrh's and shmupfan's databases are recognized as sources.
-- Sources the site adds later get their names, and Installed only can hide them, without waiting for a MisterZine update.
+- Background patterns, with a strength and direction to tune them (Supporter extra).
+- Eleven new themes, now listed from lightest to darkest.
+- Try any theme or pattern in Options before unlocking it.
 
-Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1217--2026-10-21).
+**Fixed**
+
+- Themes and group tallies are no longer betas: a code turns them on without Show beta features.
+
+Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1218--2026-10-22).
 Existing installations update through Update All, or through Update MisterZine only. New installation:
 [installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once).
