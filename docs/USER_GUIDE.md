@@ -88,6 +88,12 @@ as current. A core file is matched by name the way MiSTer itself loads it: the
 exact name, or any file whose name starts with that name followed by an
 underscore (Coin-Op ships `blkheart_mister_20260909.rbf` for `blkheart`).
 
+Console, computer and other cores are found in sub-folders too. MiSTer's menu
+opens any folder whose name starts with an underscore inside `_Console`,
+`_Computer`, `_Other` and `_Utility`, such as `_Computer/_Other`, and so does
+the scan. Arcade cores count only in `_Arcade/cores` itself, the one folder
+MiSTer loads them from.
+
 Two sources sometimes ship the same MRA file name for different cores:
 Coin-Op's and Kuze's Black Heart are both `_Arcade/Black Heart.mra`, and only
 one of them can be on the card. MisterZine reads which core the file there

@@ -259,8 +259,9 @@ you asked for help. The report holds:
   a set name, a folder MisterZine does not read, a game whose core is not in
   `_Arcade/cores`, and so on
 - the card's folders: the top level, the `_Arcade` tree with its MRA
-  counts, every file in `_Arcade/cores`, the other core folders' counts, the
-  arcade ROM folder MiSTer uses with its zip count, and MisterZine's own folder
+  counts, every file in `_Arcade/cores`, the other core folders' counts with
+  those of the sub-folders MiSTer's menu opens in them, the arcade ROM folder
+  MiSTer uses with its zip count, and MisterZine's own folder
 - how the MisterZine Arcade menu entry is set up: whether the entry, its
   startup line and the helper that opens MisterZine are in place, and which
   program MiSTer.ini names as its `main=`, if any (Degauss and Console Mode
