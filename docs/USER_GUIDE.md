@@ -403,20 +403,16 @@ copied to the card (under `_Arcade/_Arcade Patches`), each one joins its game
 as a version you pick with Left/Right instead of showing as a separate game.
 A patch that is not on the card points to arcadepatches.com.
 
-Artwork opens on the preferred video or flyer when available, otherwise the first
+Artwork opens on the preferred flyer when available, otherwise the first
 image. Left/Right chooses media and B returns; A and X have no action in artwork. Start launches the version
 selected in Details. Any launch failure appears over the artwork.
 
-**Options > List > Art type** offers gameplay, title, video and flyer. Video
-previews loop silently in the list, Details and artwork. Flyers keep their own
-shape. Games without the chosen extra media show a screenshot in the list.
-Details includes every available screenshot, preview and flyer; A opens the
-artwork view for a larger look. Select + X cycles the list choice.
-
-Videos download only for the selected game and stay cached for offline use.
-Playback pauses while scrolling, during transitions and under the screensaver.
-Availability depends on the catalogue; [media preparation and sources](MEDIA.md)
-describes how extra assets are added.
+**Options > List > Art type** offers gameplay, title and flyer. Flyers keep their
+own shape. Games without the chosen extra artwork show a screenshot in the list.
+Details includes every available screenshot and flyer; A opens the artwork view
+for a larger look. Select + X cycles the list choice. Flyers download when needed
+and stay cached for offline use. Availability depends on the catalogue;
+[media preparation and sources](MEDIA.md) describes how extra artwork is added.
 
 F12 on a keyboard saves a PNG to `/media/fat/misterzine/screenshots/`.
 Screenshots work without remote debugging.

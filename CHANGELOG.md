@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.2.21 — 2026-10-23
+
+- Add arcade flyers as artwork. When a game has a flyer, choose **flyer** under Options -> List -> Art type to see it in the list, Details and the larger artwork view; games without one continue to show screenshots. Details and artwork let you browse every available screenshot and flyer, and flyers keep their original shape. The catalogue identifies flyer files separately from screenshots, so updating the catalogue does not replace or reclassify existing artwork. The app downloads a flyer when needed, validates the PNG size and dimensions before decoding it, and caches it on the card for offline use. The list's saved Art type now accepts gameplay, title and flyer; a saved video choice from the shelved preview experiment falls back to gameplay. Tested on a MiSTer Pi with live and uncached flyers, including list, Details, fullscreen artwork and offline reuse.
+- Embedded catalogue snapshot refreshed (2,577 rows, 2026-10-23 Vancouver).
+
 ## v1.2.20 — 2026-10-22
 
 - Add Snowfall under Options -> Screensaver -> Style. Pixels of the current screen drift down and away over five minutes, leaving black. Release order moves from bright to dark through a scattered 20% brightness range to spread the snowfall across the picture. A continuous stream of pixels in the original image's colours enters from above and keeps falling after the image is gone. Other buttons wake without acting. Tested and accepted on a MiSTer Pi.
