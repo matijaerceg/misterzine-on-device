@@ -95,6 +95,9 @@ func TestVideoFrameSelectionNormalizationAndCache(t *testing.T) {
 }
 
 func TestVideoDownloadsThenDecodesInitialFrameRequest(t *testing.T) {
+	oldMedia := fetch.MediaService
+	fetch.MediaService = ""
+	defer func() { fetch.MediaService = oldMedia }()
 	clip := testMZV(t, color.RGBA{R: 255, A: 255}, color.RGBA{G: 255, A: 255})
 	var path string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

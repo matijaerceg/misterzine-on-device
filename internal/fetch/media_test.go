@@ -12,6 +12,9 @@ import (
 )
 
 func TestMediaURLsAndVideoCap(t *testing.T) {
+	oldMedia := MediaService
+	MediaService = ""
+	defer func() { MediaService = oldMedia }()
 	var path string
 	requests := 0
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -54,9 +57,7 @@ func TestMediaURLsAndVideoCap(t *testing.T) {
 	if requests != before {
 		t.Fatal("invalid media key reached the network")
 	}
-	oldMedia := MediaService
 	MediaService = srv.URL + "/objects/"
-	defer func() { MediaService = oldMedia }()
 	for _, tc := range []struct{ slot, path string }{
 		{SlotVideo, "/objects/video/demo.mzv"},
 		{SlotFlyer, "/objects/flyer/demo.png"},
