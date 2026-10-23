@@ -52,6 +52,7 @@ type Config struct {
 	SafeInsetY      int              // and at the top and bottom
 	Now             func() time.Time // calendar dates, possibly corrected before NTP
 	TimerNow        func() time.Time // same clock as input events and Tick/Frame
+	MeasureVideo    bool             // opt-in debug measurements, never changes playback
 	ClockTrusted    bool
 	Images          Images
 	Status          func(i int) data.Status // install status per row index; nil = unknown

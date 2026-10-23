@@ -11,6 +11,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 	"sync"
 	"time"
 
@@ -54,42 +55,46 @@ type Service struct {
 	client *fetch.Client // nil = never download
 	lg     *log.Logger
 
-	mu            sync.Mutex
-	cache         map[scaledKey]*entry // scaled bitmaps, LRU by bytes
-	lru           *list.List           // front = most recent
-	bytes         int
-	budget        int
-	raw           map[Pic]*image.RGBA // decoded originals of the rows in view
-	rawOrder      []Pic
-	clips         map[Pic]*media.Clip // compressed previews; decoded frames never live here or in raw
-	clipOrder     []Pic               // most recently used last; at most two clips
-	wanted        []scaledKey         // priority order, replaced on every Want
-	inflight      map[scaledKey]bool
-	netBusy       map[Pic]bool
-	missing       map[Pic]time.Time // 404 seen at; forgotten after missingTTL
-	missingDirty  bool
-	missingSaved  time.Time
-	failed        map[Pic]bool      // decode failed this run
-	retryAt       map[Pic]time.Time // download failed: not before this
-	retries       map[Pic]int
-	offline       bool
-	prefetch      []Pic // background download list, in priority order
-	prefetchOn    bool
-	prefetchPos   int
-	prefetched    int
-	kick          chan struct{}
-	decodeKick    chan struct{}
-	paused        bool // no decoding while the UI scrolls
-	have          int  // prefetch pictures on disk (kept current, never rescanned per call)
-	haveKnown     bool
-	haveGen       int          // bumped per new prefetch list; a stale count is dropped
-	got           map[Pic]bool // downloaded this run, so a count racing a download keeps it
-	progressReady chan struct{}
-	ready         chan struct{}
-	stop          chan struct{}
-	ctx           context.Context // cancelled on Close
-	cancel        context.CancelFunc
-	wg            sync.WaitGroup
+	mu             sync.Mutex
+	videoTiming    videoTiming
+	cache          map[scaledKey]*entry // scaled bitmaps, LRU by bytes
+	lru            *list.List           // front = most recent
+	bytes          int
+	budget         int
+	raw            map[Pic]*image.RGBA // decoded originals of the rows in view
+	rawOrder       []Pic
+	clips          map[Pic]*media.Clip // compressed previews; decoded frames never live here or in raw
+	clipOrder      []Pic               // most recently used last; at most two clips
+	wanted         []scaledKey         // priority order, replaced on every Want
+	inflight       map[scaledKey]bool
+	futureBlocked  map[scaledKey]bool // capacity failures, retried only after demand changes
+	waitingVideo   scaledKey
+	waitingVideoOn bool
+	netBusy        map[Pic]bool
+	missing        map[Pic]time.Time // 404 seen at; forgotten after missingTTL
+	missingDirty   bool
+	missingSaved   time.Time
+	failed         map[Pic]bool      // decode failed this run
+	retryAt        map[Pic]time.Time // download failed: not before this
+	retries        map[Pic]int
+	offline        bool
+	prefetch       []Pic // background download list, in priority order
+	prefetchOn     bool
+	prefetchPos    int
+	prefetched     int
+	kick           chan struct{}
+	decodeKick     chan struct{}
+	paused         bool // no decoding while the UI scrolls
+	have           int  // prefetch pictures on disk (kept current, never rescanned per call)
+	haveKnown      bool
+	haveGen        int          // bumped per new prefetch list; a stale count is dropped
+	got            map[Pic]bool // downloaded this run, so a count racing a download keeps it
+	progressReady  chan struct{}
+	ready          chan struct{}
+	stop           chan struct{}
+	ctx            context.Context // cancelled on Close
+	cancel         context.CancelFunc
+	wg             sync.WaitGroup
 }
 
 // New opens a service over dir (created on demand). client may be nil.
@@ -100,7 +105,7 @@ func New(dir string, client *fetch.Client, lg *log.Logger, budget int) *Service 
 	s := &Service{
 		dir: dir, client: client, lg: lg,
 		cache: map[scaledKey]*entry{}, lru: list.New(), budget: budget,
-		raw: map[Pic]*image.RGBA{}, clips: map[Pic]*media.Clip{}, inflight: map[scaledKey]bool{}, netBusy: map[Pic]bool{},
+		raw: map[Pic]*image.RGBA{}, clips: map[Pic]*media.Clip{}, inflight: map[scaledKey]bool{}, futureBlocked: map[scaledKey]bool{}, netBusy: map[Pic]bool{},
 		missing: map[Pic]time.Time{}, failed: map[Pic]bool{}, retryAt: map[Pic]time.Time{}, retries: map[Pic]int{},
 		got:  map[Pic]bool{},
 		kick: make(chan struct{}, 1), decodeKick: make(chan struct{}, 1),
@@ -236,9 +241,13 @@ func (s *Service) countHave(pics []Pic, gen int) {
 // worth of quiet); unpausing resumes with whatever is wanted now.
 func (s *Service) SetPaused(p bool) {
 	s.mu.Lock()
+	changed := s.paused != p
 	s.paused = p
+	if changed {
+		s.futureBlocked = map[scaledKey]bool{}
+	}
 	s.mu.Unlock()
-	if !p {
+	if !p || changed {
 		s.poke(s.decodeKick)
 		s.poke(s.kick)
 	}
@@ -280,30 +289,58 @@ func (s *Service) Get(req app.ImageReq) (*image.RGBA, app.ImageState) {
 	k = s.normalizeKey(k)
 	p := k.Pic
 	if s.isMissing(p) || s.failed[p] {
+		if p.Slot == fetch.SlotVideo {
+			s.clearWaitingVideoLocked(k)
+		}
 		return nil, app.ImageMissing
 	}
 	if e, ok := s.cache[k]; ok {
 		s.lru.MoveToFront(e.el)
+		if p.Slot == fetch.SlotVideo {
+			s.clearWaitingVideoLocked(k)
+		}
 		return e.img, app.ImageReady
 	}
 	if s.raw[p] == nil && !s.exists(p) {
 		if s.client == nil || s.offline {
+			if p.Slot == fetch.SlotVideo {
+				s.clearWaitingVideoLocked(k)
+			}
 			return nil, app.ImageOffline
 		}
+	}
+	if p.Slot == fetch.SlotVideo {
+		s.waitingVideo, s.waitingVideoOn = k, true
 	}
 	return nil, app.ImageLoading
 }
 
 // Want implements app.Images: the priority list of what the screen needs.
 func (s *Service) Want(reqs []app.ImageReq) {
-	s.mu.Lock()
-	s.wanted = s.wanted[:0]
+	wanted := make([]scaledKey, 0, len(reqs))
 	for _, r := range reqs {
 		if k := keyFor(r); validPic(k.Pic) {
-			s.wanted = append(s.wanted, k)
+			wanted = append(wanted, k)
 		}
 	}
+	s.mu.Lock()
+	changed := !slices.Equal(s.wanted, wanted)
+	if changed {
+		s.futureBlocked = map[scaledKey]bool{}
+	}
+	s.wanted = wanted
+	ready := false
+	if changed && s.waitingVideoOn {
+		waiting := s.normalizeKey(s.waitingVideo)
+		if s.cache[waiting] != nil && s.isWantedLocked(waiting) {
+			ready = true
+		}
+		s.waitingVideoOn = false
+	}
 	s.mu.Unlock()
+	if ready {
+		s.signal()
+	}
 	s.poke(s.kick)
 	s.poke(s.decodeKick)
 }
@@ -316,18 +353,107 @@ func (s *Service) nextDecode() (scaledKey, bool) {
 	if s.paused {
 		return scaledKey{}, false
 	}
-	for _, k := range s.wanted {
+	ordered := s.decodeOrderLocked()
+	for _, k := range ordered {
 		k = s.normalizeKey(k)
+		if s.futureBlocked[k] {
+			continue
+		}
 		if _, ok := s.cache[k]; ok || s.inflight[k] || s.isMissing(k.Pic) || s.failed[k.Pic] {
 			continue
 		}
 		if s.raw[k.Pic] == nil && !s.exists(k.Pic) {
 			continue
 		}
+		if k.Slot == fetch.SlotVideo && !s.isWantedLocked(k) && !s.canHoldVideoWindowLocked() {
+			s.blockVideoWindowLocked()
+			continue
+		}
 		s.inflight[k] = true
 		return k, true
 	}
 	return scaledKey{}, false
+}
+
+// decodeOrderLocked prioritizes the visible video and its finite lookahead
+// window, then visits all other screen requests in their original order.
+func (s *Service) decodeOrderLocked() []scaledKey {
+	current, found := s.firstVideoLocked()
+	if !found {
+		return append([]scaledKey(nil), s.wanted...)
+	}
+	ordered := make([]scaledKey, 0, len(s.wanted)+videoAheadFrames)
+	ordered = append(ordered, current)
+	ordered = append(ordered, s.videoWindowLocked()...)
+	for _, k := range s.wanted {
+		if s.normalizeKey(k) == current {
+			continue
+		}
+		ordered = append(ordered, k)
+	}
+	return ordered
+}
+
+func (s *Service) firstVideoLocked() (scaledKey, bool) {
+	for _, k := range s.wanted {
+		if k.Slot == fetch.SlotVideo {
+			return s.normalizeKey(k), true
+		}
+	}
+	return scaledKey{}, false
+}
+
+// videoWindowLocked returns the next distinct frames of the visible clip.
+// It waits for the visible frame and clip to be decoded before opening a window.
+func (s *Service) videoWindowLocked() []scaledKey {
+	current, ok := s.firstVideoLocked()
+	if !ok || s.paused || s.clips[current.Pic] == nil || s.cache[current] == nil {
+		return nil
+	}
+	clip := s.clips[current.Pic]
+	seen := map[int]bool{current.Frame: true}
+	frames := make([]scaledKey, 0, videoAheadFrames)
+	for d := 1; d <= clip.Len() && len(frames) < videoAheadFrames; d++ {
+		k := current
+		k.Frame = clip.Normalize(current.Frame + d)
+		if seen[k.Frame] {
+			continue
+		}
+		seen[k.Frame] = true
+		frames = append(frames, k)
+	}
+	return frames
+}
+
+func (s *Service) isVideoAheadLocked(k scaledKey) bool {
+	for _, future := range s.videoWindowLocked() {
+		if future == k {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *Service) canHoldVideoWindowLocked() bool {
+	current, ok := s.firstVideoLocked()
+	if !ok {
+		return false
+	}
+	frame := s.cache[current]
+	if frame == nil {
+		return false
+	}
+	needed := s.protectedBytesLocked()
+	for range s.videoWindowLocked() {
+		needed += frame.size
+	}
+	return needed <= s.budget
+}
+
+func (s *Service) blockVideoWindowLocked() {
+	for _, k := range s.videoWindowLocked() {
+		s.futureBlocked[k] = true
+	}
 }
 
 func (s *Service) decodeLoop() {
@@ -354,12 +480,18 @@ func (s *Service) decodeLoop() {
 }
 
 func (s *Service) decode(k scaledKey) {
+	s.mu.Lock()
+	eligible := s.decodeEligibleLocked(k)
+	s.mu.Unlock()
 	inflightKey := k
 	defer func() {
 		s.mu.Lock()
 		delete(s.inflight, inflightKey)
 		s.mu.Unlock()
 	}()
+	if !eligible {
+		return
+	}
 	if k.Slot == fetch.SlotVideo {
 		s.decodeVideo(k)
 		return
@@ -415,11 +547,15 @@ func (s *Service) decode(k scaledKey) {
 
 func (s *Service) decodeVideo(k scaledKey) {
 	s.mu.Lock()
+	eligible := s.decodeEligibleLocked(k)
 	clip := s.clips[k.Pic]
 	if clip != nil {
 		s.touchClip(k.Pic)
 	}
 	s.mu.Unlock()
+	if !eligible {
+		return
+	}
 	if clip == nil {
 		f, err := os.Open(s.path(k.Pic))
 		if err != nil {
@@ -437,16 +573,151 @@ func (s *Service) decodeVideo(k scaledKey) {
 		s.mu.Unlock()
 	}
 	k.Frame = clip.Normalize(k.Frame)
+	timing := s.videoTimingEnabled()
+	// Recheck immediately before JPEG decoding because the UI may have
+	// replaced its wanted list while the clip was being read.
+	s.mu.Lock()
+	eligible = s.decodeEligibleLocked(k)
+	_, cached := s.cache[k]
+	s.mu.Unlock()
+	if !eligible || cached {
+		return
+	}
+	var decodeTime, convertTime, scaleTime time.Duration
+	var started time.Time
+	if timing {
+		started = time.Now()
+	}
 	img, err := clip.Decode(k.Frame)
+	if timing {
+		decodeTime = time.Since(started)
+	}
 	if err != nil {
 		s.failCorrupt(k.Pic, err)
 		return
 	}
-	scaled := scaleFor(ToRGBA(img), k)
+	if timing {
+		started = time.Now()
+	}
+	rgba := ToRGBA(img)
+	if timing {
+		convertTime = time.Since(started)
+	}
+	if timing {
+		started = time.Now()
+	}
+	scaled := scaleFor(rgba, k)
+	if timing {
+		scaleTime = time.Since(started)
+	}
 	s.mu.Lock()
-	s.put(k, scaled)
+	current := s.isWantedLocked(k)
+	future := !current && s.decodeEligibleLocked(k)
+	if current {
+		s.put(k, scaled)
+	} else if future && s.canHoldVideoWindowLocked() && s.putFutureLocked(k, scaled) {
+		// The request remains speculative until Want names this frame.
+	} else {
+		if future {
+			s.blockVideoWindowLocked()
+		}
+		s.mu.Unlock()
+		return
+	}
+	wakeWaiting := s.waitingVideoOn && s.normalizeKey(s.waitingVideo) == k
 	s.mu.Unlock()
-	s.signal()
+	if timing {
+		s.recordVideoTiming(decodeTime, convertTime, scaleTime)
+	}
+	if current || wakeWaiting {
+		s.signal()
+	}
+}
+
+// putFutureLocked makes room only by evicting cache entries the current screen
+// does not need. The caller bounds the full visible window against budget first.
+func (s *Service) putFutureLocked(k scaledKey, img *image.RGBA) bool {
+	need := s.bytes + len(img.Pix) - s.budget
+	if need > 0 {
+		var evict []*list.Element
+		freed := 0
+		for el := s.lru.Back(); el != nil && freed < need; el = el.Prev() {
+			old := el.Value.(scaledKey)
+			if old == k || s.isPinnedLocked(old) {
+				continue
+			}
+			evict = append(evict, el)
+			if e := s.cache[old]; e != nil {
+				freed += e.size
+			}
+		}
+		if freed < need {
+			return false
+		}
+		for _, el := range evict {
+			old := el.Value.(scaledKey)
+			if e := s.cache[old]; e != nil {
+				s.bytes -= e.size
+				delete(s.cache, old)
+			}
+			s.lru.Remove(el)
+		}
+	}
+	s.put(k, img)
+	return true
+}
+
+func (s *Service) protectedBytesLocked() int {
+	seen := map[scaledKey]bool{}
+	total := 0
+	for _, wanted := range s.wanted {
+		wanted = s.normalizeKey(wanted)
+		if seen[wanted] {
+			continue
+		}
+		seen[wanted] = true
+		if e := s.cache[wanted]; e != nil {
+			total += e.size
+		}
+	}
+	return total
+}
+
+func (s *Service) isWantedLocked(k scaledKey) bool {
+	for _, w := range s.wanted {
+		if s.normalizeKey(w) == k {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *Service) clearWaitingVideoLocked(k scaledKey) {
+	if s.waitingVideoOn && s.normalizeKey(s.waitingVideo) == k {
+		s.waitingVideoOn = false
+	}
+}
+
+func (s *Service) isPinnedLocked(k scaledKey) bool {
+	if s.isWantedLocked(k) {
+		return true
+	}
+	for _, future := range s.videoWindowLocked() {
+		if future == k {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *Service) decodeEligibleLocked(k scaledKey) bool {
+	if s.paused {
+		return false
+	}
+	if s.isWantedLocked(k) {
+		return true
+	}
+	return k.Slot == fetch.SlotVideo && !s.futureBlocked[k] && s.isVideoAheadLocked(k) && s.canHoldVideoWindowLocked()
 }
 
 func (s *Service) failRead(p Pic, err error) {
@@ -712,6 +983,8 @@ var slotDirs = []string{"title", "snap", "ingame", "systems", fetch.SlotLocalSna
 // rarely appear later, but the screenshot service fills in over time, so a
 // miss is asked again after a week rather than never.
 const missingTTL = 7 * 24 * time.Hour
+
+const videoAheadFrames = 2
 
 // missingFile is missing.json: version 2 keeps when each 404 was seen.
 type missingFile struct {

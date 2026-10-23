@@ -260,6 +260,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	// pictures
 	h.client = fetch.NewClient(buildinfo.Version)
 	h.img = images.New(filepath.Join(root, "shots"), h.client, lg, 24<<20)
+	h.img.SetVideoTiming(debugAddr != "")
 	// the prefetch list, and the count of its pictures already on the
 	// card, wait for the first card scan (receiveScan): counting stats
 	// thousands of files, which the scan is doing too
@@ -277,7 +278,8 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	}
 	favSet := h.favs.Set()
 	cfg := app.Config{
-		PhysW: h.fb.CanvasW, PhysH: h.fb.CanvasH, Rotation: rotation, SafeInsetX: h.settings.InsetX, SafeInsetY: h.settings.InsetY,
+		MeasureVideo: debugAddr != "",
+		PhysW:        h.fb.CanvasW, PhysH: h.fb.CanvasH, Rotation: rotation, SafeInsetX: h.settings.InsetX, SafeInsetY: h.settings.InsetY,
 		Now: h.now, TimerNow: time.Now, ClockTrusted: trusted, Favorites: favSet, Images: h.img, Scroll: h.settings.Scroll, HoldDelay: h.settings.HoldDelay,
 		Screensaver:          h.settings.Screensaver,
 		SaverDisabled:        h.settings.SaverDisabled,
@@ -485,10 +487,11 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 					"sort": h.a.Sort().String(), "rows": len(h.a.Data().Rows), "fb": h.fb.Geometry().String(),
 					"search": h.a.Search(), "filters": h.a.Filters(), "rotation": h.a.Rotation().String(), "inset": fmt.Sprint(h.a.Inset()), "devices": h.input.Devices(),
 					"sysfs": mister.SysfsMode(), "uptime": time.Since(t0).String(), "frames": h.stats.String(), "cadence": h.stats.Cadence(), "saver": h.a.SaverStats(), "saver_blank_frames": h.saverBlankFrames, "saver_misses": h.saverMisses,
-					"update":      h.a.UpdateState(),
-					"mem":         memStats(),
-					"video":       h.a.VideoStats(),
-					"screensaver": h.a.Screensaver(), "screensaver_active": h.a.ScreensaverActive(), "saver_style": h.a.SaverStyle(), "saver_info": h.a.SaverInfo(),
+					"update":       h.a.UpdateState(),
+					"mem":          memStats(),
+					"video":        h.a.VideoStats(),
+					"video_decode": h.img.VideoStats(),
+					"screensaver":  h.a.Screensaver(), "screensaver_active": h.a.ScreensaverActive(), "saver_style": h.a.SaverStyle(), "saver_info": h.a.SaverInfo(),
 					"title_font": h.a.TitleFont(), "list_shot": h.a.ListShot(), "date_format": h.a.DateFormat(), "button_labels": h.a.ButtonLabels(),
 				}
 			},

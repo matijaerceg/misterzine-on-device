@@ -21,6 +21,7 @@ type videoState struct {
 	last           *image.RGBA
 	next           time.Time
 	resume         time.Time
+	timing         videoTiming
 }
 
 const videoInterval = time.Second / 15
@@ -29,10 +30,14 @@ const videoInterval = time.Second / 15
 // capturing and encoding a screenshot on every frame.
 func (a *App) VideoStats() map[string]any {
 	v := &a.video
-	return map[string]any{
+	out := map[string]any{
 		"key": v.req.Key, "frame": v.req.Frame, "visible": v.visible,
 		"ready": v.last != nil, "waiting": v.visible && v.next.IsZero(),
 	}
+	if a.cfg.MeasureVideo {
+		out["timing"] = v.timing.snapshot()
+	}
+	return out
 }
 
 func (a *App) mediaImage(req ImageReq, box image.Rectangle, center bool) (*image.RGBA, ImageState) {
@@ -47,6 +52,9 @@ func (a *App) mediaImage(req ImageReq, box image.Rectangle, center bool) (*image
 	}
 	v.box, v.center, v.visible = box, center, true
 	img, st := a.cfg.Images.Get(v.req)
+	if a.cfg.MeasureVideo {
+		v.timing.observe(v.req.Frame, img != nil, st == ImageLoading, a.cfg.TimerNow())
+	}
 	a.want(v.req)
 	if img != nil {
 		v.last = img

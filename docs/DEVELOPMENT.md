@@ -129,6 +129,22 @@ preserves preferences. Draw with `pal` so themes reach every screen.
 
 ## Device tools and debugging
 
+With remote debugging enabled, `/api/state` includes `video.timing`: frame
+requests, frames available immediately, frames that waited, and their average
+and maximum wait in milliseconds. These counters reset when the video's row,
+size or view changes; repeated paints of one frame do not count again.
+`video_decode` separately measures successful JPEG decoding, colour conversion
+and resizing (average and maximum milliseconds), including frames prepared
+ahead. Its counters cover the app session. These are availability and worker
+timings, not physical display timestamps; use the existing paint/present
+measurements alongside them. Normal mode does not collect these timings.
+
+The image worker prepares at most two frames ahead of the visible clip, within
+the existing scaled-image cache budget. It gives the visible frame priority,
+keeps upcoming frames from evicting the screen's current images, and replaces
+queued work when selection changes. Preparing a future frame does not repaint
+the screen or start another clip's download.
+
 Set `PI` to your device's IP or SSH hostname when using `tools/dev.sh`; Go
 must be on PATH for its build command. It uses SSH and, for some commands, the
 separately installed Remote service. Run it against an idle test device.
