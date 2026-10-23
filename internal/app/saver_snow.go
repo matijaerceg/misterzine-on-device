@@ -83,3 +83,10 @@ func (a *App) paintSaverSnow(c *gfx.Canvas) {
 	f.active = alive
 	c.DirtyAll()
 }
+
+func (a *App) saverStyleHelp() string {
+	if a.SaverStyle() == "snow" {
+		return "Pixels fall for 10 minutes, brightest first, leaving the original image at 25% brightness. Press " + a.btn("A") + " to preview; other buttons wake."
+	}
+	return "Lettering: the MISTERZINE sweep. Screenshots: arcade shots; hold Start to play. Dim: darken the current screen. Other buttons wake."
+}
