@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.2.20 — 2026-10-22
+
+- Add Snowfall under Options -> Screensaver -> Style. Pixels of the current screen drift down and away over five minutes, leaving black. Release order moves from bright to dark through a scattered 20% brightness range to spread the snowfall across the picture. A continuous stream of pixels in the original image's colours enters from above and keeps falling after the image is gone. Other buttons wake without acting. Tested and accepted on a MiSTer Pi.
+- Console, computer, other and utility cores at the top of their usual folder now take priority over copies in subfolders. A newer test build filed away no longer changes the listed status or takes over when launching; subfolder copies remain available when no top-level copy exists.
+- Embedded catalogue snapshot refreshed (2,544 rows, 2026-10-22 Vancouver).
+
 ## v1.2.19 — 2026-10-22
 
 - The list wraps around at its ends, as Options already did. In every view a single Up on the first game goes to the last one and Down on the last game goes back to the top, and the L/R jumps wrap the same way: L on the first letter, month, year, manufacturer or core goes to the first game of the last one, R on the last back to the first, landing as any jump does. Holding the button still stops at the end, so a long held scroll never runs past it; only a fresh press wraps. Asked for on the MiSTer forum for the A-Z view, like the MiSTer menu. Tested on a MiSTer Pi.

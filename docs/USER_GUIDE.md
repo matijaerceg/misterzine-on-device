@@ -648,6 +648,7 @@ Screensaver settings are under **Options → Screensaver**. Preview starts it im
   downloads and Update All continue while dimmed.
 - **Screensaver enabled:** switch automatic activation on or off separately from Delay (1, 2, 5 or 10 minutes). Disabling keeps your chosen delay and style; preview still works.
 - **Dim screensaver:** choose Dim as the third style to darken the current screen without animation. Brightness uses three touching boxes: one filled means 33% (default), two filled means 66% of the original brightness. Press A to preview.
+- **Snowfall screensaver:** the current screen breaks into drifting pixels over five minutes, leaving black. Releases scatter through a moving brightness range, from bright to dark. Coloured pixels sampled from the original image keep falling from above indefinitely. Press A to preview; other buttons wake without acting.
 - **Screensaver style:** what the screensaver shows. Lettering (default) is the
   MISTERZINE sweep above. Screenshots shows one arcade game's gameplay
   shot after another, every arcade game in the catalogue in a shuffled
