@@ -610,7 +610,7 @@ func (a *App) paintDetailInfo(c *gfx.Canvas) {
 // only while the information actually scrolls.
 func (a *App) detailsHint(scrolls bool, versions int, scrollLimit int) string {
 	hint := "Start Launch  A Shots  Y Fav"
-	if r, _, _ := a.current(); r != nil && (r.HasMedia("video") || r.HasMedia("flyer")) {
+	if r, _, _ := a.current(); r != nil && r.HasMedia("flyer") {
 		hint = "Start Launch  A Media  Y Fav"
 	}
 	short := "Start Go  A Art  Y Fav"
@@ -660,7 +660,7 @@ func shotSlots(row *data.Row) []string {
 	} else if row.Core != "" && !row.IsArcade() {
 		slots = append(slots, "system")
 	}
-	for _, s := range []string{"video", "flyer"} {
+	for _, s := range []string{"flyer"} {
 		if row.HasMedia(s) {
 			slots = append(slots, s)
 		}

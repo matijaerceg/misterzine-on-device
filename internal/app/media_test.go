@@ -3,7 +3,6 @@ package app
 import (
 	"image"
 	"image/color"
-	"reflect"
 	"testing"
 	"time"
 
@@ -40,179 +39,42 @@ func mediaApp(t *testing.T, preference string) (*App, *mediaImages, *time.Time) 
 	return a, m, &now
 }
 
-func TestMediaSelectionAndFallback(t *testing.T) {
+func TestFlyersOnly(t *testing.T) {
 	a, m, _ := mediaApp(t, "video")
-	r, _, _ := a.current()
-	for _, pref := range []string{"video", "flyer"} {
-		key, slot := thumbSlot(r, pref)
-		if key != "media" || slot != pref {
-			t.Fatalf("%s: %s/%s", pref, key, slot)
-		}
+	if a.ListShot() != "gameplay" {
+		t.Fatal("legacy video preference did not fall back")
 	}
-	if got := shotSlots(r); !reflect.DeepEqual(got, []string{"snap", "title", "video", "flyer"}) {
-		t.Fatal(got)
-	}
-	if stretchShot(r, "flyer") || stretchShot(r, "video") {
-		t.Fatal("extra media must preserve its own aspect")
-	}
-	m.state = ImageOffline
-	m.gets = nil
-	a.Invalidate()
-	a.Paint()
-	if len(m.gets) < 2 || m.gets[0].Slot != "video" || m.gets[1].Slot != "snap" {
-		t.Fatalf("offline fallback: %+v", m.gets)
-	}
-	if !a.nextVideoTick().IsZero() {
-		t.Fatal("offline video is spinning the timer")
-	}
-	if a.video.last != nil {
-		t.Fatal("failed clip retained a frozen frame")
-	}
-	r.MediaSlots = nil
-	if key, slot := thumbSlot(r, "flyer"); key != "shot" || slot != "snap" {
-		t.Fatalf("unadvertised fallback: %s/%s", key, slot)
-	}
-}
-
-func TestVideoTimelineHoldsPendingFrameAndStopsOffscreen(t *testing.T) {
-	a, m, now := mediaApp(t, "video")
-	first := a.video.last
-	if first == nil || a.nextVideoTick().IsZero() {
-		t.Fatal("preview did not start")
-	}
-	m.pending = true
-	*now = now.Add(videoInterval)
-	if !a.tickVideo(*now) {
-		t.Fatal("no video tick")
-	}
-	_, dirty := a.Paint()
-	if len(dirty) == 0 || a.video.last != first || !a.video.next.IsZero() {
-		t.Fatal("pending decode must retain last frame and wait for Ready")
-	}
-	if len(m.wants) != 1 || m.wants[0].Frame != 1 {
-		t.Fatalf("pending frame lost: %+v", m.wants)
-	}
-	m.pending = false
-	a.Invalidate()
-	a.Paint()
-	if a.video.last == first || a.video.next.IsZero() {
-		t.Fatal("decoded frame did not resume playback")
-	}
-	for i := 0; i < 20; i++ {
-		*now = now.Add(videoInterval)
-		a.tickVideo(*now)
-		a.Paint()
-	}
-	if len(m.wants) != 1 {
-		t.Fatalf("obsolete frame backlog: %d", len(m.wants))
-	}
-	a.screen = ScreenOptions
-	if !a.nextVideoTick().IsZero() {
-		t.Fatal("video kept ticking behind Options")
-	}
-	a.screen = ScreenList
-	a.saver.active = true
-	if !a.nextVideoTick().IsZero() {
-		t.Fatal("video kept ticking under screensaver")
-	}
-}
-
-func TestVideoDecodeTimeCountsTowardNextFrameDeadline(t *testing.T) {
-	a, m, now := mediaApp(t, "video")
-	*now = now.Add(videoInterval)
-	started := *now
-	if !a.tickVideo(started) {
-		t.Fatal("no video tick")
-	}
-	m.pending = true
-	a.Paint()
-	if !a.video.next.IsZero() {
-		t.Fatal("pending decode scheduled another frame")
-	}
-
-	decodeTime := 40 * time.Millisecond
-	*now = started.Add(decodeTime)
-	m.pending = false
-	a.Invalidate()
-	a.Paint()
-	want := started.Add(videoInterval)
-	if !a.video.next.Equal(want) {
-		t.Fatalf("next deadline %v, want tick-start deadline %v", a.video.next, want)
-	}
-	if a.tickVideo(*now) {
-		t.Fatal("video ticked before the remaining frame interval elapsed")
-	}
-	*now = want
-	if !a.tickVideo(*now) {
-		t.Fatal("video did not tick at the remaining frame deadline")
-	}
-}
-
-func TestDetailsAndFullscreenMedia(t *testing.T) {
-	a, m, now := mediaApp(t, "video")
-	a.actList(platform.KeyEnter)
-	a.Paint()
-	if a.screen != ScreenDetails || !a.video.visible {
-		t.Fatal("no details preview")
-	}
-	*now = now.Add(videoInterval)
-	a.tickVideo(*now)
-	a.Paint()
-	if a.video.req.Frame != 1 {
-		t.Fatal("details preview did not animate")
-	}
-	a.actDetails(platform.KeyEnter)
-	a.Paint()
-	if a.screen != ScreenShot || a.slot != 2 || !a.video.center {
-		t.Fatal("artwork did not open preferred video")
-	}
-	a.actShot(platform.KeyRight)
-	a.Paint()
-	if a.slot != 3 || a.video.visible || !a.nextVideoTick().IsZero() {
-		t.Fatal("flyer still animates")
-	}
-	last := m.gets[len(m.gets)-1]
-	if last.Key != "media" || last.Slot != "flyer" || last.Native || last.Stretch {
-		t.Fatalf("flyer request: %+v", last)
-	}
-	a.actShot(platform.KeyBack)
-	if a.screen != ScreenDetails {
-		t.Fatal("Back lost details")
-	}
-}
-
-func TestVideoFailureDuringPartialPaintFallsBack(t *testing.T) {
-	a, m, now := mediaApp(t, "video")
-	m.state = ImageMissing
-	m.gets = nil
-	*now = now.Add(videoInterval)
-	a.tickVideo(*now)
-	a.Paint()
-	if a.video.last != nil || !a.video.next.IsZero() {
-		t.Fatal("failed frame kept playing")
-	}
-	found := false
-	for _, r := range m.gets {
-		found = found || r.Slot == "snap"
-	}
-	if !found {
-		t.Fatal("failed video did not request screenshot fallback")
-	}
-}
-
-func TestArtTypeCycleAndVideoPrivacy(t *testing.T) {
-	a, _, _ := mediaApp(t, "gameplay")
-	for _, want := range []string{"title", "video", "flyer", "gameplay"} {
+	for _, want := range []string{"title", "flyer", "gameplay"} {
 		a.cycleListShot()
 		if a.ListShot() != want {
-			t.Fatalf("got %s want %s", a.ListShot(), want)
+			t.Fatal(a.ListShot())
 		}
 	}
-	a.cfg.ListShot = "video"
-	a.cfg.Mature = MaturePixelate
-	a.ds.Rows[0].Mat = 1
+	a.cfg.ListShot = "flyer"
+	a.Invalidate()
 	a.Paint()
-	if !a.video.req.Pixelate {
-		t.Fatal("video bypassed mature pixelation")
+	if len(m.gets) == 0 || m.gets[len(m.gets)-1].Slot != "flyer" {
+		t.Fatal("flyer unavailable")
+	}
+	a.actList(platform.KeyEnter)
+	a.Paint()
+	a.actDetails(platform.KeyEnter)
+	a.Paint()
+	if a.video.visible || !a.nextVideoTick().IsZero() {
+		t.Fatal("video active")
+	}
+	for _, req := range m.gets {
+		if req.Slot == "video" {
+			t.Fatal("requested shelved video")
+		}
+	}
+	row, _, _ := a.current()
+	for _, slot := range shotSlots(row) {
+		if slot == "video" {
+			t.Fatal("video in detail slots")
+		}
+	}
+	if a.screen != ScreenShot {
+		t.Fatal("flyer fullscreen unavailable")
 	}
 }

@@ -34,8 +34,8 @@ var SnapService = "https://images.misterzine.fyi"
 
 // MediaService optionally serves approved videos and flyers from an object
 // store. Empty uses the site's /images directory, like catalogue screenshots.
-// Set at build time after the image service supports /video and /flyer routes.
-var MediaService string
+// The image service hosts catalogue flyers alongside screenshots.
+var MediaService = "https://images.misterzine.fyi"
 
 // SlotLocalSnap is the picture slot served by SnapService.
 const SlotLocalSnap = "lsnap"

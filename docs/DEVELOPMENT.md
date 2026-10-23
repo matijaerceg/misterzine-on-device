@@ -72,8 +72,8 @@ picture stays loading, as on a card still fetching it.
 
 `testdata/media.json` adds a synthetic video test card and a drawn demo flyer
 under `testdata/images/video` and `testdata/images/flyer`. The media golden
-scenarios check changing video frames in the list and Details, full-screen
-media, flyer proportions and the screenshot fallback in both orientations.
+fixtures retain video samples for future experiments; video playback is currently
+shelved. Active artwork consists of screenshots and flyers.
 No third-party gameplay footage or flyer scans are bundled with these tests.
 See [media preparation](MEDIA.md) for the local conversion and hosting workflow.
 

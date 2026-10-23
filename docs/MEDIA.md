@@ -1,3 +1,5 @@
+> Video previews are shelved. The app currently offers screenshots and flyers only. Video preparation instructions below are retained for future experiments.
+
 # Optional videos and flyers
 
 MisterZine can advertise an optional gameplay preview and flyer for a game. A video uses the compact `MZV1` frame container; the MiSTer player decodes its JPEG frames directly. A flyer is a PNG. Both are separate from the existing screenshot fields, so older app versions ignore the new catalogue fields.
@@ -20,21 +22,13 @@ There are already two hosting paths: catalogue screenshots live under the
 site's `/images/`, while the [image service](https://github.com/matijaerceg/misterzine/tree/main/images)
 uses the existing `misterzine-images` Cloudflare R2 bucket for per-setname
 screenshots. That bucket is already seeded from Progetto-SNAPS snap/title packs.
-Reuse R2 for a larger media collection rather than adding a video library to
-the website's Git repository. The current Worker only routes `snap` and `title`;
-it does **not** serve these new types yet.
+Flyers use that image service by default, at `/flyer/<key>.png`, with PNG
+objects stored in R2. The catalogue resolves game families and advertises only
+available assets. The app caches downloads locally for offline use.
 
-For R2 delivery, add read-only Worker routes `/video/<key>.mzv` and
-`/flyer/<key>.png` with the same validated key rules and edge cache. Serve MZV
-as `application/octet-stream` and flyers as `image/png`. Upload approved converted
-objects under those keys and build the app with
-`-ldflags="-X github.com/matijaerceg/misterzine-on-device/internal/fetch.MediaService=https://images.misterzine.fyi"`.
-The new routes should read only those uploaded objects, without using the
-screenshot service's PNG upstream scraping or parent-copy logic. The catalogue
-manifest already resolves game families. Until those routes are deployed,
-the default remains `https://misterzine.fyi/images/`, which can serve a small
-reviewed selection alongside screenshots. No hosting configuration changes
-are made by this repository's preparation tools.
+`internal/fetch.MediaService` can still be overridden at build time for a
+different host. An empty value selects the site's `/images/` directory.
+This repository's preparation tools do not publish objects or change hosting.
 
 Acquire files from a source you are allowed to use, keeping the source files and permission records outside the generated asset directories. The tools below process local files; they do not download collections or publish files.
 

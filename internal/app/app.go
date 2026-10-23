@@ -189,7 +189,7 @@ type Config struct {
 	// TitleFont draws list titles in "tall" (default: the narrow font at the
 	// body font's height), "narrow" or "normal" (the body font).
 	TitleFont string
-	// ListShot is the list media preference: gameplay, title, video or flyer.
+	// ListShot is the list media preference: gameplay, title or flyer.
 	ListShot string
 	// DateFormat is the list date column: "mm-dd" (default), "dd-mm",
 	// "mon-d", "d-mon" or "yymmdd".

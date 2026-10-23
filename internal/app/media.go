@@ -7,7 +7,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 )
 
-var listArtTypes = []string{"gameplay", "title", "video", "flyer"}
+var listArtTypes = []string{"gameplay", "title", "flyer"}
 
 // Only the visible preview plays. Decoding runs through Images on its worker;
 // while a frame is pending we keep the preceding frame, never a loading flash.

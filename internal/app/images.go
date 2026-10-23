@@ -57,7 +57,7 @@ func (noImages) Want([]ImageReq)                        {}
 // preference the title screen first, otherwise a gameplay shot (snap, then
 // ingame) first; system photos for rows without shots.
 func thumbSlot(r *data.Row, pref string) (key, slot string) {
-	if (pref == "video" || pref == "flyer") && r.HasMedia(pref) {
+	if (pref == "flyer") && r.HasMedia(pref) {
 		return r.MediaKey, pref
 	}
 	if r.Img != "" && len(r.ImgSlots) > 0 {
