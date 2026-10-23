@@ -86,6 +86,94 @@ func TestScanCoresAndStatus(t *testing.T) {
 	}
 }
 
+// MiSTer's menu opens the folders inside _Console, _Computer, _Other and
+// _Utility whose names start with "_", and a core filed there runs, so its
+// row is on the card (a player keeps Aquarius in _Computer/_Other and the
+// Neo Geo Pocket core in _Console/_Handheld). Folders without the "_" stay
+// hidden from the menu and the list alike, and an MRA still loads its core
+// only from _Arcade/cores itself.
+func TestScanCoresSubfolders(t *testing.T) {
+	card := t.TempDir()
+	mk := func(rel string) {
+		t.Helper()
+		p := filepath.Join(card, filepath.FromSlash(rel))
+		os.MkdirAll(filepath.Dir(p), 0755)
+		if err := os.WriteFile(p, []byte("x"), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	mk("_Computer/_Other/Aquarius_20260603.rbf")
+	mk("_Console/_Handheld/NGPC_20260824.rbf")
+	mk("_Console/_Handheld/_Nintendo/GBA_20260101.rbf")
+	mk("_Utility/Tools/Hidden_20260101.rbf")      // no "_": the menu never shows it
+	mk("_Arcade/cores/_Extra/Stray_20260101.rbf") // Main loads MRA cores from cores/ only
+	mk("_Console/NES_20260301.rbf")               // newer at the top: it stays
+	mk("_Console/_Old/NES_20250101.rbf")
+	mk("_Console/SMS_20260101.rbf") // newer in a folder: that build is the one
+	mk("_Console/_New/SMS_20260202.rbf")
+	mk("_Console/Gameboy_20260101.rbf") // the same build twice: the top-level file
+	mk("_Console/_Copy/Gameboy_20260101.rbf")
+
+	idx := ScanCores(card)
+	if idx.Err != nil {
+		t.Fatal(idx.Err)
+	}
+	for core, want := range map[string]string{
+		"Aquarius": "_Computer/_Other/Aquarius_20260603.rbf",
+		"NGPC":     "_Console/_Handheld/NGPC_20260824.rbf",
+		"GBA":      "_Console/_Handheld/_Nintendo/GBA_20260101.rbf",
+		"NES":      "_Console/NES_20260301.rbf",
+		"SMS":      "_Console/_New/SMS_20260202.rbf",
+		"Gameboy":  "_Console/Gameboy_20260101.rbf",
+	} {
+		if c, ok := idx.Lookup(core); !ok || c.Path != want {
+			t.Errorf("%s = %+v %v, want %s", core, c, ok, want)
+		}
+	}
+	for _, core := range []string{"Hidden", "Stray"} {
+		if c, ok := idx.Lookup(core); ok {
+			t.Errorf("%s found at %s", core, c.Path)
+		}
+	}
+	rows := []struct {
+		row  data.Row
+		want data.Status
+	}{
+		{data.Row{Base: "Computer", Core: "Aquarius", Updated: "2026-06-03"}, data.StatusCurrent},
+		{data.Row{Base: "Console", Core: "NGPC", Updated: "2026-09-01"}, data.StatusOutdated},
+		{data.Row{Base: "Console", Core: "SMS", Updated: "2026-02-02"}, data.StatusCurrent},
+	}
+	for i, c := range rows {
+		if got := Status(card, idx, &c.row); got != c.want {
+			t.Errorf("row %d (%s): status %v, want %v", i, c.row.Core, got, c.want)
+		}
+	}
+}
+
+// A folder inside a core folder that cannot be read hides only its own
+// cores; the scan itself still completes.
+func TestScanCoresUnreadableSubfolder(t *testing.T) {
+	card := t.TempDir()
+	sub := filepath.Join(card, "_Console", "_Locked")
+	os.MkdirAll(sub, 0755)
+	os.WriteFile(filepath.Join(card, "_Console", "NES_20260301.rbf"), []byte("x"), 0644)
+	os.WriteFile(filepath.Join(sub, "SMS_20260101.rbf"), []byte("x"), 0644)
+	if err := os.Chmod(sub, 0); err != nil {
+		t.Skip(err)
+	}
+	t.Cleanup(func() { os.Chmod(sub, 0755) })
+	if _, err := os.ReadDir(sub); err == nil {
+		t.Skip("folder permissions do not apply here (Windows, or root)")
+	}
+	idx := ScanCores(card)
+	if idx.Err != nil {
+		t.Fatalf("scan failed: %v", idx.Err)
+	}
+	if _, ok := idx.Lookup("NES"); !ok {
+		t.Error("NES lost")
+	}
+}
+
 // TestLookupPrefix covers MiSTer's get_rbf rule: an rbf whose filename
 // starts with the core name followed by "_" loads for that name (Coin-Op
 // ships blkheart_mister_20260909.rbf for <rbf>blkheart</rbf>), exact

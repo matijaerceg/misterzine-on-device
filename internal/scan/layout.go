@@ -11,10 +11,11 @@ import (
 
 // Layout limits keep the diagnostic report readable on a card of any size.
 const (
-	layoutDepth   = 3    // _Arcade folders listed this deep
-	layoutFolders = 250  // folder lines at most
-	layoutNames   = 1000 // arcade core names at most
-	layoutTop     = 200  // top-level entries at most
+	layoutDepth    = 3    // _Arcade folders listed this deep
+	layoutFolders  = 250  // folder lines at most
+	layoutNames    = 1000 // arcade core names at most
+	layoutTop      = 200  // top-level entries at most
+	layoutCoreSubs = 30   // sub-folders named per other core folder at most
 )
 
 // CardLayout describes the card's folders for the diagnostic report, where a
@@ -22,7 +23,8 @@ const (
 //   - the card's top level, with the entry count of each folder
 //   - the _Arcade tree three folders deep, each folder's MRA count, and the
 //     folders the local walk leaves out marked with its reason
-//   - every file in _Arcade/cores, and the core counts of the other core folders
+//   - every file in _Arcade/cores, and the core counts of the other core
+//     folders and of the folders in them that MiSTer's menu opens
 //   - the ROM folder MiSTer's arcade loader picks, with its zip counts
 //   - the app's own folder (appDir), with file sizes
 //
@@ -136,7 +138,20 @@ func CardLayout(card, appDir string) []string {
 	}
 	var others []string
 	for _, dir := range coreDirs[1:] {
-		others = append(others, fmt.Sprintf("%s %d", dir, countSuffix(filepath.Join(card, dir), ".rbf")))
+		line := fmt.Sprintf("%s %d", dir, countSuffix(filepath.Join(card, dir), ".rbf"))
+		if entries, err := os.ReadDir(filepath.Join(card, dir)); err == nil {
+			var subs []string
+			for _, f := range coreSubdirs(card, dir, entries) {
+				subs = append(subs, fmt.Sprintf("%s %d", strings.TrimPrefix(f.dir, dir+"/"), countRBF(f.entries)))
+			}
+			if n := len(subs); n > layoutCoreSubs {
+				subs = append(subs[:layoutCoreSubs], fmt.Sprintf("... %d more", n-layoutCoreSubs))
+			}
+			if len(subs) > 0 {
+				line += " (" + strings.Join(subs, ", ") + ")"
+			}
+		}
+		others = append(others, line)
 	}
 	add("Other core folders (.rbf files): %s", strings.Join(others, ", "))
 
@@ -202,6 +217,17 @@ func countSuffix(dir, suffix string) int {
 	n := 0
 	for _, e := range entries {
 		if !e.IsDir() && strings.HasSuffix(strings.ToLower(e.Name()), suffix) {
+			n++
+		}
+	}
+	return n
+}
+
+// countRBF counts the rbf files in a folder listing.
+func countRBF(entries []os.DirEntry) int {
+	n := 0
+	for _, e := range entries {
+		if !e.IsDir() && strings.HasSuffix(strings.ToLower(e.Name()), ".rbf") {
 			n++
 		}
 	}

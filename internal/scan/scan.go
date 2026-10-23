@@ -27,8 +27,13 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/store"
 )
 
-// coreDirs are where MiSTer keeps rbf files, card-relative.
+// coreDirs are where MiSTer keeps rbf files, card-relative. Inside all but
+// the first, the folders MiSTer's menu opens hold cores too (coreSubdirs).
 var coreDirs = []string{"_Arcade/cores", "_Console", "_Computer", "_Other", "_Utility"}
+
+// coreSubDepth bounds how deep coreSubdirs follows folders. MiSTer's menu
+// has no limit, but players file a core a folder or two down at most.
+const coreSubDepth = 6
 
 // rbfName matches "<Core>_YYYYMMDD[_anything].rbf"; undated rbfs (Jotego
 // ships e.g. jt1942.rbf) simply do not match and count as undated. A
@@ -67,8 +72,9 @@ type Index struct {
 	rbfs []Core
 }
 
-// ScanCores lists the core folders. Missing folders are fine (an arcade-only
-// card has no _Console).
+// ScanCores lists the core folders and, outside _Arcade/cores, the folders
+// in them that MiSTer's menu opens. Missing folders are fine (an
+// arcade-only card has no _Console).
 func ScanCores(card string) *Index {
 	idx := &Index{Cores: map[string]Core{}, arcade: map[string]Core{}, system: map[string]Core{}, At: time.Now()}
 	if _, err := os.ReadDir(card); err != nil {
@@ -83,38 +89,93 @@ func ScanCores(card string) *Index {
 			}
 			continue
 		}
-		kind := idx.system
 		if dir == "_Arcade/cores" {
-			kind = idx.arcade
+			// an MRA loads its core from this folder itself, never one inside
+			idx.addCores(dir, entries, true)
+			continue
 		}
-		for _, e := range entries {
-			name := e.Name()
-			if e.IsDir() || !strings.HasSuffix(strings.ToLower(name), ".rbf") {
-				continue
+		idx.addCores(dir, entries, false)
+		// after the folder's own files, so a core in both places keeps the
+		// top-level file when the dates tie
+		for _, sub := range coreSubdirs(card, dir, entries) {
+			idx.addCores(sub.dir, sub.entries, false)
+		}
+	}
+	return idx
+}
+
+// addCores indexes the rbf files among one folder's entries, keeping each
+// name's newest build.
+func (idx *Index) addCores(dir string, entries []os.DirEntry, arcade bool) {
+	kind := idx.system
+	if arcade {
+		kind = idx.arcade
+	}
+	for _, e := range entries {
+		name := e.Name()
+		if e.IsDir() || !strings.HasSuffix(strings.ToLower(name), ".rbf") {
+			continue
+		}
+		stem := strings.ToLower(strings.TrimSuffix(name, filepath.Ext(name)))
+		base, date := stem, ""
+		if m := rbfName.FindStringSubmatch(name); m != nil {
+			base, date = strings.ToLower(m[1]), strings.ToLower(m[2])
+		}
+		rel := path.Join(dir, name)
+		if arcade {
+			idx.rbfs = append(idx.rbfs, Core{Date: date, Path: rel})
+		}
+		for _, m := range []map[string]Core{idx.Cores, kind} {
+			if cur, ok := m[base]; !ok || date > cur.Date {
+				m[base] = Core{Date: date, Path: rel}
 			}
-			stem := strings.ToLower(strings.TrimSuffix(name, filepath.Ext(name)))
-			base, date := stem, ""
-			if m := rbfName.FindStringSubmatch(name); m != nil {
-				base, date = strings.ToLower(m[1]), strings.ToLower(m[2])
-			}
-			rel := path.Join(dir, name)
-			if dir == "_Arcade/cores" {
-				idx.rbfs = append(idx.rbfs, Core{Date: date, Path: rel})
-			}
-			for _, m := range []map[string]Core{idx.Cores, kind} {
-				if cur, ok := m[base]; !ok || date > cur.Date {
-					m[base] = Core{Date: date, Path: rel}
-				}
-				// the full stem too, for core values that carry a date suffix
-				if stem != base {
-					if cur, ok := m[stem]; !ok || date > cur.Date {
-						m[stem] = Core{Date: date, Path: rel}
-					}
+			// the full stem too, for core values that carry a date suffix
+			if stem != base {
+				if cur, ok := m[stem]; !ok || date > cur.Date {
+					m[stem] = Core{Date: date, Path: rel}
 				}
 			}
 		}
 	}
-	return idx
+}
+
+// coreFolder is one folder inside a core folder, with its listing.
+type coreFolder struct {
+	dir     string // card-relative
+	entries []os.DirEntry
+}
+
+// coreSubdirs lists the folders inside the core folder dir (whose listing is
+// entries) that MiSTer's core menu opens: those whose name starts with "_",
+// at any depth up to coreSubDepth. Players file cores away in them
+// (_Computer/_Other, _Console/_Handheld), and a core the menu shows runs, so
+// the list must find it too. Parents come before their children. A folder
+// that cannot be read is left out: that hides only the cores inside it,
+// where an unreadable core folder fails the whole scan.
+func coreSubdirs(card, dir string, entries []os.DirEntry) []coreFolder {
+	var out []coreFolder
+	var walk func(dir string, entries []os.DirEntry, depth int)
+	walk = func(dir string, entries []os.DirEntry, depth int) {
+		if depth >= coreSubDepth {
+			return
+		}
+		for _, e := range entries {
+			// Main lists a folder only when its name starts with "_", and
+			// follows a link to one (coreSubDepth ends a loop)
+			if !strings.HasPrefix(e.Name(), "_") || !isDir(card, e, dir) {
+				continue
+			}
+			sub := path.Join(dir, e.Name())
+			list, err := os.ReadDir(filepath.Join(card, filepath.FromSlash(sub)))
+			if err != nil {
+				continue
+			}
+			out = append(out, coreFolder{dir: sub, entries: list})
+			walk(sub, list, depth+1)
+		}
+	}
+	walk(dir, entries, 0)
+	return out
 }
 
 // Lookup finds a row's core in the index, trying the exact lowercase name,

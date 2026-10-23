@@ -59,6 +59,30 @@ func TestCardLayout(t *testing.T) {
 	}
 }
 
+// The cores filed in folders MiSTer's menu opens show in the report next to
+// their core folder's own count.
+func TestCardLayoutCoreSubfolders(t *testing.T) {
+	card := fakeCard(t)
+	for _, rel := range []string{
+		"_Computer/_Other/Aquarius_20260603.rbf",
+		"_Computer/_Other/_Older/Aquarius_20250101.rbf",
+		"_Console/_Handheld/NGPC_20260824.rbf",
+		"_Console/_Handheld/GBA_20260101.rbf",
+		"_Console/Plain/Hidden_20260101.rbf",
+	} {
+		p := filepath.Join(card, filepath.FromSlash(rel))
+		os.MkdirAll(filepath.Dir(p), 0755)
+		if err := os.WriteFile(p, []byte("x"), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	got := strings.Join(CardLayout(card, ""), "\n")
+	want := "Other core folders (.rbf files): _Console 1 (_Handheld 2), _Computer 1 (_Other 1, _Other/_Older 1), _Other 0, _Utility 0"
+	if !strings.Contains(got, want) {
+		t.Fatalf("missing %q in\n%s", want, got)
+	}
+}
+
 // A mame folder at the top of the SD card is the one MiSTer picks, and then
 // cannot read from; the layout says so.
 func TestCardLayoutRootMame(t *testing.T) {

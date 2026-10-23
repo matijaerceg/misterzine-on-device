@@ -33,6 +33,19 @@ func TestLaunchCoreMatchesScanNames(t *testing.T) {
 	}
 }
 
+// A core filed in a folder MiSTer's menu opens (_Computer/_Other) launches
+// from the list as it does from the menu.
+func TestLaunchCoreInSubfolder(t *testing.T) {
+	card := t.TempDir()
+	dir := filepath.Join(card, "_Computer", "_Other")
+	os.MkdirAll(dir, 0755)
+	os.WriteFile(filepath.Join(dir, "Aquarius_20260603.rbf"), []byte("test"), 0644)
+	got, err := LaunchPath(card, "core:Aquarius")
+	if err != nil || got != filepath.ToSlash(filepath.Join(dir, "Aquarius_20260603.rbf")) {
+		t.Fatalf("core:Aquarius: %s %v", got, err)
+	}
+}
+
 // A name ending in a dot puts ".." before the extension (issue #12).
 func TestLaunchPathDottedNames(t *testing.T) {
 	card := t.TempDir()
