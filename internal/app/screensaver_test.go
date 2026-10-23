@@ -879,7 +879,7 @@ func TestSnowReleaseAndBlackGround(t *testing.T) {
 		if f.released != 1 {
 			t.Fatalf("initial releases %d", f.released)
 		}
-		a.saver.ticked = now.Add(5 * time.Minute)
+		a.saver.ticked = now.Add(snowRelease / 2)
 		a.paintSaver(c)
 		if f.released != len(f.order)/2 {
 			t.Fatalf("midpoint releases %d", f.released)
@@ -894,7 +894,7 @@ func TestSnowReleaseAndBlackGround(t *testing.T) {
 		if f.released != len(f.order) {
 			t.Fatal("release window exceeded")
 		}
-		for _, elapsed := range []time.Duration{11 * time.Minute, 24 * time.Hour} {
+		for _, elapsed := range []time.Duration{snowRelease + time.Minute, 24 * time.Hour} {
 			a.saver.ticked = now.Add(elapsed)
 			a.paintSaver(c)
 			if len(f.active) != 0 {

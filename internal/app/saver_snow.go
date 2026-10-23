@@ -8,7 +8,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 )
 
-const snowRelease = 10 * time.Minute
+const snowRelease = 5 * time.Minute
 
 type saverSnow struct {
 	order    []int
@@ -87,7 +87,7 @@ func (a *App) paintSaverSnow(c *gfx.Canvas) {
 
 func (a *App) saverStyleHelp() string {
 	if a.SaverStyle() == "snow" {
-		return "Pixels scatter from bright to dark over 10 minutes, leaving black. Press " + a.btn("A") + " to preview; other buttons wake."
+		return "Pixels scatter from bright to dark over 5 minutes, leaving black. Press " + a.btn("A") + " to preview; other buttons wake."
 	}
 	return "Lettering: the MISTERZINE sweep. Screenshots: arcade shots; hold Start to play. Dim: darken the current screen. Other buttons wake."
 }
