@@ -8,6 +8,7 @@ Choose **Snowfall** in **Options → Screensaver → Style** to watch the screen
 
 **Fixed**
 
+- Find and launch console and computer cores filed in MiSTer's subfolders.
 - Console and computer cores in their usual folders take priority over copies tucked into subfolders.
 
 Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1220--2026-10-22).

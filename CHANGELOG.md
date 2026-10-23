@@ -3,6 +3,7 @@
 ## v1.2.20 — 2026-10-22
 
 - Add Snowfall under Options -> Screensaver -> Style. Pixels of the current screen drift down and away over five minutes, leaving black. Release order moves from bright to dark through a scattered 20% brightness range to spread the snowfall across the picture. A continuous stream of pixels in the original image's colours enters from above and keeps falling after the image is gone. Other buttons wake without acting. Tested and accepted on a MiSTer Pi.
+- Find console, computer, other and utility cores inside underscore-prefixed subfolders, matching the folders MiSTer's menu opens. Cores filed in places such as `_Computer/_Other` and `_Console/_Handheld` now appear and launch from the list; unreadable subfolders do not prevent the rest of the scan.
 - Console, computer, other and utility cores at the top of their usual folder now take priority over copies in subfolders. A newer test build filed away no longer changes the listed status or takes over when launching; subfolder copies remain available when no top-level copy exists.
 - Embedded catalogue snapshot refreshed (2,544 rows, 2026-10-22 Vancouver).
 
