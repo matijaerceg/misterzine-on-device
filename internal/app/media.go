@@ -20,9 +20,20 @@ type videoState struct {
 	visible, dirty bool
 	last           *image.RGBA
 	next           time.Time
+	resume         time.Time
 }
 
 const videoInterval = time.Second / 15
+
+// VideoStats lets the opt-in debug channel measure real playback without
+// capturing and encoding a screenshot on every frame.
+func (a *App) VideoStats() map[string]any {
+	v := &a.video
+	return map[string]any{
+		"key": v.req.Key, "frame": v.req.Frame, "visible": v.visible,
+		"ready": v.last != nil, "waiting": v.visible && v.next.IsZero(),
+	}
+}
 
 func (a *App) mediaImage(req ImageReq, box image.Rectangle, center bool) (*image.RGBA, ImageState) {
 	if req.Slot != "video" {
@@ -40,12 +51,22 @@ func (a *App) mediaImage(req ImageReq, box image.Rectangle, center bool) (*image
 	if img != nil {
 		v.last = img
 		if v.next.IsZero() {
-			v.next = a.cfg.TimerNow().Add(videoInterval)
+			now := a.cfg.TimerNow()
+			if v.resume.IsZero() {
+				v.next = now.Add(videoInterval)
+			} else {
+				v.next = v.resume
+				if v.next.Before(now) {
+					v.next = now
+				}
+			}
+			v.resume = time.Time{}
 		}
 		return img, st
 	}
 	if st == ImageMissing || st == ImageOffline {
 		v.next = time.Time{}
+		v.resume = time.Time{}
 		v.last = nil
 		return nil, st
 	}
@@ -69,6 +90,7 @@ func (a *App) tickVideo(now time.Time) bool {
 		return false
 	}
 	a.video.req.Frame++
+	a.video.resume = now.Add(videoInterval)
 	a.video.next = time.Time{}
 	a.video.dirty = true
 	return true

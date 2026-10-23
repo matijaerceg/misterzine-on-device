@@ -487,6 +487,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 					"sysfs": mister.SysfsMode(), "uptime": time.Since(t0).String(), "frames": h.stats.String(), "cadence": h.stats.Cadence(), "saver": h.a.SaverStats(), "saver_blank_frames": h.saverBlankFrames, "saver_misses": h.saverMisses,
 					"update":      h.a.UpdateState(),
 					"mem":         memStats(),
+					"video":       h.a.VideoStats(),
 					"screensaver": h.a.Screensaver(), "screensaver_active": h.a.ScreensaverActive(), "saver_style": h.a.SaverStyle(), "saver_info": h.a.SaverInfo(),
 					"title_font": h.a.TitleFont(), "list_shot": h.a.ListShot(), "date_format": h.a.DateFormat(), "button_labels": h.a.ButtonLabels(),
 				}

@@ -117,6 +117,37 @@ func TestVideoTimelineHoldsPendingFrameAndStopsOffscreen(t *testing.T) {
 	}
 }
 
+func TestVideoDecodeTimeCountsTowardNextFrameDeadline(t *testing.T) {
+	a, m, now := mediaApp(t, "video")
+	*now = now.Add(videoInterval)
+	started := *now
+	if !a.tickVideo(started) {
+		t.Fatal("no video tick")
+	}
+	m.pending = true
+	a.Paint()
+	if !a.video.next.IsZero() {
+		t.Fatal("pending decode scheduled another frame")
+	}
+
+	decodeTime := 40 * time.Millisecond
+	*now = started.Add(decodeTime)
+	m.pending = false
+	a.Invalidate()
+	a.Paint()
+	want := started.Add(videoInterval)
+	if !a.video.next.Equal(want) {
+		t.Fatalf("next deadline %v, want tick-start deadline %v", a.video.next, want)
+	}
+	if a.tickVideo(*now) {
+		t.Fatal("video ticked before the remaining frame interval elapsed")
+	}
+	*now = want
+	if !a.tickVideo(*now) {
+		t.Fatal("video did not tick at the remaining frame deadline")
+	}
+}
+
 func TestDetailsAndFullscreenMedia(t *testing.T) {
 	a, m, now := mediaApp(t, "video")
 	a.actList(platform.KeyEnter)
