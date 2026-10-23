@@ -91,7 +91,9 @@ underscore (Coin-Op ships `blkheart_mister_20260909.rbf` for `blkheart`).
 Console, computer and other cores are found in sub-folders too. MiSTer's menu
 opens any folder whose name starts with an underscore inside `_Console`,
 `_Computer`, `_Other` and `_Utility`, such as `_Computer/_Other`, and so does
-the scan. Arcade cores count only in `_Arcade/cores` itself, the one folder
+the scan. A core at the top of its folder still comes first: a copy in a
+sub-folder, such as an old backup or a test build, counts only when the top
+has none. Arcade cores count only in `_Arcade/cores` itself, the one folder
 MiSTer loads them from.
 
 Two sources sometimes ship the same MRA file name for different cores:

@@ -91,7 +91,9 @@ func TestScanCoresAndStatus(t *testing.T) {
 // row is on the card (a player keeps Aquarius in _Computer/_Other and the
 // Neo Geo Pocket core in _Console/_Handheld). Folders without the "_" stay
 // hidden from the menu and the list alike, and an MRA still loads its core
-// only from _Arcade/cores itself.
+// only from _Arcade/cores itself. A core at the top of a core folder keeps
+// its place: a copy filed in a folder (an old backup, a test build) only
+// fills in a core the tops lack, however new it is.
 func TestScanCoresSubfolders(t *testing.T) {
 	card := t.TempDir()
 	mk := func(rel string) {
@@ -107,12 +109,19 @@ func TestScanCoresSubfolders(t *testing.T) {
 	mk("_Console/_Handheld/_Nintendo/GBA_20260101.rbf")
 	mk("_Utility/Tools/Hidden_20260101.rbf")      // no "_": the menu never shows it
 	mk("_Arcade/cores/_Extra/Stray_20260101.rbf") // Main loads MRA cores from cores/ only
-	mk("_Console/NES_20260301.rbf")               // newer at the top: it stays
+	mk("_Console/NES_20260301.rbf")               // an older copy in a folder
 	mk("_Console/_Old/NES_20250101.rbf")
-	mk("_Console/SMS_20260101.rbf") // newer in a folder: that build is the one
-	mk("_Console/_New/SMS_20260202.rbf")
-	mk("_Console/Gameboy_20260101.rbf") // the same build twice: the top-level file
+	mk("_Console/SMS_20260101.rbf") // a newer copy in a folder: the top still
+	mk("_Console/_Test/SMS_20260202.rbf")
+	mk("_Console/Gameboy_20260101.rbf") // the same build twice
 	mk("_Console/_Copy/Gameboy_20260101.rbf")
+	mk("_Console/_A/Vectrex_20250101.rbf") // only in folders: the newest
+	mk("_Console/_B/Vectrex_20260101.rbf")
+	// the arcade core of that name never stands in for a console core
+	// (Status reads console rows from the other folders), so it holds no
+	// place for one either
+	mk("_Arcade/cores/Astrocade_20260318.rbf")
+	mk("_Console/_Other/Astrocade_20250101.rbf")
 
 	idx := ScanCores(card)
 	if idx.Err != nil {
@@ -123,12 +132,16 @@ func TestScanCoresSubfolders(t *testing.T) {
 		"NGPC":     "_Console/_Handheld/NGPC_20260824.rbf",
 		"GBA":      "_Console/_Handheld/_Nintendo/GBA_20260101.rbf",
 		"NES":      "_Console/NES_20260301.rbf",
-		"SMS":      "_Console/_New/SMS_20260202.rbf",
+		"SMS":      "_Console/SMS_20260101.rbf",
 		"Gameboy":  "_Console/Gameboy_20260101.rbf",
+		"Vectrex":  "_Console/_B/Vectrex_20260101.rbf",
 	} {
 		if c, ok := idx.Lookup(core); !ok || c.Path != want {
 			t.Errorf("%s = %+v %v, want %s", core, c, ok, want)
 		}
+	}
+	if c, ok := idx.lookupFor(false, "Astrocade"); !ok || c.Path != "_Console/_Other/Astrocade_20250101.rbf" {
+		t.Errorf("console Astrocade = %+v %v", c, ok)
 	}
 	for _, core := range []string{"Hidden", "Stray"} {
 		if c, ok := idx.Lookup(core); ok {
@@ -141,7 +154,8 @@ func TestScanCoresSubfolders(t *testing.T) {
 	}{
 		{data.Row{Base: "Computer", Core: "Aquarius", Updated: "2026-06-03"}, data.StatusCurrent},
 		{data.Row{Base: "Console", Core: "NGPC", Updated: "2026-09-01"}, data.StatusOutdated},
-		{data.Row{Base: "Console", Core: "SMS", Updated: "2026-02-02"}, data.StatusCurrent},
+		{data.Row{Base: "Console", Core: "SMS", Updated: "2026-02-02"}, data.StatusOutdated},
+		{data.Row{Base: "Console", Core: "Astrocade", Updated: "2025-01-01"}, data.StatusCurrent},
 	}
 	for i, c := range rows {
 		if got := Status(card, idx, &c.row); got != c.want {

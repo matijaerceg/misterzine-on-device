@@ -81,6 +81,7 @@ func ScanCores(card string) *Index {
 		idx.Err = err
 		return idx
 	}
+	var subs []coreFolder
 	for _, dir := range coreDirs {
 		entries, err := os.ReadDir(filepath.Join(card, dir))
 		if err != nil {
@@ -91,22 +92,30 @@ func ScanCores(card string) *Index {
 		}
 		if dir == "_Arcade/cores" {
 			// an MRA loads its core from this folder itself, never one inside
-			idx.addCores(dir, entries, true)
+			idx.addCores(dir, entries, true, nil)
 			continue
 		}
-		idx.addCores(dir, entries, false)
-		// after the folder's own files, so a core in both places keeps the
-		// top-level file when the dates tie
-		for _, sub := range coreSubdirs(card, dir, entries) {
-			idx.addCores(sub.dir, sub.entries, false)
-		}
+		idx.addCores(dir, entries, false, nil)
+		subs = append(subs, coreSubdirs(card, dir, entries)...)
+	}
+	// The sub-folders only fill in the cores the tops lack. The top-level
+	// file is the one Update All keeps current, so a copy filed away (an old
+	// backup, a test build) never takes its place in the status or at
+	// launch, however new; a sub-folder copy otherwise counts as it would at
+	// the top.
+	top := make(map[string]bool, len(idx.system))
+	for k := range idx.system {
+		top[k] = true
+	}
+	for _, sub := range subs {
+		idx.addCores(sub.dir, sub.entries, false, top)
 	}
 	return idx
 }
 
 // addCores indexes the rbf files among one folder's entries, keeping each
-// name's newest build.
-func (idx *Index) addCores(dir string, entries []os.DirEntry, arcade bool) {
+// name's newest build. Names in fixed are left as they are.
+func (idx *Index) addCores(dir string, entries []os.DirEntry, arcade bool, fixed map[string]bool) {
 	kind := idx.system
 	if arcade {
 		kind = idx.arcade
@@ -126,12 +135,12 @@ func (idx *Index) addCores(dir string, entries []os.DirEntry, arcade bool) {
 			idx.rbfs = append(idx.rbfs, Core{Date: date, Path: rel})
 		}
 		for _, m := range []map[string]Core{idx.Cores, kind} {
-			if cur, ok := m[base]; !ok || date > cur.Date {
+			if cur, ok := m[base]; !fixed[base] && (!ok || date > cur.Date) {
 				m[base] = Core{Date: date, Path: rel}
 			}
 			// the full stem too, for core values that carry a date suffix
 			if stem != base {
-				if cur, ok := m[stem]; !ok || date > cur.Date {
+				if cur, ok := m[stem]; !fixed[stem] && (!ok || date > cur.Date) {
 					m[stem] = Core{Date: date, Path: rel}
 				}
 			}
