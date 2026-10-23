@@ -867,7 +867,7 @@ func TestArcadeIntroAllowsSaverAndSurvivesWake(t *testing.T) {
 	}
 }
 
-func TestSnowReleaseAndPermanentRemnant(t *testing.T) {
+func TestSnowReleaseAndBlackGround(t *testing.T) {
 	for _, size := range [][2]int{{32, 24}, {24, 32}} {
 		a, now := saverApp()
 		a.cfg.SaverStyle = "snow"
@@ -901,7 +901,7 @@ func TestSnowReleaseAndPermanentRemnant(t *testing.T) {
 				t.Fatal("snow did not leave screen")
 			}
 			for i := 0; i < len(c.Pix); i += 4 {
-				if c.Pix[i] != 50 || c.Pix[i+1] != 25 || c.Pix[i+2] != 12 || c.Pix[i+3] != 255 {
+				if c.Pix[i] != 0 || c.Pix[i+1] != 0 || c.Pix[i+2] != 0 || c.Pix[i+3] != 255 {
 					t.Fatalf("remnant changed: %v", c.Pix[i:i+4])
 				}
 			}
@@ -913,22 +913,31 @@ func TestSnowReleaseAndPermanentRemnant(t *testing.T) {
 	}
 }
 
-func TestSnowBrightnessOrder(t *testing.T) {
-	a, now := saverApp()
-	a.cfg.SaverStyle = "snow"
-	a.startSaver(*now)
-	c := gfx.New(16, 16)
-	for i := 0; i < 256; i++ {
-		o := c.PixOffset(i%16, i/16)
-		c.Pix[o], c.Pix[o+1], c.Pix[o+2], c.Pix[o+3] = byte(i), byte(i), byte(i), 255
+func TestSnowMovingBrightnessWindow(t *testing.T) {
+	const n = 10000
+	order := make([]int, n)
+	for i := range order {
+		order[i] = i
 	}
-	a.paintSaver(c)
-	prev := 256
-	for _, i := range a.saver.snow.order {
-		band := i / 4
-		if band > prev {
-			t.Fatal("brightness order reversed")
+	snowScatter(order)
+	if order[0] >= n/5 || order[n-1] < n-n/5 {
+		t.Fatal("endpoints outside brightest/darkest fifth")
+	}
+	seen := make([]bool, n)
+	inversions := 0
+	for rank, pixel := range order {
+		if seen[pixel] {
+			t.Fatal("duplicate pixel")
 		}
-		prev = band
+		seen[pixel] = true
+		if pixel < rank-n/5 || pixel > rank+n/5 {
+			t.Fatal("pixel escaped moving window")
+		}
+		if rank > 0 && pixel < order[rank-1] {
+			inversions++
+		}
+	}
+	if inversions < n/3 {
+		t.Fatalf("too little scattering: %d inversions", inversions)
 	}
 }

@@ -47,6 +47,7 @@ func (a *App) paintSaverSnow(c *gfx.Canvas) {
 			keys[i] = uint32(luma/4)<<26 | snowHash(i)>>6
 		}
 		sort.Slice(f.order, func(i, j int) bool { return keys[f.order[i]] > keys[f.order[j]] })
+		snowScatter(f.order)
 		s.snow = f
 	}
 	f := s.snow
@@ -55,7 +56,7 @@ func (a *App) paintSaverSnow(c *gfx.Canvas) {
 		i := f.order[f.released]
 		o := c.PixOffset(i%c.W(), i/c.W())
 		for ch := 0; ch < 3; ch++ {
-			f.ground[o+ch] = s.sharp[o+ch] / 4
+			f.ground[o+ch] = 0
 		}
 		f.active = append(f.active, f.released)
 		f.released++
@@ -86,7 +87,32 @@ func (a *App) paintSaverSnow(c *gfx.Canvas) {
 
 func (a *App) saverStyleHelp() string {
 	if a.SaverStyle() == "snow" {
-		return "Pixels fall for 10 minutes, brightest first, leaving the original image at 25% brightness. Press " + a.btn("A") + " to preview; other buttons wake."
+		return "Pixels scatter from bright to dark over 10 minutes, leaving black. Press " + a.btn("A") + " to preview; other buttons wake."
 	}
 	return "Lettering: the MISTERZINE sweep. Screenshots: arcade shots; hold Start to play. Dim: darken the current screen. Other buttons wake."
+}
+
+// Scatter sorted brightness ranks through a moving 20%-wide window.
+// A random offset up to one fifth of the image makes nearby ranks overlap:
+// the first departure must be in the brightest fifth, and the last in the
+// darkest fifth. Sorting once keeps the animation loop allocation-free.
+func snowScatter(order []int) {
+	type candidate struct {
+		pixel    int
+		priority uint64
+	}
+	candidates := make([]candidate, len(order))
+	width := uint64(max(1, (len(order)+4)/5))
+	for rank, pixel := range order {
+		candidates[rank] = candidate{pixel, uint64(rank)<<32 + uint64(snowHash(pixel+len(order)))*width}
+	}
+	sort.Slice(candidates, func(i, j int) bool {
+		if candidates[i].priority == candidates[j].priority {
+			return candidates[i].pixel < candidates[j].pixel
+		}
+		return candidates[i].priority < candidates[j].priority
+	})
+	for i, c := range candidates {
+		order[i] = c.pixel
+	}
 }
