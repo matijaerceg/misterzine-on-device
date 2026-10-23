@@ -900,9 +900,9 @@ func TestSnowReleaseAndBlackGround(t *testing.T) {
 			if len(f.active) != 0 {
 				t.Fatal("snow did not leave screen")
 			}
-			for i := 0; i < len(c.Pix); i += 4 {
-				if c.Pix[i] != 0 || c.Pix[i+1] != 0 || c.Pix[i+2] != 0 || c.Pix[i+3] != 255 {
-					t.Fatalf("remnant changed: %v", c.Pix[i:i+4])
+			for i := 0; i < len(f.ground); i += 4 {
+				if f.ground[i] != 0 || f.ground[i+1] != 0 || f.ground[i+2] != 0 || f.ground[i+3] != 255 {
+					t.Fatalf("ground changed: %v", f.ground[i:i+4])
 				}
 			}
 		}
@@ -939,5 +939,57 @@ func TestSnowMovingBrightnessWindow(t *testing.T) {
 	}
 	if inversions < n/3 {
 		t.Fatalf("too little scattering: %d inversions", inversions)
+	}
+}
+
+func TestSnowStreamContinuesWithOriginalPalette(t *testing.T) {
+	for _, size := range [][2]int{{320, 240}, {240, 320}} {
+		a, now := saverApp()
+		a.cfg.SaverStyle = "snow"
+		a.startSaver(*now)
+		c := gfx.New(size[0], size[1])
+		colours := [][3]byte{{0, 0, 0}, {240, 30, 20}, {10, 220, 60}, {40, 60, 250}}
+		for i := 0; i < len(c.Pix); i += 4 {
+			col := colours[(i/4)%len(colours)]
+			copy(c.Pix[i:i+3], col[:])
+			c.Pix[i+3] = 255
+		}
+		a.paintSaver(c)
+		f := a.saver.snow
+		if len(f.palette) != 3 {
+			t.Fatalf("palette %v", f.palette)
+		}
+		for _, elapsed := range []time.Duration{time.Second, 6 * time.Minute, 24 * time.Hour} {
+			// Isolate the stream to check colours and continuing motion after completion.
+			c.Fill(c.Rect, color.RGBA{0, 0, 0, 255})
+			f.paintStream(c, elapsed)
+			seen := map[[3]byte]bool{}
+			for i := 0; i < len(c.Pix); i += 4 {
+				col := [3]byte{c.Pix[i], c.Pix[i+1], c.Pix[i+2]}
+				if col == [3]byte{} {
+					continue
+				}
+				valid := false
+				for _, original := range colours {
+					if col == original {
+						valid = true
+					}
+				}
+				if !valid {
+					t.Fatalf("invented colour %v", col)
+				}
+				seen[col] = true
+			}
+			if len(seen) != 3 {
+				t.Fatalf("at %v: missing spectrum %v", elapsed, seen)
+			}
+		}
+		c.Fill(c.Rect, color.RGBA{0, 0, 0, 255})
+		f.paintStream(c, 0)
+		for i := 0; i < len(c.Pix); i += 4 {
+			if c.Pix[i] != 0 || c.Pix[i+1] != 0 || c.Pix[i+2] != 0 {
+				t.Fatal("snow did not start above screen")
+			}
+		}
 	}
 }
