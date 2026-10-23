@@ -157,7 +157,7 @@ func (s *Settings) Migrate(legacy bool) {
 	default:
 		s.Screensaver = "1"
 	}
-	if s.SaverStyle != "shots" && s.SaverStyle != "dim" {
+	if s.SaverStyle != "shots" && s.SaverStyle != "dim" && s.SaverStyle != "snow" {
 		s.SaverStyle = "word"
 	}
 	if s.SaverDim != "66" {

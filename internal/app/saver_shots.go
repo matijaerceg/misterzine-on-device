@@ -1,12 +1,12 @@
 package app
 
 import (
+	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
+	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 	"image"
 	"math"
 	"math/rand/v2"
 	"time"
-	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
-	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
 
 // The screenshots saver (Options -> Screensaver style: screenshots) shows one
@@ -33,11 +33,11 @@ import (
 
 // saverStyles are Options -> Screensaver style: the lettering (the default) or
 // the screenshots.
-var saverStyles = []string{"word", "shots", "dim"}
+var saverStyles = []string{"word", "shots", "dim", "snow"}
 
 // SaverStyle is Options -> Screensaver style: "word" (default) or "shots".
 func (a *App) SaverStyle() string {
-	if a.cfg.SaverStyle == "shots" || a.cfg.SaverStyle == "dim" {
+	if a.cfg.SaverStyle == "shots" || a.cfg.SaverStyle == "dim" || a.cfg.SaverStyle == "snow" {
 		return a.cfg.SaverStyle
 	}
 	return "word"

@@ -316,6 +316,7 @@ type screensaver struct {
 	// screenshots saver's state while that is the style (saver_shots.go)
 	style string
 	shots *saverShots
+	snow  *saverSnow
 }
 
 func (a *App) Screensaver() string {
@@ -411,6 +412,7 @@ func (a *App) startSaver(now time.Time) {
 	s.ticks = 0
 	s.sharp, s.ground, s.dark = nil, nil, nil
 	s.style, s.shots = a.SaverStyle(), nil
+	s.snow = nil
 	if s.style == "shots" && a.lock != nil {
 		s.style = "word" // a held Start plays a shot's game: not from the lock screen
 	}
@@ -464,6 +466,7 @@ func (a *App) saverEnd() {
 	s.active, s.leaving = false, false
 	s.sharp, s.ground, s.dark = nil, nil, nil
 	s.shots = nil
+	s.snow = nil
 	a.all = true
 }
 
@@ -502,6 +505,8 @@ func (a *App) tickSaver(now time.Time) bool {
 		changed := true
 		if a.saver.shots != nil {
 			changed = a.tickSaverShots(now) // a launch at the end of a hold takes the saver down
+		} else if a.saver.style == "snow" {
+			a.saver.ticked = now
 		} else if a.saver.style != "dim" {
 			a.saverAdvance(now)
 			if a.saver.leaving && a.saver.fadeT <= 0 {
@@ -846,6 +851,10 @@ func saverOrigin(travel, w, word int) int {
 }
 
 func (a *App) paintSaver(c *gfx.Canvas) {
+	if a.saver.style == "snow" {
+		a.paintSaverSnow(c)
+		return
+	}
 	if a.saver.style == "dim" {
 		if len(a.saver.dark) != len(c.Pix) {
 			a.saver.dark = append([]uint8(nil), c.Pix...)

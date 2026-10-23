@@ -866,3 +866,69 @@ func TestArcadeIntroAllowsSaverAndSurvivesWake(t *testing.T) {
 		})
 	}
 }
+
+func TestSnowReleaseAndPermanentRemnant(t *testing.T) {
+	for _, size := range [][2]int{{32, 24}, {24, 32}} {
+		a, now := saverApp()
+		a.cfg.SaverStyle = "snow"
+		a.startSaver(*now)
+		c := gfx.New(size[0], size[1])
+		c.Fill(c.Rect, color.RGBA{200, 100, 48, 255})
+		a.paintSaver(c)
+		f := a.saver.snow
+		if f.released != 1 {
+			t.Fatalf("initial releases %d", f.released)
+		}
+		a.saver.ticked = now.Add(5 * time.Minute)
+		a.paintSaver(c)
+		if f.released != len(f.order)/2 {
+			t.Fatalf("midpoint releases %d", f.released)
+		}
+		a.saver.ticked = now.Add(snowRelease - time.Nanosecond)
+		a.paintSaver(c)
+		if f.released != len(f.order)-1 {
+			t.Fatal("last pixel released early")
+		}
+		a.saver.ticked = now.Add(snowRelease)
+		a.paintSaver(c)
+		if f.released != len(f.order) {
+			t.Fatal("release window exceeded")
+		}
+		for _, elapsed := range []time.Duration{11 * time.Minute, 24 * time.Hour} {
+			a.saver.ticked = now.Add(elapsed)
+			a.paintSaver(c)
+			if len(f.active) != 0 {
+				t.Fatal("snow did not leave screen")
+			}
+			for i := 0; i < len(c.Pix); i += 4 {
+				if c.Pix[i] != 50 || c.Pix[i+1] != 25 || c.Pix[i+2] != 12 || c.Pix[i+3] != 255 {
+					t.Fatalf("remnant changed: %v", c.Pix[i:i+4])
+				}
+			}
+		}
+		a.Handle(platform.Event{Key: platform.KeyDown, Pressed: true, At: *now})
+		if a.ScreensaverActive() || a.saver.snow != nil {
+			t.Fatal("wake retained snow")
+		}
+	}
+}
+
+func TestSnowBrightnessOrder(t *testing.T) {
+	a, now := saverApp()
+	a.cfg.SaverStyle = "snow"
+	a.startSaver(*now)
+	c := gfx.New(16, 16)
+	for i := 0; i < 256; i++ {
+		o := c.PixOffset(i%16, i/16)
+		c.Pix[o], c.Pix[o+1], c.Pix[o+2], c.Pix[o+3] = byte(i), byte(i), byte(i), 255
+	}
+	a.paintSaver(c)
+	prev := 256
+	for _, i := range a.saver.snow.order {
+		band := i / 4
+		if band > prev {
+			t.Fatal("brightness order reversed")
+		}
+		prev = band
+	}
+}

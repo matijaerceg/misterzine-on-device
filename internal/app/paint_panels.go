@@ -1607,8 +1607,8 @@ func (a *App) saverEntries() []panelEntry {
 		{text: "Enabled", kind: "saver-enabled", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.SaverEnabled()], help: "Turn the screensaver on or off. Your delay and style are kept; preview works while disabled."},
 		{text: "Delay", kind: "screensaver", vals: []string{"1 min", "2 min", "5 min", "10 min"}, idx: saverIdx,
 			help: "Start the selected style after idle time. Left/Right sets the delay; " + a.btn("A") + " previews. Other buttons wake without acting; Menu works as usual."},
-		{text: "Style", kind: "saver-style", short: "Style", vals: []string{"lettering", "screenshots", "dim"}, idx: map[string]int{"word": 0, "shots": 1, "dim": 2}[a.SaverStyle()],
-			help: "Lettering: the MISTERZINE sweep. Screenshots: arcade shots; hold Start to play. Dim: darken the current screen. Other buttons wake."},
+		{text: "Style", kind: "saver-style", short: "Style", vals: []string{"lettering", "screenshots", "dim", "snowfall"}, idx: map[string]int{"word": 0, "shots": 1, "dim": 2, "snow": 3}[a.SaverStyle()],
+			help: "Lettering: the MISTERZINE sweep. Screenshots: arcade shots; hold Start to play. Dim: darken the screen. Snowfall: pixels fall over 10 minutes, brightest first, leaving a 25% image."},
 	}
 	if a.SaverStyle() == "dim" {
 		E = append(E, panelEntry{text: "Brightness", kind: "saver-dim", vals: []string{"33%", "66%"}, idx: map[string]int{"33": 0, "66": 1}[a.SaverDim()], help: "Show the current screen at 33% or 66% brightness. 33% is darker. Press " + a.btn("A") + " to preview."})
