@@ -596,8 +596,8 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Extra views of one genre each, A-Z: Shoot 'em ups, Fighting, Platformers, Racing and so on. " + a.btn("Y") + " reaches the ones on after Recents. " + a.btn("A") + " opens the list."},
 		{text: "Title font", kind: "title-font", vals: []string{"normal", "narrow", "narrow tall"}, idx: map[string]int{"normal": 0, "narrow": 1, "tall": 2}[a.TitleFont()],
 			help: "Narrow fonts fit a third more title; tall (default) matches the body font height. Normal: body font."},
-		{text: "Art type", kind: "list-shot", vals: []string{"gameplay", "title"}, idx: map[string]int{"gameplay": 0, "title": 1}[a.ListShot()],
-			help: "Which screenshot the list pane shows: gameplay (default) or the title screen; the Text layout has no pane. Details and the artwork view show every shot."},
+		{text: "Art type", kind: "list-shot", vals: listArtTypes, idx: map[string]int{"gameplay": 0, "title": 1, "video": 2, "flyer": 3}[a.ListShot()],
+			help: "Gameplay, title, silent video or flyer; falls back to screenshots. Text layout has no picture. Details includes all available media."},
 		{text: "Date format", kind: "date-format", vals: dateFormatLabels, idx: dateIdx,
 			help: a.dateFormatHelp()},
 		{text: "Layout", kind: "list-layout", vals: listLayouts, idx: layoutIdx,
@@ -1290,7 +1290,7 @@ func (a *App) stepValue(d int) bool {
 	case "title-font":
 		a.cfg.TitleFont = titleFonts[i]
 	case "list-shot":
-		a.cfg.ListShot = []string{"gameplay", "title"}[i]
+		a.cfg.ListShot = listArtTypes[i]
 	case "date-format":
 		a.cfg.DateFormat = dateFormats[i]
 		a.setRotation(a.rot) // the date column width changes the row layout

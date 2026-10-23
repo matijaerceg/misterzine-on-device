@@ -70,7 +70,7 @@ func main() {
 	unseenKeys := flag.String("unseen", "", "comma-separated row keys the previous visit also had not seen")
 	filterRotation := flag.Bool("filter-rotation", false, "start with the strict current-rotation filter on")
 	titleFont := flag.String("title-font", "tall", "list title font: tall, narrow or normal")
-	listShot := flag.String("list-shot", "gameplay", "list thumbnail preference: gameplay or title")
+	listShot := flag.String("list-shot", "gameplay", "list media preference: gameplay, title, video or flyer")
 	dateFormat := flag.String("date-format", "mm-dd", "list date column: mm-dd, dd-mm, mon-d, d-mon or yymmdd")
 	layout := flag.String("layout", "list", "main view arrangement: list, split, picture or text")
 	motion := flag.Bool("motion", false, "run the page and layout transitions on the scripted clock (off: every shot is an end state); the frames command records them")

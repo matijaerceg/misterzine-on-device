@@ -9,9 +9,10 @@ import (
 // ImageReq names one scaled picture: an arcade shot (Img + slot) or a system
 // photo (Core + slot "system"), scaled to fit W x H.
 type ImageReq struct {
-	Key  string // row.Img for shots, row.Core for system photos
-	Slot string // "title", "snap", "ingame", "system"
-	W, H int    // box to fit into, aspect kept
+	Key   string // row.Img for shots, row.Core for system photos
+	Slot  string // "title", "snap", "ingame", "system"
+	Frame int    // video frame at 15 fps; ignored for still images
+	W, H  int    // box to fit into, aspect kept
 	// Native: a picture close to the box (up to 15% larger) shows pixel
 	// for pixel, cropped centrally; only a much bigger one is scaled down
 	Native bool
@@ -56,6 +57,9 @@ func (noImages) Want([]ImageReq)                        {}
 // preference the title screen first, otherwise a gameplay shot (snap, then
 // ingame) first; system photos for rows without shots.
 func thumbSlot(r *data.Row, pref string) (key, slot string) {
+	if (pref == "video" || pref == "flyer") && r.HasMedia(pref) {
+		return r.MediaKey, pref
+	}
 	if r.Img != "" && len(r.ImgSlots) > 0 {
 		order := []string{"snap", "ingame", "title"}
 		if pref == "title" {
@@ -74,6 +78,22 @@ func thumbSlot(r *data.Row, pref string) (key, slot string) {
 		return r.Core, "system"
 	}
 	return "", ""
+}
+
+// Extra media keeps its own key so adding it does not change screenshots or
+// expose unsupported image slots to older versions of the app.
+func mediaKey(r *data.Row, slot string) string {
+	if slot == "video" || slot == "flyer" {
+		return r.MediaKey
+	}
+	if slot == "system" {
+		return r.Core
+	}
+	return r.Img
+}
+
+func stretchShot(r *data.Row, slot string) bool {
+	return slot != "system" && slot != "flyer" && slot != "video" && r.ImgW > r.ImgH
 }
 
 // fitBox scales (w, h) to fit inside (bw, bh) keeping aspect; never upscales

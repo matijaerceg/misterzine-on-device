@@ -403,9 +403,20 @@ copied to the card (under `_Arcade/_Arcade Patches`), each one joins its game
 as a version you pick with Left/Right instead of showing as a separate game.
 A patch that is not on the card points to arcadepatches.com.
 
-Artwork starts at the first image each time it is opened. Left/Right chooses a
-shot and B returns; A and X have no action in artwork. Start launches the version
+Artwork opens on the preferred video or flyer when available, otherwise the first
+image. Left/Right chooses media and B returns; A and X have no action in artwork. Start launches the version
 selected in Details. Any launch failure appears over the artwork.
+
+**Options > List > Art type** offers gameplay, title, video and flyer. Video
+previews loop silently in the list, Details and artwork. Flyers keep their own
+shape. Games without the chosen extra media show a screenshot in the list.
+Details includes every available screenshot, preview and flyer; A opens the
+artwork view for a larger look. Select + X cycles the list choice.
+
+Videos download only for the selected game and stay cached for offline use.
+Playback pauses while scrolling, during transitions and under the screensaver.
+Availability depends on the catalogue; [media preparation and sources](MEDIA.md)
+describes how extra assets are added.
 
 F12 on a keyboard saves a PNG to `/media/fat/misterzine/screenshots/`.
 Screenshots work without remote debugging.
@@ -603,9 +614,9 @@ and last row. Rows marked ↗ open another screen or editor.
   its capitals and lowercase match the body font's height. Narrow is the
   original, shorter face. Normal uses the body font for titles. The status
   and date columns always use the narrow font at the titles' height.
-- **Art type:** which screenshot the list pane shows for the selected row:
-  gameplay (default) or the title screen. Details and the artwork view still
-  show every shot. Hold Select and press X on the list to switch it there,
+- **Art type:** gameplay (default), title screen, silent video or flyer.
+  The list falls back to screenshots when the chosen media is unavailable.
+  Details and artwork include every available type. Hold Select and press X to cycle,
   in any layout but Text, which shows no pictures.
 - **Layout:** List (default), Split, Picture or Text, as described under
   Layouts above. The help box draws the four at the current orientation

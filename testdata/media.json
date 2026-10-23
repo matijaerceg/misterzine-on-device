@@ -1,0 +1,4 @@
+[
+  {"k":"media-demo","base":"Arcade","title":"Media Preview Demo","core":"Demo","sn":"media-demo","year":"1984","manufacturer":"Example","updated":"2026-09-07","date":"2026-09-07","img":"defender","img_slots":["snap"],"img_w":320,"img_h":240,"media_key":"media-demo","media_slots":["video","flyer"]},
+  {"k":"no-media","base":"Arcade","title":"Screenshot Fallback","core":"Demo","sn":"no-media","updated":"2026-09-06","date":"2026-09-06","img":"1942","img_slots":["snap"],"img_w":240,"img_h":320}
+]

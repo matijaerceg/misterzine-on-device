@@ -491,7 +491,7 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 			// each box hugs its picture: horizontal games at 4:3 like the
 			// site, vertical ones at their own shape; all packed from the left
 			w, stretch := bw, false
-			if s != "system" && row.ImgW > 0 && row.ImgH > 0 {
+			if s != "system" && s != "video" && s != "flyer" && row.ImgW > 0 && row.ImgH > 0 {
 				if row.ImgW > row.ImgH {
 					w, stretch = min(bw, bh*4/3), true
 				} else if fw, _ := fitBox(row.ImgW, row.ImgH, bw, bh); fw > 0 {
@@ -499,10 +499,7 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 				}
 			}
 			box := image.Rect(x, y, x+w, y+bh)
-			key := row.Img
-			if s == "system" {
-				key = row.Core
-			}
+			key := mediaKey(row, s)
 			a.paintImageBox(c, box, key, s, stretch, s != "system" && a.pixelated(row))
 			x += w + 4
 		}
@@ -613,6 +610,9 @@ func (a *App) paintDetailInfo(c *gfx.Canvas) {
 // only while the information actually scrolls.
 func (a *App) detailsHint(scrolls bool, versions int, scrollLimit int) string {
 	hint := "Start Launch  A Shots  Y Fav"
+	if r, _, _ := a.current(); r != nil && (r.HasMedia("video") || r.HasMedia("flyer")) {
+		hint = "Start Launch  A Media  Y Fav"
+	}
 	short := "Start Go  A Art  Y Fav"
 	if versions > 1 {
 		arrows := availableArrows(a.detail.pick > 0, a.detail.pick < versions-1, gfx.ArrowLeft, gfx.ArrowRight)
@@ -654,18 +654,23 @@ func wrapDetailLines(lines []paneLine, cols int) []paneLine {
 
 // shotSlots is the list of picture slots to show for a row.
 func shotSlots(row *data.Row) []string {
+	var slots []string
 	if row.Img != "" && len(row.ImgSlots) > 0 {
-		return row.ImgSlots
+		slots = append(slots, row.ImgSlots...)
+	} else if row.Core != "" && !row.IsArcade() {
+		slots = append(slots, "system")
 	}
-	if row.Core != "" && !row.IsArcade() {
-		return []string{"system"}
+	for _, s := range []string{"video", "flyer"} {
+		if row.HasMedia(s) {
+			slots = append(slots, s)
+		}
 	}
-	return nil
+	return slots
 }
 
 func (a *App) paintImageBox(c *gfx.Canvas, box image.Rectangle, key, slot string, stretch, pixelate bool) {
 	req := ImageReq{Key: key, Slot: slot, W: box.Dx(), H: box.Dy(), Stretch: stretch, Pixelate: pixelate}
-	img, st := a.cfg.Images.Get(req)
+	img, st := a.mediaImage(req, box, false)
 	if img == nil {
 		a.want(req)
 		text := "no shot"
@@ -700,6 +705,14 @@ func (a *App) actDetails(k platform.Key) bool {
 	case platform.KeyEnter:
 		a.screen = ScreenShot
 		a.slot = 0
+		if pref := a.ListShot(); pref == "video" || pref == "flyer" {
+			for i, s := range shotSlots(row) {
+				if s == pref {
+					a.slot = i
+					break
+				}
+			}
+		}
 	case platform.KeyLeft, platform.KeyRight:
 		entries := a.launchEntries(row, i)
 		prev := a.pickIn(entries)

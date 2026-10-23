@@ -16,6 +16,7 @@ import (
 
 	"github.com/matijaerceg/misterzine-on-device/internal/app"
 	"github.com/matijaerceg/misterzine-on-device/internal/fetch"
+	"github.com/matijaerceg/misterzine-on-device/internal/media"
 )
 
 // Pic names one picture on the site: an arcade shot (Key = img stem, Slot
@@ -26,14 +27,19 @@ type Pic struct {
 
 type scaledKey struct {
 	Pic
-	W, H    int
+	Frame    int
+	W, H     int
 	Native   bool
 	Stretch  bool
 	Pixelate bool
 }
 
 func keyFor(r app.ImageReq) scaledKey {
-	return scaledKey{Pic{r.Key, r.Slot}, r.W, r.H, r.Native, r.Stretch, r.Pixelate}
+	frame := 0
+	if r.Slot == fetch.SlotVideo {
+		frame = r.Frame
+	}
+	return scaledKey{Pic: Pic{r.Key, r.Slot}, Frame: frame, W: r.W, H: r.H, Native: r.Native, Stretch: r.Stretch, Pixelate: r.Pixelate}
 }
 
 type entry struct {
@@ -55,7 +61,9 @@ type Service struct {
 	budget        int
 	raw           map[Pic]*image.RGBA // decoded originals of the rows in view
 	rawOrder      []Pic
-	wanted        []scaledKey // priority order, replaced on every Want
+	clips         map[Pic]*media.Clip // compressed previews; decoded frames never live here or in raw
+	clipOrder     []Pic               // most recently used last; at most two clips
+	wanted        []scaledKey         // priority order, replaced on every Want
 	inflight      map[scaledKey]bool
 	netBusy       map[Pic]bool
 	missing       map[Pic]time.Time // 404 seen at; forgotten after missingTTL
@@ -92,7 +100,7 @@ func New(dir string, client *fetch.Client, lg *log.Logger, budget int) *Service 
 	s := &Service{
 		dir: dir, client: client, lg: lg,
 		cache: map[scaledKey]*entry{}, lru: list.New(), budget: budget,
-		raw: map[Pic]*image.RGBA{}, inflight: map[scaledKey]bool{}, netBusy: map[Pic]bool{},
+		raw: map[Pic]*image.RGBA{}, clips: map[Pic]*media.Clip{}, inflight: map[scaledKey]bool{}, netBusy: map[Pic]bool{},
 		missing: map[Pic]time.Time{}, failed: map[Pic]bool{}, retryAt: map[Pic]time.Time{}, retries: map[Pic]int{},
 		got:  map[Pic]bool{},
 		kick: make(chan struct{}, 1), decodeKick: make(chan struct{}, 1),
@@ -180,7 +188,7 @@ func uniquePics(pics []Pic) []Pic {
 	seen := make(map[Pic]bool, len(pics))
 	out := make([]Pic, 0, len(pics))
 	for _, p := range pics {
-		if !seen[p] {
+		if validPic(p) && !seen[p] {
 			seen[p] = true
 			out = append(out, p)
 		}
@@ -247,10 +255,16 @@ func (s *Service) path(p Pic) string {
 	if p.Slot == "system" {
 		return filepath.Join(s.dir, "systems", p.Key+".png")
 	}
+	if p.Slot == fetch.SlotVideo {
+		return filepath.Join(s.dir, fetch.SlotVideo, p.Key+".mzv")
+	}
 	return filepath.Join(s.dir, p.Slot, p.Key+".png")
 }
 
 func (s *Service) exists(p Pic) bool {
+	if !validPic(p) {
+		return false
+	}
 	_, err := os.Stat(s.path(p))
 	return err == nil
 }
@@ -258,15 +272,19 @@ func (s *Service) exists(p Pic) bool {
 // Get implements app.Images.
 func (s *Service) Get(req app.ImageReq) (*image.RGBA, app.ImageState) {
 	k := keyFor(req)
-	p := k.Pic
+	if !validPic(k.Pic) {
+		return nil, app.ImageMissing
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	k = s.normalizeKey(k)
+	p := k.Pic
+	if s.isMissing(p) || s.failed[p] {
+		return nil, app.ImageMissing
+	}
 	if e, ok := s.cache[k]; ok {
 		s.lru.MoveToFront(e.el)
 		return e.img, app.ImageReady
-	}
-	if s.isMissing(p) || s.failed[p] {
-		return nil, app.ImageMissing
 	}
 	if s.raw[p] == nil && !s.exists(p) {
 		if s.client == nil || s.offline {
@@ -281,7 +299,9 @@ func (s *Service) Want(reqs []app.ImageReq) {
 	s.mu.Lock()
 	s.wanted = s.wanted[:0]
 	for _, r := range reqs {
-		s.wanted = append(s.wanted, keyFor(r))
+		if k := keyFor(r); validPic(k.Pic) {
+			s.wanted = append(s.wanted, k)
+		}
 	}
 	s.mu.Unlock()
 	s.poke(s.kick)
@@ -297,6 +317,7 @@ func (s *Service) nextDecode() (scaledKey, bool) {
 		return scaledKey{}, false
 	}
 	for _, k := range s.wanted {
+		k = s.normalizeKey(k)
 		if _, ok := s.cache[k]; ok || s.inflight[k] || s.isMissing(k.Pic) || s.failed[k.Pic] {
 			continue
 		}
@@ -333,33 +354,44 @@ func (s *Service) decodeLoop() {
 }
 
 func (s *Service) decode(k scaledKey) {
+	inflightKey := k
 	defer func() {
 		s.mu.Lock()
-		delete(s.inflight, k)
+		delete(s.inflight, inflightKey)
 		s.mu.Unlock()
 	}()
+	if k.Slot == fetch.SlotVideo {
+		s.decodeVideo(k)
+		return
+	}
 	s.mu.Lock()
 	src := s.raw[k.Pic]
 	s.mu.Unlock()
 	if src == nil {
-		b, err := os.ReadFile(s.path(k.Pic))
-		if err != nil {
-			s.lg.Printf("images: read %s: %v (skipping this session)", s.path(k.Pic), err)
-			s.mu.Lock()
-			s.failed[k.Pic] = true
-			s.mu.Unlock()
-			s.signal()
-			return
-		}
-		img, err := png.Decode(bytes.NewReader(b))
-		if err != nil {
-			s.lg.Printf("images: %s: %v (deleting)", s.path(k.Pic), err)
-			os.Remove(s.path(k.Pic))
-			s.mu.Lock()
-			s.failed[k.Pic] = true
-			s.mu.Unlock()
-			s.signal()
-			return
+		var img image.Image
+		if k.Slot == fetch.SlotFlyer {
+			f, err := os.Open(s.path(k.Pic))
+			if err != nil {
+				s.failRead(k.Pic, err)
+				return
+			}
+			img, err = media.ReadFlyer(f)
+			f.Close()
+			if err != nil {
+				s.failCorrupt(k.Pic, err)
+				return
+			}
+		} else {
+			b, err := os.ReadFile(s.path(k.Pic))
+			if err != nil {
+				s.failRead(k.Pic, err)
+				return
+			}
+			img, err = png.Decode(bytes.NewReader(b))
+			if err != nil {
+				s.failCorrupt(k.Pic, err)
+				return
+			}
 		}
 		src = ToRGBA(img)
 		s.mu.Lock()
@@ -379,6 +411,97 @@ func (s *Service) decode(k scaledKey) {
 	s.put(k, scaled)
 	s.mu.Unlock()
 	s.signal()
+}
+
+func (s *Service) decodeVideo(k scaledKey) {
+	s.mu.Lock()
+	clip := s.clips[k.Pic]
+	if clip != nil {
+		s.touchClip(k.Pic)
+	}
+	s.mu.Unlock()
+	if clip == nil {
+		f, err := os.Open(s.path(k.Pic))
+		if err != nil {
+			s.failRead(k.Pic, err)
+			return
+		}
+		clip, err = media.Read(f)
+		f.Close()
+		if err != nil {
+			s.failCorrupt(k.Pic, err)
+			return
+		}
+		s.mu.Lock()
+		s.rememberClip(k.Pic, clip)
+		s.mu.Unlock()
+	}
+	k.Frame = clip.Normalize(k.Frame)
+	img, err := clip.Decode(k.Frame)
+	if err != nil {
+		s.failCorrupt(k.Pic, err)
+		return
+	}
+	scaled := scaleFor(ToRGBA(img), k)
+	s.mu.Lock()
+	s.put(k, scaled)
+	s.mu.Unlock()
+	s.signal()
+}
+
+func (s *Service) failRead(p Pic, err error) {
+	s.lg.Printf("images: read %s: %v (skipping this session)", s.path(p), err)
+	s.mu.Lock()
+	s.failed[p] = true
+	s.mu.Unlock()
+	s.signal()
+}
+
+func (s *Service) failCorrupt(p Pic, err error) {
+	s.lg.Printf("images: %s: %v (deleting)", s.path(p), err)
+	os.Remove(s.path(p))
+	s.mu.Lock()
+	delete(s.clips, p)
+	for i, q := range s.clipOrder {
+		if q == p {
+			s.clipOrder = append(s.clipOrder[:i], s.clipOrder[i+1:]...)
+			break
+		}
+	}
+	s.failed[p] = true
+	s.mu.Unlock()
+	s.signal()
+}
+
+// normalizeKey is called with mu held. A clip's count is unavailable before
+// its first read, so that first request remains unnormalized until decode.
+func (s *Service) normalizeKey(k scaledKey) scaledKey {
+	if clip := s.clips[k.Pic]; clip != nil {
+		k.Frame = clip.Normalize(k.Frame)
+		s.touchClip(k.Pic)
+	}
+	return k
+}
+
+func (s *Service) touchClip(p Pic) {
+	for i, q := range s.clipOrder {
+		if q == p {
+			copy(s.clipOrder[i:], s.clipOrder[i+1:])
+			s.clipOrder[len(s.clipOrder)-1] = p
+			return
+		}
+	}
+	s.clipOrder = append(s.clipOrder, p)
+}
+
+func (s *Service) rememberClip(p Pic, clip *media.Clip) {
+	s.clips[p] = clip
+	s.touchClip(p)
+	for len(s.clipOrder) > 2 {
+		old := s.clipOrder[0]
+		s.clipOrder = s.clipOrder[1:]
+		delete(s.clips, old)
+	}
 }
 
 // put stores a scaled bitmap, evicting least recently used ones past budget.
@@ -497,7 +620,14 @@ func (s *Service) download(p Pic) {
 		s.mu.Unlock()
 		s.poke(s.kick)
 	}()
-	ctx, cancel := context.WithTimeout(s.ctx, 10*time.Second)
+	if !validPic(p) {
+		return
+	}
+	timeout := 10 * time.Second
+	if p.Slot == fetch.SlotVideo {
+		timeout = 45 * time.Second
+	}
+	ctx, cancel := context.WithTimeout(s.ctx, timeout)
 	defer cancel()
 	b, err := s.client.Image(ctx, p.Slot, p.Key)
 	if s.ctx.Err() != nil {
@@ -568,8 +698,15 @@ func (s *Service) isMissing(p Pic) bool {
 	return ok
 }
 
+func validPic(p Pic) bool {
+	if p.Slot == fetch.SlotVideo || p.Slot == fetch.SlotFlyer {
+		return media.ValidKey(p.Key)
+	}
+	return true
+}
+
 // slotDirs are the picture folders under the store directory.
-var slotDirs = []string{"title", "snap", "ingame", "systems", fetch.SlotLocalSnap}
+var slotDirs = []string{"title", "snap", "ingame", "systems", fetch.SlotLocalSnap, fetch.SlotVideo, fetch.SlotFlyer}
 
 // missingTTL is how long a 404 is remembered. The site's catalogue pictures
 // rarely appear later, but the screenshot service fills in over time, so a
@@ -655,6 +792,8 @@ func (s *Service) ClearCache() {
 	s.bytes = 0
 	s.raw = map[Pic]*image.RGBA{}
 	s.rawOrder = nil
+	s.clips = map[Pic]*media.Clip{}
+	s.clipOrder = nil
 	s.missing = map[Pic]time.Time{}
 	s.missingDirty = false
 	s.failed = map[Pic]bool{}

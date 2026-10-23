@@ -188,7 +188,7 @@ type Config struct {
 	// TitleFont draws list titles in "tall" (default: the narrow font at the
 	// body font's height), "narrow" or "normal" (the body font).
 	TitleFont string
-	// ListShot is the pane thumbnail preference: "gameplay" (default) or "title".
+	// ListShot is the list media preference: gameplay, title, video or flyer.
 	ListShot string
 	// DateFormat is the list date column: "mm-dd" (default), "dd-mm",
 	// "mon-d", "d-mon" or "yymmdd".
@@ -328,6 +328,7 @@ type App struct {
 	all            bool       // full repaint pending
 	saver          screensaver
 	marquee        marqueeState
+	video          videoState
 	cab            launchCab
 	holdLaunch     holdLaunch
 
@@ -763,10 +764,12 @@ func (a *App) titleFont() *gfx.Font {
 	return nil
 }
 
-// ListShot is the pane thumbnail preference, "gameplay" or "title".
+// ListShot is the preferred list media, with gameplay as the default.
 func (a *App) ListShot() string {
-	if a.cfg.ListShot == "title" {
-		return "title"
+	for _, s := range listArtTypes {
+		if a.cfg.ListShot == s {
+			return s
+		}
 	}
 	return "gameplay"
 }
@@ -1143,6 +1146,7 @@ func (a *App) Tick(now time.Time) (changed bool) {
 		}
 	}
 	changed = a.tickMarquee(now) || changed
+	changed = a.tickVideo(now) || changed
 	changed = a.tickDetailScroll(now) || changed
 	return a.tickSaver(now) || changed
 }
@@ -1174,6 +1178,7 @@ func (a *App) Frame(now time.Time) (changed bool) {
 	}
 	changed = a.ListScrollFrame(now) || changed
 	changed = a.DetailScrollFrame(now) || changed // follows the display cadence under a held key
+	changed = a.tickVideo(now) || changed
 	if a.notice != "" && !now.Before(a.until) {
 		a.notice = ""
 		a.all = true
@@ -1189,7 +1194,9 @@ func (a *App) NextTick() time.Time {
 		return a.cfg.TimerNow()
 	}
 	t := a.rep.nextAt()
-	if n := a.nextControlDiscovery(); !n.IsZero() && (t.IsZero() || n.Before(t)) { t = n }
+	if n := a.nextControlDiscovery(); !n.IsZero() && (t.IsZero() || n.Before(t)) {
+		t = n
+	}
 	if a.screen == ScreenControls {
 		t = a.nextControlsTick()
 	}
@@ -1209,6 +1216,9 @@ func (a *App) NextTick() time.Time {
 		t = next
 	}
 	if next := a.nextMarqueeTick(); !next.IsZero() && (t.IsZero() || next.Before(t)) {
+		t = next
+	}
+	if next := a.nextVideoTick(); !next.IsZero() && (t.IsZero() || next.Before(t)) {
 		t = next
 	}
 	if next := a.nextDetailTick(); !next.IsZero() && (t.IsZero() || next.Before(t)) {
@@ -1460,7 +1470,12 @@ func (a *App) RepeatActive() bool { return a.rep.held && a.rep.count > 0 }
 // once per paint, in the order the views asked, so the cursor's pane image
 // comes before neighbours and prefetch.
 func (a *App) want(req ImageReq) {
-	for _, w := range a.wants {
+	for i, w := range a.wants {
+		if req.Slot == "video" && w.Slot == "video" && w.Key == req.Key {
+			// Keep just the latest frame, not a backlog of obsolete decodes.
+			a.wants[i] = req
+			return
+		}
 		if w == req {
 			return
 		}
@@ -1490,9 +1505,13 @@ func (a *App) neighbourhood() {
 				continue
 			}
 			row := &a.ds.Rows[a.previewRow(pos)]
-			key, slot := thumbSlot(row, a.ListShot())
+			pref := a.ListShot()
+			if pref == "video" {
+				pref = "gameplay"
+			} // clips download only for the selected game
+			key, slot := thumbSlot(row, pref)
 			if key != "" {
-				a.want(ImageReq{Key: key, Slot: slot, W: box.Dx(), H: box.Dy(), Stretch: slot != "system" && row.ImgW > row.ImgH, Pixelate: a.pixelated(row)})
+				a.want(ImageReq{Key: key, Slot: slot, W: box.Dx(), H: box.Dy(), Stretch: stretchShot(row, slot), Pixelate: a.pixelated(row)})
 			}
 		}
 	}
@@ -1529,6 +1548,9 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 		return a.rotatePaint()
 	}
 	a.listMotion.dirty = false
+	if !a.all && a.video.dirty && !a.PageTransitionRunning() && !a.saver.active {
+		a.paintVideo(a.logical)
+	}
 	if !a.all {
 		if (a.detail.dirty || a.detail.versionDirty) && a.screen == ScreenDetails && !a.saver.active && !a.PageTransitionRunning() {
 			if a.detail.dirty {
@@ -1541,7 +1563,7 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 			return a.rotatePaint()
 		}
 		if !a.PageTransitionRunning() {
-			return a.physical, nil
+			return a.rotatePaint()
 		}
 		copy(a.logical.Pix, a.transition.to)
 		a.paintPageTransition(false)
@@ -1551,6 +1573,7 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 	a.detail.dirty, a.detail.versionDirty = false, false
 	a.all = false
 	a.wants = a.wants[:0]
+	a.video.visible, a.video.dirty = false, false
 	if a.screen != ScreenDetails {
 		a.marquee = marqueeState{} // a return to Details starts its scroll afresh
 	}

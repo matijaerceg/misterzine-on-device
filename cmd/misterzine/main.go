@@ -1733,6 +1733,10 @@ func picsFor(ds *data.Dataset) []images.Pic {
 	var out []images.Pic
 	for _, i := range ds.Order(data.SortUpdated) {
 		r := &ds.Rows[i]
+		if r.HasMedia("flyer") {
+			out = append(out, images.Pic{Key: r.MediaKey, Slot: "flyer"})
+		}
+		// Videos are larger and downloaded only for the selected game.
 		if r.Img != "" && len(r.ImgSlots) > 0 {
 			for _, want := range []string{"snap", "title", "ingame", fetch.SlotLocalSnap} {
 				for _, s := range r.ImgSlots {

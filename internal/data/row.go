@@ -37,6 +37,8 @@ type Row struct {
 	ImgSlots     []string `json:"img_slots"`
 	ImgW         int      `json:"img_w"`
 	ImgH         int      `json:"img_h"`
+	MediaKey     string   `json:"media_key,omitempty"`   // hosted preview/flyer stem, independent of screenshots
+	MediaSlots   []string `json:"media_slots,omitempty"` // "video", "flyer" only
 	FamilySets   []string `json:"family_sets,omitempty"` // known clone setnames
 	Family       string   `json:"family,omitempty"`      // MAME clone root
 	SN           string   `json:"sn"`                    // MAME setname
@@ -173,6 +175,25 @@ func (r *Row) HasProv(field string) bool {
 
 // IsArcade reports whether the row is an arcade game (as opposed to a core).
 func (r *Row) IsArcade() bool { return r.Base == "Arcade" }
+
+// HasMedia only advertises supported extra assets explicitly in the catalogue.
+func (r *Row) HasMedia(slot string) bool {
+	if r.MediaKey == "" || (slot != "video" && slot != "flyer") {
+		return false
+	}
+	for i, c := range r.MediaKey {
+		if c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || i > 0 && (c == '_' || c == '-') {
+			continue
+		}
+		return false
+	}
+	for _, s := range r.MediaSlots {
+		if s == slot {
+			return true
+		}
+	}
+	return false
+}
 
 // SrcLocal is the source of a row the card scan made from an MRA the
 // catalogue does not list. Such rows never come from data.json.

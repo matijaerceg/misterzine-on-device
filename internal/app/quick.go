@@ -45,10 +45,11 @@ func (a *App) cycleListShot() bool {
 	if !a.listShowsArt() {
 		return false // no picture on screen: the chord is not offered
 	}
-	if a.ListShot() == "title" {
-		a.cfg.ListShot = "gameplay"
-	} else {
-		a.cfg.ListShot = "title"
+	for i, s := range listArtTypes {
+		if a.ListShot() == s {
+			a.cfg.ListShot = listArtTypes[(i+1)%len(listArtTypes)]
+			break
+		}
 	}
 	a.settingsChanged()
 	a.all = true

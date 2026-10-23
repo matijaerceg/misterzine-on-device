@@ -30,6 +30,8 @@ jobs:
           python3 tools/test_wrapper.py
           python3 tools/test_maintenance.py
           python3 tools/test_package.py
+          python3 tools/test_prepare_media.py
+          python3 tools/test_media_catalog.py
           go vet ./...
           go test ./...
           GOARCH=386 CGO_ENABLED=0 go test ./internal/app -run TestUpdate

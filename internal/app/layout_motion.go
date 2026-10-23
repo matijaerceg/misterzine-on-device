@@ -1,10 +1,10 @@
 package app
 
 import (
+	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"image"
 	"math"
 	"time"
-	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 )
 
 const layoutMotionDuration = 200 * time.Millisecond
@@ -148,7 +148,7 @@ func (a *App) startLayoutMotion(m layoutMotion) {
 	images := a.cfg.Images
 	if m.art != nil {
 		size := image.Point{}
-		if row := a.paneRow(); row != nil {
+		if row := a.paneRow(); row != nil && a.ListShot() != "flyer" && a.ListShot() != "video" {
 			size = image.Pt(row.ImgW, row.ImgH)
 		}
 		a.cfg.Images = layoutFallbackImages{Images: images, art: m.art, size: size}
@@ -159,7 +159,7 @@ func (a *App) startLayoutMotion(m layoutMotion) {
 	m.toCaption = copyLayoutPixels(c.RGBA, m.toText)
 	if row := a.paneRow(); row != nil && !a.lay.Thumb.Empty() {
 		key, slot := thumbSlot(row, a.ListShot())
-		m.request = ImageReq{Key: key, Slot: slot, W: a.lay.Thumb.Dx(), H: a.lay.Thumb.Dy(), Stretch: slot != "system" && row.ImgW > row.ImgH, Pixelate: a.pixelated(row)}
+		m.request = ImageReq{Key: key, Slot: slot, W: a.lay.Thumb.Dx(), H: a.lay.Thumb.Dy(), Stretch: stretchShot(row, slot), Pixelate: a.pixelated(row)}
 	}
 	if m.request.Key != "" && m.request.Slot != "system" {
 		// the picture the settled layout shows, when it is ready: scaled

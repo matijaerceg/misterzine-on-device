@@ -665,8 +665,17 @@ func (a *App) paintThumb(c *gfx.Canvas, box image.Rectangle, row *data.Row) imag
 	}
 	// a horizontal game fills the 4:3 box like on the site; a vertical one
 	// keeps its shape and sits on the left edge with the text
-	req := ImageReq{Key: key, Slot: slot, W: box.Dx(), H: box.Dy(), Stretch: slot != "system" && row.ImgW > row.ImgH, Pixelate: a.pixelated(row)}
-	img, st := a.cfg.Images.Get(req)
+	req := ImageReq{Key: key, Slot: slot, W: box.Dx(), H: box.Dy(), Stretch: stretchShot(row, slot), Pixelate: a.pixelated(row)}
+	center := (a.lay.Portrait && !a.lay.TextBeside) || a.lay.PictureColumns || a.lay.ArtCentered
+	img, st := a.mediaImage(req, box, center)
+	if img == nil && (slot == "video" || slot == "flyer") {
+		a.want(req)
+		if fallbackKey, fallbackSlot := thumbSlot(row, "gameplay"); fallbackKey != "" {
+			req = ImageReq{Key: fallbackKey, Slot: fallbackSlot, W: box.Dx(), H: box.Dy(), Stretch: stretchShot(row, fallbackSlot), Pixelate: a.pixelated(row)}
+			img, st = a.cfg.Images.Get(req)
+			slot = fallbackSlot
+		}
+	}
 	if img == nil {
 		a.want(req)
 		switch st {

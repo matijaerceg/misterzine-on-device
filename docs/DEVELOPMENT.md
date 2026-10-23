@@ -14,6 +14,8 @@ python3 tools/test_maintenance.py
 python3 tools/test_package.py
 python3 tools/test_wrapper.py
 python3 tools/test_snapshot.py
+python3 tools/test_prepare_media.py
+python3 tools/test_media_catalog.py
 node --test tools/sort_golden.test.js
 ```
 
@@ -67,6 +69,13 @@ The render goldens cannot use the site's artwork, so `testdata/images` holds
 synthetic stand-ins for two games, Defender (horizontal) and 1942
 (vertical); with `-images testdata/images -images-loading` every other
 picture stays loading, as on a card still fetching it.
+
+`testdata/media.json` adds a synthetic video test card and a drawn demo flyer
+under `testdata/images/video` and `testdata/images/flyer`. The media golden
+scenarios check changing video frames in the list and Details, full-screen
+media, flyer proportions and the screenshot fallback in both orientations.
+No third-party gameplay footage or flyer scans are bundled with these tests.
+See [media preparation](MEDIA.md) for the local conversion and hosting workflow.
 
 The harness leaves page and layout transitions off, so every scripted shot
 is an end state. `-motion` runs them on the scripted clock, and the script

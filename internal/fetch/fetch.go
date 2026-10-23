@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
+	"github.com/matijaerceg/misterzine-on-device/internal/media"
 )
 
 // Site is the base URL of the release tracker.
@@ -31,8 +32,18 @@ var Site = "https://misterzine.fyi"
 // missing.
 var SnapService = "https://images.misterzine.fyi"
 
+// MediaService optionally serves approved videos and flyers from an object
+// store. Empty uses the site's /images directory, like catalogue screenshots.
+// Set at build time after the image service supports /video and /flyer routes.
+var MediaService string
+
 // SlotLocalSnap is the picture slot served by SnapService.
 const SlotLocalSnap = "lsnap"
+
+const (
+	SlotVideo = "video"
+	SlotFlyer = "flyer"
+)
 
 // ReportService is the base URL that takes the card reports a player sends
 // from Options -> Troubleshooting -> Send a report; "" turns sending off.
@@ -160,6 +171,10 @@ func NewClient(version string) *Client {
 }
 
 func (c *Client) get(ctx context.Context, url string, timeout time.Duration) ([]byte, error) {
+	return c.getLimit(ctx, url, timeout, 64<<20)
+}
+
+func (c *Client) getLimit(ctx context.Context, url string, timeout time.Duration, limit int64) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
@@ -183,7 +198,14 @@ func (c *Client) get(ctx context.Context, url string, timeout time.Duration) ([]
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("%s: HTTP %d", url, resp.StatusCode)
 	}
-	return io.ReadAll(io.LimitReader(resp.Body, 64<<20))
+	b, err := io.ReadAll(io.LimitReader(resp.Body, limit+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(b)) > limit {
+		return nil, fmt.Errorf("%s: response exceeds %d bytes", url, limit)
+	}
+	return b, nil
 }
 
 // ErrNotFound is a 404.
@@ -240,19 +262,38 @@ func (c *Client) Check(ctx context.Context, current string) (Fresh, error) {
 	return out, nil
 }
 
-// Image downloads one picture: images/<slot>/<key>.png or the system photo.
+// Image downloads one picture, flyer, or MZV1 preview clip.
 func (c *Client) Image(ctx context.Context, slot, key string) ([]byte, error) {
 	url := Site + "/images/" + slot + "/" + key + ".png"
+	mediaBase := strings.TrimRight(MediaService, "/")
+	if mediaBase == "" {
+		mediaBase = Site + "/images"
+	}
+	limit := int64(64 << 20)
+	timeout := 8 * time.Second
 	switch slot {
 	case "system":
 		url = Site + "/images/systems/" + key + ".png"
+	case SlotVideo:
+		if !media.ValidKey(key) {
+			return nil, ErrNotFound
+		}
+		url = mediaBase + "/video/" + key + ".mzv"
+		limit = media.MaxBytes
+		timeout = 45 * time.Second
+	case SlotFlyer:
+		if !media.ValidKey(key) {
+			return nil, ErrNotFound
+		}
+		limit = media.MaxFlyerBytes
+		url = mediaBase + "/flyer/" + key + ".png"
 	case SlotLocalSnap:
 		if SnapService == "" {
 			return nil, ErrNotFound
 		}
 		url = SnapService + "/snap/" + key + ".png"
 	}
-	return c.get(ctx, url, 8*time.Second)
+	return c.getLimit(ctx, url, timeout, limit)
 }
 
 // Supporters fetches the site's supporters.json (the Patreon supporters

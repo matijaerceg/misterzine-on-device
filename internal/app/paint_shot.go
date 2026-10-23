@@ -1,9 +1,9 @@
 package app
 
 import (
-	"image"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
+	"image"
 )
 
 // paintShot is the screenshot view: the picture on the whole canvas (the
@@ -28,12 +28,9 @@ func (a *App) paintShot(c *gfx.Canvas) {
 			a.slot = 0
 		}
 		slot := slots[a.slot]
-		key := row.Img
-		if slot == "system" {
-			key = row.Core
-		}
-		req := ImageReq{Key: key, Slot: slot, W: area.Dx(), H: area.Dy(), Native: true, Pixelate: slot != "system" && a.pixelated(row)}
-		img, st := a.cfg.Images.Get(req)
+		key := mediaKey(row, slot)
+		req := ImageReq{Key: key, Slot: slot, W: area.Dx(), H: area.Dy(), Native: slot != "flyer" && slot != "video", Pixelate: slot != "system" && a.pixelated(row)}
+		img, st := a.mediaImage(req, area, true)
 		if img == nil {
 			a.want(req)
 			text := "loading"
@@ -56,6 +53,9 @@ func (a *App) paintShot(c *gfx.Canvas) {
 	if len(slots) > 1 {
 		// the count, on a small dark tab inside the safe zone's corner
 		s := itoa(a.slot+1) + "/" + itoa(len(slots))
+		if slots[a.slot] == "video" || slots[a.slot] == "flyer" {
+			s = slots[a.slot] + " " + s
+		}
 		w := a.sm.Width(s) + 6
 		tab := image.Rect(l.Root.Max.X-w, l.Root.Max.Y-a.sm.H-4, l.Root.Max.X, l.Root.Max.Y)
 		c.Fill(tab, rgb{R: 0, G: 0, B: 0, A: 255})
