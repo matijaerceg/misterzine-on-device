@@ -56,7 +56,9 @@ var (
 )
 
 // Grant is an issued code's public verifier, shared by all official apps.
-// Never remove an issued grant. LegacyBatch permits the first beta's receipts.
+// Never remove an issued grant. Several codes may share a month: the arcade
+// code and the Plex/Jellyfin code both cover October 2026, so either unlocks
+// the same features in every app. LegacyBatch permits the first beta's receipts.
 type Grant struct {
 	Month       Month
 	SHA256      string
@@ -65,8 +67,9 @@ type Grant struct {
 
 var grants []Grant
 
-// Register is called by the private registry at startup. Invalid/ambiguous
-// registries fail the build's startup instead of silently misgranting access.
+// Register is called by the private registry at startup. An invalid registry,
+// or one code registered twice, fails the build's startup instead of silently
+// misgranting access.
 func Register(g Grant) {
 	b, err := hex.DecodeString(g.SHA256)
 	if !g.Month.Valid() || err != nil || len(b) != sha256.Size || hex.EncodeToString(b) != g.SHA256 {
@@ -76,7 +79,7 @@ func Register(g Grant) {
 		panic("invalid legacy batch")
 	}
 	for _, old := range grants {
-		if old.SHA256 == g.SHA256 || old.Month == g.Month {
+		if old.SHA256 == g.SHA256 {
 			panic("duplicate access grant")
 		}
 	}
