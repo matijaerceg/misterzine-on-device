@@ -235,27 +235,31 @@ var SrcNames = map[string]string{
 type SrcDB struct {
 	Section string // downloader.ini section (db_id) as update_all writes it: FT_SECTIONS
 	URL     string // db_url of an opt-in database update_all has no toggle for: OPTIN_DBS, else ""
+	// InUpdateAll is whether update_all's built-in selection carries the
+	// database (UPDATE_ALL_INCLUDED): on by default or a settings toggle,
+	// never a hand-written downloader.ini section.
+	InUpdateAll bool
 }
 
-// SrcDBs mirrors FT_SECTIONS and OPTIN_DBS: pipeline source id to its database.
+// SrcDBs mirrors FT_SECTIONS, OPTIN_DBS and UPDATE_ALL_INCLUDED: pipeline source id to its database.
 var SrcDBs = map[string]SrcDB{
-	"asturur":                            {Section: "asturur/Mister-cores", URL: "https://raw.githubusercontent.com/asturur/Mister-cores/db/db.json.zip"},
-	"bazset":                             {Section: "bazset/MiSTer_BAZSET", URL: "https://raw.githubusercontent.com/bazset/MiSTer_BAZSET/db/db.json.zip"},
-	"blahm1d":                            {Section: "blahm1d", URL: "https://mister.blahm1d.com/db.json.zip"},
-	"coinop":                             {Section: "Coin-OpCollection/Distribution-MiSTerFPGA", URL: ""},
-	"decoryah":                           {Section: "decoryah/MiSTer_decoryah", URL: "https://raw.githubusercontent.com/decoryah/MiSTer_decoryah/db/db.json.zip"},
-	"distribution_mister":                {Section: "distribution_mister", URL: ""},
-	"gm0rk":                              {Section: "Gm0rk/Gm0rkCores", URL: "https://raw.githubusercontent.com/Gm0rk/Gm0rkCores/db/db.json.zip"},
-	"jlrh":                               {Section: "jlrh/jlrh-misterfpga-db", URL: "https://raw.githubusercontent.com/jlrh/jlrh-misterfpga-db/db/db.json.zip"},
-	"jtbindb":                            {Section: "jtcores", URL: ""},
-	"kuzecores":                          {Section: "kuzearcade/kuzecores", URL: "https://raw.githubusercontent.com/kuzearcade/kuzecores/db/db.json.zip"},
-	"meathax":                            {Section: "meathax/meatcores", URL: "https://raw.githubusercontent.com/meathax/meatcores/db/db.json.zip"},
-	"ongo":                               {Section: "OngoGablogian/MiSTer_Ongo", URL: "https://raw.githubusercontent.com/OngoGablogian/MiSTer_Ongo/db/db.json.zip"},
-	"ppriest":                            {Section: "ppriest/MiSTer_ppriest", URL: "https://raw.githubusercontent.com/ppriest/MiSTer_ppriest/db/db.json.zip"},
-	"rmcores":                            {Section: "rmonic79/rmcores", URL: "https://raw.githubusercontent.com/rmonic79/rmcores/db/db.json.zip"},
-	"rossops":                            {Section: "rossops/Arcade-SegaYBoard_MiSTer", URL: "https://raw.githubusercontent.com/rossops/Arcade-SegaYBoard_MiSTer/main/db.json.zip"},
-	"shmupfan":                           {Section: "shmupfan", URL: "https://raw.githubusercontent.com/shmupfan/Distribution/main/db.json"},
-	"slopcore":                           {Section: "TheJesusFish/Slop-Core", URL: "https://raw.githubusercontent.com/TheJesusFish/Slop-Core/db/db.json.zip"},
-	"theypsilon_unofficial_distribution": {Section: "theypsilon_unofficial_distribution", URL: ""},
-	"tomsvr":                             {Section: "TomSVR-Mister/TomSVR-Arcade-Cores", URL: "https://raw.githubusercontent.com/TomSVR-Mister/TomSVR-Arcade-Cores/db/db.json.zip"},
+	"asturur":                            {Section: "asturur/Mister-cores", URL: "https://raw.githubusercontent.com/asturur/Mister-cores/db/db.json.zip", InUpdateAll: false},
+	"bazset":                             {Section: "bazset/MiSTer_BAZSET", URL: "https://raw.githubusercontent.com/bazset/MiSTer_BAZSET/db/db.json.zip", InUpdateAll: false},
+	"blahm1d":                            {Section: "blahm1d", URL: "https://mister.blahm1d.com/db.json.zip", InUpdateAll: false},
+	"coinop":                             {Section: "Coin-OpCollection/Distribution-MiSTerFPGA", URL: "", InUpdateAll: true},
+	"decoryah":                           {Section: "decoryah/MiSTer_decoryah", URL: "https://raw.githubusercontent.com/decoryah/MiSTer_decoryah/db/db.json.zip", InUpdateAll: false},
+	"distribution_mister":                {Section: "distribution_mister", URL: "", InUpdateAll: true},
+	"gm0rk":                              {Section: "Gm0rk/Gm0rkCores", URL: "https://raw.githubusercontent.com/Gm0rk/Gm0rkCores/db/db.json.zip", InUpdateAll: false},
+	"jlrh":                               {Section: "jlrh/jlrh-misterfpga-db", URL: "https://raw.githubusercontent.com/jlrh/jlrh-misterfpga-db/db/db.json.zip", InUpdateAll: false},
+	"jtbindb":                            {Section: "jtcores", URL: "", InUpdateAll: true},
+	"kuzecores":                          {Section: "kuzearcade/kuzecores", URL: "https://raw.githubusercontent.com/kuzearcade/kuzecores/db/db.json.zip", InUpdateAll: false},
+	"meathax":                            {Section: "meathax/meatcores", URL: "https://raw.githubusercontent.com/meathax/meatcores/db/db.json.zip", InUpdateAll: false},
+	"ongo":                               {Section: "OngoGablogian/MiSTer_Ongo", URL: "https://raw.githubusercontent.com/OngoGablogian/MiSTer_Ongo/db/db.json.zip", InUpdateAll: false},
+	"ppriest":                            {Section: "ppriest/MiSTer_ppriest", URL: "https://raw.githubusercontent.com/ppriest/MiSTer_ppriest/db/db.json.zip", InUpdateAll: false},
+	"rmcores":                            {Section: "rmonic79/rmcores", URL: "https://raw.githubusercontent.com/rmonic79/rmcores/db/db.json.zip", InUpdateAll: false},
+	"rossops":                            {Section: "rossops/Arcade-SegaYBoard_MiSTer", URL: "https://raw.githubusercontent.com/rossops/Arcade-SegaYBoard_MiSTer/main/db.json.zip", InUpdateAll: false},
+	"shmupfan":                           {Section: "shmupfan", URL: "https://raw.githubusercontent.com/shmupfan/Distribution/main/db.json", InUpdateAll: false},
+	"slopcore":                           {Section: "TheJesusFish/Slop-Core", URL: "https://raw.githubusercontent.com/TheJesusFish/Slop-Core/db/db.json.zip", InUpdateAll: false},
+	"theypsilon_unofficial_distribution": {Section: "theypsilon_unofficial_distribution", URL: "", InUpdateAll: true},
+	"tomsvr":                             {Section: "TomSVR-Mister/TomSVR-Arcade-Cores", URL: "https://raw.githubusercontent.com/TomSVR-Mister/TomSVR-Arcade-Cores/db/db.json.zip", InUpdateAll: false},
 }

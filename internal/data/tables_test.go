@@ -10,7 +10,7 @@ import (
 const fetchedApp = `{
  "version": 1,
  "sources": {
-  "newdev": {"name": "newdev (New Dev)", "section": "NewDev/MiSTer_NewDev", "db_url": "https://raw.githubusercontent.com/NewDev/MiSTer_NewDev/db/db.json.zip"},
+  "newdev": {"name": "newdev (New Dev)", "section": "NewDev/MiSTer_NewDev", "db_url": "https://raw.githubusercontent.com/NewDev/MiSTer_NewDev/db/db.json.zip", "in_update_all": true},
   "jtbindb": {"name": "Jotego (JTcores)", "section": "jtcores", "db_url": ""},
   "meathax": {"name": "Meathax (renamed)", "section": "meathax/meatcores", "db_url": "https://raw.githubusercontent.com/meathax/meatcores/db/db.json.zip"}
  },

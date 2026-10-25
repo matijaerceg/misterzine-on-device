@@ -383,6 +383,9 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 	if row.Src == "rmcores" {
 		L = append(L, paneLine{"rm build: CRT Adjust and V-Size on the analog output and a pause overlay; the same game ships in the MiSTer Distribution without them", mu})
 	}
+	if s := a.updateAllLine(row); s != "" {
+		L = append(L, paneLine{s, mu})
+	}
 	if row.Deprecated {
 		add("Status", "deprecated", pal.Danger)
 	}
@@ -392,6 +395,45 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 	add("Note", row.Note, fg)
 	L = append(L, a.patchLines(row, i)...)
 	return L
+}
+
+// updateAllLine is the Details line under Source that says whether Update
+// All brings the game's source to this card, and what to do when it does
+// not. It reads the site's record of update_all's built-in selection
+// (data.InUpdateAll) against the card's downloader.ini (SetHiddenSources):
+//
+//   - the card's ini has the database: Update All fetches it already;
+//   - update_all carries it but the ini lacks it: a settings toggle is off;
+//   - update_all does not carry it: the ini needs a hand-written section.
+//
+// Before a card scan, or with no downloader.ini found, only the site's half
+// is known and the line says that much. Gated rows keep their gate line
+// alone: it already names the key or filter override those need, and two
+// lines on what Update All wants would say it twice. Local rows have no
+// database to speak of.
+func (a *App) updateAllLine(row *data.Row) string {
+	if row.Beta || row.Src == data.SrcLocal {
+		return ""
+	}
+	in, known := data.InUpdateAll(row.Src)
+	if !known {
+		return ""
+	}
+	name := data.SrcFull(row.Src)
+	section := "[" + data.SrcSection(row.Src) + "]"
+	if a.iniKnown && a.iniFound {
+		switch {
+		case !a.hiddenSrc[row.Src]:
+			return "Update All: this card fetches " + name
+		case in:
+			return "Update All: " + name + " is switched off on this card; turn it on in Update All's settings"
+		}
+		return "Update All: does not include " + name + "; add a " + section + " section to downloader.ini"
+	}
+	if in {
+		return "Update All: includes " + name
+	}
+	return "Update All: does not include " + name + "; it needs a " + section + " section in downloader.ini"
 }
 
 // patchLines is the Details group for the fan patches arcadepatches.com

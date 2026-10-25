@@ -927,6 +927,18 @@ Arcade Database. They match their ordinary filter categories and are marked
 Catalogue visibility does not change what Update All updates. It continues to
 use your normal updater configuration.
 
+Details tells you, under Source, whether Update All brings a game's source to
+your card. "This card fetches MiSTer Distribution" means it already does.
+"Coin-Op Collection is switched off on this card" means Update All includes
+that database but its toggle is off in Update All's settings; turn it on and
+run it. "Does not include Meathax (MeatCores); add a [meathax/meatcores]
+section to downloader.ini" names the section to write for a source Update All
+does not carry, the same lines the tracker site's Sources menu hands out. The
+line reads the card's `downloader.ini` at every card scan; before one, or
+without the file, it says only whether Update All includes the source. Patreon
+early-access games keep their own line about the key they need instead, and
+games only on your card have none.
+
 Choose **Run Update All** in Options. Browsing pauses while a dedicated screen
 shows stages, elapsed time, an activity spinner and a live log. Stages are
 milestones, not a percentage of bytes downloaded.

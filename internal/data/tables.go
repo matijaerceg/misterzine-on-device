@@ -29,6 +29,10 @@ type TableSource struct {
 	Name    string `json:"name"`
 	Section string `json:"section"`
 	DBURL   string `json:"db_url"`
+	// InUpdateAll says whether update_all's built-in selection carries the
+	// database (the site's UPDATE_ALL_INCLUDED). A file from before the
+	// field leaves it nil and the built-in answer stands.
+	InUpdateAll *bool `json:"in_update_all"`
 }
 
 // TablesVersion is the app.json schema this build reads. The site adds
@@ -100,11 +104,15 @@ func mergeTables(t *Tables) *siteTables {
 		}
 		for k, s := range t.Sources {
 			m.srcNames[k] = s.Name
-			sections[k] = gen.SrcDB{Section: s.Section, URL: s.DBURL}
+			g := gen.SrcDB{Section: s.Section, URL: s.DBURL, InUpdateAll: sections[k].InUpdateAll}
+			if s.InUpdateAll != nil {
+				g.InUpdateAll = *s.InUpdateAll
+			}
+			sections[k] = g
 		}
 	}
 	for src, g := range sections {
-		s := sourceDB{url: g.URL, ids: []string{strings.ToLower(g.Section)}}
+		s := sourceDB{url: g.URL, ids: []string{strings.ToLower(g.Section)}, section: g.Section, inUpdateAll: g.InUpdateAll}
 		if x, ok := sourceExtras[src]; ok {
 			if x.url != "" {
 				s.url = x.url

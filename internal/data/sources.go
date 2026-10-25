@@ -15,9 +15,24 @@ type DB struct {
 // the section names update_all has written for it, older ones included,
 // lower-cased for matching.
 type sourceDB struct {
-	url string
-	ids []string
+	url         string
+	ids         []string
+	section     string // the section name as update_all writes it today
+	inUpdateAll bool   // update_all's built-in selection carries it
 }
+
+// InUpdateAll reports whether update_all's built-in selection carries the
+// source's database, on by default or behind a settings toggle, so a player
+// never has to write a downloader.ini section for it. known is false for a
+// source the tables do not list, SrcLocal included.
+func InUpdateAll(src string) (in, known bool) {
+	s, ok := tables.Load().dbs[src]
+	return s.inUpdateAll, ok
+}
+
+// SrcSection is the downloader.ini section name of the source's database as
+// update_all writes it, "" for a source the tables do not list.
+func SrcSection(src string) string { return tables.Load().dbs[src].section }
 
 // sourceExtras holds what the site's tables do not carry: the db_url of the
 // databases update_all has a settings toggle for (the site records URLs for

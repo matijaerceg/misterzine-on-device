@@ -1,7 +1,7 @@
 // mzgen extracts the pieces of the misterzine website that the device app must
 // mirror exactly: the source and core tables from docs/releases/app.json
 // (which the site's export-web writes from the CORE_NAMES, SRC_NAMES,
-// FT_SECTIONS and OPTIN_DBS literals in its index.html) and the "eva"
+// FT_SECTIONS, OPTIN_DBS and UPDATE_ALL_INCLUDED literals in its index.html) and the "eva"
 // (Unit-01) palette block from docs/theme.css. It writes Go source into
 // internal/gen. The app also fetches app.json at run time (data.SetTables),
 // so these built-in tables are its fallback: regenerate them for each
@@ -28,9 +28,10 @@ import (
 type appTables struct {
 	Version int `json:"version"`
 	Sources map[string]struct {
-		Name    string `json:"name"`
-		Section string `json:"section"`
-		DBURL   string `json:"db_url"`
+		Name        string `json:"name"`
+		Section     string `json:"section"`
+		DBURL       string `json:"db_url"`
+		InUpdateAll *bool  `json:"in_update_all"`
 	} `json:"sources"`
 	CoreNames map[string]string `json:"core_names"`
 }
@@ -66,8 +67,11 @@ func main() {
 			}
 			optin++
 		}
+		if s.InUpdateAll == nil {
+			die(fmt.Errorf("source %q: no in_update_all; the site's export must say whether update_all's built-in selection carries it", src))
+		}
 		srcNames[src] = s.Name
-		dbs[src] = srcDB{section: s.Section, url: s.DBURL}
+		dbs[src] = srcDB{section: s.Section, url: s.DBURL, inUpdateAll: *s.InUpdateAll}
 	}
 	tokens := cssBlock(string(css), `:root[data-theme="eva"] {`)
 	if len(tokens) < 10 {
@@ -114,7 +118,10 @@ func sortedKeys(m map[string]string) []string {
 	return keys
 }
 
-type srcDB struct{ section, url string }
+type srcDB struct {
+	section, url string
+	inUpdateAll  bool
+}
 
 func namesSource(core, src map[string]string, dbs map[string]srcDB) string {
 	var b bytes.Buffer
@@ -130,10 +137,11 @@ func namesSource(core, src map[string]string, dbs map[string]srcDB) string {
 	}
 	b.WriteString("}\n\n// SrcDB is a source's Downloader database as the site records it.\ntype SrcDB struct {\n")
 	b.WriteString("\tSection string // downloader.ini section (db_id) as update_all writes it: FT_SECTIONS\n")
-	b.WriteString("\tURL     string // db_url of an opt-in database update_all has no toggle for: OPTIN_DBS, else \"\"\n}\n\n")
-	b.WriteString("// SrcDBs mirrors FT_SECTIONS and OPTIN_DBS: pipeline source id to its database.\nvar SrcDBs = map[string]SrcDB{\n")
+	b.WriteString("\tURL     string // db_url of an opt-in database update_all has no toggle for: OPTIN_DBS, else \"\"\n")
+	b.WriteString("\t// InUpdateAll is whether update_all's built-in selection carries the\n\t// database (UPDATE_ALL_INCLUDED): on by default or a settings toggle,\n\t// never a hand-written downloader.ini section.\n\tInUpdateAll bool\n}\n\n")
+	b.WriteString("// SrcDBs mirrors FT_SECTIONS, OPTIN_DBS and UPDATE_ALL_INCLUDED: pipeline source id to its database.\nvar SrcDBs = map[string]SrcDB{\n")
 	for _, k := range sortedKeys(src) {
-		fmt.Fprintf(&b, "\t%q: {Section: %q, URL: %q},\n", k, dbs[k].section, dbs[k].url)
+		fmt.Fprintf(&b, "\t%q: {Section: %q, URL: %q, InUpdateAll: %t},\n", k, dbs[k].section, dbs[k].url, dbs[k].inUpdateAll)
 	}
 	b.WriteString("}\n")
 	return b.String()
