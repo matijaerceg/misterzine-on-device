@@ -151,6 +151,7 @@ var CoreNames = map[string]string{
 	"jtoutrun":                 "Sega (Out Run)",
 	"jtpang":                   "Mitchell (Pang)",
 	"jtparoda":                 "Konami (Parodius)",
+	"jtpspike":                 "Video System (Power Spikes HW)",
 	"jtriders":                 "Konami (Sunset Riders HW)",
 	"jtroadf":                  "Konami (Road Fighter)",
 	"jts16":                    "Sega System 16A",
@@ -161,6 +162,7 @@ var CoreNames = map[string]string{
 	"jtshouse":                 "Namco System 1",
 	"jtsimson":                 "Konami (Simpsons HW)",
 	"jtslyspy":                 "Data East (Sly Spy HW)",
+	"jtsysfl":                  "Namco System FL",
 	"jtthundr":                 "Namco System 86",
 	"jttmnt":                   "Konami (TMNT HW)",
 	"jttora":                   "Capcom (Tiger Road)",
@@ -208,6 +210,7 @@ var CoreNames = map[string]string{
 
 // SrcNames mirrors SRC_NAMES: pipeline source id to display name.
 var SrcNames = map[string]string{
+	"asturur":                            "asturur",
 	"bazset":                             "bazset",
 	"blahm1d":                            "blahm1d",
 	"coinop":                             "Coin-Op Collection",
@@ -236,6 +239,7 @@ type SrcDB struct {
 
 // SrcDBs mirrors FT_SECTIONS and OPTIN_DBS: pipeline source id to its database.
 var SrcDBs = map[string]SrcDB{
+	"asturur":                            {Section: "asturur/Mister-cores", URL: "https://raw.githubusercontent.com/asturur/Mister-cores/db/db.json.zip"},
 	"bazset":                             {Section: "bazset/MiSTer_BAZSET", URL: "https://raw.githubusercontent.com/bazset/MiSTer_BAZSET/db/db.json.zip"},
 	"blahm1d":                            {Section: "blahm1d", URL: "https://mister.blahm1d.com/db.json.zip"},
 	"coinop":                             {Section: "Coin-OpCollection/Distribution-MiSTerFPGA", URL: ""},

@@ -18,7 +18,7 @@ func TestHiddenSourcesFollowDownloaderDatabases(t *testing.T) {
 		{ID: "jtcores"},
 		{ID: "other/db", URL: "https://example.com/db.json.zip"},
 	})
-	if want := map[string]bool{"bazset": true, "blahm1d": true, "coinop": true, "decoryah": true, "gm0rk": true, "jlrh": true, "kuzecores": true, "meathax": true, "ongo": true, "ppriest": true, "rmcores": true, "rossops": true, "shmupfan": true, "slopcore": true, "theypsilon_unofficial_distribution": true, "tomsvr": true}; !reflect.DeepEqual(got, want) {
+	if want := map[string]bool{"asturur": true, "bazset": true, "blahm1d": true, "coinop": true, "decoryah": true, "gm0rk": true, "jlrh": true, "kuzecores": true, "meathax": true, "ongo": true, "ppriest": true, "rmcores": true, "rossops": true, "shmupfan": true, "slopcore": true, "theypsilon_unofficial_distribution": true, "tomsvr": true}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("hidden = %v, want %v", got, want)
 	}
 	// the db_url identifies a renamed section; the old Coin-Op name still counts
@@ -26,10 +26,10 @@ func TestHiddenSourcesFollowDownloaderDatabases(t *testing.T) {
 		{ID: "mine", URL: "https://raw.githubusercontent.com/meathax/meatcores/db/db.json.zip"},
 		{ID: "atrac17/coin-op_collection"},
 	})
-	if want := map[string]bool{"bazset": true, "blahm1d": true, "decoryah": true, "distribution_mister": true, "gm0rk": true, "jlrh": true, "jtbindb": true, "kuzecores": true, "ongo": true, "ppriest": true, "rmcores": true, "rossops": true, "shmupfan": true, "slopcore": true, "theypsilon_unofficial_distribution": true, "tomsvr": true}; !reflect.DeepEqual(got, want) {
+	if want := map[string]bool{"asturur": true, "bazset": true, "blahm1d": true, "decoryah": true, "distribution_mister": true, "gm0rk": true, "jlrh": true, "jtbindb": true, "kuzecores": true, "ongo": true, "ppriest": true, "rmcores": true, "rossops": true, "shmupfan": true, "slopcore": true, "theypsilon_unofficial_distribution": true, "tomsvr": true}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("hidden = %v, want %v", got, want)
 	}
-	got = HiddenSources([]DB{{ID: "distribution_mister"}, {ID: "jtcores"}, {ID: "coin-opcollection/distribution-misterfpga"}, {ID: "meathax/meatcores"}, {ID: "rmonic79/rmcores"}, {ID: "TheJesusFish/Slop-Core"}, {ID: "kuzearcade/kuzecores"}, {ID: "blahm1d"}, {ID: "bazset/MiSTer_BAZSET"}, {ID: "rossops/Arcade-SegaYBoard_MiSTer"}, {ID: "OngoGablogian/MiSTer_Ongo"}, {ID: "TomSVR-Mister/TomSVR-Arcade-Cores"}, {ID: "decoryah/MiSTer_decoryah"}, {ID: "ppriest/MiSTer_ppriest"}, {ID: "Gm0rk/Gm0rkCores"}, {ID: "jlrh/jlrh-misterfpga-db"}, {ID: "shmupfan"}, {ID: "theypsilon_unofficial_distribution"}})
+	got = HiddenSources([]DB{{ID: "distribution_mister"}, {ID: "jtcores"}, {ID: "coin-opcollection/distribution-misterfpga"}, {ID: "meathax/meatcores"}, {ID: "rmonic79/rmcores"}, {ID: "TheJesusFish/Slop-Core"}, {ID: "kuzearcade/kuzecores"}, {ID: "blahm1d"}, {ID: "bazset/MiSTer_BAZSET"}, {ID: "rossops/Arcade-SegaYBoard_MiSTer"}, {ID: "OngoGablogian/MiSTer_Ongo"}, {ID: "TomSVR-Mister/TomSVR-Arcade-Cores"}, {ID: "decoryah/MiSTer_decoryah"}, {ID: "ppriest/MiSTer_ppriest"}, {ID: "Gm0rk/Gm0rkCores"}, {ID: "jlrh/jlrh-misterfpga-db"}, {ID: "shmupfan"}, {ID: "theypsilon_unofficial_distribution"}, {ID: "asturur/Mister-cores"}})
 	if got == nil || len(got) != 0 {
 		t.Fatalf("every database present must hide nothing: %v", got)
 	}
