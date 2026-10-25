@@ -78,7 +78,7 @@ func main() {
 	controlsAuto := flag.Bool("controls-auto", false, "invite unfamiliar controller fixtures automatically")
 	controlsPreview := flag.Bool("controls", false, "open Button mapping with a pad and keyboard-encoder fixture")
 	menuButton := flag.String("menu-button", "options", "what the pad's Menu button does: options or leave")
-	launcher := flag.Bool("launcher", false, "start with the main menu shortcut on, so Open at boot, Return after game and Exit chord are live; the Options row toggles it")
+	launcher := flag.Bool("launcher", false, "start with the main menu shortcut on, so Open at boot, Return after game and Exit game with are live; the Options row toggles it")
 	canvas := flag.String("canvas", "320x240", "canvas size WxH: 320x240, or a fit-display size such as 360x270 (1080p) or 400x300")
 	rememberAlt := flag.Int("remember-alt", 0, "start with galagamw's alternative N (1 or 2) remembered as its version")
 	recents := flag.Int("recents", 0, "pretend the first N rows were launched, the last one most recently; turns the Recents view on")

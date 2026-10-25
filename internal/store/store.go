@@ -54,7 +54,7 @@ type Settings struct {
 	// launcher (misterzine launcher watch), which reads this file itself.
 	OpenAtBoot      bool   `json:"open_at_boot"`      // Options -> Open at boot: pick the menu entry once Main's menu is up
 	ReturnAfterGame bool   `json:"return_after_game"` // Options -> Return after game: pick it again when a launched game exits to Menu
-	ExitChord       string `json:"exit_chord"`        // Options -> Exit chord: "" (off), select-start, lr-select-start, start-two-pads or coin-two-pads; held in a launched game, it exits to Menu
+	ExitChord       string `json:"exit_chord"`        // Options -> Exit game with: "" (off), select-start, lr-select-start, start-two-pads or coin-two-pads; held in a launched game, it exits to Menu
 	TitleFont       string `json:"title_font"`        // list titles: tall (default), narrow or normal
 	ListShot        string `json:"list_shot"`         // gameplay (default), title, video or flyer
 	DateFormat      string `json:"date_format"`       // list dates: mm-dd (default), dd-mm, mon-d, d-mon, yymmdd

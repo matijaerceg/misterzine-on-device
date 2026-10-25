@@ -131,7 +131,7 @@ Mode lists. Return after game and Open at boot work too.
 
 MisterZine opened through Console Mode's script runner (Settings -> Developer
 Tools -> Scripts -> Load Script -> MisterZine-Run) used to leave the games it
-started on their own: the Exit chord did nothing and Return after game never
+started on their own: the Exit game with buttons did nothing and Return after game never
 reopened it (reported by RonanGH). Both now work there as well, as long as
 the Main menu shortcut is on. The same goes for MisterZine-Run in any other
 Scripts list.

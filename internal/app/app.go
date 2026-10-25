@@ -181,7 +181,7 @@ type Config struct {
 	// host's resident launcher acts on; both need the launcher enabled.
 	OpenAtBoot      bool
 	ReturnAfterGame bool
-	// ExitChord is Options -> Exit chord, the pad buttons that leave a
+	// ExitChord is Options -> Exit game with, the pad buttons that leave a
 	// launched game for the menu: "" (off), "select-start",
 	// "lr-select-start", "start-two-pads" or "coin-two-pads"; the launcher
 	// watches for it.
@@ -670,7 +670,7 @@ func (a *App) Canvas() string {
 }
 func (a *App) ReturnAfterGame() bool { return a.cfg.ReturnAfterGame }
 
-// ExitChord is the Options -> Exit chord choice: "" (off), "select-start",
+// ExitChord is the Options -> Exit game with choice: "" (off), "select-start",
 // "lr-select-start", "start-two-pads" or "coin-two-pads"; anything else
 // reads as off.
 func (a *App) ExitChord() string {

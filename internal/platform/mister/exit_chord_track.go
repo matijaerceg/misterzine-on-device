@@ -7,7 +7,7 @@ import "time"
 // on, for MisterZine). The buttons are named by MiSTer define-slot, so the
 // chord is the same on every pad the user has defined.
 const (
-	ExitChordOff             = ""                // Options -> Exit chord: off
+	ExitChordOff             = ""                // Options -> Exit game with: off
 	ExitChordSelectStart     = "select-start"    // Select+Start
 	ExitChordShouldersSelect = "lr-select-start" // L+R+Select+Start
 	ExitChordStartTwoPads    = "start-two-pads"  // Start held on two pads at once (the cabinet's P1+P2 Start)

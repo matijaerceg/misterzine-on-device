@@ -501,7 +501,7 @@ Art type, Date format, Layout), Display (a monitor: rotation,
 screensaver delay, style, brightness and info, safe zone, HDMI picture), Controls
 (an arcade stick: Button mapping, Menu button, Scroll speed, Hold
 delay) and Operation (sliders: the main menu shortcut, Open at boot, Return
-after game, Exit chord). Troubleshooting, Credits and Quit sit below the sections and
+after game, Exit game with). Troubleshooting, Credits and Quit sit below the sections and
 are never hidden by collapsing one. Only Data starts expanded. Select a
 heading and press A to open or close it, or Right to open and Left to close.
 Several sections can stay open. MisterZine remembers their state during the
@@ -509,7 +509,7 @@ session, including trips through Filters and subpages; restarting restores
 the default. Left/Right on a setting still changes its value.
 A row that only applies given the row above it (Rotation under Follow INI
 rotation, the screensaver's style, brightness and info, Open at boot, Return
-after game and Exit chord under the shortcut) sits a step in behind a small branch mark.
+after game and Exit game with under the shortcut) sits a step in behind a small branch mark.
 Values line up in one column; a small arrow at the right
 edge of the top or bottom row shows when more options sit above or below the
 visible part of the list. The legend in the bottom bar follows the selected
@@ -761,14 +761,14 @@ screenshots match, lettering runs instead and the Preview help explains why.
   launched it from (with Remember last view off, MisterZine starts in the
   Default view, which may not hold it). A game the current filters hide is
   not shown; the list opens at the top. To leave a game for the menu without
-  the Exit chord, open MiSTer's OSD, press right for the System page and
+  the Exit game with buttons, open MiSTer's OSD, press right for the System page and
   choose Reboot with a short press (holding it restarts the whole MiSTer).
   Reset on the game's own OSD page only restarts the game, and Exit only
   closes the OSD. Games
   loaded some other way, and quitting through the Menu button, do not bring
   it back. Needs the Main menu shortcut, also when you opened MisterZine
   through Scripts -> MisterZine-Run (as Degauss and Console Mode do).
-- **Exit chord:** off by default. Select+Start, or L+R+Select+Start, held
+- **Exit game with:** off by default (called Exit chord before v1.2.22). Select+Start, or L+R+Select+Start, held
   together for one second inside a game you started from MisterZine leaves the
   game for the MiSTer menu, or for your frontend's menu under Degauss or
   Console Mode; with Return after game
