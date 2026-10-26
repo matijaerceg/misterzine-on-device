@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.2.24 — 2026-10-26
+
+- Dim the game list and artwork to half brightness while the view picker is open, making the choices easier to read. The popup and button hints stay at full brightness; closing it restores the normal screen. Tested and accepted on MiSTer Pi.
+- Embedded catalogue snapshot refreshed (2,674 rows, 2026-10-26).
+
 ## v1.2.23 — 2026-10-26
 
 - Y now opens a view chooser over the game list. Browse enabled views with Up/Down, select with A or cancel with B. The current view is marked; the fixed Edit available views row opens the same consolidated standard/genre checkbox editor as Options -> List -> Available views. Existing choices and startup settings carry over.
