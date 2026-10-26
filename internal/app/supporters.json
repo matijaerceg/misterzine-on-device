@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-22",
+  "updated": "2026-10-25",
   "current": [
     {
       "name": "Aaron Whitmore",
@@ -50,6 +50,10 @@
       "since": "2026-09"
     },
     {
+      "name": "Bob Loblaw",
+      "since": "2026-10"
+    },
+    {
       "name": "Brian",
       "since": "2026-10"
     },
@@ -91,6 +95,10 @@
     },
     {
       "name": "coribald",
+      "since": "2026-10"
+    },
+    {
+      "name": "Damon Brenner",
       "since": "2026-10"
     },
     {
@@ -182,6 +190,10 @@
       "since": "2026-09"
     },
     {
+      "name": "J Kaess",
+      "since": "2026-10"
+    },
+    {
       "name": "Jared Boehm",
       "since": "2026-10"
     },
@@ -219,6 +231,14 @@
     },
     {
       "name": "Jordan Rich",
+      "since": "2026-10"
+    },
+    {
+      "name": "José-Manuel Anguita",
+      "since": "2026-10"
+    },
+    {
+      "name": "K64",
       "since": "2026-10"
     },
     {
@@ -280,6 +300,10 @@
     {
       "name": "Mathieu HERVAIS",
       "since": "2026-09"
+    },
+    {
+      "name": "Matthew Prather",
+      "since": "2026-10"
     },
     {
       "name": "Michael",
@@ -386,8 +410,20 @@
       "since": "2026-10"
     },
     {
+      "name": "Scott Ayers",
+      "since": "2026-10"
+    },
+    {
+      "name": "Scott Learmonth",
+      "since": "2026-10"
+    },
+    {
       "name": "Sky B",
       "since": "2026-09"
+    },
+    {
+      "name": "SneakingElephant",
+      "since": "2026-10"
     },
     {
       "name": "Stefano Mazzola",
@@ -427,6 +463,10 @@
     },
     {
       "name": "TomSVR",
+      "since": "2026-10"
+    },
+    {
+      "name": "Trevor",
       "since": "2026-10"
     },
     {

@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.2.22 — 2026-10-26
+
+- Details says, under Source, whether Update All brings a game's source to this card, so a game that is not on the card comes with the reason. Three answers: "this card fetches MiSTer Distribution" when the card's `downloader.ini` has the database; "theypsilon Unofficial Distribution is switched off on this card; turn it on in Update All's settings" when Update All's built-in selection carries the database but the card's file lacks it; and "does not include bazset; add a [bazset/MiSTer_BAZSET] section to downloader.ini" for a source Update All does not carry, naming the section the tracker site's Sources menu hands out. The file is read at every card scan; before one, or without the file, the line says only whether Update All includes the source. Patreon early-access games keep their own line about the key they need, and games only on your card get none. Which sources Update All carries comes from the site's `releases/app.json`, now with an `in_update_all` field per source, with the built-in table as the fallback, so a source the site adds later needs no app release. Tested on a MiSTer Pi against its `downloader.ini`: MiSTer Distribution and Coin-Op fetched, theypsilon switched off, bazset outside.
+- Options -> Controls -> **Exit chord** is now **Exit game with**; the choices and the saved setting are unchanged.
+- The generated site tables gain asturur's database (asturur/Mister-cores) and the Power Spikes and System FL core names.
+- A supporter code issued for MisterZine Plex or Jellyfin can share its month with an arcade code, so the registry accepts both.
+- Credits: Bob Loblaw, Damon Brenner, J Kaess, José-Manuel Anguita, K64, Matthew Prather, Scott Ayers, Scott Learmonth, SneakingElephant and Trevor join the Patreon supporters.
+- Embedded catalogue snapshot refreshed (2,647 rows, 2026-10-25).
+
 ## v1.2.21 — 2026-10-23
 
 - Add arcade flyers as artwork. When a game has a flyer, choose **flyer** under Options -> List -> Art type to see it in the list, Details and the larger artwork view; games without one continue to show screenshots. Details and artwork let you browse every available screenshot and flyer, and flyers keep their original shape. The catalogue identifies flyer files separately from screenshots, so updating the catalogue does not replace or reclassify existing artwork. The app downloads a flyer when needed, validates the PNG size and dimensions before decoding it, and caches it on the card for offline use. The list's saved Art type now accepts gameplay, title and flyer; a saved video choice from the shelved preview experiment falls back to gameplay. Tested on a MiSTer Pi with live and uncached flyers, including list, Details, fullscreen artwork and offline reuse.
