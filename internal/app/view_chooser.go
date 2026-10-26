@@ -77,6 +77,14 @@ func (a *App) actViewChooser(k platform.Key) bool {
 }
 
 func (a *App) paintViewChooser(c *gfx.Canvas) {
+	// Dim the freshly painted list before drawing the popup and its controls.
+	for i := 0; i < len(c.Pix); i += 4 {
+		c.Pix[i] /= 2
+		c.Pix[i+1] /= 2
+		c.Pix[i+2] /= 2
+	}
+	c.DirtyAll()
+
 	p, f := &a.viewChooser, a.sm
 	body := a.lay.Body
 	// Keep a visible margin around the popup, even inside a narrow safe zone.
