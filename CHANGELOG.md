@@ -4,11 +4,6 @@
 
 - Y now opens a view chooser over the game list. Browse enabled views with Up/Down, select with A or cancel with B. The current view is marked; the fixed Edit available views row opens the same consolidated standard/genre checkbox editor as Options -> List -> Available views. Existing choices and startup settings carry over.
 
-## v1.2.23 — 2026-10-26
-
-- Options -> List -> **Mature games** now starts on **Hide**, as the misterzine.fyi release tracker does since 2026-10-25: games MAME's category list marks as mature, plus the catalogue's own additions, leave the list, search, the counts and the screensaver until Show or Pixelate is picked. Hide is now the unset value in `settings.json` and Show is saved as `"mature": "show"`. Show was the unset value before, so a card that had chosen Show moves to Hide once, like a card that never chose; a saved Pixelate or Hide is kept.
-- Embedded catalogue snapshot refreshed (2,658 rows, 2026-10-26).
-
 ## v1.2.22 — 2026-10-26
 
 - Details says, under Source, whether Update All brings a game's source to this card, so a game that is not on the card comes with the reason. Three answers: "this card fetches MiSTer Distribution" when the card's `downloader.ini` has the database; "theypsilon Unofficial Distribution is switched off on this card; turn it on in Update All's settings" when Update All's built-in selection carries the database but the card's file lacks it; and "does not include bazset; add a [bazset/MiSTer_BAZSET] section to downloader.ini" for a source Update All does not carry, naming the section the tracker site's Sources menu hands out. The file is read at every card scan; before one, or without the file, the line says only whether Update All includes the source. Patreon early-access games keep their own line about the key they need, and games only on your card get none. Which sources Update All carries comes from the site's `releases/app.json`, now with an `in_update_all` field per source, with the built-in table as the fallback, so a source the site adds later needs no app release. Tested on a MiSTer Pi against its `downloader.ini`: MiSTer Distribution and Coin-Op fetched, theypsilon switched off, bazset outside.
