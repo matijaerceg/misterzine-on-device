@@ -1,8 +1,12 @@
 # Changelog
 
-## Unreleased
+## v1.2.23 — 2026-10-26
 
 - Y now opens a view chooser over the game list. Browse enabled views with Up/Down, select with A or cancel with B. The current view is marked; the fixed Edit available views row opens the same consolidated standard/genre checkbox editor as Options -> List -> Available views. Existing choices and startup settings carry over.
+- Options -> List -> **Mature games** now defaults to **Hide**, matching the release tracker. Mature games are hidden from browsing, search, counts and the screensaver until Show or Pixelate is selected. Existing saved Pixelate and Hide choices are kept; Show previously used an unset value, so it changes to Hide once on upgrade and can be selected again.
+- The view chooser and both routes into Available views were tested on a MiSTer Pi. Existing view selections and startup preferences are preserved.
+- Embedded catalogue snapshot refreshed (2,661 rows, 2026-10-26).
+
 
 ## v1.2.22 — 2026-10-26
 
