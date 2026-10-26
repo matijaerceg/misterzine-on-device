@@ -51,9 +51,7 @@ func (a *App) listHint() string {
 		back = "B Clear find"
 	}
 	parts = append(parts, back, "X Filters")
-	if a.viewsOnCount() > 1 {
-		parts = append(parts, "Y View")
-	}
+	parts = append(parts, "Y View")
 	parts = append(parts, "Select +")
 	if a.quickHeld() {
 		parts = nil

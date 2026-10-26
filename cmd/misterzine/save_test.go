@@ -45,12 +45,18 @@ func TestSortAutosaveRestoreAndOption(t *testing.T) {
 		open()
 	}
 	tap(platform.KeySpace)
+	tap(platform.KeyDown)
+	tap(platform.KeyEnter)
 	restart()
 	if h.a.Sort() != data.SortDebut || !h.a.RememberSort() {
 		t.Fatal("debut sort did not survive restart")
 	}
-	tap(platform.KeySpace) // Year
-	tap(platform.KeySpace) // A-Z
+	tap(platform.KeySpace)
+	tap(platform.KeyDown)
+	tap(platform.KeyEnter) // Year
+	tap(platform.KeySpace)
+	tap(platform.KeyDown)
+	tap(platform.KeyEnter) // A-Z
 	restart()
 	if h.a.Sort() != data.SortAlphabetical || h.a.CursorKey() != "a" {
 		t.Fatal("alphabetical restart did not start at its first title")

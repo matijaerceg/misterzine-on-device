@@ -74,6 +74,8 @@ func TestSelectChordsToggleLayoutAndShots(t *testing.T) {
 	}
 	tap(platform.KeyUp)
 	tap(platform.KeySpace)
+	tap(platform.KeyDown)
+	tap(platform.KeyEnter)
 	if a.Sort() == sort || a.ListLayout() != "list" {
 		t.Fatalf("Y without Select: sort %v -> %v, layout %q", sort, a.Sort(), a.ListLayout())
 	}

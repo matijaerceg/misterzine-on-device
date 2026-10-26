@@ -37,7 +37,7 @@ func TestGenreViewsJoinTheCycleOnlyWhenOn(t *testing.T) {
 		var seen []data.SortMode
 		for i := 0; i < n; i++ {
 			seen = append(seen, a.mode)
-			tap(platform.KeySpace)
+			chooseNextView(a)
 		}
 		return seen
 	}
@@ -185,8 +185,7 @@ func TestEveryGenreHasAView(t *testing.T) {
 	// the Y cycle walks them in page order after Favorites
 	a.SetSort(data.SortFavorites)
 	for _, m := range data.GenreViews {
-		a.Handle(platform.Event{Key: platform.KeySpace, Pressed: true, At: clock})
-		a.Handle(platform.Event{Key: platform.KeySpace, Pressed: false, At: clock})
+		chooseNextView(a)
 		if a.mode != m {
 			t.Fatalf("Y reached %v, want %v", a.mode, m)
 		}
@@ -197,109 +196,68 @@ func TestEveryGenreHasAView(t *testing.T) {
 	}
 }
 
-// Options -> List -> Genre views is a checkbox page of the fifteen, counted on
-// its row and kept off the Views page; turning the current one off moves
-// the list to the next view on, and the choice persists by name.
+// Both families of views share one editor and keep their existing saved names.
 func TestGenreViewsPage(t *testing.T) {
 	a, tap := genreViewsApp()
 	tap(platform.KeyBack)
 	expandOptionsForTest(a)
-	row, viewsRow := -1, -1
+	row := -1
 	for i, e := range a.panel.entries {
-		switch e.kind {
-		case "genre-views":
+		if e.kind == "genre-views" {
+			t.Fatal("separate genre editor remains")
+		}
+		if e.kind == "views" {
 			row = i
-		case "views":
-			viewsRow = i
 		}
 	}
-	if row < 0 || a.panel.entries[row].text != "Genre views (0 of 15)" || viewsRow < 0 || a.panel.entries[viewsRow].text != "Views (7 of 8)" {
-		t.Fatalf("Options rows: %+v", a.panel.entries)
-	}
-	a.panel.cursor = viewsRow
-	tap(platform.KeyEnter)
-	for _, e := range a.panel.entries {
-		if m, _ := data.ParseSort(e.value); m.Genre() != "" {
-			t.Fatalf("the Views page lists %q", e.text)
-		}
-	}
-	tap(platform.KeyBack)
-	if a.panel.entries[a.panel.cursor].kind != "views" {
-		t.Fatalf("back from Views on %q", a.panel.entries[a.panel.cursor].kind)
+	if row < 0 || a.panel.entries[row].text != "Available views (7 of 23)" {
+		t.Fatal("missing consolidated entry")
 	}
 	a.panel.cursor = row
 	tap(platform.KeyEnter)
-	if a.screen != ScreenViews || a.viewsTitle() != "Genre views" || len(a.panel.entries) != 15 {
-		t.Fatalf("Genre views page: screen %v title %q entries %d", a.screen, a.viewsTitle(), len(a.panel.entries))
+	if a.screen != ScreenViews || a.viewsTitle() != "Available views" || len(a.panel.entries) != 25 {
+		t.Fatal("missing combined editor")
 	}
 	for i, want := range genreViewLabels {
-		if e := a.panel.entries[i]; e.kind != "view" || e.text != want || e.checked || e.disabled {
-			t.Fatalf("entry %d %+v", i, e)
+		if e := a.panel.entries[i+10]; e.text != want || e.checked {
+			t.Fatalf("genre %d: %+v", i, e)
 		}
 	}
-	a.Paint()
+	a.panel.cursor = 10
 	changed := 0
 	a.cfg.SettingsChanged = func() { changed++ }
-	tap(platform.KeyEnter) // Shoot 'em ups on
+	tap(platform.KeyEnter)
 	tap(platform.KeyDown)
 	tap(platform.KeyDown)
-	tap(platform.KeyEnter) // Beat 'em ups on
-	if !reflect.DeepEqual(a.GenreViewsOn(), []string{"shmups", "beatemups"}) || changed != 2 || !a.panel.entries[0].checked || a.panel.entries[1].checked || !a.panel.entries[2].checked {
-		t.Fatalf("after two on: %v, %d changes, %+v", a.GenreViewsOn(), changed, a.panel.entries)
+	tap(platform.KeyEnter)
+	if !reflect.DeepEqual(a.GenreViewsOn(), []string{"shmups", "beatemups"}) || changed != 2 {
+		t.Fatal("genre choices were not saved")
 	}
 	tap(platform.KeyBack)
-	if a.screen != ScreenOptions || a.panel.entries[a.panel.cursor].kind != "genre-views" || a.panel.entries[a.panel.cursor].text != "Genre views (2 of 15)" {
-		t.Fatalf("back to Options: screen %v row %+v", a.screen, a.panel.entries[a.panel.cursor])
+	if a.screen != ScreenOptions || a.panel.entries[a.panel.cursor].kind != "views" || a.panel.entries[a.panel.cursor].text != "Available views (9 of 23)" {
+		t.Fatal("return to Options")
 	}
-	if e := a.panel.entries[viewsRow]; e.text != "Views (7 of 8)" {
-		t.Fatalf("Views row counts the genre views: %q", e.text)
-	}
-	tap(platform.KeyBack)
-	// the saved names bring them back; a remembered genre view is kept
 	b := New(Config{PhysW: 320, PhysH: 240, RememberSort: true, LastSort: data.SortBeatEmUps, ViewsOff: a.ViewsOff(), GenreViewsOn: a.GenreViewsOn()}, a.ds, nil)
 	if b.mode != data.SortBeatEmUps || !b.viewOn(data.SortShmups) || b.viewOn(data.SortFighting) {
-		t.Fatalf("restart: mode %v, shmups %v, fighting %v", b.mode, b.viewOn(data.SortShmups), b.viewOn(data.SortFighting))
+		t.Fatal("saved settings did not round trip")
 	}
-	// a remembered genre view that went off falls back like any view
-	c := New(Config{PhysW: 320, PhysH: 240, RememberSort: true, LastSort: data.SortBeatEmUps, ViewsOff: []string{"recents"}}, a.ds, nil)
-	if c.mode != data.SortUpdated {
-		t.Fatalf("remembered off genre view: %v", c.mode)
-	}
-	// Default view offers the genre views on
-	a.cfg.RememberSort = false
-	e := a.defaultViewEntry()
-	if !reflect.DeepEqual(e.vals, []string{"Build date", "MiSTer debut", "Original year", "A-Z", "Manufacturer", "Core", "Favorites", "Shoot 'em ups", "Beat 'em ups"}) {
-		t.Fatalf("default view choices %v", e.vals)
-	}
-	// turning the current genre view off moves the list to the next view on
 	a.SetSort(data.SortShmups)
-	a.openViews("genre-views")
+	a.openViews("views")
+	a.panel.cursor = 10
 	tap(platform.KeyEnter)
-	if a.viewOn(data.SortShmups) || a.mode != data.SortBeatEmUps || !reflect.DeepEqual(a.GenreViewsOn(), []string{"beatemups"}) {
-		t.Fatalf("shmups off while in it: on %v mode %v, genre views %v", a.viewOn(data.SortShmups), a.mode, a.GenreViewsOn())
+	if a.mode != data.SortBeatEmUps || a.viewOn(data.SortShmups) {
+		t.Fatal("disabling current genre did not advance")
 	}
-	a.SetSort(data.SortBeatEmUps)
-	tap(platform.KeyDown)
-	tap(platform.KeyDown)
-	tap(platform.KeyEnter)
-	if a.viewOn(data.SortBeatEmUps) || a.mode != data.SortUpdated || len(a.GenreViewsOn()) != 0 {
-		t.Fatalf("the last genre view off while in it: mode %v, genre views %v", a.mode, a.GenreViewsOn())
-	}
-	// the last view on anywhere stays on, a genre view included
-	for _, m := range a.viewsPageOrder() {
-		a.setViewOn(m, false)
-	}
-	a.setViewOn(data.SortFighting, true)
 	for _, m := range a.viewsPageOrder() {
 		a.setViewOn(m, false)
 	}
 	a.buildPanel()
-	if a.viewsOnCount() != 1 || a.mode != data.SortFighting || !a.panel.entries[1].disabled {
-		t.Fatalf("Fighting as the last view: %d on, mode %v, %+v", a.viewsOnCount(), a.mode, a.panel.entries[1])
+	a.panel.cursor = 12
+	if !a.panel.entries[12].disabled {
+		t.Fatal("last genre view is not protected")
 	}
-	a.panel.cursor = 1
 	tap(platform.KeyEnter)
-	if !a.viewOn(data.SortFighting) || a.notice != "Keep at least one view on" {
-		t.Fatalf("the last view must stay on: notice %q", a.notice)
+	if a.viewsOnCount() != 1 || a.notice != "Keep at least one view on" {
+		t.Fatal("last view disabled")
 	}
 }

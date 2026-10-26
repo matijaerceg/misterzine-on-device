@@ -32,7 +32,7 @@ func TestFavoritesModeLifecycle(t *testing.T) {
 	if len(a.view) != 0 || a.screen != ScreenList || a.emptyListMessage() != "No favorites yet" {
 		t.Fatal("removing last favorite did not return to empty favorites view")
 	}
-	a.actList(platform.KeySpace)
+	chooseNextView(a)
 	if a.mode != data.SortUpdated || len(a.view) != 3 {
 		t.Fatal("favorites leaked into next mode")
 	}

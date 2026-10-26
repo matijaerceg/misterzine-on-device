@@ -437,8 +437,8 @@ func TestYearSortOrderAndJumps(t *testing.T) {
 		t.Fatal("Y must walk Updated, Debut, Year, A-Z, Favorites")
 	}
 	a := New(Config{PhysW: 320, PhysH: 240, Now: func() time.Time { return clock }, TimerNow: func() time.Time { return clock }}, ds, nil)
-	a.actList(platform.KeySpace)
-	a.actList(platform.KeySpace)
+	chooseNextView(a)
+	chooseNextView(a)
 	if a.Sort() != data.SortYear || a.CursorKey() != "a" {
 		t.Fatalf("two presses reach the year order and keep the row: %v %q", a.Sort(), a.CursorKey())
 	}

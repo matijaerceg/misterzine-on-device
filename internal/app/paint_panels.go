@@ -588,12 +588,10 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Adult games, as MAME's category list marks them. Pixelate: blocks over their shots. Hide: off the list, search and screensaver."},
 		{text: "Filter by rotation", kind: "filter-rotation", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.FilterRotation()],
 			help: "Show only games made for the current orientation (INI or manual); unknowns hidden. Off restores manual filters."},
-		{text: "Views (" + a.viewsSummary() + ")", kind: "views", opensPage: true,
-			help: "Which views " + a.btn("Y") + " cycles through: build date, MiSTer debut, original year, A-Z, manufacturer, core, Favorites, Recents (launches from here). " + a.btn("A") + " opens the list."},
+		{text: "Available views (" + a.viewsSummary() + ")", kind: "views", opensPage: true,
+			help: "Choose which standard and genre views appear in the view chooser. " + a.btn("A") + " opens the list."},
 		{text: "Remember last view", kind: "remember-sort", child: true, vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.RememberSort()],
 			help: "On: reopen in the last view used. Off: use Default view. Takes effect next time MisterZine opens."},
-		{text: "Genre views (" + a.genreViewsSummary() + ")", kind: "genre-views", opensPage: true,
-			help: "Extra views of one genre each, A-Z: Shoot 'em ups, Fighting, Platformers, Racing and so on. " + a.btn("Y") + " reaches the ones on after Recents. " + a.btn("A") + " opens the list."},
 		{text: "Title font", kind: "title-font", vals: []string{"normal", "narrow", "narrow tall"}, idx: map[string]int{"normal": 0, "narrow": 1, "tall": 2}[a.TitleFont()],
 			help: "Narrow fonts fit a third more title; tall (default) matches the body font height. Normal: body font."},
 		{text: "Art type", kind: "list-shot", vals: listArtTypes, idx: map[string]int{"gameplay": 0, "title": 1, "flyer": 2}[a.ListShot()],
@@ -1031,7 +1029,7 @@ var optionsActs = map[string]string{
 	"rom-report":         "Info",
 	"show-beta-features": "Toggle",
 	"refresh":            "Refresh", "update": "Run", "update-app": "Run", "update-result": "Open", "rescan": "Rescan", "clearimg": "Clear",
-	"views": "Open", "genre-views": "Open", "saver-options": "Open", "saver-preview": "Preview", "screensaver": "Preview", "launch-transition": "Preview", "saver-style": "Preview", "saver-bright": "Preview", "saver-dim": "Preview", "saver-info": "Preview",
+	"views": "Open", "saver-options": "Open", "saver-preview": "Preview", "screensaver": "Preview", "launch-transition": "Preview", "saver-style": "Preview", "saver-bright": "Preview", "saver-dim": "Preview", "saver-info": "Preview",
 	"inset": "Edit", "troubleshooting": "Open", "credits": "Open", "quit": "Quit",
 }
 
@@ -1379,7 +1377,7 @@ func (a *App) togglePanel() bool {
 		a.buildPanel()
 		a.all = true
 		return true
-	case "views", "genre-views":
+	case "views":
 		a.openViews(e.kind)
 		return true
 	case "rom-report":

@@ -185,16 +185,19 @@ core and the local row steps aside for it, taking its favorite, chosen
 version and launch history along. If a game file on your card is not in the
 list and you cannot see why, Options -> Troubleshooting -> Send a report lists
 every file MisterZine leaves out, with the reason.
-Options -> Views -> Remember last view is on by default; turn it off to choose
-a Default view for each new visit (Core updated initially).
-Y cycles Updated, Debut, Year, Alphabetical, Manufacturer, Core, then
-Favorites; the top bar names the order as core updated, MiSTer debut, original
-year, A-Z, manufacturer, core or Favorites A-Z. Options -> Views can leave any
-of them out of the cycle.
-With Recents on there, Recents follows Favorites: the games launched from
-MisterZine, latest launch first, with the launch date in the date column
-and L/R jumping between launch months. The genre views from Options ->
-Genre views, described below, come after Recents.
+Options -> List -> Remember last view is on by default; turn it off to choose
+a Default view for each new visit (Build date initially).
+Y opens **Choose view**, a popup over the list, with the current view marked
+and highlighted. Up/Down browses the enabled views; A selects and B cancels.
+Browsing or cancelling keeps the current game, search and filters unchanged.
+The **Edit available views...** row stays at the bottom of the popup; Up from
+the first view reaches it directly. It opens the same checkbox editor as
+**Options -> List -> Available views**, and B returns to the updated chooser.
+Standard views come first: Build date, MiSTer debut, Original year, A-Z,
+Manufacturer, Core, Favorites and Recents. Enabled genre views follow under
+Genres. Long lists scroll, keeping the selected entry visible.
+Recents lists the games launched from MisterZine, latest launch first, with
+the launch date in the date column and L/R jumping between launch months.
 Year orders games
 by their original release year, newest first, with titles alphabetical within
 a year and unknown or uncertain years last; a header line names each year,
@@ -222,9 +225,8 @@ scrolled off the top keeps its name pinned on the top line until its last
 row has gone.
 Favorites shows only your starred entries in alphabetical order, with the same
 letter jumps as A-Z. Star a game with Y in Details or Select + A on the list.
-Fifteen genre views, one per catalogue genre and off until Options -> Genre
-views turns them on, follow Favorites and Recents in the cycle, in the order
-of that page: Shoot 'em ups, Fighting, Beat 'em ups, Run 'n guns, Platformers,
+Fifteen genre views, one per catalogue genre and off until Available views
+turns them on, follow the standard views in the chooser: Shoot 'em ups, Fighting, Beat 'em ups, Run 'n guns, Platformers,
 Arena shooters, Fixed shooters, Rail shooters, Light gun, Racing, Maze, Puzzle,
 Sports, Tabletop & quiz and Other. Each lists the games of that one genre, as
 the catalogue labels them, A-Z exactly like the A-Z view: the same letter
@@ -260,7 +262,7 @@ still be current. Routine checks and data age stay out of the list's top bar;
 connection failures and app-update availability remain visible.
 
 Type a title in the list to search. Matching ignores case and spaces and works
-together with Filters. Space changes the view until a search has begun, then
+together with Filters. Space opens the view chooser until a search has begun, then
 it types, on a keyboard with a Button mapping profile too. Backspace edits, and held it erases quickly after the
 Hold delay; Esc/B clears the query before B opens Options. Keyboard find currently uses a US layout. Search clears on restart;
 filter choices are saved.
@@ -280,7 +282,7 @@ arcade controls. It is free and needs no beta switch or code.
 | A | Enter | details | artwork | | toggle a value; open/close a heading | run action |
 | B | Esc | Options / clear search | back | back | back | back |
 | X | Tab | Filters | | | back to the list | |
-| Y | Space | change view | favorite | | only/all | |
+| Y | Space | choose view | favorite | | only/all | |
 | Start | gamepad Start | launch remembered version | launch selected version | launch selected version | | |
 | Select (held) | | + Y: Layout, + X: Art type, + Left/Right: rotation, + A: favorite | | | | |
 | Menu | | Options; held 2 s: quit MisterZine (or quit at once: Options -> Menu button) | Options | Options | Options | back to the screen it was opened over |
@@ -495,8 +497,8 @@ installation and core version, not a guarantee of playability.
 Options is in five groups, each under a grey heading with a small mark and
 a rule and an expansion arrow: Data (a diskette: Refresh data now, Run Update All, Last update
 result, Rescan card, Prefetch shots, Clear image cache), List (stacked
-lines: Sources, Filter by rotation, Views (with Remember last view and its
-conditional Default view beneath it), Genre views, Title font,
+lines: Sources, Filter by rotation, Available views (with Remember last view and its
+conditional Default view beneath it), Title font,
 Art type, Date format, Layout), Display (a monitor: rotation,
 screensaver delay, style, brightness and info, safe zone, HDMI picture), Controls
 (an arcade stick: Button mapping, Menu button, Scroll speed, Hold
@@ -573,7 +575,7 @@ and last row. Rows marked ↗ open another screen or editor.
   filters remain active; saved manual rotation filters are temporarily
   superseded and restored when this option is turned off. Filters shows the
   active rule, and it follows the interface when the rotation changes.
-- **Remember last view:** a child of Views, on by default, including after
+- **Remember last view:** a child of Available views, on by default, including after
   upgrading. Reopens in the view you left. Turning it off reveals **Default
   view** one level further in: choose the enabled view used at startup.
   Core updated is the initial default; a disabled default falls back to the
@@ -582,29 +584,17 @@ and last row. Rows marked ↗ open another screen or editor.
   reopens after a game or a restart. Returning from Options, Details or Filters,
   waking the screensaver, and rescanning keep the current view. Return after
   game also tries to select the game just played within the starting view.
-- **Views:** which list orders Y cycles through, as a checkbox page: core
-  updated, MiSTer debut, original year, A-Z, Manufacturer, Core, Favorites and
-  Recents.
-  Everything is on except Recents by default. A toggles a view; the last one
-  on cannot be turned off (it is greyed, and A there says so), and turning off
-  the view you are in moves the list to the next one on. The Options row
-  counts them, such as "Views (7 of 8)".
-  Recents lists the games launched from MisterZine, latest first, each once
-  with its last launch date, up to 100; search and filters apply. That history
-  is MisterZine's own, kept in its state.json whether the view is on or off,
-  and separate from MiSTer's recent lists.
-- **Genre views:** the fifteen genre views, one per catalogue genre (Shoot
-  'em ups, Fighting, Beat 'em ups, Run 'n guns, Platformers, Arena shooters,
-  Fixed shooters, Rail shooters, Light gun, Racing, Maze, Puzzle, Sports,
-  Tabletop & quiz, Other) as a checkbox page like Views, each off by default.
-  The page is longer than the screen and scrolls like the other long pages.
-  A toggles one; a view turned on joins the Y cycle after Favorites and
-  Recents, in the page's order, and turning off the view you are in moves the
-  list to the next one on. The row counts them, such as "Genre views (0 of
-  15)". They are not
-  listed on the Views page, and the last view on anywhere, a genre view
-  included, cannot be turned off. The choice is saved with the other view
-  settings.
+- **Available views:** the shared checkbox editor for the Y chooser, also
+  reached through its **Edit available views...** row. Standard views and
+  Genres have separate headings on the same page. A toggles a view; B returns
+  to the entry point. Standard views start on except Recents; all fifteen
+  genre views start off. Existing saved choices carry over.
+  The last enabled view cannot be disabled. Disabling the current view moves
+  the list to the next enabled view. The Options row counts both families,
+  such as "Available views (7 of 23)".
+  Recents keeps up to 100 games launched from MisterZine, latest first, each
+  once. Its history remains saved even while the view is disabled. Genre
+  views list one genre A-Z, with the same search and filters as other views.
 - **Title font:** narrow tall by default, a condensed proportional font that
   fits about a third more of each title on a row, made one pixel taller so
   its capitals and lowercase match the body font's height. Narrow is the

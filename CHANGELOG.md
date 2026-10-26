@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Y now opens a view chooser over the game list. Browse enabled views with Up/Down, select with A or cancel with B. The current view is marked; the fixed Edit available views row opens the same consolidated standard/genre checkbox editor as Options -> List -> Available views. Existing choices and startup settings carry over.
+
 ## v1.2.23 — 2026-10-26
 
 - Options -> List -> **Mature games** now starts on **Hide**, as the misterzine.fyi release tracker does since 2026-10-25: games MAME's category list marks as mature, plus the catalogue's own additions, leave the list, search, the counts and the screensaver until Show or Pixelate is picked. Hide is now the unset value in `settings.json` and Show is saved as `"mature": "show"`. Show was the unset value before, so a card that had chosen Show moves to Hide once, like a card that never chose; a saved Pixelate or Hide is kept.

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
-	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
 
 func TestFacetCountsRespectOtherFiltersAndSearch(t *testing.T) {
@@ -151,7 +150,7 @@ func TestAlphabeticalSortCyclePreservesSelectionAndFilters(t *testing.T) {
 	a.SetFilters(data.Filters{FavOnly: true})
 	a.MoveToKey("z")
 	for _, mode := range []data.SortMode{data.SortDebut, data.SortYear, data.SortAlphabetical, data.SortMaker, data.SortCore, data.SortFavorites, data.SortUpdated} {
-		a.actList(platform.KeySpace)
+		chooseNextView(a)
 		if a.Sort() != mode || a.CursorKey() != "z" || !a.filters.FavOnly {
 			t.Fatal("sort cycle changed selection or filters")
 		}
@@ -169,9 +168,9 @@ func TestAlphabeticalSortCyclePreservesSelectionAndFilters(t *testing.T) {
 		}
 	}
 	a.setSearch("Game")
-	a.actList(platform.KeySpace)
-	a.actList(platform.KeySpace)
-	a.actList(platform.KeySpace)
+	chooseNextView(a)
+	chooseNextView(a)
+	chooseNextView(a)
 	if a.Sort() != data.SortAlphabetical || a.Search() != "Game" || len(a.view) != 2 {
 		t.Fatal("sort lost search")
 	}

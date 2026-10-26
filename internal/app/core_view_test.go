@@ -47,7 +47,7 @@ func TestCoreView(t *testing.T) {
 	var seen []data.SortMode
 	for i := 0; i < 7; i++ {
 		seen = append(seen, a.mode)
-		tap(platform.KeySpace)
+		chooseNextView(a)
 	}
 	want := []data.SortMode{data.SortUpdated, data.SortDebut, data.SortYear, data.SortAlphabetical, data.SortMaker, data.SortCore, data.SortFavorites}
 	if !reflect.DeepEqual(seen, want) || a.mode != data.SortUpdated {
@@ -86,11 +86,11 @@ func TestCoreView(t *testing.T) {
 	a.Paint()
 	// Options -> Views has the Core view after Manufacturer, on for everyone
 	e := viewsRow(t, a, tap)
-	if e.text != "Views (7 of 8)" || !strings.Contains(e.help, "manufacturer, core, Favorites") {
+	if e.text != "Available views (7 of 23)" || !strings.Contains(e.help, "standard and genre views") {
 		t.Fatalf("Views row %q, help %q", e.text, e.help)
 	}
 	a.openViews("views")
-	if len(a.panel.entries) != 8 || a.panel.entries[5].value != "core" || a.panel.entries[5].text != "Core" || !a.panel.entries[5].checked {
+	if len(a.panel.entries) != 25 || a.panel.entries[6].value != "core" || a.panel.entries[6].text != "Core" || !a.panel.entries[6].checked {
 		t.Fatalf("Views page %+v", a.panel.entries)
 	}
 	// taking the current view out moves the list on to Favorites

@@ -73,7 +73,7 @@ For configuration by hand, see [installation details](docs/USER_GUIDE.md#install
 | A | Open details |
 | Start | Launch the main version |
 | X | Filters |
-| Y | Cycle latest update, MiSTer debut, alphabetical, and Favorites |
+| Y | Open the view chooser (A selects, B cancels) |
 | B | Options |
 | Menu | Return to MiSTer's main menu |
 

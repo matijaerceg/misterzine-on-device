@@ -39,9 +39,9 @@ scenarios = [
     ["-rot", "none", "-out", "out/h"],
     ["-rot", "left", "-out", "out/t", "-logical"],
     ["-out", "out/filters-h", "-script",
-     "space*3; home; shot alphabetical; tab; pagedown*4; right; shot arcade; end; right; shot controls-players"],
+     "space; home; down*3; enter; home; shot alphabetical; tab; pagedown*4; right; shot arcade; end; right; shot controls-players"],
     ["-rot", "left", "-logical", "-out", "out/filters-t", "-script",
-     "space*3; home; shot alphabetical; tab; pagedown*4; right; shot arcade; end; right; shot controls-players"],
+     "space; home; down*3; enter; home; shot alphabetical; tab; pagedown*4; right; shot arcade; end; right; shot controls-players"],
     ["-update-state", "testdata/update-running.json", "-out", "out/update-h",
      "-script", "shot running; press back; wait 1000; shot cancel-hold; release back; hold back 2200; shot cancel"],
     ["-update-state", "testdata/update-running.json", "-rot", "left", "-logical",
@@ -63,15 +63,15 @@ scenarios = [
     # closed line; A opens it onto its members, a member's A is Details as
     # ever, and A on the umbrella closes it again. Caveman Ninja shows A-Z.
     ["-show-beta", "-out", "out/umbrella-h", "-script",
-     "type turtles; shot collapsed; enter; shot expanded; down; shot member; enter; shot member-details; back; up; enter; shot closed-again; back; space*3; type caveman; shot alphabetical"],
+     "type turtles; shot collapsed; enter; shot expanded; down; shot member; enter; shot member-details; back; up; enter; shot closed-again; back; space; home; down*3; enter; type caveman; shot alphabetical"],
     ["-show-beta", "-rot", "left", "-logical", "-out", "out/umbrella-t", "-script",
-     "type turtles; shot collapsed; enter; shot expanded; down; shot member; enter; shot member-details; back; up; enter; shot closed-again; back; space*3; type caveman; shot alphabetical"],
+     "type turtles; shot collapsed; enter; shot expanded; down; shot member; enter; shot member-details; back; up; enter; shot closed-again; back; space; home; down*3; enter; type caveman; shot alphabetical"],
     # Options -> Version counts on, the last List row while groups are on:
     # the umbrella's name is followed by its (2)
     ["-show-beta", "-out", "out/umbrella-count-h", "-script",
-     "back; home; pagedown; right; down*13; shot option; right; shot option-on; back; type turtles; shot collapsed; enter; shot expanded"],
+     "back; home; pagedown; right; down*12; shot option; right; shot option-on; back; type turtles; shot collapsed; enter; shot expanded"],
     ["-show-beta", "-rot", "left", "-logical", "-out", "out/umbrella-count-t", "-script",
-     "back; home; pagedown; right; down*13; shot option; right; shot option-on; back; type turtles; shot collapsed; enter; shot expanded"],
+     "back; home; pagedown; right; down*12; shot option; right; shot option-on; back; type turtles; shot collapsed; enter; shot expanded"],
     # one member the last visit has not seen: the closed umbrella carries its
     # green date, which the member keeps once the umbrella opens
     # Core batches: under Build date the games one core build shipped
@@ -80,9 +80,9 @@ scenarios = [
     # same-day debuts; a search keeps every match under its batch, open,
     # until A closes one.
     ["-show-beta", "-out", "out/batch-h", "-script",
-     "down*22; shot collapsed; enter; shot expanded; down; enter; shot member-details; back; up; enter; shot closed-again; space; shot debut; type alien; shot search; enter; shot search-closed"],
+     "down*22; shot collapsed; enter; shot expanded; down; enter; shot member-details; back; up; enter; shot closed-again; space; down; enter; shot debut; type alien; shot search; enter; shot search-closed"],
     ["-show-beta", "-rot", "left", "-logical", "-out", "out/batch-t", "-script",
-     "down*22; shot collapsed; enter; shot expanded; down; enter; shot member-details; back; up; enter; shot closed-again; space; shot debut; type alien; shot search; enter; shot search-closed"],
+     "down*22; shot collapsed; enter; shot expanded; down; enter; shot member-details; back; up; enter; shot closed-again; space; down; enter; shot debut; type alien; shot search; enter; shot search-closed"],
     ["-show-beta", "-unseen", "teenage-mutant-ninja-turtles-turtles-in-time", "-out", "out/umbrella-dot-h", "-script",
      "type turtles; shot collapsed; enter; shot expanded"],
     ["-show-beta", "-unseen", "teenage-mutant-ninja-turtles-turtles-in-time", "-rot", "left", "-logical", "-out", "out/umbrella-dot-t", "-script",
@@ -122,18 +122,18 @@ for rotation in ([], ["-rot", "left", "-logical"]):
         scenarios.append([*rotation, "-inset", str(inset), "-status", "missing",
                           "-out", f"out/browsing-{orientation}-{inset}", "-script",
                           "back; home; pagedown; right; down*7; shot remember-on; left; shot remember-off; back; "
-                          "space*3; home; pagedown; shot letter-jump; enter; enter; start; shot launch-failure; "
+                          "space; home; down*3; enter; home; pagedown; shot letter-jump; enter; enter; start; shot launch-failure; "
                           "back; back; wait 3200; end; pageup; pagedown; shot last-letter; "
-                          "space*4; home; pagedown; shot updated-month; wait 2200; shot updated-month-settled; "
-                          "space; home; pagedown; shot debut-month; wait 2200; shot debut-month-settled; "
-                          "space; home; shot year-top; pagedown; shot year-jump; wait 2200; shot year-settled"])
+                          "space; home; enter; home; pagedown; shot updated-month; wait 2200; shot updated-month-settled; "
+                          "space; down; enter; home; pagedown; shot debut-month; wait 2200; shot debut-month-settled; "
+                          "space; down; enter; home; shot year-top; pagedown; shot year-jump; wait 2200; shot year-settled"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):
         scenarios.append([*rotation, "-inset", str(inset), "-app-update", "v1.0.6",
                           "-out", f"out/new-modes-{orientation}-{inset}", "-script",
                           "shot update-notice; back; right; down*2; shot update-option; back; "
-                          "enter; space; back; space*6; wait 2200; shot favorites; tab; shot counts"])
+                          "enter; space; back; space; home; down*6; enter; wait 2200; shot favorites; tab; shot counts"])
         # Rescan card: a rescan that changed nothing, and what one changed
         scenarios.append([*rotation, "-inset", str(inset), "-scan-result",
                           "-out", f"out/card-scan-{orientation}-{inset}", "-script", "shot result"])
@@ -164,7 +164,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     scenarios.append([*rotation, "-inset", "40",
                       "-out", f"out/center-scroll-{orientation}", "-script",
-                      "space*3; home; down*12; shot middle; end; up*4; shot bottom; "
+                      "space; home; down*3; enter; home; down*12; shot middle; end; up*4; shot bottom; "
                       "home; shot top; tab; pagedown*4; right; shot section; left; shot closed; "
                       "right; down*2; right; shot years; left; left; shot nested-closed; "
                       "pagedown; shot next-section; pageup; shot previous-section"])
@@ -176,13 +176,13 @@ for rotation in ([], ["-rot", "left", "-logical"]):
         # a Filters heading
         scenarios.append([*rotation, "-inset", str(inset),
                           "-out", f"out/list-polish-{orientation}-{inset}", "-script",
-                          "type gradius; shot beta-tall; back; back; home; pagedown; right; down*9; shot title-font; left; back; "
-                          "type gradius; shot beta-narrow; back; back; home; pagedown; right; down*9; left; back; "
-                          "type gradius; shot beta-normal; back; back; home; pagedown; right; down*9; right; right; "
-                          "down; shot list-shots; right; back; shot title-shot; back; home; pagedown; right; down*10; left; "
-                          "down; right; shot date-dd-mm; back; shot list-dd-mm; back; home; pagedown; right; down*11; right; shot date-mon-d; back; shot list-mon-d; "
-                          "back; home; pagedown; right; down*11; right; shot date-d-mon; back; shot list-d-mon; back; home; pagedown; right; down*11; right; shot date-yymmdd; back; shot list-yymmdd; "
-                          "back; home; pagedown; right; down*11; left*4; back; "
+                          "type gradius; shot beta-tall; back; back; home; pagedown; right; down*8; shot title-font; left; back; "
+                          "type gradius; shot beta-narrow; back; back; home; pagedown; right; down*8; left; back; "
+                          "type gradius; shot beta-normal; back; back; home; pagedown; right; down*8; right; right; "
+                          "down; shot list-shots; right; back; shot title-shot; back; home; pagedown; right; down*9; left; "
+                          "down; right; shot date-dd-mm; back; shot list-dd-mm; back; home; pagedown; right; down*10; right; shot date-mon-d; back; shot list-mon-d; "
+                          "back; home; pagedown; right; down*10; right; shot date-d-mon; back; shot list-d-mon; back; home; pagedown; right; down*10; right; shot date-yymmdd; back; shot list-yymmdd; "
+                          "back; home; pagedown; right; down*10; left*4; back; "
                           "type galaga; down*2; enter; right*2; shot alt-start; wait 1200; shot alt-mid; wait 1200; shot alt-end; "
                           "down; shot info-page; wait 400; shot info-sliding; wait 2000; shot info-paged; "
                           "back; tab; shot heading; enter; shot heading-open; enter; shot heading-closed; "
@@ -202,15 +202,15 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     # from the Views page while the list is in it
     scenarios.append([*rotation, "-recents", "9",
                       "-out", f"out/recents-{orientation}", "-script",
-                      "space*7; shot recents; home; pagedown; shot month-jump; wait 2200; "
-                      "back; home; pagedown; right; down*6; shot option; enter; end; shot views-on; enter; back; back; shot off"])
+                      "space; home; down*7; enter; shot recents; home; pagedown; shot month-jump; wait 2200; "
+                      "back; home; pagedown; right; down*6; shot option; enter; down*7; shot views-on; enter; back; back; shot off"])
     # the Genre views row and page (fifteen rows, scrolled to its end), one
     # turned on, and the view it adds to the cycle after Favorites (the
     # harness catalogue carries no genre labels, so the view is empty)
     scenarios.append([*rotation,
                       "-out", f"out/genre-views-{orientation}", "-script",
-                      "back; home; pagedown; right; down*8; shot option; enter; shot page; end; shot page-end; home; enter; shot page-on; back; shot option-on; back; "
-                      "space*7; shot shmups"])
+                      "back; home; pagedown; right; down*6; shot option; enter; shot page; end; shot page-end; home; down*8; enter; shot page-on; back; shot option-on; back; "
+                      "space; end; up; enter; shot shmups"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):
@@ -271,13 +271,13 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     scenarios.append([*rotation,
                       "-out", f"out/quick-{orientation}", "-script",
                       "press select; shot chord-legend; space; shot layout-split; space; shot layout-picture; space; shot layout-text; space; "
-                      "tab; shot shots-title; enter; shot favorite-added; release select; shot released; space; shot sorted"])
+                      "tab; shot shots-title; enter; shot favorite-added; release select; shot released; space; down; enter; shot sorted"])
     # a notice gives way as soon as a press changes the bar under it: Y
     # right after Select+Y names the new view, a letter typed over a jump's
     # month shows the search
     scenarios.append([*rotation,
                       "-out", f"out/notice-yield-{orientation}", "-script",
-                      "press select; space; release select; shot layout; space; shot view; pagedown; shot month; type g; shot find"])
+                      "press select; space; release select; shot layout; space; down; enter; shot view; pagedown; shot month; type g; shot find"])
     # the layout motion steps once per displayed frame, so 100 ms after
     # Select+Y is exactly halfway (step 6 of 12), and its last frame is the
     # settled layout
@@ -292,7 +292,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     # the Maker order with its header lines, a maker jump, and the Views page
     scenarios.append([*rotation,
                       "-out", f"out/maker-{orientation}", "-script",
-                      "space*4; shot maker; pagedown*3; shot maker-jump; down*2; shot maker-rows; home; down*48; shot maker-pinned; "
+                      "space; home; down*4; enter; shot maker; pagedown*3; shot maker-jump; down*2; shot maker-rows; home; down*48; shot maker-pinned; "
                       "back; home; pagedown; right; down*6; shot options-views; enter; shot views; down*4; enter; shot views-off; "
                       "up*4; enter; down; enter; down; enter; down; enter; down*2; enter; down; enter; shot views-last; "
                       "enter; back; back"])
@@ -301,12 +301,12 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     # the Views page and as the default view
     scenarios.append([*rotation,
                       "-out", f"out/core-{orientation}", "-script",
-                      "space*5; shot core; pagedown*3; shot core-jump; home; down*12; shot core-pinned; end; shot single-game; "
+                      "space; home; down*5; enter; shot core; pagedown*3; shot core-jump; home; down*12; shot core-pinned; end; shot single-game; "
                       "back; home; pagedown; right; down*6; shot options-views; enter; shot views; back; down; left; down; right*5; shot default-core"])
     # with the non-arcade cores grouped by kind, in the picture and text layouts
     scenarios.append([*rotation, "-show-non-arcade", "-layout", "picture",
                       "-out", f"out/core-layouts-{orientation}", "-script",
-                      "space*5; shot picture; end; pageup*2; shot picture-console; "
+                      "space; home; down*5; enter; shot picture; end; pageup*2; shot picture-console; "
                       "press select; space; release select; wait 2200; shot text-console"])
     # Options -> Credits: the row, the page from its top, its end and the way back
     scenarios.append([*rotation,
@@ -316,8 +316,8 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     # pinned on the top line while its rows run past it, the unknown years
     scenarios.append([*rotation,
                       "-out", f"out/headers-{orientation}", "-script",
-                      "space*3; home; down*30; shot letter-pinned; pagedown*2; shot letter-jump; "
-                      "space*6; home; down*30; shot year-pinned; end; up*2; shot year-unknown"])
+                      "space; home; down*3; enter; home; down*30; shot letter-pinned; pagedown*2; shot letter-jump; "
+                      "space; home; down*2; enter; home; down*30; shot year-pinned; end; up*2; shot year-unknown"])
     # over Details, the Menu button option row itself, closing Options back
     # onto Details and Filters, and the held-Menu hint over Filters (the
     # screen stays put once the hold engages) with its progress line
@@ -331,7 +331,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):
         scenarios.append([*rotation, "-inset", str(inset), "-out", f"out/option-samples-{orientation}-{inset}", "-script",
-                          "back; home; pagedown; right; down*9; shot font; left; shot font-narrow; left; shot font-normal; "
+                          "back; home; pagedown; right; down*8; shot font; left; shot font-narrow; left; shot font-normal; "
                           "home; pagedown*3; right; down*3; shot speed; wait 200; shot speed-moving; down; shot smooth-on; wait 17; shot smooth-moving; left; shot smooth-off; down; shot delay; "
                           "wait 250; shot delay-short; wait 400; shot delay-reverse; down; shot dismissed"])
         # the 10 Hz scroll speed, and the smooth and hold-delay samples at its pace
@@ -356,7 +356,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     # Options -> Layout: the four diagrams in the help box, the chosen one framed
     scenarios.append([*rotation, "-out", f"out/layout-previews-{orientation}", "-script",
-                      "back; home; pagedown; right; down*12; shot list; right; shot split; right; shot picture; right; shot text; down; shot dismissed"])
+                      "back; home; pagedown; right; down*11; shot list; right; shot split; right; shot picture; right; shot text; down; shot dismissed"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):
@@ -414,5 +414,12 @@ for rotation in ([], ["-rot", "left", "-logical"]):
         scenarios.append([*rotation, "-data", "testdata/media.json", "-images", "testdata/images",
                           "-list-shot", art, "-out", f"out/media-{art}-{orientation}", "-script",
                           "shot list; wait 80; shot next-frame; enter; shot details; wait 80; shot details-next; enter; shot artwork; right; shot next-art; back; back; down; shot fallback"])
+for rotation in ([], ["-rot", "left", "-logical"]):
+    orientation = "t" if rotation else "h"
+    for inset in (0, 40):
+        scenarios.append([*rotation, "-inset", str(inset), "-genre-views",
+                          "shmups,fighting,beatemups,runnguns,platformers,arenashooters,fixedshooters,railshooters,lightgun,racing,maze,puzzle,sports,tabletopquiz,other",
+                          "-out", f"out/view-chooser-{orientation}-{inset}", "-script",
+                          "space; shot open; end; shot edit; up; shot last; enter; shot chosen; space; shot current; end; enter; shot editor; end; shot editor-end; enter; back; shot updated; back; shot cancelled; back; home; pagedown; right; down*6; enter; shot options-editor"])
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)

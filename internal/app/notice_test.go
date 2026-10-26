@@ -62,9 +62,11 @@ func TestNoticeGivesWayToTheNewView(t *testing.T) {
 	if a.notice != "Layout: split" || a.Sort() != view {
 		t.Fatalf("Select+Y: notice %q, view %v", a.notice, a.Sort())
 	}
-	if !k.tap(platform.KeySpace) || a.Sort() == view || a.notice != "" {
+	if !k.tap(platform.KeySpace) || a.screen != ScreenViewChooser || a.notice != "" {
 		t.Fatalf("Y: view %v -> %v, notice %q", view, a.Sort(), a.notice)
 	}
+	k.tap(platform.KeyDown)
+	k.tap(platform.KeyEnter)
 	if got, want := a.statusBar().view, statusViews[a.Sort()]; got != want {
 		t.Fatalf("the bar reads %q, want %q", got, want)
 	}
@@ -249,6 +251,8 @@ func TestMenuHoldHintOutlastsTheBar(t *testing.T) {
 	view := a.Sort()
 	*k.now = k.now.Add(menuHint)
 	k.tap(platform.KeySpace)
+	k.tap(platform.KeyDown)
+	k.tap(platform.KeyEnter)
 	if a.Sort() == view || a.notice != menuHoldNotice {
 		t.Fatalf("Y under the hold: view %v -> %v, notice %q", view, a.Sort(), a.notice)
 	}

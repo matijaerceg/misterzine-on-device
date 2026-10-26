@@ -32,16 +32,17 @@ const (
 	ScreenUpdate
 	ScreenTroubleshooting
 	ScreenScan
-	ScreenViews   // Options -> Views: the checkbox page of the Y cycle
+	ScreenViews   // Options -> Available views: shared checkbox editor
 	ScreenCredits // Options -> Credits: who made it, what it builds on, the early adopters
 	ScreenSaverOptions
 	ScreenMembers // a page the members' build draws and drives (members.go); the free build never opens it
 	ScreenControls
 	ScreenAccess
+	ScreenViewChooser // Choose an enabled view over the main list
 )
 
 func (s Screen) String() string {
-	return [...]string{"list", "details", "screen", "filter", "options", "calibrate", "update", "troubleshooting", "scan", "views", "credits", "screensaver-options", "members", "controls", "access"}[s]
+	return [...]string{"list", "details", "screen", "filter", "options", "calibrate", "update", "troubleshooting", "scan", "views", "credits", "screensaver-options", "members", "controls", "access", "view-chooser"}[s]
 }
 
 // Config is what the app needs from its host.
@@ -169,9 +170,9 @@ type Config struct {
 	// every view, the counts and the screensaver), MatureShow or
 	// MaturePixelate (screenshots of rows marked mature are pixelated).
 	Mature string
-	// ViewsOff names the views Options -> Views left out of the Y cycle
+	// ViewsOff names the standard views Available views leaves out of the chooser
 	// (data.SortMode.Name); a fresh install lists only "recents".
-	// GenreViewsOn names the genre views Options -> Genre views put in;
+	// GenreViewsOn names the genres enabled in Available views;
 	// none to start.
 	ViewsOff     []string
 	GenreViewsOn []string
@@ -281,8 +282,9 @@ type App struct {
 	sinceAdded         int                    // rows added since the last visit, over the enabled catalogue
 	sinceUpdated       int                    // rows rebuilt since the last visit, over the enabled catalogue
 	marks              []int                  // every marker line, by the view position it precedes (marks.go)
-	viewsOff           map[data.SortMode]bool // views left out of the Y cycle (views.go)
-	viewsPage          string                 // the Options row the open ScreenViews page belongs to: "views" or "genre-views"
+	viewsOff           map[data.SortMode]bool // views left out of the chooser (views.go)
+	viewChooser        panelState
+	viewsPage          string // editor origin: "views" in Options, or "chooser"
 
 	screen       Screen
 	cursor       int  // index into view
@@ -630,7 +632,7 @@ func (a *App) MoveToKey(k string) {
 	a.all = true
 }
 
-// SetSort switches the sort mode; a view turned off in Options -> Views
+// SetSort switches the sort mode; a view turned off in Available views
 // is refused.
 func (a *App) SetSort(m data.SortMode) {
 	if !a.viewOn(m) || m == a.mode {
@@ -965,7 +967,7 @@ func (a *App) Handle(ev platform.Event) (repaint bool) {
 		return a.handlePadTest(ev)
 	}
 	if ev.Pressed && ev.Text != 0 && a.screen == ScreenList {
-		// Space still sorts before a search begins; while searching it is text.
+		// Space opens the chooser before a search begins; while searching it is text.
 		if ev.Text != ' ' || a.query != "" {
 			if ev.Key == platform.KeySpace {
 				// Main re-types a keyboard's Space on its virtual input as a
@@ -1007,7 +1009,7 @@ func (a *App) Handle(ev platform.Event) (repaint bool) {
 	if ev.Key == platform.KeyMenu {
 		return a.menuButton()
 	}
-	if a.screen == ScreenList || a.screen == ScreenFilter || a.screen == ScreenOptions || a.screen == ScreenViews || a.screen == ScreenCredits || a.screen == ScreenAccess || a.screen == ScreenSaverOptions || a.screen == ScreenMembers {
+	if a.screen == ScreenList || a.screen == ScreenViewChooser || a.screen == ScreenFilter || a.screen == ScreenOptions || a.screen == ScreenViews || a.screen == ScreenCredits || a.screen == ScreenAccess || a.screen == ScreenSaverOptions || a.screen == ScreenMembers {
 		switch ev.Key {
 		case platform.KeyUp, platform.KeyDown, platform.KeyLeft, platform.KeyRight:
 			a.rep.next = ev.At.Add(time.Duration(a.HoldDelay()) * time.Millisecond)
@@ -1083,7 +1085,7 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 		case platform.KeyUp, platform.KeyDown:
 			return repeatPage
 		}
-	case ScreenFilter, ScreenOptions, ScreenViews, ScreenCredits, ScreenAccess, ScreenSaverOptions:
+	case ScreenViewChooser, ScreenFilter, ScreenOptions, ScreenViews, ScreenCredits, ScreenAccess, ScreenSaverOptions:
 		switch k {
 		case platform.KeyUp, platform.KeyDown:
 			return scrollPace(a.cfg.Scroll)
@@ -1273,6 +1275,8 @@ func (a *App) act(k platform.Key) bool {
 			return true
 		}
 		return false
+	case ScreenViewChooser:
+		return a.actViewChooser(k)
 	case ScreenList:
 		return a.actList(k)
 	case ScreenDetails:
@@ -1335,7 +1339,7 @@ func (a *App) actList(k platform.Key) bool {
 		if a.quickHeld() {
 			return a.cycleListLayout()
 		}
-		a.SetSort(a.nextSort())
+		a.openViewChooser()
 		return true
 	case platform.KeyTab:
 		if a.quickHeld() {
@@ -1601,6 +1605,9 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 	} else {
 		c.Fill(c.Rect, pal.Bg)
 		switch a.screen {
+		case ScreenViewChooser:
+			a.paintList(c)
+			a.paintViewChooser(c)
 		case ScreenList:
 			a.paintList(c)
 		case ScreenDetails:

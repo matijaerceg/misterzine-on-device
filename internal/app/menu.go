@@ -1,9 +1,9 @@
 package app
 
 import (
-	"time"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
+	"time"
 )
 
 // menuHold is how long the pad's Menu button must stay down to quit
@@ -208,6 +208,12 @@ func (a *App) paintHoldBar(c *gfx.Canvas) {
 // Troubleshooting -> Options -> back still ends on Details.
 func (a *App) openOptions() {
 	switch a.screen {
+	case ScreenViews:
+		if a.viewsPage == "chooser" {
+			a.optionsFrom, a.optionsKey, a.filterHeld = ScreenViewChooser, "", nil
+		}
+	case ScreenViewChooser:
+		a.optionsFrom, a.optionsKey, a.filterHeld = ScreenViewChooser, "", nil
 	case ScreenList, ScreenDetails, ScreenShot:
 		a.optionsFrom, a.optionsKey, a.filterHeld = a.screen, a.CursorKey(), nil
 	case ScreenFilter:
@@ -226,6 +232,9 @@ func (a *App) closeOptions() {
 	from, key, held := a.optionsFrom, a.optionsKey, a.filterHeld
 	a.optionsFrom, a.optionsKey, a.filterHeld = ScreenList, "", nil
 	switch from {
+	case ScreenViewChooser:
+		a.openViewChooser()
+		return
 	case ScreenDetails, ScreenShot:
 		if key != "" && a.CursorKey() == key {
 			a.screen = from

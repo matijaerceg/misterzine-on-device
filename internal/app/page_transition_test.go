@@ -131,7 +131,7 @@ func TestPageTransitionInputAndCompletion(t *testing.T) {
 		if a.PageTransitionRunning() {
 			t.Fatal("list paging animated")
 		}
-		tap(platform.KeySpace)
+		chooseNextView(a)
 		a.Paint()
 		if !a.PageTransitionRunning() {
 			t.Fatal("view switch did not animate")

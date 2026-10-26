@@ -80,22 +80,24 @@ func TestProfiledKeyboardSpaceTypesIntoSearch(t *testing.T) {
 	// before a search Space is still the view key
 	a.setSearch("")
 	typeWord(a, clock, " ")
-	if a.query != "" || a.mode != data.SortMaker {
+	if a.query != "" || (a.mode != data.SortAlphabetical || a.screen != ScreenViewChooser) {
 		t.Fatalf("Space with no search: query %q, view %v", a.query, a.mode)
 	}
+	a.act(platform.KeyBack)
 	// a letter the profile maps to an action acts, and never types
 	a.cfg.ControlProfiles.Profiles["046d_c548_50805e3d5466e4d6"] = controls.Profile{MappingVersion: 2, Inputs: map[uint16]string{30: "space", 57: "space"}}
 	a.SetSort(data.SortAlphabetical)
 	typeWord(a, clock, "a")
-	if a.query != "" || a.mode != data.SortMaker {
+	if a.query != "" || (a.mode != data.SortAlphabetical || a.screen != ScreenViewChooser) {
 		t.Fatalf("mapped letter: query %q, view %v", a.query, a.mode)
 	}
+	a.act(platform.KeyBack)
 	// an arcade panel's Space is a button, never text
 	a.cfg.ControlProfiles.Profiles["046d_c548_50805e3d5466e4d6"] = controls.Profile{MappingVersion: 2, Panel: true, Inputs: map[uint16]string{57: "space"}}
 	a.SetSort(data.SortAlphabetical)
 	a.setSearch("street")
 	typeWord(a, clock, " ")
-	if a.query != "street" || a.mode != data.SortMaker {
+	if a.query != "street" || (a.mode != data.SortAlphabetical || a.screen != ScreenViewChooser) {
 		t.Fatalf("panel Space: query %q, view %v", a.query, a.mode)
 	}
 }
@@ -136,9 +138,10 @@ func TestVirtualInputSpaceEchoDoesNotChangeTheViewWhileSearching(t *testing.T) {
 	*clock = clock.Add(time.Second)
 	echo(true, *clock)
 	echo(false, clock.Add(40*time.Millisecond))
-	if a.query != "street  " || a.mode != data.SortMaker {
+	if a.query != "street  " || (a.mode != data.SortAlphabetical || a.screen != ScreenViewChooser) {
 		t.Fatalf("pad Y: query %q, view %v", a.query, a.mode)
 	}
+	a.act(platform.KeyBack)
 	// with no search the keyboard's Space and its echo change the view once
 	a.setSearch("")
 	a.SetSort(data.SortAlphabetical)
@@ -147,7 +150,7 @@ func TestVirtualInputSpaceEchoDoesNotChangeTheViewWhileSearching(t *testing.T) {
 	echo(true, clock.Add(2*time.Millisecond))
 	kbd(false, clock.Add(40*time.Millisecond))
 	echo(false, clock.Add(42*time.Millisecond))
-	if a.mode != data.SortMaker {
+	if a.mode != data.SortAlphabetical || a.screen != ScreenViewChooser {
 		t.Fatalf("Space with no search moved to %v", a.mode)
 	}
 }

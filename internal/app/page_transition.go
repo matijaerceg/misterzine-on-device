@@ -42,6 +42,9 @@ func (a *App) pageIdentity() pageIdentity {
 		return pageIdentity{locked: true}
 	}
 	p := pageIdentity{screen: a.screen}
+	if a.screen == ScreenViewChooser {
+		p.screen, p.view = ScreenList, a.mode
+	}
 	if a.screen == ScreenList {
 		p.view = a.mode
 	}

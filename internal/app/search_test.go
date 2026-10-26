@@ -28,7 +28,7 @@ func TestKeyboardFindCombinesWithFiltersAndClears(t *testing.T) {
 	}
 	// Gamepad Y remains sorting even with a query; keyboard Space appends.
 	before := a.Sort()
-	tap(platform.KeySpace)
+	chooseNextView(a)
 	if a.Sort() == before || a.Search() != "SPACE inv" {
 		t.Fatal("Y stopped sorting")
 	}

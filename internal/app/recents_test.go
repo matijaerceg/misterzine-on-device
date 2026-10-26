@@ -19,7 +19,7 @@ func TestRecentsViewLifecycle(t *testing.T) {
 
 	// off (a fresh install's Views): Y skips Recents and SetSort refuses it
 	a.SetSort(data.SortFavorites)
-	a.actList(platform.KeySpace)
+	chooseNextView(a)
 	if a.mode != data.SortUpdated {
 		t.Fatal("recents view joined the cycle while off")
 	}
@@ -47,14 +47,14 @@ func TestRecentsViewLifecycle(t *testing.T) {
 	// on: Favorites -> Recents -> Updated, launch order, launch date, count
 	a.setViewOn(data.SortRecents, true)
 	a.SetSort(data.SortFavorites)
-	a.actList(platform.KeySpace)
+	chooseNextView(a)
 	if a.mode != data.SortRecents || len(a.view) != 2 || a.CursorKey() != "a" || a.ds.Rows[a.view[1]].K != "z" {
 		t.Fatalf("recents view: mode %v view %v", a.mode, a.view)
 	}
 	if a.launchedAt("a") != "2026-09-11" || a.launchedAt("b") != "" || a.jumpGroupKey(0) != "2026-09" {
 		t.Fatal("launch dates")
 	}
-	a.actList(platform.KeySpace)
+	chooseNextView(a)
 	if a.mode != data.SortUpdated {
 		t.Fatal("recents did not wrap to updated")
 	}

@@ -4,17 +4,14 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 )
 
-// Options -> Views: which of the list orders Y cycles through. The choice
-// is kept as the names of the views left out (settings.json "views_off"),
-// so a view added later is on for everyone; a fresh install leaves only
-// Recents out. The genre views (Options -> Genre views) go the other way:
-// off unless named in "genre_views_on", since nobody asked for fifteen
-// more stops in the cycle. In the app both pages share one set, viewsOff.
+// The shared Available views editor keeps existing settings names: standard
+// views are enabled unless in views_off; genres are off unless in genre_views_on.
+// Both families share viewsOff inside the app.
 
-// viewOn reports whether a view is in the Y cycle.
+// viewOn reports whether a view is in the chooser.
 func (a *App) viewOn(m data.SortMode) bool { return m.Valid() && !a.viewsOff[m] }
 
-// ViewsOff lists the views left out of the cycle, by settings name, for
+// ViewsOff lists the views left out of the chooser, by settings name, for
 // the host to persist; the genre views are GenreViewsOn's.
 func (a *App) ViewsOff() []string {
 	out := []string{} // never nil, so every view on saves as [] rather than null
@@ -26,7 +23,7 @@ func (a *App) ViewsOff() []string {
 	return out
 }
 
-// GenreViewsOn lists the genre views in the cycle, by settings name, for
+// GenreViewsOn lists the genre views in the chooser, by settings name, for
 // the host to persist.
 func (a *App) GenreViewsOn() []string {
 	out := []string{}
@@ -62,8 +59,7 @@ func parseViewsOff(off, genreOn []string) map[data.SortMode]bool {
 	return set
 }
 
-// viewsPageOrder is the Views page: every view but the genre views, which
-// have their own page.
+// viewsPageOrder is the standard-view order, also used for saving views_off.
 func (a *App) viewsPageOrder() []data.SortMode {
 	out := make([]data.SortMode, 0, len(data.ViewOrder))
 	for _, m := range data.ViewOrder {
@@ -74,7 +70,7 @@ func (a *App) viewsPageOrder() []data.SortMode {
 	return out
 }
 
-// viewsOnCount is how many views the cycle has.
+// viewsOnCount is how many views are enabled.
 func (a *App) viewsOnCount() int {
 	n := 0
 	for _, m := range data.ViewOrder {
@@ -85,7 +81,7 @@ func (a *App) viewsOnCount() int {
 	return n
 }
 
-// firstView is the first view in the cycle that is on: where a visit
+// firstView is the first view in the chooser that is on: where a visit
 // starts when the remembered order is off or turned off.
 func (a *App) firstView() data.SortMode {
 	for _, m := range data.ViewOrder {
@@ -96,7 +92,7 @@ func (a *App) firstView() data.SortMode {
 	return data.SortUpdated
 }
 
-// nextSort is the view Y moves to: the next one on in ViewOrder, wrapping.
+// nextSort finds the next enabled view when the current one is disabled.
 func (a *App) nextSort() data.SortMode {
 	order := data.ViewOrder
 	at := -1
@@ -113,7 +109,7 @@ func (a *App) nextSort() data.SortMode {
 	return a.mode
 }
 
-// setViewOn puts a view into the cycle or takes it out. The last view on
+// setViewOn puts a view into the chooser or takes it out. The last view on
 // stays on; taking out the current view moves the list to the next one.
 func (a *App) setViewOn(m data.SortMode, on bool) bool {
 	if !m.Valid() || a.viewOn(m) == on {
@@ -139,7 +135,7 @@ func (a *App) setViewOn(m data.SortMode, on bool) bool {
 	return true
 }
 
-// viewLabels name the views on the Views and Genre views pages and in
+// viewLabels name the views in the chooser, shared editor and
 // the Default view row.
 var viewLabels = map[data.SortMode]string{
 	data.SortUpdated: "Build date", data.SortDebut: "MiSTer debut", data.SortYear: "Original year",
@@ -152,48 +148,29 @@ func init() {
 	}
 }
 
-// viewsPageViews are the views the open checkbox page lists: the Views
-// page's, or the genre views on the Genre views page.
-func (a *App) viewsPageViews() []data.SortMode {
-	if a.viewsPage == "genre-views" {
-		return data.GenreViews
-	}
-	return a.viewsPageOrder()
-}
-
-// viewsEntries builds the Views or Genre views page: one checkbox per
-// view in cycle order, nothing else; the Options row already says what
-// the page is for.
+// viewsEntries lists both families under non-selectable headings.
 func (a *App) viewsEntries() []panelEntry {
-	views := a.viewsPageViews()
-	E := make([]panelEntry, 0, len(views))
+	views := data.ViewOrder
+	E := []panelEntry{{text: "Standard views", header: true, info: true}}
+	genre := false
 	only := a.viewsOnCount() <= 1
 	for _, m := range views {
+		if m.Genre() != "" && !genre {
+			E = append(E, panelEntry{text: "Genres", header: true, info: true})
+			genre = true
+		}
 		on := a.viewOn(m)
 		E = append(E, panelEntry{text: viewLabels[m], kind: "view", value: m.Name(), checked: on, disabled: on && only})
 	}
 	return E
 }
 
-// viewsSummary is the Views row's tally, "7 of 8": the genre views count
-// on their own row.
+// viewsSummary counts enabled views across both families.
 func (a *App) viewsSummary() string {
-	n := 0
-	for _, m := range a.viewsPageOrder() {
-		if a.viewOn(m) {
-			n++
-		}
-	}
-	return itoa(n) + " of " + itoa(len(a.viewsPageOrder()))
+	return itoa(a.viewsOnCount()) + " of " + itoa(len(data.ViewOrder))
 }
 
-// genreViewsSummary is the Genre views row's tally, "0 of 15".
-func (a *App) genreViewsSummary() string {
-	return itoa(len(a.GenreViewsOn())) + " of " + itoa(len(data.GenreViews))
-}
-
-// openViews opens the Views page ("views") or the Genre views page
-// ("genre-views") from its Options row.
+// openViews opens the shared editor, remembering its entry point.
 func (a *App) openViews(row string) {
 	a.viewsPage = row
 	a.screen = ScreenViews
@@ -205,15 +182,14 @@ func (a *App) openViews(row string) {
 }
 
 // viewsTitle names the open checkbox page in its top bar.
-func (a *App) viewsTitle() string {
-	if a.viewsPage == "genre-views" {
-		return "Genre views"
-	}
-	return "Views"
-}
+func (a *App) viewsTitle() string { return "Available views" }
 
-// closeViews returns to Options on the row that opened the page.
+// closeViews returns to the chooser or the originating Options row.
 func (a *App) closeViews() {
+	if a.viewsPage == "chooser" {
+		a.openViewChooser()
+		return
+	}
 	a.openOptions()
 	for i, e := range a.panel.entries {
 		if e.kind == a.viewsPage {
