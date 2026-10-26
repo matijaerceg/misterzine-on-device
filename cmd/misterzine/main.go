@@ -1109,7 +1109,7 @@ func (h *host) saveAll(final bool) {
 		h.settings.ShowDeprecated = h.a.ShowDeprecated()
 		h.settings.VersionCounts = h.a.VersionCounts()
 		h.settings.Mature = h.a.Mature()
-		if h.settings.Mature == app.MatureShow {
+		if h.settings.Mature == app.MatureHide {
 			h.settings.Mature = "" // the default stays out of settings.json
 		}
 		h.settings.ShowNonArcade = h.a.ShowNonArcade()

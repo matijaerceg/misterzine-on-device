@@ -165,9 +165,9 @@ type Config struct {
 	// shows how many versions it holds after its name, "(2)"; off (the
 	// default), its plus marks it alone.
 	VersionCounts bool
-	// Mature is Options -> Mature games: MatureShow (""), MaturePixelate
-	// (screenshots of rows marked mature are pixelated) or MatureHide (the
-	// rows leave every view, the counts and the screensaver).
+	// Mature is Options -> Mature games: MatureHide ("", the rows leave
+	// every view, the counts and the screensaver), MatureShow or
+	// MaturePixelate (screenshots of rows marked mature are pixelated).
 	Mature string
 	// ViewsOff names the views Options -> Views left out of the Y cycle
 	// (data.SortMode.Name); a fresh install lists only "recents".
@@ -700,13 +700,15 @@ const (
 	MatureHide     = "hide"
 )
 
-// Mature reports Options -> Mature games, MatureShow when unset or unknown.
+// Mature reports Options -> Mature games, MatureHide when unset or unknown.
+// Show was the default before v1.2.23 and was saved as unset, so a card that
+// had chosen Show moves to Hide once, like one that never chose.
 func (a *App) Mature() string {
 	switch a.cfg.Mature {
-	case MaturePixelate, MatureHide:
+	case MatureShow, MaturePixelate:
 		return a.cfg.Mature
 	}
-	return MatureShow
+	return MatureHide
 }
 
 // pixelated reports whether a row's screenshots are drawn pixelated.

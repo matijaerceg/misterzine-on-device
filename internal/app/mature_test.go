@@ -37,8 +37,15 @@ func poolHas(a *App, k string) bool {
 	return false
 }
 
-func TestMatureShowKeepsEverything(t *testing.T) {
+func TestMatureDefaultsToHide(t *testing.T) {
 	a := matureApp(t, "")
+	if a.Mature() != MatureHide || listed(a, "red") || !listed(a, "blue") {
+		t.Fatalf("mode %q listed red %v blue %v", a.Mature(), listed(a, "red"), listed(a, "blue"))
+	}
+}
+
+func TestMatureShowKeepsEverything(t *testing.T) {
+	a := matureApp(t, MatureShow)
 	if a.Mature() != MatureShow || !listed(a, "red") || !poolHas(a, "red") {
 		t.Fatalf("mode %q listed %v pool %v", a.Mature(), listed(a, "red"), poolHas(a, "red"))
 	}
