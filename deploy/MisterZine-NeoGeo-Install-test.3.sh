@@ -3,7 +3,7 @@
 set -eu
 CARD=/media/fat
 URL=https://github.com/matijaerceg/misterzine-on-device/releases/download/v1.2.24-neogeo-test.3/MisterZine-NeoGeo-test.3.zip
-SHA=a4d9346026e3a22fa82b42166f354641be4104e037b21ac7686357c31dc7066e
+SHA=401792ee40228e34e8b34d00df5f7b0f8010fab7be43c08f87a11d9a456c04c8
 ROOT="$CARD/misterzine-neogeo-test"
 ENTRY=MisterZine-NeoGeo-TEST.sh
 echo "Installing MisterZine Neo Geo test 3"
