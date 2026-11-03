@@ -23,6 +23,19 @@ func localTestRows() []data.Row {
 	return data.MergeLocal(cat, local)
 }
 
+func TestLocalMGLDetailsDoNotClaimMRAProvenance(t *testing.T) {
+	row := data.Row{K: "local:neogeo:mslug", Title: "Metal Slug", Base: "Arcade", Src: data.SrcLocal, Core: "NeoGeo", MRA: "_@Favorites/Metal Slug.mgl"}
+	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest([]data.Row{row}, "mgl", time.Now()), nil)
+	var text []string
+	for _, line := range a.detailLines(&a.ds.Rows[0], &a.ds.Der[0], 0) {
+		text = append(text, line.text)
+	}
+	joined := strings.Join(text, "\n")
+	if strings.Contains(joined, "MRA file") || !strings.Contains(joined, "Local shortcut") || !strings.Contains(joined, row.MRA) {
+		t.Fatalf("incorrect shortcut details: %s", joined)
+	}
+}
+
 func TestLocalRowDetails(t *testing.T) {
 	a := New(Config{PhysW: 320, PhysH: 240, Status: func(int) data.Status { return data.StatusFoundUndated }}, data.Ingest(localTestRows(), "h", time.Now()), nil)
 	i := a.ds.Index("local:orphanf")

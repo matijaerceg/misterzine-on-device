@@ -333,6 +333,9 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 	}
 	if row.IsLocal() {
 		note := "Not in the MisterZine catalogue; details read from the MRA file"
+		if strings.HasSuffix(strings.ToLower(row.MRA), ".mgl") {
+			note = "Local shortcut; title matched from the game filename"
+		}
 		if row.Standin {
 			note = "The catalogue lists this game only for cores that are not on this card; details read from the MRA file"
 		}
