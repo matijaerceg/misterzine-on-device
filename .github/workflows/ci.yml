@@ -31,6 +31,7 @@ jobs:
           python3 tools/test_maintenance.py
           python3 tools/test_package.py
           python3 tools/test_neogeo_package.py
+          python3 tools/test_neogeo_installer.py
           python3 tools/test_prepare_media.py
           python3 tools/test_media_catalog.py
           go vet ./...
