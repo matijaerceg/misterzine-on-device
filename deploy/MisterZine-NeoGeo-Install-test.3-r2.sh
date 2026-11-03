@@ -19,7 +19,15 @@ done
 WORK=$(mktemp -d "$CARD/.mz-neogeo-install.XXXXXX")
 trap 'rm -rf -- "$WORK"' EXIT
 echo "Downloading the fixed test release..."
-curl --fail --location --retry 3 --connect-timeout 20 --max-time 300 --proto '=https' --proto-redir '=https' "$URL" -o "$WORK/test.zip"
+# Downloader maintains a newer trust store than many MiSTer Linux images.
+CA_ARGS=()
+if [ -s "$CARD/Scripts/.config/downloader/cacert.pem" ]; then
+  CA_ARGS=(--cacert "$CARD/Scripts/.config/downloader/cacert.pem")
+fi
+if ! curl "${CA_ARGS[@]}" --fail --location --retry 3 --connect-timeout 20 --max-time 300 --proto '=https' --proto-redir '=https' "$URL" -o "$WORK/test.zip"; then
+  echo "Download failed. For certificate errors, run Update All to refresh its certificates, or extract the test ZIP manually."
+  exit 1
+fi
 echo "$SHA  $WORK/test.zip" | sha256sum -c -
 unzip -tq "$WORK/test.zip"
 mkdir "$WORK/staged"
