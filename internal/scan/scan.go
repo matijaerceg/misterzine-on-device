@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
+	"github.com/matijaerceg/misterzine-on-device/internal/mgl"
 	"github.com/matijaerceg/misterzine-on-device/internal/store"
 )
 
@@ -268,6 +269,26 @@ func lookupPrefix(cores map[string]Core, l string) (Core, bool) {
 // shipped rbf's build date (bd, falling back to updated) is compared with
 // the rbf filename date.
 func Status(card string, idx *Index, r *data.Row) data.Status {
+	if r.Src == data.SrcLocal && strings.HasPrefix(r.K, "local:neogeo:") && strings.EqualFold(path.Ext(r.MRA), ".mgl") {
+		root, err := os.OpenRoot(card)
+		if err != nil {
+			return data.StatusNotFound
+		}
+		defer root.Close()
+		f, err := root.Open(r.MRA)
+		if err != nil {
+			return data.StatusNotFound
+		}
+		defer f.Close()
+		d, err := mgl.Parse(f)
+		if err != nil {
+			return data.StatusNotFound
+		}
+		if ok, _ := d.Cartridge(); !ok || !mgl.CorePresent(card, d) {
+			return data.StatusNotFound
+		}
+		return data.StatusFoundUndated
+	}
 	if r.IsArcade() {
 		if r.MRA == "" {
 			return data.StatusUnknown

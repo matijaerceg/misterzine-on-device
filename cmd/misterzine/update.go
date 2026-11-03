@@ -55,7 +55,7 @@ func (h *host) initUpdates() {
 // startUpdate begins a run of the given mode (updater.ModeAll, ModeApp, or
 // ModeBeta, the free build's way back to MisterZine Arcade).
 func (h *host) startUpdate(mode string) {
-	if h.updatePending {
+	if neoGeoPilot || h.updatePending {
 		return
 	}
 	h.updatePending = true

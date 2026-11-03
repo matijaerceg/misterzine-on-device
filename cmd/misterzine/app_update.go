@@ -11,7 +11,7 @@ import (
 )
 
 func (h *host) requestAppCheck() {
-	if h.appCheckRunning || time.Now().Before(h.nextAppCheck) {
+	if neoGeoPilot || h.appCheckRunning || time.Now().Before(h.nextAppCheck) {
 		return
 	}
 	h.appCheckRunning = true

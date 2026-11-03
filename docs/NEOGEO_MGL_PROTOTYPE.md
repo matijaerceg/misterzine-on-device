@@ -1,6 +1,6 @@
 # Neo Geo MGL import prototype
 
-This is an isolated desktop/card-audit prototype, not an enabled feature of the device app. It discovers existing shortcuts, explains inclusion/exclusion, and exports recognised games to the existing UI harness. It does not write to the card, install anything, generate shortcuts, or launch a game on hardware.
+Normal builds do not enable this feature. This document describes the desktop/card-audit prototype; the separate opt-in ARM device build is documented in [Neo Geo device test](NEOGEO_DEVICE_TEST.md). It discovers existing shortcuts, explains inclusion/exclusion, and exports recognised games to the existing UI harness. It does not write to the card, install anything, generate shortcuts, or launch a game on hardware.
 
 ## Try the preview
 
@@ -45,9 +45,9 @@ The fixtures are small, independently authored examples of the following generat
 - [NeoGeo-Arcade generator](https://github.com/TheJesusFish/NeoGeo-Arcade/blob/9a709463957b1c0662ee7747af5854f1d7e9a941/neogeo_arcade_set.py): relative paths, `setname same_dir="1"`, and separate per-game configuration files. Those configurations must remain installed; an MGL alone does not carry them.
 - [Official MGL format](https://mister-devel.github.io/MkDocs_MiSTer/advanced/mgl/): menu folder conventions and Neo Geo cartridge loading parameters.
 
-## Before device integration
+## Remaining integration work
 
-Expand and review the identity catalogue and aliases against real collections. Define stable game/configuration identities beyond the prototype's exact-file hash. Wire discovery into card rescans and cache lifecycle, distinguish arcade classification from core location, check the exact referenced core and storage targets, and retain unknown ROM validity rather than borrowing MRA validation. Exercise Favorites/Recents and configuration variants across restarts. Finally, test launch and return on hardware using working original shortcuts. These steps are not claimed by the desktop prototype.
+Expand and review the identity catalogue and aliases against real collections. Define stable game/configuration identities beyond the prototype's exact-file hash. The tagged device build now connects discovery to rescans and the local cache, checks the referenced core directory separately from arcade classification, and leaves ROM validity unknown. Storage-target and BIOS validation remain open. Exercise Favorites/Recents and configuration variants across restarts. Finally, test launch and return on hardware using working original shortcuts. These steps are not claimed by the desktop prototype.
 
 ## Prototype validation
 

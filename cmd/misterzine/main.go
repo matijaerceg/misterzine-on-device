@@ -140,12 +140,23 @@ func main() {
 		return
 	}
 	if len(os.Args) > 1 && os.Args[1] == "launcher" {
+		if neoGeoPilot {
+			fmt.Fprintln(os.Stderr, "Test build: use Scripts/MisterZine Neo Geo TEST.sh")
+			os.Exit(2)
+		}
 		os.Exit(launcherCmd(os.Args[2:]))
 	}
 	if len(os.Args) == 6 && os.Args[1] == "update-worker" {
+		if neoGeoPilot {
+			os.Exit(2)
+		}
 		os.Exit(updater.Worker(os.Args[2], os.Args[3], os.Args[4], os.Args[5]))
 	}
-	root := flag.String("root", "/media/fat/misterzine", "config directory")
+	defaultRoot := "/media/fat/misterzine"
+	if neoGeoPilot {
+		defaultRoot = pilotRoot
+	}
+	root := flag.String("root", defaultRoot, "config directory")
 	card := flag.String("card", "/media/fat", "card root")
 	ini := flag.String("ini", "", "MiSTer INI path; empty follows Main's active (alternative) INI on the card")
 	debugAddr := flag.String("debug-http", "", "LAN debug server address, e.g. :8195")
@@ -160,6 +171,10 @@ func main() {
 			os.Exit(2)
 		}
 		return
+	}
+	if neoGeoPilot && filepath.Clean(*root) != pilotRoot {
+		fmt.Fprintln(os.Stderr, "Test build requires its separate config directory")
+		os.Exit(2)
 	}
 	os.Exit(run(*root, *card, *ini, *debugAddr, *resume))
 }
@@ -320,8 +335,8 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		MenuButton:           h.settings.MenuButton,
 		FavoritesUnavailable: h.favLoadFailed,
 		Progress:             func() (int, int) { return h.img.Progress() },
-		Launcher:             launcherEnabled,
-		CanUpdateApp:         func() bool { return updater.CanUpdateApp(card) },
+		Launcher:             func() bool { return !neoGeoPilot && launcherEnabled() },
+		CanUpdateApp:         func() bool { return !neoGeoPilot && updater.CanUpdateApp(card) },
 		Status: func(i int) data.Status {
 			if i < len(h.status) {
 				return h.status[i]
@@ -358,6 +373,10 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		SettingsChanged: func() { h.setDirty = true },
 		Action: func(kind, arg string) {
 			lg.Printf("action: %s %s", kind, arg)
+			if neoGeoPilot && (kind == "launcher" || strings.HasPrefix(kind, "update")) {
+				h.a.Notice("Not available in the separate Neo Geo test build", 6*time.Second)
+				return
+			}
 			if kind == "canvas" {
 				h.canvasDue = time.Now().Add(200 * time.Millisecond)
 				return
@@ -1171,6 +1190,9 @@ func (h *host) cleanup() {
 // Start before a scan finishes must not turn a missing core into a silent exit.
 func (h *host) requestLaunch(target string) {
 	abs, err := mister.LaunchPath(h.card, target)
+	if err == nil && neoGeoPilot && strings.EqualFold(filepath.Ext(target), ".mgl") {
+		err = validatePilotLaunch(h.card, target)
+	}
 	message := "Cannot launch: target missing or invalid"
 	if err == nil {
 		message = "Cannot launch: MiSTer not ready"
@@ -1606,6 +1628,25 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 	if local.Err != nil {
 		h.lg.Printf("scan: local: %v", local.Err)
 		notice = "Card scan incomplete"
+	}
+	if neoGeoPilot {
+		pilot, pilotErr := h.scanPilot()
+		if pilotErr != nil {
+			local.Err = errors.Join(local.Err, pilotErr)
+			notice = "Card scan incomplete"
+			h.lg.Printf("MGL scan: %v", pilotErr)
+			for _, r := range rows[ncat:] {
+				if strings.HasPrefix(r.K, "local:neogeo:") {
+					local.Rows = append(local.Rows, r)
+				}
+			}
+		} else {
+			local.Rows = append(local.Rows, pilot.Rows...)
+			for k, ps := range pilot.Alternatives {
+				resolved[k] = ps
+			}
+		}
+		h.lg.Printf("MGL pilot: %d included, %d inspected", len(pilot.Rows), len(pilot.Entries))
 	}
 	merged := data.MergeLocal(catalogue, local.Rows)
 	nextGen := data.Generation(hash, merged[ncat:])
