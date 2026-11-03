@@ -27,6 +27,8 @@ class NeoGeoPackageTest(unittest.TestCase):
                 wrapper = z.read(scripts[0])
                 self.assertNotIn(b"\r", wrapper)
                 self.assertEqual(wrapper, z.read("misterzine-neogeo-test/launch.sh"))
+                self.assertEqual(z.read("misterzine-neogeo-test/neogeo-arcade.json"),
+                                 (repo / "internal/mgl/neogeo-arcade.json").read_bytes().replace(b"\r\n", b"\n"))
                 self.assertTrue((z.getinfo(scripts[0]).external_attr >> 16) & 0o111)
                 z.extractall(root / "card")
             if os.name != "posix":

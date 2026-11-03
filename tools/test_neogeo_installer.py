@@ -11,9 +11,9 @@ import zipfile
 @unittest.skipUnless(os.name == "posix", "requires Linux shell tools")
 class InstallerTest(unittest.TestCase):
     def test_install_repair_and_rejected_download(self):
-        source = (Path(__file__).resolve().parents[1] / "deploy/MisterZine-NeoGeo-Install-test.3-r2.sh").read_text()
+        source = (Path(__file__).resolve().parents[1] / "deploy/MisterZine-NeoGeo-Install-test.4.sh").read_text()
         self.assertIn("--proto '=https'", source)
-        self.assertIn("/releases/download/v1.2.24-neogeo-test.3/", source)
+        self.assertIn("/releases/download/v1.2.24-neogeo-test.4/", source)
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
             card = base / "card"

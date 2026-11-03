@@ -1,4 +1,4 @@
-"""Package the private five-game MGL device pilot, without a Downloader feed."""
+"""Package the Neo Geo MGL test build, without a Downloader feed."""
 import argparse
 from pathlib import Path
 import zipfile
@@ -13,9 +13,10 @@ prefix = "misterzine-neogeo-test/"
 files = {
     prefix + "mz-neogeo": args.binary,
     prefix + "mzmglprobe": args.probe,
-    prefix + "arcade-pilot.json": repo / "testdata/mgl/arcade-pilot.json",
+    prefix + "neogeo-arcade.json": repo / "internal/mgl/neogeo-arcade.json",
     prefix + "launch.sh": repo / "deploy/neogeo-test.sh",
     prefix + "README.md": repo / "docs/NEOGEO_DEVICE_TEST.md",
+    prefix + "NEOGEO_CATALOGUE.md": repo / "docs/NEOGEO_CATALOGUE.md",
     "Scripts/MisterZine-NeoGeo-TEST.sh": repo / "deploy/neogeo-test.sh",
 }
 for name in ["LICENSE", "LICENSE-CATALOGUE", "SPLEEN-LICENSE", "SCIENTIFICA-LICENSE", "THIRD-PARTY-NOTICES.txt"]:

@@ -6,7 +6,7 @@ Normal builds do not enable this feature. This document describes the desktop/ca
 
 With Go 1.27 and Python 3 available, run `python3 tools/preview_mgl.py` from the repository. It scans the fixture card, writes `dist/mgl-prototype/report.json` and `rows.json`, and renders horizontal and vertical list/details previews. The harness prints the original MGL path when its scripted Start button is pressed; this is a simulated launch callback, not hardware validation.
 
-The example includes five deliberately reviewed arcade identities: Metal Slug, Art of Fighting, Blazing Star, Samurai Shodown and The King of Fighters '98. This is a pilot matching list, not a complete Neo Geo catalogue. The synthetic card contains no ROMs, BIOS files or FPGA binaries. Installed status remains unknown in the preview.
+The small desktop fixture includes five arcade identities: Metal Slug, Art of Fighting, Blazing Star, Samurai Shodown and The King of Fighters '98. This remains a compact parser fixture. The device test now uses the full shared [arcade catalogue](NEOGEO_CATALOGUE.md), not this fixture list. The synthetic card contains no ROMs, BIOS files or FPGA binaries. Installed status remains unknown in the preview.
 
 ## Inspect a real card or a copy of its menus
 
@@ -47,7 +47,7 @@ The fixtures are small, independently authored examples of the following generat
 
 ## Remaining integration work
 
-Expand and review the identity catalogue and aliases against real collections. Define stable game/configuration identities beyond the prototype's exact-file hash. The tagged device build now connects discovery to rescans and the local cache, checks the referenced core directory separately from arcade classification, and leaves ROM validity unknown. Storage-target and BIOS validation remain open. Exercise Favorites/Recents and configuration variants across restarts. Finally, test launch and return on hardware using working original shortcuts. These steps are not claimed by the desktop prototype.
+The device catalogue now covers 161 families; collect reports of unrecognised real-world filename aliases. Define stable game/configuration identities beyond the prototype's exact-file hash. The tagged device build now connects discovery to rescans and the local cache, checks the referenced core directory separately from arcade classification, and leaves ROM validity unknown. Storage-target and BIOS validation remain open. Exercise Favorites/Recents and configuration variants across restarts. Finally, test launch and return on hardware using working original shortcuts. These steps are not claimed by the desktop prototype.
 
 ## Prototype validation
 

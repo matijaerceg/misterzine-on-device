@@ -163,7 +163,12 @@ func (d Document) Cartridge() (bool, string) {
 	}
 	ext := strings.ToLower(path.Ext(strings.TrimRight(f.Path, "/")))
 	if ext != "" && ext != ".neo" && ext != ".zip" && ext != ".rom" {
-		return false, "unsupported cartridge target extension"
+		// A reviewed extracted-set directory can itself contain a period.
+		// This does not admit arbitrary extensions or CD image filenames.
+		base := strings.ToLower(path.Base(strings.TrimRight(f.Path, "/")))
+		if _, knownDirectory := NeoGeoCatalogue().names[base]; !knownDirectory {
+			return false, "unsupported cartridge target extension"
+		}
 	}
 	return true, "Neo Geo cartridge shortcut"
 }

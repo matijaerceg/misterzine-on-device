@@ -64,7 +64,12 @@ func (c *Catalogue) Match(d Document) (Game, bool) {
 		return Game{}, false
 	}
 	name := path.Base(strings.TrimRight(d.Files[0].Path, "/"))
-	name = strings.TrimSuffix(name, path.Ext(name))
+	// Extracted-set directory names can contain periods (Neo Mr. Do!,
+	// SNK vs. Capcom). Strip only a supported file extension.
+	switch strings.ToLower(path.Ext(name)) {
+	case ".neo", ".rom", ".zip":
+		name = strings.TrimSuffix(name, path.Ext(name))
+	}
 	g, ok := c.names[strings.ToLower(name)]
 	return g, ok
 }

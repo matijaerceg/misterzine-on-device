@@ -16,17 +16,7 @@ import (
 const pilotRoot = "/media/fat/misterzine-neogeo-test"
 
 func pilotCatalogue() *mgl.Catalogue {
-	c, err := mgl.ReadCatalogue(strings.NewReader(`[
- {"id":"mslug","title":"Metal Slug","aliases":["Metal Slug - Super Vehicle-001"]},
- {"id":"aof","title":"Art of Fighting"},
- {"id":"blazstar","title":"Blazing Star"},
- {"id":"samsho","title":"Samurai Shodown"},
- {"id":"kof98","title":"The King of Fighters '98","aliases":["King of Fighters '98"]}
- ]`))
-	if err != nil {
-		panic(err)
-	}
-	return c
+	return mgl.NeoGeoCatalogue()
 }
 
 func (h *host) scanPilot() (mgl.Result, error) {
@@ -62,7 +52,7 @@ func validatePilotLaunch(card, target string) error {
 		return errors.New(reason)
 	}
 	if _, ok := pilotCatalogue().Match(d); !ok {
-		return errors.New("game is outside the five-game pilot")
+		return errors.New("game target is not recognised in the Neo Geo arcade catalogue")
 	}
 	if !mgl.CorePresent(card, d) {
 		return errors.New("Neo Geo core missing at shortcut's core path")

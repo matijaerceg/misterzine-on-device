@@ -20,6 +20,9 @@ func TestPilotLaunchRevalidatesShortcut(t *testing.T) {
 		pass             bool
 	}{
 		{"cartridge", "_Console/NeoGeo", "mslug.neo", true},
+		{"expanded catalogue", "_Console/NeoGeo", "garou.neo", true},
+		{"regional set", "_Console/NeoGeo", "kof97h.zip", true},
+		{"MiSTer alias", "_Console/NeoGeo", "tws96.rom", true},
 		{"different system", "_Console/SNES", "mslug.neo", false},
 		{"unreviewed title", "_Console/NeoGeo", "homebrew.neo", false},
 		{"wrong core location", "_Other/NeoGeo", "mslug.neo", false},
