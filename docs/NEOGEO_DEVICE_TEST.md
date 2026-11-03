@@ -8,14 +8,16 @@ Extract the ZIP at the root of the MiSTer card. In MiSTer's Scripts menu, choose
 
 Existing `.mgl` files must be in the card root or menu folders whose names start with `_` at every level. The scan does not walk `games/`. The shortcut must name a supported Neo Geo cartridge core and exactly one file with `type="f" index="1"`. Its core must exist in the directory named by `<rbf>`. The original MGL is passed to MiSTer unchanged, preserving its game path, delay, setname and options. ROM, archive-member and BIOS validation is not implemented.
 
-This build does not install a resident launcher or change boot settings. After leaving a game, reopen it through Scripts. Its automatic return and application updater are unavailable. No core, ROM or BIOS is included.
+This build does not install a resident launcher or change boot settings. Options → Return after game and Exit game with work through a temporary helper for games launched from this test app. Enable Return after game and choose Select+Start to hold those buttons for one second and reopen the test app on the game. The helper exits when the game is replaced or the returned app closes. The application updater is unavailable. No core, ROM or BIOS is included.
+
+To hide imported Neo Geo games, open Filters → Source/core → Local → Neo Geo and turn it off. This saved choice covers all supported Neo Geo core variants and games discovered later; other local arcade games remain available. Turn it back on to restore them.
 
 ## Smoke test
 
 1. Prepare one working shortcut for one of the five games. Launch it directly from MiSTer's menu first to confirm the game and BIOS work.
 2. Open the test app, rescan, and find the game among local arcade entries. Check that a shortcut for another core or a CD image does not appear as a Neo Geo arcade game.
 3. Open the game details and launch. Verify the correct game, expected settings and controller input on the display.
-4. Return to MiSTer's menu, reopen the test app and confirm that favorites and the remembered game behave normally.
+4. Hold the configured exit chord for one second and confirm that Return after game reopens the test app on the same game. Launch again, then exit through MiSTer's menu and check the same return. Confirm favorites and the Neo Geo filter survive reopening and rescanning.
 5. Inspect `misterzine-neogeo-test/mgl-report.json` for included, excluded, unrecognized or malformed shortcuts. The report contains local paths, so review it before sharing.
 
 The standalone diagnostic command is `mzmglprobe -card /media/fat -arcade-list /media/fat/misterzine-neogeo-test/arcade-pilot.json`. It reads files without launching games. For remote troubleshooting only, create `misterzine-neogeo-test/debug.flag`; the test wrapper then enables the existing authenticated debug API on port 8197.

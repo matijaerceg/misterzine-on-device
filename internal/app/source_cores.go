@@ -12,9 +12,9 @@ import (
 // single-game cores (one game within this source, data.Derived.SoloCore),
 // then one row per core that runs more. SrcOff hides a whole source,
 // CoreOff one core of it (data.CoreKey), SinglesOff its single-game cores.
-// Every row of a source off collapses into the source off, so the two never
-// say the same thing twice. A source with fewer than two rows to show has
-// nothing to open.
+// Every row off normally collapses into the source off. Neo Geo shortcuts
+// retain their explicit choice even when alone, so future unrelated local
+// games stay visible. That choice is also offered with just one game.
 
 // singlesText names a source's single-game cores row.
 const singlesText = "Single-game cores"
@@ -38,6 +38,9 @@ func (a *App) buildSourceCores() {
 			continue
 		}
 		label[key] = d.CoreLabel
+		if r.IsNeoGeoShortcut() {
+			label[key] = "Neo Geo"
+		}
 		if d.SoloCore {
 			singles[r.Src] = append(singles[r.Src], key)
 		} else {
@@ -57,7 +60,7 @@ func (a *App) sourceOpens(src string) bool {
 	if len(a.panel.srcSingles[src]) > 0 {
 		n++
 	}
-	return n > 1
+	return n > 1 || (src == data.SrcLocal && len(a.panel.srcCores[src]) > 0 && a.panel.coreLabel["local/NeoGeo"] != "")
 }
 
 // singlesOn reports how many of a source's single-game cores are on, of
@@ -222,7 +225,7 @@ func (a *App) toggleSource(only bool) bool {
 		} else {
 			coreOff[core] = true
 		}
-		if allOff() {
+		if allOff() && core != "local/NeoGeo" {
 			srcOff[src] = true
 			clear()
 		}

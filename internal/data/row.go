@@ -203,9 +203,17 @@ const SrcLocal = "local"
 // than from the catalogue.
 func (r *Row) IsLocal() bool { return r.Src == SrcLocal }
 
-// CoreKey names the row's core within its source, "ongo/Seta": the Source
-// filter opens into cores, and a core two sources ship stays two choices.
-func CoreKey(r *Row) string { return r.Src + "/" + r.Core }
+// IsNeoGeoShortcut identifies imported arcade shortcuts, not the console catalogue row.
+func (r *Row) IsNeoGeoShortcut() bool { return r.IsLocal() && strings.HasPrefix(r.K, "local:neogeo:") }
+
+// CoreKey names a core within its source. Imported Neo Geo variants share
+// one filter choice so a newly discovered variant stays hidden too.
+func CoreKey(r *Row) string {
+	if r.IsNeoGeoShortcut() {
+		return SrcLocal + "/NeoGeo"
+	}
+	return r.Src + "/" + r.Core
+}
 
 // CoreKeySrc is the source half of a CoreKey; core names never hold a slash.
 func CoreKeySrc(key string) string { return key[:max(0, strings.LastIndexByte(key, '/'))] }

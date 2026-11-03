@@ -120,7 +120,8 @@ type Config struct {
 	// for Filters to name then. "" = it writes none.
 	ROMList string
 	// Launcher reports whether the main-menu launcher is enabled (nil = unsupported).
-	Launcher func() bool
+	Launcher   func() bool
+	GameReturn bool // separate test launcher supports return without a main-menu entry
 	// CanUpdateApp reports whether this card can fetch a new MisterZine on
 	// its own, which needs Downloader (nil = unsupported).
 	CanUpdateApp func() bool

@@ -853,6 +853,18 @@ func menuCoreCmd(consoleMode bool) string {
 // resume tells the app it is reopening after a game; selected is when the
 // menu selection was written.
 func runFromMenu(lg *log.Logger, kbd *mister.VKeyboard, resume bool, selected time.Time) error {
+	entry := scriptEntry
+	if !fileExists(entry) {
+		entry = "/media/fat/Scripts/misterzine.sh"
+	}
+	return runScriptFromMenu(lg, kbd, resume, selected, entry)
+}
+
+func runScriptFromMenu(lg *log.Logger, kbd *mister.VKeyboard, resume bool, selected time.Time, entry string) error {
+	marker := launchedFile
+	if filepath.Dir(entry) == pilotRoot {
+		marker = filepath.Join(pilotRoot, "launched")
+	}
 	time.Sleep(1200 * time.Millisecond) // Main has just re-executed itself
 	lg.Printf("watch: console: active %s, fb mode %q before", mister.ActiveTTY(), mister.SysfsMode())
 	closeFrontend(lg, selected, time.Sleep)
@@ -862,7 +874,7 @@ func runFromMenu(lg *log.Logger, kbd *mister.VKeyboard, resume bool, selected ti
 	}
 	if lease != nil {
 		defer func() {
-			if fileExists(launchedFile) {
+			if fileExists(marker) {
 				return // the new core owns Main now
 			}
 			// The UI can leave while its updater still owns the console.
@@ -888,17 +900,11 @@ func runFromMenu(lg *log.Logger, kbd *mister.VKeyboard, resume bool, selected ti
 	} else if err := openConsoleF9(lg, kbd); err != nil {
 		return err
 	}
-	entry := scriptEntry
-	if !fileExists(entry) {
-		// Allow an older installation to finish an update before its new
-		// wrapper arrives. Downloader removes this old Scripts entry.
-		entry = "/media/fat/Scripts/misterzine.sh"
-	}
 	args := ""
 	if resume {
 		args = " --resume"
 	}
-	launcher := "#!/bin/bash\nexport LC_ALL=en_US.UTF-8\nexport HOME=/root\ncd " + filepath.Dir(entry) + "\n" + entry + args + "\n"
+	launcher := "#!/bin/bash\nexport LC_ALL=en_US.UTF-8\nexport HOME=/root\ncd " + filepath.Dir(entry) + "\n\"" + entry + "\"" + args + "\n"
 	if lease != nil {
 		launcher = strings.Replace(launcher, "export HOME=/root\n", "export HOME=/root\nexport "+menuLeaseEnv+"=1\n", 1)
 	}

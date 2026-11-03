@@ -139,6 +139,9 @@ func main() {
 		mister.RestoreAll()
 		return
 	}
+	if len(os.Args) == 2 && os.Args[1] == "pilot-watch" && neoGeoPilot {
+		os.Exit(pilotWatch())
+	}
 	if len(os.Args) > 1 && os.Args[1] == "launcher" {
 		if neoGeoPilot {
 			fmt.Fprintln(os.Stderr, "Test build: use Scripts/MisterZine Neo Geo TEST.sh")
@@ -335,6 +338,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		MenuButton:           h.settings.MenuButton,
 		FavoritesUnavailable: h.favLoadFailed,
 		Progress:             func() (int, int) { return h.img.Progress() },
+		GameReturn:           neoGeoPilot,
 		Launcher:             func() bool { return !neoGeoPilot && launcherEnabled() },
 		CanUpdateApp:         func() bool { return !neoGeoPilot && updater.CanUpdateApp(card) },
 		Status: func(i int) data.Status {
@@ -1217,6 +1221,13 @@ func (h *host) doLaunch() int {
 		h.lg.Printf("launch marker: %v", err)
 		h.supportLaunchResult("Could not prepare launch", err)
 		return 1
+	}
+	if neoGeoPilot && (h.settings.ReturnAfterGame || h.settings.ExitChord != "") {
+		if err := startPilotWatch(); err != nil {
+			h.lg.Printf("test return helper: %v", err)
+			os.Remove(marker)
+			return 1
+		}
 	}
 	if err := h.cmd.Send("load_core " + h.launch); err != nil {
 		h.lg.Printf("launch: %v", err)

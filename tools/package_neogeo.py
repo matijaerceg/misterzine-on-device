@@ -14,6 +14,7 @@ files = {
     prefix + "mz-neogeo": args.binary,
     prefix + "mzmglprobe": args.probe,
     prefix + "arcade-pilot.json": repo / "testdata/mgl/arcade-pilot.json",
+    prefix + "launch.sh": repo / "deploy/neogeo-test.sh",
     prefix + "README.md": repo / "docs/NEOGEO_DEVICE_TEST.md",
     "Scripts/MisterZine Neo Geo TEST.sh": repo / "deploy/neogeo-test.sh",
 }

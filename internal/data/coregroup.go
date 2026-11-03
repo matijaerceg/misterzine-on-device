@@ -58,7 +58,7 @@ func (ds *Dataset) coreGroups() {
 		}
 	}
 	for i := range ds.Rows {
-		ds.Der[i].SoloCore = ds.Rows[i].IsArcade() && inSrc[CoreKey(&ds.Rows[i])] < 2
+		ds.Der[i].SoloCore = ds.Rows[i].IsArcade() && !ds.Rows[i].IsNeoGeoShortcut() && inSrc[CoreKey(&ds.Rows[i])] < 2
 	}
 	keys := map[string][]elem{}
 	for i := range ds.Rows {
