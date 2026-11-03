@@ -2,7 +2,7 @@
 # MisterZine's console wrapper, opened by the main-menu launcher.
 DIR=/media/fat/misterzine-neogeo-test
 BIN="$DIR/mz-neogeo"
-[ -x "$BIN" ] || { echo "misterzine: binary missing at $BIN (run update_all)"; exit 1; }
+[ -x "$BIN" ] || { echo "misterzine: binary missing at $BIN (extract the Neo Geo test ZIP again)"; exit 1; }
 # Preserve a restore helper even if Update All replaces/removes the installed file.
 RESTORE_DIR=$(mktemp -d /tmp/misterzine-restore.XXXXXX) || exit 1
 RESTORE="$RESTORE_DIR/restore"

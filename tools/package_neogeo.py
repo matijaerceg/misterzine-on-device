@@ -16,7 +16,7 @@ files = {
     prefix + "arcade-pilot.json": repo / "testdata/mgl/arcade-pilot.json",
     prefix + "launch.sh": repo / "deploy/neogeo-test.sh",
     prefix + "README.md": repo / "docs/NEOGEO_DEVICE_TEST.md",
-    "Scripts/MisterZine Neo Geo TEST.sh": repo / "deploy/neogeo-test.sh",
+    "Scripts/MisterZine-NeoGeo-TEST.sh": repo / "deploy/neogeo-test.sh",
 }
 for name in ["LICENSE", "LICENSE-CATALOGUE", "SPLEEN-LICENSE", "SCIENTIFICA-LICENSE", "THIRD-PARTY-NOTICES.txt"]:
     source = repo / name

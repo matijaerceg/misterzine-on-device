@@ -144,7 +144,7 @@ func main() {
 	}
 	if len(os.Args) > 1 && os.Args[1] == "launcher" {
 		if neoGeoPilot {
-			fmt.Fprintln(os.Stderr, "Test build: use Scripts/MisterZine Neo Geo TEST.sh")
+			fmt.Fprintln(os.Stderr, "Test build: use Scripts/MisterZine-NeoGeo-TEST.sh")
 			os.Exit(2)
 		}
 		os.Exit(launcherCmd(os.Args[2:]))

@@ -4,13 +4,13 @@ This private build adds existing Neo Geo cartridge shortcuts to MisterZine's loc
 
 ## Install and run
 
-Extract the ZIP at the root of the MiSTer card. In MiSTer's Scripts menu, choose **MisterZine Neo Geo TEST**. The app uses `/media/fat/misterzine-neogeo-test` for its settings, cache and logs. It has separate preferences; configure rotation and controls there if needed. Your usual MisterZine installation stays in place.
+Extract the ZIP at the root of the MiSTer card. In MiSTer's Scripts menu, choose **MisterZine-NeoGeo-TEST**. The app uses `/media/fat/misterzine-neogeo-test` for its settings, cache and logs. It has separate preferences; configure rotation and controls there if needed. Your usual MisterZine installation stays in place.
 
 Existing `.mgl` files must be in the card root or menu folders whose names start with `_` at every level. The scan does not walk `games/`. The shortcut must name a supported Neo Geo cartridge core and exactly one file with `type="f" index="1"`. Its core must exist in the directory named by `<rbf>`. The original MGL is passed to MiSTer unchanged, preserving its game path, delay, setname and options. ROM, archive-member and BIOS validation is not implemented.
 
-This build does not install a resident launcher or change boot settings. Options → Return after game and Exit game with work through a temporary helper for games launched from this test app. Enable Return after game and choose Select+Start to hold those buttons for one second and reopen the test app on the game. The helper exits when the game is replaced or the returned app closes. The application updater is unavailable. No core, ROM or BIOS is included.
+This build does not install a resident launcher or change boot settings. Options â†’ Return after game and Exit game with work through a temporary helper for games launched from this test app. Enable Return after game and choose Select+Start to hold those buttons for one second and reopen the test app on the game. The helper exits when the game is replaced or the returned app closes. The application updater is unavailable. No core, ROM or BIOS is included.
 
-To hide imported Neo Geo games, open Filters → Source/core → Local → Neo Geo and turn it off. This saved choice covers all supported Neo Geo core variants and games discovered later; other local arcade games remain available. Turn it back on to restore them.
+To hide imported Neo Geo games, open Filters â†’ Source/core â†’ Local â†’ Neo Geo and turn it off. This saved choice covers all supported Neo Geo core variants and games discovered later; other local arcade games remain available. Turn it back on to restore them.
 
 ## Smoke test
 
@@ -24,7 +24,7 @@ The standalone diagnostic command is `mzmglprobe -card /media/fat -arcade-list /
 
 ## Remove
 
-Exit the test app, then delete `Scripts/MisterZine Neo Geo TEST.sh` and the `misterzine-neogeo-test` folder. This removes only the test build and its settings. Keep your game shortcuts and your usual MisterZine installation.
+Exit the test app, then delete `Scripts/MisterZine-NeoGeo-TEST.sh` and the `misterzine-neogeo-test` folder. This removes only the test build and its settings. Keep your game shortcuts and your usual MisterZine installation.
 
 ## Build
 
