@@ -1,0 +1,36 @@
+[
+  {
+    "k": "local:neogeo:aof:one",
+    "title": "Art of Fighting",
+    "src": "local",
+    "base": "Arcade",
+    "core": "NeoGeo",
+    "mra": "_Favorites/Art of Fighting.mgl",
+    "year": "1992",
+    "manufacturer": "SNK",
+    "genre": "Fighting",
+    "rot": "Horizontal",
+    "plr": "2"
+  },
+  {
+    "k": "local:neogeo:mslug:two",
+    "title": "Metal Slug",
+    "src": "local",
+    "base": "Arcade",
+    "core": "NeoGeo_LLAPI",
+    "mra": "_Favorites/Metal Slug.mgl",
+    "year": "1996",
+    "manufacturer": "Nazca",
+    "genre": "Run 'n gun",
+    "rot": "Horizontal",
+    "plr": "2"
+  },
+  {
+    "k": "local:other",
+    "title": "Other local arcade",
+    "src": "local",
+    "base": "Arcade",
+    "core": "Other",
+    "mra": "_Arcade/Other.mra"
+  }
+]

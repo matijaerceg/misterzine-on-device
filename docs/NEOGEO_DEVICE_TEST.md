@@ -4,7 +4,7 @@ This experimental build recognises the Neo Geo arcade catalogue, including known
 
 ## Install
 
-Download `MisterZine-NeoGeo-Install-test.4.sh`, copy it into the card's `Scripts` folder, and run it from MiSTer's Scripts menu with an internet connection. Then open **MisterZine-NeoGeo-TEST**. Alternatively, extract the test ZIP at the card root.
+Download `MisterZine-NeoGeo-Install-test.5.sh`, copy it into the card's `Scripts` folder, and run it from MiSTer's Scripts menu with an internet connection. Then open **MisterZine-NeoGeo-TEST**. Alternatively, extract the test ZIP at the card root.
 
 Exit the test app and its game before installing. The installer verifies the pinned ZIP, preserves existing test preferences and saves a backup of a previous test installation. It uses Downloader's maintained certificate bundle when available. Normal MisterZine, boot settings and Update All configuration stay unchanged. This trial does not update itself automatically.
 
@@ -13,6 +13,12 @@ Exit the test app and its game before installing. The installer verifies the pin
 Use existing working `.mgl` shortcuts in the card root or underscore-prefixed menu folders at every level. The scan does not walk `games/`. The shortcut must name a supported Neo Geo core and exactly one cartridge file with `type="f" index="1"`. Other cores, CD targets, demos and unknown names are not imported. The original MGL is launched unchanged, including its paths and configuration options. No cores, games or BIOS files are included.
 
 Configure **Options > Return after game** and **Exit game with** as desired. The temporary return helper runs only for this test app's games. To hide the imports, turn off **Filters > Source/core > Local > Neo Geo**. Settings and logs live in `/media/fat/misterzine-neogeo-test`.
+
+## Browsing and filters
+
+Enable **Neo Geo** under **Options > Available views > Cores** (or **Y > Edit available views**) for an A-Z list of your recognised shortcuts. It starts off and can also be chosen as the default view once enabled. It respects your filters; if Neo Geo is hidden, the empty list says so, with Filters available in the footer.
+
+**Filters > Source/core** lists Local first, then catalogue sources by their displayed names. Neo Geo is inside Local. Unknown values appear last in filter sections; years and player counts keep their natural order.
 
 ## Feedback
 

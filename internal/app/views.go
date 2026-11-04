@@ -6,10 +6,18 @@ import (
 
 // The shared Available views editor keeps existing settings names: standard
 // views are enabled unless in views_off; genres are off unless in genre_views_on.
-// Both families share viewsOff inside the app.
+// The optional Neo Geo view uses neogeo_view. All share viewsOff inside the app.
+
+// viewAvailable keeps the Neo Geo view in hosts that support its shortcuts.
+func (a *App) viewAvailable(m data.SortMode) bool {
+	return m.Valid() && (m != data.SortNeoGeo || a.cfg.NeoGeoSupport)
+}
 
 // viewOn reports whether a view is in the chooser.
-func (a *App) viewOn(m data.SortMode) bool { return m.Valid() && !a.viewsOff[m] }
+func (a *App) viewOn(m data.SortMode) bool { return a.viewAvailable(m) && !a.viewsOff[m] }
+
+// NeoGeoView reports the optional view's saved choice.
+func (a *App) NeoGeoView() bool { return a.viewOn(data.SortNeoGeo) }
 
 // ViewsOff lists the views left out of the chooser, by settings name, for
 // the host to persist; the genre views are GenreViewsOn's.
@@ -38,16 +46,19 @@ func (a *App) GenreViewsOn() []string {
 // parseViewsOff turns the saved names into the set: the views off by name
 // and the genre views not on by name. Unknown names are dropped, and a
 // choice that would leave nothing on is ignored.
-func parseViewsOff(off, genreOn []string) map[data.SortMode]bool {
-	set := map[data.SortMode]bool{}
+func parseViewsOff(off, genreOn []string, neoGeoOn bool) map[data.SortMode]bool {
+	set := map[data.SortMode]bool{data.SortNeoGeo: true}
+	if neoGeoOn {
+		delete(set, data.SortNeoGeo)
+	}
 	for _, m := range data.GenreViews {
 		set[m] = true
 	}
-	if data.ViewsOn(off, genreOn) == 0 {
+	if data.ViewsOn(off, genreOn, neoGeoOn) == 0 {
 		return set
 	}
 	for _, n := range off {
-		if m, ok := data.ParseSort(n); ok && m.Genre() == "" {
+		if m, ok := data.ParseSort(n); ok && m.Genre() == "" && m != data.SortNeoGeo {
 			set[m] = true
 		}
 	}
@@ -63,7 +74,7 @@ func parseViewsOff(off, genreOn []string) map[data.SortMode]bool {
 func (a *App) viewsPageOrder() []data.SortMode {
 	out := make([]data.SortMode, 0, len(data.ViewOrder))
 	for _, m := range data.ViewOrder {
-		if m.Genre() == "" {
+		if m.Genre() == "" && m != data.SortNeoGeo {
 			out = append(out, m)
 		}
 	}
@@ -112,7 +123,7 @@ func (a *App) nextSort() data.SortMode {
 // setViewOn puts a view into the chooser or takes it out. The last view on
 // stays on; taking out the current view moves the list to the next one.
 func (a *App) setViewOn(m data.SortMode, on bool) bool {
-	if !m.Valid() || a.viewOn(m) == on {
+	if !a.viewAvailable(m) || a.viewOn(m) == on {
 		return false
 	}
 	if !on && a.viewsOnCount() <= 1 {
@@ -139,7 +150,7 @@ func (a *App) setViewOn(m data.SortMode, on bool) bool {
 // the Default view row.
 var viewLabels = map[data.SortMode]string{
 	data.SortUpdated: "Build date", data.SortDebut: "MiSTer debut", data.SortYear: "Original year",
-	data.SortAlphabetical: "A-Z", data.SortMaker: "Manufacturer", data.SortCore: "Core", data.SortFavorites: "Favorites", data.SortRecents: "Recents",
+	data.SortAlphabetical: "A-Z", data.SortMaker: "Manufacturer", data.SortCore: "Core", data.SortFavorites: "Favorites", data.SortRecents: "Recents", data.SortNeoGeo: "Neo Geo",
 }
 
 func init() {
@@ -148,13 +159,19 @@ func init() {
 	}
 }
 
-// viewsEntries lists both families under non-selectable headings.
+// viewsEntries groups the views under non-selectable headings.
 func (a *App) viewsEntries() []panelEntry {
 	views := data.ViewOrder
 	E := []panelEntry{{text: "Standard views", header: true, info: true}}
 	genre := false
 	only := a.viewsOnCount() <= 1
 	for _, m := range views {
+		if !a.viewAvailable(m) {
+			continue
+		}
+		if m == data.SortNeoGeo {
+			E = append(E, panelEntry{text: "Cores", header: true, info: true})
+		}
 		if m.Genre() != "" && !genre {
 			E = append(E, panelEntry{text: "Genres", header: true, info: true})
 			genre = true
@@ -165,9 +182,15 @@ func (a *App) viewsEntries() []panelEntry {
 	return E
 }
 
-// viewsSummary counts enabled views across both families.
+// viewsSummary counts enabled views among those available in this host.
 func (a *App) viewsSummary() string {
-	return itoa(a.viewsOnCount()) + " of " + itoa(len(data.ViewOrder))
+	total := 0
+	for _, m := range data.ViewOrder {
+		if a.viewAvailable(m) {
+			total++
+		}
+	}
+	return itoa(a.viewsOnCount()) + " of " + itoa(total)
 }
 
 // openViews opens the shared editor, remembering its entry point.

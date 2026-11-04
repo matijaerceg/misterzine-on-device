@@ -510,3 +510,22 @@ func TestMembersSettingsRoundTrip(t *testing.T) {
 		t.Fatal("no members' settings should write no members key")
 	}
 }
+
+func TestNeoGeoViewSettingsRoundTrip(t *testing.T) {
+	path := writeSettings(t, `{"schema":1,"neogeo_view":true,"last_sort":23,"default_sort":23,"views_off":["updated","debut","year","alphabetical","maker","core","favorites","recents"]}`)
+	s, err := LoadSettings(path)
+	if err != nil || !s.NeoGeoView || s.LastSort != data.SortNeoGeo || len(s.ViewsOff) != 8 {
+		t.Fatalf("load: %+v (%v)", s, err)
+	}
+	if err := Save(path, s); err != nil {
+		t.Fatal(err)
+	}
+	again, err := LoadSettings(path)
+	if err != nil || !again.NeoGeoView || again.LastSort != data.SortNeoGeo || len(again.ViewsOff) != 8 {
+		t.Fatalf("restart: %+v (%v)", again, err)
+	}
+	old, err := LoadSettings(writeSettings(t, `{"schema":1,"last_sort":2}`))
+	if err != nil || old.NeoGeoView || old.LastSort != data.SortAlphabetical {
+		t.Fatal("existing preference changed")
+	}
+}

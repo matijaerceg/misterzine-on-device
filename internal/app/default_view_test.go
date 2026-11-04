@@ -13,11 +13,11 @@ func TestDefaultViewStartupAndChoices(t *testing.T) {
 		if m.Genre() != "" {
 			genres = []string{m.Name()}
 		}
-		a := New(Config{PhysW: 320, PhysH: 240, DefaultSort: m, LastSort: data.SortDebut, GenreViewsOn: genres}, ds, nil)
+		a := New(Config{PhysW: 320, PhysH: 240, DefaultSort: m, LastSort: data.SortDebut, GenreViewsOn: genres, NeoGeoSupport: true, NeoGeoView: m == data.SortNeoGeo}, ds, nil)
 		if a.Sort() != m {
 			t.Fatalf("default %v: got %v", m, a.Sort())
 		}
-		b := New(Config{PhysW: 320, PhysH: 240, DefaultSort: m, LastSort: data.SortDebut, RememberSort: true, GenreViewsOn: genres}, ds, nil)
+		b := New(Config{PhysW: 320, PhysH: 240, DefaultSort: m, LastSort: data.SortDebut, RememberSort: true, GenreViewsOn: genres, NeoGeoSupport: true, NeoGeoView: m == data.SortNeoGeo}, ds, nil)
 		if b.Sort() != data.SortDebut {
 			t.Fatal("default overrode remembering")
 		}

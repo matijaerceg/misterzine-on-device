@@ -153,7 +153,7 @@ var (
 
 // the genre views read "Shoot 'em ups A-Z" and so on in both
 func init() {
-	for _, m := range data.GenreViews {
+	for _, m := range append([]data.SortMode{data.SortNeoGeo}, data.GenreViews...) {
 		statusViews[m] = m.String() + " A-Z"
 		statusViewsShort[m] = m.String() + " A-Z"
 	}
@@ -170,7 +170,7 @@ func (a *App) statusBar() statusBar {
 	if v, ok := statusViews[a.mode]; ok {
 		s.view = v
 	}
-	if a.filtersActive() || a.mode == data.SortFavorites || a.mode == data.SortRecents || a.mode.Genre() != "" {
+	if a.filtersActive() || a.mode == data.SortFavorites || a.mode == data.SortRecents || a.mode.Genre() != "" || a.mode == data.SortNeoGeo {
 		s.shown, s.narrow = a.shown, true
 	}
 	return s
@@ -270,6 +270,14 @@ func (a *App) emptyListMessage() string {
 	}
 	if a.mode == data.SortRecents && len(a.cfg.RecentLaunches) == 0 {
 		return "No launches yet"
+	}
+	if a.mode == data.SortNeoGeo && a.query == "" {
+		if a.filters.SrcOff[data.SrcLocal] || a.filters.CoreOff["local/NeoGeo"] {
+			return "Neo Geo hidden"
+		}
+		if !a.filtersActive() {
+			return "No Neo Geo shortcuts"
+		}
 	}
 	if a.mode.Genre() != "" && a.query == "" && !a.filtersActive() {
 		return "No " + a.mode.String() + " listed"

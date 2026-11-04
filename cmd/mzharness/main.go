@@ -83,6 +83,8 @@ func main() {
 	rememberAlt := flag.Int("remember-alt", 0, "start with galagamw's alternative N (1 or 2) remembered as its version")
 	recents := flag.Int("recents", 0, "pretend the first N rows were launched, the last one most recently; turns the Recents view on")
 	viewsOff := flag.String("views-off", "", "views left out of the chooser, comma separated names (updated, debut, year, alphabetical, maker, core, favorites, recents); Recents is off unless -recents is given")
+	neoGeo := flag.Bool("neogeo", false, "offer the optional Neo Geo view")
+	neoGeoView := flag.Bool("neogeo-view", false, "enable the Neo Geo view in the chooser")
 	genreViews := flag.String("genre-views", "", "genre views enabled in the chooser, comma separated settings names (shmups, fighting, beatemups, runnguns, platformers, arenashooters, fixedshooters, railshooters, lightgun, racing, maze, puzzle, sports, tabletopquiz, other); all off unless given")
 	installed := flag.String("installed", "", "Downloader database ids the card has, comma separated (e.g. distribution_mister,jtcores): Sources starts on installed only and the other sources are hidden")
 	showNonArcade := flag.Bool("show-non-arcade", false, "include console, computer and other cores")
@@ -155,6 +157,8 @@ func main() {
 		Mature:         *mature,
 		ViewsOff:       viewsOffList(*viewsOff, *recents > 0),
 		GenreViewsOn:   viewsOffList(*genreViews, true),
+		NeoGeoSupport:  *neoGeo,
+		NeoGeoView:     *neoGeoView,
 		TitleFont:      *titleFont,
 		ListShot:       *listShot,
 		DateFormat:     *dateFormat,
@@ -331,7 +335,7 @@ func main() {
 		for _, k := range strings.Split(*unseenKeys, ",") {
 			delete(cur, k)
 		}
-		stored =&data.SeenRecord{T: now.Add(-*seenAge).UTC().Format(time.RFC3339), Cur: cur}
+		stored = &data.SeenRecord{T: now.Add(-*seenAge).UTC().Format(time.RFC3339), Cur: cur}
 	}
 	controlPads := controlFixtures()
 	if *controlsPreview || *controlsAuto {

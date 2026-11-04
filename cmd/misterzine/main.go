@@ -321,6 +321,8 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		ArcadeBack:           h.arcadeBack,
 		ViewsOff:             h.settings.ViewsOff,
 		GenreViewsOn:         h.settings.GenreViewsOn,
+		NeoGeoSupport:        neoGeoPilot,
+		NeoGeoView:           h.settings.NeoGeoView,
 		RecentLaunches:       h.state.Recents,
 		LastSort:             h.settings.LastSort,
 		DefaultSort:          h.settings.DefaultSort,
@@ -1142,6 +1144,7 @@ func (h *host) saveAll(final bool) {
 		}
 		h.settings.ViewsOff = h.a.ViewsOff()
 		h.settings.GenreViewsOn = h.a.GenreViewsOn()
+		h.settings.NeoGeoView = h.a.NeoGeoView()
 		h.settings.LastSort = h.a.Sort()
 		h.settings.DefaultSort = h.a.DefaultView()
 		h.settings.OpenAtBoot = h.a.OpenAtBoot()

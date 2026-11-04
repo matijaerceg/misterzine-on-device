@@ -57,6 +57,8 @@ const (
 	SortSports
 	SortTabletopQuiz
 	SortOther
+	// SortNeoGeo lists imported Neo Geo arcade shortcuts A-Z. Appended to preserve saved values.
+	SortNeoGeo
 	sortEnd // one past the last mode
 )
 
@@ -115,13 +117,15 @@ func (m SortMode) Genre() string {
 }
 
 // Alphabetical reports whether the view runs A-Z with a header line per
-// letter: the A-Z view and the genre views.
-func (m SortMode) Alphabetical() bool { return m == SortAlphabetical || m.Genre() != "" }
+// letter: the A-Z, Neo Geo and genre views.
+func (m SortMode) Alphabetical() bool {
+	return m == SortAlphabetical || m == SortNeoGeo || m.Genre() != ""
+}
 
 // ViewsOn counts the views a saved choice leaves in the cycle: the views
 // off by name, and the genre views on by name (they are off unless
-// listed). Zero means the choice would leave nothing on and is ignored.
-func ViewsOn(off, genreOn []string) int {
+// listed), plus the optional Neo Geo view. Zero means the choice would leave nothing on and is ignored.
+func ViewsOn(off, genreOn []string, neoGeoOn bool) int {
 	set := func(names []string) map[SortMode]bool {
 		m := map[SortMode]bool{}
 		for _, n := range names {
@@ -134,7 +138,11 @@ func ViewsOn(off, genreOn []string) int {
 	offSet, onSet := set(off), set(genreOn)
 	n := 0
 	for _, m := range ViewOrder {
-		if m.Genre() != "" {
+		if m == SortNeoGeo {
+			if neoGeoOn {
+				n++
+			}
+		} else if m.Genre() != "" {
 			if onSet[m] {
 				n++
 			}
@@ -152,10 +160,10 @@ func ViewsOn(off, genreOn []string) int {
 func (m SortMode) Anchored() bool { return m != SortFavorites && m != SortRecents }
 
 // ViewOrder is every view in the order Y walks them, Recents and the genre
-// views included.
-var ViewOrder = append([]SortMode{SortUpdated, SortDebut, SortYear, SortAlphabetical, SortMaker, SortCore, SortFavorites, SortRecents}, GenreViews...)
+// views and optional Neo Geo view included.
+var ViewOrder = append([]SortMode{SortUpdated, SortDebut, SortYear, SortAlphabetical, SortMaker, SortCore, SortFavorites, SortRecents, SortNeoGeo}, GenreViews...)
 
-var sortNames = map[SortMode]string{SortUpdated: "updated", SortDebut: "debut", SortYear: "year", SortAlphabetical: "alphabetical", SortMaker: "maker", SortCore: "core", SortFavorites: "favorites", SortRecents: "recents"}
+var sortNames = map[SortMode]string{SortUpdated: "updated", SortDebut: "debut", SortYear: "year", SortAlphabetical: "alphabetical", SortMaker: "maker", SortCore: "core", SortFavorites: "favorites", SortRecents: "recents", SortNeoGeo: "neogeo"}
 
 // Name is the mode's settings name (Options -> Views keeps the ones left
 // out of the cycle by name, Genre views the ones put in).
@@ -240,6 +248,8 @@ func (m SortMode) String() string {
 		return "Manufacturer"
 	case SortCore:
 		return "Core"
+	case SortNeoGeo:
+		return "Neo Geo"
 	}
 	if g := m.genreView(); g != nil {
 		return g.label

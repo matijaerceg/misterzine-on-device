@@ -421,5 +421,17 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "shmups,fighting,beatemups,runnguns,platformers,arenashooters,fixedshooters,railshooters,lightgun,racing,maze,puzzle,sports,tabletopquiz,other",
                           "-out", f"out/view-chooser-{orientation}-{inset}", "-script",
                           "space; shot open; end; shot edit; up; shot last; enter; shot chosen; space; shot current; end; enter; shot editor; end; shot editor-end; enter; back; shot updated; back; shot cancelled; back; home; pagedown; right; down*6; enter; shot options-editor"])
+# Neo Geo is offered only by the prototype host and stays off until enabled.
+for rotation in ([], ["-rot", "left", "-logical"]):
+    orientation = "t" if rotation else "h"
+    for inset in (0, 40):
+        scenarios.append([*rotation, "-inset", str(inset), "-neogeo", "-local", "testdata/neogeo-rows.json",
+                          "-out", f"out/neogeo-{orientation}-{inset}", "-script",
+                          "space; end; enter; down*8; shot view-off; enter; shot view-on; back; end; up; shot chooser; enter; shot games; "
+                          "tab; home; down*3; right; down; right; down*2; shot filter; enter; back; shot hidden; "
+                          "tab; home; enter; back; shot restored; type slug; shot search"])
+        scenarios.append([*rotation, "-inset", str(inset), "-neogeo", "-neogeo-view",
+                          "-out", f"out/neogeo-{orientation}-{inset}", "-script",
+                          "space; end; up; enter; shot no-shortcuts"])
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)

@@ -191,7 +191,7 @@ func TestEveryGenreHasAView(t *testing.T) {
 		}
 	}
 	// the first four keep their saved values; the rest follow in order
-	if int(data.SortShmups) != 8 || int(data.SortRunNGuns) != 11 || int(data.SortPlatformers) != 12 || int(data.SortOther) != 22 || data.SortMode(23).Valid() {
+	if int(data.SortShmups) != 8 || int(data.SortRunNGuns) != 11 || int(data.SortPlatformers) != 12 || int(data.SortOther) != 22 || int(data.SortNeoGeo) != 23 || data.SortMode(24).Valid() {
 		t.Fatalf("values: shmups %d runnguns %d platformers %d other %d", data.SortShmups, data.SortRunNGuns, data.SortPlatformers, data.SortOther)
 	}
 }

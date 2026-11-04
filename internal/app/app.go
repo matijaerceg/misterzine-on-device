@@ -175,10 +175,12 @@ type Config struct {
 	// (data.SortMode.Name); a fresh install lists only "recents".
 	// GenreViewsOn names the genres enabled in Available views;
 	// none to start.
-	ViewsOff     []string
-	GenreViewsOn []string
-	LastSort     data.SortMode
-	DefaultSort  data.SortMode
+	ViewsOff      []string
+	GenreViewsOn  []string
+	NeoGeoSupport bool // host supports importing Neo Geo shortcuts
+	NeoGeoView    bool // optional Neo Geo view, off by default
+	LastSort      data.SortMode
+	DefaultSort   data.SortMode
 	// OpenAtBoot and ReturnAfterGame are Options -> Operation switches the
 	// host's resident launcher acts on; both need the launcher enabled.
 	OpenAtBoot      bool
@@ -387,7 +389,7 @@ func New(cfg Config, ds *data.Dataset, stored *data.SeenRecord) *App {
 		cfg.Versions = map[string]string{}
 	}
 	a := &App{cfg: cfg, body: fonts.Body(), sm: fonts.Small(), narrow: fonts.Narrow(), tall: fonts.NarrowTall(), rot: cfg.Rotation, down: map[platform.Key]bool{}, released: map[platform.Key]time.Time{}, look: DefaultSaverLook, supporters: defaultSupporters()}
-	a.viewsOff = parseViewsOff(cfg.ViewsOff, cfg.GenreViewsOn)
+	a.viewsOff = parseViewsOff(cfg.ViewsOff, cfg.GenreViewsOn, cfg.NeoGeoSupport && cfg.NeoGeoView)
 	a.mode = a.DefaultView()
 	if cfg.RememberSort && a.viewOn(cfg.LastSort) {
 		a.mode = cfg.LastSort
@@ -538,6 +540,7 @@ func (a *App) rebuild() {
 		filters.FavOnly = true
 	}
 	filters.Genre = a.mode.Genre()
+	filters.NeoGeoOnly = a.mode == data.SortNeoGeo
 	a.total = len(a.ds.Rows)
 	if len(filters.SrcHidden) > 0 || filters.HideDeprecated || filters.HideMature || filters.ArcadeOnly {
 		a.total = 0

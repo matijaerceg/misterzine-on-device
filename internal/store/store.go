@@ -49,6 +49,7 @@ type Settings struct {
 	LastSort             data.SortMode `json:"last_sort"`
 	DefaultSort          data.SortMode `json:"default_sort"`
 	ViewsOff             []string      `json:"views_off"`                // Options -> Views: the list orders left out of the Y cycle, by name (updated, debut, year, alphabetical, maker, favorites, recents)
+	NeoGeoView           bool          `json:"neogeo_view,omitempty"`    // optional Neo Geo A-Z view
 	GenreViewsOn         []string      `json:"genre_views_on,omitempty"` // Options -> Genre views: the genre views put into the cycle, by name (shmups, fighting, beatemups, runnguns, platformers and so on, see data.GenreViews); off unless listed
 	// OpenAtBoot and ReturnAfterGame are carried out by the resident menu
 	// launcher (misterzine launcher watch), which reads this file itself.
@@ -135,7 +136,7 @@ func (s *Settings) Migrate(legacy bool) {
 	}
 	views := []string{} // never nil: an empty set saves as [] and reloads as every view on
 	for _, n := range s.ViewsOff {
-		if m, ok := data.ParseSort(n); ok && m.Genre() == "" {
+		if m, ok := data.ParseSort(n); ok && m.Genre() == "" && m != data.SortNeoGeo {
 			views = append(views, n)
 		}
 	}
@@ -145,7 +146,7 @@ func (s *Settings) Migrate(legacy bool) {
 			genres = append(genres, n)
 		}
 	}
-	if data.ViewsOn(views, genres) == 0 {
+	if data.ViewsOn(views, genres, s.NeoGeoView) == 0 {
 		views = []string{} // nothing left on: back to every view
 	}
 	s.ViewsOff, s.GenreViewsOn = views, genres

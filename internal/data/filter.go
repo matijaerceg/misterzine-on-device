@@ -66,6 +66,7 @@ type Filters struct {
 	HideMature     bool            `json:"-"`                 // runtime catalogue preference
 	MatchRotation  string          `json:"-"`                 // runtime INI rule; includes system/unknown rows
 	SrcHidden      map[string]bool `json:"-"`                 // runtime rule: sources whose Downloader database the card lacks
+	NeoGeoOnly     bool            `json:"-"`                 // runtime rule: imported Neo Geo arcade shortcuts only
 	Genre          string          `json:"-"`                 // runtime rule: a genre view shows this Row.Genre alone
 	ResOff         map[string]bool `json:"res_off,omitempty"` // raw resolution, "" = unknown
 	BaseOff        map[string]bool `json:"base_off,omitempty"`
@@ -76,18 +77,18 @@ type Filters struct {
 	// those the catalogue gains later included; the ones off
 	// when it was set are in CoreOff too, so a core that gains a second
 	// game stays off
-	SinglesOff map[string]bool `json:"singles_off,omitempty"`
+	SinglesOff    map[string]bool `json:"singles_off,omitempty"`
 	RotOff        map[string]bool `json:"rot_off,omitempty"`   // "h", "v", ""
-	PlrOff         map[string]bool `json:"plr_off,omitempty"`   // raw plr, "" = unknown
-	GenreOff       map[string]bool `json:"genre_off,omitempty"` // raw genre, "" = no genre
-	PatchOff       map[string]bool `json:"patch_off,omitempty"` // patch kind, "" = no patch
-	DirectionsOff  map[string]bool `json:"directions_off,omitempty"`
-	ButtonsOff     map[string]bool `json:"buttons_off,omitempty"`
-	YearOff        map[string]bool `json:"year_off,omitempty"` // original arcade release year; "" = unknown
-	Install        string          `json:"install,omitempty"`  // InstallAll (default) or one of the Install* values
-	FavOnly        bool            `json:"fav_only,omitempty"`
-	Since          bool            `json:"since,omitempty"` // only rows changed since the last look
-	ROM            string          `json:"rom,omitempty"`   // ROMAll (default) or one of the ROM* values
+	PlrOff        map[string]bool `json:"plr_off,omitempty"`   // raw plr, "" = unknown
+	GenreOff      map[string]bool `json:"genre_off,omitempty"` // raw genre, "" = no genre
+	PatchOff      map[string]bool `json:"patch_off,omitempty"` // patch kind, "" = no patch
+	DirectionsOff map[string]bool `json:"directions_off,omitempty"`
+	ButtonsOff    map[string]bool `json:"buttons_off,omitempty"`
+	YearOff       map[string]bool `json:"year_off,omitempty"` // original arcade release year; "" = unknown
+	Install       string          `json:"install,omitempty"`  // InstallAll (default) or one of the Install* values
+	FavOnly       bool            `json:"fav_only,omitempty"`
+	Since         bool            `json:"since,omitempty"` // only rows changed since the last look
+	ROM           string          `json:"rom,omitempty"`   // ROMAll (default) or one of the ROM* values
 }
 
 // Active reports whether any narrowing is in effect.
@@ -95,7 +96,7 @@ func (f *Filters) Active() bool {
 	if f == nil {
 		return false
 	}
-	return f.ArcadeOnly || f.HideDeprecated || f.HideMature || f.MatchRotation != "" || len(f.SrcHidden) > 0 || f.Genre != "" || len(f.YearOff) > 0 || len(f.BaseOff) > 0 || len(f.BetaOff) > 0 || len(f.SrcOff) > 0 || len(f.CoreOff) > 0 || len(f.SinglesOff) > 0 || len(f.RotOff) > 0 || len(f.PlrOff) > 0 ||
+	return f.ArcadeOnly || f.HideDeprecated || f.HideMature || f.MatchRotation != "" || len(f.SrcHidden) > 0 || f.NeoGeoOnly || f.Genre != "" || len(f.YearOff) > 0 || len(f.BaseOff) > 0 || len(f.BetaOff) > 0 || len(f.SrcOff) > 0 || len(f.CoreOff) > 0 || len(f.SinglesOff) > 0 || len(f.RotOff) > 0 || len(f.PlrOff) > 0 ||
 		len(f.ResOff) > 0 || len(f.GenreOff) > 0 || len(f.PatchOff) > 0 || len(f.DirectionsOff) > 0 || len(f.ButtonsOff) > 0 || (f.Install != "" && f.Install != InstallAll) || f.FavOnly || f.Since || f.ROMActive()
 }
 
@@ -127,6 +128,9 @@ func (f *Filters) Why(r *Row, d *Derived, st Status, fav, unseen bool, rom ROMSt
 	}
 	if f.HideMature && r.Mat != 0 {
 		return "a mature game (Options: mature games hidden)"
+	}
+	if f.NeoGeoOnly && !r.IsNeoGeoShortcut() {
+		return "the Neo Geo view (not a Neo Geo arcade shortcut)"
 	}
 	if f.Genre != "" && r.Genre != f.Genre {
 		return "the " + f.Genre + " view (this genre is " + orUnknown(r.Genre) + ")"

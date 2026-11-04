@@ -125,7 +125,7 @@ func TestResumeLandsOnTheLaunchedGameInItsView(t *testing.T) {
 		t.Fatalf("an unrecorded launch view moved the list: view %v", a.Sort())
 	}
 	a.cfg.ViewsOff = []string{"alphabetical"}
-	a.viewsOff = parseViewsOff(a.cfg.ViewsOff, nil)
+	a.viewsOff = parseViewsOff(a.cfg.ViewsOff, nil, false)
 	if a.ResumeAt(data.Recent{K: "b", View: "alphabetical"}) || a.Sort() != data.SortFavorites {
 		t.Fatalf("a launch view turned off was reopened: view %v", a.Sort())
 	}

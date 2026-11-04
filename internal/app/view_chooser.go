@@ -12,6 +12,9 @@ func (a *App) openViewChooser() {
 	p := panelState{}
 	genres := false
 	for _, m := range a.enabledViews() {
+		if m == data.SortNeoGeo {
+			p.entries = append(p.entries, panelEntry{text: "Cores", info: true})
+		}
 		if m.Genre() != "" && !genres {
 			p.entries = append(p.entries, panelEntry{text: "Genres", info: true})
 			genres = true

@@ -188,7 +188,12 @@ func sortedFacet(m map[string]int) []string {
 	for k := range m {
 		keys = append(keys, k)
 	}
-	sort.Slice(keys, func(i, j int) bool { return data.Compare(keys[i], keys[j]) < 0 })
+	sort.Slice(keys, func(i, j int) bool {
+		if (keys[i] == "") != (keys[j] == "") {
+			return keys[j] == ""
+		}
+		return data.Compare(keys[i], keys[j]) < 0
+	})
 	return keys
 }
 
@@ -274,6 +279,7 @@ func (a *App) facetRows(f data.Filters, arcade bool, fn func(i int)) {
 		f.FavOnly = true
 	}
 	f.Genre = a.mode.Genre()
+	f.NeoGeoOnly = a.mode == data.SortNeoGeo
 	query := searchText(a.query)
 	for i := range a.ds.Rows {
 		r, d := &a.ds.Rows[i], &a.ds.Der[i]
@@ -403,7 +409,23 @@ func (a *App) rawFilterEntries() []panelEntry {
 			E = append(E, panelEntry{text: a.rotationFilterLabel(), info: true})
 			return
 		}
-		for _, v := range sortedFacet(facet) {
+		keys := sortedFacet(facet)
+		if kind == "src" {
+			sort.Slice(keys, func(i, j int) bool {
+				x, y := keys[i], keys[j]
+				if (x == data.SrcLocal) != (y == data.SrcLocal) {
+					return x == data.SrcLocal
+				}
+				if (x == "") != (y == "") {
+					return y == ""
+				}
+				if c := data.Compare(label(x), label(y)); c != 0 {
+					return c < 0
+				}
+				return x < y
+			})
+		}
+		for _, v := range keys {
 			if kind == "base" && v == "Arcade" {
 				E = append(E, a.arcadeEntries(counts[v])...)
 				continue

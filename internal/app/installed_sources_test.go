@@ -66,7 +66,7 @@ func TestInstalledSourcesLeaveEveryView(t *testing.T) {
 			sources = append(sources, e.value)
 		}
 	}
-	if got := strings.Join(sources, " "); got != "distribution_mister jtbindb newsource ongo" {
+	if got := strings.Join(sources, " "); got != "jtbindb distribution_mister newsource ongo" {
 		t.Fatalf("Source section: %q", got)
 	}
 	a.screen = ScreenList
