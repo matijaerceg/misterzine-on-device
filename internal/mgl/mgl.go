@@ -1,4 +1,4 @@
-// Package mgl is the isolated Neo Geo shortcut import prototype. It never
+// Package mgl imports recognised Neo Geo arcade shortcuts. It never
 // rewrites launchers, opens their ROM targets, or treats an MGL as an MRA.
 package mgl
 

@@ -64,7 +64,7 @@ func TestNeoGeoViewOptInAndPersistence(t *testing.T) {
 	if c.viewsOnCount() != 1 || c.setViewOn(data.SortNeoGeo, false) {
 		t.Fatal("only-view protection failed")
 	}
-	// A normal host never offers the pilot view, including when loading its settings.
+	// A host without shortcut support never offers the Neo Geo view, including when loading its settings.
 	cfg.NeoGeoSupport = false
 	d := New(cfg, ds, nil)
 	if d.Sort() == data.SortNeoGeo || d.viewsOnCount() == 0 {
@@ -72,7 +72,7 @@ func TestNeoGeoViewOptInAndPersistence(t *testing.T) {
 	}
 	for _, e := range d.viewsEntries() {
 		if e.value == "neogeo" {
-			t.Fatal("normal app offers pilot view")
+			t.Fatal("unsupported host offers Neo Geo view")
 		}
 	}
 }

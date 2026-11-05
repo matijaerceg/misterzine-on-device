@@ -1,5 +1,7 @@
 # Neo Geo MGL device test
 
+Neo Geo shortcut support is now included in normal MisterZine builds; see the [user guide](USER_GUIDE.md#neo-geo-games). This page documents the earlier separate test installation, which remains isolated from the normal app and keeps its own preferences.
+
 This experimental build recognises the Neo Geo arcade catalogue, including known regional and revision set names. It uses one shared list of 161 game families for discovery and launch checks; the old five-game restriction is gone. See [catalogue sources and coverage](NEOGEO_CATALOGUE.md). Recognition does not certify ROM contents, BIOS compatibility or MVS settings.
 
 ## Install
@@ -32,4 +34,4 @@ Missing games are explained in `mgl-report.json` in the test folder. Review its 
 
 Exit the test app, then remove `Scripts/MisterZine-NeoGeo-TEST.sh`, the installer and `misterzine-neogeo-test`. Any `misterzine-neogeo-test-backup-*` folders can be removed when no longer needed. Keep your games, shortcuts and usual MisterZine installation.
 
-Build `cmd/misterzine` for Linux ARMv7 with `CGO_ENABLED=0`, the `neogeopilot` tag and a distinct version stamp. Build `cmd/mzmglprobe` for the same target, then run `python3 tools/package_neogeo.py --binary PATH --probe PATH --output PATH`. Normal builds omit the tag and do not import MGL rows.
+Build `cmd/misterzine` for Linux ARMv7 with `CGO_ENABLED=0`, the `neogeopilot` tag and a distinct version stamp. Build `cmd/mzmglprobe` for the same target, then run `python3 tools/package_neogeo.py --binary PATH --probe PATH --output PATH`. Normal builds omit the tag and import the same recognised MGL rows through their ordinary card scan and launcher. The tag now selects only the isolated test installation and its restrictions.

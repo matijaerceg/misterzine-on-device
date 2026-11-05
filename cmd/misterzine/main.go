@@ -321,7 +321,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		ArcadeBack:           h.arcadeBack,
 		ViewsOff:             h.settings.ViewsOff,
 		GenreViewsOn:         h.settings.GenreViewsOn,
-		NeoGeoSupport:        neoGeoPilot,
+		NeoGeoSupport:        true,
 		NeoGeoView:           h.settings.NeoGeoView,
 		RecentLaunches:       h.state.Recents,
 		LastSort:             h.settings.LastSort,
@@ -1197,8 +1197,8 @@ func (h *host) cleanup() {
 // Start before a scan finishes must not turn a missing core into a silent exit.
 func (h *host) requestLaunch(target string) {
 	abs, err := mister.LaunchPath(h.card, target)
-	if err == nil && neoGeoPilot && strings.EqualFold(filepath.Ext(target), ".mgl") {
-		err = validatePilotLaunch(h.card, target)
+	if err == nil && strings.EqualFold(filepath.Ext(target), ".mgl") {
+		err = validateNeoGeoLaunch(h.card, target)
 	}
 	message := "Cannot launch: target missing or invalid"
 	if err == nil {
@@ -1645,25 +1645,23 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 		h.lg.Printf("scan: local: %v", local.Err)
 		notice = "Card scan incomplete"
 	}
-	if neoGeoPilot {
-		pilot, pilotErr := h.scanPilot()
-		if pilotErr != nil {
-			local.Err = errors.Join(local.Err, pilotErr)
-			notice = "Card scan incomplete"
-			h.lg.Printf("MGL scan: %v", pilotErr)
-			for _, r := range rows[ncat:] {
-				if strings.HasPrefix(r.K, "local:neogeo:") {
-					local.Rows = append(local.Rows, r)
-				}
-			}
-		} else {
-			local.Rows = append(local.Rows, pilot.Rows...)
-			for k, ps := range pilot.Alternatives {
-				resolved[k] = ps
+	neoGeo, neoGeoErr := h.scanNeoGeo()
+	if neoGeoErr != nil {
+		local.Err = errors.Join(local.Err, neoGeoErr)
+		notice = "Card scan incomplete"
+		h.lg.Printf("MGL scan: %v", neoGeoErr)
+		for _, r := range rows[ncat:] {
+			if strings.HasPrefix(r.K, "local:neogeo:") {
+				local.Rows = append(local.Rows, r)
 			}
 		}
-		h.lg.Printf("MGL pilot: %d included, %d inspected", len(pilot.Rows), len(pilot.Entries))
+	} else {
+		local.Rows = append(local.Rows, neoGeo.Rows...)
+		for k, ps := range neoGeo.Alternatives {
+			resolved[k] = ps
+		}
 	}
+	h.lg.Printf("Neo Geo shortcuts: %d included, %d inspected", len(neoGeo.Rows), len(neoGeo.Entries))
 	merged := data.MergeLocal(catalogue, local.Rows)
 	nextGen := data.Generation(hash, merged[ncat:])
 	h.lg.Printf("scan: %d MRAs outside the catalogue's folders, %d local rows (%v)", local.Files, len(merged)-ncat, time.Since(t2).Round(time.Millisecond))

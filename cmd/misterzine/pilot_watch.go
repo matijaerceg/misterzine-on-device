@@ -13,6 +13,8 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/store"
 )
 
+const pilotRoot = "/media/fat/misterzine-neogeo-test"
+
 // One detached helper follows one launched game. It exits when the game is
 // replaced or when the returned UI closes. Each subsequent launch starts its
 // own helper; no boot script or standard-installation watcher is changed.

@@ -83,7 +83,7 @@ func main() {
 	rememberAlt := flag.Int("remember-alt", 0, "start with galagamw's alternative N (1 or 2) remembered as its version")
 	recents := flag.Int("recents", 0, "pretend the first N rows were launched, the last one most recently; turns the Recents view on")
 	viewsOff := flag.String("views-off", "", "views left out of the chooser, comma separated names (updated, debut, year, alphabetical, maker, core, favorites, recents); Recents is off unless -recents is given")
-	neoGeo := flag.Bool("neogeo", false, "offer the optional Neo Geo view")
+	neoGeo := flag.Bool("neogeo", true, "offer the optional Neo Geo view")
 	neoGeoView := flag.Bool("neogeo-view", false, "enable the Neo Geo view in the chooser")
 	genreViews := flag.String("genre-views", "", "genre views enabled in the chooser, comma separated settings names (shmups, fighting, beatemups, runnguns, platformers, arenashooters, fixedshooters, railshooters, lightgun, racing, maze, puzzle, sports, tabletopquiz, other); all off unless given")
 	sourceFiles := flag.String("source-files", "", "URL-free Downloader source-file snapshot JSON")

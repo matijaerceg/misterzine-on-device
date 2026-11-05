@@ -1,6 +1,6 @@
 # Neo Geo arcade catalogue
 
-The device test and diagnostic package share `internal/mgl/neogeo-arcade.json`: 161 game families with 1,282 identifiers, titles and aliases before case folding. This replaces the original five-game pilot list. Classic arcade releases, arcade prototypes and known regional, revision and bootleg variants are included. Specific later MVS releases are also covered; this is not a claim to recognise every future homebrew filename.
+The app, separate device test and diagnostic package share `internal/mgl/neogeo-arcade.json`: 161 game families with 1,282 identifiers, titles and aliases before case folding. This replaces the original five-game pilot list. Classic arcade releases, arcade prototypes and known regional, revision and bootleg variants are included. Specific later MVS releases are also covered; this is not a claim to recognise every future homebrew filename.
 
 ## Sources and regeneration
 

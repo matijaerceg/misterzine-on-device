@@ -209,7 +209,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     # harness catalogue carries no genre labels, so the view is empty)
     scenarios.append([*rotation,
                       "-out", f"out/genre-views-{orientation}", "-script",
-                      "back; home; pagedown; right; down*7; shot option; enter; shot page; end; shot page-end; home; down*8; enter; shot page-on; back; shot option-on; back; "
+                      "back; home; pagedown; right; down*7; shot option; enter; shot page; end; shot page-end; home; down*9; enter; shot page-on; back; shot option-on; back; "
                       "space; end; up; enter; shot shmups"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
@@ -421,27 +421,27 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "shmups,fighting,beatemups,runnguns,platformers,arenashooters,fixedshooters,railshooters,lightgun,racing,maze,puzzle,sports,tabletopquiz,other",
                           "-out", f"out/view-chooser-{orientation}-{inset}", "-script",
                           "space; shot open; end; shot edit; up; shot last; enter; shot chosen; space; shot current; end; enter; shot editor; end; shot editor-end; enter; back; shot updated; back; shot cancelled; back; home; pagedown; right; down*7; enter; shot options-editor"])
-# Neo Geo is offered only by the prototype host and stays off until enabled.
+# Neo Geo is offered by the normal host and stays off until enabled.
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (0, 40):
-        scenarios.append([*rotation, "-inset", str(inset), "-neogeo", "-local", "testdata/neogeo-rows.json",
+        scenarios.append([*rotation, "-inset", str(inset), "-local", "testdata/neogeo-rows.json",
                           "-out", f"out/neogeo-{orientation}-{inset}", "-script",
                           "space; end; enter; down*8; shot view-off; enter; shot view-on; back; end; up; shot chooser; enter; shot games; "
                           "tab; home; down*3; right; down; right; down*2; shot filter; enter; back; shot hidden; "
                           "tab; home; enter; back; shot restored; type slug; shot search"])
-        scenarios.append([*rotation, "-inset", str(inset), "-neogeo", "-neogeo-view",
+        scenarios.append([*rotation, "-inset", str(inset), "-neogeo-view",
                           "-out", f"out/neogeo-{orientation}-{inset}", "-script",
                           "space; end; up; enter; shot no-shortcuts"])
 # The combined Core view includes Neo Geo without enabling its optional view.
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (0, 40):
-        scenarios.append([*rotation, "-inset", str(inset), "-neogeo", "-data", "testdata/neogeo-core-view.json",
+        scenarios.append([*rotation, "-inset", str(inset), "-data", "testdata/neogeo-core-view.json",
                           "-out", f"out/neogeo-core-{orientation}-{inset}", "-script",
                           "space; home; down*5; enter; shot combined; pagedown; shot neo-jump; pagedown; shot next-core; "
                           "type slug; shot search; back; tab; home; down*3; right; down; right; down*2; enter; back; shot hidden"])
-        scenarios.append([*rotation, "-inset", str(inset), "-neogeo", "-data", "testdata/neogeo-core-single.json",
+        scenarios.append([*rotation, "-inset", str(inset), "-data", "testdata/neogeo-core-single.json",
                           "-out", f"out/neogeo-core-{orientation}-{inset}", "-script",
                           "space; home; down*5; enter; pagedown; shot single-shortcut"])
 # Source-file provenance is available with either Sources choice.

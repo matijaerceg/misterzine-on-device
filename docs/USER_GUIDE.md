@@ -243,6 +243,14 @@ it types, on a keyboard with a Button mapping profile too. Backspace edits, and 
 Hold delay; Esc/B clears the query before B opens Options. Keyboard find currently uses a US layout. Search clears on restart;
 filter choices are saved.
 
+### Neo Geo games
+
+Existing Neo Geo arcade game shortcuts (`.mgl` files) appear alongside other arcade games after the card scan. MisterZine looks in the card root and MiSTer's underscore-prefixed menu folders, including nested folders such as `_@Favorites`; it does not search the `games` folder for ROMs or create shortcuts. Use shortcuts that already work from MiSTer's menu. The original shortcut is launched unchanged, keeping its game path and configuration.
+
+The **Core** view gathers these games under **Neo Geo**. For a separate A-Z list, enable **Neo Geo** in **Options -> List -> Available views -> Cores**, also reachable through **Y -> Edit available views**. This optional view starts off and follows your search and filters. To hide the games from every view, use **Filters -> Source/core -> Local -> Neo Geo**. Favorites, Recents, the exit chord and Return after game work as they do for other games.
+
+Recognition covers the [Neo Geo arcade catalogue](NEOGEO_CATALOGUE.md), including known regional and revision names, for NeoGeo, NeoGeo_LLAPI and NeoGeoYC cartridge shortcuts. Other systems, Neo Geo CD and unrecognised game filenames are not imported. A missing core leaves the game greyed out. Recognition does not verify the game files or BIOS; the scan's `misterzine/mgl-report.json` explains why a shortcut was included or omitted. Preferences from the earlier separate Neo Geo test app stay in that test installation.
+
 ## Controls
 
 The [Button mapping screen](BUTTON_MAPPING.md) (Options -> Controls) asks for six basic

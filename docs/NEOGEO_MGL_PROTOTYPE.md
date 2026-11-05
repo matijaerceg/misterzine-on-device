@@ -1,6 +1,6 @@
 # Neo Geo MGL import prototype
 
-Normal builds do not enable this feature. This document describes the desktop/card-audit prototype; the separate opt-in ARM device build is documented in [Neo Geo device test](NEOGEO_DEVICE_TEST.md). It discovers existing shortcuts, explains inclusion/exclusion, and exports recognised games to the existing UI harness. It does not write to the card, install anything, generate shortcuts, or launch a game on hardware.
+Neo Geo shortcut support is now included in normal builds; see the [user guide](USER_GUIDE.md#neo-geo-games). This document records the desktop/card-audit prototype; the separate opt-in ARM device build is documented in [Neo Geo device test](NEOGEO_DEVICE_TEST.md). It discovers existing shortcuts, explains inclusion/exclusion, and exports recognised games to the existing UI harness. It does not write to the card, install anything, generate shortcuts, or launch a game on hardware.
 
 ## Try the preview
 

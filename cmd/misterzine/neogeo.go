@@ -13,14 +13,12 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/store"
 )
 
-const pilotRoot = "/media/fat/misterzine-neogeo-test"
-
-func pilotCatalogue() *mgl.Catalogue {
+func neoGeoCatalogue() *mgl.Catalogue {
 	return mgl.NeoGeoCatalogue()
 }
 
-func (h *host) scanPilot() (mgl.Result, error) {
-	result, err := mgl.Scan(h.card, pilotCatalogue())
+func (h *host) scanNeoGeo() (mgl.Result, error) {
+	result, err := mgl.Scan(h.card, neoGeoCatalogue())
 	if len(result.Problems) > 0 {
 		err = errors.Join(err, errors.New(strings.Join(result.Problems, "; ")))
 	}
@@ -32,8 +30,8 @@ func (h *host) scanPilot() (mgl.Result, error) {
 }
 
 // Re-read the shortcut before handing the unchanged file to Main. A shortcut
-// edited since discovery must still satisfy the pilot's core and title rules.
-func validatePilotLaunch(card, target string) error {
+// edited since discovery must still satisfy the supported core and title rules.
+func validateNeoGeoLaunch(card, target string) error {
 	root, err := os.OpenRoot(card)
 	if err != nil {
 		return err
@@ -51,7 +49,7 @@ func validatePilotLaunch(card, target string) error {
 	if ok, reason := d.Cartridge(); !ok {
 		return errors.New(reason)
 	}
-	if _, ok := pilotCatalogue().Match(d); !ok {
+	if _, ok := neoGeoCatalogue().Match(d); !ok {
 		return errors.New("game target is not recognised in the Neo Geo arcade catalogue")
 	}
 	if !mgl.CorePresent(card, d) {
