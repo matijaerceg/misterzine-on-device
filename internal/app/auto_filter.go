@@ -53,9 +53,9 @@ func (a *App) filtersActive() bool {
 // hidden when the card has no downloader.ini.
 func (a *App) sourcesHelp() string {
 	if a.cfg.InstalledOnly && a.iniKnown && !a.iniFound {
-		return "No downloader.ini was found on this card, so nothing is hidden. Installed only: games from the databases Downloader is set up to fetch."
+		return "No downloader.ini was found on this card, so nothing is hidden. To hide missing games, use Filters > On the card > found on card."
 	}
-	return "Installed only: games from the databases in this card's downloader.ini, read at every card scan; other sources leave the list and Filters."
+	return "Show sources listed in your Downloader INI files. To hide missing games, use Filters > On the card > found on card."
 }
 
 func (a *App) rotationFilterLabel() string {

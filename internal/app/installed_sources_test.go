@@ -9,7 +9,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 )
 
-// Options -> Sources: installed only drops every source whose Downloader
+// Options -> Sources: in INI drops every source whose Downloader
 // database the card lacks from the list, search, Favorites, the card
 // counts and the Filters panel, without reading as an active filter.
 func TestInstalledSourcesLeaveEveryView(t *testing.T) {
@@ -40,7 +40,7 @@ func TestInstalledSourcesLeaveEveryView(t *testing.T) {
 	a.SetHiddenSources(data.HiddenSources([]data.DB{{ID: "distribution_mister"}, {ID: "jtcores"}, {ID: "OngoGablogian/MiSTer_Ongo"}}), true)
 	a.Refilter()
 	if keys() != "j m n o" || a.total != 4 {
-		t.Fatalf("installed only: %q total %d", keys(), a.total)
+		t.Fatalf("in INI: %q total %d", keys(), a.total)
 	}
 	if a.filtersActive() || a.filters.Active() {
 		t.Fatal("the sources rule must not read as a filter")
@@ -78,8 +78,8 @@ func TestInstalledSourcesLeaveEveryView(t *testing.T) {
 			row = i
 		}
 	}
-	if row < 0 || a.panel.entries[row].idx != 1 || a.panel.entries[row].vals[1] != "installed only" {
-		t.Fatal("Sources option missing or not on installed only")
+	if row < 0 || a.panel.entries[row].idx != 1 || a.panel.entries[row].vals[1] != "in INI" {
+		t.Fatal("Sources option missing or not on in INI")
 	}
 	a.panel.cursor = row
 	a.stepValue(-1)

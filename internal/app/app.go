@@ -153,7 +153,7 @@ type Config struct {
 	RememberSort   bool
 	FollowRotation bool
 	FilterRotation bool // strict filter on the current orientation
-	// InstalledOnly is Options -> Sources: installed only. Sources whose Downloader
+	// InstalledOnly is Options -> Sources: in INI. Sources whose Downloader
 	// database the card lacks (SetHiddenSources) leave every view.
 	InstalledOnly bool
 	ShowNonArcade bool
@@ -689,7 +689,7 @@ func (a *App) ExitChord() string {
 func (a *App) FollowRotation() bool { return a.cfg.FollowRotation }
 func (a *App) FilterRotation() bool { return a.cfg.FilterRotation }
 
-// InstalledOnly reports Options -> Sources: installed only.
+// InstalledOnly reports Options -> Sources: in INI.
 func (a *App) InstalledOnly() bool { return a.cfg.InstalledOnly }
 
 func (a *App) ShowNonArcade() bool      { return a.cfg.ShowNonArcade }

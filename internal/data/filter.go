@@ -148,7 +148,7 @@ func (f *Filters) Why(r *Row, d *Derived, st Status, fav, unseen bool, rom ROMSt
 		return "Filters -> Source/core (" + r.Src + ": single-game cores off)"
 	}
 	if f.SrcHidden[r.Src] {
-		return "Options -> Sources: installed only (" + r.Src + " is not in downloader.ini)"
+		return "Options -> Sources: in INI (" + r.Src + " is not in downloader.ini)"
 	}
 	if r.IsArcade() {
 		switch {

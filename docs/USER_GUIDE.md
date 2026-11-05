@@ -147,31 +147,7 @@ feature too, shown with Show beta features on.
 
 ### Games only on your card
 
-Arcade games on the card that the catalogue does not list appear as well, with
-a "local" chip and "Local" as their source. The scan reads every `.mra` under
-`_Arcade` except `cores` and arcade_organizer's `_Organized` copies. A file in an
-`_alternatives` folder joins the catalogue game it belongs to, and is listed as
-a local game only when it belongs to none. Title, year, maker,
-rotation, region, players and buttons come from the file itself; Details shows
-the file's path and the MRA category as a note. One row is shown per game
-however many copies are installed; the extra copies are offered as versions.
-A local game named like another game in the list shows the version its file
-gives after the name, or else its maker and year. Midway's cocktail Space
-Invaders Part II, a different game from Taito's in the catalogue, reads
-Space Invaders Part II (Midway, Cocktail).
-Local games carry no release dates, so they sit at the end of the date views
-(except a copy standing in for a greyed game, described below) and never count
-as new since your last look. To hide them, turn the Local
-source off in Filters -> Source/core; "Installed only" in Options never hides them.
-Pictures for local games are fetched from images.misterzine.fyi by MAME set
-name, the only thing sent about the game; a game without a known screenshot
-shows a placeholder, and the app asks again after a week. Local games with a
-screenshot join the screensaver like any other. System BIOS files are not
-listed. A game whose core is not installed shows greyed, and Start says which
-core is missing instead of launching it (MiSTer would otherwise sit on a load
-that never finishes). When the catalogue later lists a game that was local, the row
-becomes the catalogue's and keeps its favorite, chosen version and launch
-history.
+Arcade games on the card that the catalogue does not list appear as well, with a "local" chip and "Local" as their source. The scan reads every `.mra` under `_Arcade` except `cores` and arcade_organizer's `_Organized` copies. A file in an `_alternatives` folder joins the catalogue game it belongs to, and is listed as a local game only when it belongs to none. Title, year, maker, rotation, region, players and buttons come from the file itself; Details shows the file's path and the MRA category as a note. One row is shown per game however many copies are installed; the extra copies are offered as versions. A local game named like another game in the list shows the version its file gives after the name, or else its maker and year. Midway's cocktail Space Invaders Part II, a different game from Taito's in the catalogue, reads Space Invaders Part II (Midway, Cocktail). Local games carry no release dates, so they sit at the end of the date views (except a copy standing in for a greyed game, described below) and never count as new since your last look. To hide them, turn the Local source off in Filters -> Source/core; "in INI" in Options never hides them. Pictures for local games are fetched from images.misterzine.fyi by MAME set name, the only thing sent about the game; a game without a known screenshot shows a placeholder, and the app asks again after a week. Local games with a screenshot join the screensaver like any other. System BIOS files are not listed. A game whose core is not installed shows greyed, and Start says which core is missing instead of launching it (MiSTer would otherwise sit on a load that never finishes). When the catalogue later lists a game that was local, the row becomes the catalogue's and keeps its favorite, chosen version and launch history.
 
 Some games are in the catalogue only for a core you have not got: a Patreon
 core in early access, say, or one from a database you do not subscribe to.
@@ -554,19 +530,7 @@ and last row. Rows marked ↗ open another screen or editor.
   clearing filters does not change this preference. Upgraded installations show
   a one-time explanation. Hold A for two seconds to continue; the progress line
   fills while held. Releasing early resets it.
-- **Sources:** all by default. Installed only shows games from the databases
-  listed in the card's `downloader.ini`, the file Update All rewrites on every
-  run, or in the drop-in files Downloader reads beside it (`downloader_*.ini`
-  and the `downloader` folder, such as blahm1d's `downloader_blahm1d.ini`),
-  so a source you never enabled (Coin-Op, Meathax, rmCores, Jotego, Slop Cores, kuzecores, blahm1d, bazset or rossops) stays out of
-  the list, search, Favorites and the Filters panel, and the release count
-  leaves it out too. The file is read at every card scan: launch, Rescan card
-  and the rescan after Update All. Without database sections Downloader
-  fetches MiSTer Distribution alone, and the option follows that; without any
-  `downloader.ini` nothing is hidden and the help text says so. Sources the
-  app does not know stay visible. rmCores rows are rmonic79's own builds of
-  games the MiSTer Distribution also has, with CRT Adjust and V-Size on the
-  analog output and a pause overlay; Details says so under Source.
+- **Sources:** all by default. **in INI** shows games from the databases listed in the card's `downloader.ini`, the file Update All rewrites on every run, or in the drop-in files Downloader reads beside it (`downloader_*.ini` and the `downloader` folder, such as blahm1d's `downloader_blahm1d.ini`), so a source you never enabled (Coin-Op, Meathax, rmCores, Jotego, Slop Cores, kuzecores, blahm1d, bazset or rossops) stays out of the list, search, Favorites and the Filters panel, and the release count leaves it out too. The file is read at every card scan: launch, Rescan card and the rescan after Update All. Without database sections Downloader fetches MiSTer Distribution alone, and the option follows that; without any `downloader.ini` nothing is hidden and the help text says so. Sources the app does not know stay visible. rmCores rows are rmonic79's own builds of games the MiSTer Distribution also has, with CRT Adjust and V-Size on the analog output and a pause overlay; Details says so under Source. This checks which sources are configured, not which games are installed. To hide missing games, use Filters > On the card > found on card.
 - **Filter by current rotation:** off by default. On immediately shows only
   entries explicitly marked Horizontal when the interface is horizontal, or
   Vertical when it is rotated either way, whatever set that rotation (the INI or

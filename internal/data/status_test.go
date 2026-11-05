@@ -45,7 +45,7 @@ func TestFiltersWhy(t *testing.T) {
 		{Filters{MatchRotation: "h"}, StatusCurrent, false, "Filter by rotation (the screen shows horizontal games; this one is vertical)"},
 		{Filters{HideDeprecated: true}, StatusCurrent, false, "deprecated"},
 		{Filters{SrcOff: map[string]bool{"local": true}}, StatusCurrent, false, "Filters -> Source/core (local off)"},
-		{Filters{SrcHidden: map[string]bool{"local": true}}, StatusCurrent, false, "installed only"},
+		{Filters{SrcHidden: map[string]bool{"local": true}}, StatusCurrent, false, "in INI"},
 		{Filters{BetaOff: map[string]bool{"stable": true}}, StatusCurrent, false, "Filters -> Type (stable off)"},
 		{Filters{YearOff: map[string]bool{"1989": true}}, StatusCurrent, false, "Filters -> Year (1989 off)"},
 		{Filters{RotOff: map[string]bool{"v": true}}, StatusCurrent, false, "Filters -> Rotation (vertical off)"},

@@ -600,7 +600,7 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "Clear image cache", kind: "clearimg", child: true,
 			help: "Delete the downloaded screenshots and system photos; they come back as you browse."},
 		spacer, group(gfx.SectionList, "List"),
-		{text: "Sources", kind: "sources", vals: []string{"all", "installed only"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.InstalledOnly],
+		{text: "Sources", kind: "sources", vals: []string{"all", "in INI"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.InstalledOnly],
 			help: a.sourcesHelp()},
 		{text: "Show non-arcade cores", kind: "show-non-arcade", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ShowNonArcade],
 			help: "Include console, computer and other cores. Off (default): browse arcade games only. Saved favorites are kept."},

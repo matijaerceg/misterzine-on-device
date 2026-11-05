@@ -232,15 +232,7 @@ days. Harness `-report-send sent|failed` renders the screens without uploading.
 replace the coupled sorting fixtures in `testdata/`; those belong to
 `tools/sort_golden.js`. The regular network client updates the on-device cache.
 
-The site's source and core tables reach the app two ways. At run time, after
-each catalogue check, the app fetches `releases/app.json` (the site's
-`export-web` writes it from the `SRC_NAMES`, `FT_SECTIONS`, `OPTIN_DBS` and
-`CORE_NAMES` literals in its `index.html`), caches it as `cache/app.json` and
-lays it over the built-in tables (`internal/data/tables.go`). So a source the
-site starts tracking gets its display name, `downloader.ini` section, opt-in
-`db_url` and core labels on every card without an app release, and
-Options -> Sources: Installed only can hide it. A missing or malformed file
-leaves the tables in use as they are.
+The site's source and core tables reach the app two ways. At run time, after each catalogue check, the app fetches `releases/app.json` (the site's `export-web` writes it from the `SRC_NAMES`, `FT_SECTIONS`, `OPTIN_DBS` and `CORE_NAMES` literals in its `index.html`), caches it as `cache/app.json` and lays it over the built-in tables (`internal/data/tables.go`). So a source the site starts tracking gets its display name, `downloader.ini` section, opt-in `db_url` and core labels on every card without an app release, and Options -> Sources: in INI can hide it. A missing or malformed file leaves the tables in use as they are.
 
 At build time `cmd/mzgen` imports the same `app.json`, plus the Unit-01
 palette from `theme.css`, into `internal/gen/`, the fallback for a card that
