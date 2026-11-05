@@ -39,10 +39,11 @@ const (
 	ScreenControls
 	ScreenAccess
 	ScreenViewChooser // Choose an enabled view over the main list
+	ScreenSourceFiles // Read-only Downloader INI provenance
 )
 
 func (s Screen) String() string {
-	return [...]string{"list", "details", "screen", "filter", "options", "calibrate", "update", "troubleshooting", "scan", "views", "credits", "screensaver-options", "members", "controls", "access", "view-chooser"}[s]
+	return [...]string{"list", "details", "screen", "filter", "options", "calibrate", "update", "troubleshooting", "scan", "views", "credits", "screensaver-options", "members", "controls", "access", "view-chooser", "source-files"}[s]
 }
 
 // Config is what the app needs from its host.
@@ -279,6 +280,7 @@ type App struct {
 	// report found a downloader.ini at all.
 	hiddenSrc          map[string]bool
 	iniKnown, iniFound bool
+	sourceFiles        []data.SourceFile
 	romMemo            map[int]data.ROMState // per row, cleared when the check or a choice changes (rom.go)
 	seen               *data.Seen
 	marker             bool                   // the since-visit status row heads the list (marks.go)
@@ -441,7 +443,7 @@ func (a *App) SetCanvasSize(w, h int) {
 	a.physical = image.NewRGBA(image.Rect(0, 0, w, h))
 	a.setRotation(a.rot)
 	switch a.screen {
-	case ScreenOptions, ScreenSaverOptions, ScreenViews, ScreenCredits, ScreenAccess, ScreenFilter:
+	case ScreenOptions, ScreenSaverOptions, ScreenViews, ScreenCredits, ScreenSourceFiles, ScreenAccess, ScreenFilter:
 		a.buildPanel()
 	}
 }
@@ -1013,7 +1015,7 @@ func (a *App) Handle(ev platform.Event) (repaint bool) {
 	if ev.Key == platform.KeyMenu {
 		return a.menuButton()
 	}
-	if a.screen == ScreenList || a.screen == ScreenViewChooser || a.screen == ScreenFilter || a.screen == ScreenOptions || a.screen == ScreenViews || a.screen == ScreenCredits || a.screen == ScreenAccess || a.screen == ScreenSaverOptions || a.screen == ScreenMembers {
+	if a.screen == ScreenList || a.screen == ScreenViewChooser || a.screen == ScreenFilter || a.screen == ScreenOptions || a.screen == ScreenViews || a.screen == ScreenCredits || a.screen == ScreenSourceFiles || a.screen == ScreenAccess || a.screen == ScreenSaverOptions || a.screen == ScreenMembers {
 		switch ev.Key {
 		case platform.KeyUp, platform.KeyDown, platform.KeyLeft, platform.KeyRight:
 			a.rep.next = ev.At.Add(time.Duration(a.HoldDelay()) * time.Millisecond)
@@ -1089,7 +1091,7 @@ func (a *App) repeatStep(k platform.Key, count int) time.Duration {
 		case platform.KeyUp, platform.KeyDown:
 			return repeatPage
 		}
-	case ScreenViewChooser, ScreenFilter, ScreenOptions, ScreenViews, ScreenCredits, ScreenAccess, ScreenSaverOptions:
+	case ScreenViewChooser, ScreenFilter, ScreenOptions, ScreenViews, ScreenCredits, ScreenSourceFiles, ScreenAccess, ScreenSaverOptions:
 		switch k {
 		case platform.KeyUp, platform.KeyDown:
 			return scrollPace(a.cfg.Scroll)
@@ -1289,7 +1291,7 @@ func (a *App) act(k platform.Key) bool {
 		return a.actSupport(k)
 	case ScreenShot:
 		return a.actShot(k)
-	case ScreenFilter, ScreenOptions, ScreenViews, ScreenCredits, ScreenAccess, ScreenSaverOptions:
+	case ScreenFilter, ScreenOptions, ScreenViews, ScreenCredits, ScreenSourceFiles, ScreenAccess, ScreenSaverOptions:
 		return a.actPanel(k)
 	case ScreenCalibrate:
 		return a.actCalibrate(k)
@@ -1618,7 +1620,7 @@ func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
 			a.paintDetails(c)
 		case ScreenShot:
 			a.paintShot(c)
-		case ScreenFilter, ScreenOptions, ScreenViews, ScreenCredits, ScreenAccess, ScreenSaverOptions:
+		case ScreenFilter, ScreenOptions, ScreenViews, ScreenCredits, ScreenSourceFiles, ScreenAccess, ScreenSaverOptions:
 			a.paintPanel(c)
 		case ScreenCalibrate:
 			a.paintCalibrate(c)

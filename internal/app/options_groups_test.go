@@ -21,7 +21,7 @@ func TestOptionsGroups(t *testing.T) {
 		kinds        []string
 	}{
 		{gfx.SectionData, "Data", []string{"refresh", "update", "update-result", "rescan", "rom-report", "prefetch", "clearimg"}},
-		{gfx.SectionList, "List", []string{"sources", "show-non-arcade", "show-deprecated", "mature", "filter-rotation", "views", "remember-sort", "default-view", "title-font", "list-shot", "date-format", "list-layout"}},
+		{gfx.SectionList, "List", []string{"sources", "source-files", "show-non-arcade", "show-deprecated", "mature", "filter-rotation", "views", "remember-sort", "default-view", "title-font", "list-shot", "date-format", "list-layout"}},
 		{gfx.SectionDisplay, "Display", []string{"follow-rotation", "rotation", "saver-options", "inset", "canvas", "page-transitions", "launch-transition"}},
 		{gfx.SectionControls, "Controls", []string{"controls", "menu-button", "scroll", "smooth-scroll", "hold-delay"}},
 		{gfx.SectionOperation, "Operation", []string{"launcher", "open-at-boot", "return-after-game", "exit-chord", "your-access", "show-beta-features", "troubleshooting", "credits", "quit"}},
@@ -66,7 +66,7 @@ func TestOptionsGroups(t *testing.T) {
 	}
 	// the rows that only apply given the row above them are children, drawn
 	// a step in behind the branch mark; every other row sits flush
-	children := map[string]bool{"update-result": true, "rom-report": true, "clearimg": true, "smooth-scroll": true, "remember-sort": true, "default-view": true, "rotation": true, "open-at-boot": true, "return-after-game": true, "exit-chord": true}
+	children := map[string]bool{"source-files": true, "update-result": true, "rom-report": true, "clearimg": true, "smooth-scroll": true, "remember-sort": true, "default-view": true, "rotation": true, "open-at-boot": true, "return-after-game": true, "exit-chord": true}
 	a.cfg.SaverStyle = "shots"
 	seen := 0
 	for _, e := range a.optionsEntries() {

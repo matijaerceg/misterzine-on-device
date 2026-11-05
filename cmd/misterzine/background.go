@@ -108,6 +108,7 @@ func (h *host) receiveScan(r scanResult) {
 	}
 	if r.index != nil {
 		h.a.SetHiddenSources(r.hidden, r.iniFound)
+		h.a.SetSourceFiles(r.sourceFiles)
 	}
 	h.a.Refilter()
 	if current && r.notice != "" {

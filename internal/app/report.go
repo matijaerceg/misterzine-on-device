@@ -17,12 +17,13 @@ import (
 // never disagree with what the player sees.
 func (a *App) ReportPart() report.AppPart {
 	p := report.AppPart{
-		View:      a.mode.Name(),
-		Search:    a.query,
-		Rotation:  a.Rotation().String(),
-		Rows:      len(a.ds.Rows),
-		Catalogue: a.ds.NCat,
-		Shown:     a.shown,
+		View:        a.mode.Name(),
+		Search:      a.query,
+		Rotation:    a.Rotation().String(),
+		Rows:        len(a.ds.Rows),
+		Catalogue:   a.ds.NCat,
+		Shown:       a.shown,
+		SourceFiles: a.sourceFiles,
 	}
 	filters := a.effectiveFilters()
 	if a.mode == data.SortFavorites {

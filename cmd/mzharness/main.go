@@ -86,7 +86,8 @@ func main() {
 	neoGeo := flag.Bool("neogeo", false, "offer the optional Neo Geo view")
 	neoGeoView := flag.Bool("neogeo-view", false, "enable the Neo Geo view in the chooser")
 	genreViews := flag.String("genre-views", "", "genre views enabled in the chooser, comma separated settings names (shmups, fighting, beatemups, runnguns, platformers, arenashooters, fixedshooters, railshooters, lightgun, racing, maze, puzzle, sports, tabletopquiz, other); all off unless given")
-	installed := flag.String("installed", "", "Downloader database ids the card has, comma separated (e.g. distribution_mister,jtcores): Sources starts on installed only and the other sources are hidden")
+	sourceFiles := flag.String("source-files", "", "URL-free Downloader source-file snapshot JSON")
+	installed := flag.String("installed", "", "Downloader database ids the card has, comma separated (e.g. distribution_mister,jtcores): Sources starts on in INI and the other sources are hidden")
 	showNonArcade := flag.Bool("show-non-arcade", false, "include console, computer and other cores")
 	mature := flag.String("mature", "show", "Options -> Mature games for rows the data marks \"mat\": show, pixelate or hide")
 	arcadeIntro := flag.Bool("arcade-intro", false, "show upgrade explanation")
@@ -359,6 +360,17 @@ func main() {
 		}
 		a.SetHiddenSources(data.HiddenSources(dbs), true)
 		a.Refilter()
+	}
+	if *sourceFiles != "" {
+		b, err := os.ReadFile(*sourceFiles)
+		if err != nil {
+			die(err)
+		}
+		var files []data.SourceFile
+		if err := json.Unmarshal(b, &files); err != nil {
+			die(err)
+		}
+		a.SetSourceFiles(files)
 	}
 	a.SetAppUpdate(*appUpdate)
 	if *scanResult {

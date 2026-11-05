@@ -1,9 +1,6 @@
 package scan
 
 import (
-	"os"
-	"path/filepath"
-	"sort"
 	"strings"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
@@ -18,21 +15,8 @@ import (
 // to copy next to downloader.ini. found is false when no ini exists, so the
 // caller hides nothing.
 func DownloaderDBs(card string) (dbs []data.DB, found bool) {
-	for _, rel := range []string{"downloader.ini", "Scripts/downloader.ini"} {
-		path := filepath.Join(card, filepath.FromSlash(rel))
-		raw, err := os.ReadFile(path)
-		if err != nil {
-			continue
-		}
-		dbs = parseDownloaderINI(string(raw))
-		for _, f := range dropInFiles(filepath.Dir(path)) {
-			if raw, err := os.ReadFile(f); err == nil {
-				dbs = append(dbs, parseINISections(string(raw))...)
-			}
-		}
-		return dbs, true
-	}
-	return nil, false
+	r := ScanDownloader(card)
+	return r.DBs, r.Found
 }
 
 // MisterZineEntries lists the db_url of every [misterzine] section
@@ -53,33 +37,6 @@ func MisterZineEntries(card string) (urls []string, found bool) {
 		}
 	}
 	return urls, found
-}
-
-// dropInFiles lists the drop-in database files Downloader reads from the
-// folder holding downloader.ini, in its order: downloader/*.ini, then
-// downloader_*.ini, each sorted, dotfiles skipped.
-func dropInFiles(dir string) []string {
-	var out []string
-	for _, pattern := range []string{filepath.Join(dir, "downloader", "*.ini"), filepath.Join(dir, "downloader_*.ini")} {
-		m, _ := filepath.Glob(pattern)
-		sort.Strings(m)
-		for _, f := range m {
-			if !strings.HasPrefix(filepath.Base(f), ".") {
-				out = append(out, f)
-			}
-		}
-	}
-	return out
-}
-
-// parseDownloaderINI reads downloader.ini: its database sections, or MiSTer
-// Distribution alone when it has none.
-func parseDownloaderINI(s string) []data.DB {
-	dbs := parseINISections(s)
-	if len(dbs) == 0 {
-		dbs = append(dbs, data.DB{ID: "distribution_mister"})
-	}
-	return dbs
 }
 
 // parseINISections lists an ini's database sections, [mister] aside, and

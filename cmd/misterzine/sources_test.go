@@ -31,6 +31,10 @@ func TestScanHidesSourcesTheDownloaderLacks(t *testing.T) {
 	if h.a.Visible() != 1 {
 		t.Fatalf("visible rows after the scan: %d", h.a.Visible())
 	}
+	files := h.a.ReportPart().SourceFiles
+	if len(files) == 0 || files[0].Path != "downloader.ini" || files[0].State != data.SourceFileUsed || len(files[0].Sections) != 1 || files[0].Sections[0].Sources[0] != "distribution_mister" {
+		t.Fatalf("card scan lost source-file provenance: %+v", files)
+	}
 	// enabling a database and rescanning brings its source back
 	if err := os.WriteFile(filepath.Join(h.card, "downloader.ini"), []byte(ini+"\n[meathax/meatcores]\ndb_url = https://raw.githubusercontent.com/meathax/meatcores/db/db.json.zip\n"), 0644); err != nil {
 		t.Fatal(err)

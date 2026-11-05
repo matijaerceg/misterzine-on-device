@@ -1,0 +1,8 @@
+[
+  {"path":"downloader.ini","state":"missing"},
+  {"path":"Scripts/downloader.ini","state":"unreadable"},
+  {"path":"downloader/*.ini","state":"missing","note":"No matching files"},
+  {"path":"downloader_blahm1d.ini","state":"skipped","note":"No readable main INI"},
+  {"path":"Scripts/downloader/*.ini","state":"missing","note":"No matching files"},
+  {"path":"Scripts/downloader_*.ini","state":"missing","note":"No matching files"}
+]

@@ -1479,8 +1479,9 @@ type scanResult struct {
 	moves map[string]string
 	// hidden are the sources without a Downloader database in the card's
 	// downloader.ini; iniFound is whether that file was read at all.
-	hidden   map[string]bool
-	iniFound bool
+	hidden      map[string]bool
+	iniFound    bool
+	sourceFiles []data.SourceFile
 	// diag is the final pass's account of the card for the report: its
 	// totals and every file or folder that is no row, with the reason.
 	diag *scanDiag
@@ -1547,7 +1548,8 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 	idx.FeedAt = feedAt
 	idx.HashCache = filepath.Join(h.root, "cache", "hashes.json")
 	st, owners := scan.Statuses(h.card, idx, rows)
-	dbs, iniFound := scan.DownloaderDBs(h.card)
+	downloader := scan.ScanDownloader(h.card)
+	dbs, iniFound := downloader.DBs, downloader.Found
 	hidden := data.HiddenSources(dbs)
 	counts := map[data.Status]int{}
 	for _, s := range st {
@@ -1574,7 +1576,7 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 	}
 	diag.lines = append(diag.lines, fmt.Sprintf("downloader.ini found: %v; databases: %d", iniFound, len(dbs)))
 	if !iniFound {
-		h.lg.Printf("scan: no downloader.ini on the card; Sources: installed hides nothing")
+		h.lg.Printf("scan: no downloader.ini on the card; Sources: in INI hides nothing")
 	} else {
 		names := make([]string, 0, len(hidden))
 		for src := range hidden {
@@ -1583,7 +1585,7 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 		sort.Strings(names)
 		h.lg.Printf("scan: downloader.ini lists %d databases; sources without one: %v", len(dbs), names)
 	}
-	if !h.sendScan(scanResult{index: idx, status: st, owners: owners, gen: gen, hidden: hidden, iniFound: iniFound}) {
+	if !h.sendScan(scanResult{index: idx, status: st, owners: owners, gen: gen, hidden: hidden, iniFound: iniFound, sourceFiles: downloader.Files}) {
 		return
 	}
 	t1 := time.Now()
@@ -1697,7 +1699,7 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 	for _, a := range local.Accounted {
 		diag.files = append(diag.files, report.File{Path: a.Path, Reason: a.Reason + " (catalogue row " + a.K + ")"})
 	}
-	res := scanResult{index: idx, status: st, owners: owners, gen: gen, alts: resolved, altCores: local.VersionCores, altSets: local.VersionSets, notice: notice, final: true, hidden: hidden, iniFound: iniFound, diag: diag,
+	res := scanResult{index: idx, status: st, owners: owners, gen: gen, alts: resolved, altCores: local.VersionCores, altSets: local.VersionSets, notice: notice, final: true, hidden: hidden, iniFound: iniFound, sourceFiles: downloader.Files, diag: diag,
 		access: scan.NewCoreAccess(catalogue, idx), complete: err == nil && local.Err == nil}
 	if res.complete {
 		// only a scan that read the whole card knows every local row

@@ -1,0 +1,9 @@
+[
+  {"path":"downloader.ini","state":"used","note":"First readable main INI","sections":[{"id":"distribution_mister","sources":["distribution_mister"]},{"id":"jtcores","sources":["jtbindb"]}]},
+  {"path":"Scripts/downloader.ini","state":"skipped","note":"Using downloader.ini"},
+  {"path":"downloader/renamed-source-with-a-long-file-name.ini","state":"used","sections":[{"id":"my cores","sources":["rmcores"]},{"id":"extra database"}]},
+  {"path":"downloader_blahm1d.ini","state":"used","sections":[{"id":"blahm1d","sources":["blahm1d"]}]},
+  {"path":"downloader_broken.ini","state":"unreadable"},
+  {"path":"Scripts/downloader/*.ini","state":"missing","note":"No matching files"},
+  {"path":"Scripts/downloader_old.ini","state":"skipped","note":"Drop-ins belong beside downloader.ini"}
+]

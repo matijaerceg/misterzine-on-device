@@ -105,7 +105,7 @@ func TestArcadePreferenceAndIntroPersistThroughHost(t *testing.T) {
 		tap(platform.KeyBack)
 		tap(platform.KeyPageDown)
 		tap(platform.KeyRight)
-		for i := 0; i < 2; i++ {
+		for i := 0; i < 3; i++ {
 			tap(platform.KeyDown)
 		}
 		if show {

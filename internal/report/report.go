@@ -14,6 +14,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/matijaerceg/misterzine-on-device/internal/data"
 )
 
 // Magic is the report's first line; the service refuses anything else.
@@ -29,16 +31,17 @@ const (
 
 // AppPart is what only the UI knows: the list as the player sees it.
 type AppPart struct {
-	View      string // the list order
-	Search    string
-	Rotation  string // the screen's rotation
-	Rows      int    // every row, catalogue and local
-	Catalogue int
-	Shown     int      // rows in the list right now
-	Effective string   // the filters in force, JSON
-	Saved     string   // the filters the player chose, JSON
-	Hidden    []string // sources hidden by Installed only
-	Local     []LocalGame
+	View        string // the list order
+	Search      string
+	Rotation    string // the screen's rotation
+	Rows        int    // every row, catalogue and local
+	Catalogue   int
+	Shown       int               // rows in the list right now
+	Effective   string            // the filters in force, JSON
+	Saved       string            // the filters the player chose, JSON
+	Hidden      []string          // sources hidden by in INI
+	SourceFiles []data.SourceFile // URL-free provenance from the same card scan
+	Local       []LocalGame
 	// LocalSaved is set while the local rows are the last run's, which this
 	// run's scan has not yet confirmed or replaced.
 	LocalSaved bool
@@ -150,7 +153,29 @@ func format(in Input, files []File, logLines []string) []byte {
 	line("Filters in force: %s", orNone(a.Effective))
 	line("Filters chosen: %s", orNone(a.Saved))
 	if len(a.Hidden) > 0 {
-		line("Sources hidden by Installed only: %s", strings.Join(a.Hidden, ", "))
+		line("Sources hidden by in INI: %s", strings.Join(a.Hidden, ", "))
+	}
+
+	head("SOURCE FILES")
+	if a.SourceFiles == nil {
+		line("no Downloader INI scan has reported yet")
+	}
+	for _, f := range a.SourceFiles {
+		line("%s: %s", f.State, Scrub(f.Path))
+		if f.Note != "" {
+			line("  %s", Scrub(f.Note))
+		}
+		for _, section := range f.Sections {
+			label := "[" + section.ID + "]"
+			if section.Default {
+				label += " (Downloader default)"
+			}
+			sources := "no matching catalogue source"
+			if len(section.Sources) > 0 {
+				sources = strings.Join(section.Sources, ", ")
+			}
+			line("  %s -> %s", Scrub(label), Scrub(sources))
+		}
 	}
 
 	head(fmt.Sprintf("LOCAL GAMES (%d)", len(a.Local)))

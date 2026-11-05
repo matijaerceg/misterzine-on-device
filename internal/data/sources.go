@@ -1,6 +1,7 @@
 package data
 
 import (
+	"sort"
 	"strings"
 )
 
@@ -91,4 +92,18 @@ func HiddenSources(dbs []DB) map[string]bool {
 		}
 	}
 	return hidden
+}
+
+// SourcesForDB uses the same matching rules as the Sources option, including
+// renamed sections, legacy database addresses and fetched site tables.
+func SourcesForDB(db DB) []string {
+	hidden := HiddenSources([]DB{db})
+	var sources []string
+	for src := range tables.Load().dbs {
+		if !hidden[src] {
+			sources = append(sources, src)
+		}
+	}
+	sort.Strings(sources)
+	return sources
 }

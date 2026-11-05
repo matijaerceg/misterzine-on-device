@@ -64,7 +64,7 @@ func TestSortAutosaveRestoreAndOption(t *testing.T) {
 	tap(platform.KeyBack)
 	tap(platform.KeyPageDown)
 	tap(platform.KeyRight)
-	for i := 0; i < 7; i++ {
+	for i := 0; i < 8; i++ {
 		tap(platform.KeyDown)
 	}
 	tap(platform.KeyLeft) // Remember last view: off, in the List group
@@ -78,7 +78,7 @@ func TestSortAutosaveRestoreAndOption(t *testing.T) {
 	tap(platform.KeyBack)
 	tap(platform.KeyPageDown)
 	tap(platform.KeyRight)
-	for i := 0; i < 8; i++ {
+	for i := 0; i < 9; i++ {
 		tap(platform.KeyDown)
 	}
 	tap(platform.KeyRight) // Default view: MiSTer debut.

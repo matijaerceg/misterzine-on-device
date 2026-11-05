@@ -34,7 +34,7 @@ func TestBuildSections(t *testing.T) {
 		t.Fatalf("header:\n%s", s[:120])
 	}
 	at := -1
-	for _, h := range []string{"== SYSTEM", "== MENU ENTRY", "== LIST", "== LOCAL GAMES (2)", "== GAME FILES NOT IN THE LIST (2)", "== CARD SCAN", "== CARD LAYOUT", "== SETTINGS",
+	for _, h := range []string{"== SYSTEM", "== MENU ENTRY", "== LIST", "== SOURCE FILES", "== LOCAL GAMES (2)", "== GAME FILES NOT IN THE LIST (2)", "== CARD SCAN", "== CARD LAYOUT", "== SETTINGS",
 		"== WATCH LOG (last 2 lines)", "== LOG (last 2 lines)"} {
 		i := strings.Index(s, h)
 		if i <= at {
@@ -44,7 +44,7 @@ func TestBuildSections(t *testing.T) {
 	}
 	for _, want := range []string{
 		"Rows: 1286 (catalogue 1276, local 2); in the list now: 1071",
-		"Sources hidden by Installed only: coinop",
+		"Sources hidden by in INI: coinop",
 		"local:gigandes | Gigandes (World bazset) | core Gigandes_baz | _Arcade/Gigandes (World bazset).mra | stands in for gigandes",
 		"| HIDDEN: Filter by rotation",
 		"_Arcade/_Organized | an organiser's folder",

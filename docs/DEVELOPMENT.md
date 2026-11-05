@@ -299,3 +299,6 @@ Launcher entry is deferred while known external updaters own the console.
 
 Regression tests use simulated updaters and temporary files. Run a real system
 update only as a separately planned device test.
+
+
+Downloader source-file diagnostics come from `scan.ScanDownloader` alongside the database list used by filtering. Its URL-free `Files` snapshot is passed to `App.SetSourceFiles` and the support report, retaining file paths, outcomes, section names and matching catalogue source IDs. Skipped files are inventoried without reading their database entries, and additional INIs count only beside the selected main INI. The harness accepts `-source-files testdata/source-files.json` for deterministic page renders.

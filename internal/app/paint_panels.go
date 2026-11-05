@@ -162,6 +162,8 @@ func (a *App) buildPanel() {
 		a.panel.entries = a.accessEntries()
 	case ScreenCredits:
 		a.panel.entries = a.creditsEntries()
+	case ScreenSourceFiles:
+		a.panel.entries = a.sourceFileEntries()
 	default:
 		a.panel.entries = a.filterEntries()
 	}
@@ -602,6 +604,8 @@ func (a *App) optionsEntries() []panelEntry {
 		spacer, group(gfx.SectionList, "List"),
 		{text: "Sources", kind: "sources", vals: []string{"all", "in INI"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.InstalledOnly],
 			help: a.sourcesHelp()},
+		{text: "Source files", kind: "source-files", child: true, opensPage: true,
+			help: "INI files checked, which were used, and the sources each supplied. Refresh with Rescan card."},
 		{text: "Show non-arcade cores", kind: "show-non-arcade", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ShowNonArcade],
 			help: "Include console, computer and other cores. Off (default): browse arcade games only. Saved favorites are kept."},
 		{text: "Show deprecated cores", kind: "show-deprecated", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ShowDeprecated],
@@ -777,6 +781,8 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 			title = a.viewsTitle()
 		} else if a.screen == ScreenAccess {
 			title = "Your access"
+		} else if a.screen == ScreenSourceFiles {
+			title = "Source files"
 		} else if a.screen == ScreenCredits {
 			title = "Credits"
 		}
@@ -1001,7 +1007,7 @@ func (a *App) paintPanel(c *gfx.Canvas) {
 		a.paintHint(c, hint)
 	} else if a.screen == ScreenAccess {
 		a.paintHint(c, a.optionsHint())
-	} else if a.screen == ScreenCredits {
+	} else if a.screen == ScreenCredits || a.screen == ScreenSourceFiles {
 		a.paintHint(c, "B Back")
 	} else {
 		a.paintHint(c, a.filterHint())
@@ -1051,7 +1057,7 @@ var optionsActs = map[string]string{
 	"rom-report":         "Info",
 	"show-beta-features": "Toggle",
 	"refresh":            "Refresh", "update": "Run", "update-app": "Run", "update-result": "Open", "rescan": "Rescan", "clearimg": "Clear",
-	"views": "Open", "saver-options": "Open", "saver-preview": "Preview", "screensaver": "Preview", "launch-transition": "Preview", "saver-style": "Preview", "saver-bright": "Preview", "saver-dim": "Preview", "saver-info": "Preview",
+	"source-files": "Open", "views": "Open", "saver-options": "Open", "saver-preview": "Preview", "screensaver": "Preview", "launch-transition": "Preview", "saver-style": "Preview", "saver-bright": "Preview", "saver-dim": "Preview", "saver-info": "Preview",
 	"inset": "Edit", "troubleshooting": "Open", "credits": "Open", "quit": "Quit",
 }
 
@@ -1114,6 +1120,10 @@ func (a *App) actPanel(k platform.Key) bool {
 		}
 		if a.screen == ScreenAccess {
 			a.closeAccess()
+			return true
+		}
+		if a.screen == ScreenSourceFiles {
+			a.closeSourceFiles()
 			return true
 		}
 		if a.screen == ScreenCredits {
@@ -1420,6 +1430,11 @@ func (a *App) togglePanel() bool {
 		return true
 	case "show-beta-features":
 		return a.stepValue(1 - 2*e.idx)
+	case "source-files":
+		a.openSourceFiles()
+		return true
+	case "source-file-line":
+		return false
 	case "credits":
 		a.openCredits()
 		return true
