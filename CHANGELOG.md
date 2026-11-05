@@ -11,6 +11,8 @@
 - Add fourteen built-in core names from the catalogue, including Century CVS and additional TomSVR cores, so they are available before an online table refresh.
 - Extend regression coverage for source-file origins, INI precedence and fallback, rescanning, narrow layouts, normal Neo Geo scanning and cache reuse, shortcut revalidation, and Neo Geo test packaging. The combined app's checks follow the new Options rows and view. Source files, both Sources choices, scrolling, Back, Rescan card and normal startup were tested on MiSTer Pi with saved settings preserved.
 
+- Embedded catalogue snapshot refreshed (2,914 rows, 2026-11-05).
+
 ## v1.2.24 — 2026-10-26
 
 - Dim the game list and artwork to half brightness while the view picker is open, making the choices easier to read. The popup and button hints stay at full brightness; closing it restores the normal screen. Tested and accepted on MiSTer Pi.
