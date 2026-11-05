@@ -1,0 +1,43 @@
+[
+  {
+    "k": "ffight",
+    "title": "Final Fight",
+    "base": "Arcade",
+    "src": "distribution_mister",
+    "core": "jtcps1"
+  },
+  {
+    "k": "sf2",
+    "title": "Street Fighter II",
+    "base": "Arcade",
+    "src": "distribution_mister",
+    "core": "jtcps1"
+  },
+  {
+    "k": "goldnaxe",
+    "title": "Golden Axe",
+    "base": "Arcade",
+    "src": "distribution_mister",
+    "core": "jts16b"
+  },
+  {
+    "k": "shinobi",
+    "title": "Shinobi",
+    "base": "Arcade",
+    "src": "distribution_mister",
+    "core": "jts16b"
+  },
+  {
+    "k": "local:neogeo:aof:one",
+    "title": "Art of Fighting",
+    "src": "local",
+    "base": "Arcade",
+    "core": "NeoGeo",
+    "mra": "_Favorites/Art of Fighting.mgl",
+    "year": "1992",
+    "manufacturer": "SNK",
+    "genre": "Fighting",
+    "rot": "Horizontal",
+    "plr": "2"
+  }
+]

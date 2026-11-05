@@ -7,7 +7,8 @@ package data
 // group. More than half the arcade cores run a single game, and most of
 // them are labelled with its title, so a header each would mostly repeat
 // the row under it: they are gathered in one group instead. Console,
-// computer and other cores are one row each, so they group by kind.
+// computer and other cores are one row each, so they group by kind. Neo Geo
+// shortcuts always share one group, including a lone game and core variants.
 
 // The Core view's gathered groups, as their headers name them.
 const (
@@ -32,6 +33,8 @@ func coreGroupOf(r *Row, games int, label string) (rank int, group string) {
 			return 5, "Other cores"
 		}
 		return 5, r.Base + " cores"
+	case r.IsNeoGeoShortcut():
+		return 0, "Neo Geo"
 	case label == "":
 		return 2, CoreUnknown
 	case games < 2: // a standin counts none of its own
@@ -64,7 +67,7 @@ func (ds *Dataset) coreGroups() {
 	for i := range ds.Rows {
 		d := &ds.Der[i]
 		d.coreRank, d.CoreGroup = coreGroupOf(&ds.Rows[i], games[d.CoreLabel], d.CoreLabel)
-		if d.coreRank == 0 {
+		if d.coreRank == 0 && d.CoreGroup == d.CoreLabel {
 			d.coreGroupKey = d.coreKey
 			continue
 		}

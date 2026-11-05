@@ -89,3 +89,48 @@ func TestSoloCorePerSource(t *testing.T) {
 		t.Errorf("the Core view still counts both sources' games: %q", g)
 	}
 }
+
+// Each supported Neo Geo shortcut keeps a group even on its own. Variants
+// sort by the shared heading, then game title, without rewriting launch data.
+func TestNeoGeoCoreGroupAcrossVariants(t *testing.T) {
+	cores := []string{"NeoGeo", "NeoGeo_20260603", "NeoGeo_LLAPI", "NeoGeo_LLAPI_20260603", "NeoGeoYC", "NeoGeoYC_20260603"}
+	titles := []string{"Metal Slug", "Art of Fighting", "Samurai Shodown", "Blazing Star", "King of Fighters '98", "Fatal Fury"}
+	cat := []Row{
+		{K: "ffight", Title: "Final Fight", Base: "Arcade", Core: "jtcps1"},
+		{K: "sf2", Title: "Street Fighter II", Base: "Arcade", Core: "jtcps1"},
+		{K: "goldnaxe", Title: "Golden Axe", Base: "Arcade", Core: "jts16b"},
+		{K: "shinobi", Title: "Shinobi", Base: "Arcade", Core: "jts16b"},
+		{K: "console", Title: "Neo Geo", Base: "Console", Core: "NeoGeo"},
+	}
+	var local []Row
+	for i, core := range cores {
+		row := Row{K: "local:neogeo:" + core, Title: titles[i], Base: "Arcade", Src: SrcLocal, Core: core, MRA: "_Favorites/" + titles[i] + ".mgl"}
+		local = append(local, row)
+		ds := Ingest(MergeLocal(cat, []Row{row}), "", time.Time{})
+		d := ds.Der[ds.Index(row.K)]
+		if d.CoreGroup != "Neo Geo" || d.SoloCore {
+			t.Fatalf("lone %s: group %q, solo %v", core, d.CoreGroup, d.SoloCore)
+		}
+	}
+	ds := Ingest(MergeLocal(cat, local), "", time.Time{})
+	var got []string
+	for _, i := range ds.Order(SortCore) {
+		got = append(got, ds.Rows[i].Title)
+	}
+	want := []string{"Final Fight", "Street Fighter II", "Art of Fighting", "Blazing Star", "Fatal Fury", "King of Fighters '98", "Metal Slug", "Samurai Shodown", "Golden Axe", "Shinobi", "Neo Geo"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("combined order %v", got)
+	}
+	for _, row := range local {
+		i := ds.Index(row.K)
+		if !reflect.DeepEqual(ds.Rows[i], row) {
+			t.Fatal("grouping changed shortcut data")
+		}
+		if ds.Der[i].CoreGroup != "Neo Geo" {
+			t.Fatal("variant escaped shared group")
+		}
+	}
+	if ds.Der[ds.Index("console")].CoreGroup != "Console cores" {
+		t.Fatal("console row became an arcade group")
+	}
+}

@@ -16,6 +16,8 @@ Configure **Options > Return after game** and **Exit game with** as desired. The
 
 ## Browsing and filters
 
+**Development after test 5:** **Choose view > Core** groups recognised Neo Geo shortcuts under one **Neo Geo** heading alongside the other arcade cores, with games A-Z. The heading is kept even with one shortcut, and supported core variants share it. The Neo Geo filter still applies.
+
 Enable **Neo Geo** under **Options > Available views > Cores** (or **Y > Edit available views**) for an A-Z list of your recognised shortcuts. It starts off and can also be chosen as the default view once enabled. It respects your filters; if Neo Geo is hidden, the empty list says so, with Filters available in the footer.
 
 **Filters > Source/core** lists Local first, then catalogue sources by their displayed names. Neo Geo is inside Local. Unknown values appear last in filter sections; years and player counts keep their natural order.

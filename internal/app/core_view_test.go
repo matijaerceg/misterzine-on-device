@@ -106,3 +106,47 @@ func TestCoreView(t *testing.T) {
 		t.Fatalf("default Core view opens in %v", b.mode)
 	}
 }
+
+func TestNeoGeoInsideCombinedCoreView(t *testing.T) {
+	a, tap := coreViewApp(Config{NeoGeoSupport: true})
+	neo := []data.Row{
+		{K: "local:neogeo:mslug:one", Title: "Metal Slug", Src: data.SrcLocal, Base: "Arcade", Core: "NeoGeo", Year: "1996"},
+		{K: "local:neogeo:aof:two", Title: "Art of Fighting", Src: data.SrcLocal, Base: "Arcade", Core: "NeoGeoYC_20260603", Year: "1992"},
+	}
+	a.SetData(data.Ingest(data.MergeLocal(a.ds.Rows, neo), "", time.Time{}), nil)
+	a.SetSort(data.SortCore)
+	if a.NeoGeoView() {
+		t.Fatal("combined browsing enabled the optional view")
+	}
+	if got := viewKeys(a); !reflect.DeepEqual(got, []string{"a", "b", neo[1].K, neo[0].K, "c", "d"}) {
+		t.Fatalf("combined list %v", got)
+	}
+	if a.markText(2) != "Neo Geo" || a.markText(3) != data.CoreSingleGame {
+		t.Fatalf("headers %q, %q", a.markText(2), a.markText(3))
+	}
+	a.cursor = 0
+	tap(platform.KeyPageDown)
+	if a.CursorKey() != neo[1].K {
+		t.Fatal("core jump missed Neo Geo")
+	}
+	tap(platform.KeyPageDown)
+	if a.CursorKey() != "c" {
+		t.Fatal("core jump split Neo Geo variants")
+	}
+	// Hiding Neo Geo removes just its games, and selecting Core never undoes it.
+	a.SetFilters(data.Filters{CoreOff: map[string]bool{"local/NeoGeo": true}})
+	a.SetSort(data.SortAlphabetical)
+	a.SetSort(data.SortCore)
+	if !reflect.DeepEqual(viewKeys(a), []string{"a", "b", "c", "d"}) {
+		t.Fatal("Neo Geo filter ignored")
+	}
+	a.SetFilters(data.Filters{YearOff: map[string]bool{"1992": true}})
+	if got := viewKeys(a); !reflect.DeepEqual(got, []string{"a", "b", neo[0].K, "c", "d"}) || a.markText(2) != "Neo Geo" {
+		t.Fatalf("one remaining game: %v", got)
+	}
+	a.SetFilters(data.Filters{})
+	a.setSearch("slug")
+	if !reflect.DeepEqual(viewKeys(a), []string{neo[0].K}) || a.markText(1) != "Neo Geo" {
+		t.Fatal("search lost Neo Geo heading")
+	}
+}

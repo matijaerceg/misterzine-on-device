@@ -433,5 +433,16 @@ for rotation in ([], ["-rot", "left", "-logical"]):
         scenarios.append([*rotation, "-inset", str(inset), "-neogeo", "-neogeo-view",
                           "-out", f"out/neogeo-{orientation}-{inset}", "-script",
                           "space; end; up; enter; shot no-shortcuts"])
+# The combined Core view includes Neo Geo without enabling its optional view.
+for rotation in ([], ["-rot", "left", "-logical"]):
+    orientation = "t" if rotation else "h"
+    for inset in (0, 40):
+        scenarios.append([*rotation, "-inset", str(inset), "-neogeo", "-data", "testdata/neogeo-core-view.json",
+                          "-out", f"out/neogeo-core-{orientation}-{inset}", "-script",
+                          "space; home; down*5; enter; shot combined; pagedown; shot neo-jump; pagedown; shot next-core; "
+                          "type slug; shot search; back; tab; home; down*3; right; down; right; down*2; enter; back; shot hidden"])
+        scenarios.append([*rotation, "-inset", str(inset), "-neogeo", "-data", "testdata/neogeo-core-single.json",
+                          "-out", f"out/neogeo-core-{orientation}-{inset}", "-script",
+                          "space; home; down*5; enter; pagedown; shot single-shortcut"])
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)
