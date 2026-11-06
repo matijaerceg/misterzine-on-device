@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.2.26 — 2026-11-06
+
+- Recognise Neo Geo cartridge filenames such as `3 Count Bout (3countb).neo`, so a shared collection can keep its readable titles. The scan first tries the full filename without its extension, then checks the final parentheses for a known MAME or MiSTer set name. This works for `.neo`, `.rom` and `.zip` files, including regional sets. MisterZine launches the original shortcut with its full game path. Thanks to PhiLongTran for the example. Tested on a DE10 through the game's title screen and attract mode.
+- Add built-in display names for the Midway T-Unit and Y-Unit arcade cores.
+- Refresh the embedded catalogue to 2,933 entries for offline browsing.
+
 ## v1.2.25 — 2026-11-05
 
 - Include Neo Geo arcade games in the normal app. The card scan recognises existing cartridge MGL shortcuts in the card root and underscore-prefixed MiSTer menu folders, using the shared arcade catalogue and known regional/revision aliases. Games appear as local arcade rows with screenshots, Favorites and Recents, retain their identity across unchanged shortcut moves, and reuse saved local rows at startup. Identical copies are offered as versions; different shortcut configurations remain separate. Launch rechecks the supported game and referenced core, then hands the original MGL to MiSTer unchanged. The normal launcher supplies the existing exit chord and Return after game; the separate test installation keeps its own settings and restrictions.

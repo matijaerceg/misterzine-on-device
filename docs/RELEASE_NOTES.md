@@ -1,18 +1,10 @@
-**Neo Geo arcade games in MisterZine**
+**Neo Geo filenames**
 
-Your existing Neo Geo game shortcuts now appear alongside other arcade games. Find them together in **Core** view, or enable **Neo Geo** in **Options -> List -> Available views** for their own A-Z list.
+You can keep names like `3 Count Bout (3countb).neo` on your NAS. After updating, rescan the card to pick up your existing game shortcuts.
 
 **Added**
 
-- Recognised Neo Geo arcade shortcuts join the list and launch with their existing configuration.
-- An optional **Neo Geo** view and a **Local -> Neo Geo** source filter.
-- **Options -> List -> Source files** shows used, missing, unreadable and skipped INIs, with sources listed under each file.
-- **Send a report** includes source-file details to help troubleshoot missing games.
+- Neo Geo shortcuts recognise a known set name in parentheses at the end of the game filename. Thanks to PhiLongTran for the example.
 
-**Fixed**
-
-- The **Sources** choice **installed only** is now **in INI**, with clearer help for hiding missing games. Thanks to PhiLongTran for reporting the confusion.
-- Filters list **Local** first, sort other sources by name, and put unknown values last.
-
-Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1225--2026-11-05).
+Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1226--2026-11-06).
 Existing installations update through Update All, or through Update MisterZine only. New installation: [installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once).
