@@ -15,6 +15,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/mgl"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform/mister"
+	"github.com/matijaerceg/misterzine-on-device/internal/scan"
 	"github.com/matijaerceg/misterzine-on-device/internal/store"
 )
 
@@ -51,14 +52,24 @@ func (h *host) setScanNeoGeoFolder(on bool) {
 	if !on {
 		ds := h.a.Data()
 		rows := make([]data.Row, 0, len(ds.Rows))
-		for _, row := range ds.Rows {
+		status := make([]data.Status, 0, len(h.status))
+		for i, row := range ds.Rows {
 			if !row.IsNeoGeoFile() {
 				rows = append(rows, row)
+				if i < len(h.status) {
+					status = append(status, h.status[i])
+				}
 			}
 		}
 		if len(rows) != len(ds.Rows) {
-			h.status, h.owners = nil, nil
-			h.a.SetData(data.Ingest(rows, ds.Hash, ds.Updated), nil)
+			// Only folder cartridges went away. Retained games keep their
+			// card status, shared-file ownership and available versions.
+			next := data.Ingest(rows, ds.Hash, ds.Updated)
+			if h.altGen == ds.Gen {
+				h.altGen = next.Gen
+			}
+			h.status = status
+			h.a.SetData(next, nil)
 		}
 	}
 	h.requestScan()
@@ -74,10 +85,14 @@ func (h *host) prepareLaunch(target string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		if h.index == nil {
-			return "", errors.New("waiting for the core scan")
+		idx := h.index
+		if idx == nil {
+			// Cached games are selectable from the first frame. Look up
+			// their core now without waiting for the catalogue status pass.
+			idx = scan.ScanCores(h.card)
+			idx.FindNeoGeoRBF(h.card)
 		}
-		rbf := h.index.NeoGeoRBF
+		rbf := idx.NeoGeoRBF
 		if rbf == "" {
 			return "", errors.New("standard Neo Geo core missing")
 		}

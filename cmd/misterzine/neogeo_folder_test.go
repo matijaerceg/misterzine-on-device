@@ -159,10 +159,27 @@ func TestNeoGeoFolderScanAndLaunch(t *testing.T) {
 		t.Fatal(err)
 	}
 	putCartFile(t, h.card, "_Console/NeoGeo_20261101.rbf", "fixture")
+	previous := h.a.Data()
+	status := map[string]data.Status{}
+	for i, r := range previous.Rows {
+		status[r.K] = h.status[i]
+	}
+	// Existing non-folder versions and ownership come from the completed scan.
+	k := previous.Rows[0].K
+	h.alts = map[string][]string{k: {"_Arcade/versions/Existing.mra"}}
+	h.owners = map[string]string{k: "another-source"}
 	h.requestScan() // toggle while the previous scan is in flight
 	h.setScanNeoGeoFolder(false)
 	if len(folderGames(h)) != 0 {
 		t.Fatal("opt-out left games in the list")
+	}
+	if len(h.status) != len(h.a.Data().Rows) || h.owners[k] != "another-source" || len(h.alternatives(&h.a.Data().Rows[0])) != 1 {
+		t.Fatal("opt-out discarded existing games' scan results")
+	}
+	for i, r := range h.a.Data().Rows {
+		if h.status[i] != status[r.K] {
+			t.Fatalf("opt-out changed the card status for %s", r.K)
+		}
 	}
 	finishBackground(t, h)
 	if len(folderGames(h)) != 0 {
@@ -186,6 +203,49 @@ func TestNeoGeoFolderZIPErrorIsIsolatedAndOnlyReadOnOptIn(t *testing.T) {
 		if menuErr != nil || (folderErr != nil) != on || len(result.Rows) != map[bool]int{false: 1, true: 2}[on] {
 			t.Fatalf("opt-in %v: %v rows, menu %v, folder %v", on, len(result.Rows), menuErr, folderErr)
 		}
+	}
+}
+
+// A returning player can press Start on a cached row before even the first
+// core/status result arrives. Use the same core and ZIP member as a later launch.
+func TestCachedNeoGeoLaunchBeforeFirstScan(t *testing.T) {
+	h := backgroundHost(t)
+	h.settings.ScanNeoGeoFolder = true
+	const pack = "games/NeoGeo/Collection.zip"
+	putPack(t, h.card, pack, "Arcade/3countb.neo")
+	const core = "_Console/_SNK/NeoGeo_20261101.rbf"
+	putCartFile(t, h.card, core, "fixture")
+	scanOnce(t, h, catalogueRows(), "cat")
+
+	cold := backgroundHost(t)
+	cold.root, cold.card = h.root, h.card
+	cold.settings.ScanNeoGeoFolder = true
+	rows, _, _ := cold.withSavedLocalRows(catalogueRows(), "cat")
+	pos := slices.IndexFunc(rows, func(r data.Row) bool { return r.IsNeoGeoFile() })
+	if pos < 0 || cold.index != nil {
+		t.Fatal("expected a cached cartridge before the first core scan")
+	}
+	target := rows[pos].MRA
+	if target != pack+"/Arcade/3countb.neo" {
+		t.Fatal(target)
+	}
+	launch, err := cold.prepareLaunch(target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := os.ReadFile(launch)
+	if err != nil {
+		t.Fatal(err)
+	}
+	d, err := mgl.Parse(strings.NewReader(string(b)))
+	if err != nil || d.RBF != "_Console/_SNK/NeoGeo" || d.Files[0].Path != filepath.Join(h.card, target) {
+		t.Fatalf("early launch: %+v, %v", d, err)
+	}
+	if err := os.Remove(filepath.Join(h.card, core)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := cold.prepareLaunch(target); err == nil {
+		t.Fatal("early launch with missing core")
 	}
 }
 
