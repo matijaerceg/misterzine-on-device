@@ -55,7 +55,7 @@ func TestNeoGeoLaunchRevalidatesShortcut(t *testing.T) {
 
 func TestNeoGeoDeviceScanReport(t *testing.T) {
 	h := &host{root: t.TempDir(), card: "../../testdata/mgl/card"}
-	result, err := h.scanNeoGeo()
+	result, err, _ := h.scanNeoGeo(false)
 	if err != nil {
 		t.Fatal(err)
 	}

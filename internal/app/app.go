@@ -176,12 +176,13 @@ type Config struct {
 	// (data.SortMode.Name); a fresh install lists only "recents".
 	// GenreViewsOn names the genres enabled in Available views;
 	// none to start.
-	ViewsOff      []string
-	GenreViewsOn  []string
-	NeoGeoSupport bool // host supports importing Neo Geo shortcuts
-	NeoGeoView    bool // optional Neo Geo view, off by default
-	LastSort      data.SortMode
-	DefaultSort   data.SortMode
+	ViewsOff         []string
+	GenreViewsOn     []string
+	ScanNeoGeoFolder bool // opt-in discovery in games/NeoGeo
+	NeoGeoSupport    bool // host supports importing Neo Geo shortcuts
+	NeoGeoView       bool // optional Neo Geo view, off by default
+	LastSort         data.SortMode
+	DefaultSort      data.SortMode
 	// OpenAtBoot and ReturnAfterGame are Options -> Operation switches the
 	// host's resident launcher acts on; both need the launcher enabled.
 	OpenAtBoot      bool

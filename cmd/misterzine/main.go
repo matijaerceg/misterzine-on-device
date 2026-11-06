@@ -35,6 +35,7 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/debugsrv"
 	"github.com/matijaerceg/misterzine-on-device/internal/fetch"
 	"github.com/matijaerceg/misterzine-on-device/internal/images"
+	"github.com/matijaerceg/misterzine-on-device/internal/mgl"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform/mister"
 	"github.com/matijaerceg/misterzine-on-device/internal/report"
@@ -50,6 +51,7 @@ type host struct {
 	pageFrames                    []pageFrameTiming
 	pageLastAt                    time.Time
 	pageLastScreen                string
+	scanningNeoGeoFolder          bool // option captured by the running scan
 	root, card                    string
 	directVideo                   bool // MiSTer.ini direct_video=1: Main scales a low-line framebuffer per axis
 	lg                            *log.Logger
@@ -313,6 +315,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		FollowRotation:       h.settings.FollowRotation,
 		FilterRotation:       h.settings.FilterRotation,
 		InstalledOnly:        h.settings.InstalledOnly,
+		ScanNeoGeoFolder:     h.settings.ScanNeoGeoFolder,
 		ShowDeprecated:       h.settings.ShowDeprecated,
 		VersionCounts:        h.settings.VersionCounts,
 		Mature:               h.settings.Mature,
@@ -354,6 +357,9 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		AltSetname:   func(p string) string { return h.altSets[p] },
 		Versions:     h.state.Versions,
 		Exists: func(rel string) bool {
+			if backing, ok := mgl.GameBackingPath(rel); ok {
+				rel = backing
+			}
 			_, err := os.Stat(filepath.Join(card, filepath.FromSlash(rel)))
 			return err == nil
 		},
@@ -413,6 +419,9 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			if kind == "rescan" {
 				h.manualScan = true
 				h.requestScan()
+			}
+			if kind == "scan-neogeo-folder" {
+				h.setScanNeoGeoFolder(arg == "on")
 			}
 			if kind == "prefetch" {
 				h.settings.Prefetch = arg == "on"
@@ -1196,10 +1205,7 @@ func (h *host) cleanup() {
 // requestLaunch validates while the app can still show an error. In particular,
 // Start before a scan finishes must not turn a missing core into a silent exit.
 func (h *host) requestLaunch(target string) {
-	abs, err := mister.LaunchPath(h.card, target)
-	if err == nil && strings.EqualFold(filepath.Ext(target), ".mgl") {
-		err = validateNeoGeoLaunch(h.card, target)
-	}
+	abs, err := h.prepareLaunch(target)
 	message := "Cannot launch: target missing or invalid"
 	if err == nil {
 		message = "Cannot launch: MiSTer not ready"
@@ -1537,7 +1543,7 @@ func goneLines(files, dirs []scan.Skipped) []string {
 // alternatives and the local walk after (slow the first time). rows are the
 // dataset's rows, local rows included; ncat of them are the catalogue's.
 // saved is set when those local rows are the last run's (local_cache.go).
-func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Time, saved bool) {
+func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Time, saved, scanFolder bool) {
 	// a thread of its own, below the UI's priority, so the walks and the
 	// core hashing never take a core from a frame (the thread ends with
 	// this goroutine: never unlocked)
@@ -1545,6 +1551,9 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 	scan.LowerThreadPriority()
 	t0 := time.Now()
 	idx := scan.ScanCores(h.card)
+	if scanFolder {
+		idx.FindNeoGeoRBF(h.card)
+	}
 	idx.FeedAt = feedAt
 	idx.HashCache = filepath.Join(h.root, "cache", "hashes.json")
 	st, owners := scan.Statuses(h.card, idx, rows)
@@ -1645,13 +1654,13 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 		h.lg.Printf("scan: local: %v", local.Err)
 		notice = "Card scan incomplete"
 	}
-	neoGeo, neoGeoErr := h.scanNeoGeo()
-	if neoGeoErr != nil {
-		local.Err = errors.Join(local.Err, neoGeoErr)
+	neoGeo, menuErr, folderErr := h.scanNeoGeo(scanFolder)
+	if menuErr != nil {
+		local.Err = errors.Join(local.Err, menuErr)
 		notice = "Card scan incomplete"
-		h.lg.Printf("MGL scan: %v", neoGeoErr)
+		h.lg.Printf("MGL scan: %v", menuErr)
 		for _, r := range rows[ncat:] {
-			if strings.HasPrefix(r.K, "local:neogeo:") {
+			if r.IsNeoGeoShortcut() && (scanFolder || !r.IsNeoGeoFile()) {
 				local.Rows = append(local.Rows, r)
 			}
 		}
@@ -1661,7 +1670,12 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 			resolved[k] = ps
 		}
 	}
-	h.lg.Printf("Neo Geo shortcuts: %d included, %d inspected", len(neoGeo.Rows), len(neoGeo.Entries))
+	if folderErr != nil {
+		local.Err = errors.Join(local.Err, folderErr)
+		notice = "Card scan incomplete"
+		h.lg.Printf("Neo Geo folder: %v", folderErr)
+	}
+	h.lg.Printf("Neo Geo: %d games, %d shortcuts inspected", len(neoGeo.Rows), len(neoGeo.Entries))
 	merged := data.MergeLocal(catalogue, local.Rows)
 	nextGen := data.Generation(hash, merged[ncat:])
 	h.lg.Printf("scan: %d MRAs outside the catalogue's folders, %d local rows (%v)", local.Files, len(merged)-ncat, time.Since(t2).Round(time.Millisecond))

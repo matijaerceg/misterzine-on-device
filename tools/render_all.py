@@ -453,5 +453,9 @@ for rotation in ([], ["-rot", "left", "-logical"]):
             scenarios.append([*rotation, "-inset", str(inset), *fixture,
                               "-out", f"out/source-files-{name}-{orientation}-{inset}", "-script",
                               "back; home; pagedown; right; down*2; shot option; enter; shot files; down*12; shot middle; end; shot end; back; shot returned; up; right; down; enter; shot in-ini"])
+# The opt-in Neo Geo game scan is the last row in List.
+for rotation, orientation in [([], "h"), (["-rot", "left", "-logical"], "t")]:
+    scenarios.append([*rotation, "-out", f"out/neogeo-folder-{orientation}", "-script",
+                      "back; home; pagedown; right; pagedown; up; shot off; right; shot on"])
 for args in scenarios:
     subprocess.run([go, "run", "./cmd/mzharness", "-images", "", *args], check=True)

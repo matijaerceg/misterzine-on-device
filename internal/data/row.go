@@ -203,8 +203,10 @@ const SrcLocal = "local"
 // than from the catalogue.
 func (r *Row) IsLocal() bool { return r.Src == SrcLocal }
 
-// IsNeoGeoShortcut identifies imported arcade shortcuts, not the console catalogue row.
+// IsNeoGeoShortcut includes shortcuts and directly discovered arcade cartridges.
 func (r *Row) IsNeoGeoShortcut() bool { return r.IsLocal() && strings.HasPrefix(r.K, "local:neogeo:") }
+
+func (r *Row) IsNeoGeoFile() bool { return r.IsLocal() && strings.HasPrefix(r.K, "local:neogeo:file:") }
 
 // CoreKey names a core within its source. Imported Neo Geo variants share
 // one filter choice so a newly discovered variant stays hidden too.

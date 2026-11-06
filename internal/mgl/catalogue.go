@@ -72,7 +72,11 @@ func (c *Catalogue) Match(d Document) (Game, bool) {
 	if c == nil || len(d.Files) != 1 {
 		return Game{}, false
 	}
-	name := strings.ToLower(path.Base(strings.TrimRight(d.Files[0].Path, "/")))
+	return c.matchTarget(d.Files[0].Path)
+}
+
+func (c *Catalogue) matchTarget(target string) (Game, bool) {
+	name := strings.ToLower(path.Base(strings.TrimRight(target, "/")))
 	// Extracted-set directory names can contain periods (Neo Mr. Do!,
 	// SNK vs. Capcom). Strip only a supported file extension.
 	switch ext := path.Ext(name); ext {

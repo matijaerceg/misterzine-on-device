@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/store"
@@ -36,6 +37,9 @@ func (h *host) withSavedLocalRows(catalogue []data.Row, hash string) (rows []dat
 		// the scan rewrites it; until then the list waits for the scan
 		h.lg.Printf("cache: %s ignored: %v", localRowsName, err)
 		return catalogue, 0, ""
+	}
+	if !h.settings.ScanNeoGeoFolder {
+		local = slices.DeleteFunc(local, func(r data.Row) bool { return r.IsNeoGeoFile() })
 	}
 	rows = data.MergeLocal(catalogue, local)
 	n = len(rows) - len(catalogue)

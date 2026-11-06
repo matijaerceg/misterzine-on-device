@@ -38,10 +38,10 @@ func TestListPreferencesPersist(t *testing.T) {
 	tap(platform.KeyBack)
 	tap(platform.KeyPageDown)
 	tap(platform.KeyRight)
-	// up from Display, as a members' row can sit higher in List: Layout,
+	// up from Display, as a members' row can sit higher in List: Scan Neo Geo folder, Layout,
 	// Date format, Art type, Title font
 	tap(platform.KeyPageDown)
-	for i := 0; i < 4; i++ {
+	for i := 0; i < 5; i++ {
 		tap(platform.KeyUp)
 	}
 	tap(platform.KeyLeft) // Title font: narrow

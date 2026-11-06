@@ -47,7 +47,8 @@ func (h *host) requestScan() {
 	h.scanPending = false
 	h.scanRunning = true
 	ds := h.a.Data()
-	go h.scan(ds.Rows, ds.NCat, ds.Gen, ds.Hash, ds.Updated, h.localSaved)
+	h.scanningNeoGeoFolder = h.settings.ScanNeoGeoFolder
+	go h.scan(ds.Rows, ds.NCat, ds.Gen, ds.Hash, ds.Updated, h.localSaved, h.scanningNeoGeoFolder)
 }
 
 // receiveScan installs a scan result. Results are checked against the
@@ -58,7 +59,7 @@ func (h *host) receiveScan(r scanResult) {
 	if r.index != nil {
 		h.index = r.index
 	}
-	current := r.gen == h.a.Data().Gen
+	current := r.gen == h.a.Data().Gen && h.scanningNeoGeoFolder == h.settings.ScanNeoGeoFolder
 	if current && r.final && r.rows != nil {
 		// The card's local rows changed: install the new row set and its
 		// statuses in one step, before anything paints.

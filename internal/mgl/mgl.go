@@ -18,6 +18,7 @@ import (
 const MaxBytes = 64 << 10
 
 type File struct {
+	Root  string `xml:"root,attr,omitempty" json:"root,omitempty"`
 	Path  string `xml:"path,attr" json:"path"`
 	Type  string `xml:"type,attr" json:"type"`
 	Index string `xml:"index,attr" json:"index"`

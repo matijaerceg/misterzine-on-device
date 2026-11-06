@@ -626,6 +626,8 @@ func (a *App) optionsEntries() []panelEntry {
 			help: a.dateFormatHelp()},
 		{text: "Layout", kind: "list-layout", vals: listLayouts, idx: layoutIdx,
 			help: layoutHelp},
+		{text: "Scan Neo Geo folder", kind: "scan-neogeo-folder", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ScanNeoGeoFolder],
+			help: "Find arcade games in games/NeoGeo, including ZIP packs. Off uses your existing shortcuts. Changing this rescans the card."},
 		spacer, group(gfx.SectionDisplay, "Display"),
 		{text: "Follow INI rotation", kind: "follow-rotation", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.FollowRotation()],
 			help: "On (default): match osd_rotate in the active MiSTer INI at every startup. Off: rotate manually below. Never edits the INI."},
@@ -1283,6 +1285,11 @@ func (a *App) stepValue(d int) bool {
 	case "show-non-arcade":
 		a.cfg.ShowNonArcade = i == 1
 		a.Refilter()
+	case "scan-neogeo-folder":
+		a.cfg.ScanNeoGeoFolder = i == 1
+		if a.cfg.Action != nil {
+			a.cfg.Action(e.kind, onOff(a.cfg.ScanNeoGeoFolder))
+		}
 	case "show-deprecated":
 		a.cfg.ShowDeprecated = i == 1
 		a.Refilter()
@@ -1541,7 +1548,7 @@ func (a *App) togglePanel() bool {
 		if !e.header {
 			f.Since = !f.Since
 		}
-	case "page-transitions", "rotation", "follow-rotation", "filter-rotation", "sources", "show-deprecated", "mature", "launcher", "scroll", "smooth-scroll", "hold-delay", "remember-sort", "default-view", "prefetch", "title-font", "list-shot", "date-format", "list-layout", "version-counts":
+	case "page-transitions", "rotation", "follow-rotation", "filter-rotation", "sources", "scan-neogeo-folder", "show-deprecated", "mature", "launcher", "scroll", "smooth-scroll", "hold-delay", "remember-sort", "default-view", "prefetch", "title-font", "list-shot", "date-format", "list-layout", "version-counts":
 		return true // Left/Right pick these
 	case "inset":
 		a.screen = ScreenCalibrate

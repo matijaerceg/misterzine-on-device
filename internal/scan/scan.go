@@ -55,11 +55,12 @@ type Core struct {
 // _Arcade/cores while a console/computer row's rbf lives elsewhere, and the
 // two can share a name (Astrocade ships both).
 type Index struct {
-	Cores  map[string]Core
-	arcade map[string]Core
-	system map[string]Core
-	At     time.Time
-	Err    error // unreadable card/core folders; absent optional folders are fine
+	NeoGeoRBF string // stock cartridge core path without date or extension, for folder games
+	Cores     map[string]Core
+	arcade    map[string]Core
+	system    map[string]Core
+	At        time.Time
+	Err       error // unreadable card/core folders; absent optional folders are fine
 	// FeedAt is when the feed was generated. An undated rbf installed after
 	// that cannot be behind the feed's hash, so a mismatch reads as current
 	// rather than older. Zero disables the guard.
@@ -112,6 +113,16 @@ func ScanCores(card string) *Index {
 		idx.addCores(sub.dir, sub.entries, false, top)
 	}
 	return idx
+}
+
+// FindNeoGeoRBF resolves the standard core once per opted-in scan. The
+// core's installation guide also allows placing the RBF directly in _Arcade.
+func (idx *Index) FindNeoGeoRBF(card string) {
+	if c, ok := idx.Cores["neogeo"]; ok {
+		idx.NeoGeoRBF = path.Join(path.Dir(c.Path), "NeoGeo")
+	} else if mgl.CorePresent(card, mgl.Document{RBF: "_Arcade/NeoGeo"}) {
+		idx.NeoGeoRBF = "_Arcade/NeoGeo"
+	}
 }
 
 // addCores indexes the rbf files among one folder's entries, keeping each
@@ -269,6 +280,14 @@ func lookupPrefix(cores map[string]Core, l string) (Core, bool) {
 // shipped rbf's build date (bd, falling back to updated) is compared with
 // the rbf filename date.
 func Status(card string, idx *Index, r *data.Row) data.Status {
+	if r.IsNeoGeoFile() {
+		// The scan already inspected the game (including ZIP members).
+		// Recheck the individual target at launch, not every archive per row.
+		if idx != nil && idx.NeoGeoRBF != "" {
+			return data.StatusFoundUndated
+		}
+		return data.StatusNotFound
+	}
 	if r.Src == data.SrcLocal && strings.HasPrefix(r.K, "local:neogeo:") && strings.EqualFold(path.Ext(r.MRA), ".mgl") {
 		root, err := os.OpenRoot(card)
 		if err != nil {

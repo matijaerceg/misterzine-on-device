@@ -276,6 +276,9 @@ func (a *App) emptyListMessage() string {
 			return "Neo Geo hidden"
 		}
 		if !a.filtersActive() {
+			if a.cfg.ScanNeoGeoFolder {
+				return "No Neo Geo arcade games"
+			}
 			return "No Neo Geo shortcuts"
 		}
 	}
