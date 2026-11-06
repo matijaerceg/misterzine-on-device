@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.2.27 — 2026-11-06
+
+- Turn on **Options → List → Scan Neo Geo folder** to find recognised arcade cartridges in `games/NeoGeo` without making MGL shortcuts. The option starts off, including after an upgrade. It supports loose `.neo` files, Darksoft sets and games inside a single ZIP. You can keep descriptive filenames such as `3 Count Bout (3countb).neo`. Thanks to ac3 for the suggestion.
+- The scan skips Neo Geo CD and unknown games. An existing MGL takes priority for the same game path. Turning the option off removes the folder entries and keeps existing shortcuts available.
+- Launch a previously scanned cartridge as soon as the list opens, including while the card scan is running. Tested on a DE10 with multiple games in one ZIP, a Darksoft set, and a ZIP larger than 4 GB on a read-only SMB share.
+
 ## v1.2.26 — 2026-11-06
 
 - Recognise Neo Geo cartridge filenames such as `3 Count Bout (3countb).neo`, so a shared collection can keep its readable titles. The scan first tries the full filename without its extension, then checks the final parentheses for a known MAME or MiSTer set name. This works for `.neo`, `.rom` and `.zip` files, including regional sets. MisterZine launches the original shortcut with its full game path. Thanks to PhiLongTran for the example. Tested on a DE10 through the game's title screen and attract mode.

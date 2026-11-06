@@ -1,10 +1,7 @@
-**Neo Geo filenames**
+**Optional Neo Geo folder scan**
 
-You can keep names like `3 Count Bout (3countb).neo` on your NAS. After updating, rescan the card to pick up your existing game shortcuts.
+Turn on **Options → List → Scan Neo Geo folder** and MisterZine will find recognised arcade games in `games/NeoGeo`. You can keep your filenames and launch games directly from a collection ZIP. Loose `.neo` files and Darksoft sets work too.
 
-**Added**
+The scan starts **off**, including after an upgrade. It skips Neo Geo CD and gives existing MGL shortcuts priority for the same game path. Thanks to ac3 for the suggestion.
 
-- Neo Geo shortcuts recognise a known set name in parentheses at the end of the game filename. Thanks to PhiLongTran for the example.
-
-Full details in the [changelog](https://github.com/matijaerceg/misterzine-on-device/blob/main/CHANGELOG.md#v1226--2026-11-06).
-Existing installations update through Update All, or through Update MisterZine only. New installation: [installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once).
+Update through **Update All** or **Update MisterZine only**. [Installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once) · [Changelog](https://github.com/matijaerceg/misterzine-on-device/blob/v1.2.27/CHANGELOG.md#v1227--2026-11-06)
