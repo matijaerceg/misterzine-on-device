@@ -5,7 +5,9 @@
     "aliases": [
       "2020 Super Baseball (set 1)",
       "2020 Super Baseball (set 2)",
-      "2020 Super Baseball (set 3)",
+      "2020 Super Baseball (set 3)"
+    ],
+    "set_names": [
       "2020bba",
       "2020bbh"
     ]
@@ -28,7 +30,6 @@
       "Alpha Mission II - ASO II - Last Guardian",
       "Alpha Mission II - ASO II - Last Guardian (NGM-007 ~ NGH-007)",
       "Alpha Mission II - ASO II - Last Guardian (prototype)",
-      "alpham2p",
       "ASO II - Last Guardian",
       "ASO II - Last Guardian (NGM-007 ~ NGH-007)",
       "ASO II - Last Guardian (prototype)",
@@ -36,6 +37,9 @@
       "ASO II Last Guardian (prototype)",
       "ASO II: Last Guardian",
       "ASO II: Last Guardian (prototype)"
+    ],
+    "set_names": [
+      "alpham2p"
     ]
   },
   {
@@ -69,7 +73,6 @@
     "id": "aof2",
     "title": "Art of Fighting 2",
     "aliases": [
-      "aof2a",
       "Art of Fighting 2 (NGH-056)",
       "Art of Fighting 2 - Ryuuko no Ken 2",
       "Art of Fighting 2 - Ryuuko no Ken 2 (NGH-056)",
@@ -77,13 +80,15 @@
       "Ryuuko no Ken 2",
       "Ryuuko no Ken 2 (NGH-056)",
       "Ryuuko no Ken 2 (NGM-056)"
+    ],
+    "set_names": [
+      "aof2a"
     ]
   },
   {
     "id": "aof3",
     "title": "Art of Fighting 3 - The Path of the Warrior",
     "aliases": [
-      "aof3k",
       "Art of Fighting - Ryuuko no Ken Gaiden",
       "Art of Fighting 3 - The Path of the Warrior (Korean release)",
       "Art of Fighting 3 - The Path of the Warrior - Art of Fighting - Ryuuko no Ken Gaiden",
@@ -93,6 +98,9 @@
       "Art of Fighting 3: The Path of the Warrior (Korean release)",
       "Art of Fighting Ryuuko no Ken Gaiden",
       "Art of Fighting: Ryuuko no Ken Gaiden"
+    ],
+    "set_names": [
+      "aof3k"
     ]
   },
   {
@@ -118,13 +126,15 @@
     "id": "bjourney",
     "title": "Blue's Journey",
     "aliases": [
-      "bjourneyh",
       "Blue's Journey - Raguy",
       "Blue's Journey - Raguy (ALH-001)",
       "Blue's Journey - Raguy (ALM-001 ~ ALH-001)",
       "Raguy",
       "Raguy (ALH-001)",
       "Raguy (ALM-001 ~ ALH-001)"
+    ],
+    "set_names": [
+      "bjourneyh"
     ]
   },
   {
@@ -147,7 +157,9 @@
     "title": "Baseball Stars Professional",
     "aliases": [
       "Baseball Stars Professional (NGH-002)",
-      "Baseball Stars Professional (NGM-002)",
+      "Baseball Stars Professional (NGM-002)"
+    ],
+    "set_names": [
       "bstarsh"
     ]
   },
@@ -160,14 +172,16 @@
     "id": "burningf",
     "title": "Burning Fight",
     "aliases": [
-      "brningfh",
-      "brningfp",
-      "brnngfpa",
       "Burning Fight (NGH-018, US)",
       "Burning Fight (NGM-018 ~ NGH-018)",
       "Burning Fight (prototype, near final, ver 23.3, 910326)",
       "Burning Fight (prototype, newer, V07)",
-      "Burning Fight (prototype, older)",
+      "Burning Fight (prototype, older)"
+    ],
+    "set_names": [
+      "brningfh",
+      "brningfp",
+      "brnngfpa",
       "burningfh",
       "burningfp",
       "burningfpa",
@@ -239,11 +253,13 @@
       "Fatal Fury Special - Garou Densetsu Special",
       "Fatal Fury Special - Garou Densetsu Special (NGM-058 ~ NGH-058, set 1)",
       "Fatal Fury Special - Garou Densetsu Special (NGM-058 ~ NGH-058, set 2)",
-      "fatfurspa",
-      "ftfurspa",
       "Garou Densetsu Special",
       "Garou Densetsu Special (NGM-058 ~ NGH-058, set 1)",
       "Garou Densetsu Special (NGM-058 ~ NGH-058, set 2)"
+    ],
+    "set_names": [
+      "fatfurspa",
+      "ftfurspa"
     ]
   },
   {
@@ -297,15 +313,17 @@
     "id": "fightfev",
     "title": "Fight Fever",
     "aliases": [
-      "fghtfeva",
       "Fight Fever (set 2)",
       "Fight Fever - Wang Jung Wang",
       "Fight Fever - Wang Jung Wang (set 1)",
       "Fight Fever - Wang Jung Wang (set 2)",
-      "fightfeva",
       "Wang Jung Wang",
       "Wang Jung Wang (set 1)",
       "Wang Jung Wang (set 2)"
+    ],
+    "set_names": [
+      "fghtfeva",
+      "fightfeva"
     ]
   },
   {
@@ -348,7 +366,9 @@
       "Garou: Mark of the Wolves",
       "Garou: Mark of the Wolves (bootleg)",
       "Garou: Mark of the Wolves (earlier release)",
-      "Garou: Mark of the Wolves (prototype)",
+      "Garou: Mark of the Wolves (prototype)"
+    ],
+    "set_names": [
       "garoubl",
       "garouh",
       "garouha",
@@ -387,7 +407,9 @@
     "aliases": [
       "Ghost Pilots (NGH-020, US)",
       "Ghost Pilots (NGM-020 ~ NGH-020)",
-      "Ghost Pilots (prototype)",
+      "Ghost Pilots (prototype)"
+    ],
+    "set_names": [
       "gpilotsh",
       "gpilotsp"
     ]
@@ -405,12 +427,14 @@
       "Choutetsu Brikin'ger - Iron Clad",
       "Choutetsu Brikin'ger - Iron Clad (prototype)",
       "Choutetsu Brikin'ger - Iron Clad (prototype, bootleg)",
-      "irnclado",
       "Iron Clad",
       "Iron Clad (prototype)",
       "Iron Clad (prototype, bootleg)",
       "Ironclad",
-      "Ironclad (prototype, bootleg)",
+      "Ironclad (prototype, bootleg)"
+    ],
+    "set_names": [
+      "irnclado",
       "ironclado"
     ]
   },
@@ -438,7 +462,9 @@
     "title": "Jockey Grand Prix",
     "aliases": [
       "Jockey Grand Prix (set 1)",
-      "Jockey Grand Prix (set 2)",
+      "Jockey Grand Prix (set 2)"
+    ],
+    "set_names": [
       "jockeygpa"
     ]
   },
@@ -482,7 +508,9 @@
       "Kizuna Encounter - Super Tag Battle 4 Way Battle Version",
       "Kizuna Encounter - Super Tag Battle 4 Way Battle Version - Fu'un Super Tag Battle Special Version",
       "Kizuna Encounter Super Tag Battle",
-      "Kizuna Encounter: Super Tag Battle",
+      "Kizuna Encounter: Super Tag Battle"
+    ],
+    "set_names": [
       "kizuna4p"
     ]
   },
@@ -499,9 +527,11 @@
       "King of Fighters 2000 (NGM-2570 ~ NGH-2570)",
       "King of Fighters 2000 (not encrypted)",
       "King of Fighters 2000, The",
-      "kof2000n",
       "The King of Fighters 2000 (NGM-2570 ~ NGH-2570)",
       "The King of Fighters 2000 (not encrypted)"
+    ],
+    "set_names": [
+      "kof2000n"
     ]
   },
   {
@@ -514,30 +544,26 @@
       "Crouching Tiger Hidden Dragon 2003 Super Plus (hack of The King of Fighters 2001)",
       "Crouching Tiger Hidden Dragon 2003 Super Plus (hack of The King of Fighters 2001, alternate)",
       "Crouching Tiger Hidden Dragon 2003 Super Plus (The King of Fighters 2001 bootleg)",
-      "ct2k3sa",
-      "ct2k3sp",
-      "cthd2003",
       "King of Fighters 2001",
       "King of Fighters 2001 (NGH-2621)",
       "King of Fighters 2001 (NGM-262?)",
       "King of Fighters 2001, The",
       "King of Fighters 2001, The (NGH-2620)",
-      "kof2001h",
       "The King of Fighters 2001 (NGH-2620)",
       "The King of Fighters 2001 (NGH-2621)",
       "The King of Fighters 2001 (NGM-262?)"
+    ],
+    "set_names": [
+      "ct2k3sa",
+      "ct2k3sp",
+      "cthd2003",
+      "kof2001h"
     ]
   },
   {
     "id": "kof2002",
     "title": "The King of Fighters 2002",
     "aliases": [
-      "kf10thep",
-      "kf2k2mp",
-      "kf2k2mp2",
-      "kf2k2pla",
-      "kf2k2pls",
-      "kf2k5uni",
       "King of Fighters 10th Anniversary",
       "King of Fighters 10th Anniversary (bootleg of The King of Fighters 2002)",
       "King of Fighters 10th Anniversary 2005 Unique",
@@ -571,9 +597,6 @@
       "King of Fighters Special Edition 2004 (bootleg of The King of Fighters 2002)",
       "King of Fighters Special Edition 2004, The",
       "King of Fighters Special Edition 2004, The (The King of Fighters 2002 bootleg)",
-      "kof10th",
-      "kof2002b",
-      "kof2k4se",
       "The King of Fighters 10th Anniversary",
       "The King of Fighters 10th Anniversary (bootleg of The King of Fighters 2002)",
       "The King of Fighters 10th Anniversary 2005 Unique",
@@ -595,6 +618,17 @@
       "The King of Fighters Special Edition 2004",
       "The King of Fighters Special Edition 2004 (bootleg of The King of Fighters 2002)",
       "The King of Fighters Special Edition 2004 (The King of Fighters 2002 bootleg)"
+    ],
+    "set_names": [
+      "kf10thep",
+      "kf2k2mp",
+      "kf2k2mp2",
+      "kf2k2pla",
+      "kf2k2pls",
+      "kf2k5uni",
+      "kof10th",
+      "kof2002b",
+      "kof2k4se"
     ]
   },
   {
@@ -603,10 +637,6 @@
     "aliases": [
       "Hero",
       "Hero (bootleg of The King of Fighters 2003)",
-      "kf2k3bl",
-      "kf2k3bla",
-      "kf2k3pl",
-      "kf2k3upl",
       "King of Fighters 2003",
       "King of Fighters 2003 (bootleg set 1)",
       "King of Fighters 2003 (bootleg set 2)",
@@ -620,8 +650,6 @@
       "King of Fighters 2004 Plus - Hero (bootleg of The King of Fighters 2003)",
       "King of Fighters 2004 Ultra Plus",
       "King of Fighters 2004 Ultra Plus (bootleg of The King of Fighters 2003)",
-      "kof2003h",
-      "kof2003ps2",
       "The King of Fighters 2003 (bootleg set 1)",
       "The King of Fighters 2003 (bootleg set 2)",
       "The King of Fighters 2003 (NGH-2710)",
@@ -632,6 +660,14 @@
       "The King of Fighters 2004 Plus - Hero (bootleg of The King of Fighters 2003)",
       "The King of Fighters 2004 Ultra Plus",
       "The King of Fighters 2004 Ultra Plus (bootleg of The King of Fighters 2003)"
+    ],
+    "set_names": [
+      "kf2k3bl",
+      "kf2k3bla",
+      "kf2k3pl",
+      "kf2k3upl",
+      "kof2003h",
+      "kof2003ps2"
     ]
   },
   {
@@ -655,11 +691,13 @@
       "King of Fighters '95, The",
       "King of Fighters '95, The (NGH-084)",
       "King of Fighters '95, The (NGM-084, alt board)",
-      "kof95a",
-      "kof95h",
       "The King of Fighters '95 (NGH-084)",
       "The King of Fighters '95 (NGM-084)",
       "The King of Fighters '95 (NGM-084, alt board)"
+    ],
+    "set_names": [
+      "kof95a",
+      "kof95h"
     ]
   },
   {
@@ -672,11 +710,13 @@
       "King of Fighters '96 (NGM-214)",
       "King of Fighters '96, The",
       "King of Fighters '96, The (NGH-214)",
-      "kof96a",
-      "kof96h",
       "The King of Fighters '96 (bug fix revision)",
       "The King of Fighters '96 (NGH-214)",
       "The King of Fighters '96 (NGM-214)"
+    ],
+    "set_names": [
+      "kof96a",
+      "kof96h"
     ]
   },
   {
@@ -702,11 +742,6 @@
       "King of Gladiator (bootleg of The King of Fighters '97)",
       "King of Gladiators",
       "King of Gladiators (The King of Fighters '97 bootleg)",
-      "kof97h",
-      "kof97k",
-      "kof97oro",
-      "kof97pls",
-      "kog",
       "The King of Fighters '97 (Korean release)",
       "The King of Fighters '97 (NGH-2320)",
       "The King of Fighters '97 (NGM-2320)",
@@ -714,6 +749,13 @@
       "The King of Fighters '97 Chongchu Jianghu Plus 2003 (bootleg)",
       "The King of Fighters '97 Plus",
       "The King of Fighters '97 Plus (bootleg)"
+    ],
+    "set_names": [
+      "kof97h",
+      "kof97k",
+      "kof97oro",
+      "kof97pls",
+      "kog"
     ]
   },
   {
@@ -761,12 +803,6 @@
       "King of Fighters '98: Dream Match Never Ends",
       "King of Fighters '98: Dream Match Never Ends (NGH-2420)",
       "King of Fighters '98: Dream Match Never Ends (NGM-2420, alt board)",
-      "kof98a",
-      "kof98ae2016",
-      "kof98h",
-      "kof98k",
-      "kof98ka",
-      "kof98Ultimate",
       "The King of Fighters '98 - Anniversary Edition",
       "The King of Fighters '98 - The Slugfest",
       "The King of Fighters '98 - The Slugfest (Korean release)",
@@ -794,6 +830,14 @@
       "The King of Fighters '98: The Slugfest (NGH-2420)",
       "The King of Fighters '98: The Slugfest (NGM-2420, alt board)",
       "The King of Fighters '98: Ultimate Match"
+    ],
+    "set_names": [
+      "kof98a",
+      "kof98ae2016",
+      "kof98h",
+      "kof98k",
+      "kof98ka",
+      "kof98Ultimate"
     ]
   },
   {
@@ -824,12 +868,6 @@
       "King of Fighters '99, The: Millennium Battle (Korean release)",
       "King of Fighters '99, The: Millennium Battle (NGH-2510)",
       "King of Fighters '99, The: Millennium Battle (prototype)",
-      "kof99ae",
-      "kof99e",
-      "kof99h",
-      "kof99k",
-      "kof99ka",
-      "kof99p",
       "The King of Fighters '99 - Millennium Battle (earlier release)",
       "The King of Fighters '99 - Millennium Battle (earlier)",
       "The King of Fighters '99 - Millennium Battle (Korean release)",
@@ -847,6 +885,14 @@
       "The King of Fighters '99: Millennium Battle (Korean release)",
       "The King of Fighters '99: Millennium Battle (NGH-2510)",
       "The King of Fighters '99: Millennium Battle (prototype)"
+    ],
+    "set_names": [
+      "kof99ae",
+      "kof99e",
+      "kof99h",
+      "kof99k",
+      "kof99ka",
+      "kof99p"
     ]
   },
   {
@@ -854,7 +900,9 @@
     "title": "King of the Monsters",
     "aliases": [
       "King of the Monsters (set 1)",
-      "King of the Monsters (set 2)",
+      "King of the Monsters (set 2)"
+    ],
+    "set_names": [
       "kotmh"
     ]
   },
@@ -868,7 +916,9 @@
       "King of the Monsters 2 The Next Thing",
       "King of the Monsters 2 The Next Thing (prototype)",
       "King of the Monsters 2: The Next Thing",
-      "King of the Monsters 2: The Next Thing (prototype)",
+      "King of the Monsters 2: The Next Thing (prototype)"
+    ],
+    "set_names": [
       "kotm2a",
       "kotm2p"
     ]
@@ -893,15 +943,17 @@
       "Last Soldier",
       "Last Soldier (Korean release of The Last Blade)",
       "Last Soldier, The",
-      "lastbladh",
-      "lastsold",
-      "lstbladh",
       "The Last Blade (NGH-2340)",
       "The Last Blade - Bakumatsu Roman - Gekka no Kenshi",
       "The Last Blade - Bakumatsu Roman - Gekka no Kenshi (NGH-2340)",
       "The Last Blade - Bakumatsu Roman - Gekka no Kenshi (NGM-2340)",
       "The Last Soldier",
       "The Last Soldier (Korean release of The Last Blade)"
+    ],
+    "set_names": [
+      "lastbladh",
+      "lastsold",
+      "lstbladh"
     ]
   },
   {
@@ -939,7 +991,9 @@
     "id": "lresort",
     "title": "Last Resort",
     "aliases": [
-      "Last Resort (prototype)",
+      "Last Resort (prototype)"
+    ],
+    "set_names": [
       "lresortp"
     ]
   },
@@ -960,7 +1014,9 @@
     "title": "Magician Lord",
     "aliases": [
       "Magician Lord (NGH-005)",
-      "Magician Lord (NGM-005)",
+      "Magician Lord (NGM-005)"
+    ],
+    "set_names": [
       "maglordh"
     ]
   },
@@ -984,7 +1040,6 @@
     "id": "matrim",
     "title": "Matrimelee",
     "aliases": [
-      "matrimbl",
       "Matrimelee - Shin Gouketsuji Ichizoku Toukon",
       "Matrimelee - Shin Gouketsuji Ichizoku Toukon (bootleg)",
       "Matrimelee - Shin Gouketsuji Ichizoku Toukon (NGM-2660 ~ NGH-2660)",
@@ -995,6 +1050,9 @@
       "Shin Gouketsuji Ichizoku Toukon",
       "Shin Gouketsuji Ichizoku Toukon (bootleg)",
       "Shin Gouketsuji Ichizoku Toukon (NGM-2660 ~ NGH-2660)"
+    ],
+    "set_names": [
+      "matrimbl"
     ]
   },
   {
@@ -1039,7 +1097,9 @@
       "Metal Slug 2 Turbo",
       "Metal Slug 2 Turbo (hack)",
       "Metal Slug 2 Turbo (NGM-9410) (hack)",
-      "Metal Slug 2: Super Vehicle-001-II",
+      "Metal Slug 2: Super Vehicle-001-II"
+    ],
+    "set_names": [
       "mslug2t"
     ]
   },
@@ -1052,7 +1112,9 @@
       "Metal Slug 3 (NGM-2560, earlier)",
       "Metal Slug 6",
       "Metal Slug 6 (bootleg of Metal Slug 3)",
-      "Metal Slug 6 (Metal Slug 3 bootleg)",
+      "Metal Slug 6 (Metal Slug 3 bootleg)"
+    ],
+    "set_names": [
       "mslug3a",
       "mslug3b6",
       "mslug3h",
@@ -1066,7 +1128,9 @@
       "Metal Slug 4 (NGH-2630)",
       "Metal Slug 4 (NGM-2630)",
       "Metal Slug 4 Plus",
-      "Metal Slug 4 Plus (bootleg)",
+      "Metal Slug 4 Plus (bootleg)"
+    ],
+    "set_names": [
       "ms4plus",
       "mslug4h"
     ]
@@ -1079,7 +1143,9 @@
       "Metal Slug 5 (NGH-2680)",
       "Metal Slug 5 (NGM-2680)",
       "Metal Slug 5 Plus",
-      "Metal Slug 5 Plus (bootleg)",
+      "Metal Slug 5 Plus (bootleg)"
+    ],
+    "set_names": [
       "ms5plus",
       "mslug5b",
       "mslug5h"
@@ -1112,9 +1178,11 @@
     "id": "ncombat",
     "title": "Ninja Combat",
     "aliases": [
-      "ncombath",
       "Ninja Combat (NGH-009)",
       "Ninja Combat (NGM-009)"
+    ],
+    "set_names": [
+      "ncombath"
     ]
   },
   {
@@ -1161,7 +1229,9 @@
     "id": "nitd",
     "title": "Nightmare in the Dark",
     "aliases": [
-      "Nightmare in the Dark (bootleg)",
+      "Nightmare in the Dark (bootleg)"
+    ],
+    "set_names": [
       "nitdbl"
     ]
   },
@@ -1195,12 +1265,14 @@
       "Bust-A-Move (bootleg)",
       "Bust-A-Move (Neo-Geo, bootleg)",
       "Bust-A-Move (Neo-Geo, NGM-083)",
-      "pbbblenb",
-      "pbobblenb",
       "Puzzle Bobble (bootleg)",
       "Puzzle Bobble - Bust-A-Move",
       "Puzzle Bobble - Bust-A-Move (Neo-Geo, bootleg)",
       "Puzzle Bobble - Bust-A-Move (Neo-Geo, NGM-083)"
+    ],
+    "set_names": [
+      "pbbblenb",
+      "pbobblenb"
     ]
   },
   {
@@ -1217,10 +1289,12 @@
     "id": "pnyaa",
     "title": "Pochi and Nyaa",
     "aliases": [
-      "pnyaaa",
       "Pochi and Nyaa (Ver 2.00)",
       "Pochi and Nyaa (Ver 2.02)",
       "Pochi to Nyaa"
+    ],
+    "set_names": [
+      "pnyaaa"
     ]
   },
   {
@@ -1279,7 +1353,9 @@
       "Quiz Salibtamjeong The Last Count Down",
       "Quiz Salibtamjeong The Last Count Down (Korean localized Quiz Daisousa Sen)",
       "Quiz Salibtamjeong: The Last Count Down",
-      "Quiz Salibtamjeong: The Last Count Down (Korean localized Quiz Daisousa Sen)",
+      "Quiz Salibtamjeong: The Last Count Down (Korean localized Quiz Daisousa Sen)"
+    ],
+    "set_names": [
       "quizdaisk",
       "quizdask"
     ]
@@ -1290,7 +1366,9 @@
     "aliases": [
       "Quiz King of Fighters (Korea)",
       "Quiz King of Fighters (Korean release)",
-      "Quiz King of Fighters (SAM-080 ~ SAH-080)",
+      "Quiz King of Fighters (SAM-080 ~ SAH-080)"
+    ],
+    "set_names": [
       "quizkofk"
     ]
   },
@@ -1306,9 +1384,6 @@
     "id": "rbff1",
     "title": "Real Bout Fatal Fury",
     "aliases": [
-      "rbff1a",
-      "rbff1k",
-      "rbff1ka",
       "Real Bout Fatal Fury (bug fix revision)",
       "Real Bout Fatal Fury - Real Bout Garou Densetsu",
       "Real Bout Fatal Fury - Real Bout Garou Densetsu (bug fix revision)",
@@ -1320,14 +1395,17 @@
       "Real Bout Garou Densetsu (Korean release)",
       "Real Bout Garou Densetsu (Korean release, bug fix revision)",
       "Real Bout Garou Densetsu (NGM-095 ~ NGH-095)"
+    ],
+    "set_names": [
+      "rbff1a",
+      "rbff1k",
+      "rbff1ka"
     ]
   },
   {
     "id": "rbff2",
     "title": "Real Bout Fatal Fury 2 - The Newcomers",
     "aliases": [
-      "rbff2h",
-      "rbff2k",
       "Real Bout Fatal Fury 2 - The Newcomers (Korean release)",
       "Real Bout Fatal Fury 2 - The Newcomers (NGH-2400)",
       "Real Bout Fatal Fury 2 - The Newcomers - Real Bout Garou Densetsu 2 - The Newcomers",
@@ -1346,35 +1424,45 @@
       "Real Bout Garou Densetsu 2 The Newcomers (NGH-2400)",
       "Real Bout Garou Densetsu 2: The Newcomers",
       "Real Bout Garou Densetsu 2: The Newcomers (NGH-2400)"
+    ],
+    "set_names": [
+      "rbff2h",
+      "rbff2k"
     ]
   },
   {
     "id": "rbffspec",
     "title": "Real Bout Fatal Fury Special",
     "aliases": [
-      "rbffspck",
-      "rbffspeck",
       "Real Bout Fatal Fury Special (Korean release)",
       "Real Bout Fatal Fury Special - Real Bout Garou Densetsu Special",
       "Real Bout Fatal Fury Special - Real Bout Garou Densetsu Special (Korean release)",
       "Real Bout Garou Densetsu Special",
       "Real Bout Garou Densetsu Special (Korean release)"
+    ],
+    "set_names": [
+      "rbffspck",
+      "rbffspeck"
     ]
   },
   {
     "id": "ridhero",
     "title": "Riding Hero",
     "aliases": [
-      "ridheroh",
       "Riding Hero (NGM-006 ~ NGH-006)",
       "Riding Hero (set 2)"
+    ],
+    "set_names": [
+      "ridheroh"
     ]
   },
   {
     "id": "roboarmy",
     "title": "Robo Army",
     "aliases": [
-      "Robo Army (NGM-032 ~ NGH-032)",
+      "Robo Army (NGM-032 ~ NGH-032)"
+    ],
+    "set_names": [
       "roboarma",
       "roboarmya"
     ]
@@ -1384,7 +1472,9 @@
     "title": "Rage of the Dragons",
     "aliases": [
       "Rage of the Dragons (NGH-2640?)",
-      "Rage of the Dragons (NGM-2640?)",
+      "Rage of the Dragons (NGM-2640?)"
+    ],
+    "set_names": [
       "rotdh"
     ]
   },
@@ -1397,10 +1487,6 @@
     "id": "samsh5sp",
     "title": "Samurai Shodown V Special",
     "aliases": [
-      "samsh5fe",
-      "samsh5pf",
-      "samsh5sph",
-      "samsh5spho",
       "Samurai Shodown V Perfect",
       "Samurai Shodown V Special (1st release, censored)",
       "Samurai Shodown V Special (2nd release, less censored)",
@@ -1416,7 +1502,13 @@
       "Samurai Spirits Zero Special (2nd release, less censored)",
       "Samurai Spirits Zero Special (NGH-2720, 1st release, censored)",
       "Samurai Spirits Zero Special (NGH-2720, 2nd release, less censored)",
-      "Samurai Spirits Zero Special (NGM-2720)",
+      "Samurai Spirits Zero Special (NGM-2720)"
+    ],
+    "set_names": [
+      "samsh5fe",
+      "samsh5pf",
+      "samsh5sph",
+      "samsh5spho",
       "smsh5sph",
       "smsh5spo"
     ]
@@ -1425,7 +1517,6 @@
     "id": "samsho",
     "title": "Samurai Shodown",
     "aliases": [
-      "samshoh",
       "Samurai Shodown (NGH-045)",
       "Samurai Shodown - Samurai Spirits",
       "Samurai Shodown - Samurai Spirits (NGH-045)",
@@ -1433,6 +1524,9 @@
       "Samurai Spirits",
       "Samurai Spirits (NGH-045)",
       "Samurai Spirits (NGM-045)"
+    ],
+    "set_names": [
+      "samshoh"
     ]
   },
   {
@@ -1442,8 +1536,6 @@
       "Jin Saulabi Tu Hon",
       "Jin Saulabi Tu Hon (Korean release of Samurai Shodown II, set 1)",
       "Jin Saulabi Tu Hon (Korean release of Samurai Shodown II, set 2)",
-      "samsho2k",
-      "samsho2ka",
       "Samurai Shodown II - Shin Samurai Spirits - Haohmaru Jigokuhen",
       "Samurai Shodown II - Shin Samurai Spirits - Haohmaru Jigokuhen (NGM-063 ~ NGH-063)",
       "Saulabi Spirits",
@@ -1455,7 +1547,11 @@
       "Shin Samurai Spirits - Haohmaru Jigokuhen",
       "Shin Samurai Spirits - Haohmaru Jigokuhen (NGM-063 ~ NGH-063)",
       "Shin Samurai Spirits Haohmaru Jigokuhen",
-      "Shin Samurai Spirits: Haohmaru Jigokuhen",
+      "Shin Samurai Spirits: Haohmaru Jigokuhen"
+    ],
+    "set_names": [
+      "samsho2k",
+      "samsho2ka",
       "smsho2k2"
     ]
   },
@@ -1465,8 +1561,6 @@
     "aliases": [
       "Fighters Swords",
       "Fighters Swords (Korean release of Samurai Shodown III)",
-      "fswords",
-      "samsho3h",
       "Samurai Shodown III (NGH-087)",
       "Samurai Shodown III - Samurai Spirits - Zankurou Musouken",
       "Samurai Shodown III - Samurai Spirits - Zankurou Musouken (NGH-087)",
@@ -1478,6 +1572,10 @@
       "Samurai Spirits Zankurou Musouken (NGH-087)",
       "Samurai Spirits: Zankurou Musouken",
       "Samurai Spirits: Zankurou Musouken (NGH-087)"
+    ],
+    "set_names": [
+      "fswords",
+      "samsho3h"
     ]
   },
   {
@@ -1492,7 +1590,6 @@
       "Paewang Jeonseol",
       "Paewang Jeonseol - Legend of a Warrior",
       "Paewang Jeonseol - Legend of a Warrior (Korean censored Samurai Shodown IV)",
-      "samsho4k",
       "Samurai Shodown IV - Amakusa's Revenge - Samurai Spirits - Amakusa Kourin",
       "Samurai Shodown IV - Amakusa's Revenge - Samurai Spirits - Amakusa Kourin (NGM-222 ~ NGH-222)",
       "Samurai Shodown IV Amakusa's Revenge",
@@ -1501,16 +1598,15 @@
       "Samurai Spirits - Amakusa Kourin (NGM-222 ~ NGH-222)",
       "Samurai Spirits Amakusa Kourin",
       "Samurai Spirits: Amakusa Kourin"
+    ],
+    "set_names": [
+      "samsho4k"
     ]
   },
   {
     "id": "samsho5",
     "title": "Samurai Shodown V",
     "aliases": [
-      "samsho5a",
-      "samsho5b",
-      "samsho5h",
-      "samsho5x",
       "Samurai Shodown V (bootleg)",
       "Samurai Shodown V (NGH-2700)",
       "Samurai Shodown V (XBOX version hack)",
@@ -1525,6 +1621,12 @@
       "Samurai Spirits Zero (NGM-2700, set 1)",
       "Samurai Spirits Zero (NGM-2700, set 2)",
       "Samurai Spirits Zero (XBOX version hack)"
+    ],
+    "set_names": [
+      "samsho5a",
+      "samsho5b",
+      "samsho5h",
+      "samsho5x"
     ]
   },
   {
@@ -1560,7 +1662,9 @@
       "Sengoku - Sengoku Denshou (NGM-017 ~ NGH-017)",
       "Sengoku Denshou",
       "Sengoku Denshou (NGH-017, US)",
-      "Sengoku Denshou (NGM-017 ~ NGH-017)",
+      "Sengoku Denshou (NGM-017 ~ NGH-017)"
+    ],
+    "set_names": [
       "sengokuh"
     ]
   },
@@ -1582,7 +1686,9 @@
       "Sengoku Densho 2001",
       "Sengoku Densho 2001 (set 1)",
       "Sengoku Densho 2001 (set 2)",
-      "Sengoku Denshou 2001",
+      "Sengoku Denshou 2001"
+    ],
+    "set_names": [
       "sengoku3a"
     ]
   },
@@ -1590,21 +1696,25 @@
     "id": "shocktr2",
     "title": "Shock Troopers - 2nd Squad",
     "aliases": [
-      "lans2004",
       "Lansquenet",
       "Lansquenet 2004",
       "Lansquenet 2004 (bootleg of Shock Troopers - 2nd Squad)",
       "Shock Troopers 2nd Squad",
       "Shock Troopers: 2nd Squad"
+    ],
+    "set_names": [
+      "lans2004"
     ]
   },
   {
     "id": "shocktro",
     "title": "Shock Troopers",
     "aliases": [
-      "shcktroa",
       "Shock Troopers (set 1)",
-      "Shock Troopers (set 2)",
+      "Shock Troopers (set 2)"
+    ],
+    "set_names": [
+      "shcktroa",
       "shocktroa"
     ]
   },
@@ -1612,10 +1722,12 @@
     "id": "socbrawl",
     "title": "Soccer Brawl",
     "aliases": [
-      "scbrawlh",
-      "socbrawlh",
       "Soccer Brawl (NGH-031)",
       "Soccer Brawl (NGM-031)"
+    ],
+    "set_names": [
+      "scbrawlh",
+      "socbrawlh"
     ]
   },
   {
@@ -1703,7 +1815,9 @@
       "Stakes Winner - Stakes Winner - GI Kinzen Seiha e no Michi",
       "Stakes Winner - Stakes Winner - GI Kinzen Seiha e no Michi (early development board)",
       "Stakes Winner GI Kinzen Seiha e no Michi",
-      "Stakes Winner: GI Kinzen Seiha e no Michi",
+      "Stakes Winner: GI Kinzen Seiha e no Michi"
+    ],
+    "set_names": [
       "stakwindev"
     ]
   },
@@ -1751,7 +1865,9 @@
       "SNK vs. Capcom Super Plus",
       "SNK vs. Capcom Super Plus (bootleg)",
       "SNK vs. Capcom SVC Chaos",
-      "SNK vs. Capcom: SVC Chaos",
+      "SNK vs. Capcom: SVC Chaos"
+    ],
+    "set_names": [
       "svcboot",
       "svccpru",
       "svcplus",
@@ -1768,7 +1884,9 @@
       "Top Hunter Roddy & Cathy",
       "Top Hunter Roddy & Cathy (NGH-046)",
       "Top Hunter: Roddy & Cathy",
-      "Top Hunter: Roddy & Cathy (NGH-046)",
+      "Top Hunter: Roddy & Cathy (NGH-046)"
+    ],
+    "set_names": [
       "tophuntrh",
       "tphuntrh"
     ]
@@ -1803,7 +1921,8 @@
   {
     "id": "twsoc96",
     "title": "Tecmo World Soccer '96",
-    "aliases": [
+    "aliases": [],
+    "set_names": [
       "tws96"
     ]
   },
@@ -1811,8 +1930,10 @@
     "id": "viewpoin",
     "title": "Viewpoint",
     "aliases": [
-      "viewpoinp",
       "Viewpoint (prototype)"
+    ],
+    "set_names": [
+      "viewpoinp"
     ]
   },
   {
@@ -1823,7 +1944,9 @@
       "V-Liner (v0.54)",
       "V-Liner (v0.6e)",
       "V-Liner (v0.7a)",
-      "V-Liner (v0.7e)",
+      "V-Liner (v0.7e)"
+    ],
+    "set_names": [
       "vliner53",
       "vliner54",
       "vliner6e",
@@ -1839,20 +1962,24 @@
     "id": "wh1",
     "title": "World Heroes",
     "aliases": [
-      "wh1h",
-      "wh1ha",
       "World Heroes (ALH-005)",
       "World Heroes (ALM-005)",
       "World Heroes (set 3)"
+    ],
+    "set_names": [
+      "wh1h",
+      "wh1ha"
     ]
   },
   {
     "id": "wh2",
     "title": "World Heroes 2",
     "aliases": [
-      "wh2h",
       "World Heroes 2 (ALH-006)",
       "World Heroes 2 (ALM-006 ~ ALH-006)"
+    ],
+    "set_names": [
+      "wh2h"
     ]
   },
   {
@@ -1873,14 +2000,17 @@
     "aliases": [
       "Flying Power Disc",
       "Windjammers - Flying Power Disc",
-      "Windjammers Supersonic",
+      "Windjammers Supersonic"
+    ],
+    "set_names": [
       "wjammss"
     ]
   },
   {
     "id": "xenocris",
     "title": "Xeno Crisis",
-    "aliases": [
+    "aliases": [],
+    "set_names": [
       "xenocrisis"
     ]
   },

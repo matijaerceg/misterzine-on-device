@@ -249,6 +249,8 @@ Existing Neo Geo arcade game shortcuts (`.mgl` files) appear alongside other arc
 
 The **Core** view gathers these games under **Neo Geo**. For a separate A-Z list, enable **Neo Geo** in **Options -> List -> Available views -> Cores**, also reachable through **Y -> Edit available views**. This optional view starts off and follows your search and filters. To hide the games from every view, use **Filters -> Source/core -> Local -> Neo Geo**. Favorites, Recents, the exit chord and Return after game work as they do for other games.
 
+You can keep filenames such as `3 Count Bout (3countb).neo`. When the full name has no catalogue match, MisterZine checks the final parentheses for a known set name. Your shortcut still opens the file at its original path.
+
 Recognition covers the [Neo Geo arcade catalogue](NEOGEO_CATALOGUE.md), including known regional and revision names, for NeoGeo, NeoGeo_LLAPI and NeoGeoYC cartridge shortcuts. Other systems, Neo Geo CD and unrecognised game filenames are not imported. A missing core leaves the game greyed out. Recognition does not verify the game files or BIOS; the scan's `misterzine/mgl-report.json` explains why a shortcut was included or omitted. Preferences from the earlier separate Neo Geo test app stay in that test installation.
 
 ## Controls

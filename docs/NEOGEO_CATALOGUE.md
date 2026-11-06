@@ -13,7 +13,7 @@ Run `python3 tools/generate_neogeo_catalogue.py` to regenerate from pinned metad
 
 ## Matching and boundaries
 
-Matching uses the target's basename, not the MGL's label or setname. It recognises exact case-insensitive set names, source titles, regional titles and explicit filename-safe variants. It does not guess arbitrary renamed files. MAME clones and known MiSTer variants map to their game family for title and classification; the original shortcut and configuration remain unchanged and distinct XML still produces distinct rows. Existing pilot IDs and titles are retained to preserve favourites.
+Matching uses the target's basename, not the MGL's label or setname. It recognises exact case-insensitive set names, source titles, regional titles and explicit filename-safe variants. For `.neo`, `.rom` and `.zip` filenames, an exact match takes priority. A filename such as `3 Count Bout (3countb).neo` can also match a known set identifier in the final parentheses. This includes MAME clones and MiSTer set names. MAME clones and known MiSTer variants map to their game family for title and classification; the original shortcut and configuration remain unchanged and distinct XML still produces distinct rows. Existing pilot IDs and titles are retained to preserve favourites.
 
 The MAME-only exclusions are `lasthope` (home-only conversion without credits), `mvstemp` (development subsystem) and the CD-only conversions `zintrckb`, `crswd2bl`, `froman2b`. Unmapped MiSTer entries such as test ROMs, demos and home-only games remain diagnostic candidates. Other cores and CD/mounted or multiple-file MGLs are rejected independently of game-name matching. Neo Geo home versions of arcade games share the family, so a recognised shortcut is not a guarantee of MVS mode.
 

@@ -26,6 +26,8 @@ func TestNeoGeoLaunchRevalidatesShortcut(t *testing.T) {
 	}{
 		{"cartridge", "_Console/NeoGeo", "mslug.neo", true},
 		{"expanded catalogue", "_Console/NeoGeo", "garou.neo", true},
+		{"parenthesized set", "_Console/NeoGeo", "3 Count Bout (3countb).neo", true},
+		{"region only", "_Console/NeoGeo", "3 Count Bout (USA).neo", false},
 		{"regional set", "_Console/NeoGeo", "kof97h.zip", true},
 		{"MiSTer alias", "_Console/NeoGeo", "tws96.rom", true},
 		{"different system", "_Console/SNES", "mslug.neo", false},

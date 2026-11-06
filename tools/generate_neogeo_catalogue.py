@@ -4,6 +4,7 @@ Only names and family relationships are extracted; no ROM data is downloaded.
 Pass --sources DIR containing neogeo.cpp, romsets.xml and software.xml to work offline.
 """
 import argparse
+from collections import defaultdict
 import csv
 import json
 from pathlib import Path
@@ -75,6 +76,7 @@ def generate(sources):
         return name
 
     games = {}
+    set_names = defaultdict(set)
     for name, (_, title) in sets.items():
         root = family(name)
         if root in EXCLUDE:
@@ -83,7 +85,8 @@ def generate(sources):
             raise ValueError("unknown family " + root)
         base = re.sub(r"\s*\([^)]*\)", "", sets[root][1].split(" / ")[0]).replace("/", "-").strip()
         game = games.setdefault(root, {"id": root, "title": PRESERVE.get(root, base), "aliases": set()})
-        game["aliases"].update({name, *forms(title)})
+        set_names[root].add(name)
+        game["aliases"].update(forms(title))
     for entry in ET.fromstring(sources["software.xml"]).findall("software"):
         name = entry.get("name")
         info = " ".join(e.get("value", "") for e in entry.findall("info"))
@@ -98,20 +101,24 @@ def generate(sources):
         if len(roots) > 1:
             raise ValueError("ambiguous MiSTer set " + str(names))
         if roots:
-            game = games[roots.pop()]
-            game["aliases"].update(names)
+            root = roots.pop()
+            game = games[root]
+            set_names[root].update(names)
             for field in ("altname", "altnamej"):
                 if entry.get(field):
                     game["aliases"].update(forms(entry.get(field)))
     games["kof98"]["aliases"].add("King of Fighters '98")
     owners = {}
     for game in games.values():
-        for name in {game["id"], game["title"], *game["aliases"]}:
+        sets = set_names[game["id"]] - {game["id"]}
+        for name in {game["id"], game["title"], *sets, *game["aliases"]}:
             key = name.lower()
             if key in owners and owners[key] != game["id"]:
                 raise ValueError("ambiguous alias " + name)
             owners[key] = game["id"]
-        game["aliases"] = sorted(game["aliases"] - {game["id"], game["title"]}, key=str.lower)
+        game["aliases"] = sorted(game["aliases"] - {game["id"], game["title"]} - sets, key=str.lower)
+        if sets:
+            game["set_names"] = sorted(sets, key=str.lower)
     return sorted(games.values(), key=lambda g: g["id"])
 
 
@@ -123,4 +130,4 @@ if __name__ == "__main__":
     sources = {name: (args.sources / name).read_text(encoding="utf-8") if args.sources else urllib.request.urlopen(url).read().decode("utf-8") for name, url in SOURCES.items()}
     games = generate(sources)
     args.output.write_text(json.dumps(games, indent=2, ensure_ascii=True) + "\n", encoding="utf-8", newline="\n")
-    print(f"{len(games)} game families; {sum(len(g['aliases']) + 2 for g in games)} names")
+    print(f"{len(games)} game families; {sum(len({g['id'], g['title'], *g['aliases'], *g.get('set_names', [])}) for g in games)} names")
