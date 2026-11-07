@@ -425,6 +425,8 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "-out", f"out/view-chooser-{orientation}-{inset}", "-script",
                           "space; shot open; end; shot edit; up; shot last; enter; shot chosen; space; shot current; end; enter; shot editor; end; shot editor-end; enter; back; shot updated; back; shot cancelled; back; home; pagedown; right; down*7; enter; shot options-editor"])
 # Neo Geo is offered by the normal host and stays off until enabled.
+scenarios.append(["-data", "testdata/neogeo-versions.json", "-status", "unknown", "-out", "out/neogeo-versions", "-script",
+                  "type art of fighting 2; shot family; enter; right; shot home; back; back; type king of gladiator; shot search; enter; shot bootleg"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (0, 40):

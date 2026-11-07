@@ -60,6 +60,9 @@ type Row struct {
 	FamilySets   []string `json:"family_sets,omitempty"` // known clone setnames
 	Family       string   `json:"family,omitempty"`      // MAME clone root
 	SN           string   `json:"sn"`                    // MAME setname
+	NeoSet       string   `json:"neo_set,omitempty"`     // actual cartridge set; SN is its shared family
+	NeoVariant   string   `json:"neo_variant,omitempty"` // human-readable set label
+	NeoAliases   []string `json:"neo_aliases,omitempty"` // alternate titles specific to this set
 	Rot          string   `json:"rot"`
 	Plr          string   `json:"plr"`
 	Ctl          string   `json:"ctl"`

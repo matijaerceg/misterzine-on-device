@@ -33,12 +33,45 @@ func (a *App) pickIn(entries []launchEntry) int {
 // 0 (the main one) when none is remembered or it is gone.
 func (a *App) rememberedPickOf(row *data.Row, i int) int {
 	want := a.cfg.Versions[row.K]
-	if want == "" {
+	neo := row.IsNeoGeoShortcut() && row.SN != ""
+	if neo {
+		if saved := a.cfg.Versions[row.PreferenceKey()]; saved != "" {
+			want = saved
+		}
+		if want == "" {
+			for _, j := range a.ds.NeoMembers(row) {
+				if old := a.cfg.Versions[a.ds.Rows[j].K]; old != "" {
+					want = old
+					break
+				}
+			}
+		}
+		if a.neoVersionSearch(row) || want == "" && a.mode == data.SortRecents {
+			want = row.MRA
+		}
+		if want == "" && a.mode == data.SortFavorites {
+			for _, j := range a.ds.NeoMembers(row) {
+				if r := &a.ds.Rows[j]; a.cfg.Favorites[r.K] {
+					want = r.MRA
+					break
+				}
+			}
+		}
+	}
+	if !neo && want == "" {
 		return 0
 	}
-	for n, e := range a.launchEntries(row, i) {
+	entries := a.launchEntries(row, i)
+	for n, e := range entries {
 		if e.path == want {
 			return n
+		}
+	}
+	if neo {
+		for n, e := range entries {
+			if e.ok {
+				return n
+			}
 		}
 	}
 	return 0
@@ -52,16 +85,17 @@ func (a *App) rememberPick(row *data.Row, entries []launchEntry, pick int) {
 		return
 	}
 	p := ""
-	if pick > 0 && pick < len(entries) {
+	key := row.PreferenceKey()
+	if pick >= 0 && pick < len(entries) && (pick > 0 || key != row.K) {
 		p = entries[pick].path
 	}
-	if a.cfg.Versions[row.K] == p {
+	if a.cfg.Versions[key] == p {
 		return
 	}
 	if p == "" {
-		delete(a.cfg.Versions, row.K)
+		delete(a.cfg.Versions, key)
 	} else {
-		a.cfg.Versions[row.K] = p
+		a.cfg.Versions[key] = p
 	}
 	a.romMemo = nil // the list's ROM mark follows the version to launch
 	if a.cfg.VersionChanged != nil {

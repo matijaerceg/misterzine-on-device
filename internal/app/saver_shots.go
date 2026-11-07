@@ -739,10 +739,11 @@ func (a *App) paintSaverCaption(c *gfx.Canvas) {
 
 func (a *App) saverPool() []saverPick {
 	var pool []saverPick
+	neo := map[string]bool{}
 	for i := range a.ds.Rows {
 		r := &a.ds.Rows[i]
 		// a mature game is never screensaver décor unless its shots are shown
-		if !r.IsArcade() || r.Img == "" || (r.Mat != 0 && a.Mature() != MatureShow) || (a.cfg.SaverCard && !a.status(i).Found()) || (a.cfg.SaverFavorites && !a.cfg.Favorites[r.K]) {
+		if !r.IsArcade() || r.Img == "" || (r.Mat != 0 && a.Mature() != MatureShow) || (a.cfg.SaverCard && !a.status(i).Found()) || (a.cfg.SaverFavorites && !a.familyFavorite(r)) {
 			continue
 		}
 
@@ -761,6 +762,12 @@ func (a *App) saverPool() []saverPick {
 		}
 		for _, slot := range r.ImgSlots {
 			if data.ShotKind(slot) == "snap" {
+				if r.IsNeoGeoShortcut() && r.SN != "" {
+					if neo[r.SN] {
+						continue
+					}
+					neo[r.SN] = true
+				}
 				pool = append(pool, saverPick{i, slot})
 			}
 		}

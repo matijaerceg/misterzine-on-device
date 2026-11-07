@@ -56,6 +56,30 @@ def forms(title):
     return results
 
 
+def version_label(title, parent, setname, is_parent):
+    """A short picker label from the source's English name and set qualifiers."""
+    def stem(s):
+        return s.split(" / ", 1)[0].split(" (", 1)[0].strip()
+    name = stem(title)
+    qualifiers = []
+    for value in re.findall(r"\(([^()]*)\)", title):
+        code, sep, detail = value.partition(", ")
+        if re.fullmatch(r"NGM-\w+\s*~\s*NGH-\w+", code):
+            value = detail
+        elif re.fullmatch(r"NG[MH]-\w+", code):
+            value = ("Home cartridge" if code.startswith("NGH") else "Arcade cartridge") + sep + detail
+        elif value.startswith("bootleg of "):
+            value = "bootleg"
+        if value:
+            qualifiers.append(value)
+    if name != stem(parent):
+        return name + "".join(f" ({q})" for q in qualifiers)
+    if qualifiers:
+        label = ", ".join(qualifiers)
+        return label[:1].upper() + label[1:]
+    return "Standard cartridge" if is_parent else f"Alternate set ({setname})"
+
+
 def generate(sources):
     sets = {}
     for line in sources["neogeo.cpp"].splitlines():
@@ -77,6 +101,8 @@ def generate(sources):
 
     games = {}
     set_names = defaultdict(set)
+    descriptions = {}
+    spellings = defaultdict(set)
     for name, (_, title) in sets.items():
         root = family(name)
         if root in EXCLUDE:
@@ -87,6 +113,8 @@ def generate(sources):
         game = games.setdefault(root, {"id": root, "title": PRESERVE.get(root, base), "aliases": set()})
         set_names[root].add(name)
         game["aliases"].update(forms(title))
+        descriptions[name] = title
+        spellings[name].update(forms(title))
     for entry in ET.fromstring(sources["software.xml"]).findall("software"):
         name = entry.get("name")
         info = " ".join(e.get("value", "") for e in entry.findall("info"))
@@ -107,6 +135,10 @@ def generate(sources):
             for field in ("altname", "altnamej"):
                 if entry.get(field):
                     game["aliases"].update(forms(entry.get(field)))
+                    for name in names:
+                        spellings[name].update(forms(entry.get(field)))
+            for name in names:
+                descriptions.setdefault(name, entry.get("altname") or name)
     games["kof98"]["aliases"].add("King of Fighters '98")
     owners = {}
     for game in games.values():
@@ -119,6 +151,24 @@ def generate(sources):
         game["aliases"] = sorted(game["aliases"] - {game["id"], game["title"]} - sets, key=str.lower)
         if sets:
             game["set_names"] = sorted(sets, key=str.lower)
+            root = game["id"]
+            parent = descriptions.get(root, game["title"])
+            # A shared readable title cannot distinguish a revision. Only an
+            # alias unique to a particular set may override the family match.
+            users = defaultdict(set)
+            for name in sets | {root}:
+                for alias in spellings[name]:
+                    users[alias.lower()].add(name)
+            variants = {}
+            for name in [root, *game["set_names"]]:
+                label = version_label(descriptions.get(name, name), parent, name, name == root)
+                entry = {"label": label}
+                aliases = sorted(a for a in spellings[name] if name != root and users[a.lower()] == {name}
+                                 and a.lower() != game["title"].lower())
+                if aliases:
+                    entry["aliases"] = aliases
+                variants[name] = entry
+            game["variants"] = variants
     return sorted(games.values(), key=lambda g: g["id"])
 
 

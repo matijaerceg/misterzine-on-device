@@ -201,6 +201,7 @@ type launchEntry struct {
 	path  string // card-relative, or "core:NAME"
 	ok    bool   // launchable: the file and its core are on the card
 	why   string // the notice when not ok
+	row   int    // physical row supplying this launch path
 }
 
 // launchEntries lists the mainline file and installed alternatives, each
@@ -210,6 +211,35 @@ type launchEntry struct {
 // completes. Its alternatives share the core. Without an Exists hook a
 // not-found status cannot tell the two apart and reads as the file missing.
 func (a *App) launchEntries(row *data.Row, i int) []launchEntry {
+	members := a.ds.NeoMembers(row)
+	if len(members) < 2 {
+		entries := a.rowEntries(row, i)
+		if len(entries) == 1 && row.NeoSet != row.SN && row.NeoVariant != "" {
+			entries[0].label = data.ASCII(row.NeoVariant)
+		}
+		return entries
+	}
+	var out []launchEntry
+	labels := map[string]int{}
+	for _, j := range members {
+		member := &a.ds.Rows[j]
+		for _, e := range a.rowEntries(member, j) {
+			if member.NeoVariant != "" {
+				e.label = data.ASCII(member.NeoVariant)
+			}
+			labels[e.label]++
+			out = append(out, e)
+		}
+	}
+	for n, e := range out {
+		if labels[e.label] > 1 {
+			out[n].label += " - " + e.path
+		}
+	}
+	return out
+}
+
+func (a *App) rowEntries(row *data.Row, i int) []launchEntry {
 	var out []launchEntry
 	st := a.status(i)
 	// another source's game at the row's path is no missing core, and
@@ -233,10 +263,10 @@ func (a *App) launchEntries(row *data.Row, i int) []launchEntry {
 		} else if coreMissing != "" {
 			ok, why = false, coreMissing
 		}
-		out = append(out, launchEntry{path.Base(row.MRA), row.MRA, ok, why})
+		out = append(out, launchEntry{path.Base(row.MRA), row.MRA, ok, why, i})
 	} else if row.Core != "" {
 		ok := a.cfg.Status == nil || st != data.StatusNotFound
-		out = append(out, launchEntry{"load the " + row.Core + " core", "core:" + row.Core, ok, "the " + row.Core + " core is not on the card"})
+		out = append(out, launchEntry{"load the " + row.Core + " core", "core:" + row.Core, ok, "the " + row.Core + " core is not on the card", i})
 	}
 	if a.cfg.Alternatives != nil {
 		for _, alt := range a.cfg.Alternatives(row) {
@@ -247,7 +277,7 @@ func (a *App) launchEntries(row *data.Row, i int) []launchEntry {
 					label += " [" + c + "]"
 				}
 			}
-			out = append(out, launchEntry{label, alt, coreMissing == "", coreMissing})
+			out = append(out, launchEntry{label, alt, coreMissing == "", coreMissing, i})
 		}
 	}
 	// two files of one name, in different folders, are told apart by folder
@@ -267,6 +297,10 @@ func (a *App) launchEntries(row *data.Row, i int) []launchEntry {
 // first (when it shipped, is it on the card, how does it boot), then the
 // rest of the site's panel fields.
 func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
+	return a.detailLinesFor(row, d, i, a.launchEntries(row, i))
+}
+
+func (a *App) detailLinesFor(row *data.Row, d *data.Derived, i int, entries []launchEntry) []paneLine {
 	now := a.cfg.Now()
 	rel := func(iso string) string {
 		if !a.cfg.ClockTrusted {
@@ -291,7 +325,6 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 	}
 	fg, mu := pal.Fg, pal.Muted
 	if a.cfg.ROMIssue != nil {
-		entries := a.launchEntries(row, i)
 		if len(entries) > 0 {
 			e := entries[a.pickIn(entries)]
 			if e.ok {
@@ -304,6 +337,12 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 				L = append(L, paneLine{"ROM problems in " + itoa(bad) + " of " + itoa(total) + " versions", pal.Warn})
 			}
 		}
+	}
+	file := row.MRA
+	if row.IsNeoGeoShortcut() && len(entries) > 0 {
+		e := entries[a.pickIn(entries)]
+		i, file = e.row, e.path
+		row, d = &a.ds.Rows[i], &a.ds.Der[i]
 	}
 	prov := func(f string) rgb {
 		if row.HasProv(f) {
@@ -343,7 +382,7 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 			note = "The catalogue lists this game only for cores that are not on this card; details read from the MRA file"
 		}
 		L = append(L, paneLine{note, mu})
-		add("File", row.MRA, mu)
+		add("File", file, mu)
 	}
 	if row.Rot != "" {
 		addSpec("Rotation", "rot", row.Rot)
@@ -360,7 +399,11 @@ func (a *App) detailLines(row *data.Row, d *data.Derived, i int) []paneLine {
 	if row.Core != "" {
 		add("Core", d.CoreLabel+" ("+row.Core+")", fg)
 	}
-	add("ROM", row.SN, fg)
+	set := row.SN
+	if row.NeoSet != "" {
+		set = row.NeoSet
+	}
+	add("ROM", set, fg)
 	if row.Year != "" {
 		y := row.Year
 		if a.cfg.ClockTrusted {
@@ -504,7 +547,7 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 	cols := a.body.Cols(body.Dx())
 	y := body.Min.Y
 	title := d.Title
-	if a.cfg.Favorites[row.K] {
+	if a.familyFavorite(row) {
 		title = "* " + title
 	}
 	for _, t := range gfx.Wrap(title, cols, 2) {
@@ -555,7 +598,7 @@ func (a *App) paintDetails(c *gfx.Canvas) {
 	}
 	// spec lines, scrollable
 	sc := a.sm.Cols(body.Dx() - 4) // leave room for the information scrollbar
-	lines := wrapDetailLines(a.detailLines(row, d, i), sc)
+	lines := wrapDetailLines(a.detailLinesFor(row, d, i, entries), sc)
 	avail := body.Max.Y - y
 	specH := avail - launchH - 2
 	maxLines := max(0, specH/lh)
@@ -843,6 +886,9 @@ func (a *App) launchRow(row *data.Row, i, pick int) bool {
 			// the main version keeps any record: the alternatives may just
 			// not be scanned yet.
 			a.rememberPick(row, entries, pick)
+		}
+		if e.row != i {
+			row = &a.ds.Rows[e.row]
 		}
 		a.recordLaunch(row)
 		if a.LaunchTransition() == "hold" && a.transition.enabled {

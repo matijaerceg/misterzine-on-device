@@ -18,12 +18,17 @@ func (a *App) toggleFavorite() (left bool) {
 	if a.cfg.Favorites == nil {
 		a.cfg.Favorites = map[string]bool{}
 	}
-	k := a.ds.Rows[a.view[a.cursor]].K
-	if a.cfg.Favorites[k] {
+	row := &a.ds.Rows[a.view[a.cursor]]
+	k := row.K
+	if a.familyFavorite(row) {
 		delete(a.cfg.Favorites, k)
+		delete(a.cfg.Favorites, row.PreferenceKey())
+		for _, i := range a.ds.NeoMembers(row) {
+			delete(a.cfg.Favorites, a.ds.Rows[i].K)
+		}
 		a.Notice("favorite removed", 2*time.Second)
 	} else {
-		a.cfg.Favorites[k] = true
+		a.cfg.Favorites[row.PreferenceKey()] = true
 		a.Notice("favorite added", 2*time.Second)
 	}
 	if a.cfg.FavChanged != nil {

@@ -47,8 +47,8 @@ func (a *App) ReportPart() report.AppPart {
 			g.StandsFor = a.ds.Rows[j].K
 		}
 		unseen := a.seen != nil && a.seen.Unseen(r)
-		g.Hidden = filters.Why(r, d, a.status(i), a.cfg.Favorites[r.K], unseen, a.romState(i))
-		if g.Hidden == "" && q != "" && !strings.Contains(searchText(d.Title), q) {
+		g.Hidden = filters.Why(r, d, a.status(i), a.familyFavorite(r), unseen, a.romState(i))
+		if g.Hidden == "" && q != "" && !strings.Contains(searchText(d.Title), q) && !neoMatches(r, q) {
 			g.Hidden = fmt.Sprintf("the search %q", a.query)
 		}
 		p.Local = append(p.Local, g)

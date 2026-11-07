@@ -283,18 +283,26 @@ func (a *App) facetRows(f data.Filters, arcade bool, fn func(i int)) {
 	f.Genre = a.mode.Genre()
 	f.NeoGeoOnly = a.mode == data.SortNeoGeo
 	query := searchText(a.query)
+	var neoRows []int
 	for i := range a.ds.Rows {
 		r, d := &a.ds.Rows[i], &a.ds.Der[i]
 		if arcade && !r.IsArcade() {
 			continue
 		}
-		if query != "" && !strings.Contains(searchText(d.Title), query) {
+		if query != "" && !strings.Contains(searchText(d.Title), query) && !neoMatches(r, query) {
 			continue
 		}
 		unseen := a.seen != nil && a.seen.Unseen(r)
-		if f.Pass(r, d, a.status(i), a.cfg.Favorites[r.K], unseen, a.romState(i)) {
-			fn(i)
+		if f.Pass(r, d, a.status(i), a.familyFavorite(r), unseen, a.romState(i)) {
+			if len(a.ds.NeoMembers(r)) > 1 {
+				neoRows = append(neoRows, i)
+			} else {
+				fn(i)
+			}
 		}
+	}
+	for _, i := range a.collapseNeoVersions(neoRows) {
+		fn(i)
 	}
 }
 

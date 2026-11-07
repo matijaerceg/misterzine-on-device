@@ -55,6 +55,20 @@ func TestExactNeoGeoNameWinsOverSetSuffix(t *testing.T) {
 	}
 }
 
+func TestMatchedNeoGeoVariant(t *testing.T) {
+	for _, tc := range []struct{ target, set, label string }{
+		{"aof2.neo", "aof2", "Arcade cartridge"},
+		{"Library.zip/Art of Fighting 2 (AOF2A).neo", "aof2a", "Home cartridge"},
+		{"Ryuuko no Ken 2 (NGH-056).neo", "aof2a", "Home cartridge"},
+		{"King of Gladiator.neo", "kog", "King of Gladiator (bootleg)"},
+	} {
+		g, ok := NeoGeoCatalogue().matchTarget(tc.target)
+		if !ok || g.set != tc.set || g.variant.Label != tc.label {
+			t.Errorf("%s: %q %q %v", tc.target, g.set, g.variant.Label, ok)
+		}
+	}
+}
+
 // Exercise every family through XML parsing and real menu discovery, not only
 // the map lookup. No ROMs/cores are needed for this discovery-only test.
 func TestScanWholeNeoGeoCatalogue(t *testing.T) {

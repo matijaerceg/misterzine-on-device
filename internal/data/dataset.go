@@ -12,6 +12,7 @@ import (
 // Derived is what Ingest computes once per row so painting and sorting never
 // recompute labels or collation keys.
 type Derived struct {
+	NeoRank    int    // preferred launch order within a local Neo Geo family
 	CoreLabel  string // site coreLabel(core)
 	TypeLabel  string // "Arcade" or "<base> core"
 	SrcShort   string // MiSTer / Jotego / Coin-Op / Meathax / rmCores
@@ -56,16 +57,17 @@ type Facets struct {
 
 // Dataset is one ingested data.json with every derived index.
 type Dataset struct {
-	Rows    []Row
-	Der     []Derived
-	Hash    string    // sha256 hex from meta.json, "" when unknown; catalogue only
-	Gen     string    // Hash plus a digest of the local rows: what positional scan results index into
-	NCat    int       // Rows[:NCat] are catalogue rows, Rows[NCat:] local rows
-	Updated time.Time // meta.json updated stamp, zero when unknown
-	ByKey   map[string]int
-	Sole    map[string]string
-	cluster map[string]int
-	Facets  Facets
+	Rows        []Row
+	Der         []Derived
+	Hash        string    // sha256 hex from meta.json, "" when unknown; catalogue only
+	Gen         string    // Hash plus a digest of the local rows: what positional scan results index into
+	NCat        int       // Rows[:NCat] are catalogue rows, Rows[NCat:] local rows
+	Updated     time.Time // meta.json updated stamp, zero when unknown
+	ByKey       map[string]int
+	neoFamilies map[string][]int // physical rows, in default cartridge order
+	Sole        map[string]string
+	cluster     map[string]int
+	Facets      Facets
 
 	// catalogue-wide counts for core batches (batches.go): rows per
 	// same-game group, and games per batch under Updated and Debut
@@ -167,6 +169,7 @@ func Ingest(rows []Row, hash string, updated time.Time) *Dataset {
 		}
 	}
 	ds.coreGroups()
+	ds.indexNeoFamilies()
 	ds.countBatches()
 	return ds
 }

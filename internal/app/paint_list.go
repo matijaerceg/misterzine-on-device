@@ -452,7 +452,7 @@ func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {
 	y := r.Min.Y
 	fw := a.body.W
 	// fav
-	if a.cfg.Favorites[row.K] {
+	if a.familyFavorite(row) {
 		c.Text(x, y, a.body, "*", pal.Accent)
 	}
 	x += fw
@@ -478,13 +478,25 @@ func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {
 		// the year is on the header line, so the title takes the date column
 		tw += a.dateCols() * rf.W
 	}
+	titleCanvas, width := c, tw
 	if fit := tw + a.restLayout().TitleW - l.TitleW; fit != tw {
 		// a framed layout motion: the title as it reads at rest, cut by
 		// its column's moving edge
-		col := &gfx.Canvas{RGBA: c.Sub(image.Rect(x, c.Rect.Min.Y, x+tw, c.Rect.Max.Y))}
-		a.paintTitle(col, x+indent, y, fit-indent, d.Title, row.Beta, titleCol)
+		titleCanvas = &gfx.Canvas{RGBA: c.Sub(image.Rect(x, c.Rect.Min.Y, x+tw, c.Rect.Max.Y))}
+		width = fit
+	}
+	title := d.Title
+	if a.neoVersionSearch(row) && row.NeoVariant != "" {
+		title = data.ASCII(row.NeoVariant)
+	}
+	if n := a.neoVersionCount(row); n > 1 {
+		tail := "+"
+		if a.VersionCounts() {
+			tail += " (" + itoa(n) + ")"
+		}
+		a.paintCountedTitle(titleCanvas, x+indent, y, width-indent, title, tail, titleCol)
 	} else {
-		a.paintTitle(c, x+indent, y, tw-indent, d.Title, row.Beta, titleCol)
+		a.paintTitle(titleCanvas, x+indent, y, width-indent, title, row.Beta, titleCol)
 	}
 	if l.PictureColumns {
 		return
@@ -606,6 +618,9 @@ func (a *App) paneLines(row *data.Row, d *data.Derived, i, cols int) []paneLine 
 	hue := typeHue(row.Base)
 	for _, t := range gfx.Wrap(d.Title, cols, 2) {
 		lines = append(lines, paneLine{t, pal.Fg})
+	}
+	if n := a.neoVersionCount(row); n > 1 {
+		lines = append(lines, paneLine{itoa(n) + " versions", pal.Muted})
 	}
 	// the card answer comes right after the title: it is the point of the app
 	if a.cfg.Status != nil {

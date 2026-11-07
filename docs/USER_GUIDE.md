@@ -246,6 +246,10 @@ filter choices are saved.
 
 ### Neo Geo games
 
+Each recognised game has one list entry. A **+** after the title means you have more than one launch choice. For example, **Art of Fighting 2 +** can include the arcade and home cartridges. **Start** launches the standard cartridge when available. In **Details**, use **Left/Right** to choose another version. MisterZine remembers your choice for the next launch.
+
+Search can take you directly to an installed version by name or set identifier. For example, searching **King of Gladiator** or **kog** finds the bootleg under **The King of Fighters '97** and selects it for Details or Start. Regional releases, prototypes and custom shortcuts keep their own launch targets. When two choices share a label, the picker includes the file path.
+
 Neo Geo shortcuts and folder games have gameplay screenshots in the list and in **Details → Shots**. When a title screen is available, use Left/Right in Shots to switch between the two. Pictures download as you browse. Turn on **Options → Data → Prefetch shots** to download them ahead of time for offline browsing. Different shortcuts and regional versions of the same game share the downloaded pictures.
 
 Open **Details** on a recognised game to see its arcade release year, maker, genre, players and controls. Shortcuts and games found by **Scan Neo Geo folder** share the same offline game information. Year and Maker views and the arcade filters use it too. The button count appears when the game's action buttons are documented.

@@ -1,0 +1,6 @@
+[
+  {"k":"local:neogeo:file:home","title":"Art of Fighting 2","src":"local","base":"Arcade","core":"NeoGeo","mra":"games/NEOGEO/aof2a.neo","sn":"aof2","neo_set":"aof2a","neo_variant":"Home cartridge"},
+  {"k":"local:neogeo:file:arcade","title":"Art of Fighting 2","src":"local","base":"Arcade","core":"NeoGeo","mra":"games/NEOGEO/aof2.neo","sn":"aof2","neo_set":"aof2","neo_variant":"Arcade cartridge"},
+  {"k":"local:neogeo:kof97:favorite","title":"The King of Fighters '97","src":"local","base":"Arcade","core":"NeoGeo","mra":"_Favorites/KOF 97.mgl","sn":"kof97","neo_set":"kof97","neo_variant":"Arcade cartridge"},
+  {"k":"local:neogeo:file:kog","title":"The King of Fighters '97","src":"local","base":"Arcade","core":"NeoGeo","mra":"games/NEOGEO/Arcade.zip/kog.neo","sn":"kof97","neo_set":"kog","neo_variant":"King of Gladiator (bootleg)"}
+]

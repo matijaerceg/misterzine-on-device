@@ -15,11 +15,19 @@ import (
 // Game is a reviewed arcade identity. Aliases are exact target basenames,
 // without extensions; the shortcut filename and setname are not evidence.
 type Game struct {
-	ID       string       `json:"id"`
-	Title    string       `json:"title"`
-	Aliases  []string     `json:"aliases"`
-	SetNames []string     `json:"set_names,omitempty"` // additional MAME and MiSTer set identifiers
-	Details  *gameDetails `json:"details,omitempty"`
+	ID       string                      `json:"id"`
+	Title    string                      `json:"title"`
+	Aliases  []string                    `json:"aliases"`
+	SetNames []string                    `json:"set_names,omitempty"` // additional MAME and MiSTer set identifiers
+	Details  *gameDetails                `json:"details,omitempty"`
+	Variants map[string]cartridgeVariant `json:"variants,omitempty"`
+	set      string
+	variant  cartridgeVariant // the matched target within this family
+}
+
+type cartridgeVariant struct {
+	Label   string   `json:"label"`
+	Aliases []string `json:"aliases,omitempty"`
 }
 
 type gameDetails struct {
@@ -38,6 +46,7 @@ type gameDetails struct {
 
 func (g Game) row(key, core, target string) data.Row {
 	r := data.Row{K: key, Title: g.Title, Base: "Arcade", Src: data.SrcLocal, Core: core, MRA: target, SN: g.ID}
+	r.NeoSet, r.NeoVariant, r.NeoAliases = g.set, g.variant.Label, g.variant.Aliases
 	g.applyDetails(&r)
 	return r
 }
@@ -66,7 +75,15 @@ func RefreshSavedDetails(rows []data.Row) {
 	for i := range rows {
 		r := &rows[i]
 		if r.IsNeoGeoShortcut() {
-			NeoGeoCatalogue().sets[r.SN].applyDetails(r)
+			c := NeoGeoCatalogue()
+			c.sets[r.SN].applyDetails(r)
+			g, ok := c.sets[r.NeoSet]
+			if !ok && r.IsNeoGeoFile() {
+				g, ok = c.matchTarget(r.MRA)
+			}
+			if ok && g.ID == r.SN {
+				r.NeoSet, r.NeoVariant, r.NeoAliases = g.set, g.variant.Label, g.variant.Aliases
+			}
 		}
 	}
 }
@@ -101,10 +118,8 @@ func ReadCatalogue(r io.Reader) (*Catalogue, error) {
 			return nil, fmt.Errorf("invalid or repeated game identity %q", g.ID)
 		}
 		ids[g.ID] = true
+		g.set, g.variant = g.ID, g.Variants[g.ID]
 		sets := append([]string{g.ID}, g.SetNames...)
-		for _, name := range sets {
-			c.sets[strings.ToLower(name)] = g
-		}
 		names := append(sets, g.Title)
 		for _, name := range append(names, g.Aliases...) {
 			key := strings.ToLower(name)
@@ -115,6 +130,25 @@ func ReadCatalogue(r io.Reader) (*Catalogue, error) {
 				return nil, fmt.Errorf("ambiguous game alias %q", name)
 			}
 			c.names[key] = g
+		}
+		for _, name := range sets {
+			match := g
+			match.set = strings.ToLower(name)
+			v := g.Variants[name]
+			match.variant = v
+			for _, alias := range v.Aliases {
+				key := strings.ToLower(alias)
+				if c.names[key].ID != g.ID {
+					return nil, fmt.Errorf("unknown variant alias %q for %s", alias, name)
+				}
+				c.names[key] = match
+			}
+			c.sets[match.set] = match
+		}
+		// Exact set names take precedence over every readable spelling.
+		for _, name := range sets {
+			key := strings.ToLower(name)
+			c.names[key] = c.sets[key]
 		}
 	}
 	return c, nil

@@ -11,6 +11,23 @@
       "2020bba",
       "2020bbh"
     ],
+    "variants": {
+      "2020bb": {
+        "label": "Set 1"
+      },
+      "2020bba": {
+        "label": "Set 2",
+        "aliases": [
+          "2020 Super Baseball (set 2)"
+        ]
+      },
+      "2020bbh": {
+        "label": "Set 3",
+        "aliases": [
+          "2020 Super Baseball (set 3)"
+        ]
+      }
+    },
     "details": {
       "year": "1991",
       "manufacturer": "SNK / Pallas",
@@ -58,6 +75,21 @@
     "set_names": [
       "alpham2p"
     ],
+    "variants": {
+      "alpham2": {
+        "label": "Standard cartridge"
+      },
+      "alpham2p": {
+        "label": "Prototype",
+        "aliases": [
+          "ASO II - Last Guardian (prototype)",
+          "ASO II Last Guardian (prototype)",
+          "ASO II: Last Guardian (prototype)",
+          "Alpha Mission II (prototype)",
+          "Alpha Mission II - ASO II - Last Guardian (prototype)"
+        ]
+      }
+    },
     "details": {
       "year": "1991",
       "manufacturer": "SNK",
@@ -135,6 +167,19 @@
     "set_names": [
       "aof2a"
     ],
+    "variants": {
+      "aof2": {
+        "label": "Arcade cartridge"
+      },
+      "aof2a": {
+        "label": "Home cartridge",
+        "aliases": [
+          "Art of Fighting 2 (NGH-056)",
+          "Art of Fighting 2 - Ryuuko no Ken 2 (NGH-056)",
+          "Ryuuko no Ken 2 (NGH-056)"
+        ]
+      }
+    },
     "details": {
       "year": "1994",
       "manufacturer": "SNK",
@@ -162,6 +207,19 @@
     "set_names": [
       "aof3k"
     ],
+    "variants": {
+      "aof3": {
+        "label": "Standard cartridge"
+      },
+      "aof3k": {
+        "label": "Korean release",
+        "aliases": [
+          "Art of Fighting 3 - The Path of the Warrior (Korean release)",
+          "Art of Fighting 3 The Path of the Warrior (Korean release)",
+          "Art of Fighting 3: The Path of the Warrior (Korean release)"
+        ]
+      }
+    },
     "details": {
       "year": "1996",
       "manufacturer": "SNK",
@@ -230,6 +288,18 @@
     "set_names": [
       "bjourneyh"
     ],
+    "variants": {
+      "bjourney": {
+        "label": "ALM-001 ~ ALH-001"
+      },
+      "bjourneyh": {
+        "label": "ALH-001",
+        "aliases": [
+          "Blue's Journey - Raguy (ALH-001)",
+          "Raguy (ALH-001)"
+        ]
+      }
+    },
     "details": {
       "year": "1990",
       "manufacturer": "Alpha Denshi Co.",
@@ -291,6 +361,17 @@
     "set_names": [
       "bstarsh"
     ],
+    "variants": {
+      "bstars": {
+        "label": "Arcade cartridge"
+      },
+      "bstarsh": {
+        "label": "Home cartridge",
+        "aliases": [
+          "Baseball Stars Professional (NGH-002)"
+        ]
+      }
+    },
     "details": {
       "year": "1990",
       "manufacturer": "SNK",
@@ -332,6 +413,35 @@
       "burningfpa",
       "burningfpb"
     ],
+    "variants": {
+      "burningf": {
+        "label": "Standard cartridge"
+      },
+      "brningfh": {
+        "label": "Home cartridge, US"
+      },
+      "brningfp": {
+        "label": "Prototype, older"
+      },
+      "brnngfpa": {
+        "label": "Prototype, near final, ver 23.3, 910326"
+      },
+      "burningfh": {
+        "label": "Home cartridge, US"
+      },
+      "burningfp": {
+        "label": "Prototype, older"
+      },
+      "burningfpa": {
+        "label": "Prototype, near final, ver 23.3, 910326"
+      },
+      "burningfpb": {
+        "label": "Prototype, newer, V07",
+        "aliases": [
+          "Burning Fight (prototype, newer, V07)"
+        ]
+      }
+    },
     "details": {
       "year": "1991",
       "manufacturer": "SNK",
@@ -489,6 +599,20 @@
       "fatfurspa",
       "ftfurspa"
     ],
+    "variants": {
+      "fatfursp": {
+        "label": "Set 1"
+      },
+      "fatfurspa": {
+        "label": "Set 2",
+        "aliases": [
+          "Fatal Fury Special - Garou Densetsu Special (NGM-058 ~ NGH-058, set 2)"
+        ]
+      },
+      "ftfurspa": {
+        "label": "Set 2"
+      }
+    },
     "details": {
       "year": "1993",
       "manufacturer": "SNK",
@@ -597,6 +721,20 @@
       "fghtfeva",
       "fightfeva"
     ],
+    "variants": {
+      "fightfev": {
+        "label": "Set 1"
+      },
+      "fghtfeva": {
+        "label": "Set 2"
+      },
+      "fightfeva": {
+        "label": "Set 2",
+        "aliases": [
+          "Fight Fever - Wang Jung Wang (set 2)"
+        ]
+      }
+    },
     "details": {
       "year": "1994",
       "manufacturer": "Viccom",
@@ -680,6 +818,42 @@
       "garouha",
       "garoup"
     ],
+    "variants": {
+      "garou": {
+        "label": "Arcade cartridge"
+      },
+      "garoubl": {
+        "label": "Bootleg",
+        "aliases": [
+          "Garou - Mark of the Wolves (bootleg)",
+          "Garou Mark of the Wolves (bootleg)",
+          "Garou: Mark of the Wolves (bootleg)"
+        ]
+      },
+      "garouh": {
+        "label": "Alternate set (garouh)",
+        "aliases": [
+          "Garou - Mark of the Wolves (NGM-2530 ~ NGH-2530)",
+          "Garou - Mark of the Wolves (earlier release)",
+          "Garou Mark of the Wolves (earlier release)",
+          "Garou: Mark of the Wolves (earlier release)"
+        ]
+      },
+      "garouha": {
+        "label": "Home cartridge",
+        "aliases": [
+          "Garou - Mark of the Wolves (NGH-2530)"
+        ]
+      },
+      "garoup": {
+        "label": "Prototype",
+        "aliases": [
+          "Garou - Mark of the Wolves (prototype)",
+          "Garou Mark of the Wolves (prototype)",
+          "Garou: Mark of the Wolves (prototype)"
+        ]
+      }
+    },
     "details": {
       "year": "1999",
       "manufacturer": "SNK",
@@ -764,6 +938,23 @@
       "gpilotsh",
       "gpilotsp"
     ],
+    "variants": {
+      "gpilots": {
+        "label": "Standard cartridge"
+      },
+      "gpilotsh": {
+        "label": "Home cartridge, US",
+        "aliases": [
+          "Ghost Pilots (NGH-020, US)"
+        ]
+      },
+      "gpilotsp": {
+        "label": "Prototype",
+        "aliases": [
+          "Ghost Pilots (prototype)"
+        ]
+      }
+    },
     "details": {
       "year": "1991",
       "manufacturer": "SNK",
@@ -804,6 +995,21 @@
       "irnclado",
       "ironclado"
     ],
+    "variants": {
+      "ironclad": {
+        "label": "Prototype"
+      },
+      "irnclado": {
+        "label": "Ironclad (prototype, bootleg)"
+      },
+      "ironclado": {
+        "label": "Prototype, bootleg",
+        "aliases": [
+          "Choutetsu Brikin'ger - Iron Clad (prototype, bootleg)",
+          "Iron Clad (prototype, bootleg)"
+        ]
+      }
+    },
     "details": {
       "year": "1996",
       "manufacturer": "Saurus",
@@ -859,6 +1065,17 @@
     "set_names": [
       "jockeygpa"
     ],
+    "variants": {
+      "jockeygp": {
+        "label": "Set 1"
+      },
+      "jockeygpa": {
+        "label": "Set 2",
+        "aliases": [
+          "Jockey Grand Prix (set 2)"
+        ]
+      }
+    },
     "details": {
       "year": "2001",
       "manufacturer": "Sun Amusement / BrezzaSoft",
@@ -939,6 +1156,19 @@
     "set_names": [
       "kizuna4p"
     ],
+    "variants": {
+      "kizuna": {
+        "label": "Standard cartridge"
+      },
+      "kizuna4p": {
+        "label": "Kizuna Encounter - Super Tag Battle 4 Way Battle Version",
+        "aliases": [
+          "Fu'un Super Tag Battle Special Version",
+          "Kizuna Encounter - Super Tag Battle 4 Way Battle Version",
+          "Kizuna Encounter - Super Tag Battle 4 Way Battle Version - Fu'un Super Tag Battle Special Version"
+        ]
+      }
+    },
     "details": {
       "year": "1996",
       "manufacturer": "SNK",
@@ -977,6 +1207,18 @@
     "set_names": [
       "kof2000n"
     ],
+    "variants": {
+      "kof2000": {
+        "label": "Standard cartridge"
+      },
+      "kof2000n": {
+        "label": "Not encrypted",
+        "aliases": [
+          "King of Fighters 2000 (not encrypted)",
+          "The King of Fighters 2000 (not encrypted)"
+        ]
+      }
+    },
     "details": {
       "year": "2000",
       "manufacturer": "SNK",
@@ -1012,6 +1254,40 @@
       "cthd2003",
       "kof2001h"
     ],
+    "variants": {
+      "kof2001": {
+        "label": "NGM-262?"
+      },
+      "ct2k3sa": {
+        "label": "Crouching Tiger Hidden Dragon 2003 Super Plus (hack of The King of Fighters 2001, alternate)",
+        "aliases": [
+          "Crouching Tiger Hidden Dragon 2003 Super Plus (The King of Fighters 2001 bootleg)",
+          "Crouching Tiger Hidden Dragon 2003 Super Plus (hack of The King of Fighters 2001, alternate)"
+        ]
+      },
+      "ct2k3sp": {
+        "label": "Crouching Tiger Hidden Dragon 2003 Super Plus (hack of The King of Fighters 2001)",
+        "aliases": [
+          "Crouching Tiger Hidden Dragon 2003 Super Plus (hack of The King of Fighters 2001)"
+        ]
+      },
+      "cthd2003": {
+        "label": "Crouching Tiger Hidden Dragon 2003 (hack of The King of Fighters 2001)",
+        "aliases": [
+          "Crouching Tiger Hidden Dragon 2003",
+          "Crouching Tiger Hidden Dragon 2003 (hack of The King of Fighters 2001)"
+        ]
+      },
+      "kof2001h": {
+        "label": "Home cartridge",
+        "aliases": [
+          "King of Fighters 2001 (NGH-2621)",
+          "King of Fighters 2001, The (NGH-2620)",
+          "The King of Fighters 2001 (NGH-2620)",
+          "The King of Fighters 2001 (NGH-2621)"
+        ]
+      }
+    },
     "details": {
       "year": "2001",
       "manufacturer": "Eolith / SNK",
@@ -1092,6 +1368,103 @@
       "kof2002b",
       "kof2k4se"
     ],
+    "variants": {
+      "kof2002": {
+        "label": "Standard cartridge"
+      },
+      "kf10thep": {
+        "label": "The King of Fighters 10th Anniversary Extra Plus (bootleg)",
+        "aliases": [
+          "King of Fighters 10th Anniversary Extra Plus",
+          "King of Fighters 10th Anniversary Extra Plus (bootleg of The King of Fighters 2002)",
+          "King of Fighters 10th Anniversary Extra Plus, The",
+          "King of Fighters 10th Anniversary Extra Plus, The (The King of Fighters 2002 bootleg)",
+          "The King of Fighters 10th Anniversary Extra Plus",
+          "The King of Fighters 10th Anniversary Extra Plus (The King of Fighters 2002 bootleg)",
+          "The King of Fighters 10th Anniversary Extra Plus (bootleg of The King of Fighters 2002)"
+        ]
+      },
+      "kf2k2mp": {
+        "label": "The King of Fighters 2002 Magic Plus (bootleg)",
+        "aliases": [
+          "King of Fighters 2002 Magic Plus",
+          "King of Fighters 2002 Magic Plus (bootleg)",
+          "King of Fighters 2002 Magic Plus, The",
+          "King of Fighters 2002 Magic Plus, The (bootleg)",
+          "The King of Fighters 2002 Magic Plus",
+          "The King of Fighters 2002 Magic Plus (bootleg)"
+        ]
+      },
+      "kf2k2mp2": {
+        "label": "The King of Fighters 2002 Magic Plus II (bootleg)",
+        "aliases": [
+          "King of Fighters 2002 Magic Plus II",
+          "King of Fighters 2002 Magic Plus II (bootleg)",
+          "King of Fighters 2002 Magic Plus II, The",
+          "King of Fighters 2002 Magic Plus II, The (bootleg)",
+          "The King of Fighters 2002 Magic Plus II",
+          "The King of Fighters 2002 Magic Plus II (bootleg)"
+        ]
+      },
+      "kf2k2pla": {
+        "label": "The King of Fighters 2002 Plus (bootleg set 2)",
+        "aliases": [
+          "King of Fighters 2002 Plus (bootleg set 2)",
+          "King of Fighters 2002 Plus, The (bootleg set 2)",
+          "The King of Fighters 2002 Plus (bootleg set 2)"
+        ]
+      },
+      "kf2k2pls": {
+        "label": "The King of Fighters 2002 Plus (bootleg set 1)",
+        "aliases": [
+          "King of Fighters 2002 Plus (bootleg set 1)",
+          "King of Fighters 2002 Plus, The (bootleg)",
+          "The King of Fighters 2002 Plus (bootleg set 1)",
+          "The King of Fighters 2002 Plus (bootleg)"
+        ]
+      },
+      "kf2k5uni": {
+        "label": "The King of Fighters 10th Anniversary 2005 Unique (bootleg)",
+        "aliases": [
+          "King of Fighters 10th Anniversary 2005 Unique",
+          "King of Fighters 10th Anniversary 2005 Unique (bootleg of The King of Fighters 2002)",
+          "King of Fighters 10th Anniversary 2005 Unique, The",
+          "King of Fighters 10th Anniversary 2005 Unique, The (The King of Fighters 2002 bootleg)",
+          "The King of Fighters 10th Anniversary 2005 Unique",
+          "The King of Fighters 10th Anniversary 2005 Unique (The King of Fighters 2002 bootleg)",
+          "The King of Fighters 10th Anniversary 2005 Unique (bootleg of The King of Fighters 2002)"
+        ]
+      },
+      "kof10th": {
+        "label": "The King of Fighters 10th Anniversary (bootleg)",
+        "aliases": [
+          "King of Fighters 10th Anniversary",
+          "King of Fighters 10th Anniversary (bootleg of The King of Fighters 2002)",
+          "The King of Fighters 10th Anniversary",
+          "The King of Fighters 10th Anniversary (bootleg of The King of Fighters 2002)"
+        ]
+      },
+      "kof2002b": {
+        "label": "Bootleg",
+        "aliases": [
+          "King of Fighters 2002 (bootleg)",
+          "King of Fighters 2002, The (bootleg)",
+          "The King of Fighters 2002 (bootleg)"
+        ]
+      },
+      "kof2k4se": {
+        "label": "The King of Fighters Special Edition 2004 (bootleg)",
+        "aliases": [
+          "King of Fighters Special Edition 2004",
+          "King of Fighters Special Edition 2004 (bootleg of The King of Fighters 2002)",
+          "King of Fighters Special Edition 2004, The",
+          "King of Fighters Special Edition 2004, The (The King of Fighters 2002 bootleg)",
+          "The King of Fighters Special Edition 2004",
+          "The King of Fighters Special Edition 2004 (The King of Fighters 2002 bootleg)",
+          "The King of Fighters Special Edition 2004 (bootleg of The King of Fighters 2002)"
+        ]
+      }
+    },
     "details": {
       "year": "2002",
       "manufacturer": "Eolith / Playmore",
@@ -1140,6 +1513,62 @@
       "kof2003h",
       "kof2003ps2"
     ],
+    "variants": {
+      "kof2003": {
+        "label": "Arcade cartridge, Export"
+      },
+      "kf2k3bl": {
+        "label": "Bootleg set 1",
+        "aliases": [
+          "King of Fighters 2003 (bootleg set 1)",
+          "The King of Fighters 2003 (bootleg set 1)"
+        ]
+      },
+      "kf2k3bla": {
+        "label": "Bootleg set 2",
+        "aliases": [
+          "King of Fighters 2003 (bootleg set 2)",
+          "The King of Fighters 2003 (bootleg set 2)"
+        ]
+      },
+      "kf2k3pl": {
+        "label": "The King of Fighters 2004 Plus (bootleg)",
+        "aliases": [
+          "Hero",
+          "Hero (bootleg of The King of Fighters 2003)",
+          "King of Fighters 2004 Plus",
+          "King of Fighters 2004 Plus - Hero",
+          "King of Fighters 2004 Plus - Hero (bootleg of The King of Fighters 2003)",
+          "The King of Fighters 2004 Plus",
+          "The King of Fighters 2004 Plus - Hero",
+          "The King of Fighters 2004 Plus - Hero (bootleg of The King of Fighters 2003)"
+        ]
+      },
+      "kf2k3upl": {
+        "label": "The King of Fighters 2004 Ultra Plus (bootleg)",
+        "aliases": [
+          "King of Fighters 2004 Ultra Plus",
+          "King of Fighters 2004 Ultra Plus (bootleg of The King of Fighters 2003)",
+          "The King of Fighters 2004 Ultra Plus",
+          "The King of Fighters 2004 Ultra Plus (bootleg of The King of Fighters 2003)"
+        ]
+      },
+      "kof2003h": {
+        "label": "Home cartridge",
+        "aliases": [
+          "King of Fighters 2003 (NGH-2710)",
+          "King of Fighters 2003, The (NGH-2710)",
+          "The King of Fighters 2003 (NGH-2710)"
+        ]
+      },
+      "kof2003ps2": {
+        "label": "King of Fighters 2003, The (PS2)",
+        "aliases": [
+          "King of Fighters 2003, The (PS2)",
+          "The King of Fighters 2003 (PS2)"
+        ]
+      }
+    },
     "details": {
       "year": "2003",
       "manufacturer": "SNK Playmore",
@@ -1188,6 +1617,27 @@
       "kof95a",
       "kof95h"
     ],
+    "variants": {
+      "kof95": {
+        "label": "Arcade cartridge"
+      },
+      "kof95a": {
+        "label": "Arcade cartridge, alt board",
+        "aliases": [
+          "King of Fighters '95 (NGM-084, alt board)",
+          "King of Fighters '95, The (NGM-084, alt board)",
+          "The King of Fighters '95 (NGM-084, alt board)"
+        ]
+      },
+      "kof95h": {
+        "label": "Home cartridge",
+        "aliases": [
+          "King of Fighters '95 (NGH-084)",
+          "King of Fighters '95, The (NGH-084)",
+          "The King of Fighters '95 (NGH-084)"
+        ]
+      }
+    },
     "details": {
       "year": "1995",
       "manufacturer": "SNK",
@@ -1216,6 +1666,26 @@
       "kof96a",
       "kof96h"
     ],
+    "variants": {
+      "kof96": {
+        "label": "Arcade cartridge"
+      },
+      "kof96a": {
+        "label": "Bug fix revision",
+        "aliases": [
+          "King of Fighters '96 (bug fix revision)",
+          "The King of Fighters '96 (bug fix revision)"
+        ]
+      },
+      "kof96h": {
+        "label": "Home cartridge",
+        "aliases": [
+          "King of Fighters '96 (NGH-214)",
+          "King of Fighters '96, The (NGH-214)",
+          "The King of Fighters '96 (NGH-214)"
+        ]
+      }
+    },
     "details": {
       "year": "1996",
       "manufacturer": "SNK",
@@ -1264,6 +1734,58 @@
       "kof97pls",
       "kog"
     ],
+    "variants": {
+      "kof97": {
+        "label": "Arcade cartridge"
+      },
+      "kof97h": {
+        "label": "Home cartridge",
+        "aliases": [
+          "King of Fighters '97 (NGH-2320)",
+          "King of Fighters '97, The (NGH-2320)",
+          "The King of Fighters '97 (NGH-2320)"
+        ]
+      },
+      "kof97k": {
+        "label": "Korean release",
+        "aliases": [
+          "King of Fighters '97 (Korean release)",
+          "King of Fighters '97, The (Korean release)",
+          "The King of Fighters '97 (Korean release)"
+        ]
+      },
+      "kof97oro": {
+        "label": "The King of Fighters '97 Chongchu Jianghu Plus 2003 (bootleg)",
+        "aliases": [
+          "King of Fighters '97 Chongchu Jianghu Plus 2003",
+          "King of Fighters '97 Chongchu Jianghu Plus 2003 (bootleg)",
+          "King of Fighters '97 Chongchu Jianghu Plus 2003, The",
+          "King of Fighters '97 Chongchu Jianghu Plus 2003, The (bootleg)",
+          "The King of Fighters '97 Chongchu Jianghu Plus 2003",
+          "The King of Fighters '97 Chongchu Jianghu Plus 2003 (bootleg)"
+        ]
+      },
+      "kof97pls": {
+        "label": "The King of Fighters '97 Plus (bootleg)",
+        "aliases": [
+          "King of Fighters '97 Plus",
+          "King of Fighters '97 Plus (bootleg)",
+          "King of Fighters '97 Plus, The",
+          "King of Fighters '97 Plus, The (bootleg)",
+          "The King of Fighters '97 Plus",
+          "The King of Fighters '97 Plus (bootleg)"
+        ]
+      },
+      "kog": {
+        "label": "King of Gladiator (bootleg)",
+        "aliases": [
+          "King of Gladiator",
+          "King of Gladiator (bootleg of The King of Fighters '97)",
+          "King of Gladiators",
+          "King of Gladiators (The King of Fighters '97 bootleg)"
+        ]
+      }
+    },
     "details": {
       "year": "1997",
       "manufacturer": "SNK",
@@ -1355,6 +1877,93 @@
       "kof98ka",
       "kof98Ultimate"
     ],
+    "variants": {
+      "kof98": {
+        "label": "Arcade cartridge"
+      },
+      "kof98a": {
+        "label": "Arcade cartridge, alt board",
+        "aliases": [
+          "King of Fighters '98 - Dream Match Never Ends (NGM-2420, alt board)",
+          "King of Fighters '98 - The Slugfest - King of Fighters '98 - Dream Match Never Ends (NGM-2420, alt board)",
+          "King of Fighters '98 Dream Match Never Ends (NGM-2420, alt board)",
+          "King of Fighters '98, The - The Slugfest (NGM-2420, alt board)",
+          "King of Fighters '98, The The Slugfest (NGM-2420, alt board)",
+          "King of Fighters '98, The: The Slugfest (NGM-2420, alt board)",
+          "King of Fighters '98: Dream Match Never Ends (NGM-2420, alt board)",
+          "The King of Fighters '98 - The Slugfest (NGM-2420, alt board)",
+          "The King of Fighters '98 - The Slugfest - King of Fighters '98 - Dream Match Never Ends (NGM-2420, alt board)",
+          "The King of Fighters '98 The Slugfest (NGM-2420, alt board)",
+          "The King of Fighters '98: The Slugfest (NGM-2420, alt board)"
+        ]
+      },
+      "kof98ae2016": {
+        "label": "King of Fighters '98, The: Anniversary Edition",
+        "aliases": [
+          "King of Fighters '98, The - Anniversary Edition",
+          "King of Fighters '98, The Anniversary Edition",
+          "King of Fighters '98, The: Anniversary Edition",
+          "The King of Fighters '98 - Anniversary Edition",
+          "The King of Fighters '98 Anniversary Edition",
+          "The King of Fighters '98: Anniversary Edition"
+        ]
+      },
+      "kof98h": {
+        "label": "Home cartridge",
+        "aliases": [
+          "King of Fighters '98 - Dream Match Never Ends (NGH-2420)",
+          "King of Fighters '98 - The Slugfest - King of Fighters '98 - Dream Match Never Ends (NGH-2420)",
+          "King of Fighters '98 Dream Match Never Ends (NGH-2420)",
+          "King of Fighters '98, The - The Slugfest (NGH-2420)",
+          "King of Fighters '98, The The Slugfest (NGH-2420)",
+          "King of Fighters '98, The: The Slugfest (NGH-2420)",
+          "King of Fighters '98: Dream Match Never Ends (NGH-2420)",
+          "The King of Fighters '98 - The Slugfest (NGH-2420)",
+          "The King of Fighters '98 - The Slugfest - King of Fighters '98 - Dream Match Never Ends (NGH-2420)",
+          "The King of Fighters '98 The Slugfest (NGH-2420)",
+          "The King of Fighters '98: The Slugfest (NGH-2420)"
+        ]
+      },
+      "kof98k": {
+        "label": "Korean board, set 1",
+        "aliases": [
+          "King of Fighters '98 - Dream Match Never Ends (Korean board, set 1)",
+          "King of Fighters '98 - The Slugfest - King of Fighters '98 - Dream Match Never Ends (Korean board, set 1)",
+          "King of Fighters '98, The - The Slugfest (Korean release)",
+          "King of Fighters '98, The The Slugfest (Korean release)",
+          "King of Fighters '98, The: The Slugfest (Korean release)",
+          "The King of Fighters '98 - The Slugfest (Korean release)",
+          "The King of Fighters '98 - The Slugfest - King of Fighters '98 - Dream Match Never Ends (Korean board, set 1)",
+          "The King of Fighters '98 The Slugfest (Korean release)",
+          "The King of Fighters '98: The Slugfest (Korean release)"
+        ]
+      },
+      "kof98ka": {
+        "label": "Korean board, set 2",
+        "aliases": [
+          "King of Fighters '98 - Dream Match Never Ends (Korean board, set 2)",
+          "King of Fighters '98 - The Slugfest - King of Fighters '98 - Dream Match Never Ends (Korean board, set 2)",
+          "King of Fighters '98, The - The Slugfest (Korean release, set 2)",
+          "King of Fighters '98, The The Slugfest (Korean release, set 2)",
+          "King of Fighters '98, The: The Slugfest (Korean release, set 2)",
+          "The King of Fighters '98 - The Slugfest (Korean release, set 2)",
+          "The King of Fighters '98 - The Slugfest - King of Fighters '98 - Dream Match Never Ends (Korean board, set 2)",
+          "The King of Fighters '98 The Slugfest (Korean release, set 2)",
+          "The King of Fighters '98: The Slugfest (Korean release, set 2)"
+        ]
+      },
+      "kof98Ultimate": {
+        "label": "King of Fighters '98, The: Ultimate Match",
+        "aliases": [
+          "King of Fighters '98, The - Ultimate Match",
+          "King of Fighters '98, The Ultimate Match",
+          "King of Fighters '98, The: Ultimate Match",
+          "The King of Fighters '98 - Ultimate Match",
+          "The King of Fighters '98 Ultimate Match",
+          "The King of Fighters '98: Ultimate Match"
+        ]
+      }
+    },
     "details": {
       "year": "1998",
       "manufacturer": "SNK",
@@ -1419,6 +2028,74 @@
       "kof99ka",
       "kof99p"
     ],
+    "variants": {
+      "kof99": {
+        "label": "Arcade cartridge"
+      },
+      "kof99ae": {
+        "label": "King of Fighters '99 (15th Anniversary Edition)",
+        "aliases": [
+          "King of Fighters '99",
+          "King of Fighters '99 (15th Anniversary Edition)"
+        ]
+      },
+      "kof99e": {
+        "label": "Earlier",
+        "aliases": [
+          "King of Fighters '99 - Millennium Battle (earlier)",
+          "King of Fighters '99, The - Millennium Battle (earlier release)",
+          "King of Fighters '99, The Millennium Battle (earlier release)",
+          "King of Fighters '99, The: Millennium Battle (earlier release)",
+          "The King of Fighters '99 - Millennium Battle (earlier release)",
+          "The King of Fighters '99 - Millennium Battle (earlier)",
+          "The King of Fighters '99 Millennium Battle (earlier release)",
+          "The King of Fighters '99: Millennium Battle (earlier release)"
+        ]
+      },
+      "kof99h": {
+        "label": "Home cartridge",
+        "aliases": [
+          "King of Fighters '99 - Millennium Battle (NGH-2510)",
+          "King of Fighters '99, The - Millennium Battle (NGH-2510)",
+          "King of Fighters '99, The Millennium Battle (NGH-2510)",
+          "King of Fighters '99, The: Millennium Battle (NGH-2510)",
+          "The King of Fighters '99 - Millennium Battle (NGH-2510)",
+          "The King of Fighters '99 Millennium Battle (NGH-2510)",
+          "The King of Fighters '99: Millennium Battle (NGH-2510)"
+        ]
+      },
+      "kof99k": {
+        "label": "Korean release",
+        "aliases": [
+          "King of Fighters '99 - Millennium Battle (Korean release)",
+          "King of Fighters '99, The - Millennium Battle (Korean release)",
+          "King of Fighters '99, The Millennium Battle (Korean release)",
+          "King of Fighters '99, The: Millennium Battle (Korean release)",
+          "The King of Fighters '99 - Millennium Battle (Korean release)",
+          "The King of Fighters '99 Millennium Battle (Korean release)",
+          "The King of Fighters '99: Millennium Battle (Korean release)"
+        ]
+      },
+      "kof99ka": {
+        "label": "Korean release, non-encrypted program",
+        "aliases": [
+          "King of Fighters '99 - Millennium Battle (Korean release, non-encrypted program)",
+          "The King of Fighters '99 - Millennium Battle (Korean release, non-encrypted program)"
+        ]
+      },
+      "kof99p": {
+        "label": "Prototype",
+        "aliases": [
+          "King of Fighters '99 - Millennium Battle (prototype)",
+          "King of Fighters '99, The - Millennium Battle (prototype)",
+          "King of Fighters '99, The Millennium Battle (prototype)",
+          "King of Fighters '99, The: Millennium Battle (prototype)",
+          "The King of Fighters '99 - Millennium Battle (prototype)",
+          "The King of Fighters '99 Millennium Battle (prototype)",
+          "The King of Fighters '99: Millennium Battle (prototype)"
+        ]
+      }
+    },
     "details": {
       "year": "1999",
       "manufacturer": "SNK",
@@ -1439,6 +2116,17 @@
     "set_names": [
       "kotmh"
     ],
+    "variants": {
+      "kotm": {
+        "label": "Set 1"
+      },
+      "kotmh": {
+        "label": "Set 2",
+        "aliases": [
+          "King of the Monsters (set 2)"
+        ]
+      }
+    },
     "details": {
       "year": "1991",
       "manufacturer": "SNK",
@@ -1464,6 +2152,25 @@
       "kotm2a",
       "kotm2p"
     ],
+    "variants": {
+      "kotm2": {
+        "label": "Standard cartridge"
+      },
+      "kotm2a": {
+        "label": "Older",
+        "aliases": [
+          "King of the Monsters 2 - The Next Thing (older)"
+        ]
+      },
+      "kotm2p": {
+        "label": "Prototype",
+        "aliases": [
+          "King of the Monsters 2 - The Next Thing (prototype)",
+          "King of the Monsters 2 The Next Thing (prototype)",
+          "King of the Monsters 2: The Next Thing (prototype)"
+        ]
+      }
+    },
     "details": {
       "year": "1992",
       "manufacturer": "SNK",
@@ -1505,6 +2212,31 @@
       "lastsold",
       "lstbladh"
     ],
+    "variants": {
+      "lastblad": {
+        "label": "Arcade cartridge"
+      },
+      "lastbladh": {
+        "label": "Home cartridge",
+        "aliases": [
+          "Last Blade - Bakumatsu Roman - Gekka no Kenshi (NGH-2340)",
+          "The Last Blade - Bakumatsu Roman - Gekka no Kenshi (NGH-2340)"
+        ]
+      },
+      "lastsold": {
+        "label": "The Last Soldier (Korean release of The Last Blade)",
+        "aliases": [
+          "Last Soldier",
+          "Last Soldier (Korean release of The Last Blade)",
+          "Last Soldier, The",
+          "The Last Soldier",
+          "The Last Soldier (Korean release of The Last Blade)"
+        ]
+      },
+      "lstbladh": {
+        "label": "Last Blade, The (Home cartridge)"
+      }
+    },
     "details": {
       "year": "1997",
       "manufacturer": "SNK",
@@ -1580,6 +2312,17 @@
     "set_names": [
       "lresortp"
     ],
+    "variants": {
+      "lresort": {
+        "label": "Standard cartridge"
+      },
+      "lresortp": {
+        "label": "Prototype",
+        "aliases": [
+          "Last Resort (prototype)"
+        ]
+      }
+    },
     "details": {
       "year": "1992",
       "manufacturer": "SNK",
@@ -1627,6 +2370,17 @@
     "set_names": [
       "maglordh"
     ],
+    "variants": {
+      "maglord": {
+        "label": "Arcade cartridge"
+      },
+      "maglordh": {
+        "label": "Home cartridge",
+        "aliases": [
+          "Magician Lord (NGH-005)"
+        ]
+      }
+    },
     "details": {
       "year": "1990",
       "manufacturer": "Alpha Denshi Co.",
@@ -1687,6 +2441,18 @@
     "set_names": [
       "matrimbl"
     ],
+    "variants": {
+      "matrim": {
+        "label": "Standard cartridge"
+      },
+      "matrimbl": {
+        "label": "Bootleg",
+        "aliases": [
+          "Matrimelee - Shin Gouketsuji Ichizoku Toukon (bootleg)",
+          "Shin Gouketsuji Ichizoku Toukon (bootleg)"
+        ]
+      }
+    },
     "details": {
       "year": "2003",
       "manufacturer": "Noise Factory / Atlus",
@@ -1777,6 +2543,19 @@
     "set_names": [
       "mslug2t"
     ],
+    "variants": {
+      "mslug2": {
+        "label": "Standard cartridge"
+      },
+      "mslug2t": {
+        "label": "Metal Slug 2 Turbo (Arcade cartridge) (hack)",
+        "aliases": [
+          "Metal Slug 2 Turbo",
+          "Metal Slug 2 Turbo (NGM-9410) (hack)",
+          "Metal Slug 2 Turbo (hack)"
+        ]
+      }
+    },
     "details": {
       "year": "1998",
       "manufacturer": "SNK",
@@ -1804,6 +2583,32 @@
       "mslug3h",
       "mslug6"
     ],
+    "variants": {
+      "mslug3": {
+        "label": "Arcade cartridge"
+      },
+      "mslug3a": {
+        "label": "Arcade cartridge, earlier",
+        "aliases": [
+          "Metal Slug 3 (NGM-2560, earlier)"
+        ]
+      },
+      "mslug3b6": {
+        "label": "Metal Slug 6 (bootleg)",
+        "aliases": [
+          "Metal Slug 6 (bootleg of Metal Slug 3)"
+        ]
+      },
+      "mslug3h": {
+        "label": "Home cartridge",
+        "aliases": [
+          "Metal Slug 3 (NGH-2560)"
+        ]
+      },
+      "mslug6": {
+        "label": "Metal Slug 6 (Metal Slug 3 bootleg)"
+      }
+    },
     "details": {
       "year": "2000",
       "manufacturer": "SNK",
@@ -1827,6 +2632,24 @@
       "ms4plus",
       "mslug4h"
     ],
+    "variants": {
+      "mslug4": {
+        "label": "Arcade cartridge"
+      },
+      "ms4plus": {
+        "label": "Metal Slug 4 Plus (bootleg)",
+        "aliases": [
+          "Metal Slug 4 Plus",
+          "Metal Slug 4 Plus (bootleg)"
+        ]
+      },
+      "mslug4h": {
+        "label": "Home cartridge",
+        "aliases": [
+          "Metal Slug 4 (NGH-2630)"
+        ]
+      }
+    },
     "details": {
       "year": "2002",
       "manufacturer": "Mega / Noise Factory / Playmore",
@@ -1852,6 +2675,30 @@
       "mslug5b",
       "mslug5h"
     ],
+    "variants": {
+      "mslug5": {
+        "label": "Arcade cartridge"
+      },
+      "ms5plus": {
+        "label": "Metal Slug 5 Plus (bootleg)",
+        "aliases": [
+          "Metal Slug 5 Plus",
+          "Metal Slug 5 Plus (bootleg)"
+        ]
+      },
+      "mslug5b": {
+        "label": "Bootleg",
+        "aliases": [
+          "Metal Slug 5 (bootleg)"
+        ]
+      },
+      "mslug5h": {
+        "label": "Home cartridge",
+        "aliases": [
+          "Metal Slug 5 (NGH-2680)"
+        ]
+      }
+    },
     "details": {
       "year": "2003",
       "manufacturer": "SNK Playmore",
@@ -1920,6 +2767,17 @@
     "set_names": [
       "ncombath"
     ],
+    "variants": {
+      "ncombat": {
+        "label": "Arcade cartridge"
+      },
+      "ncombath": {
+        "label": "Home cartridge",
+        "aliases": [
+          "Ninja Combat (NGH-009)"
+        ]
+      }
+    },
     "details": {
       "year": "1990",
       "manufacturer": "Alpha Denshi Co.",
@@ -2027,6 +2885,17 @@
     "set_names": [
       "nitdbl"
     ],
+    "variants": {
+      "nitd": {
+        "label": "Standard cartridge"
+      },
+      "nitdbl": {
+        "label": "Bootleg",
+        "aliases": [
+          "Nightmare in the Dark (bootleg)"
+        ]
+      }
+    },
     "details": {
       "year": "2000",
       "manufacturer": "Eleven / Gavaking",
@@ -2099,6 +2968,21 @@
       "pbbblenb",
       "pbobblenb"
     ],
+    "variants": {
+      "pbobblen": {
+        "label": "Neo-Geo, NGM-083"
+      },
+      "pbbblenb": {
+        "label": "Bootleg"
+      },
+      "pbobblenb": {
+        "label": "Neo-Geo, bootleg",
+        "aliases": [
+          "Bust-A-Move (Neo-Geo, bootleg)",
+          "Puzzle Bobble - Bust-A-Move (Neo-Geo, bootleg)"
+        ]
+      }
+    },
     "details": {
       "year": "1994",
       "manufacturer": "Taito",
@@ -2137,6 +3021,17 @@
     "set_names": [
       "pnyaaa"
     ],
+    "variants": {
+      "pnyaa": {
+        "label": "Ver 2.02"
+      },
+      "pnyaaa": {
+        "label": "Ver 2.00",
+        "aliases": [
+          "Pochi and Nyaa (Ver 2.00)"
+        ]
+      }
+    },
     "details": {
       "year": "2003",
       "manufacturer": "Aiky / Taito",
@@ -2265,6 +3160,23 @@
       "quizdaisk",
       "quizdask"
     ],
+    "variants": {
+      "quizdais": {
+        "label": "Standard cartridge"
+      },
+      "quizdaisk": {
+        "label": "Quiz Salibtamjeong - The Last Count Down (Korean localized Quiz Daisousa Sen)"
+      },
+      "quizdask": {
+        "label": "Quiz Salibtamjeong: The Last Count Down (Korean localized Quiz Daisousa Sen)",
+        "aliases": [
+          "Quiz Salibtamjeong The Last Count Down",
+          "Quiz Salibtamjeong The Last Count Down (Korean localized Quiz Daisousa Sen)",
+          "Quiz Salibtamjeong: The Last Count Down",
+          "Quiz Salibtamjeong: The Last Count Down (Korean localized Quiz Daisousa Sen)"
+        ]
+      }
+    },
     "details": {
       "year": "1991",
       "manufacturer": "SNK",
@@ -2285,6 +3197,18 @@
     "set_names": [
       "quizkofk"
     ],
+    "variants": {
+      "quizkof": {
+        "label": "SAM-080 ~ SAH-080"
+      },
+      "quizkofk": {
+        "label": "Korea",
+        "aliases": [
+          "Quiz King of Fighters (Korea)",
+          "Quiz King of Fighters (Korean release)"
+        ]
+      }
+    },
     "details": {
       "year": "1995",
       "manufacturer": "Saurus (SNK license)",
@@ -2332,6 +3256,33 @@
       "rbff1k",
       "rbff1ka"
     ],
+    "variants": {
+      "rbff1": {
+        "label": "Standard cartridge"
+      },
+      "rbff1a": {
+        "label": "Bug fix revision",
+        "aliases": [
+          "Real Bout Fatal Fury (bug fix revision)",
+          "Real Bout Fatal Fury - Real Bout Garou Densetsu (bug fix revision)",
+          "Real Bout Garou Densetsu (bug fix revision)"
+        ]
+      },
+      "rbff1k": {
+        "label": "Korean release",
+        "aliases": [
+          "Real Bout Fatal Fury - Real Bout Garou Densetsu (Korean release)",
+          "Real Bout Garou Densetsu (Korean release)"
+        ]
+      },
+      "rbff1ka": {
+        "label": "Korean release, bug fix revision",
+        "aliases": [
+          "Real Bout Fatal Fury - Real Bout Garou Densetsu (Korean release, bug fix revision)",
+          "Real Bout Garou Densetsu (Korean release, bug fix revision)"
+        ]
+      }
+    },
     "details": {
       "year": "1995",
       "manufacturer": "SNK",
@@ -2369,6 +3320,31 @@
       "rbff2h",
       "rbff2k"
     ],
+    "variants": {
+      "rbff2": {
+        "label": "Arcade cartridge"
+      },
+      "rbff2h": {
+        "label": "Home cartridge",
+        "aliases": [
+          "Real Bout Fatal Fury 2 - The Newcomers (NGH-2400)",
+          "Real Bout Fatal Fury 2 - The Newcomers - Real Bout Garou Densetsu 2 - The Newcomers (NGH-2400)",
+          "Real Bout Fatal Fury 2 The Newcomers (NGH-2400)",
+          "Real Bout Fatal Fury 2: The Newcomers (NGH-2400)",
+          "Real Bout Garou Densetsu 2 - The Newcomers (NGH-2400)",
+          "Real Bout Garou Densetsu 2 The Newcomers (NGH-2400)",
+          "Real Bout Garou Densetsu 2: The Newcomers (NGH-2400)"
+        ]
+      },
+      "rbff2k": {
+        "label": "Korean release",
+        "aliases": [
+          "Real Bout Fatal Fury 2 - The Newcomers (Korean release)",
+          "Real Bout Fatal Fury 2 The Newcomers (Korean release)",
+          "Real Bout Fatal Fury 2: The Newcomers (Korean release)"
+        ]
+      }
+    },
     "details": {
       "year": "1998",
       "manufacturer": "SNK",
@@ -2393,6 +3369,21 @@
       "rbffspck",
       "rbffspeck"
     ],
+    "variants": {
+      "rbffspec": {
+        "label": "Standard cartridge"
+      },
+      "rbffspck": {
+        "label": "Korean release"
+      },
+      "rbffspeck": {
+        "label": "Korean release",
+        "aliases": [
+          "Real Bout Fatal Fury Special - Real Bout Garou Densetsu Special (Korean release)",
+          "Real Bout Garou Densetsu Special (Korean release)"
+        ]
+      }
+    },
     "details": {
       "year": "1996",
       "manufacturer": "SNK",
@@ -2413,6 +3404,17 @@
     "set_names": [
       "ridheroh"
     ],
+    "variants": {
+      "ridhero": {
+        "label": "Standard cartridge"
+      },
+      "ridheroh": {
+        "label": "Set 2",
+        "aliases": [
+          "Riding Hero (set 2)"
+        ]
+      }
+    },
     "details": {
       "year": "1990",
       "manufacturer": "SNK",
@@ -2432,6 +3434,17 @@
       "roboarma",
       "roboarmya"
     ],
+    "variants": {
+      "roboarmy": {
+        "label": "Standard cartridge"
+      },
+      "roboarma": {
+        "label": "Alternate set (roboarma)"
+      },
+      "roboarmya": {
+        "label": "Alternate set (roboarmya)"
+      }
+    },
     "details": {
       "year": "1991",
       "manufacturer": "SNK",
@@ -2451,6 +3464,17 @@
     "set_names": [
       "rotdh"
     ],
+    "variants": {
+      "rotd": {
+        "label": "NGM-2640?"
+      },
+      "rotdh": {
+        "label": "NGH-2640?",
+        "aliases": [
+          "Rage of the Dragons (NGH-2640?)"
+        ]
+      }
+    },
     "details": {
       "year": "2002",
       "manufacturer": "Evoga / Playmore",
@@ -2504,6 +3528,45 @@
       "smsh5sph",
       "smsh5spo"
     ],
+    "variants": {
+      "samsh5sp": {
+        "label": "Arcade cartridge"
+      },
+      "samsh5fe": {
+        "label": "Samurai Shodown V Special Final Edition",
+        "aliases": [
+          "Samurai Shodown V Special Final Edition",
+          "Samurai Shodown Zero Special Final Edition"
+        ]
+      },
+      "samsh5pf": {
+        "label": "Samurai Shodown V Perfect",
+        "aliases": [
+          "Samurai Shodown V Perfect",
+          "Samurai Spirits Zero Perfect"
+        ]
+      },
+      "samsh5sph": {
+        "label": "Home cartridge, 2nd release, less censored",
+        "aliases": [
+          "Samurai Shodown V Special - Samurai Spirits Zero Special (NGH-2720, 2nd release, less censored)",
+          "Samurai Spirits Zero Special (NGH-2720, 2nd release, less censored)"
+        ]
+      },
+      "samsh5spho": {
+        "label": "Home cartridge, 1st release, censored",
+        "aliases": [
+          "Samurai Shodown V Special - Samurai Spirits Zero Special (NGH-2720, 1st release, censored)",
+          "Samurai Spirits Zero Special (NGH-2720, 1st release, censored)"
+        ]
+      },
+      "smsh5sph": {
+        "label": "2nd release, less censored"
+      },
+      "smsh5spo": {
+        "label": "1st release, censored"
+      }
+    },
     "details": {
       "year": "2004",
       "manufacturer": "Yuki Enterprise / SNK Playmore",
@@ -2529,6 +3592,19 @@
     "set_names": [
       "samshoh"
     ],
+    "variants": {
+      "samsho": {
+        "label": "Arcade cartridge"
+      },
+      "samshoh": {
+        "label": "Home cartridge",
+        "aliases": [
+          "Samurai Shodown (NGH-045)",
+          "Samurai Shodown - Samurai Spirits (NGH-045)",
+          "Samurai Spirits (NGH-045)"
+        ]
+      }
+    },
     "details": {
       "year": "1993",
       "manufacturer": "SNK",
@@ -2564,6 +3640,29 @@
       "samsho2ka",
       "smsho2k2"
     ],
+    "variants": {
+      "samsho2": {
+        "label": "Standard cartridge"
+      },
+      "samsho2k": {
+        "label": "Saulabi Spirits (Korean release of Samurai Shodown II, set 1)",
+        "aliases": [
+          "Jin Saulabi Tu Hon (Korean release of Samurai Shodown II, set 1)",
+          "Saulabi Spirits (Korean release of Samurai Shodown II)",
+          "Saulabi Spirits - Jin Saulabi Tu Hon (Korean release of Samurai Shodown II, set 1)"
+        ]
+      },
+      "samsho2ka": {
+        "label": "Saulabi Spirits (Korean release of Samurai Shodown II, set 2)",
+        "aliases": [
+          "Jin Saulabi Tu Hon (Korean release of Samurai Shodown II, set 2)",
+          "Saulabi Spirits - Jin Saulabi Tu Hon (Korean release of Samurai Shodown II, set 2)"
+        ]
+      },
+      "smsho2k2": {
+        "label": "Saulabi Spirits (Korean release of Samurai Shodown II, set 2)"
+      }
+    },
     "details": {
       "year": "1994",
       "manufacturer": "SNK",
@@ -2596,6 +3695,28 @@
       "fswords",
       "samsho3h"
     ],
+    "variants": {
+      "samsho3": {
+        "label": "Arcade cartridge"
+      },
+      "fswords": {
+        "label": "Fighters Swords (Korean release of Samurai Shodown III)",
+        "aliases": [
+          "Fighters Swords",
+          "Fighters Swords (Korean release of Samurai Shodown III)"
+        ]
+      },
+      "samsho3h": {
+        "label": "Home cartridge",
+        "aliases": [
+          "Samurai Shodown III (NGH-087)",
+          "Samurai Shodown III - Samurai Spirits - Zankurou Musouken (NGH-087)",
+          "Samurai Spirits - Zankurou Musouken (NGH-087)",
+          "Samurai Spirits Zankurou Musouken (NGH-087)",
+          "Samurai Spirits: Zankurou Musouken (NGH-087)"
+        ]
+      }
+    },
     "details": {
       "year": "1995",
       "manufacturer": "SNK",
@@ -2630,6 +3751,24 @@
     "set_names": [
       "samsho4k"
     ],
+    "variants": {
+      "samsho4": {
+        "label": "Standard cartridge"
+      },
+      "samsho4k": {
+        "label": "Paewang Jeonseol (Korean censored Samurai Shodown IV)",
+        "aliases": [
+          "Legend of a Warrior",
+          "Legend of a Warrior (Korean censored Samurai Shodown IV)",
+          "Pae Wang Jeon Seol - Legend of a Warrior",
+          "Pae Wang Jeon Seol Legend of a Warrior",
+          "Pae Wang Jeon Seol: Legend of a Warrior",
+          "Paewang Jeonseol",
+          "Paewang Jeonseol - Legend of a Warrior",
+          "Paewang Jeonseol - Legend of a Warrior (Korean censored Samurai Shodown IV)"
+        ]
+      }
+    },
     "details": {
       "year": "1996",
       "manufacturer": "SNK",
@@ -2665,6 +3804,41 @@
       "samsho5h",
       "samsho5x"
     ],
+    "variants": {
+      "samsho5": {
+        "label": "Arcade cartridge, set 1"
+      },
+      "samsho5a": {
+        "label": "Arcade cartridge, set 2",
+        "aliases": [
+          "Samurai Shodown V - Samurai Spirits Zero (NGM-2700, set 2)",
+          "Samurai Spirits Zero (NGM-2700, set 2)"
+        ]
+      },
+      "samsho5b": {
+        "label": "Bootleg",
+        "aliases": [
+          "Samurai Shodown V (bootleg)",
+          "Samurai Shodown V - Samurai Spirits Zero (bootleg)",
+          "Samurai Spirits Zero (bootleg)"
+        ]
+      },
+      "samsho5h": {
+        "label": "Home cartridge",
+        "aliases": [
+          "Samurai Shodown V (NGH-2700)",
+          "Samurai Shodown V - Samurai Spirits Zero (NGH-2700)",
+          "Samurai Spirits Zero (NGH-2700)"
+        ]
+      },
+      "samsho5x": {
+        "label": "XBOX version hack",
+        "aliases": [
+          "Samurai Shodown V (XBOX version hack)",
+          "Samurai Spirits Zero (XBOX version hack)"
+        ]
+      }
+    },
     "details": {
       "year": "2003",
       "manufacturer": "Yuki Enterprise / SNK Playmore",
@@ -2739,6 +3913,19 @@
     "set_names": [
       "sengokuh"
     ],
+    "variants": {
+      "sengoku": {
+        "label": "Standard cartridge"
+      },
+      "sengokuh": {
+        "label": "Home cartridge, US",
+        "aliases": [
+          "Sengoku (NGH-017, US)",
+          "Sengoku - Sengoku Denshou (NGH-017, US)",
+          "Sengoku Denshou (NGH-017, US)"
+        ]
+      }
+    },
     "details": {
       "year": "1991",
       "manufacturer": "SNK",
@@ -2779,6 +3966,18 @@
     "set_names": [
       "sengoku3a"
     ],
+    "variants": {
+      "sengoku3": {
+        "label": "Set 1"
+      },
+      "sengoku3a": {
+        "label": "Set 2",
+        "aliases": [
+          "Sengoku 3 - Sengoku Densho 2001 (set 2)",
+          "Sengoku Densho 2001 (set 2)"
+        ]
+      }
+    },
     "details": {
       "year": "2001",
       "manufacturer": "Noise Factory / SNK",
@@ -2801,6 +4000,19 @@
     "set_names": [
       "lans2004"
     ],
+    "variants": {
+      "shocktr2": {
+        "label": "Standard cartridge"
+      },
+      "lans2004": {
+        "label": "Lansquenet 2004 (bootleg)",
+        "aliases": [
+          "Lansquenet",
+          "Lansquenet 2004",
+          "Lansquenet 2004 (bootleg of Shock Troopers - 2nd Squad)"
+        ]
+      }
+    },
     "details": {
       "year": "1998",
       "manufacturer": "Saurus",
@@ -2821,6 +4033,17 @@
       "shcktroa",
       "shocktroa"
     ],
+    "variants": {
+      "shocktro": {
+        "label": "Set 1"
+      },
+      "shcktroa": {
+        "label": "Set 2"
+      },
+      "shocktroa": {
+        "label": "Set 2"
+      }
+    },
     "details": {
       "year": "1997",
       "manufacturer": "Saurus",
@@ -2841,6 +4064,17 @@
       "scbrawlh",
       "socbrawlh"
     ],
+    "variants": {
+      "socbrawl": {
+        "label": "Arcade cartridge"
+      },
+      "scbrawlh": {
+        "label": "Home cartridge"
+      },
+      "socbrawlh": {
+        "label": "Home cartridge"
+      }
+    },
     "details": {
       "year": "1991",
       "manufacturer": "SNK",
@@ -2997,6 +4231,18 @@
     "set_names": [
       "stakwindev"
     ],
+    "variants": {
+      "stakwin": {
+        "label": "Standard cartridge"
+      },
+      "stakwindev": {
+        "label": "Early development board",
+        "aliases": [
+          "Stakes Winner - GI Kinzen Seiha e no Michi (early development board)",
+          "Stakes Winner - Stakes Winner - GI Kinzen Seiha e no Michi (early development board)"
+        ]
+      }
+    },
     "details": {
       "year": "1995",
       "manufacturer": "Saurus",
@@ -3083,6 +4329,46 @@
       "svcplusa",
       "svcsplus"
     ],
+    "variants": {
+      "svc": {
+        "label": "Standard cartridge"
+      },
+      "svcboot": {
+        "label": "Bootleg",
+        "aliases": [
+          "SNK vs. Capcom - SVC Chaos (bootleg)"
+        ]
+      },
+      "svccpru": {
+        "label": "SNK vs. Capcom Remix Ultra",
+        "aliases": [
+          "SNK vs. Capcom Remix Ultra"
+        ]
+      },
+      "svcplus": {
+        "label": "SNK vs. Capcom - SVC Chaos Plus (bootleg set 1)",
+        "aliases": [
+          "SNK vs. Capcom - SVC Chaos Plus (bootleg set 1)",
+          "SNK vs. Capcom Plus",
+          "SNK vs. Capcom Plus (bootleg)"
+        ]
+      },
+      "svcplusa": {
+        "label": "SNK vs. Capcom - SVC Chaos Plus (bootleg set 2)",
+        "aliases": [
+          "SNK vs. Capcom - SVC Chaos Plus (bootleg set 2)"
+        ]
+      },
+      "svcsplus": {
+        "label": "SNK vs. Capcom - SVC Chaos Super Plus (bootleg)",
+        "aliases": [
+          "SNK vs. Capcom - SVC Chaos Super Plus",
+          "SNK vs. Capcom - SVC Chaos Super Plus (bootleg)",
+          "SNK vs. Capcom Super Plus",
+          "SNK vs. Capcom Super Plus (bootleg)"
+        ]
+      }
+    },
     "details": {
       "year": "2003",
       "manufacturer": "Playmore / Capcom",
@@ -3108,6 +4394,17 @@
       "tophuntrh",
       "tphuntrh"
     ],
+    "variants": {
+      "tophuntr": {
+        "label": "Arcade cartridge"
+      },
+      "tophuntrh": {
+        "label": "Home cartridge"
+      },
+      "tphuntrh": {
+        "label": "Top Hunter: Roddy & Cathy (Home cartridge)"
+      }
+    },
     "details": {
       "year": "1994",
       "manufacturer": "SNK",
@@ -3184,6 +4481,14 @@
     "set_names": [
       "tws96"
     ],
+    "variants": {
+      "twsoc96": {
+        "label": "Standard cartridge"
+      },
+      "tws96": {
+        "label": "Alternate set (tws96)"
+      }
+    },
     "details": {
       "year": "1996",
       "manufacturer": "Tecmo",
@@ -3202,6 +4507,17 @@
     "set_names": [
       "viewpoinp"
     ],
+    "variants": {
+      "viewpoin": {
+        "label": "Standard cartridge"
+      },
+      "viewpoinp": {
+        "label": "Prototype",
+        "aliases": [
+          "Viewpoint (prototype)"
+        ]
+      }
+    },
     "details": {
       "year": "1992",
       "manufacturer": "Sammy / Aicom",
@@ -3227,6 +4543,35 @@
       "vliner6e",
       "vliner7e"
     ],
+    "variants": {
+      "vliner": {
+        "label": "V0.7a"
+      },
+      "vliner53": {
+        "label": "V0.53",
+        "aliases": [
+          "V-Liner (v0.53)"
+        ]
+      },
+      "vliner54": {
+        "label": "V0.54",
+        "aliases": [
+          "V-Liner (v0.54)"
+        ]
+      },
+      "vliner6e": {
+        "label": "V0.6e",
+        "aliases": [
+          "V-Liner (v0.6e)"
+        ]
+      },
+      "vliner7e": {
+        "label": "V0.7e",
+        "aliases": [
+          "V-Liner (v0.7e)"
+        ]
+      }
+    },
     "details": {
       "year": "2001",
       "manufacturer": "Dyna / BrezzaSoft",
@@ -3263,6 +4608,23 @@
       "wh1h",
       "wh1ha"
     ],
+    "variants": {
+      "wh1": {
+        "label": "ALM-005"
+      },
+      "wh1h": {
+        "label": "ALH-005",
+        "aliases": [
+          "World Heroes (ALH-005)"
+        ]
+      },
+      "wh1ha": {
+        "label": "Set 3",
+        "aliases": [
+          "World Heroes (set 3)"
+        ]
+      }
+    },
     "details": {
       "year": "1992",
       "manufacturer": "Alpha Denshi Co.",
@@ -3283,6 +4645,17 @@
     "set_names": [
       "wh2h"
     ],
+    "variants": {
+      "wh2": {
+        "label": "ALM-006 ~ ALH-006"
+      },
+      "wh2h": {
+        "label": "ALH-006",
+        "aliases": [
+          "World Heroes 2 (ALH-006)"
+        ]
+      }
+    },
     "details": {
       "year": "1993",
       "manufacturer": "ADK",
@@ -3334,6 +4707,17 @@
     "set_names": [
       "wjammss"
     ],
+    "variants": {
+      "wjammers": {
+        "label": "Standard cartridge"
+      },
+      "wjammss": {
+        "label": "Windjammers Supersonic",
+        "aliases": [
+          "Windjammers Supersonic"
+        ]
+      }
+    },
     "details": {
       "year": "1994",
       "manufacturer": "Data East Corporation",
@@ -3350,6 +4734,14 @@
     "set_names": [
       "xenocrisis"
     ],
+    "variants": {
+      "xenocris": {
+        "label": "xenocris"
+      },
+      "xenocrisis": {
+        "label": "Alternate set (xenocrisis)"
+      }
+    },
     "details": {
       "year": "2021",
       "manufacturer": "Bitmap Bureau",

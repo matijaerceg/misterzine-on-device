@@ -185,9 +185,7 @@ func (a *App) batchWord(u *data.Group) string {
 // paintCountedTitle draws an umbrella's name into w pixels with its tail
 // (umbrellaTail) right after it in the title's font but muted; a long name
 // gives way to the tail.
-func (a *App) paintCountedTitle(c *gfx.Canvas, x, y, w int, u *data.Group, col rgb) {
-	count := a.umbrellaTail(u)
-	title := u.Title(a.ds)
+func (a *App) paintCountedTitle(c *gfx.Canvas, x, y, w int, title, count string, col rgb) {
 	if f := a.titleFont(); f != nil {
 		y-- // scientifica's baseline is one pixel lower than the body font's
 		if count == "" {
@@ -257,9 +255,9 @@ func (a *App) paintUmbrella(c *gfx.Canvas, r image.Rectangle, pos int, u *data.G
 	// the count follows the name, "(2)", and the name takes the rest
 	if fit := tw + a.restLayout().TitleW - l.TitleW; fit != tw {
 		col := &gfx.Canvas{RGBA: c.Sub(image.Rect(x, c.Rect.Min.Y, x+tw, c.Rect.Max.Y))}
-		a.paintCountedTitle(col, x, y, fit, u, titleCol)
+		a.paintCountedTitle(col, x, y, fit, u.Title(a.ds), a.umbrellaTail(u), titleCol)
 	} else {
-		a.paintCountedTitle(c, x, y, tw, u, titleCol)
+		a.paintCountedTitle(c, x, y, tw, u.Title(a.ds), a.umbrellaTail(u), titleCol)
 	}
 	if l.PictureColumns || a.mode == data.SortYear {
 		return

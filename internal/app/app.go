@@ -495,6 +495,9 @@ func (a *App) SetData(ds *data.Dataset, stored *data.SeenRecord) {
 	var curK string
 	if a.ds != nil {
 		curK = a.CursorKey()
+		if i := a.ds.Index(curK); i >= 0 {
+			curK = a.ds.Rows[i].PreferenceKey()
+		}
 	}
 	first := a.ds == nil
 	a.ds = ds
@@ -536,7 +539,12 @@ func (a *App) rebuild() {
 	if a.mode == data.SortRecents {
 		a.order = a.ds.OrderRecents(a.cfg.RecentLaunches)
 	}
-	fav := func(k string) bool { return a.cfg.Favorites[k] }
+	fav := func(k string) bool {
+		if i := a.ds.Index(k); i >= 0 {
+			return a.familyFavorite(&a.ds.Rows[i])
+		}
+		return false
+	}
 	unseen := func(i int) bool { return a.seen != nil && a.seen.Unseen(&a.ds.Rows[i]) }
 	filters := a.effectiveFilters()
 	if a.mode == data.SortFavorites {
@@ -544,25 +552,23 @@ func (a *App) rebuild() {
 	}
 	filters.Genre = a.mode.Genre()
 	filters.NeoGeoOnly = a.mode == data.SortNeoGeo
-	a.total = len(a.ds.Rows)
-	if len(filters.SrcHidden) > 0 || filters.HideDeprecated || filters.HideMature || filters.ArcadeOnly {
-		a.total = 0
-		for i := range a.ds.Rows {
-			if a.catalogueIncludes(&a.ds.Rows[i]) {
-				a.total++
-			}
+	a.total = 0
+	for i := range a.ds.Rows {
+		if a.ds.Der[i].NeoRank == 0 && a.catalogueIncludes(&a.ds.Rows[i]) {
+			a.total++
 		}
 	}
 	a.view = data.Apply(a.ds, a.order, &filters, a.cfg.Status, fav, unseen, a.romState)
 	if q := searchText(a.query); q != "" {
 		matched := a.view[:0]
 		for _, i := range a.view {
-			if strings.Contains(searchText(a.ds.Der[i].Title), q) {
+			if strings.Contains(searchText(a.ds.Der[i].Title), q) || neoMatches(&a.ds.Rows[i], q) {
 				matched = append(matched, i)
 			}
 		}
 		a.view = matched
 	}
+	a.view = a.collapseNeoVersions(a.view)
 	a.shown = len(a.view)
 	// same-game umbrellas and core batches are beta features: with both
 	// hidden the list stays flat, every row its own line
@@ -609,9 +615,19 @@ func (a *App) moveToKey(k string) {
 // viewPos is the list line showing key k (a row's K or an umbrella's
 // GroupKey), -1 when none does.
 func (a *App) viewPos(k string) int {
+	family := ""
+	if i := a.ds.Index(k); i >= 0 && len(a.ds.NeoMembers(&a.ds.Rows[i])) > 0 {
+		family = a.ds.Rows[i].SN
+	}
 	for pos := range a.view {
 		if a.keyAt(pos) == k {
 			return pos
+		}
+		if family != "" && a.umbrellaAt(pos) == nil {
+			r := &a.ds.Rows[a.view[pos]]
+			if r.IsNeoGeoShortcut() && r.SN == family {
+				return pos
+			}
 		}
 	}
 	return -1
@@ -1370,15 +1386,19 @@ func (a *App) actList(k platform.Key) bool {
 		if n > 0 {
 			a.screen = ScreenDetails
 			a.detail = detailState{from: ScreenList, pick: a.rememberedPick()}
-			if row, _, _ := a.current(); row != nil && a.detail.pick > 0 {
-				a.detail.pickPath = a.cfg.Versions[row.K]
+			if row, _, i := a.current(); row != nil && (a.detail.pick > 0 || row.IsNeoGeoShortcut()) {
+				if entries := a.launchEntries(row, i); a.detail.pick < len(entries) {
+					a.detail.pickPath = entries[a.detail.pick].path
+				}
 			}
 			a.all = true
 		}
 		return true
 	case platform.KeyStart: // launch the remembered version straight from the list
 		if n > 0 {
-			a.launchPick(a.rememberedPick())
+			if row, _, i := a.current(); row != nil {
+				a.launchRow(row, i, a.rememberedPickOf(row, i))
+			}
 		}
 		return true
 	case platform.KeyLeft: // a screen of rows up, the row centered like a step
