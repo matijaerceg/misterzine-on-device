@@ -33,6 +33,33 @@ func scanOnce(t *testing.T, h *host, cat []data.Row, hash string) {
 	finishBackground(t, h)
 }
 
+func TestSavedNeoGeoRowsGetCurrentDetailsBeforeScan(t *testing.T) {
+	h := backgroundHost(t)
+	h.settings.ScanNeoGeoFolder = true
+	local := []data.Row{
+		{K: "local:neogeo:mslug:fixture", MRA: "_Favorites/My Slug.mgl"},
+		{K: "local:neogeo:file:fixture", MRA: "games/NeoGeo/Metal Slug (mslug).neo", Year: "stale"},
+		{K: data.LocalKey("mslug"), MRA: "_Arcade/My Slug.mra", Year: "from MRA"},
+	}
+	for i := range local {
+		local[i].Base, local[i].Src, local[i].SN = "Arcade", data.SrcLocal, "mslug"
+	}
+	h.saveLocalRows("old", local)
+	rows, n, _ := h.withSavedLocalRows(nil, "new")
+	if n != len(local) {
+		t.Fatalf("recovered %d local rows, want %d", n, len(local))
+	}
+	for _, row := range rows {
+		if row.IsNeoGeoShortcut() {
+			if row.Year != "1996" || row.Manufacturer != "Nazca" || row.Buttons == nil || *row.Buttons != 3 {
+				t.Errorf("missing current metadata for %s: %+v", row.MRA, row)
+			}
+		} else if row.Year != "from MRA" || row.Buttons != nil {
+			t.Errorf("changed unrelated saved MRA: %+v", row)
+		}
+	}
+}
+
 // restart is the start of the next run on the same card and cache: the
 // catalogue rows plus the saved local rows, as run() builds its dataset.
 func restart(t *testing.T, prev *host, cat []data.Row, hash string, favs map[string]bool) (*host, int, string) {

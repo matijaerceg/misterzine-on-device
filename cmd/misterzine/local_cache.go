@@ -11,6 +11,7 @@ import (
 	"slices"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
+	"github.com/matijaerceg/misterzine-on-device/internal/mgl"
 	"github.com/matijaerceg/misterzine-on-device/internal/store"
 )
 
@@ -41,6 +42,7 @@ func (h *host) withSavedLocalRows(catalogue []data.Row, hash string) (rows []dat
 	if !h.settings.ScanNeoGeoFolder {
 		local = slices.DeleteFunc(local, func(r data.Row) bool { return r.IsNeoGeoFile() })
 	}
+	mgl.RefreshSavedDetails(local)
 	rows = data.MergeLocal(catalogue, local)
 	n = len(rows) - len(catalogue)
 	if n == 0 {

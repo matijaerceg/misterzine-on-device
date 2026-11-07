@@ -8,15 +8,56 @@ import (
 	"io"
 	"path"
 	"strings"
+
+	"github.com/matijaerceg/misterzine-on-device/internal/data"
 )
 
 // Game is a reviewed arcade identity. Aliases are exact target basenames,
 // without extensions; the shortcut filename and setname are not evidence.
 type Game struct {
-	ID       string   `json:"id"`
-	Title    string   `json:"title"`
-	Aliases  []string `json:"aliases"`
-	SetNames []string `json:"set_names,omitempty"` // additional MAME and MiSTer set identifiers
+	ID       string       `json:"id"`
+	Title    string       `json:"title"`
+	Aliases  []string     `json:"aliases"`
+	SetNames []string     `json:"set_names,omitempty"` // additional MAME and MiSTer set identifiers
+	Details  *gameDetails `json:"details,omitempty"`
+}
+
+type gameDetails struct {
+	Year         string `json:"year"`
+	Manufacturer string `json:"manufacturer"`
+	Genre        string `json:"genre"`
+	Players      string `json:"plr"`
+	Rotation     string `json:"rot"`
+	Controls     string `json:"ctl"`
+	Buttons      *int   `json:"buttons,omitempty"`
+	Special      string `json:"spc,omitempty"`
+	Mature       int    `json:"mat,omitempty"`
+}
+
+func (g Game) row(key, core, target string) data.Row {
+	r := data.Row{K: key, Title: g.Title, Base: "Arcade", Src: data.SrcLocal, Core: core, MRA: target, SN: g.ID}
+	g.applyDetails(&r)
+	return r
+}
+
+func (g Game) applyDetails(r *data.Row) {
+	if d := g.Details; d != nil {
+		r.Year, r.Manufacturer, r.Genre = d.Year, d.Manufacturer, d.Genre
+		// Original MVS raster timing is shared by all cartridges.
+		r.Plr, r.Rot, r.Res = d.Players, d.Rotation, "15kHz"
+		r.Ctl, r.Buttons, r.Spc = d.Controls, d.Buttons, d.Special
+		r.Mat = d.Mature
+	}
+}
+
+// RefreshSavedDetails applies this build's catalogue to rows from older scans.
+func RefreshSavedDetails(rows []data.Row) {
+	for i := range rows {
+		r := &rows[i]
+		if r.IsNeoGeoShortcut() {
+			NeoGeoCatalogue().sets[r.SN].applyDetails(r)
+		}
+	}
 }
 
 type Catalogue struct {

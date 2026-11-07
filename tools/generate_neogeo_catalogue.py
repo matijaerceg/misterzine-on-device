@@ -1,7 +1,6 @@
 """Generate the shared arcade identity list from pinned MAME/MiSTer metadata.
 
-Only names and family relationships are extracted; no ROM data is downloaded.
-Pass --sources DIR containing neogeo.cpp, romsets.xml and software.xml to work offline.
+Only metadata is downloaded. See docs/NEOGEO_CATALOGUE.md for offline inputs.
 """
 import argparse
 from collections import defaultdict
@@ -9,8 +8,9 @@ import csv
 import json
 from pathlib import Path
 import re
-import urllib.request
 import xml.etree.ElementTree as ET
+
+from neogeo_details import add_details, read_source
 
 SOURCES = {
     "neogeo.cpp": "https://raw.githubusercontent.com/mamedev/mame/114a5f239188be9cbf965cf0d0085dd7167e6ed0/src/mame/snk/neogeo.cpp",
@@ -125,9 +125,12 @@ def generate(sources):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--sources", type=Path)
+    parser.add_argument("--site", type=Path, default=Path(__file__).resolve().parents[2] / "misterzine",
+                        help="MisterZine website checkout for the shared arcade metadata and genre rules")
     parser.add_argument("--output", type=Path, default=Path(__file__).resolve().parents[1] / "internal/mgl/neogeo-arcade.json")
     args = parser.parse_args()
-    sources = {name: (args.sources / name).read_text(encoding="utf-8") if args.sources else urllib.request.urlopen(url).read().decode("utf-8") for name, url in SOURCES.items()}
+    sources = {name: read_source(args.sources, name, url).decode("utf-8") for name, url in SOURCES.items()}
     games = generate(sources)
+    add_details(games, args.site, args.sources)
     args.output.write_text(json.dumps(games, indent=2, ensure_ascii=True) + "\n", encoding="utf-8", newline="\n")
     print(f"{len(games)} game families; {sum(len({g['id'], g['title'], *g['aliases'], *g.get('set_names', [])}) for g in games)} names")

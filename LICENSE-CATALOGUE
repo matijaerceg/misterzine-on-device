@@ -54,3 +54,9 @@ that date.
 The catalogue is not a versioned API: fields may be added or renamed without
 notice, so consume it defensively. Screenshots and hardware photos are not
 part of the catalogue and remain the property of their owners.
+
+Neo Geo player counts and play modes derived from NPlayers 0.278 by Nomax,
+copyright 2004-2025 Made Of Dreams Corp. (https://nplayers.arcadebelgium.be/) are distributed under
+Creative Commons Attribution-ShareAlike 3.0 Unported
+(https://creativecommons.org/licenses/by-sa/3.0/). The app selects the
+recognised MVS games and expands the play-mode abbreviations.

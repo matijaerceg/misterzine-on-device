@@ -11,8 +11,6 @@ import (
 	"path/filepath"
 	"strings"
 	"unicode"
-
-	"github.com/matijaerceg/misterzine-on-device/internal/data"
 )
 
 // A row carries the card-relative target, including the path inside a collection ZIP.
@@ -232,7 +230,7 @@ func walkLibrary(root *os.Root, folder string, result *Result, shortcuts map[str
 			return
 		}
 		key := fmt.Sprintf("local:neogeo:file:%x", sha256.Sum256([]byte(target)))
-		result.Rows = append(result.Rows, data.Row{K: key, Title: game.Title, Base: "Arcade", Src: data.SrcLocal, Core: "NeoGeo", MRA: target, SN: game.ID})
+		result.Rows = append(result.Rows, game.row(key, "NeoGeo", target))
 	}
 	limit := errors.New("Neo Geo game folder scan limit reached")
 	var walk func(fs.FS, string) error

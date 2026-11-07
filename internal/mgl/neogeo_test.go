@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/matijaerceg/misterzine-on-device/internal/data"
 )
 
 func TestNeoGeoCatalogueCoverageAndAliases(t *testing.T) {
@@ -64,10 +67,17 @@ func TestScanWholeNeoGeoCatalogue(t *testing.T) {
 	}
 	card := t.TempDir()
 	menu := filepath.Join(card, "_NeoGeo")
+	folder := filepath.Join(card, "games", "NeoGeo")
+	if err := os.MkdirAll(folder, 0755); err != nil {
+		t.Fatal(err)
+	}
 	if err := os.Mkdir(menu, 0755); err != nil {
 		t.Fatal(err)
 	}
 	for _, g := range games {
+		if err := os.WriteFile(filepath.Join(folder, g.ID+".neo"), nil, 0644); err != nil {
+			t.Fatal(err)
+		}
 		content := sample("_Console/NeoGeo", `<file type="f" index="1" path="`+g.ID+`.neo"/>`)
 		if err := os.WriteFile(filepath.Join(menu, g.ID+".mgl"), []byte(content), 0644); err != nil {
 			t.Fatal(err)
@@ -77,9 +87,38 @@ func TestScanWholeNeoGeoCatalogue(t *testing.T) {
 	if err != nil || len(result.Problems) != 0 || len(result.Rows) != len(games) {
 		t.Fatalf("scan: %d rows for %d games, %v, %v", len(result.Rows), len(games), err, result.Problems)
 	}
+	byID := map[string]data.Row{}
 	for _, r := range result.Rows {
 		if !strings.HasSuffix(r.MRA, "/"+r.SN+".mgl") {
 			t.Fatalf("changed launch target: %+v", r)
+		}
+		if r.Year == "" || r.Manufacturer == "" || r.Genre == "" || r.Plr == "" || r.Rot == "" || r.Res != "15kHz" || (r.Ctl == "" && r.Spc == "") {
+			t.Fatalf("missing arcade details for %s: %+v", r.SN, r)
+		}
+		byID[r.SN] = r
+	}
+	// Scan the cartridges independently so shortcut precedence doesn't hide them.
+	var direct Result
+	if err := ScanCartridges(card, &direct); err != nil || len(direct.Rows) != len(games) {
+		t.Fatalf("folder scan: %d rows, %v", len(direct.Rows), err)
+	}
+	for _, r := range direct.Rows {
+		want := byID[r.SN]
+		want.K, want.MRA = r.K, r.MRA
+		if !r.IsNeoGeoFile() || !reflect.DeepEqual(r, want) {
+			t.Fatalf("%s: folder and shortcut disagree: %+v / %+v", r.SN, r, want)
+		}
+	}
+	slug := byID["mslug"]
+	if slug.Year != "1996" || slug.Manufacturer != "Nazca" || slug.Genre != "Run 'n gun" || slug.Plr != "2 (simultaneous)" || slug.Ctl != "8-way · 3 buttons" || slug.Buttons == nil || *slug.Buttons != 3 {
+		t.Fatalf("incorrect Metal Slug details: %+v", slug)
+	}
+	if byID["irrmaze"].Spc != "Trackball" || byID["janshin"].Mat != 1 {
+		t.Fatal("special controls or mature classification lost")
+	}
+	for id, year := range map[string]string{"knightsch": "2014", "xenocris": "2021", "cyborgforce": "2024", "captainbarrel": "2024", "gladmort": "2025"} {
+		if byID[id].Year != year {
+			t.Errorf("%s: want MVS release year %s, got %s", id, year, byID[id].Year)
 		}
 	}
 }

@@ -246,6 +246,8 @@ filter choices are saved.
 
 ### Neo Geo games
 
+Open **Details** on a recognised game to see its arcade release year, maker, genre, players and controls. Shortcuts and games found by **Scan Neo Geo folder** share the same offline game information. Year and Maker views and the arcade filters use it too. The button count appears when the game's action buttons are documented.
+
 Existing Neo Geo arcade game shortcuts (`.mgl` files) appear alongside other arcade games after the card scan. By default MisterZine reads shortcuts in the card root and MiSTer's underscore-prefixed menu folders, including nested folders such as `_@Favorites`. Use shortcuts that already work from MiSTer's menu. The original shortcut is launched unchanged, keeping its game path and configuration.
 
 Turn on **Options -> List -> Scan Neo Geo folder** to find arcade cartridges in `games/NeoGeo` and its subfolders. Changing the setting rescans the card. It recognises loose `.neo` games, collections of them inside one ZIP, and Darksoft game folders or ZIPs containing the game's ROM pieces. A collection ZIP can also contain Darksoft folders. For ZIPs inside another ZIP, unpack the outer layer first. Only games in the arcade catalogue are listed. CD images, console-only titles and unknown games are skipped. Existing shortcuts take priority for the same target. Folder games use the standard Neo Geo core and an app-owned launch file, so the games folder can be read-only.

@@ -4,12 +4,30 @@ The app, separate device test and diagnostic package share `internal/mgl/neogeo-
 
 ## Sources and regeneration
 
-Run `python3 tools/generate_neogeo_catalogue.py` to regenerate from pinned metadata, or use `--sources DIR` containing `neogeo.cpp`, `romsets.xml` and `software.xml` for an offline run. The generator downloads metadata only, never games. Names and parent relationships are factual catalogue data; no emulator code or ROM data is embedded.
+Run `python3 tools/generate_neogeo_catalogue.py --site /path/to/misterzine` with the [website checkout used for this edition](https://github.com/matijaerceg/misterzine/tree/941fa60c245b773d503cd25331632c0c4b21b86c). A sibling checkout named `misterzine` is the default. For offline regeneration, add `--sources DIR` with the three identity files below named `neogeo.cpp`, `romsets.xml` and `software.xml`, plus the two versioned data archives below saved as `nplayers.zip` and `command.zip`. Online generation uses curl. Both modes verify the archives against their SHA-256 hashes.
 
 - [MAME Neo Geo driver](https://github.com/mamedev/mame/blob/114a5f239188be9cbf965cf0d0085dd7167e6ed0/src/mame/snk/neogeo.cpp): arcade game identities and clone relationships.
 - [MiSTer Neo Geo set map](https://github.com/MiSTer-devel/NeoGeo_MiSTer/blob/a8496bfe0203c69f13b6c646c4bbf6a95f231482/releases/romsets.xml): Darksoft/MiSTer set aliases and English/Japanese display names.
 - [MAME Neo Geo software list](https://github.com/mamedev/mame/blob/954def46685cd0276671138fbd032036b1a771fb/hash/neogeo.xml): additional entries explicitly recording an MVS release, including Xeno Crisis.
 - Additional MVS identities: Knight's Chance (MVS/AES noted in the MAME driver), [GladMort](https://www.pixelheart.eu/fr/produit/gladmort-neo-geo-mvs-us-2/), [Cyborg Force](https://ozzyouzo.itch.io/cyborg-force) and [Captain Barrel](https://ozzyouzo.itch.io/captain-barrel/comments). MiSTer's map supplies their exact set identifiers.
+
+## Arcade game details
+
+Both discovery methods attach facts to the recognised game family. Old saved rows pick up the current facts on startup. The website's MAME data supplies year, manufacturer, orientation and input device. Its genre and mature-content rules also apply here. Original MVS video uses the 15 kHz CRT class (a 6 MHz pixel clock and 384 clocks per scanline). [Arcade data](https://github.com/matijaerceg/misterzine/tree/941fa60c245b773d503cd25331632c0c4b21b86c/data/cache) · [MAME clock](https://github.com/mamedev/mame/blob/114a5f239188be9cbf965cf0d0085dd7167e6ed0/src/mame/snk/neogeo.h) · [MAME scanline timing](https://github.com/mamedev/mame/blob/114a5f239188be9cbf965cf0d0085dd7167e6ed0/src/mame/snk/neogeo_spr.h)
+
+Player counts and alternating or simultaneous play come from NPlayers 0.278 by Nomax, © 2004–2025 Made Of Dreams Corp. The app expands its play-mode abbreviations. This subset is available under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/). [NPlayers](https://nplayers.arcadebelgium.be/) · [Source archive](https://nplayers.arcadebelgium.be/files/nplayers0278.zip)
+
+Action-button counts use game-specific assignments. Progetto-SNAPS Command 0.273 documents all four button positions for 62 game families, including unused positions. For example, Metal Slug assigns three actions and Blazing Star assigns two. V-Liner's MAME driver names its four game buttons separately from the operator inputs. Other titles with a documented count include GladMort and Xeno Crisis. A blank count means the available evidence covers only the input device. [Command project](https://www.progettosnaps.net/command/) · [Source archive](https://www.progettosnaps.net/download/?tipo=command&file=pS_Command_273.zip) · [V-Liner inputs](https://github.com/mamedev/mame/blob/114a5f239188be9cbf965cf0d0085dd7167e6ed0/src/mame/snk/neogeo.cpp)
+
+The five games outside the main arcade data use the following MVS records. The [FinalBurn Neo cartridge records](https://github.com/finalburnneo/FBNeo/blob/0c65008a226434235b2a4b01e2036013d8fd4cd9/src/burn/drv/neogeo/d_neogeo.cpp) also identify their player counts and joystick hardware.
+
+| Game | MVS year | Maker | Genre | Players | Sources |
+| --- | --- | --- | --- | --- | --- |
+| Knight's Chance | 2014 | Neobitz | Tabletop & quiz | 1 | [Developer](https://neobitz.itch.io/knights-chance) · [MVS developer interview](https://www.archaic.fr/interviews/interview-jeff-kurtz-repond-a-nos-questions/3/) |
+| Xeno Crisis | 2021 | Bitmap Bureau | Arena shooter | 2 simultaneous | [Publisher](https://eushop.bitmapbureau.com/products/xeno-crisis-neo-geo-mvs) · [MVS release dates](https://github.com/mamedev/mame/blob/954def46685cd0276671138fbd032036b1a771fb/hash/neogeo.xml) · [Neo Geo control screen](https://drinkwildsoda.wordpress.com/2021/10/07/624/) |
+| Cyborg Force | 2024 | Neo Byte Force | Run 'n gun | 2 simultaneous | [Developer](https://ozzyouzo.itch.io/cyborg-force) · [Developer's March 2024 shipping announcement following 2023 preorders](https://www.arcade-projects.com/threads/cyborg-force-new-game.25554/page-3) |
+| Captain Barrel! | 2024 | Neo Byte Force | Puzzle | 2 alternating | [Developer's Neo Geo release](https://ozzyouzo.itch.io/captain-barrel) · [Developer's play-mode description](https://store.steampowered.com/app/3041340/CAPTAIN_BARREL/) |
+| GladMort | 2025 | PixelHeart / Chipsonsteroids | Platformer | 1 | [MVS release and studio credits](https://www.pixelheart.eu/en/produit/gladmort-neo-geo-mvs-us/) · [Publisher's control guide](https://www.pixelheart.eu/en/become-a-gladmort-master-the-ultimate-guide/) |
 
 ## Matching and boundaries
 

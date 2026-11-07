@@ -106,7 +106,7 @@ func Scan(card string, catalogue *Catalogue) (Result, error) {
 								result.Alternatives[key] = append(result.Alternatives[key], p)
 							} else {
 								seen[key] = len(result.Rows)
-								result.Rows = append(result.Rows, data.Row{K: key, Title: g.Title, Base: "Arcade", Src: data.SrcLocal, Core: path.Base(d.RBF), MRA: p, SN: g.ID})
+								result.Rows = append(result.Rows, g.row(key, path.Base(d.RBF), p))
 							}
 						}
 					}
