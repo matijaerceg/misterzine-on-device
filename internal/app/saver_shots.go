@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 	"image"
@@ -759,7 +760,7 @@ func (a *App) saverPool() []saverPick {
 			continue
 		}
 		for _, slot := range r.ImgSlots {
-			if slot == "snap" || slot == SlotLocalSnap { // the gameplay shot, from either service
+			if data.ShotKind(slot) == "snap" {
 				pool = append(pool, saverPick{i, slot})
 			}
 		}

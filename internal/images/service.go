@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/app"
+	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/fetch"
 	"github.com/matijaerceg/misterzine-on-device/internal/media"
 )
@@ -977,7 +978,7 @@ func validPic(p Pic) bool {
 }
 
 // slotDirs are the picture folders under the store directory.
-var slotDirs = []string{"title", "snap", "ingame", "systems", fetch.SlotLocalSnap, fetch.SlotVideo, fetch.SlotFlyer}
+var slotDirs = []string{"title", "snap", "ingame", "systems", data.SlotLocalSnap, data.SlotLocalTitle, fetch.SlotVideo, fetch.SlotFlyer}
 
 // missingTTL is how long a 404 is remembered. The site's catalogue pictures
 // rarely appear later, but the screenshot service fills in over time, so a

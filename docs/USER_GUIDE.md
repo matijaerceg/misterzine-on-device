@@ -246,6 +246,8 @@ filter choices are saved.
 
 ### Neo Geo games
 
+Neo Geo shortcuts and folder games have gameplay screenshots in the list and in **Details → Shots**. When a title screen is available, use Left/Right in Shots to switch between the two. Pictures download as you browse. Turn on **Options → Data → Prefetch shots** to download them ahead of time for offline browsing. Different shortcuts and regional versions of the same game share the downloaded pictures.
+
 Open **Details** on a recognised game to see its arcade release year, maker, genre, players and controls. Shortcuts and games found by **Scan Neo Geo folder** share the same offline game information. Year and Maker views and the arcade filters use it too. The button count appears when the game's action buttons are documented.
 
 Existing Neo Geo arcade game shortcuts (`.mgl` files) appear alongside other arcade games after the card scan. By default MisterZine reads shortcuts in the card root and MiSTer's underscore-prefixed menu folders, including nested folders such as `_@Favorites`. Use shortcuts that already work from MiSTer's menu. The original shortcut is launched unchanged, keeping its game path and configuration.

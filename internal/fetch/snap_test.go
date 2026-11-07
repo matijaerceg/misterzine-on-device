@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/matijaerceg/misterzine-on-device/internal/data"
 )
 
 func TestLocalSnapURL(t *testing.T) {
@@ -21,8 +23,10 @@ func TestLocalSnapURL(t *testing.T) {
 	c := NewClient("test")
 
 	// Service unset: a local snap is missing without any request.
-	if _, err := c.Image(context.Background(), SlotLocalSnap, "orphan"); !errors.Is(err, ErrNotFound) || len(got) != 0 {
-		t.Fatalf("unset service: err=%v requests=%v", err, got)
+	for _, slot := range []string{data.SlotLocalSnap, data.SlotLocalTitle} {
+		if _, err := c.Image(context.Background(), slot, "orphan"); !errors.Is(err, ErrNotFound) || len(got) != 0 {
+			t.Fatalf("unset service: err=%v requests=%v", err, got)
+		}
 	}
 	// Catalogue slots still go to the site.
 	if _, err := c.Image(context.Background(), "snap", "colony7"); err != nil || got[0] != "/images/snap/colony7.png" {
@@ -32,7 +36,10 @@ func TestLocalSnapURL(t *testing.T) {
 		t.Fatalf("system photo: %v %v", err, got)
 	}
 	SnapService = srv.URL + "/svc"
-	if _, err := c.Image(context.Background(), SlotLocalSnap, "orphan"); err != nil || got[2] != "/svc/snap/orphan.png" {
+	if _, err := c.Image(context.Background(), data.SlotLocalSnap, "orphan"); err != nil || got[2] != "/svc/snap/orphan.png" {
 		t.Fatalf("service snap: %v %v", err, got)
+	}
+	if _, err := c.Image(context.Background(), data.SlotLocalTitle, "orphan"); err != nil || got[3] != "/svc/title/orphan.png" {
+		t.Fatalf("service title: %v %v", err, got)
 	}
 }

@@ -1811,9 +1811,9 @@ func picsFor(ds *data.Dataset) []images.Pic {
 		}
 		// Videos are larger and downloaded only for the selected game.
 		if r.Img != "" && len(r.ImgSlots) > 0 {
-			for _, want := range []string{"snap", "title", "ingame", fetch.SlotLocalSnap} {
+			for _, want := range []string{"snap", "title", "ingame"} {
 				for _, s := range r.ImgSlots {
-					if s == want {
+					if data.ShotKind(s) == want {
 						out = append(out, images.Pic{Key: r.Img, Slot: s})
 					}
 				}

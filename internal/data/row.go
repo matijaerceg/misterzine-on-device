@@ -11,6 +11,24 @@ import (
 	"strings"
 )
 
+// Card-discovered games use a separate image service and on-card cache.
+const (
+	SlotLocalSnap  = "lsnap"
+	SlotLocalTitle = "ltitle"
+)
+
+// ShotKind identifies the picture for display or download ordering while the
+// original slot keeps catalogue and image-service cache entries separate.
+func ShotKind(slot string) string {
+	switch slot {
+	case SlotLocalSnap:
+		return "snap"
+	case SlotLocalTitle:
+		return "title"
+	}
+	return slot
+}
+
 // Row is one release row exactly as docs/releases/data.json emits it. Field
 // names follow the JSON keys; see the site's _web_row in misterzine.py for
 // the authority on what each means.

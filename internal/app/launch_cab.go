@@ -153,7 +153,7 @@ func cabShot(r *data.Row) (key, slot string) {
 	if r.Img != "" {
 		for _, want := range []string{"title", "snap", "ingame"} {
 			for _, s := range r.ImgSlots {
-				if s == want {
+				if data.ShotKind(s) == want {
 					return r.Img, s
 				}
 			}

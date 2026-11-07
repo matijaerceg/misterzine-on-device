@@ -89,6 +89,18 @@ func TestScanWholeNeoGeoCatalogue(t *testing.T) {
 	}
 	byID := map[string]data.Row{}
 	for _, r := range result.Rows {
+		wantKey := r.SN
+		switch r.SN {
+		case "gladmort", "cyborgforce", "knightsch", "xenocris", "captainbarrel":
+			wantKey = "fbneo_" + r.SN
+		}
+		wantSlots := []string{"ltitle", "lsnap"}
+		if r.SN == "gladmort" {
+			wantSlots = []string{"lsnap"}
+		}
+		if r.Img != wantKey || !reflect.DeepEqual(r.ImgSlots, wantSlots) || r.ImgW != 320 || r.ImgH != 224 {
+			t.Fatalf("%s: wrong screenshot identity, slots or size: %+v", r.SN, r)
+		}
 		if !strings.HasSuffix(r.MRA, "/"+r.SN+".mgl") {
 			t.Fatalf("changed launch target: %+v", r)
 		}

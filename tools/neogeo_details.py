@@ -97,6 +97,11 @@ def add_details(games, site_dir, sources_dir):
         if not all((year, maker, genre, mode, rotation)):
             raise ValueError(f"incomplete Neo Geo details for {key}")
         details = dict(year=year, manufacturer=maker, genre=genre, plr=mode, rot=rotation)
+        if key in MVS_RELEASES:
+            # Reviewed FBNeo captures have their own keys outside the MAME packs.
+            details["fbneo_art"] = True
+            if key == "gladmort":
+                details["gameplay_only"] = True  # the available title screen is from the demo
         if key in buttons:
             n = buttons[key]
             details["buttons"] = n

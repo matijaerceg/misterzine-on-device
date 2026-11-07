@@ -23,10 +23,6 @@ var localMaxFiles = 20000 // a variable so a test can lower it
 // ErrTooManyMRAs stops the walk once localMaxFiles headers have been read.
 var ErrTooManyMRAs = errors.New("too many MRA files under _Arcade; list cut short")
 
-// SlotLocalSnap is the picture slot of a local row whose shot comes from the
-// image service rather than the catalogue (fetch.SlotLocalSnap).
-const SlotLocalSnap = "lsnap"
-
 // LocalResult is what DiscoverLocal hands the host to merge.
 type LocalResult struct {
 	Rows    []data.Row          // one per unmatched setname, sorted by K
@@ -346,7 +342,7 @@ func DiscoverLocal(card, cachePath string, catalogue []data.Row, idx *Index, sta
 			r.Beta, r.Gate = true, acc.Gate
 		}
 		if snap {
-			r.Img, r.ImgSlots = sn, []string{SlotLocalSnap}
+			r.Img, r.ImgSlots = sn, []string{data.SlotLocalSnap}
 			// a stand-in size of the right shape: the image service's real
 			// size is unknown here, and every box that fits a picture caps
 			// it at twice these, so a bare 3:4 made a 6-pixel-wide box

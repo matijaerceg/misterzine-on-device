@@ -26,8 +26,7 @@ import (
 // Site is the base URL of the release tracker.
 var Site = "https://misterzine.fyi"
 
-// SnapService is the base URL of the screenshot service that serves shots
-// by MAME setname for games the catalogue does not list (the "lsnap" slot).
+// SnapService serves title and gameplay screens by MAME setname.
 // Set it to "" to turn those requests off: such pictures are then simply
 // missing.
 var SnapService = "https://images.misterzine.fyi"
@@ -36,9 +35,6 @@ var SnapService = "https://images.misterzine.fyi"
 // store. Empty uses the site's /images directory, like catalogue screenshots.
 // The image service hosts catalogue flyers alongside screenshots.
 var MediaService = "https://images.misterzine.fyi"
-
-// SlotLocalSnap is the picture slot served by SnapService.
-const SlotLocalSnap = "lsnap"
 
 const (
 	SlotVideo = "video"
@@ -287,11 +283,11 @@ func (c *Client) Image(ctx context.Context, slot, key string) ([]byte, error) {
 		}
 		limit = media.MaxFlyerBytes
 		url = mediaBase + "/flyer/" + key + ".png"
-	case SlotLocalSnap:
+	case data.SlotLocalSnap, data.SlotLocalTitle:
 		if SnapService == "" {
 			return nil, ErrNotFound
 		}
-		url = SnapService + "/snap/" + key + ".png"
+		url = SnapService + "/" + data.ShotKind(slot) + "/" + key + ".png"
 	}
 	return c.getLimit(ctx, url, timeout, limit)
 }

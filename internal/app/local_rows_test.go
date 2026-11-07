@@ -1,6 +1,7 @@
 package app
 
 import (
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -8,6 +9,25 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
+
+func TestNeoGeoArtworkPreferences(t *testing.T) {
+	row := data.Row{Base: "Arcade", Img: "mslug", ImgSlots: []string{"ltitle", "lsnap"}}
+	for pref, want := range map[string]string{"gameplay": "lsnap", "title": "ltitle"} {
+		if key, slot := thumbSlot(&row, pref); key != "mslug" || slot != want {
+			t.Errorf("list %s: got %s/%s", pref, slot, key)
+		}
+	}
+	if key, slot := cabShot(&row); key != "mslug" || slot != "ltitle" {
+		t.Errorf("launch cabinet: got %s/%s", slot, key)
+	}
+	if slots := shotSlots(&row); !slices.Equal(slots, row.ImgSlots) {
+		t.Errorf("artwork viewer: got %v", slots)
+	}
+	row.ImgSlots = []string{"lsnap"}
+	if _, slot := thumbSlot(&row, "title"); slot != "lsnap" {
+		t.Errorf("missing title should fall back to gameplay, got %s", slot)
+	}
+}
 
 func localTestRows() []data.Row {
 	cat := []data.Row{

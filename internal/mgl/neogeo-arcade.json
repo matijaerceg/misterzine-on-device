@@ -351,6 +351,7 @@
       "genre": "Puzzle",
       "plr": "2 (alternating)",
       "rot": "Horizontal",
+      "fbneo_art": true,
       "ctl": "8-way"
     }
   },
@@ -407,6 +408,7 @@
       "genre": "Run 'n gun",
       "plr": "2 (simultaneous)",
       "rot": "Horizontal",
+      "fbneo_art": true,
       "ctl": "8-way"
     }
   },
@@ -713,6 +715,8 @@
       "genre": "Platformer",
       "plr": "1",
       "rot": "Horizontal",
+      "fbneo_art": true,
+      "gameplay_only": true,
       "buttons": 3,
       "ctl": "8-way \u00b7 3 buttons"
     }
@@ -955,6 +959,7 @@
       "genre": "Tabletop & quiz",
       "plr": "1",
       "rot": "Horizontal",
+      "fbneo_art": true,
       "ctl": "8-way"
     }
   },
@@ -3351,6 +3356,7 @@
       "genre": "Arena shooter",
       "plr": "2 (simultaneous)",
       "rot": "Horizontal",
+      "fbneo_art": true,
       "buttons": 4,
       "ctl": "8-way \u00b7 4 buttons"
     }

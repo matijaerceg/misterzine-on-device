@@ -32,6 +32,8 @@ type gameDetails struct {
 	Buttons      *int   `json:"buttons,omitempty"`
 	Special      string `json:"spc,omitempty"`
 	Mature       int    `json:"mat,omitempty"`
+	FBNeoArt     bool   `json:"fbneo_art,omitempty"`
+	GameplayOnly bool   `json:"gameplay_only,omitempty"`
 }
 
 func (g Game) row(key, core, target string) data.Row {
@@ -47,6 +49,15 @@ func (g Game) applyDetails(r *data.Row) {
 		r.Plr, r.Rot, r.Res = d.Players, d.Rotation, "15kHz"
 		r.Ctl, r.Buttons, r.Spc = d.Controls, d.Buttons, d.Special
 		r.Mat = d.Mature
+		r.Img, r.ImgW, r.ImgH = g.ID, 320, 224
+		if d.FBNeoArt {
+			r.Img = "fbneo_" + g.ID
+		}
+		if d.GameplayOnly {
+			r.ImgSlots = []string{data.SlotLocalSnap}
+		} else {
+			r.ImgSlots = []string{data.SlotLocalTitle, data.SlotLocalSnap}
+		}
 	}
 }
 

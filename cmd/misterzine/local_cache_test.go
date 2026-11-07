@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -51,6 +52,9 @@ func TestSavedNeoGeoRowsGetCurrentDetailsBeforeScan(t *testing.T) {
 	}
 	for _, row := range rows {
 		if row.IsNeoGeoShortcut() {
+			if row.Img != "mslug" || !slices.Equal(row.ImgSlots, []string{"ltitle", "lsnap"}) {
+				t.Errorf("missing current artwork for %s: %+v", row.MRA, row)
+			}
 			if row.Year != "1996" || row.Manufacturer != "Nazca" || row.Buttons == nil || *row.Buttons != 3 {
 				t.Errorf("missing current metadata for %s: %+v", row.MRA, row)
 			}

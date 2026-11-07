@@ -26,10 +26,6 @@ type ImageReq struct {
 // ImageState says why Get returned nil.
 type ImageState int
 
-// SlotLocalSnap is the gameplay shot of a game the catalogue does not list,
-// served by the image service by setname (fetch.SlotLocalSnap).
-const SlotLocalSnap = "lsnap"
-
 const (
 	ImageReady   ImageState = iota // Get returns the bitmap
 	ImageLoading                   // fetching or decoding
@@ -67,7 +63,7 @@ func thumbSlot(r *data.Row, pref string) (key, slot string) {
 		}
 		for _, want := range order {
 			for _, s := range r.ImgSlots {
-				if s == want {
+				if data.ShotKind(s) == want {
 					return r.Img, s
 				}
 			}
