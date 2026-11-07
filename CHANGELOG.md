@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.2.28 — 2026-11-07
+
+- Neo Geo shortcuts and games found by the folder scan show arcade game details, including year, maker, genre, players and controls where known. The details are built in and work offline. All 161 recognised games have a gameplay screenshot, and 160 also have a title screen. MisterZine downloads the pictures on demand or through screenshot prefetch and keeps them on the card.
+- Neo Geo versions share one game entry. A **+** marks multiple launch choices. In **Details**, choose between arcade and home cartridges, regional releases, prototypes and bootlegs. The original cartridge comes first when available, and MisterZine remembers your choice. Searching for a version such as King of Gladiator selects that version of The King of Fighters ’97. Each file and shortcut keeps its own launch settings.
+- Grouped game titles dim when the scan finds none of their versions on the card. Pressing **Y** a second time closes **Choose view** and returns to the list. Thanks to malento for suggesting both changes.
+- Refresh the offline catalogue to the November 7 export with 2,933 entries.
+
 ## v1.2.27 — 2026-11-06
 
 - Turn on **Options → List → Scan Neo Geo folder** to find recognised arcade cartridges in `games/NeoGeo` without making MGL shortcuts. The option starts off, including after an upgrade. It supports loose `.neo` files, Darksoft sets and games inside a single ZIP. You can keep descriptive filenames such as `3 Count Bout (3countb).neo`. Thanks to ac3 for the suggestion.

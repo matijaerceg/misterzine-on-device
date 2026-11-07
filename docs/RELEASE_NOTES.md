@@ -1,7 +1,17 @@
-**Optional Neo Geo folder scan**
+**Neo Geo screenshots and game versions**
 
-Turn on **Options → List → Scan Neo Geo folder** and MisterZine will find recognised arcade games in `games/NeoGeo`. You can keep your filenames and launch games directly from a collection ZIP. Loose `.neo` files and Darksoft sets work too.
+Browse Neo Geo arcade games with screenshots and game details, whether you use shortcuts or scan your games folder. Art of Fighting 2 now appears once, with its arcade and home cartridges together.
 
-The scan starts **off**, including after an upgrade. It skips Neo Geo CD and gives existing MGL shortcuts priority for the same game path. Thanks to ac3 for the suggestion.
+**Added**
 
-Update through **Update All** or **Update MisterZine only**. [Installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once) · [Changelog](https://github.com/matijaerceg/misterzine-on-device/blob/v1.2.27/CHANGELOG.md#v1227--2026-11-06)
+- Neo Geo games show gameplay screenshots, title screens where available, and details such as year, maker and controls.
+- A **+** marks games with multiple versions. Choose one in **Details** and MisterZine remembers it. You can also search for a version by name, including King of Gladiator.
+
+**Fixed**
+
+- A grouped game dims when none of its versions are on the card.
+- Press **Y** again to close **Choose view**. Thanks to malento for both suggestions.
+
+[Full changelog](https://github.com/matijaerceg/misterzine-on-device/blob/v1.2.28/CHANGELOG.md#v1228--2026-11-07)
+Update through **Update All** or **Update MisterZine only**.
+[Installation guide](https://github.com/matijaerceg/misterzine-on-device#install-once)
