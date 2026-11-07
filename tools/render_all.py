@@ -66,6 +66,9 @@ scenarios = [
      "type turtles; shot collapsed; enter; shot expanded; down; shot member; enter; shot member-details; back; up; enter; shot closed-again; back; space; home; down*3; enter; type caveman; shot alphabetical"],
     ["-show-beta", "-rot", "left", "-logical", "-out", "out/umbrella-t", "-script",
      "type turtles; shot collapsed; enter; shot expanded; down; shot member; enter; shot member-details; back; up; enter; shot closed-again; back; space; home; down*3; enter; type caveman; shot alphabetical"],
+    # The second Y returns to the same search, with the missing version group dimmed.
+    ["-show-beta", "-status", "missing", "-out", "out/umbrella-missing", "-script",
+     "type turtles; end; space; down; space; shot list"],
     # Options -> Version counts on, the last List row while groups are on:
     # the umbrella's name is followed by its (2)
     ["-show-beta", "-out", "out/umbrella-count-h", "-script",

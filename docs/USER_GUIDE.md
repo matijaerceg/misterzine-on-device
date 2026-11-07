@@ -129,6 +129,8 @@ only one version, it shows as a normal entry. The Core, Favorites and Recents
 views never group. Groups start closed each time the app starts or the
 catalogue refreshes.
 
+The grouped game's name dims when the card scan finds none of its listed versions. You can still highlight and expand the group.
+
 Grouping is a beta feature for now: it shows when Show beta features is on
 in Options -> Operation. With it off, every version is its own entry.
 
@@ -163,8 +165,7 @@ list and you cannot see why, Options -> Troubleshooting -> Send a report lists
 every file MisterZine leaves out, with the reason.
 Options -> List -> Remember last view is on by default; turn it off to choose
 a Default view for each new visit (Build date initially).
-Y opens **Choose view**, a popup over the list, with the current view marked
-and highlighted. Up/Down browses the enabled views; A selects and B cancels.
+Press Y to open **Choose view**. It opens on the current view, which is marked with an arrow. Browse with Up/Down, press A to select, or press B or Y to cancel.
 Browsing or cancelling keeps the current game, search and filters unchanged.
 The **Edit available views...** row stays at the bottom of the popup; Up from
 the first view reaches it directly. It opens the same checkbox editor as

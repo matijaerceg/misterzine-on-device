@@ -151,6 +151,35 @@ func TestUmbrellaRollsUpTheSinceVisitDot(t *testing.T) {
 	}
 }
 
+func TestUmbrellaVersionsMissing(t *testing.T) {
+	a := umbrellaApp(nil)
+	a.SetSort(data.SortUpdated)
+	u := a.umbrellaAt(0)
+	if u == nil || len(u.Members) != 3 {
+		t.Fatal("expected two catalogue versions and a local stand-in")
+	}
+	if a.versionsMissing(u) {
+		t.Fatal("unscanned versions counted as missing")
+	}
+	status := make([]data.Status, len(a.ds.Rows))
+	a.cfg.Status = func(i int) data.Status { return status[i] }
+	for _, i := range u.Members {
+		status[i] = data.StatusNotFound
+	}
+	if !a.versionsMissing(u) {
+		t.Fatal("all versions missing on card")
+	}
+	for _, i := range u.Members {
+		for _, st := range []data.Status{data.StatusUnknown, data.StatusCurrent, data.StatusOutdated, data.StatusFoundUndated, data.StatusLikelyOutdated} {
+			status[i] = st
+			if a.versionsMissing(u) {
+				t.Fatalf("group counted as missing with %s at status %v", a.ds.Rows[i].K, st)
+			}
+		}
+		status[i] = data.StatusNotFound
+	}
+}
+
 func TestUmbrellaTakesNoStar(t *testing.T) {
 	a := umbrellaApp(nil)
 	a.SetSort(data.SortUpdated)

@@ -220,6 +220,17 @@ func umbrellaMark(open bool) string {
 	return gfx.Expand
 }
 
+// versionsMissing reports whether the card scan has ruled out every visible
+// version of a game, including local stand-ins.
+func (a *App) versionsMissing(u *data.Group) bool {
+	for _, i := range u.Members {
+		if a.status(i) != data.StatusNotFound {
+			return false
+		}
+	}
+	return true
+}
+
 // paintUmbrella draws an umbrella line: the plus or minus in the star's column,
 // the game's name with its core count, and the group's date (the newest
 // build, or the first debut) or the original year, as rows show theirs.
@@ -235,6 +246,8 @@ func (a *App) paintUmbrella(c *gfx.Canvas, r image.Rectangle, pos int, u *data.G
 	titleCol := pal.Fg
 	if selected {
 		titleCol = pal.Accent
+	} else if !u.Batch() && a.versionsMissing(u) {
+		titleCol = pal.Muted
 	}
 	rf := a.rowFont()
 	tw := l.TitleW

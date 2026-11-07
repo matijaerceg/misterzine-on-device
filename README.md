@@ -73,7 +73,7 @@ For configuration by hand, see [installation details](docs/USER_GUIDE.md#install
 | A | Open details |
 | Start | Launch the main version |
 | X | Filters |
-| Y | Open the view chooser (A selects, B cancels) |
+| Y | Open the view chooser. Press A to select, or B or Y to cancel. |
 | B | Options |
 | Menu | Return to MiSTer's main menu |
 

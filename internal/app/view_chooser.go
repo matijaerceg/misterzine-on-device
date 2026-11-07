@@ -33,7 +33,7 @@ func (a *App) actViewChooser(k platform.Key) bool {
 	p := &a.viewChooser
 	n := len(p.entries) // the fixed Edit row occupies index n
 	switch k {
-	case platform.KeyBack:
+	case platform.KeyBack, platform.KeySpace:
 		a.screen = ScreenList
 	case platform.KeyEnter:
 		if p.cursor == n {

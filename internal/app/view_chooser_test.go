@@ -38,9 +38,9 @@ func TestViewChooserCancelAndCommit(t *testing.T) {
 	if a.mode != data.SortAlphabetical || a.Search() != "Beta" || a.cursor != cursor || a.top != top {
 		t.Fatal("browsing changed the list")
 	}
-	tap(platform.KeyBack)
-	if a.screen != ScreenList || a.mode != data.SortAlphabetical || a.CursorKey() != "b" {
-		t.Fatal("cancel changed selection")
+	tap(platform.KeySpace)
+	if a.screen != ScreenList || a.mode != data.SortAlphabetical || a.Search() != "Beta" || a.CursorKey() != "b" || a.top != top {
+		t.Fatal("pressing Y again did not return to the same list")
 	}
 	tap(platform.KeySpace)
 	tap(platform.KeyDown)
