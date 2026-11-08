@@ -324,6 +324,35 @@ func TestSaverShotsHoldPlaysTheOutgoingShot(t *testing.T) {
 	}
 }
 
+func TestSaverShotsLaunchTransition(t *testing.T) {
+	for _, mode := range []string{"off", "hold", "always"} {
+		t.Run(mode, func(t *testing.T) {
+			a, _, clock, launches := shotsApp()
+			a.cfg.LaunchTransition = mode
+			a.EnablePageTransitions()
+			a.startSaver(*clock)
+			frames(a, clock, saverShotWipe+1)
+			want := a.ds.Rows[a.saver.shots.cur.row].MRA
+			a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})
+			*clock = clock.Add(saverShotHold)
+			a.SaverFrame(*clock)
+			if mode == "always" {
+				if !a.LaunchCabRunning() || len(*launches) != 0 {
+					t.Fatal("the slideshow should play the animation before launching")
+				}
+			} else if a.LaunchCabRunning() || len(*launches) != 1 {
+				t.Fatal("the slideshow should launch as soon as its hold completes")
+			}
+			a.Handle(platform.Event{Key: platform.KeyStart, At: *clock})
+			*clock = clock.Add(cabSpinDur + cabPushDur)
+			a.Tick(*clock)
+			if len(*launches) != 1 || (*launches)[0] != want || len(a.saver.waking) != 0 {
+				t.Fatalf("after releasing Start: launches %v, want %q once, pending wake keys %v", *launches, want, a.saver.waking)
+			}
+		})
+	}
+}
+
 func TestSaverShotsReleasedHoldResumesTheIncomingShot(t *testing.T) {
 	a, _, clock, launches := shotsApp()
 	a.startSaver(*clock)

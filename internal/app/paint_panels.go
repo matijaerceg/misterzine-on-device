@@ -652,8 +652,8 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Full display: use both HDMI dimensions. 320x240: classic size. Fit 4:3: keep a 4:3 picture sized to HDMI height. Applies live."},
 		{text: "Page transitions", kind: "page-transitions", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.PageTransitions()],
 			help: "On: softly wipe between pages. Off: change pages instantly. Saved for next time."},
-		{text: "Launch transition", kind: "launch-transition", vals: []string{"always", "hold Start"}, idx: map[string]int{"always": 0, "hold": 1}[a.LaunchTransition()],
-			help: "Always: every launch plays the cabinet animation. Hold Start (default): a tap launches at once; holding Start plays it. " + a.btn("A") + " previews it."},
+		{text: "Launch transition", kind: "launch-transition", vals: []string{"off", "hold Start", "always"}, idx: map[string]int{"off": 0, "hold": 1, "always": 2}[a.LaunchTransition()],
+			help: "Off skips the animation. Hold Start plays it on a long press while browsing. Always plays it for every launch, including the slideshow. " + a.btn("A") + " previews it."},
 		spacer, group(gfx.SectionControls, "Controls"),
 		{text: "Menu button", kind: "menu-button", vals: []string{"Options", "quit MisterZine"}, idx: map[bool]int{false: 0, true: 1}[a.MenuButton() == "leave"],
 			help: "What the pad button defined as MiSTer's menu (OSD) button does here: Options (default; held 2 s it quits) or quit at once. Keyboard F12 still quits."},
@@ -1344,7 +1344,7 @@ func (a *App) stepValue(d int) bool {
 	case "page-transitions":
 		a.cfg.TransitionsDisabled = i == 0
 	case "launch-transition":
-		a.cfg.LaunchTransition = []string{"always", "hold"}[i]
+		a.cfg.LaunchTransition = []string{"off", "hold", "always"}[i]
 	case "canvas":
 		a.cfg.Canvas = []string{"full", "320x240", "fit"}[i]
 		if a.cfg.Action != nil {

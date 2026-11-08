@@ -19,7 +19,7 @@ type Settings struct {
 	ShowBetaFeatures     bool          `json:"show_beta_features,omitempty"`
 	SmoothScrollDisabled bool          `json:"smooth_scroll_disabled,omitempty"`
 	TransitionsDisabled  bool          `json:"transitions_disabled,omitempty"`
-	LaunchTransition     string        `json:"launch_transition,omitempty"` // hold (default): only a held Start plays it, or always
+	LaunchTransition     string        `json:"launch_transition,omitempty"` // off (default), hold, or always
 	ShowNonArcade        bool          `json:"show_non_arcade"`
 	ArcadeIntroPending   bool          `json:"arcade_intro_pending"`
 	ArcadeBackAsked      bool          `json:"arcade_back_asked,omitempty"` // the free build asked once whether to go back to MisterZine Arcade

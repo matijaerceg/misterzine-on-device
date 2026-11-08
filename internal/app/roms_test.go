@@ -10,7 +10,7 @@ func TestMissingROMBlocksLaunch(t *testing.T) {
 	launched, fresh := false, false
 	a := New(Config{Launch: func(string) { launched = true }, Exists: func(string) bool { return true }, ROMIssue: func(_ string, f bool) (string, bool) { fresh = f; return "Missing game ROM: jpark.zip", true }}, data.Ingest(nil, "test", time.Now()), nil)
 	row := data.Row{MRA: "_Arcade/Jurassic Park.mra"}
-	if !a.launchRow(&row, 0, 0) || launched || !fresh || a.notice != "Missing game ROM: jpark.zip" {
+	if !a.launchRow(&row, 0, 0, launchFromMenu) || launched || !fresh || a.notice != "Missing game ROM: jpark.zip" {
 		t.Fatalf("missing ROM not blocked: launched=%v fresh=%v notice=%q", launched, fresh, a.notice)
 	}
 }
@@ -29,7 +29,7 @@ func TestROMWarningStillLaunches(t *testing.T) {
 	if !found {
 		t.Fatal("Details did not show the warning")
 	}
-	a.launchRow(&row, 0, 0)
+	a.launchRow(&row, 0, 0, launchFromMenu)
 	if launched != "_Arcade/Bagman.mra" || a.notice == warn {
 		t.Fatalf("warning blocked the launch: launched=%q notice=%q", launched, a.notice)
 	}
@@ -58,11 +58,11 @@ func TestROMWarningFollowsSelectedVersion(t *testing.T) {
 	if !found {
 		t.Fatal("Details did not warn about selected alternative")
 	}
-	a.launchRow(&row, 0, 1)
+	a.launchRow(&row, 0, 1, launchFromMenu)
 	if launched != "" {
 		t.Fatal("missing alternative launched")
 	}
-	a.launchRow(&row, 0, 0)
+	a.launchRow(&row, 0, 0, launchFromMenu)
 	if launched != "main.mra" {
 		t.Fatal("present main version was blocked")
 	}

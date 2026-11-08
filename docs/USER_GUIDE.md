@@ -49,14 +49,7 @@ list movement, page jumps, and option adjustments remain immediate. Buttons
 keep working during the transition. Options -> Display -> Page transitions
 turns the effect on or off; the choice is remembered.
 
-Starting a game plays a short launch animation: an arcade cabinet with the
-game's screenshot on its screen turns towards you and fades to black, and
-the screen stays black until the core is up. It runs at the display's
-refresh rate. Options -> Display -> Launch transition chooses when it plays:
-Always, or Hold Start (the default), where a tap of Start launches at once
-and only a held Start plays the animation. A on that row previews it. A
-button released during the animation is not treated as held afterwards,
-and the screensaver waits while the animation and the game own the screen.
+Games launch directly by default. In Options -> Display -> Launch transition, choose Hold Start to play the cabinet animation when you hold Start in the list, Details or artwork. A tap launches directly. Choose Always to play the animation on every launch, including when you hold Start for two seconds in the game slideshow. Press A on the option to preview the cabinet turning towards you with the game's screenshot on its screen.
 
 ## List and search
 
@@ -198,8 +191,7 @@ original year, and L/R jump from core to core.
 In the grouped orders (Year, A-Z, Manufacturer, Core) a group whose header has
 scrolled off the top keeps its name pinned on the top line until its last
 row has gone.
-Favorites shows only your starred entries in alphabetical order, with the same
-letter jumps as A-Z. Star a game with Y in Details or Select + A on the list.
+Favorites A-Z shows your starred entries in alphabetical order, with the original release year beside each title when known. L/R jumps between letters. Star a game with Y in Details or Select + A on the list.
 Fifteen genre views, one per catalogue genre and off until Available views
 turns them on, follow the standard views in the chooser: Shoot 'em ups, Fighting, Beat 'em ups, Run 'n guns, Platformers,
 Arena shooters, Fixed shooters, Rail shooters, Light gun, Racing, Maze, Puzzle,
@@ -210,9 +202,7 @@ filters narrow it further. The top bar names it Shoot 'em ups A-Z and so on,
 with the count of games shown. A genre view that is on takes part in Remember last view and Default
 view like any other.
 Search and filters still apply. Remember last view also remembers Favorites.
-Changing sort keeps the selected title, search and filters. Dates in alphabetical
-order still show the build date, and the green since-visit marks show in every
-order.
+Changing sort keeps the selected title, search and filters. All genre A-Z views show the original release year when known. The green since-visit marks appear in every order.
 In alphabetical order, L/R jumps to the first title of the previous/next letter
 in your current search and filters; the title lands centred with its header
 line right above it, as in the Year and Manufacturer orders. Empty letters are
@@ -694,10 +684,7 @@ screenshots match, lettering runs instead and the Preview help explains why.
   50 Hz menu (`menu_pal=1`) gives, each doubled across to fill the line.
   Unusual video timings that cannot fit a bounded canvas fall back to Fit 4:3.
   If a live switch fails, MisterZine attempts to restore the previous picture.
-- **Launch transition:** Always plays the cabinet animation on every launch.
-  Hold Start (default) launches at once on a tap and plays the animation only
-  while Start is held. A previews it from the row.
-  Safe-zone margins still apply.
+- **Launch transition** defaults to Off. Hold Start plays the cabinet animation when you hold Start in the list, Details or artwork. Always also plays it on a tap and when launching from the game slideshow. Press A to preview the animation.
 - **Button mapping:** six basic controls, then a controller-check table.
   Press an input to identify it; hold for one second to change its action or OSD name.
   New keyboards can instead be accepted for ordinary typing without remapping.

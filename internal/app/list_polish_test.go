@@ -71,6 +71,7 @@ func TestAZShowsOriginalYear(t *testing.T) {
 		row, group string
 	}{
 		{data.SortAlphabetical, "198?", "198?"}, {data.SortNeoGeo, "198?", "198?"},
+		{data.SortFavorites, "198?", "198?"}, {data.SortFighting, "198?", "198?"},
 		{data.SortUpdated, "2022", "2023"}, {data.SortDebut, "2020", "2019"},
 	} {
 		a.mode = tc.mode

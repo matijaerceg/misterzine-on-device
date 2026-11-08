@@ -244,7 +244,7 @@ func TestLocalRowMissingCoreDoesNotLaunch(t *testing.T) {
 	}
 	for pick := range entries {
 		a.notice = ""
-		if !a.launchRow(row, i, pick) {
+		if !a.launchRow(row, i, pick, launchFromMenu) {
 			t.Fatalf("pick %d: launched", pick)
 		}
 		if a.notice != "the defender core is not on the card" {
@@ -256,7 +256,7 @@ func TestLocalRowMissingCoreDoesNotLaunch(t *testing.T) {
 	}
 	// The file missing keeps its own notice.
 	a.cfg.Exists = func(string) bool { return false }
-	a.launchRow(row, i, 0)
+	a.launchRow(row, i, 0, launchFromMenu)
 	if a.notice != "that file is not on the card" {
 		t.Fatalf("notice %q", a.notice)
 	}
@@ -297,7 +297,7 @@ func TestFileOfAnotherSourceDoesNotLaunch(t *testing.T) {
 	if len(entries) != 2 || entries[0].ok || entries[0].why != want || !entries[1].ok {
 		t.Fatalf("entries %+v", entries)
 	}
-	a.launchRow(row, i, 0)
+	a.launchRow(row, i, 0, launchFromMenu)
 	if a.notice != want || len(launched) != 0 {
 		t.Fatalf("notice %q, launched %v", a.notice, launched)
 	}

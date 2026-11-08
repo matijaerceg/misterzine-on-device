@@ -458,12 +458,18 @@ for rotation in ([], ["-rot", "left", "-logical"]):
             scenarios.append([*rotation, "-inset", str(inset), *fixture,
                               "-out", f"out/source-files-{name}-{orientation}-{inset}", "-script",
                               "back; home; pagedown; right; down*2; shot option; enter; shot files; down*12; shot middle; end; shot end; back; shot returned; up; right; down; enter; shot in-ini"])
-# Both A-Z views show the original year on first use.
+# Original years in the alphabetical views and launch transition choices.
 for rotation, orientation in [([], "h"), (["-rot", "left", "-logical"], "t")]:
     scenarios.append([*rotation, "-local", "testdata/neogeo-rows.json", "-neogeo-view",
                       "-out", f"out/az-date-{orientation}", "-script",
                       "back; home; right; down*2; shot app-only; "
                       "back; space; home; down*3; enter; type art of fighting; shot alphabetical; back; space; end; up; enter; shot neo-years"])
+    scenarios.append([*rotation, "-local", "testdata/neogeo-rows.json", "-genre-views", "fighting",
+                      "-out", f"out/favorites-genre-{orientation}", "-script",
+                      "type art of fighting; enter; space; back; back; space; home; down*6; enter; shot favorite-year; "
+                      "space; end; up; enter; shot fighting-year"])
+    scenarios.append([*rotation, "-out", f"out/launch-transition-{orientation}", "-script",
+                      "back; home; pagedown*2; right; pagedown; up; shot off; right; shot hold; right; shot always"])
 # The opt-in Neo Geo game scan is the last row in List.
 for rotation, orientation in [([], "h"), (["-rot", "left", "-logical"], "t")]:
     scenarios.append([*rotation, "-out", f"out/neogeo-folder-{orientation}", "-script",

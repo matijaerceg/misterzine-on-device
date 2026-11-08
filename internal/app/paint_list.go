@@ -525,9 +525,6 @@ func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {
 // build or earliest MiSTer debut across the versions it contains.
 func (a *App) listDateText(row *data.Row, group *data.Group) string {
 	switch a.mode {
-	case data.SortAlphabetical, data.SortNeoGeo, data.SortMaker, data.SortCore:
-		year := gfx.Fit(strings.TrimSpace(row.Year), a.dateCols())
-		return strings.Repeat(" ", a.dateCols()-len(year)) + year
 	case data.SortDebut:
 		if group != nil {
 			return a.dateCol(group.Date(a.ds))
@@ -535,11 +532,14 @@ func (a *App) listDateText(row *data.Row, group *data.Group) string {
 		return a.dateCol(row.Date)
 	case data.SortRecents:
 		return a.dateCol(a.launchedAt(row.K))
-	default:
+	case data.SortUpdated:
 		if group != nil {
 			return a.dateCol(group.Updated(a.ds))
 		}
 		return a.dateCol(row.Updated)
+	default:
+		year := gfx.Fit(strings.TrimSpace(row.Year), a.dateCols())
+		return strings.Repeat(" ", a.dateCols()-len(year)) + year
 	}
 }
 

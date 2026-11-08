@@ -51,13 +51,21 @@ type holdLaunch struct {
 	at   time.Time
 }
 
-// LaunchTransition is the saved preference: "hold" (the default) or
-// "always".
+type launchSource int
+
+const (
+	launchFromMenu launchSource = iota
+	launchFromSlideshow
+)
+
+// LaunchTransition returns the saved mode, defaulting to "off".
 func (a *App) LaunchTransition() string {
-	if a.cfg.LaunchTransition == "always" {
-		return "always"
+	switch a.cfg.LaunchTransition {
+	case "hold", "always":
+		return a.cfg.LaunchTransition
+	default:
+		return "off"
 	}
-	return "hold"
 }
 
 // releaseHoldLaunch launches plainly when Start comes up before the hold
@@ -102,7 +110,7 @@ type launchCab struct {
 }
 
 // startLaunchCab plays the animation before launching path, or launches at
-// once when animations are off (static hosts, tests, the preference).
+// once on a host without an animation clock.
 func (a *App) startLaunchCab(row *data.Row, path string) {
 	if !a.transition.enabled { // static hosts and tests without a clock
 		a.cfg.Launch(path)

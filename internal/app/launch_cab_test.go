@@ -143,11 +143,9 @@ func TestLaunchCabEndsBlack(t *testing.T) {
 }
 
 func TestLaunchCabHoldStart(t *testing.T) {
-	// a tap launches plainly on the release; "hold" is the default
+	// A tap launches on release in Hold Start mode.
 	a, clock, launched := cabApp(true)
-	if got := a.LaunchTransition(); got != "hold" {
-		t.Fatalf("the unset launch transition is %q, want hold", got)
-	}
+	a.cfg.LaunchTransition = "hold"
 	a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})
 	if a.LaunchCabRunning() || len(*launched) != 0 {
 		t.Fatal("a press must wait")
@@ -164,6 +162,7 @@ func TestLaunchCabHoldStart(t *testing.T) {
 
 	// a hold plays the animation, and the later release does nothing
 	a, clock, launched = cabApp(true)
+	a.cfg.LaunchTransition = "hold"
 	a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})
 	*clock = clock.Add(cabHoldStart)
 	a.Tick(*clock)
@@ -189,6 +188,26 @@ func TestLaunchCabHoldStart(t *testing.T) {
 	a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})
 	if !a.LaunchCabRunning() {
 		t.Fatal("always must animate on the press")
+	}
+}
+
+func TestLaunchCabOffLaunchesImmediately(t *testing.T) {
+	for _, mode := range []string{"", "off"} {
+		a, clock, launched := cabApp(true)
+		a.cfg.LaunchTransition = mode
+		if got := a.LaunchTransition(); got != "off" {
+			t.Fatalf("setting %q selected %q, want off", mode, got)
+		}
+		a.Handle(platform.Event{Key: platform.KeyStart, Pressed: true, At: *clock})
+		if len(*launched) != 1 {
+			t.Fatalf("setting %q did not launch on press", mode)
+		}
+		*clock = clock.Add(cabHoldStart)
+		a.Tick(*clock)
+		a.Handle(platform.Event{Key: platform.KeyStart, At: *clock})
+		if a.LaunchCabRunning() || len(*launched) != 1 {
+			t.Fatalf("setting %q on release: animation=%v launches=%v", mode, a.LaunchCabRunning(), *launched)
+		}
 	}
 }
 

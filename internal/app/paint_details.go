@@ -859,12 +859,12 @@ func (a *App) launchPick(pick int) bool {
 	if a.detail.pickPath != "" {
 		pick = a.pickIn(a.launchEntries(row, i)) // the chosen file, wherever a rescan put it
 	}
-	return a.launchRow(row, i, pick)
+	return a.launchRow(row, i, pick, launchFromMenu)
 }
 
 // launchRow launches entry pick of row i's versions; true when the
 // version is not on the card and a notice says so instead.
-func (a *App) launchRow(row *data.Row, i, pick int) bool {
+func (a *App) launchRow(row *data.Row, i, pick int, source launchSource) bool {
 	entries := a.launchEntries(row, i)
 	if len(entries) > 0 && a.cfg.Launch != nil {
 		pick = max(0, min(pick, len(entries)-1))
@@ -891,13 +891,15 @@ func (a *App) launchRow(row *data.Row, i, pick int) bool {
 			row = &a.ds.Rows[e.row]
 		}
 		a.recordLaunch(row)
-		if a.LaunchTransition() == "hold" && a.transition.enabled {
-			// the animation waits for Start to stay down; a tap launches
-			// on the release
+		mode := a.LaunchTransition()
+		switch {
+		case mode == "always":
+			a.startLaunchCab(row, e.path)
+		case mode == "hold" && source == launchFromMenu && a.transition.enabled:
 			a.holdLaunch = holdLaunch{row: row, path: e.path, at: a.cfg.TimerNow()}
-			return false
+		default:
+			a.cfg.Launch(e.path)
 		}
-		a.startLaunchCab(row, e.path)
 	}
 	return false
 }

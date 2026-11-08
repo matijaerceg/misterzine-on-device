@@ -136,9 +136,8 @@ type Config struct {
 	Screensaver         string
 	SaverDisabled       bool
 	TransitionsDisabled bool
-	// LaunchTransition: "hold" (default) plays the launch animation only
-	// when Start is held past cabHoldStart, a tap launching at once;
-	// "always" plays it on every launch.
+	// LaunchTransition is "off" (default), "hold" for a held Start in the
+	// menus, or "always" for every game launch including the slideshow.
 	LaunchTransition string
 	// SaverStyle is what the saver shows: "word" (default: the lettering)
 	// or "shots" (random arcade screenshots, Start held plays one); with
@@ -943,10 +942,11 @@ func (a *App) Handle(ev platform.Event) (repaint bool) {
 	if a.forget != nil {
 		return a.handleForgetCode(ev)
 	}
-	if a.handleLaunchCab(ev) {
+	// Let the slideshow consume its Start release even during a launch animation.
+	if a.handleSaverInput(ev) {
 		return true
 	}
-	if a.handleSaverInput(ev) {
+	if a.handleLaunchCab(ev) {
 		return true
 	}
 	if a.lock != nil {
@@ -1399,7 +1399,7 @@ func (a *App) actList(k platform.Key) bool {
 	case platform.KeyStart: // launch the remembered version straight from the list
 		if n > 0 {
 			if row, _, i := a.current(); row != nil {
-				a.launchRow(row, i, a.rememberedPickOf(row, i))
+				a.launchRow(row, i, a.rememberedPickOf(row, i), launchFromMenu)
 			}
 		}
 		return true

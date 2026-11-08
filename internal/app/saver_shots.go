@@ -422,7 +422,7 @@ func (a *App) saverShotsLaunch() {
 	a.moveToKey(row.K)
 	a.saver.waking = map[saverKey]bool{{key: platform.KeyStart}: true}
 	a.saverEnd()
-	a.launchRow(row, s.cur.row, a.rememberedPickOf(row, s.cur.row))
+	a.launchRow(row, s.cur.row, a.rememberedPickOf(row, s.cur.row), launchFromSlideshow)
 }
 
 // saverShotsFallback gives the run to the lettering: nothing to show.
