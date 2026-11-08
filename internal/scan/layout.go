@@ -100,6 +100,8 @@ func CardLayout(card, appDir string) []string {
 				ok = folder(depth+1, "%s/: skipped, a symbolic link", e.Name())
 			case skipDirReason(e.Name()) != "":
 				ok = folder(depth+1, "%s/: skipped, %s", e.Name(), skipDirReason(e.Name()))
+			case l == "cores" && depth == 0 && rel != "_Arcade":
+				ok = folder(depth+1, "%s/: %d core files", e.Name(), countSuffix(filepath.Join(card, sub), ".rbf"))
 			case l == "cores" && depth == 0:
 				ok = folder(depth+1, "%s/: %d files (listed below)", e.Name(), countEntries(filepath.Join(card, filepath.FromSlash(sub))))
 			case l == "_alternatives":
@@ -115,6 +117,17 @@ func CardLayout(card, appDir string) []string {
 		}
 	}
 	tree("_Arcade", 0)
+	collections, err := collectionRoots(card, top)
+	if err != nil {
+		add("Arcade collections: %v", err)
+	}
+	for _, root := range collections {
+		if folders >= layoutFolders {
+			break
+		}
+		add("Arcade collection: %s (%d RBFs in %s/cores)", root, countSuffix(filepath.Join(card, root, "cores"), ".rbf"), root)
+		tree(root, 0)
+	}
 
 	cores, err := os.ReadDir(filepath.Join(card, "_Arcade", "cores"))
 	if err != nil {

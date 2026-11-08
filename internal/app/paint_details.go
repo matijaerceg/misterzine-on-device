@@ -239,6 +239,19 @@ func (a *App) launchEntries(row *data.Row, i int) []launchEntry {
 	return out
 }
 
+func (a *App) versionCoreIssue(p, fallback string) string {
+	if a.cfg.VersionCore != nil {
+		if name, available := a.cfg.VersionCore(p); name != "" {
+			if available {
+				return ""
+			}
+			root, _, _ := strings.Cut(p, "/")
+			return "missing " + name + " core in " + root + "/cores"
+		}
+	}
+	return fallback
+}
+
 func (a *App) rowEntries(row *data.Row, i int) []launchEntry {
 	var out []launchEntry
 	st := a.status(i)
@@ -249,6 +262,7 @@ func (a *App) rowEntries(row *data.Row, i int) []launchEntry {
 	if other == "" && row.MRA != "" && row.Core != "" && st == data.StatusNotFound && a.cfg.Status != nil && a.cfg.Exists != nil && a.cfg.Exists(row.MRA) {
 		coreMissing = "the " + row.Core + " core is not on the card"
 	}
+	coreMissing = a.versionCoreIssue(row.MRA, coreMissing)
 	if row.MRA != "" {
 		ok, why := true, ""
 		if a.cfg.Exists != nil {
@@ -277,7 +291,8 @@ func (a *App) rowEntries(row *data.Row, i int) []launchEntry {
 					label += " [" + c + "]"
 				}
 			}
-			out = append(out, launchEntry{label, alt, coreMissing == "", coreMissing, i})
+			why := a.versionCoreIssue(alt, coreMissing)
+			out = append(out, launchEntry{label, alt, why == "", why, i})
 		}
 	}
 	// two files of one name, in different folders, are told apart by folder
@@ -287,7 +302,16 @@ func (a *App) rowEntries(row *data.Row, i int) []launchEntry {
 	}
 	for n := range out {
 		if b := path.Base(out[n].path); names[b] > 1 && strings.Contains(out[n].path, "/") {
-			out[n].label = strings.Replace(out[n].label, b, path.Base(path.Dir(out[n].path))+"/"+b, 1)
+			folder := path.Base(path.Dir(out[n].path))
+			root, _, _ := strings.Cut(out[n].path, "/")
+			if root != "_Arcade" && strings.EqualFold(path.Ext(out[n].path), ".mra") {
+				if folder == "_Arcade" || folder == root {
+					folder = root
+				} else {
+					folder = path.Join(root, folder)
+				}
+			}
+			out[n].label = strings.Replace(out[n].label, b, folder+"/"+b, 1)
 		}
 	}
 	return out

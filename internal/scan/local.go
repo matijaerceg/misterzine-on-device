@@ -93,7 +93,7 @@ func ScanArcadeMRAs(card, cachePath string) ([]Alt, []Skipped, error) {
 }
 
 // scanArcadeMRAs is ScanArcadeMRAs that also names the folders it left out.
-func scanArcadeMRAs(card, cachePath string) ([]Alt, []Skipped, []Skipped, error) {
+func scanArcadeMRAs(card, cachePath string, roots ...string) ([]Alt, []Skipped, []Skipped, error) {
 	dc := openDirCache(cachePath)
 	var out []Alt
 	var skipped, dirs []Skipped
@@ -149,7 +149,7 @@ func scanArcadeMRAs(card, cachePath string) ([]Alt, []Skipped, []Skipped, error)
 				dirs = append(dirs, Skipped{Path: sub, Reason: why})
 				continue
 			}
-			if skipDir(e.Name()) {
+			if skipDir(e.Name()) && !(len(roots) > 0 && strings.EqualFold(e.Name(), "_alternatives")) {
 				continue
 			}
 			if depth >= localMaxDepth {
@@ -162,7 +162,15 @@ func scanArcadeMRAs(card, cachePath string) ([]Alt, []Skipped, []Skipped, error)
 		}
 		return true
 	}
-	walk("_Arcade", 0)
+	if len(roots) == 0 {
+		walk("_Arcade", 0)
+	} else {
+		for _, root := range roots {
+			if !walk(root, 0) {
+				break
+			}
+		}
+	}
 	dc.save("local scan cache")
 	sort.Slice(out, func(i, j int) bool { return out[i].Path < out[j].Path })
 	return out, skipped, dirs, errors.Join(dc.problems...)
@@ -193,16 +201,23 @@ func scanArcadeMRAs(card, cachePath string) ([]Alt, []Skipped, []Skipped, error)
 // then ask it for a shot by setname.
 func DiscoverLocal(card, cachePath string, catalogue []data.Row, idx *Index, status []data.Status, alts []Alt, attached map[string]bool, snap bool) LocalResult {
 	walked, skipped, dirs, err := scanArcadeMRAs(card, cachePath)
+	if idx != nil {
+		walked = append(walked, idx.collections.games...)
+		skipped = append(skipped, idx.collections.skipped...)
+		dirs = append(dirs, idx.collections.skippedDirs...)
+		err = errors.Join(err, idx.collections.err)
+	}
 	res := LocalResult{Alts: map[string][]string{}, Files: len(walked), Skipped: skipped, SkippedDirs: dirs, Err: err,
 		Versions: map[string][]string{}, VersionCores: map[string]string{}, VersionOwner: map[string]string{}, VersionSets: map[string]string{}}
 	own := catalogueOwners(catalogue)
 	access := NewCoreAccess(catalogue, idx)
 	cores := map[string]bool{}
-	has := func(core string) bool { // coreOnCard, remembered per name: a miss scans the index
-		v, ok := cores[core]
+	has := func(mra, core string) bool { // misses need a prefix search within the collection
+		key := path.Join(arcadeRoot(mra), core)
+		v, ok := cores[key]
 		if !ok {
-			v = coreOnCard(idx, core)
-			cores[core] = v
+			v = idx.HasMRACore(mra, core)
+			cores[key] = v
 		}
 		return v
 	}
@@ -212,7 +227,7 @@ func DiscoverLocal(card, cachePath string, catalogue []data.Row, idx *Index, sta
 		if status != nil {
 			return i < len(status) && status[i].Found()
 		}
-		return has(catalogue[i].Core)
+		return has(catalogue[i].MRA, catalogue[i].Core)
 	}
 	// version offers file a to every row among rows that runs here; a file
 	// the family resolver already attached skips the rows on its own core,
@@ -245,7 +260,7 @@ func DiscoverLocal(card, cachePath string, catalogue []data.Row, idx *Index, sta
 			Motion.Wait()
 		}
 		// the catalogue's own files are its rows
-		if own.paths[a.Path] {
+		if f := idx.launcher(a.Path); own.paths[a.Path] || f != nil && f.matched {
 			res.OwnFiles++
 			continue
 		}
@@ -255,7 +270,7 @@ func DiscoverLocal(card, cachePath string, catalogue []data.Row, idx *Index, sta
 			// already a version of a catalogue game; another row of the same
 			// game that runs here on another core offers it too
 			res.VersionFiles++
-			if !bios && !ambiguous && has(a.RBF) {
+			if !bios && !ambiguous && has(a.Path, a.RBF) {
 				version(a, rows, true)
 			}
 			continue
@@ -277,17 +292,17 @@ func DiscoverLocal(card, cachePath string, catalogue []data.Row, idx *Index, sta
 				res.Accounted = append(res.Accounted, Accounted{Path: a.Path, K: k,
 					Reason: "several catalogue games share this set's family, so it is not offered as a version of any"})
 				continue
-			case runnable && has(a.RBF):
+			case runnable && has(a.Path, a.RBF):
 				version(a, rows, false)
 				continue
 			case runnable:
 				res.Accounted = append(res.Accounted, Accounted{Path: a.Path, K: k,
-					Reason: "the catalogue runs this game here; this file's core (" + a.RBF + ") is not in _Arcade/cores"})
+					Reason: "the catalogue runs this game here; this file's core (" + a.RBF + ") is not in " + path.Join(arcadeRoot(a.Path), "cores")})
 				continue
-			case !has(a.RBF):
+			case !has(a.Path, a.RBF):
 				// neither copy runs: the greyed catalogue row says so
 				res.Accounted = append(res.Accounted, Accounted{Path: a.Path, K: k,
-					Reason: "neither the catalogue's core nor this file's core (" + a.RBF + ") is in _Arcade/cores"})
+					Reason: "neither the catalogue's core nor this file's core (" + a.RBF + ") is in " + path.Join(arcadeRoot(a.Path), "cores")})
 				continue
 			}
 			standins[a.Path] = true
@@ -316,8 +331,21 @@ func DiscoverLocal(card, cachePath string, catalogue []data.Row, idx *Index, sta
 	}
 	var heads []Alt // the file each row was read from, by row
 	for sn, g := range groups {
+		mixedRoots := false
+		for _, a := range g[1:] {
+			if arcadeRoot(a.Path) != arcadeRoot(g[0].Path) {
+				mixedRoots = true
+				break
+			}
+		}
 		sort.Slice(g, func(i, j int) bool {
 			// the parent set itself, then main folders, then short paths
+			if mixedRoots {
+				left, right := has(g[i].Path, g[i].RBF), has(g[j].Path, g[j].RBF)
+				if left != right {
+					return left
+				}
+			}
 			pi, pj := g[i].Setname == sn, g[j].Setname == sn
 			if pi != pj {
 				return pi
@@ -338,7 +366,7 @@ func DiscoverLocal(card, cachePath string, catalogue []data.Row, idx *Index, sta
 		// a game on a gated core is a beta game whoever made its MRA, so
 		// Filters -> Type -> Beta off hides it with the catalogue's; a
 		// stand-in goes by its own core, not the catalogue game's
-		if acc := access.Of(r.Core); acc.Beta {
+		if acc := access.ofMRA(r.MRA, r.Core); acc.Beta {
 			r.Beta, r.Gate = true, acc.Gate
 		}
 		if snap {

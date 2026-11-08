@@ -63,7 +63,7 @@ func (a *App) rememberedPickOf(row *data.Row, i int) int {
 	}
 	entries := a.launchEntries(row, i)
 	for n, e := range entries {
-		if e.path == want {
+		if e.path == want && a.versionCoreIssue(want, "") == "" {
 			return n
 		}
 	}

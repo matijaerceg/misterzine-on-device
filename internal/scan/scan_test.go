@@ -351,13 +351,13 @@ func TestSharedFileFollowsMainsCoreChoice(t *testing.T) {
 	}
 	os.WriteFile(filepath.Join(card, "_Arcade/Foo.mra"), []byte("<misterromdescription><rbf>foo</rbf></misterromdescription>"), 0644)
 	idx := ScanCores(card)
-	if c, ok := idx.mainRBF("FOO"); !ok || path.Base(c.Path) != "foo_mister_20260101.rbf" {
+	if c, ok := idx.arcadeFor("_Arcade/").mainRBF("FOO"); !ok || path.Base(c.Path) != "foo_mister_20260101.rbf" {
 		t.Fatalf("mainRBF(FOO) = %+v %v", c, ok)
 	}
-	if c, ok := idx.mainRBF("bar"); !ok || path.Base(c.Path) != "Arcade-bar_20260101.rbf" {
+	if c, ok := idx.arcadeFor("_Arcade/").mainRBF("bar"); !ok || path.Base(c.Path) != "Arcade-bar_20260101.rbf" {
 		t.Fatalf("mainRBF(bar) = %+v %v", c, ok)
 	}
-	if _, ok := idx.mainRBF("fo"); ok {
+	if _, ok := idx.arcadeFor("_Arcade/").mainRBF("fo"); ok {
 		t.Fatal("a shorter name matched")
 	}
 	// Main compares the real names, case and all: an undated foo.rbf beats
@@ -369,7 +369,7 @@ func TestSharedFileFollowsMainsCoreChoice(t *testing.T) {
 		os.MkdirAll(filepath.Dir(p), 0755)
 		os.WriteFile(p, []byte("x"), 0644)
 	}
-	if c, ok := ScanCores(other).mainRBF("foo"); !ok || path.Base(c.Path) != "foo.rbf" {
+	if c, ok := ScanCores(other).arcadeFor("_Arcade/").mainRBF("foo"); !ok || path.Base(c.Path) != "foo.rbf" {
 		t.Fatalf("mainRBF(foo) with an undated foo.rbf = %+v %v", c, ok)
 	}
 	rows := []data.Row{

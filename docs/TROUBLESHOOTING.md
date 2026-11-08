@@ -165,6 +165,8 @@ Use Rescan card after an external update. Alternatives must be installed:
 Downloader filters can intentionally exclude them. MisterZine leaves those
 preferences unchanged. A missing or invalid launch target reports an error.
 
+For Ongo Isolated, check for the game launcher under `_Ongo/_Arcade` and its core under `_Ongo/cores`. Details can offer both the isolated and regular copies of a game. A missing-core message names the folder that copy needs.
+
 An alternative whose MRA file holds no readable header (an empty file, one
 cut short, or one without an `<rbf>` element) is left out of the picker, as
 MiSTer could not load it either. The scan still completes. The log names

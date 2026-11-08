@@ -75,6 +75,8 @@ type Config struct {
 	// AltCore names the core of a version that may run on another core than
 	// its row's ("" when unknown), for its label in the version picker.
 	AltCore func(path string) string
+	// VersionCore returns a collection copy's own core and whether it is installed.
+	VersionCore func(path string) (string, bool)
 	// AltSetname names the setname of such a version ("" when unknown), so
 	// Details can tell which fan patch of the game is on the card.
 	AltSetname func(path string) string

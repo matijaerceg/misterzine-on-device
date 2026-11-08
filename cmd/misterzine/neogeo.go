@@ -121,6 +121,9 @@ func (h *host) prepareLaunch(target string) (string, error) {
 		return mister.LaunchPath(h.card, p)
 	}
 	abs, err := mister.LaunchPath(h.card, target)
+	if err == nil && strings.EqualFold(filepath.Ext(target), ".mra") && h.index.CollectionLauncher(target) {
+		err = scan.CheckMRACore(h.card, target)
+	}
 	if err == nil && strings.EqualFold(filepath.Ext(target), ".mgl") {
 		err = validateNeoGeoLaunch(h.card, target)
 	}

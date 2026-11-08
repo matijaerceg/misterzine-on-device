@@ -21,7 +21,7 @@ func (a *App) launchPath(row *data.Row, i int) string {
 	}
 	if want := a.cfg.Versions[row.K]; want != "" && want != row.MRA && a.cfg.Alternatives != nil {
 		for _, alt := range a.cfg.Alternatives(row) {
-			if alt == want {
+			if alt == want && a.versionCoreIssue(want, "") == "" {
 				return want
 			}
 		}

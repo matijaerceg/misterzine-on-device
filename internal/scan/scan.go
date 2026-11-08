@@ -50,17 +50,17 @@ type Core struct {
 }
 
 // Index is the card's core inventory keyed by lowercase core name. Cores is
-// the whole card (what the launcher resolves names against); arcade and
-// system split it by folder, because an arcade MRA only ever loads from
-// _Arcade/cores while a console/computer row's rbf lives elsewhere, and the
-// two can share a name (Astrocade ships both).
+// the standard folders used for direct core launches. Arcade launchers load
+// only the RBFs in their own collection, even when names coincide.
 type Index struct {
-	NeoGeoRBF string // stock cartridge core path without date or extension, for folder games
-	Cores     map[string]Core
-	arcade    map[string]Core
-	system    map[string]Core
-	At        time.Time
-	Err       error // unreadable card/core folders; absent optional folders are fine
+	NeoGeoRBF       string // stock cartridge core path without date or extension, for folder games
+	Cores           map[string]Core
+	arcades         map[string]*arcadeFiles
+	collectionRoots []string
+	collections     collectionScan
+	system          map[string]Core
+	At              time.Time
+	Err             error // unreadable card/core folders; absent optional folders are fine
 	// FeedAt is when the feed was generated. An undated rbf installed after
 	// that cannot be behind the feed's hash, so a mismatch reads as current
 	// rather than older. Zero disables the guard.
@@ -69,19 +69,28 @@ type Index struct {
 	// memory only.
 	HashCache string
 	hashes    hashes
-	// rbfs is every file in _Arcade/cores: the maps keep one file per name,
-	// and Main's own choice (mainRBF) can be one they dropped
-	rbfs []Core
 }
 
 // ScanCores lists the core folders and, outside _Arcade/cores, the folders
 // in them that MiSTer's menu opens. Missing folders are fine (an
 // arcade-only card has no _Console).
 func ScanCores(card string) *Index {
-	idx := &Index{Cores: map[string]Core{}, arcade: map[string]Core{}, system: map[string]Core{}, At: time.Now()}
-	if _, err := os.ReadDir(card); err != nil {
+	idx := &Index{Cores: map[string]Core{}, arcades: map[string]*arcadeFiles{}, system: map[string]Core{}, At: time.Now()}
+	menu, err := os.ReadDir(card)
+	if err != nil {
 		idx.Err = err
 		return idx
+	}
+	// Keep errors probing optional collections in the partial scan report.
+	idx.collectionRoots, idx.collections.err = collectionRoots(card, menu)
+	for _, root := range idx.collectionRoots {
+		dir := path.Join(root, "cores")
+		entries, err := os.ReadDir(filepath.Join(card, dir))
+		if err == nil {
+			idx.addCores(dir, entries, true, nil)
+		} else if !os.IsNotExist(err) {
+			idx.collections.err = errors.Join(idx.collections.err, err)
+		}
 	}
 	var subs []coreFolder
 	for _, dir := range coreDirs {
@@ -128,9 +137,16 @@ func (idx *Index) FindNeoGeoRBF(card string) {
 // addCores indexes the rbf files among one folder's entries, keeping each
 // name's newest build. Names in fixed are left as they are.
 func (idx *Index) addCores(dir string, entries []os.DirEntry, arcade bool, fixed map[string]bool) {
-	kind := idx.system
+	maps := []map[string]Core{idx.Cores, idx.system}
+	var files *arcadeFiles
 	if arcade {
-		kind = idx.arcade
+		root := path.Dir(dir)
+		files = &arcadeFiles{names: map[string]Core{}}
+		idx.arcades[root] = files
+		maps = []map[string]Core{files.names}
+		if root == "_Arcade" {
+			maps = append(maps, idx.Cores)
+		}
 	}
 	for _, e := range entries {
 		name := e.Name()
@@ -144,9 +160,9 @@ func (idx *Index) addCores(dir string, entries []os.DirEntry, arcade bool, fixed
 		}
 		rel := path.Join(dir, name)
 		if arcade {
-			idx.rbfs = append(idx.rbfs, Core{Date: date, Path: rel})
+			files.rbfs = append(files.rbfs, Core{Date: date, Path: rel})
 		}
-		for _, m := range []map[string]Core{idx.Cores, kind} {
+		for _, m := range maps {
 			if cur, ok := m[base]; !fixed[base] && (!ok || date > cur.Date) {
 				m[base] = Core{Date: date, Path: rel}
 			}
@@ -223,7 +239,7 @@ func (idx *Index) lookupFor(arcade bool, core string) (Core, bool) {
 		return Core{}, false
 	}
 	if arcade {
-		return lookup(idx.arcade, core)
+		return idx.arcadeFor("_Arcade/").lookup(core)
 	}
 	return lookup(idx.system, core)
 }
@@ -322,7 +338,18 @@ func Status(card string, idx *Index, r *data.Row) data.Status {
 		}
 		return data.StatusUnknown
 	}
-	c, ok := idx.lookupFor(r.IsArcade(), r.Core)
+	var c Core
+	var ok bool
+	if r.IsArcade() {
+		files := idx.arcadeFor(r.MRA)
+		if f := idx.launcher(r.MRA); f != nil {
+			c, ok = f.core, f.core.Path != ""
+		} else {
+			c, ok = files.lookup(r.Core)
+		}
+	} else {
+		c, ok = idx.lookupFor(false, r.Core)
+	}
 	if !ok {
 		return data.StatusNotFound
 	}
@@ -401,7 +428,7 @@ func claimShared(card string, idx *Index, rows []data.Row, st []data.Status) map
 		}
 		owner := -1
 		for _, i := range group {
-			if loadsCore(idx, a.RBF, rows[i].Core) {
+			if loadsCore(idx.arcadeFor(rows[i].MRA), a.RBF, rows[i].Core) {
 				if owner >= 0 {
 					owner = -1
 					break
@@ -430,12 +457,12 @@ func claimShared(card string, idx *Index, rows []data.Row, st []data.Status) map
 // loadsCore reports whether an MRA naming rbf loads the row's core: the file
 // Main picks for rbf is the one the row's core finds on the card or, when
 // either finds none, they name the same core.
-func loadsCore(idx *Index, rbf, core string) bool {
+func loadsCore(files *arcadeFiles, rbf, core string) bool {
 	if core == "" {
 		return false
 	}
-	c1, ok1 := idx.mainRBF(rbf)
-	c2, ok2 := idx.lookupFor(true, core)
+	c1, ok1 := files.mainRBF(rbf)
+	c2, ok2 := files.lookup(core)
 	if ok1 && ok2 {
 		return c1.Path == c2.Path
 	}
@@ -447,13 +474,13 @@ func loadsCore(idx *Index, rbf, core string) bool {
 // or "Arcade-"+name followed by "." or "_", the greatest name. lookupFor
 // prefers an exact name, so with foo_20260101.rbf and foo_mister_20260101.rbf
 // both there it finds the first where Main loads the second.
-func (idx *Index) mainRBF(name string) (Core, bool) {
-	if idx == nil || name == "" {
+func (files *arcadeFiles) mainRBF(name string) (Core, bool) {
+	if files == nil || name == "" {
 		return Core{}, false
 	}
 	var best Core
 	bestName := ""
-	for _, c := range idx.rbfs {
+	for _, c := range files.rbfs {
 		file := path.Base(c.Path)
 		if (rbfFor(file, name) || rbfFor(file, "Arcade-"+name)) && file > bestName {
 			best, bestName = c, file

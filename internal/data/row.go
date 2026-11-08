@@ -33,6 +33,8 @@ func ShotKind(slot string) string {
 // names follow the JSON keys; see the site's _web_row in misterzine.py for
 // the authority on what each means.
 type Row struct {
+	// CatalogueMRA preserves the feed path while MRA points to an installed collection copy.
+	CatalogueMRA string   `json:"-"`
 	Title        string   `json:"title"`
 	Base         string   `json:"base"` // Arcade, Console, Computer, Other
 	Genre        string   `json:"genre"`

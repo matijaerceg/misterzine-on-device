@@ -356,6 +356,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		},
 		Alternatives: h.alternatives,
 		AltCore:      func(p string) string { return h.altCores[p] },
+		VersionCore:  func(p string) (string, bool) { return h.index.VersionCore(p) },
 		AltSetname:   func(p string) string { return h.altSets[p] },
 		Versions:     h.state.Versions,
 		Exists: func(rel string) bool {
@@ -1559,6 +1560,7 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 	}
 	idx.FeedAt = feedAt
 	idx.HashCache = filepath.Join(h.root, "cache", "hashes.json")
+	rows, pathsChanged := idx.ResolveCollections(h.card, filepath.Join(h.root, "cache", "collections.json"), rows)
 	st, owners := scan.Statuses(h.card, idx, rows)
 	downloader := scan.ScanDownloader(h.card)
 	dbs, iniFound := downloader.DBs, downloader.Found
@@ -1597,11 +1599,12 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 		sort.Strings(names)
 		h.lg.Printf("scan: downloader.ini lists %d databases; sources without one: %v", len(dbs), names)
 	}
-	if !h.sendScan(scanResult{index: idx, status: st, owners: owners, gen: gen, hidden: hidden, iniFound: iniFound, sourceFiles: downloader.Files}) {
+	if !idx.HasCollections() && !pathsChanged && !h.sendScan(scanResult{index: idx, status: st, owners: owners, gen: gen, hidden: hidden, iniFound: iniFound, sourceFiles: downloader.Files}) {
 		return
 	}
 	t1 := time.Now()
 	alts, skipped, goneDirs, err := scan.ScanAlternativesWithDirs(h.card, filepath.Join(h.root, "cache", "alts.json"))
+	alts = idx.CollectionAlternatives(alts)
 	// A skipped MRA is logged the first time its folder is read; later scans
 	// reuse the cache and only repeat the count. An entry listed but gone is
 	// never cached, so every scan names it again.
@@ -1687,6 +1690,7 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 	}
 	// the catalogue games that run here offer their sets on other cores,
 	// and their own sets outside the _alternatives folders, too
+	idx.MergeCollectionVersions(resolved)
 	offers, extra := scan.MergeVersions(resolved, local.Versions)
 	diag.lines = append(diag.lines,
 		fmt.Sprintf("alternatives: %d files, %d unreadable (%v)", len(alts), unreadable, t2.Sub(t1).Round(time.Millisecond)),
@@ -1722,7 +1726,7 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 	}
 	// Saved rows can match this scan's by generation and still differ in a
 	// title or a field this build adds: the scan's own rows replace them.
-	if nextGen != gen || saved && !data.SameLocalRows(rows[ncat:], merged[ncat:]) {
+	if pathsChanged || nextGen != gen || saved && !data.SameLocalRows(rows[ncat:], merged[ncat:]) {
 		// The row set changes: statuses must index into the new rows.
 		res.status, res.owners = scan.Statuses(h.card, idx, merged)
 		res.rows, res.nextGen = merged, nextGen
@@ -1756,7 +1760,7 @@ func (h *host) alternatives(r *data.Row) []string {
 	}
 	out := make([]string, 0, len(ps))
 	for _, p := range ps {
-		if core, ok := h.altCores[p]; ok && !h.index.HasArcadeCore(core) {
+		if core, ok := h.altCores[p]; ok && !h.index.CollectionLauncher(p) && !h.index.HasArcadeCore(core) {
 			continue
 		}
 		out = append(out, p)

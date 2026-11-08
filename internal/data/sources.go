@@ -13,7 +13,7 @@ type DB struct {
 }
 
 // sourceDB is the Downloader database behind one feed source: its db_url and
-// the section names update_all has written for it, older ones included,
+// matching Downloader section names and alternate database addresses,
 // lower-cased for matching.
 type sourceDB struct {
 	url         string
@@ -41,6 +41,7 @@ func SrcSection(src string) string { return tables.Load().dbs[src].section }
 // writes. A source with neither entry needs nothing here.
 var sourceExtras = map[string]sourceDB{
 	"distribution_mister":                {url: "https://raw.githubusercontent.com/MiSTer-devel/Distribution_MiSTer/main/db.json.zip"},
+	"ongo":                               {ids: []string{"videodr0me/mister_ongo_isolated", "https://raw.githubusercontent.com/videodr0me/mister_ongo_isolated/db/db.json.zip"}},
 	"jtbindb":                            {url: "https://raw.githubusercontent.com/jotego/jtcores_mister/main/jtbindb.json.zip"},
 	"coinop":                             {url: "https://raw.githubusercontent.com/Coin-OpCollection/Distribution-MiSTerFPGA/db/db.json.zip", ids: []string{"atrac17/coin-op_collection"}},
 	"theypsilon_unofficial_distribution": {url: "https://raw.githubusercontent.com/theypsilon/Unofficial_Distribution_MiSTer/main/unofficialdb.json.zip"},

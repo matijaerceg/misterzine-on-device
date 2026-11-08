@@ -81,6 +81,7 @@ type ROMCheck struct {
 	CachePath string
 	cache     map[string]romCacheEntry
 	cacheOnce sync.Once
+	cacheRoot string // immutable after loadCache, for rescans after a mount change
 	cacheRaw  []byte
 	stamps    map[string]romCacheEntry
 	// Slow, when set, hears of a sweep check that took over 80 ms, for
@@ -183,7 +184,7 @@ func (c *ROMCheck) sweep(paths []string, stop <-chan struct{}, done func(int, in
 			var res ROMResult
 			var stamp romCacheEntry
 			stamped := false
-			if e, ok := c.cached(rel, stats); ok && !rootMame {
+			if e, ok := c.cached(rel, stats); ok && !rootMame && c.cacheRoot == root {
 				res, stamp, stamped = e.result(), e, true
 				reused++
 			} else {
@@ -197,7 +198,7 @@ func (c *ROMCheck) sweep(paths []string, stop <-chan struct{}, done func(int, in
 				if d := time.Since(t); d > 80*time.Millisecond && c.Slow != nil {
 					c.Slow(rel, d)
 				}
-				stamp, stamped = c.stampVerdict(root, rel, res)
+				stamp, stamped = c.stampVerdict(c.romRootFor(root, rel), rel, res)
 			}
 			c.mu.Lock()
 			prev, known := c.results[rel]
@@ -418,8 +419,9 @@ func (c *ROMCheck) check(rel string, acc *CoreAccess) ROMResult {
 	if issue != "" {
 		return ROMResult{Text: issue, Block: issue != romListUnreadable}
 	}
-	key := keyRule(rbf, acc)
+	key := keyRule(rel, rbf, acc)
 	root, rootMame := arcadeROMRoot(c.card)
+	root = c.romRootFor(root, rel)
 	if rootMame {
 		// Main takes a mame folder at the card's root before games/mame,
 		// then loses the folder's path and looks for every zip under /mame
@@ -551,7 +553,7 @@ func keyPart(p romPart) bool {
 // Simpsons (2 Players Free Play) on jtsimson played with "beta.bin not
 // found" in a corner. A core the catalogue does not know, or has not been
 // read for yet, gets the benefit of the doubt.
-func keyRule(rbf string, acc *CoreAccess) func(ROMResult) ROMResult {
+func keyRule(rel, rbf string, acc *CoreAccess) func(ROMResult) ROMResult {
 	core := "the " + rbf + " core"
 	if rbf == "" {
 		core = "the MRA's core"
@@ -559,7 +561,7 @@ func keyRule(rbf string, acc *CoreAccess) func(ROMResult) ROMResult {
 	return func(res ROMResult) ROMResult {
 		// asked only for a key that is missing: the sweep checks thousands
 		// of MRAs, and few have one
-		a := acc.Of(rbf)
+		a := acc.ofMRA(rel, rbf)
 		switch {
 		case a.JotegoBeta():
 			res.Text, res.Block = res.Text+"; "+core+" is a Patreon beta and needs it", true
@@ -1134,6 +1136,14 @@ func (c *ROMCheck) zipIndex(path string) *zipIndex {
 		}
 	}
 	return ix
+}
+
+// With no shared mame folder Main falls back to the launcher's arcade root.
+func (c *ROMCheck) romRootFor(root, rel string) string {
+	if root == filepath.Join(c.card, "_Arcade") {
+		return filepath.Join(c.card, arcadeRoot(rel))
+	}
+	return root
 }
 
 // arcadeROMRoot follows Main's findGamesDir precedence. Main selects one

@@ -56,10 +56,10 @@ func (h *host) requestScan() {
 // local rows, since positional statuses are only right for that row set.
 func (h *host) receiveScan(r scanResult) {
 	first := h.index == nil
-	if r.index != nil {
+	current := r.gen == h.a.Data().Gen && h.scanningNeoGeoFolder == h.settings.ScanNeoGeoFolder
+	if current && r.index != nil {
 		h.index = r.index
 	}
-	current := r.gen == h.a.Data().Gen && h.scanningNeoGeoFolder == h.settings.ScanNeoGeoFolder
 	if current && r.final && r.rows != nil {
 		// The card's local rows changed: install the new row set and its
 		// statuses in one step, before anything paints.
@@ -100,6 +100,7 @@ func (h *host) receiveScan(r scanResult) {
 		}
 		h.alts, h.altCores, h.altSets = r.alts, r.altCores, r.altSets
 		h.altGen = h.a.Data().Gen
+		h.a.ROMChanged()
 		// before the sweep, so its answers go by this catalogue and card
 		h.roms.SetAccess(r.access)
 		// the sweep starts on a later tick: set up in the same frame as the

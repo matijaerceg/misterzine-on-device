@@ -43,6 +43,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	idx := scan.ScanCores(*card)
+	rows, _ = idx.ResolveCollections(*card, "", rows)
+	alts = idx.CollectionAlternatives(alts)
 	var families scan.FamilyCache
 	resolved := families.Resolve(*card, alts, rows)
 	cold := time.Since(start)
@@ -51,7 +54,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	families.Resolve(*card, again, rows)
+	families.Resolve(*card, idx.CollectionAlternatives(again), rows)
 	warm := time.Since(start)
 
 	// Local discovery: the MRAs no catalogue row accounts for. Timed apart
@@ -63,7 +66,6 @@ func main() {
 	}
 	// The core index decides which catalogue rows this card can actually
 	// run, and so which files stand in for the ones it cannot.
-	idx := scan.ScanCores(*card)
 	// what the list would show: a row runs when its core and its own MRA
 	// are on the card, as in the app
 	status, _ := scan.Statuses(*card, idx, rows)
@@ -75,6 +77,7 @@ func main() {
 	localWarm := time.Since(start)
 	// the games that run here also offer their sets on other cores and
 	// outside the _alternatives folders, as the app merges them
+	idx.MergeCollectionVersions(resolved)
 	extraOffers, extraFiles := scan.MergeVersions(resolved, local.Versions)
 	type extraVersion struct {
 		Key  string `json:"key"`

@@ -68,6 +68,7 @@ func (c *ROMCheck) loadCache(root string, rootMame bool) {
 		if json.Unmarshal(b, &f) != nil || f.V != romCacheVersion || f.Root != root || f.RootMame != rootMame {
 			return
 		}
+		c.cacheRoot = root
 		c.cacheRaw = b
 		if f.MRAs != nil {
 			c.cache = f.MRAs

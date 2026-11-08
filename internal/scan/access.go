@@ -69,12 +69,15 @@ func NewCoreAccess(catalogue []data.Row, idx *Index) *CoreAccess {
 // the card, the catalogue cores that count are the ones resolving to the
 // same file, as claimShared decides a shared MRA; without it, the ones
 // named alike (sameCore). Several that disagree, or none, are unknown.
-func (ca *CoreAccess) Of(rbf string) Access {
+func (ca *CoreAccess) Of(rbf string) Access { return ca.ofMRA("_Arcade/", rbf) }
+
+func (ca *CoreAccess) ofMRA(mra, rbf string) Access {
 	if ca == nil || rbf == "" {
 		return Access{}
 	}
 	stem := coreStem(rbf)
-	file, installed := ca.idx.mainRBF(rbf)
+	files := ca.idx.arcadeFor(mra)
+	file, installed := files.mainRBF(rbf)
 	var out Access
 	n := 0
 	for _, c := range ca.cores {
@@ -82,7 +85,7 @@ func (ca *CoreAccess) Of(rbf string) Access {
 			continue
 		}
 		if installed {
-			if f, ok := ca.idx.lookupFor(true, c.name); !ok || f.Path != file.Path {
+			if f, ok := files.lookup(c.name); !ok || f.Path != file.Path {
 				continue
 			}
 		}
