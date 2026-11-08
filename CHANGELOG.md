@@ -1,8 +1,9 @@
 # Changelog
 
-## Unreleased
+## v1.2.29 — 2026-11-07
 
-- **Scan Neo Geo folder** now finds and launches cartridges from the same storage locations MiSTer checks, including USB drives and network shares. Rescan after plugging in or removing a drive to show the collection at the first matching location.
+- **Scan Neo Geo folder** now finds and launches cartridges from the same storage locations MiSTer checks, including USB drives and network shares. Rescan after plugging in or removing a drive to show the collection at the first matching location. Thanks to malento for reporting the missing USB games.
+- Refresh the offline catalogue to 2,938 entries.
 
 ## v1.2.28 — 2026-11-07
 
