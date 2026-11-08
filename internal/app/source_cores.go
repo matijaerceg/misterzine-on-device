@@ -23,7 +23,7 @@ const singlesText = "Single-game cores"
 func srcGroup(src string) string { return "src:" + src }
 
 // buildSourceCores lists each source's arcade cores within the enabled
-// catalogue for the panel being built: the multi-game cores by label into
+// catalogue for the panel being built: the multi-game cores into
 // srcCores, the single-game ones into srcSingles.
 func (a *App) buildSourceCores() {
 	label := map[string]string{}
@@ -46,10 +46,6 @@ func (a *App) buildSourceCores() {
 		} else {
 			multi[r.Src] = append(multi[r.Src], key)
 		}
-	}
-	for src, keys := range multi {
-		sort.Slice(keys, func(i, j int) bool { return data.Compare(label[keys[i]], label[keys[j]]) < 0 })
-		multi[src] = keys
 	}
 	a.panel.srcCores, a.panel.srcSingles, a.panel.coreLabel = multi, singles, label
 }
@@ -101,11 +97,15 @@ func (a *App) sourceEntries(src, text string) []panelEntry {
 	if !open {
 		return E
 	}
+	cores := a.panel.srcCores[src]
+	sort.Slice(cores, func(i, j int) bool {
+		return data.Compare(a.panel.coreLabel[cores[i]], a.panel.coreLabel[cores[j]]) < 0
+	})
 	if singles > 0 {
 		E = append(E, panelEntry{text: "  " + singlesText, kind: "singles", value: src, checked: on && singlesOn == singles,
 			partial: on && singlesOn > 0 && singlesOn < singles})
 	}
-	for _, k := range a.panel.srcCores[src] {
+	for _, k := range cores {
 		E = append(E, panelEntry{text: "  " + a.panel.coreLabel[k], kind: "core", value: k, checked: on && !f.CoreOff[k]})
 	}
 	return E
