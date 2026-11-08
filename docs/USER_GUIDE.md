@@ -596,6 +596,7 @@ and last row. Rows marked ↗ open another screen or editor.
   Layouts above. The help box draws the four at the current orientation
   with the chosen one framed. Hold Select and press Y on the list to cycle
   them there.
+- **A-Z date** chooses Build date (default), MiSTer debut or Original year for the date beside each game in A-Z and Neo Geo A-Z. Missing dates are blank. Original year shows the arcade release year for Neo Geo games with a known year.
 - **Date format:** how list dates read: MM-DD (default), DD-MM, Mon D (Sep 7),
   D Mon (7 Sep) or YYMMDD (260907). The help line shows today's date in the
   chosen format. Rows from earlier years show the year alone, except with
@@ -846,14 +847,8 @@ known, while the scan at launch is still running, says neither. B closes it even
 while scanning; completion does not interrupt the screen you moved to.
 Unreadable card scans retain the previous inventory and show a failure banner.
 
-MisterZine checks GitHub for a newer stable app release on launch and at most
-every 30 minutes. When available, the main bar shows **App update**, and Options
-gains **Update MisterZine only**, which fetches just the new MisterZine through
-Downloader in a few seconds and then offers a restart; the row below it, Update
-MisterZine + all, runs Update All as usual and brings the new app with
-everything else. Offline checks stay quiet. This is
-separate from automatically refreshing the games catalogue; prerelease and
-development builds do not advertise stable downgrades.
+MisterZine checks GitHub for a newer stable app release on launch and every 30 minutes after a successful check. If Wi-Fi is still connecting, it retries shortly and spaces out further attempts. When an update is available, the main bar shows **App update** and the Update All row reads **Update MisterZine + all**. On cards with Downloader, **Options → Data → Update MisterZine only** is available even before the first check succeeds. Connect to the internet to run it. Development and prerelease builds skip stable downgrade notices.
+
 By default, **Type** offers Stable and Beta directly and the **Game filters**
 section contains Rotation, Resolution, Genre, Patches, Controls, Buttons and
 Players. Enable **Options > List > Show non-arcade cores** to restore the broader Type
@@ -921,10 +916,7 @@ Choose **Run Update All** in Options. Browsing pauses while a dedicated screen
 shows stages, elapsed time, an activity spinner and a live log. Stages are
 milestones, not a percentage of bytes downloaded.
 
-When a new MisterZine is out, **Update MisterZine only** sits above that row:
-the same screen, but running Downloader for the misterzine database alone
-(`--run-only misterzine`), so nothing else on the card changes and the run
-takes seconds. When it finishes, A restarts MisterZine into the new version.
+**Update MisterZine only** sits above Update All on cards with Downloader. It runs Downloader for the MisterZine database alone (`--run-only misterzine`). You can start it manually even when the current version is already installed. After an upgrade, A restarts MisterZine into the new version.
 
 It uses whichever Downloader the card has: `Scripts/downloader.sh` when
 Downloader is installed as a script in its own right, and otherwise the copy

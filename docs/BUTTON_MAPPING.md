@@ -6,6 +6,8 @@ MiSTer's global settings or games. Button mapping replaces the older OK button
 and Button labels options; a choice saved in either still applies to a pad until
 you map that pad here.
 
+At startup, the button hints use the last controller you pressed if it is connected and has a saved mapping. On the first launch after upgrading, MisterZine can also recognize a single connected device with a saved mapping. When several mapped devices are connected, pressing one selects its labels for the next launch.
+
 ## Six basic controls
 
 An unfamiliar device is invited only when you press an input on it. That opening

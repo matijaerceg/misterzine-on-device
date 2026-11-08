@@ -72,9 +72,9 @@ scenarios = [
     # Options -> Version counts on, the last List row while groups are on:
     # the umbrella's name is followed by its (2)
     ["-show-beta", "-out", "out/umbrella-count-h", "-script",
-     "back; home; pagedown; right; down*13; shot option; right; shot option-on; back; type turtles; shot collapsed; enter; shot expanded"],
+     "back; home; pagedown; right; down*14; shot option; right; shot option-on; back; type turtles; shot collapsed; enter; shot expanded"],
     ["-show-beta", "-rot", "left", "-logical", "-out", "out/umbrella-count-t", "-script",
-     "back; home; pagedown; right; down*13; shot option; right; shot option-on; back; type turtles; shot collapsed; enter; shot expanded"],
+     "back; home; pagedown; right; down*14; shot option; right; shot option-on; back; type turtles; shot collapsed; enter; shot expanded"],
     # one member the last visit has not seen: the closed umbrella carries its
     # green date, which the member keeps once the umbrella opens
     # Core batches: under Build date the games one core build shipped
@@ -359,7 +359,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     # Options -> Layout: the four diagrams in the help box, the chosen one framed
     scenarios.append([*rotation, "-out", f"out/layout-previews-{orientation}", "-script",
-                      "back; home; pagedown; right; down*12; shot list; right; shot split; right; shot picture; right; shot text; down; shot dismissed"])
+                      "back; home; pagedown; right; down*13; shot list; right; shot split; right; shot picture; right; shot text; down; shot dismissed"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):
@@ -399,7 +399,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):
         scenarios.append([*rotation, "-show-beta", "-inset", str(inset), "-out", f"out/free-beta-{orientation}-{inset}", "-script",
-                          "back; home; right; down*5; shot description; enter; shot info; back; shot returned"])
+                          "back; home; right; down*6; shot description; enter; shot info; back; shot returned"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):
@@ -410,7 +410,7 @@ for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for inset in (15, 40):
         scenarios.append([*rotation, "-inset", str(inset), "-access-month", "202610", "-show-beta", "-out", f"out/forget-{orientation}-{inset}", "-script",
-                          "back; shot collapsed; home; right; down*5; shot rom-child; home; pagedown*4; right; end; up*4; enter; shot access; end; shot forget-row; enter; shot ask; press enter; wait 1000; shot half; release enter; shot released; back; shot kept; enter; hold enter 2000; shot forgotten; wait 3200; home; down; enter; type 123456; enter; shot restored"])
+                          "back; shot collapsed; home; right; down*6; shot rom-child; home; pagedown*4; right; end; up*4; enter; shot access; end; shot forget-row; enter; shot ask; press enter; wait 1000; shot half; release enter; shot released; back; shot kept; enter; hold enter 2000; shot forgotten; wait 3200; home; down; enter; type 123456; enter; shot restored"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     for art in ("video", "flyer"):
@@ -458,6 +458,12 @@ for rotation in ([], ["-rot", "left", "-logical"]):
             scenarios.append([*rotation, "-inset", str(inset), *fixture,
                               "-out", f"out/source-files-{name}-{orientation}-{inset}", "-script",
                               "back; home; pagedown; right; down*2; shot option; enter; shot files; down*12; shot middle; end; shot end; back; shot returned; up; right; down; enter; shot in-ini"])
+# Select the A-Z column in Options, then browse the dated Neo Geo titles.
+for rotation, orientation in [([], "h"), (["-rot", "left", "-logical"], "t")]:
+    scenarios.append([*rotation, "-local", "testdata/neogeo-rows.json", "-neogeo-view",
+                      "-out", f"out/az-date-{orientation}", "-script",
+                      "back; home; right; down*2; shot app-only; home; pagedown; right; down*12; shot build; right; shot debut; right; shot year; "
+                      "back; space; home; down*3; enter; type art of fighting; shot alphabetical; back; space; end; up; enter; shot neo-years"])
 # The opt-in Neo Geo game scan is the last row in List.
 for rotation, orientation in [([], "h"), (["-rot", "left", "-logical"], "t")]:
     scenarios.append([*rotation, "-out", f"out/neogeo-folder-{orientation}", "-script",

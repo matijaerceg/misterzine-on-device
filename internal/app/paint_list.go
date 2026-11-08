@@ -512,30 +512,39 @@ func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {
 	if a.mode == data.SortYear {
 		return
 	}
-	// date, right-aligned in its column
-	date := row.Updated
-	if a.mode == data.SortDebut {
-		date = row.Date
-	} else if a.mode == data.SortRecents {
-		date = a.launchedAt(row.K) // when it was launched last
-	}
 	// a row added or rebuilt since the last visit shows its date in the
 	// accent under every order: the app's form of the site's per-row dot
 	dateCol := pal.Muted
 	if a.seen != nil && a.seen.Unseen(row) {
 		dateCol = pal.Accent
 	}
-	text := a.dateCol(date)
-	if a.mode == data.SortMaker || a.mode == data.SortCore {
-		// the original release year as the catalogue has it, "198?" included
-		// (a core's games mostly share one build date, which would only
-		// repeat down its group)
-		text = gfx.Fit(strings.TrimSpace(row.Year), a.dateCols())
-		for len(text) < a.dateCols() {
-			text = " " + text
-		}
+	c.Text(r.Max.X-a.dateCols()*rf.W, y-1, rf, a.listDateText(row, nil), dateCol)
+}
+
+// Rows and collapsed groups use the same column. A group takes its newest
+// build or earliest MiSTer debut across the versions it contains.
+func (a *App) listDateText(row *data.Row, group *data.Group) string {
+	mode := a.mode
+	if mode == data.SortAlphabetical || mode == data.SortNeoGeo {
+		mode = a.AZDate()
 	}
-	c.Text(r.Max.X-a.dateCols()*rf.W, y-1, rf, text, dateCol)
+	switch mode {
+	case data.SortYear, data.SortMaker, data.SortCore:
+		year := gfx.Fit(strings.TrimSpace(row.Year), a.dateCols())
+		return strings.Repeat(" ", a.dateCols()-len(year)) + year
+	case data.SortDebut:
+		if group != nil {
+			return a.dateCol(group.Date(a.ds))
+		}
+		return a.dateCol(row.Date)
+	case data.SortRecents:
+		return a.dateCol(a.launchedAt(row.K))
+	default:
+		if group != nil {
+			return a.dateCol(group.Updated(a.ds))
+		}
+		return a.dateCol(row.Updated)
+	}
 }
 
 // paintTitle draws a list title into w pixels, in the narrow font when

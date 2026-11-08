@@ -73,12 +73,12 @@ func TestManualScanDismissAndUpdateNotice(t *testing.T) {
 		t.Fatalf("update actions with a new version out: %q, %q", entries[2].text, entries[3].text)
 	}
 	a.SetAppUpdate("")
-	if entries = a.optionsEntries(); entries[2].text != "Run Update All" || entries[3].kind != "update-result" {
+	if entries = a.optionsEntries(); entries[2].kind != "update-app" || strings.Contains(entries[2].help, "is available") || entries[3].text != "Run Update All" || entries[4].kind != "update-result" {
 		t.Fatal("stale update notice")
 	}
 }
 
-// With a new MisterZine announced, Options offers to fetch it alone: A on
+// Even before a release check succeeds, Options offers an app-only run: A on
 // that row opens the update screen for a MisterZine update and asks the
 // host for the app-only run; the ordinary row still asks for Update All.
 func TestUpdateMisterzineOnlyRow(t *testing.T) {
@@ -87,7 +87,6 @@ func TestUpdateMisterzineOnlyRow(t *testing.T) {
 		CanUpdateApp: func() bool { return true }}, data.Ingest(nil, "test", now), nil)
 	var actions []string
 	a.cfg.Action = func(kind, arg string) { actions = append(actions, kind+"="+arg) }
-	a.SetAppUpdate("v1.0.6")
 	a.openOptions()
 	expandOptionsForTest(a)
 	for i, e := range a.panel.entries {

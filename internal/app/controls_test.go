@@ -36,6 +36,63 @@ func mappingTap(a *App, clock *time.Time, ev platform.Event) {
 	ev.Pressed = false
 	a.Handle(ev)
 }
+func TestControllerLabelsAtStartup(t *testing.T) {
+	setup, clock, pads, _ := mappingApp()
+	cfg := setup.cfg
+	ds := setup.Data()
+	first := (*pads)[0]
+	first.InstanceID = "0001_0002_first"
+	second := first
+	second.InstanceID, second.Node = "0001_0002_second", "event7"
+	*pads = []support.Pad{first, second}
+	cfg.ControlProfiles.Profiles[first.InstanceID] = controls.Profile{
+		MappingVersion: 2, BasicsComplete: true,
+		Inputs: map[uint16]string{802: "up", 803: "down", 800: "left", 801: "right", 304: "enter", 305: "back", 307: "tab", 308: "space"},
+		Names:  map[uint16]string{304: "A", 305: "B", 307: "C", 308: "D"},
+	}
+	open := func(id string) *App {
+		cfg.LastControlID = id
+		return New(cfg, ds, nil)
+	}
+	// An upgrade has no last-used ID yet. The only configured controller
+	// already has the right legends, even with another pad plugged in.
+	a := open("")
+	if a.btn("A B X Y") != "A B C D" || a.screen != ScreenList {
+		t.Fatal("sole mapped stick did not supply startup labels")
+	}
+	cfg.ControlProfiles.Profiles[second.InstanceID] = controls.Profile{Style: "numbers"}
+	a = open("")
+	if a.btn("X Y") != "X Y" {
+		t.Fatal("chose arbitrarily between saved profiles")
+	}
+	writes := 0
+	cfg.Controls.LastUsedChanged = func() { writes++ }
+	for _, pad := range []support.Pad{second, first, first} {
+		mappingTap(a, clock, rawControl(pad, 802, platform.KeyUp))
+	}
+	mappingTap(a, clock, platform.Event{Key: platform.KeyUp, Source: "MiSTer virtual input"})
+	if a.LastControlID() != first.InstanceID || writes != 2 {
+		t.Fatalf("last control %q, state changes %d", a.LastControlID(), writes)
+	}
+	// A dock can front different sticks under one USB identity. Only
+	// the exposed identity selects a profile, even if the name changes.
+	(*pads)[0].Name = "Dock with a different stick"
+	(*pads)[0].Node = "event9"
+	a = open(a.LastControlID())
+	if a.btn("A B X Y") != "A B C D" || a.controlInput.node != "event9" {
+		t.Fatal("restart did not restore the stick on its new event node")
+	}
+	a = open(second.InstanceID)
+	if a.btn("X Y") != "3 4" {
+		t.Fatal("identical second controller did not retain its own labels")
+	}
+	*pads = (*pads)[1:]
+	a = open(first.InstanceID)
+	if a.btn("X Y") != "X Y" || a.LastControlID() != first.InstanceID {
+		t.Fatal("disconnected stick showed labels or lost its identity")
+	}
+}
+
 func TestPanelMappingSuppressesSearchAndLeavesOtherKeyboardsAlone(t *testing.T) {
 	a, _, pads, _ := mappingApp()
 	p := (*pads)[1]

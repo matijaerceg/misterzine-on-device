@@ -131,6 +131,22 @@ func TestRefreshUsesInstalledHashAndCoalescesRequests(t *testing.T) {
 	}
 }
 
+func TestAppCheckRetriesWhenWiFiConnectsLate(t *testing.T) {
+	h := backgroundHost(t)
+	offline := fmt.Errorf("network unreachable")
+	for _, want := range []time.Duration{15 * time.Second, 30 * time.Second, 30 * time.Minute, 15 * time.Second} {
+		err := offline
+		if want == 30*time.Minute {
+			err = nil // reachable again: resume normal checks
+		}
+		h.appCheckRunning = true
+		h.finishAppCheck("", err)
+		if delay := time.Until(h.nextAppCheck); h.appCheckRunning || delay < want-time.Second || delay > want {
+			t.Fatalf("retry in %v (want %v), running %t", delay, want, h.appCheckRunning)
+		}
+	}
+}
+
 func TestScanCoalescesAndReplacesStaleRowStatuses(t *testing.T) {
 	h := backgroundHost(t)
 	h.a.SetData(data.Ingest([]data.Row{{Base: "Arcade", K: "old", Core: "Missing"}}, "old", time.Now()), nil)

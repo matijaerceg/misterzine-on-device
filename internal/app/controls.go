@@ -34,6 +34,36 @@ func (a *App) controlDevices() []support.Pad {
 	return nil
 }
 
+// Before the first press, use the last controller if connected. Older state
+// has no ID, so an unambiguous connected profile can supply its labels.
+func (a *App) restoreControl() {
+	if len(a.cfg.ControlProfiles.Profiles) == 0 {
+		return
+	}
+	var selected support.Pad
+	for _, p := range a.controlDevices() {
+		id := controlID(p)
+		if !p.Direct && !p.Keyboard || a.cfg.LastControlID != "" && id != a.cfg.LastControlID {
+			continue
+		}
+		if _, ok := a.cfg.ControlProfiles.Profiles[id]; !ok {
+			continue
+		}
+		if selected.Node != "" && controlID(selected) != id {
+			return
+		}
+		// A single controller can also expose a companion keyboard node.
+		if selected.Node == "" || !selected.Direct && p.Direct {
+			selected = p
+		}
+	}
+	if selected.Node != "" {
+		a.controlInput.current, a.controlInput.node = controlID(selected), selected.Node
+	}
+}
+
+func (a *App) LastControlID() string { return a.cfg.LastControlID }
+
 func (a *App) controlBase(p support.Pad, profile controls.Profile) map[string]uint16 {
 	if p.Keyboard && profile.Panel {
 		return controls.PanelBase()
@@ -98,17 +128,6 @@ func (a *App) mapControlEvent(ev platform.Event) platform.Event {
 	if ev.Keyboard && (!ok || !p.Panel) {
 		return ev
 	}
-	if ev.Pressed {
-		a.controlInput.current = ev.DeviceID
-		a.controlInput.node = ev.Node
-		found := false
-		for _, d := range a.controlInput.devices {
-			found = found || (controlID(d) == ev.DeviceID && d.Node == ev.Node)
-		}
-		if !found {
-			a.controlDevices()
-		}
-	}
 	if !ok {
 		return ev
 	}
@@ -116,7 +135,7 @@ func (a *App) mapControlEvent(ev platform.Event) platform.Event {
 	// of its individual buttons has a different MisterZine action. A complete
 	// remap explicitly replaces Menu too, including when it is skipped.
 	if _, explicitMenu := p.Bindings["menu"]; ev.Key == platform.KeyMenu && !explicitMenu {
-		for _, d := range a.controlInput.devices {
+		for _, d := range a.controlDevices() {
 			if d.Node == ev.Node && controlID(d) == ev.DeviceID && strings.Contains(d.Menu, "+") {
 				return ev
 			}
@@ -339,7 +358,17 @@ func (a *App) controlEvent(ev platform.Event) (platform.Event, bool, bool) {
 	}
 	raw := ev
 	if ev.Pressed && ev.DeviceID != "" && ev.Node != "" {
-		a.controlInput.current, a.controlInput.node = ev.DeviceID, ev.Node
+		if a.controlInput.current != ev.DeviceID || a.controlInput.node != ev.Node {
+			a.controlInput.current, a.controlInput.node = ev.DeviceID, ev.Node
+			a.controlDevices() // the device may have been plugged in since startup
+			a.all = true
+		}
+		if a.cfg.LastControlID != ev.DeviceID {
+			a.cfg.LastControlID = ev.DeviceID
+			if h := a.cfg.Controls; h != nil && h.LastUsedChanged != nil {
+				h.LastUsedChanged()
+			}
+		}
 	}
 	token := controlToken(ev)
 	if a.controlInput.held == nil {

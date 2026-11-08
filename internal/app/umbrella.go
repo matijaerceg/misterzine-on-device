@@ -262,18 +262,7 @@ func (a *App) paintUmbrella(c *gfx.Canvas, r image.Rectangle, pos int, u *data.G
 	if l.PictureColumns || a.mode == data.SortYear {
 		return
 	}
-	text := ""
-	switch a.mode {
-	case data.SortDebut:
-		text = a.dateCol(u.Date(a.ds))
-	case data.SortMaker:
-		text = gfx.Fit(a.ds.Rows[u.Anchor].Year, a.dateCols())
-		for len(text) < a.dateCols() {
-			text = " " + text
-		}
-	default:
-		text = a.dateCol(u.Updated(a.ds))
-	}
+	text := a.listDateText(&a.ds.Rows[u.Anchor], u)
 	dateCol := pal.Muted
 	if a.umbrellaUnseen(u) {
 		dateCol = pal.Accent

@@ -65,6 +65,7 @@ type Config struct {
 	Support         *SupportHooks
 	Controls        *ControlsHooks
 	ControlProfiles controls.File
+	LastControlID   string
 
 	// FavoritesUnavailable prevents edits after the host could not read the file.
 	FavoritesUnavailable bool
@@ -200,6 +201,7 @@ type Config struct {
 	// DateFormat is the list date column: "mm-dd" (default), "dd-mm",
 	// "mon-d", "d-mon" or "yymmdd".
 	DateFormat string
+	AZDate     data.SortMode
 	// ListLayout is the main view's arrangement: "list" (default), "split",
 	// "picture" or "text" (see Layout.Style).
 	ListLayout string
@@ -405,6 +407,7 @@ func New(cfg Config, ds *data.Dataset, stored *data.SeenRecord) *App {
 		a.lock = newBetaLock()
 		a.lock.leaving = cfg.BetaEarlierBatch
 	}
+	a.restoreControl()
 	a.membersStart()
 	return a
 }
@@ -810,6 +813,17 @@ func (a *App) ListLayout() string {
 		}
 	}
 	return listLayouts[0]
+}
+
+var azDates = []data.SortMode{data.SortUpdated, data.SortDebut, data.SortYear}
+
+func (a *App) AZDate() data.SortMode {
+	switch a.cfg.AZDate {
+	case data.SortDebut, data.SortYear:
+		return a.cfg.AZDate
+	default:
+		return data.SortUpdated
+	}
 }
 
 // DateFormat is the list date column format, one of dateFormats.

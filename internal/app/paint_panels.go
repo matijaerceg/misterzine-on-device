@@ -3,6 +3,7 @@ package app
 import (
 	"image"
 	"image/color"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -584,9 +585,11 @@ func (a *App) optionsEntries() []panelEntry {
 	if a.FollowRotation() {
 		rotationHelp = "Set by the active MiSTer INI. Turn off Follow INI rotation above to rotate manually, or hold Select and press Left/Right on the list."
 	}
+	appUpdateHelp := "Run Downloader to check for and install a MisterZine update. Connect to the internet before starting."
 	updateText := "Run Update All"
 	updateHelp := "Update with live output and a stage bar. Hold " + a.btn("B") + " for 2 seconds to cancel; system writes finish first. A restart may be required."
 	if a.appUpdate != "" {
+		appUpdateHelp = "MisterZine " + a.appUpdate + " is available. Fetches just MisterZine through Downloader, then offers a restart."
 		updateText = "Update MisterZine + all"
 		updateHelp = "MisterZine " + a.appUpdate + " is available. Run Update All to bring it with everything else, then restart MisterZine to use it."
 	}
@@ -632,6 +635,8 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Gameplay, title or flyer; falls back to screenshots. Text layout has no picture. Details includes all available media."},
 		{text: "Date format", kind: "date-format", vals: dateFormatLabels, idx: dateIdx,
 			help: a.dateFormatHelp()},
+		{text: "A-Z date", kind: "az-date", vals: []string{viewLabels[data.SortUpdated], viewLabels[data.SortDebut], viewLabels[data.SortYear]}, idx: slices.Index(azDates, a.AZDate()),
+			help: "Choose the date beside each title in A-Z and Neo Geo A-Z. Unknown dates are blank."},
 		{text: "Layout", kind: "list-layout", vals: listLayouts, idx: layoutIdx,
 			help: layoutHelp},
 		{text: "Scan Neo Geo folder", kind: "scan-neogeo-folder", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ScanNeoGeoFolder],
@@ -700,14 +705,11 @@ func (a *App) optionsEntries() []panelEntry {
 			}
 		}
 	}
-	if a.appUpdate != "" && a.canUpdateApp() {
-		// a new MisterZine is out and this card can fetch it by itself: the
-		// quick way sits first, Downloader for this one database, above the
-		// full Update All that also brings it
+	if a.canUpdateApp() {
 		for i, e := range E {
 			if e.kind == "update" {
 				row := panelEntry{text: "Update MisterZine only", kind: "update-app", opensPage: true,
-					help: "MisterZine " + a.appUpdate + " is available. Fetches just MisterZine through Downloader in seconds, then offers a restart; nothing else changes."}
+					help: appUpdateHelp}
 				E = append(E[:i], append([]panelEntry{row}, E[i:]...)...)
 				break
 			}
@@ -1336,6 +1338,8 @@ func (a *App) stepValue(d int) bool {
 		a.cfg.TitleFont = titleFonts[i]
 	case "list-shot":
 		a.cfg.ListShot = listArtTypes[i]
+	case "az-date":
+		a.cfg.AZDate = azDates[i]
 	case "date-format":
 		a.cfg.DateFormat = dateFormats[i]
 		a.setRotation(a.rot) // the date column width changes the row layout

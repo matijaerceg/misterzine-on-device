@@ -109,6 +109,7 @@ type host struct {
 	checkPending                  bool
 	nextCheck                     time.Time
 	nextAppCheck                  time.Time
+	appCheckRetry                 time.Duration
 	appCheckRunning               bool
 	scanRunning                   bool
 	scanPending                   bool
@@ -335,6 +336,8 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		TitleFont:            h.settings.TitleFont,
 		ListShot:             h.settings.ListShot,
 		DateFormat:           h.settings.DateFormat,
+		AZDate:               h.settings.AZDate,
+		LastControlID:        h.state.LastControlID,
 		ListLayout:           h.settings.ListLayout,
 		ButtonLabels:         h.settings.ButtonLabels,
 		OKButtons:            h.settings.OKButtons,
@@ -526,7 +529,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 					"video":        h.a.VideoStats(),
 					"video_decode": h.img.VideoStats(),
 					"screensaver":  h.a.Screensaver(), "screensaver_active": h.a.ScreensaverActive(), "saver_style": h.a.SaverStyle(), "saver_info": h.a.SaverInfo(),
-					"title_font": h.a.TitleFont(), "list_shot": h.a.ListShot(), "date_format": h.a.DateFormat(), "button_labels": h.a.ButtonLabels(),
+					"title_font": h.a.TitleFont(), "list_shot": h.a.ListShot(), "date_format": h.a.DateFormat(), "az_date": h.a.AZDate().Name(), "button_labels": h.a.ButtonLabels(),
 				}
 			},
 			Quit: h.stop,
@@ -597,9 +600,9 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 			h.runOnUI(func() {
 				if !time.Now().Before(h.nextCheck) {
 					h.requestCheck()
-					if !h.updateRunning && !h.updatePending {
-						h.requestAppCheck()
-					}
+				}
+				if !h.updateRunning && !h.updatePending {
+					h.requestAppCheck()
 				}
 			})
 			wait = 15 * time.Second
@@ -1101,7 +1104,8 @@ func (h *host) saveAll(final bool) {
 	}
 	if h.dirty || final {
 		st := store.State{Schema: 1,
-			LastOpen: h.now().UTC().Format(time.RFC3339), DataHash: h.a.Data().Hash, Filters: h.a.Filters(), Versions: h.a.Versions(), Recents: h.a.Recents()}
+			LastControlID: h.a.LastControlID(),
+			LastOpen:      h.now().UTC().Format(time.RFC3339), DataHash: h.a.Data().Hash, Filters: h.a.Filters(), Versions: h.a.Versions(), Recents: h.a.Recents()}
 		if s := h.a.Seen(); s != nil {
 			st.Seen = s.State
 		}
@@ -1162,6 +1166,7 @@ func (h *host) saveAll(final bool) {
 		h.settings.TitleFont = h.a.TitleFont()
 		h.settings.ListShot = h.a.ListShot()
 		h.settings.DateFormat = h.a.DateFormat()
+		h.settings.AZDate = h.a.AZDate()
 		h.settings.ListLayout = h.a.ListLayout()
 		h.settings.ButtonLabels = h.a.ButtonLabels()
 		h.settings.OKButtons = h.a.OKButtons()

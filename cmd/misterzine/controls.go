@@ -40,6 +40,7 @@ func (h *host) configureControls(cfg *app.Config, root string) {
 		}
 		h.input.SetPanels(panels)
 	}
+	hooks.LastUsedChanged = func() { h.dirty = true }
 	cfg.Controls = hooks
 	hooks.Changed(profiles, access.Controls.Allowed(cfg.AccessMonth, cfg.ShowBetaFeatures))
 }
