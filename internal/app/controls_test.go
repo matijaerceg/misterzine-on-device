@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/controls"
+	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 	"github.com/matijaerceg/misterzine-on-device/internal/support"
 )
@@ -36,6 +37,56 @@ func mappingTap(a *App, clock *time.Time, ev platform.Event) {
 	ev.Pressed = false
 	a.Handle(ev)
 }
+func TestMappedViewButtonInPanels(t *testing.T) {
+	a, clock, pads, _ := mappingApp()
+	pad := &(*pads)[0]
+	pad.OK = "X"
+	a.cfg.ControlProfiles.Profiles[padID(*pad)] = controls.Profile{
+		MappingVersion: 2, BasicsComplete: true,
+		Inputs: map[uint16]string{802: "up", 803: "down", 800: "left", 801: "right", 307: "enter", 308: "back", 304: "tab", 305: "space"},
+		Names:  map[uint16]string{307: "A", 308: "B", 304: "C", 305: "D"},
+	}
+	// MiSTer's A slot is the stick's D (View). Its X slot is the stick's A (OK).
+	view := rawControl(*pad, 305, platform.KeyEnter)
+	ok := rawControl(*pad, 307, platform.KeyTab)
+
+	a.openOptions()
+	mappingTap(a, clock, view)
+	if a.optionSectionOpen("Data") {
+		t.Fatal("View opened the Data section in Options")
+	}
+	mappingTap(a, clock, ok)
+	if !a.optionSectionOpen("Data") {
+		t.Fatal("OK did not open the Data section in Options")
+	}
+
+	a.openViews("views")
+	mappingTap(a, clock, view)
+	if !a.viewOn(data.SortUpdated) {
+		t.Fatal("View disabled the highlighted view")
+	}
+	mappingTap(a, clock, ok)
+	if a.viewOn(data.SortUpdated) {
+		t.Fatal("OK did not disable the highlighted view")
+	}
+
+	openExpandedFilters(a)
+	for i, row := range a.panel.entries {
+		if row.kind == "install" && row.value == data.InstallFound {
+			a.panel.cursor = i
+			break
+		}
+	}
+	mappingTap(a, clock, view)
+	if a.filters.Install != data.InstallFound {
+		t.Fatal("View did not isolate the highlighted filter")
+	}
+	mappingTap(a, clock, view)
+	if a.filters.Install != "" {
+		t.Fatal("a second View press did not restore all install statuses")
+	}
+}
+
 func TestControllerLabelsAtStartup(t *testing.T) {
 	setup, clock, pads, _ := mappingApp()
 	cfg := setup.cfg
