@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.2.31 — 2026-11-08
+
+- MisterZine finds arcade collections with their own core folders, including Ongo Isolated. Run **Options → Data → Rescan card** after adding one. A game keeps its catalogue entry and favorites, and **Details** lets you choose between copies. Each copy launches with the core from its own collection. **Sources → in INI** also recognizes Ongo Isolated as Ongo. Thanks to segaman for reporting the missing games.
+- **Filters** opens with your saved choices. Counts fill in for expanded sections after the page transition, and a source’s cores are sorted when you expand it. On a MiSTer Pi with a saved source filter, the median time from a button press to the first visible change fell from 727 ms to 74 ms.
+- The button assigned to **View** no longer acts as a second **OK** in **Options** or **Available views**. It still switches between one choice and all choices in **Filters**. Thanks to PhiLongTran for reporting the extra button action.
+- **Favorites A-Z** and all 15 genre views show the original release year beside each title when known. **Recents** still shows when you last played.
+- The cabinet launch animation defaults to **Off**. Existing **Hold Start** and **Always** choices are respected. Holding Start in the game slideshow launches directly unless **Always** is selected, and releasing Start during the animation no longer carries the button press into the next screen.
+- Refresh the offline catalogue to the November 8 export with 2,938 entries.
+
 ## v1.2.30 — 2026-11-08
 
 - **A-Z** and **Neo Geo A-Z** now show the game's original release year beside its title. If the year is unknown, the space stays blank. The **Build date** and **MiSTer debut** views still show their respective dates.
