@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.2.30 — 2026-11-08
+
+- **A-Z** and **Neo Geo A-Z** now show the game's original release year beside its title. If the year is unknown, the space stays blank. The **Build date** and **MiSTer debut** views still show their respective dates.
+- On cards with Downloader, **Options → Data → Update MisterZine only** is available even if Wi-Fi is still connecting at startup or the current version is already installed. Connect before running it. A failed automatic check retries after 15 seconds and spaces out further attempts. **App update** still appears in the game list when a newer version is found.
+- The button hints use the last connected controller you used as soon as MisterZine opens. When upgrading with a single connected controller that has a saved mapping, its labels appear on the first launch. Sticks that share a USB adapter identity share its saved labels. Thanks to PhiLongTran for reporting the startup issues and suggesting original release years in A-Z.
+- Refresh the offline catalogue to the November 8 export with 2,938 entries.
+
 ## v1.2.29 — 2026-11-07
 
 - **Scan Neo Geo folder** now finds and launches cartridges from the same storage locations MiSTer checks, including USB drives and network shares. Rescan after plugging in or removing a drive to show the collection at the first matching location. Thanks to malento for reporting the missing USB games.
