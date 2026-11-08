@@ -48,8 +48,7 @@ type Settings struct {
 	RememberSort         bool          `json:"remember_sort"`
 	LastSort             data.SortMode `json:"last_sort"`
 	DefaultSort          data.SortMode `json:"default_sort"`
-	AZDate               data.SortMode `json:"az_date,omitempty"` // date shown in A-Z and Neo Geo A-Z
-	ViewsOff             []string      `json:"views_off"`         // Options -> Views: the list orders left out of the Y cycle, by name (updated, debut, year, alphabetical, maker, favorites, recents)
+	ViewsOff             []string      `json:"views_off"` // Options -> Views: the list orders left out of the Y cycle, by name (updated, debut, year, alphabetical, maker, favorites, recents)
 	ScanNeoGeoFolder     bool          `json:"scan_neogeo_folder,omitempty"`
 	NeoGeoView           bool          `json:"neogeo_view,omitempty"`    // optional Neo Geo A-Z view
 	GenreViewsOn         []string      `json:"genre_views_on,omitempty"` // Options -> Genre views: the genre views put into the cycle, by name (shmups, fighting, beatemups, runnguns, platformers and so on, see data.GenreViews); off unless listed

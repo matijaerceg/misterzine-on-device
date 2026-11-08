@@ -59,49 +59,32 @@ func TestListDateFormats(t *testing.T) {
 	}
 }
 
-func TestAZDateChoice(t *testing.T) {
-	a := New(Config{PhysW: 320, PhysH: 240, NeoGeoSupport: true, NeoGeoView: true},
-		data.Ingest([]data.Row{
-			{K: "one", Title: "One", Base: "Arcade", Year: "198?", Date: "2020-03-01", Updated: "2022-04-01"},
-			{K: "two", Title: "Two", Base: "Arcade", Year: "198?", Date: "2019-02-01", Updated: "2023-04-01"},
-		}, "", time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)), nil)
+func TestAZShowsOriginalYear(t *testing.T) {
+	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest([]data.Row{
+		{K: "one", Title: "One", Base: "Arcade", Year: "198?", Date: "2020-03-01", Updated: "2022-04-01"},
+		{K: "two", Title: "Two", Base: "Arcade", Year: "198?", Date: "2019-02-01", Updated: "2023-04-01"},
+	}, "", time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)), nil)
 	row := &a.ds.Rows[0]
 	group := &data.Group{Anchor: 0, Members: []int{0, 1}}
-	neo := &data.Row{Year: "1992"}
-	a.openOptions()
-	expandOptionsForTest(a)
-	for i, e := range a.panel.entries {
-		if e.kind == "az-date" {
-			a.panel.cursor = i
-			break
-		}
-	}
-	for i, tc := range []struct{ row, group, neo string }{
-		{"2022", "2023", ""}, {"2020", "2019", ""}, {"198?", "198?", "1992"},
+	for _, tc := range []struct {
+		mode       data.SortMode
+		row, group string
+	}{
+		{data.SortAlphabetical, "198?", "198?"}, {data.SortNeoGeo, "198?", "198?"},
+		{data.SortUpdated, "2022", "2023"}, {data.SortDebut, "2020", "2019"},
 	} {
-		if i != 0 && !a.stepValue(1) {
-			t.Fatal("could not change A-Z date")
+		a.mode = tc.mode
+		if got := strings.TrimSpace(a.listDateText(row, nil)); got != tc.row {
+			t.Errorf("%v row: got %q, want %q", tc.mode, got, tc.row)
 		}
-		for _, mode := range []data.SortMode{data.SortAlphabetical, data.SortNeoGeo} {
-			a.mode = mode
-			if got := strings.TrimSpace(a.listDateText(row, nil)); got != tc.row {
-				t.Fatalf("%v row: %q", mode, got)
-			}
-			if got := strings.TrimSpace(a.listDateText(row, group)); got != tc.group {
-				t.Fatalf("%v group: %q", mode, got)
-			}
-			if got := strings.TrimSpace(a.listDateText(neo, nil)); got != tc.neo {
-				t.Fatalf("%v cartridge: %q", mode, got)
-			}
+		if got := strings.TrimSpace(a.listDateText(row, group)); got != tc.group {
+			t.Errorf("%v group: got %q, want %q", tc.mode, got, tc.group)
 		}
 	}
-	a.mode = data.SortUpdated
-	if got := strings.TrimSpace(a.listDateText(row, nil)); got != "2022" {
-		t.Fatalf("Build date view changed: %q", got)
-	}
-	a.cfg.AZDate = data.SortRecents
-	if a.AZDate() != data.SortUpdated {
-		t.Fatal("invalid saved choice did not default to build date")
+	a.mode = data.SortAlphabetical
+	undated := data.Row{Updated: "2022-04-01"}
+	if got := strings.TrimSpace(a.listDateText(&undated, nil)); got != "" {
+		t.Errorf("unknown original year: got %q, want blank", got)
 	}
 }
 

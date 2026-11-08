@@ -524,12 +524,8 @@ func (a *App) paintRow(c *gfx.Canvas, r image.Rectangle, pos int) {
 // Rows and collapsed groups use the same column. A group takes its newest
 // build or earliest MiSTer debut across the versions it contains.
 func (a *App) listDateText(row *data.Row, group *data.Group) string {
-	mode := a.mode
-	if mode == data.SortAlphabetical || mode == data.SortNeoGeo {
-		mode = a.AZDate()
-	}
-	switch mode {
-	case data.SortYear, data.SortMaker, data.SortCore:
+	switch a.mode {
+	case data.SortAlphabetical, data.SortNeoGeo, data.SortMaker, data.SortCore:
 		year := gfx.Fit(strings.TrimSpace(row.Year), a.dateCols())
 		return strings.Repeat(" ", a.dateCols()-len(year)) + year
 	case data.SortDebut:

@@ -3,7 +3,6 @@ package app
 import (
 	"image"
 	"image/color"
-	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -635,8 +634,6 @@ func (a *App) optionsEntries() []panelEntry {
 			help: "Gameplay, title or flyer; falls back to screenshots. Text layout has no picture. Details includes all available media."},
 		{text: "Date format", kind: "date-format", vals: dateFormatLabels, idx: dateIdx,
 			help: a.dateFormatHelp()},
-		{text: "A-Z date", kind: "az-date", vals: []string{viewLabels[data.SortUpdated], viewLabels[data.SortDebut], viewLabels[data.SortYear]}, idx: slices.Index(azDates, a.AZDate()),
-			help: "Choose the date beside each title in A-Z and Neo Geo A-Z. Unknown dates are blank."},
 		{text: "Layout", kind: "list-layout", vals: listLayouts, idx: layoutIdx,
 			help: layoutHelp},
 		{text: "Scan Neo Geo folder", kind: "scan-neogeo-folder", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ScanNeoGeoFolder],
@@ -1338,8 +1335,6 @@ func (a *App) stepValue(d int) bool {
 		a.cfg.TitleFont = titleFonts[i]
 	case "list-shot":
 		a.cfg.ListShot = listArtTypes[i]
-	case "az-date":
-		a.cfg.AZDate = azDates[i]
 	case "date-format":
 		a.cfg.DateFormat = dateFormats[i]
 		a.setRotation(a.rot) // the date column width changes the row layout

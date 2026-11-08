@@ -336,7 +336,6 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		TitleFont:            h.settings.TitleFont,
 		ListShot:             h.settings.ListShot,
 		DateFormat:           h.settings.DateFormat,
-		AZDate:               h.settings.AZDate,
 		LastControlID:        h.state.LastControlID,
 		ListLayout:           h.settings.ListLayout,
 		ButtonLabels:         h.settings.ButtonLabels,
@@ -529,7 +528,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 					"video":        h.a.VideoStats(),
 					"video_decode": h.img.VideoStats(),
 					"screensaver":  h.a.Screensaver(), "screensaver_active": h.a.ScreensaverActive(), "saver_style": h.a.SaverStyle(), "saver_info": h.a.SaverInfo(),
-					"title_font": h.a.TitleFont(), "list_shot": h.a.ListShot(), "date_format": h.a.DateFormat(), "az_date": h.a.AZDate().Name(), "button_labels": h.a.ButtonLabels(),
+					"title_font": h.a.TitleFont(), "list_shot": h.a.ListShot(), "date_format": h.a.DateFormat(), "button_labels": h.a.ButtonLabels(),
 				}
 			},
 			Quit: h.stop,
@@ -1166,7 +1165,6 @@ func (h *host) saveAll(final bool) {
 		h.settings.TitleFont = h.a.TitleFont()
 		h.settings.ListShot = h.a.ListShot()
 		h.settings.DateFormat = h.a.DateFormat()
-		h.settings.AZDate = h.a.AZDate()
 		h.settings.ListLayout = h.a.ListLayout()
 		h.settings.ButtonLabels = h.a.ButtonLabels()
 		h.settings.OKButtons = h.a.OKButtons()

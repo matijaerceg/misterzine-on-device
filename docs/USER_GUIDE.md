@@ -180,9 +180,7 @@ by their original release year, newest first, with titles alphabetical within
 a year and unknown or uncertain years last; a header line names each year,
 the last one Year unknown, and the title takes the date column's room, with
 only the card status glyph kept at the right.
-Alphabetical sorting ignores case and accents and puts Game 2 before Game 10;
-a header line names each letter, with numbers and symbols under 0-9 and
-symbols before A.
+A-Z and Neo Geo A-Z show the game's original release year beside its title. An unknown year leaves that space blank. Titles sort alphabetically, ignoring case and accents, with Game 2 before Game 10. A header marks each letter. Numbers and symbols appear under 0-9 before A.
 Manufacturer groups the games by manufacturer: a header line names each one,
 manufacturers run A-Z with titles A-Z under them, the date column shows the
 original year, and L/R jump from manufacturer to manufacturer. Joint credits and licences count under the
@@ -596,7 +594,6 @@ and last row. Rows marked ↗ open another screen or editor.
   Layouts above. The help box draws the four at the current orientation
   with the chosen one framed. Hold Select and press Y on the list to cycle
   them there.
-- **A-Z date** chooses Build date (default), MiSTer debut or Original year for the date beside each game in A-Z and Neo Geo A-Z. Missing dates are blank. Original year shows the arcade release year for Neo Geo games with a known year.
 - **Date format:** how list dates read: MM-DD (default), DD-MM, Mon D (Sep 7),
   D Mon (7 Sep) or YYMMDD (260907). The help line shows today's date in the
   chosen format. Rows from earlier years show the year alone, except with

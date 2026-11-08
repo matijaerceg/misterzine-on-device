@@ -21,12 +21,12 @@ func TestListPreferencesPersist(t *testing.T) {
 	rows := []data.Row{{Base: "Arcade", K: "a", Title: "Alpha", Updated: "2026-09-10"}}
 	open := func() {
 		h.a = app.New(app.Config{PhysW: 320, PhysH: 240, RememberSort: h.settings.RememberSort,
-			TitleFont: h.settings.TitleFont, ListShot: h.settings.ListShot, DateFormat: h.settings.DateFormat, AZDate: h.settings.AZDate,
+			TitleFont: h.settings.TitleFont, ListShot: h.settings.ListShot, DateFormat: h.settings.DateFormat,
 			SettingsChanged: func() { h.setDirty = true },
 		}, data.Ingest(rows, "test", time.Now()), nil)
 	}
 	open()
-	if h.a.TitleFont() != "tall" || h.a.ListShot() != "gameplay" || h.a.DateFormat() != "mm-dd" || h.a.AZDate() != data.SortUpdated {
+	if h.a.TitleFont() != "tall" || h.a.ListShot() != "gameplay" || h.a.DateFormat() != "mm-dd" {
 		t.Fatal("fresh defaults: narrow tall titles, gameplay shots, MM-DD")
 	}
 	at := time.Now()
@@ -39,9 +39,9 @@ func TestListPreferencesPersist(t *testing.T) {
 	tap(platform.KeyPageDown)
 	tap(platform.KeyRight)
 	// up from Display, as a members' row can sit higher in List: Scan Neo Geo folder, Layout,
-	// A-Z date, Date format, Art type, Title font
+	// Date format, Art type, Title font
 	tap(platform.KeyPageDown)
-	for i := 0; i < 6; i++ {
+	for i := 0; i < 5; i++ {
 		tap(platform.KeyUp)
 	}
 	tap(platform.KeyLeft) // Title font: narrow
@@ -50,9 +50,6 @@ func TestListPreferencesPersist(t *testing.T) {
 	tap(platform.KeyDown)
 	tap(platform.KeyRight)
 	tap(platform.KeyRight) // Date format: Mon D
-	tap(platform.KeyDown)
-	tap(platform.KeyRight)
-	tap(platform.KeyRight) // A-Z date: Original year
 	now := time.Now()
 	h.autosave(now, false)
 	h.autosave(now.Add(500*time.Millisecond), false)
@@ -60,11 +57,11 @@ func TestListPreferencesPersist(t *testing.T) {
 	if h.settings, err = store.LoadSettings(filepath.Join(root, "settings.json")); err != nil {
 		t.Fatal(err)
 	}
-	if h.settings.TitleFont != "narrow" || h.settings.ListShot != "title" || h.settings.DateFormat != "mon-d" || h.settings.AZDate != data.SortYear {
+	if h.settings.TitleFont != "narrow" || h.settings.ListShot != "title" || h.settings.DateFormat != "mon-d" {
 		t.Fatalf("saved %+v", h.settings)
 	}
 	open()
-	if h.a.TitleFont() != "narrow" || h.a.ListShot() != "title" || h.a.DateFormat() != "mon-d" || h.a.AZDate() != data.SortYear {
+	if h.a.TitleFont() != "narrow" || h.a.ListShot() != "title" || h.a.DateFormat() != "mon-d" {
 		t.Fatal("preferences did not survive a restart")
 	}
 }
