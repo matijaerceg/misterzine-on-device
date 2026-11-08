@@ -10,8 +10,8 @@ import (
 // Arcade off, so the two never say the same thing twice.
 
 // arcadeEntries is the Arcade row of the Type section with its children
-// when open; count is the type's own tally.
-func (a *App) arcadeEntries(count int) []panelEntry {
+// when open.
+func (a *App) arcadeEntries() []panelEntry {
 	f := &a.filters
 	on := !f.BaseOff["Arcade"]
 	open := a.panel.yearOpen["Arcade"]
@@ -19,11 +19,10 @@ func (a *App) arcadeEntries(count int) []panelEntry {
 	if open {
 		arrow = gfx.ArrowDown
 	}
-	E := []panelEntry{{text: arrow + " Arcade", kind: "base", value: "Arcade", checked: on && len(f.BetaOff) == 0, partial: on && len(f.BetaOff) > 0, count: count, showCount: true}}
+	E := []panelEntry{{text: arrow + " Arcade", kind: "base", value: "Arcade", checked: on && len(f.BetaOff) == 0, partial: on && len(f.BetaOff) > 0}}
 	if open {
-		counts := a.facetCounts("beta")
 		for _, v := range []struct{ value, text string }{{"stable", "Stable"}, {"beta", "Beta"}} {
-			E = append(E, panelEntry{text: "  " + v.text, kind: "beta", value: v.value, checked: on && !f.BetaOff[v.value], count: counts[v.value], showCount: true})
+			E = append(E, panelEntry{text: "  " + v.text, kind: "beta", value: v.value, checked: on && !f.BetaOff[v.value]})
 		}
 	}
 	return E

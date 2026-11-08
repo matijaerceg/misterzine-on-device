@@ -128,7 +128,7 @@ func TestFilterOrderingLocalFirstAndUnknownLast(t *testing.T) {
 	}
 	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest(rows, "", time.Now()), nil)
 	var sources, playerChoices []string
-	for _, e := range a.rawFilterEntries() {
+	for _, e := range a.filterEntries() {
 		if e.header {
 			continue
 		}

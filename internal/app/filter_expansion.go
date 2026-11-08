@@ -10,32 +10,8 @@ import (
 func (a *App) resetFilterExpansion() {
 	a.panel.sectionClosed = map[string]bool{}
 	a.panel.yearOpen = map[string]bool{}
-	for _, e := range a.rawFilterEntries() {
-		if !e.header || e.info || e.kind == "" {
-			continue
-		}
-		a.panel.sectionClosed[e.kind] = !a.filterSectionActive(e.kind)
-	}
-	if a.rotationFilter() != "" {
-		a.panel.sectionClosed["rot"] = false
-	}
 	if len(a.filters.BetaOff) > 0 {
 		a.panel.yearOpen["Arcade"] = true // reveal the Stable/Beta choice
-	}
-	// and a source with some of its listed cores off; rawFilterEntries
-	// above listed them
-	for k := range a.filters.CoreOff {
-		if _, listed := a.panel.coreLabel[k]; !listed {
-			continue
-		}
-		if src := data.CoreKeySrc(k); !a.filters.SrcOff[src] && a.sourceOpens(src) {
-			a.panel.yearOpen[srcGroup(src)] = true
-		}
-	}
-	for src := range a.filters.SinglesOff {
-		if !a.filters.SrcOff[src] && a.sourceOpens(src) {
-			a.panel.yearOpen[srcGroup(src)] = true
-		}
 	}
 	// Reveal individual years only for partially selected decades.
 	total, hidden := map[string]int{}, map[string]int{}
@@ -51,6 +27,23 @@ func (a *App) resetFilterExpansion() {
 	}
 	for decade, n := range hidden {
 		a.panel.yearOpen[decade] = n > 0 && n < total[decade]
+	}
+}
+
+// Reveal active core choices on entry, once the source rows are known.
+func (a *App) revealFilteredCores() {
+	for k := range a.filters.CoreOff {
+		if _, listed := a.panel.coreLabel[k]; !listed {
+			continue
+		}
+		if src := data.CoreKeySrc(k); !a.filters.SrcOff[src] && a.sourceOpens(src) {
+			a.panel.yearOpen[srcGroup(src)] = true
+		}
+	}
+	for src := range a.filters.SinglesOff {
+		if !a.filters.SrcOff[src] && a.sourceOpens(src) {
+			a.panel.yearOpen[srcGroup(src)] = true
+		}
 	}
 }
 

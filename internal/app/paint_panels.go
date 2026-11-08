@@ -97,6 +97,7 @@ func (a *App) paintLabel(c *gfx.Canvas, x, y, cols int, e panelEntry, col color.
 }
 
 type panelState struct {
+	filterCounts  filterCountWork
 	entries       []panelEntry
 	cursor        int
 	top           int
@@ -292,8 +293,16 @@ func (a *App) facetRows(f data.Filters, arcade bool, fn func(i int)) {
 		if query != "" && !strings.Contains(searchText(d.Title), query) && !neoMatches(r, query) {
 			continue
 		}
-		unseen := a.seen != nil && a.seen.Unseen(r)
-		if f.Pass(r, d, a.status(i), a.familyFavorite(r), unseen, a.romState(i)) {
+		unseen := f.Since && a.seen != nil && a.seen.Unseen(r)
+		fav := f.FavOnly && a.familyFavorite(r)
+		status, rom := data.StatusUnknown, data.ROMUnknown
+		if f.Install != "" && f.Install != data.InstallAll {
+			status = a.status(i)
+		}
+		if f.ROMActive() {
+			rom = a.romState(i)
+		}
+		if f.Pass(r, d, status, fav, unseen, rom) {
 			if len(a.ds.NeoMembers(r)) > 1 {
 				neoRows = append(neoRows, i)
 			} else {
@@ -306,35 +315,29 @@ func (a *App) facetRows(f data.Filters, arcade bool, fn func(i int)) {
 	}
 }
 
-func (a *App) filterEntries() []panelEntry {
-	var out []panelEntry
-	hidden := false
-	for _, e := range a.rawFilterEntries() {
-		if e.header {
-			hidden = false
-			if !e.info && e.kind != "" {
-				hidden = a.panel.sectionClosed[e.kind]
-				arrow := gfx.ArrowDown
-				if hidden {
-					arrow = gfx.ArrowRight
-				}
-				mark := ""
-				if a.filterSectionActive(e.kind) {
-					mark = "* "
-				}
-				e.text = arrow + " " + mark + e.text
-			}
-			out = append(out, e)
-		} else if !hidden {
-			out = append(out, e)
-		}
-	}
-	return out
-}
-
-func (a *App) rawFilterEntries() []panelEntry {
+func (a *App) filterRows() []panelEntry {
 	f := &a.filters
 	var E []panelEntry
+	// On entry, reveal sections with active filters. Later rebuilds keep the
+	// user's expansion choices. Closed sections need only their heading.
+	opening := a.panel.sectionClosed != nil && len(a.panel.sectionClosed) == 0
+	openSection := func(title, kind string) bool {
+		active := a.filterSectionActive(kind)
+		closed := a.panel.sectionClosed[kind]
+		if opening {
+			closed = !active
+			a.panel.sectionClosed[kind] = closed
+		}
+		arrow := gfx.ArrowDown
+		if closed {
+			arrow = gfx.ArrowRight
+		}
+		if active {
+			title = "* " + title
+		}
+		E = append(E, panelEntry{text: arrow + " " + title, header: true, kind: kind})
+		return !closed
+	}
 	text := "Clear all filters"
 	if a.rotationFilter() != "" {
 		text = "Clear other filters"
@@ -344,50 +347,23 @@ func (a *App) rawFilterEntries() []panelEntry {
 		E = append(E, panelEntry{text: a.rotationFilterLabel(), info: true},
 			panelEntry{text: "Change in Options", info: true})
 	}
-	// These two sections count within the other filters and the search, as
-	// the facet sections below do: with beta games hidden, their missing
-	// jtbeta.zip no longer counts. The card scan screen keeps whole-catalogue
-	// numbers (cardCounts).
-	E = append(E, panelEntry{text: "On the card", header: true, kind: "install"})
-	counts := map[data.Status]int{}
-	all := 0
-	fi := a.effectiveFilters()
-	fi.Install = ""
-	a.facetRows(fi, false, func(i int) { counts[a.status(i)]++; all++ })
-	scanned := a.anyRow(func(i int) bool { return a.status(i) != data.StatusUnknown })
-	installCounts := map[string]int{
-		data.InstallAll:     all,
-		data.InstallFound:   counts[data.StatusCurrent] + counts[data.StatusOutdated] + counts[data.StatusLikelyOutdated] + counts[data.StatusFoundUndated],
-		data.InstallCurrent: counts[data.StatusCurrent], data.InstallOlder: counts[data.StatusOutdated] + counts[data.StatusLikelyOutdated],
-		data.InstallUndated: counts[data.StatusFoundUndated], data.InstallMissing: counts[data.StatusNotFound],
-	}
-	for _, v := range []struct{ val, text string }{{data.InstallAll, "everything"}, {data.InstallFound, "found on card"}, {data.InstallCurrent, "up to date"}, {data.InstallOlder, "older installed"}, {data.InstallUndated, "date unknown"}, {data.InstallMissing, "not found on card"}} {
-		cur := f.Install
-		if cur == "" {
-			cur = data.InstallAll
+	if openSection("On the card", "install") {
+		for _, v := range []struct{ val, text string }{{data.InstallAll, "everything"}, {data.InstallFound, "found on card"}, {data.InstallCurrent, "up to date"}, {data.InstallOlder, "older installed"}, {data.InstallUndated, "date unknown"}, {data.InstallMissing, "not found on card"}} {
+			cur := f.Install
+			if cur == "" {
+				cur = data.InstallAll
+			}
+			E = append(E, panelEntry{text: v.text, kind: "install", value: v.val, checked: cur == v.val})
 		}
-		E = append(E, panelEntry{text: v.text, kind: "install", value: v.val, checked: cur == v.val, count: installCounts[v.val], showCount: scanned})
 	}
-	if a.cfg.ROMKnown != nil {
-		E = append(E, panelEntry{text: "ROM check", header: true, kind: "rom"})
-		romCounts := map[data.ROMState]int{}
-		all := 0
-		fr := a.effectiveFilters()
-		fr.ROM = ""
-		a.facetRows(fr, false, func(i int) { romCounts[a.romState(i)]++; all++ })
-		// numbers once the check has answered anything, zeros included: a
-		// search that matches nothing, or only games off the card, reads (0)
-		checked := a.anyRow(func(i int) bool { return a.romState(i) != data.ROMUnknown })
+	if a.cfg.ROMKnown != nil && openSection("ROM check", "rom") {
 		cur := f.ROM
 		if cur == "" {
 			cur = data.ROMAll
 		}
-		for _, v := range []struct {
-			val, text string
-			n         int
-		}{{data.ROMAll, "everything", all}, {data.ROMLaunch, "problem in launch version", romCounts[data.ROMLaunchIssue]},
-			{data.ROMAny, "problem in any version", romCounts[data.ROMLaunchIssue] + romCounts[data.ROMOtherIssue]}, {data.ROMNone, "no problems found", romCounts[data.ROMClean]}} {
-			E = append(E, panelEntry{text: v.text, kind: "rom", value: v.val, checked: cur == v.val, count: v.n, showCount: checked})
+		for _, v := range []struct{ val, text string }{{data.ROMAll, "everything"}, {data.ROMLaunch, "problem in launch version"},
+			{data.ROMAny, "problem in any version"}, {data.ROMNone, "no problems found"}} {
+			E = append(E, panelEntry{text: v.text, kind: "rom", value: v.val, checked: cur == v.val})
 		}
 		if a.cfg.ROMProgress != nil {
 			if done, total := a.cfg.ROMProgress(); done < total {
@@ -400,21 +376,24 @@ func (a *App) rawFilterEntries() []panelEntry {
 			}
 		}
 	}
-	E = append(E, panelEntry{text: "Since last look", header: true, kind: "since"})
-	if a.seen == nil || a.seen.BaseRows == nil {
-		E = append(E, panelEntry{text: "available after your first visit", info: true})
-	} else {
-		E = append(E, panelEntry{text: "only rows changed since my last look", kind: "since", checked: f.Since})
+	if openSection("Since last look", "since") {
+		if a.seen == nil || a.seen.BaseRows == nil {
+			E = append(E, panelEntry{text: "available after your first visit", info: true})
+		} else {
+			E = append(E, panelEntry{text: "only rows changed since my last look", kind: "since", checked: f.Since})
+		}
 	}
 	hiddenSrc := a.effectiveFilters().SrcHidden
-	a.buildSourceCores()
 	section := func(title, kind string, facet map[string]int, off map[string]bool, label func(string) string) {
-		counts := a.facetCounts(kind)
-		var coreCounts map[string]int
-		if kind == "src" {
-			coreCounts = a.facetCounts("core")
+		if !openSection(title, kind) {
+			return
 		}
-		E = append(E, panelEntry{text: title, header: true, kind: kind})
+		if kind == "src" {
+			a.buildSourceCores()
+			if opening {
+				a.revealFilteredCores()
+			}
+		}
 		if kind == "rot" && a.rotationFilter() != "" {
 			E = append(E, panelEntry{text: a.rotationFilterLabel(), info: true})
 			return
@@ -437,27 +416,25 @@ func (a *App) rawFilterEntries() []panelEntry {
 		}
 		for _, v := range keys {
 			if kind == "base" && v == "Arcade" {
-				E = append(E, a.arcadeEntries(counts[v])...)
+				E = append(E, a.arcadeEntries()...)
 				continue
 			}
 			if kind == "src" && hiddenSrc[v] {
 				continue // Options -> Sources: installed; not a choice here
 			}
 			if kind == "src" {
-				E = append(E, a.sourceEntries(v, label(v), counts[v], coreCounts)...)
+				E = append(E, a.sourceEntries(v, label(v))...)
 				continue
 			}
-			E = append(E, panelEntry{text: label(v), kind: kind, value: v, checked: !off[v], count: counts[v], showCount: true})
+			E = append(E, panelEntry{text: label(v), kind: kind, value: v, checked: !off[v]})
 		}
 	}
 	ident := func(s string) string { return s }
 	if a.cfg.ShowNonArcade {
 		section("Type", "base", a.ds.Facets.Base, f.BaseOff, ident)
-	} else {
-		E = append(E, panelEntry{text: "Type", header: true, kind: "base"})
-		counts := a.facetCounts("beta")
+	} else if openSection("Type", "base") {
 		for _, v := range []struct{ value, text string }{{"stable", "Stable"}, {"beta", "Beta"}} {
-			E = append(E, panelEntry{text: v.text, kind: "beta", value: v.value, checked: !f.BaseOff["Arcade"] && !f.BetaOff[v.value], count: counts[v.value], showCount: true})
+			E = append(E, panelEntry{text: v.text, kind: "beta", value: v.value, checked: !f.BaseOff["Arcade"] && !f.BetaOff[v.value]})
 		}
 	}
 	section("Source/core", "src", a.ds.Facets.Src, f.SrcOff, func(s string) string {
@@ -475,7 +452,9 @@ func (a *App) rawFilterEntries() []panelEntry {
 	}
 	E = append(E, panelEntry{header: true, info: true},
 		panelEntry{text: gameHeading, header: true, info: true})
-	E = append(E, a.yearEntries()...)
+	if openSection("Original release year", "year") {
+		E = append(E, a.yearEntries()...)
+	}
 	section("Rotation", "rot", a.ds.Facets.Rot, f.RotOff, func(s string) string {
 		switch s {
 		case "h":
@@ -499,14 +478,12 @@ func (a *App) rawFilterEntries() []panelEntry {
 	})
 	// Patches: arcadepatches.com's kinds in a fixed order, shown once the
 	// catalogue names any patch at all
-	if a.anyPatch() {
-		counts := a.facetCounts("patch")
-		E = append(E, panelEntry{text: "Patches", header: true, kind: "patch"})
+	if a.anyPatch() && openSection("Patches", "patch") {
 		for _, v := range data.PatchKinds {
 			if _, ok := a.ds.Facets.Patch[v]; !ok {
 				continue
 			}
-			E = append(E, panelEntry{text: data.PatchLabel(v), kind: "patch", value: v, checked: !f.PatchOff[v], count: counts[v], showCount: true})
+			E = append(E, panelEntry{text: data.PatchLabel(v), kind: "patch", value: v, checked: !f.PatchOff[v]})
 		}
 	}
 	section("Controls", "directions", a.ds.Facets.Directions, f.DirectionsOff, func(s string) string {

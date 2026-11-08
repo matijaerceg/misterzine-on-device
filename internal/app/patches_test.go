@@ -73,7 +73,7 @@ func TestPatchFilterSection(t *testing.T) {
 	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest(patchRows(), "", time.Now()), nil)
 	var labels []string
 	in := false
-	for _, e := range a.rawFilterEntries() {
+	for _, e := range a.filterEntries() {
 		if e.header {
 			in = e.kind == "patch"
 			continue
@@ -99,7 +99,7 @@ func TestPatchFilterSection(t *testing.T) {
 
 	// a catalogue without any patch shows no Patches section
 	b := New(Config{PhysW: 320, PhysH: 240}, data.Ingest(patchRows()[2:], "", time.Now()), nil)
-	for _, e := range b.rawFilterEntries() {
+	for _, e := range b.filterEntries() {
 		if e.kind == "patch" {
 			t.Fatal("Patches section without patches")
 		}

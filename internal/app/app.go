@@ -1140,6 +1140,7 @@ func (a *App) Tick(now time.Time) (changed bool) {
 	a.readNoticeBar()
 	defer func() { changed = a.settleNotice() || changed }() // a held key's repeats count as presses
 	changed = a.tickPageTransition(now)
+	changed = a.tickFilterCounts(now) || changed
 	changed = a.tickHoldLaunch(now) || changed
 	changed = a.tickLaunchCab(now) || changed
 	a.validateLayoutMotion() // the motion itself steps once per displayed frame (LayoutMotionFrame)
@@ -1190,6 +1191,7 @@ func (a *App) Frame(now time.Time) (changed bool) {
 	defer func() { changed = a.settleNotice() || changed }()
 	a.saver.lastInput = now // a held direction is still activity
 	changed = a.tickPageTransition(now)
+	changed = a.tickFilterCounts(now) || changed
 	changed = a.tickHoldLaunch(now) || changed
 	changed = a.tickLaunchCab(now) || changed
 	changed = a.LayoutMotionFrame() || changed
@@ -1226,6 +1228,9 @@ func (a *App) NextTick() time.Time {
 		return a.cfg.TimerNow()
 	}
 	t := a.rep.nextAt()
+	if next := a.panel.filterCounts.next; a.screen == ScreenFilter && !a.saver.active && !a.PageTransitionRunning() && !next.IsZero() && (t.IsZero() || next.Before(t)) {
+		t = next
+	}
 	if n := a.nextControlDiscovery(); !n.IsZero() && (t.IsZero() || n.Before(t)) {
 		t = n
 	}
@@ -1558,6 +1563,9 @@ func (a *App) neighbourhood() {
 // Paint renders whatever changed and returns the physical frame with the
 // rectangles that need presenting (nil when nothing changed).
 func (a *App) Paint() (*image.RGBA, []image.Rectangle) {
+	if a.screen == ScreenFilter {
+		defer a.scheduleFilterCounts()
+	}
 	if a.cab.active {
 		a.all = true
 		if a.cab.ahead != nil {

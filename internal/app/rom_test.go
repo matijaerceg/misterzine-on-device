@@ -166,7 +166,7 @@ func TestROMListNamedInFilters(t *testing.T) {
 	info := func(a *App) []string {
 		var out []string
 		in := false
-		for _, e := range a.rawFilterEntries() {
+		for _, e := range a.filterEntries() {
 			if e.header && !e.info {
 				in = e.kind == "rom"
 				continue

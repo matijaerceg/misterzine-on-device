@@ -6,18 +6,17 @@ import (
 )
 
 func (a *App) yearEntries() []panelEntry {
-	entries := []panelEntry{{text: "Original release year", header: true, kind: "year"}}
+	var entries []panelEntry
 	groups := map[string]int{}
 	for y, n := range a.ds.Facets.Year {
 		groups[data.Decade(y)] += n
 	}
-	counts := a.facetCounts("year")
 	for _, decade := range sortedFacet(groups) {
 		if decade == "" {
-			entries = append(entries, panelEntry{text: "Unknown", kind: "year", value: "", checked: !a.filters.YearOff[""], count: counts[""], showCount: true})
+			entries = append(entries, panelEntry{text: "Unknown", kind: "year", value: "", checked: !a.filters.YearOff[""]})
 			continue
 		}
-		on, total, count := 0, 0, 0
+		on, total := 0, 0
 		var years []panelEntry
 		for _, y := range sortedFacet(a.ds.Facets.Year) {
 			if data.Decade(y) != decade {
@@ -27,14 +26,13 @@ func (a *App) yearEntries() []panelEntry {
 			if !a.filters.YearOff[y] {
 				on++
 			}
-			count += counts[y]
-			years = append(years, panelEntry{text: "  " + y, kind: "year", value: y, checked: !a.filters.YearOff[y], count: counts[y], showCount: true})
+			years = append(years, panelEntry{text: "  " + y, kind: "year", value: y, checked: !a.filters.YearOff[y]})
 		}
 		arrow := gfx.ArrowRight
 		if a.panel.yearOpen[decade] {
 			arrow = gfx.ArrowDown
 		}
-		entries = append(entries, panelEntry{text: arrow + " " + decade, kind: "decade", value: decade, checked: on == total, partial: on > 0 && on < total, count: count, showCount: true})
+		entries = append(entries, panelEntry{text: arrow + " " + decade, kind: "decade", value: decade, checked: on == total, partial: on > 0 && on < total})
 		if a.panel.yearOpen[decade] {
 			entries = append(entries, years...)
 		}

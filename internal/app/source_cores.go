@@ -75,8 +75,8 @@ func (a *App) singlesOn(f *data.Filters, src string) (on, total int) {
 }
 
 // sourceEntries is one source's row of the Source/core section with its
-// cores when open; count is the source's own tally.
-func (a *App) sourceEntries(src, text string, count int, counts map[string]int) []panelEntry {
+// cores when open.
+func (a *App) sourceEntries(src, text string) []panelEntry {
 	f := &a.filters
 	on := !f.SrcOff[src]
 	off := 0
@@ -90,27 +90,23 @@ func (a *App) sourceEntries(src, text string, count int, counts map[string]int) 
 		off++
 	}
 	if !a.sourceOpens(src) {
-		return []panelEntry{{text: text, kind: "src", value: src, checked: on && off == 0, partial: on && off > 0, count: count, showCount: true}}
+		return []panelEntry{{text: text, kind: "src", value: src, checked: on && off == 0, partial: on && off > 0}}
 	}
 	open := a.panel.yearOpen[srcGroup(src)]
 	arrow := gfx.ArrowRight
 	if open {
 		arrow = gfx.ArrowDown
 	}
-	E := []panelEntry{{text: arrow + " " + text, kind: "src", value: src, checked: on && off == 0, partial: on && off > 0, count: count, showCount: true}}
+	E := []panelEntry{{text: arrow + " " + text, kind: "src", value: src, checked: on && off == 0, partial: on && off > 0}}
 	if !open {
 		return E
 	}
 	if singles > 0 {
-		n := 0
-		for _, k := range a.panel.srcSingles[src] {
-			n += counts[k]
-		}
 		E = append(E, panelEntry{text: "  " + singlesText, kind: "singles", value: src, checked: on && singlesOn == singles,
-			partial: on && singlesOn > 0 && singlesOn < singles, count: n, showCount: true})
+			partial: on && singlesOn > 0 && singlesOn < singles})
 	}
 	for _, k := range a.panel.srcCores[src] {
-		E = append(E, panelEntry{text: "  " + a.panel.coreLabel[k], kind: "core", value: k, checked: on && !f.CoreOff[k], count: counts[k], showCount: true})
+		E = append(E, panelEntry{text: "  " + a.panel.coreLabel[k], kind: "core", value: k, checked: on && !f.CoreOff[k]})
 	}
 	return E
 }
