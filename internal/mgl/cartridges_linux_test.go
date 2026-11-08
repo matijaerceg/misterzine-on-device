@@ -12,7 +12,7 @@ import (
 func TestLargeNeoGeoCollection(t *testing.T) {
 	const offset = 1<<32 + 100
 	card := t.TempDir()
-	folder := filepath.Join(card, "games", "NeoGeo")
+	folder := filepath.Join(card, "games", "NEOGEO")
 	if err := os.MkdirAll(folder, 0755); err != nil {
 		t.Fatal(err)
 	}

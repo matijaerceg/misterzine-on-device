@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Scan Neo Geo folder** now finds and launches cartridges from the same storage locations MiSTer checks, including USB drives and network shares. Rescan after plugging in or removing a drive to show the collection at the first matching location.
+
 ## v1.2.28 — 2026-11-07
 
 - Neo Geo shortcuts and games found by the folder scan show arcade game details, including year, maker, genre, players and controls where known. The details are built in and work offline. All 161 recognised games have a gameplay screenshot, and 160 also have a title screen. MisterZine downloads the pictures on demand or through screenshot prefetch and keeps them on the card.

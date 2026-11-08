@@ -195,8 +195,8 @@ func TestNeoGeoFolderScanAndLaunch(t *testing.T) {
 
 func TestNeoGeoFolderZIPErrorIsIsolatedAndOnlyReadOnOptIn(t *testing.T) {
 	h := backgroundHost(t)
-	putCartFile(t, h.card, "games/NeoGeo/damaged.zip", "not a zip")
-	putCartFile(t, h.card, "games/NeoGeo/3countb.neo", "fixture")
+	putCartFile(t, h.card, "games/NEOGEO/damaged.zip", "not a zip")
+	putCartFile(t, h.card, "games/NEOGEO/3countb.neo", "fixture")
 	writeNeoGeoShortcut(t, h.card, "_Favorites/Slug.mgl", "_Console/NeoGeo")
 	for _, on := range []bool{false, true} {
 		result, menuErr, folderErr := h.scanNeoGeo(on)
@@ -206,12 +206,79 @@ func TestNeoGeoFolderZIPErrorIsIsolatedAndOnlyReadOnOptIn(t *testing.T) {
 	}
 }
 
+func TestNeoGeoUSBScanLaunchAndRemoval(t *testing.T) {
+	h := backgroundHost(t)
+	h.card = filepath.Join(t.TempDir(), "fat")
+	const sd = "games/NEOGEO/"
+	const usb = "../usb0/games/NEOGEO/"
+	const member = "pack.zip/World/3countb.neo"
+	putCartFile(t, h.card, "_Console/NeoGeo.rbf", "core")
+	putCartFile(t, h.card, sd+"mslug.neo", "sd")
+	putCartFile(t, h.card, usb+"mslug.neo", "usb")
+	putCartFile(t, h.card, usb+"kof98.neo", "USB-only loose cartridge")
+	putPack(t, h.card, usb+"pack.zip", "World/3countb.neo")
+	writeNeoGeoShortcut(t, h.card, "_Favorites/Slug.mgl", "_Console/NeoGeo")
+	// This SD-pinned shortcut must not hide the USB edition of the game.
+	putCartFile(t, h.card, "_Favorites/Bout.mgl", `<mistergamedescription><rbf>_Console/NeoGeo</rbf><file type="f" index="1" path="`+filepath.Join(h.card, sd, member)+`"/></mistergamedescription>`)
+	h.setScanNeoGeoFolder(true)
+	finishBackground(t, h)
+	if got := folderGames(h); !slices.Equal(got, []string{usb + "kof98.neo", usb + member}) {
+		t.Fatalf("USB scan with relative and pinned shortcuts: %v", got)
+	}
+	cold := backgroundHost(t)
+	cold.card, cold.root = h.card, h.root
+	cold.settings.ScanNeoGeoFolder = true
+	rows, _, _ := cold.withSavedLocalRows(catalogueRows(), "cat")
+	for _, target := range []string{usb + member, usb + "kof98.neo"} {
+		if !slices.ContainsFunc(rows, func(r data.Row) bool { return r.IsNeoGeoFile() && r.MRA == target }) {
+			t.Fatalf("missing cached USB cartridge %s", target)
+		}
+		launch, err := cold.prepareLaunch(target)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, err := os.ReadFile(launch)
+		if err != nil {
+			t.Fatal(err)
+		}
+		d, err := mgl.Parse(strings.NewReader(string(b)))
+		if err != nil || len(d.Files) != 1 || d.Files[0].Path != filepath.Join(h.card, target) {
+			t.Fatalf("USB launch file: %+v, %v", d, err)
+		}
+	}
+	if backing, ok := mgl.GameBackingPath(usb + member); !ok || backing != usb+"pack.zip" {
+		t.Fatalf("wrong file for USB availability: %q", backing)
+	}
+	// An empty folder at the USB root wins over USB/games and the SD.
+	empty := filepath.Join(h.card, "../usb0/NEOGEO")
+	if err := os.Mkdir(empty, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := cold.prepareLaunch(usb + member); err == nil {
+		t.Fatal("cached launch ignored changed storage priority")
+	}
+	h.requestScan()
+	finishBackground(t, h)
+	if got := folderGames(h); len(got) != 0 {
+		t.Fatalf("expected empty USB library, found %v", got)
+	}
+	putCartFile(t, h.card, sd+"garou.neo", "sd")
+	if err := os.Rename(filepath.Join(h.card, "../usb0"), filepath.Join(h.card, "../unplugged")); err != nil {
+		t.Fatal(err)
+	}
+	h.requestScan()
+	finishBackground(t, h)
+	if got := folderGames(h); !slices.Equal(got, []string{sd + "garou.neo"}) {
+		t.Fatalf("expected SD library after rescan, found %v", got)
+	}
+}
+
 // A returning player can press Start on a cached row before even the first
 // core/status result arrives. Use the same core and ZIP member as a later launch.
 func TestCachedNeoGeoLaunchBeforeFirstScan(t *testing.T) {
 	h := backgroundHost(t)
 	h.settings.ScanNeoGeoFolder = true
-	const pack = "games/NeoGeo/Collection.zip"
+	const pack = "games/NEOGEO/Collection.zip"
 	putPack(t, h.card, pack, "Arcade/3countb.neo")
 	const core = "_Console/_SNK/NeoGeo_20261101.rbf"
 	putCartFile(t, h.card, core, "fixture")
@@ -254,7 +321,7 @@ func TestNeoGeoFolderPreferenceAndLinkedLibrary(t *testing.T) {
 	library := t.TempDir()
 	putCartFile(t, library, "3countb.neo", "network fixture")
 	putCartFile(t, h.card, "games/other.txt", "fixture")
-	if err := os.Symlink(library, filepath.Join(h.card, "games", "NeoGeo")); err != nil {
+	if err := os.Symlink(library, filepath.Join(h.card, "games", "NEOGEO")); err != nil {
 		t.Fatal(err)
 	}
 	h.a = app.New(app.Config{PhysW: 320, PhysH: 240, NeoGeoSupport: true, Action: func(kind, arg string) {

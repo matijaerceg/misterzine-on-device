@@ -11,16 +11,29 @@ import (
 	"path/filepath"
 	"strings"
 	"unicode"
+
+	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
 
 // A row carries the card-relative target, including the path inside a collection ZIP.
 func gamePath(target string) (folder, rel string, ok bool) {
-	parts := strings.SplitN(target, "/", 3)
-	if len(parts) != 3 || parts[0] != "games" || !strings.EqualFold(parts[1], "NeoGeo") ||
-		!fs.ValidPath(target) || badPath(target) || strings.IndexFunc(target, unicode.IsControl) >= 0 || len(target) > 900 {
+	if len(target) > 900 || badPath(target) || strings.IndexFunc(target, unicode.IsControl) >= 0 {
 		return "", "", false
 	}
-	return parts[0] + "/" + parts[1], parts[2], true
+	for parent := range platform.GameDirParents {
+		rest := target
+		if parent != "" {
+			var found bool
+			if rest, found = strings.CutPrefix(target, parent+"/"); !found {
+				continue
+			}
+		}
+		name, rel, ok := strings.Cut(rest, "/")
+		if ok && strings.EqualFold(name, "NeoGeo") && fs.ValidPath(rest) {
+			return path.Join(parent, name), rel, true
+		}
+	}
+	return "", "", false
 }
 
 // GameBackingPath is the file or directory the operating system can stat.
@@ -112,6 +125,9 @@ func ValidateCartridge(card, target string) (string, error) {
 	if !ok {
 		return "", errors.New("invalid Neo Geo cartridge path")
 	}
+	if folder != neoGeoFolder(card) {
+		return "", errors.New("Neo Geo storage changed; rescan the card")
+	}
 	root, err := os.OpenRoot(filepath.Join(card, filepath.FromSlash(folder)))
 	if err != nil {
 		return "", err
@@ -158,69 +174,93 @@ func ValidateCartridge(card, target string) (string, error) {
 // A shortcut may use the core's games folder, a custom setname, or the
 // common ../../../../../media/fat/... convention. Keep paths on other
 // volumes distinct even when they have the same game filename.
-func shortcutGamePath(card string, d Document) string {
-	core := datedCore.ReplaceAllString(strings.TrimSuffix(strings.ToLower(path.Base(d.RBF)), ".rbf"), "")
-	home := core
+func shortcutGamePath(card, folder string, d Document) string {
+	file := d.Files[0]
+	target := file.Path
+	home := datedCore.ReplaceAllString(strings.TrimSuffix(strings.ToLower(path.Base(d.RBF)), ".rbf"), "")
 	if d.Setname.Name != "" && d.Setname.SameDir != "1" {
 		home = d.Setname.Name
 	}
-	base := path.Join(filepath.ToSlash(card), "games", home)
-	target := d.Files[0].Path
-	if strings.EqualFold(d.Files[0].Root, "games") {
-		target = path.Join(filepath.ToSlash(card), "games", strings.TrimLeft(target, "/"))
-	} else if d.Files[0].Root != "" {
+	rootGames := strings.EqualFold(file.Root, "games")
+	if rootGames {
+		home, target, _ = strings.Cut(strings.TrimLeft(target, "/"), "/")
+		target = strings.TrimLeft(target, "/")
+	} else if file.Root != "" {
 		return ""
-	} else if !path.IsAbs(target) {
+	}
+	if !path.IsAbs(target) {
+		if home == "." || !fs.ValidPath(home) || strings.Contains(home, "/") {
+			return ""
+		}
+		base := folder
+		if rootGames || !strings.EqualFold(home, "NeoGeo") {
+			var ok bool
+			if base, ok = platform.FindGameDir(card, home); !ok {
+				base = path.Join("games", home)
+			}
+		}
+		base = path.Join(filepath.ToSlash(card), base)
 		target = path.Join(base, target)
 	}
+	library := path.Join(filepath.ToSlash(card), folder)
 	target = path.Clean(target)
-	games := path.Join(filepath.ToSlash(card), "games") + "/"
-	if !strings.HasPrefix(target, games) {
+	parent, ok := strings.CutPrefix(target, path.Dir(library)+"/")
+	name, rel, nested := strings.Cut(parent, "/")
+	if !ok || !nested || !strings.EqualFold(name, path.Base(library)) {
 		return ""
 	}
-	folder, rel, ok := strings.Cut(strings.TrimPrefix(target, games), "/")
-	if !ok || !strings.EqualFold(folder, "NeoGeo") {
+	if name == path.Base(library) {
+		return rel
+	}
+	// Absolute MGL paths can spell the folder differently on FAT.
+	original, err := os.Stat(filepath.FromSlash(library))
+	other, otherErr := os.Stat(filepath.Join(filepath.Dir(library), name))
+	if err == nil && otherErr == nil && os.SameFile(original, other) {
+		return rel
+	}
+	return ""
+}
+
+// The stock core calls its folder NEOGEO. Keep the on-disk spelling in
+// targets so upgrades retain existing SD favourites and version choices.
+func neoGeoFolder(card string) string {
+	selected, found := platform.FindGameDir(card, "NEOGEO")
+	if !found {
 		return ""
 	}
-	return rel
+	parent := path.Dir(selected)
+	// ReadDir sorts NEOGEO first if the filesystem has multiple spellings.
+	entries, _ := os.ReadDir(filepath.Join(card, filepath.FromSlash(parent)))
+	for _, e := range entries {
+		if strings.EqualFold(e.Name(), "NEOGEO") {
+			return path.Join(parent, e.Name())
+		}
+	}
+	return selected // a known name can be traversable even if its parent can't be listed
 }
 
 // ScanCartridges is called only for an opted-in card scan. The chosen library
 // root may be a NAS mount or link. WalkDir does not follow links inside it.
 func ScanCartridges(card string, result *Result) error {
-	gameDirs, err := os.ReadDir(filepath.Join(card, "games"))
-	if errors.Is(err, fs.ErrNotExist) {
+	folder := neoGeoFolder(card)
+	if folder == "" {
 		return nil
 	}
+	root, err := os.OpenRoot(filepath.Join(card, filepath.FromSlash(folder)))
 	if err != nil {
 		return err
 	}
+	defer root.Close()
 	shortcuts := map[string]bool{}
 	for _, entry := range result.Entries {
 		if entry.Decision == "included" && entry.Document != nil {
-			shortcuts[shortcutGamePath(card, *entry.Document)] = true
+			shortcuts[shortcutGamePath(card, folder, *entry.Document)] = true
 		}
 	}
-	count := 0
-	for _, dir := range gameDirs {
-		if !strings.EqualFold(dir.Name(), "NeoGeo") {
-			continue
-		}
-		folder := path.Join("games", dir.Name())
-		root, err := os.OpenRoot(filepath.Join(card, filepath.FromSlash(folder)))
-		if err != nil {
-			return err
-		}
-		err = walkLibrary(root, folder, result, shortcuts, &count)
-		root.Close()
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return walkLibrary(root, folder, result, shortcuts)
 }
 
-func walkLibrary(root *os.Root, folder string, result *Result, shortcuts map[string]bool, count *int) error {
+func walkLibrary(root *os.Root, folder string, result *Result, shortcuts map[string]bool) error {
 	add := func(rel string, game Game) {
 		if shortcuts[rel] {
 			return
@@ -233,6 +273,7 @@ func walkLibrary(root *os.Root, folder string, result *Result, shortcuts map[str
 		result.Rows = append(result.Rows, game.row(key, "NeoGeo", target))
 	}
 	limit := errors.New("Neo Geo game folder scan limit reached")
+	count := 0
 	var walk func(fs.FS, string) error
 	walk = func(fsys fs.FS, archive string) error {
 		return fs.WalkDir(fsys, ".", func(p string, entry fs.DirEntry, err error) error {
@@ -240,8 +281,8 @@ func walkLibrary(root *os.Root, folder string, result *Result, shortcuts map[str
 				result.Problems = append(result.Problems, fmt.Sprintf("%s: %v", path.Join(folder, archive, p), err))
 				return nil
 			}
-			*count++
-			if *count > MaxEntries {
+			count++
+			if count > MaxEntries {
 				return limit
 			}
 			if p == "." || entry.Type()&fs.ModeSymlink != 0 {

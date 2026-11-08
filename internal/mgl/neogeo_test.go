@@ -81,7 +81,7 @@ func TestScanWholeNeoGeoCatalogue(t *testing.T) {
 	}
 	card := t.TempDir()
 	menu := filepath.Join(card, "_NeoGeo")
-	folder := filepath.Join(card, "games", "NeoGeo")
+	folder := filepath.Join(card, "games", "NEOGEO")
 	if err := os.MkdirAll(folder, 0755); err != nil {
 		t.Fatal(err)
 	}

@@ -635,7 +635,7 @@ func (a *App) optionsEntries() []panelEntry {
 		{text: "Layout", kind: "list-layout", vals: listLayouts, idx: layoutIdx,
 			help: layoutHelp},
 		{text: "Scan Neo Geo folder", kind: "scan-neogeo-folder", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.cfg.ScanNeoGeoFolder],
-			help: "Find arcade games in games/NeoGeo, including ZIP packs. Off uses your existing shortcuts. Changing this rescans the card."},
+			help: "Find arcade games and ZIP packs in MiSTer's Neo Geo folder, including on USB. Off uses your existing shortcuts. Changing this rescans the card."},
 		spacer, group(gfx.SectionDisplay, "Display"),
 		{text: "Follow INI rotation", kind: "follow-rotation", vals: []string{"off", "on"}, idx: map[bool]int{false: 0, true: 1}[a.FollowRotation()],
 			help: "On (default): match osd_rotate in the active MiSTer INI at every startup. Off: rotate manually below. Never edits the INI."},

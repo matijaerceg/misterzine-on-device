@@ -17,6 +17,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
 
 // ROMResult is the verdict on one MRA's ROM files. Text is empty when
@@ -1139,17 +1141,8 @@ func (c *ROMCheck) zipIndex(path string) *zipIndex {
 // rootMame reports a mame folder at the card's root, which Main takes and
 // then cannot read from (see check).
 func arcadeROMRoot(card string) (root string, rootMame bool) {
-	var roots []string
-	for i := 0; i < 6; i++ {
-		roots = append(roots, filepath.Join(filepath.Dir(card), fmt.Sprintf("usb%d", i)))
-	}
-	roots = append(roots, filepath.Join(filepath.Dir(card), "network"), filepath.Join(card, "cifs"), card)
-	for _, root := range roots {
-		for _, p := range []string{root, filepath.Join(root, "games")} {
-			if st, err := os.Stat(filepath.Join(p, "mame")); err == nil && st.IsDir() {
-				return p, p == card
-			}
-		}
+	if dir, ok := platform.FindGameDir(card, "mame"); ok {
+		return filepath.Dir(filepath.Join(card, filepath.FromSlash(dir))), dir == "mame"
 	}
 	return filepath.Join(card, "_Arcade"), false
 }
