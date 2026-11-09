@@ -821,7 +821,9 @@ came from. Favorites mode
 always shows favorites only;
 use Y in the main view to leave it.
 
-Card scans run quietly on launch. Options -> Rescan card shows a result screen
+The **On the card** filters use the last complete scan as soon as the list opens, including when you return from a game. A background scan updates the list when files have changed and keeps your place if the selected game is still there. On the first run, or when the saved results no longer match the catalogue or scan settings, the filters fill in as the scan reports.
+
+Options -> Rescan card shows a result screen
 with up-to-date, older, undated, missing and unknown totals for the enabled
 catalogue. Under its heading it says how many releases became up to date
 since the statuses on show, such as "Newly up to date: 12 (9 updated, 3

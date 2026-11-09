@@ -121,8 +121,19 @@ func (h *host) prepareLaunch(target string) (string, error) {
 		return mister.LaunchPath(h.card, p)
 	}
 	abs, err := mister.LaunchPath(h.card, target)
-	if err == nil && strings.EqualFold(filepath.Ext(target), ".mra") && h.index.CollectionLauncher(target) {
-		err = scan.CheckMRACore(h.card, target)
+	if err == nil && ext == ".mra" && (h.savedCard != nil || h.index.CollectionLauncher(target)) {
+		// A shared filename can have changed hands since the saved scan.
+		expected := ""
+		if h.savedCard != nil {
+			ds := h.a.Data()
+			for _, owner := range h.owners {
+				if i := ds.Index(owner); i >= 0 && strings.EqualFold(ds.Rows[i].MRA, target) {
+					expected = ds.Rows[i].Core
+					break
+				}
+			}
+		}
+		err = scan.CheckMRACore(h.card, target, expected)
 	}
 	if err == nil && strings.EqualFold(filepath.Ext(target), ".mgl") {
 		err = validateNeoGeoLaunch(h.card, target)

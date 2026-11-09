@@ -239,7 +239,7 @@ func (idx *Index) MergeCollectionVersions(resolved map[string][]string) {
 
 // CheckMRACore rechecks the actual launcher and just its own cores directory
 // at Start, so removal after a scan cannot hand Main a broken launch.
-func CheckMRACore(card, rel string) error {
+func CheckMRACore(card, rel, expected string) error {
 	a, ok := ParseMRAHeader(filepath.Join(card, filepath.FromSlash(rel)))
 	if !ok || a.RBF == "" {
 		return errors.New("cannot read launcher core")
@@ -249,11 +249,14 @@ func CheckMRACore(card, rel string) error {
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
-	for _, e := range entries {
-		name := e.Name()
-		if !e.IsDir() && strings.EqualFold(path.Ext(name), ".rbf") && (rbfFor(name, a.RBF) || rbfFor(name, "Arcade-"+a.RBF)) {
-			return nil
-		}
+	idx := Index{Cores: map[string]Core{}, arcades: map[string]*arcadeFiles{}}
+	idx.addCores(dir, entries, true, nil)
+	files := idx.arcadeFor(rel)
+	if _, ok := files.mainRBF(a.RBF); !ok {
+		return errors.New(a.RBF + " core missing from " + dir)
 	}
-	return errors.New(a.RBF + " core missing from " + dir)
+	if expected != "" && !loadsCore(files, a.RBF, expected) {
+		return errors.New("shared launcher now loads " + a.RBF + " instead of " + expected)
+	}
+	return nil
 }

@@ -95,6 +95,7 @@ type host struct {
 	romReportMu                   sync.RWMutex
 	romList                       string // where each finished sweep writes its list of problems; "" = nowhere
 	index                         *scan.Index
+	savedCard                     *cardInventory // last complete inventory until this run verifies the card
 	status                        []data.Status
 	owners                        map[string]string // row key -> the row whose file sits at its MRA path (scan.Statuses)
 	alts                          map[string][]string
@@ -240,6 +241,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 	h.clock = platform.Clock{Now: h.now, Trusted: trusted}
 	h.dataUpdated = upd
 	ds := data.Ingest(rows, meta.Hash, upd)
+	h.restoreCard(ds)
 	lg.Printf("data: %d rows from %s%s, hash %.8s, updated %s, clock trusted=%v (%v)", ncat, source, localNote, meta.Hash, meta.Updated, trusted, time.Since(t0).Round(time.Millisecond))
 
 	// platform
@@ -348,17 +350,12 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		GameReturn:           neoGeoPilot,
 		Launcher:             func() bool { return !neoGeoPilot && launcherEnabled() },
 		CanUpdateApp:         func() bool { return !neoGeoPilot && updater.CanUpdateApp(card) },
-		Status: func(i int) data.Status {
-			if i < len(h.status) {
-				return h.status[i]
-			}
-			return data.StatusUnknown
-		},
-		Alternatives: h.alternatives,
-		AltCore:      func(p string) string { return h.altCores[p] },
-		VersionCore:  func(p string) (string, bool) { return h.index.VersionCore(p) },
-		AltSetname:   func(p string) string { return h.altSets[p] },
-		Versions:     h.state.Versions,
+		Status:               h.cardStatus,
+		Alternatives:         h.alternatives,
+		AltCore:              func(p string) string { return h.altCores[p] },
+		VersionCore:          h.versionCore,
+		AltSetname:           func(p string) string { return h.altSets[p] },
+		Versions:             h.state.Versions,
 		Exists: func(rel string) bool {
 			if backing, ok := mgl.GameBackingPath(rel); ok {
 				rel = backing
@@ -471,6 +468,9 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		seen = &h.state.Seen
 	}
 	h.a = app.New(cfg, ds, seen)
+	if h.savedCard != nil {
+		h.a.SetHiddenSources(h.savedCard.Hidden, h.savedCard.INIFound)
+	}
 	h.loadSupporters()
 	h.a.StartSplash()
 	h.a.EnablePageTransitions()
@@ -1459,6 +1459,7 @@ func (h *host) swap(fr fetch.Fresh) {
 	news := h.a.CatalogueNews(old, fr.Rows)
 	// Old status indices belong to the previous row order. Rebuild off the UI.
 	h.status, h.owners = nil, nil
+	h.savedCard = nil
 	h.a.SetData(ds, nil)
 	h.a.RenameKeys(moves) // a local game the catalogue now lists keeps its star
 	h.requestScan()
@@ -1720,10 +1721,6 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 	}
 	res := scanResult{index: idx, status: st, owners: owners, gen: gen, alts: resolved, altCores: local.VersionCores, altSets: local.VersionSets, notice: notice, final: true, hidden: hidden, iniFound: iniFound, sourceFiles: downloader.Files, diag: diag,
 		access: scan.NewCoreAccess(catalogue, idx), complete: err == nil && local.Err == nil}
-	if res.complete {
-		// only a scan that read the whole card knows every local row
-		h.saveLocalRows(hash, merged[ncat:])
-	}
 	// Saved rows can match this scan's by generation and still differ in a
 	// title or a field this build adds: the scan's own rows replace them.
 	if pathsChanged || nextGen != gen || saved && !data.SameLocalRows(rows[ncat:], merged[ncat:]) {
@@ -1744,6 +1741,13 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 			}
 		}
 	}
+	if res.complete {
+		h.saveLocalRows(hash, merged[ncat:])
+		if res.rows != nil {
+			rows = res.rows
+		}
+		h.saveCard(rows, nextGen, scanFolder, res)
+	}
 	h.sendScan(res)
 }
 
@@ -1754,18 +1758,28 @@ func (h *host) alternatives(r *data.Row) []string {
 	if h.a == nil || h.altGen != h.a.Data().Gen {
 		return nil
 	}
-	ps := h.alts[r.K]
-	if len(h.altCores) == 0 {
+	return availableAlternatives(h.alts[r.K], h.altCores, h.index)
+}
+
+func availableAlternatives(ps []string, cores map[string]string, idx *scan.Index) []string {
+	if idx == nil || len(ps) == 0 || len(cores) == 0 {
 		return ps
 	}
 	out := make([]string, 0, len(ps))
 	for _, p := range ps {
-		if core, ok := h.altCores[p]; ok && !h.index.CollectionLauncher(p) && !h.index.HasArcadeCore(core) {
+		if core, ok := cores[p]; ok && !idx.CollectionLauncher(p) && !idx.HasArcadeCore(core) {
 			continue
 		}
 		out = append(out, p)
 	}
 	return out
+}
+
+func (h *host) versionCore(p string) (string, bool) {
+	if h.savedCard != nil {
+		return h.savedCard.Missing[p], false
+	}
+	return h.index.VersionCore(p)
 }
 
 // droppedLocal returns the local rows this scan no longer lists. A standin

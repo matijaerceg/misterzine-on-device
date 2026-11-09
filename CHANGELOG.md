@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Found on card** opens with the last complete scan's results, including when returning from a game. The list keeps the selected game while a background scan checks for additions and removals. Thanks to berp for the report.
+
 ## v1.2.31 — 2026-11-08
 
 - MisterZine finds arcade collections with their own core folders, including Ongo Isolated. Run **Options → Data → Rescan card** after adding one. A game keeps its catalogue entry and favorites, and **Details** lets you choose between copies. Each copy launches with the core from its own collection. **Sources → in INI** also recognizes Ongo Isolated as Ongo. Thanks to segaman for reporting the missing games.

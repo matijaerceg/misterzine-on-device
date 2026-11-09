@@ -57,6 +57,19 @@ func (h *host) requestScan() {
 func (h *host) receiveScan(r scanResult) {
 	first := h.index == nil
 	current := r.gen == h.a.Data().Gen && h.scanningNeoGeoFolder == h.settings.ScanNeoGeoFolder
+	if current && h.savedCard != nil {
+		// The saved list includes local games, collection paths and versions.
+		// Publishing only the first pass would split that inventory in two.
+		if !r.final {
+			return
+		}
+		if r.complete {
+			h.savedCard = nil
+		} else {
+			// Keep the last complete list and report the failed/incomplete scan.
+			r.index, r.rows = nil, nil
+		}
+	}
 	if current && r.index != nil {
 		h.index = r.index
 	}
@@ -108,7 +121,7 @@ func (h *host) receiveScan(r scanResult) {
 		// on a Pi
 		h.sweepDue = time.Now().Add(500 * time.Millisecond)
 	}
-	if r.index != nil {
+	if current && r.index != nil {
 		h.a.SetHiddenSources(r.hidden, r.iniFound)
 		h.a.SetSourceFiles(r.sourceFiles)
 	}
