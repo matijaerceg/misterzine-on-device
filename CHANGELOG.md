@@ -1,8 +1,9 @@
 # Changelog
 
-## Unreleased
+## v1.2.32 — 2026-11-09
 
-- **Found on card** opens with the last complete scan's results, including when returning from a game. The list keeps the selected game while a background scan checks for additions and removals. Thanks to berp for the report.
+- **Found on card** opens with the last complete scan's results, including when returning from a game. The list keeps the selected game while a background scan checks for additions and removals. On a DE10, returning from 1942 to a populated list took a median of 5.9 seconds, down from 7.4 seconds across three runs per build. All three returns landed on 1942. Thanks to berp for the report.
+- Refresh the offline catalogue to the November 9 export with 2,940 entries.
 
 ## v1.2.31 — 2026-11-08
 
