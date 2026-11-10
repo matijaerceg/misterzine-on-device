@@ -893,6 +893,12 @@ func (a *App) launchRow(row *data.Row, i, pick int, source launchSource) bool {
 	if len(entries) > 0 && a.cfg.Launch != nil {
 		pick = max(0, min(pick, len(entries)-1))
 		e := entries[pick]
+		if a.cfg.CheckLaunch != nil {
+			if why := a.cfg.CheckLaunch(&a.ds.Rows[e.row], e.path); why != "" {
+				a.Notice(why, 3*time.Second)
+				return true
+			}
+		}
 		if !e.ok {
 			a.Notice(e.why, 3*time.Second)
 			return true

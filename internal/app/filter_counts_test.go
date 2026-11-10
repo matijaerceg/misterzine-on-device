@@ -8,6 +8,24 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 )
 
+func TestEmptyCardFilterWhileScanning(t *testing.T) {
+	message := "Checking card..."
+	a := New(Config{PhysW: 320, PhysH: 240, CardCheckMessage: func() string { return message }},
+		data.Ingest([]data.Row{{K: "game", Title: "Game", Base: "Arcade"}}, "cat", time.Now()), nil)
+	a.SetFilters(data.Filters{Install: data.InstallFound})
+	if a.Visible() != 0 || a.emptyListMessage() != message {
+		t.Fatal("empty card filter did not explain the pending scan")
+	}
+	message = "Card scan failed"
+	if a.emptyListMessage() != message {
+		t.Fatal("failed scan reported zero matches")
+	}
+	message = ""
+	if want := "no rows match, " + a.btn("X") + ": filters"; a.emptyListMessage() != want {
+		t.Fatal("completed empty scan did not show the normal message")
+	}
+}
+
 func TestFilterCountsFollowFirstFrame(t *testing.T) {
 	for _, tc := range []struct {
 		name string

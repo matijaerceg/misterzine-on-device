@@ -228,8 +228,8 @@ func TestSwapKeepsStandinKey(t *testing.T) {
 		Core: "jttaitox", SN: "gigandes", MRA: "_Arcade/Gigandes.mra"})
 	h.swap(fetch.Fresh{Changed: true, Rows: rows, Meta: data.Meta{Hash: "new", Updated: "2026-09-17T00:00Z"}})
 	ds := h.a.Data()
-	if ds.NCat != 3 || len(ds.Rows) != 4 || ds.Rows[3].K != "local:gigandes" {
-		t.Fatalf("swap dropped the standin: ncat=%d rows=%d", ds.NCat, len(ds.Rows))
+	if ds.Hash != "cat" || ds.Index("local:gigandes") < 0 {
+		t.Fatalf("pending catalogue dropped the standin: ncat=%d rows=%d", ds.NCat, len(ds.Rows))
 	}
 	if f := h.a.FavoriteSet(); !f["local:gigandes"] || f["gigandes"] {
 		t.Fatalf("star moved to a row the card cannot run: %v", f)
@@ -337,9 +337,10 @@ func TestSwapKeepsLocals(t *testing.T) {
 	rows := append(catalogueRows(), data.Row{K: "soon", Title: "Soon", Base: "Arcade", Src: "coinop", Core: "defender", SN: "soon", MRA: "_Arcade/_Coin-Op/Soon.mra"})
 	h.swap(fetch.Fresh{Changed: true, Rows: rows, Meta: data.Meta{Hash: "new", Updated: "2026-09-17T00:00Z"}})
 	ds := h.a.Data()
-	if ds.Hash != "new" || ds.NCat != 3 || len(ds.Rows) != 4 || ds.Rows[3].K != "local:orphan" {
-		t.Fatalf("swap: hash=%q ncat=%d rows=%d", ds.Hash, ds.NCat, len(ds.Rows))
+	if ds.Hash != "cat" || ds.Index("local:orphan") < 0 || ds.Index("local:soon") < 0 || !h.scanRunning {
+		t.Fatalf("old rows lost before rescan: hash=%q rows=%v", ds.Hash, len(ds.Rows))
 	}
+	finishBackground(t, h)
 	// ...and its star, version and launch record follow it to the new row.
 	if f := h.a.FavoriteSet(); !f["soon"] || f["local:soon"] || !h.favDirty {
 		t.Fatalf("favorite not moved: %v dirty=%v", f, h.favDirty)
@@ -350,10 +351,6 @@ func TestSwapKeepsLocals(t *testing.T) {
 	if r := h.a.Recents(); len(r) != 1 || r[0].K != "soon" {
 		t.Fatalf("recent not moved: %v", r)
 	}
-	if !h.scanRunning {
-		t.Fatal("swap must rescan the card against the new catalogue")
-	}
-	finishBackground(t, h)
 	// An empty card: the rescan drops the stale local row.
 	if ds = h.a.Data(); len(ds.Rows) != 3 || ds.Gen != "new" {
 		t.Fatalf("rescan: rows=%d gen=%q", len(ds.Rows), ds.Gen)

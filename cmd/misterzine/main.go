@@ -7,6 +7,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"errors"
 	"flag"
 	"fmt"
@@ -95,7 +96,9 @@ type host struct {
 	romReportMu                   sync.RWMutex
 	romList                       string // where each finished sweep writes its list of problems; "" = nowhere
 	index                         *scan.Index
-	savedCard                     *cardInventory // last complete inventory until this run verifies the card
+	savedCard                     *cardInventory              // last complete inventory until this run verifies the card
+	pendingCatalogue              atomic.Pointer[fetch.Fresh] // also checked by the worker before it saves the new inventory
+	cardScanProblem               string                      // last failed scan, for an empty card-filtered list
 	status                        []data.Status
 	owners                        map[string]string // row key -> the row whose file sits at its MRA path (scan.Statuses)
 	alts                          map[string][]string
@@ -351,6 +354,8 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 		Launcher:             func() bool { return !neoGeoPilot && launcherEnabled() },
 		CanUpdateApp:         func() bool { return !neoGeoPilot && updater.CanUpdateApp(card) },
 		Status:               h.cardStatus,
+		CardCheckMessage:     h.cardCheckMessage,
+		CheckLaunch:          h.checkProvisionalLaunch,
 		Alternatives:         h.alternatives,
 		AltCore:              func(p string) string { return h.altCores[p] },
 		VersionCore:          h.versionCore,
@@ -1261,7 +1266,12 @@ func (h *host) loadData() ([]data.Row, data.Meta, string) {
 			if mb, err := os.ReadFile(filepath.Join(cache, "meta.json")); err == nil {
 				meta, _ = data.DecodeMeta(bytes.NewReader(mb))
 			}
-			return rows, meta, "cache"
+			// Each cache file is replaced atomically. A power cut between
+			// the two renames can leave yesterday's hash on today's rows.
+			if meta.Hash == "" || fmt.Sprintf("%x", sha256.Sum256(b)) == meta.Hash {
+				return rows, meta, "cache"
+			}
+			h.lg.Printf("cache: data.json does not match meta.json; using the embedded catalogue")
 		} else if err != nil {
 			h.lg.Printf("cache: %v", err)
 			os.Rename(filepath.Join(cache, "data.json"), filepath.Join(cache, "data.json.bad"))
@@ -1331,19 +1341,26 @@ func (h *host) check(current string, trusted bool) {
 	if !fr.Changed {
 		h.lg.Printf("check: current (%.8s)", fr.Meta.Hash)
 		h.sendNet("")
-		if tablesChanged {
-			h.runOnUI(h.relabel)
-		}
+		h.runOnUI(func() {
+			if tablesChanged {
+				h.relabel()
+			} else if h.pendingCatalogue.Load() != nil && !h.scanRunning {
+				h.requestScan() // retry a catalogue whose card scan failed
+			}
+		})
 		return
 	}
+	h.lg.Printf("check: new data %.8s, %d rows", fr.Meta.Hash, len(fr.Rows))
+	h.runOnUI(func() { h.swap(fr) })
+}
+
+func (h *host) saveCatalogue(fr *fetch.Fresh) {
 	cache := filepath.Join(h.root, "cache")
 	if err := store.WriteAtomic(filepath.Join(cache, "data.json"), fr.RawData); err != nil {
 		h.lg.Printf("cache: %v (meta.json left as it was)", err)
 	} else if err := store.WriteAtomic(filepath.Join(cache, "meta.json"), fr.RawMeta); err != nil {
 		h.lg.Printf("cache: %v", err)
 	}
-	h.lg.Printf("check: new data %.8s, %d rows", fr.Meta.Hash, len(fr.Rows))
-	h.runOnUI(func() { h.swap(fr) })
 }
 
 // checkSupporters refreshes the Credits page's Patreon supporters after a
@@ -1439,46 +1456,27 @@ func (h *host) loadSupporters() {
 	}
 }
 
-// swap installs fetched data on the UI goroutine. The local rows the last
-// scan found stay in place (less any the new catalogue now covers) so they
-// do not blink out; the rescan below re-derives them against the new rows.
+// Keep browsing the current rows, versions and install statuses together
+// until a scan of the new catalogue can replace all three.
 func (h *host) swap(fr fetch.Fresh) {
-	old := h.a.Data()
-	upd, _ := data.ParseMetaTime(fr.Meta.Updated)
-	// A standin row is covered by the catalogue on paper already; whether the
-	// new one is any more runnable here is for the rescan below to find out,
-	// so its key stays put for now.
-	var giving []data.Row
-	for _, r := range old.Rows[old.NCat:] {
-		if !r.Standin {
-			giving = append(giving, r)
-		}
+	if fr.Meta.Hash == h.a.Data().Hash {
+		h.pendingCatalogue.Store(nil) // the site reverted an update that was still being scanned
+	} else {
+		h.pendingCatalogue.Store(&fr)
 	}
-	moves := data.LocalTakeovers(giving, fr.Rows)
-	ds := data.Ingest(data.MergeLocal(fr.Rows, old.Rows[old.NCat:]), fr.Meta.Hash, upd)
-	news := h.a.CatalogueNews(old, fr.Rows)
-	// Old status indices belong to the previous row order. Rebuild off the UI.
-	h.status, h.owners = nil, nil
-	h.savedCard = nil
-	h.a.SetData(ds, nil)
-	h.a.RenameKeys(moves) // a local game the catalogue now lists keeps its star
 	h.requestScan()
-	h.img.SetPrefetch(picsFor(ds), h.settings.Prefetch)
 	h.a.SetNet("")
-	if news != "" {
-		h.a.Notice(news, 12*time.Second)
-	}
-	h.dirty = true
 }
 
 type scanResult struct {
-	index  *scan.Index
-	status []data.Status
-	owners map[string]string // rows whose MRA path holds another row's file (scan.Statuses)
-	gen    string            // the dataset generation the statuses index into
-	alts   map[string][]string
-	notice string
-	final  bool // alternatives pass finished, including an empty result
+	catalogue *fetch.Fresh // nil for a scan of the catalogue already on screen
+	index     *scan.Index
+	status    []data.Status
+	owners    map[string]string // rows whose MRA path holds another row's file (scan.Statuses)
+	gen       string            // displayed generation when the scan was requested
+	alts      map[string][]string
+	notice    string
+	final     bool // alternatives pass finished, including an empty result
 	// rows is set on the final pass when the card's local rows changed: the
 	// catalogue rows followed by the new local rows, which the statuses then
 	// index into; nextGen is their generation. nil when nothing changed.
@@ -1544,17 +1542,38 @@ func goneLines(files, dirs []scan.Skipped) []string {
 	return lines
 }
 
+type scanRequest struct {
+	displayed    *data.Dataset
+	catalogue    *fetch.Fresh
+	savedLocals  bool
+	scanFolder   bool
+	hasInventory bool
+}
+
 // scan reads the card off the UI goroutine: cores and MRA stats first (fast),
-// alternatives and the local walk after (slow the first time). rows are the
-// dataset's rows, local rows included; ncat of them are the catalogue's.
-// saved is set when those local rows are the last run's (local_cache.go).
-func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Time, saved, scanFolder bool) {
+// alternatives and the local walk after (slow the first time). A downloaded
+// catalogue is scanned separately from the dataset still on screen.
+func (h *host) scan(req scanRequest) {
 	// a thread of its own, below the UI's priority, so the walks and the
 	// core hashing never take a core from a frame (the thread ends with
 	// this goroutine: never unlocked)
 	runtime.LockOSThread()
 	scan.LowerThreadPriority()
 	t0 := time.Now()
+	ds, fresh := req.displayed, req.catalogue
+	scanFolder := req.scanFolder
+	rows, ncat, gen, hash, feedAt := ds.Rows, ds.NCat, ds.Gen, ds.Hash, ds.Updated
+	if fresh != nil {
+		rows = data.MergeLocal(fresh.Rows, ds.Rows[ncat:])
+		ncat, hash = len(fresh.Rows), fresh.Meta.Hash
+		gen = data.Generation(hash, rows[ncat:])
+		feedAt, _ = data.ParseMetaTime(fresh.Meta.Updated)
+		// With no earlier inventory, the new catalogue should still be
+		// available offline even if this card cannot be read.
+		if !req.hasInventory && fresh == h.pendingCatalogue.Load() {
+			h.saveCatalogue(fresh)
+		}
+	}
 	idx := scan.ScanCores(h.card)
 	if scanFolder {
 		idx.FindNeoGeoRBF(h.card)
@@ -1577,7 +1596,11 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 	if idx.Err != nil {
 		h.lg.Printf("scan failed: %v", idx.Err)
 		diag.lines = append(diag.lines, "scan failed: "+idx.Err.Error())
-		h.sendScan(scanResult{gen: gen, notice: "Card scan failed", final: true, diag: diag})
+		r := scanResult{gen: ds.Gen, catalogue: fresh, notice: "Card scan failed", final: true, diag: diag}
+		if fresh != nil && !req.hasInventory {
+			r.rows, r.nextGen = rows, gen
+		}
+		h.sendScan(r)
 		return
 	}
 	// two sources ship one file name: the report says whose file it is
@@ -1600,7 +1623,12 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 		sort.Strings(names)
 		h.lg.Printf("scan: downloader.ini lists %d databases; sources without one: %v", len(dbs), names)
 	}
-	if !idx.HasCollections() && !pathsChanged && !h.sendScan(scanResult{index: idx, status: st, owners: owners, gen: gen, hidden: hidden, iniFound: iniFound, sourceFiles: downloader.Files}) {
+	if fresh != h.pendingCatalogue.Load() {
+		// A newer catalogue is queued. Let its scan do the remaining walks.
+		h.sendScan(scanResult{gen: ds.Gen, catalogue: fresh, final: true})
+		return
+	}
+	if fresh == nil && !idx.HasCollections() && !pathsChanged && !h.sendScan(scanResult{index: idx, status: st, owners: owners, gen: gen, hidden: hidden, iniFound: iniFound, sourceFiles: downloader.Files}) {
 		return
 	}
 	t1 := time.Now()
@@ -1719,15 +1747,20 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 	for _, a := range local.Accounted {
 		diag.files = append(diag.files, report.File{Path: a.Path, Reason: a.Reason + " (catalogue row " + a.K + ")"})
 	}
-	res := scanResult{index: idx, status: st, owners: owners, gen: gen, alts: resolved, altCores: local.VersionCores, altSets: local.VersionSets, notice: notice, final: true, hidden: hidden, iniFound: iniFound, sourceFiles: downloader.Files, diag: diag,
+	res := scanResult{index: idx, status: st, owners: owners, gen: ds.Gen, catalogue: fresh, alts: resolved, altCores: local.VersionCores, altSets: local.VersionSets, notice: notice, final: true, hidden: hidden, iniFound: iniFound, sourceFiles: downloader.Files, diag: diag,
 		access: scan.NewCoreAccess(catalogue, idx), complete: err == nil && local.Err == nil}
 	// Saved rows can match this scan's by generation and still differ in a
 	// title or a field this build adds: the scan's own rows replace them.
-	if pathsChanged || nextGen != gen || saved && !data.SameLocalRows(rows[ncat:], merged[ncat:]) {
+	rowsChanged := pathsChanged || nextGen != gen || req.savedLocals && !data.SameLocalRows(rows[ncat:], merged[ncat:])
+	if rowsChanged {
 		// The row set changes: statuses must index into the new rows.
 		res.status, res.owners = scan.Statuses(h.card, idx, merged)
-		res.rows, res.nextGen = merged, nextGen
-		dropped := droppedLocal(rows[ncat:], merged[ncat:])
+		rows = merged
+	}
+	if rowsChanged || fresh != nil {
+		res.rows, res.nextGen = rows, nextGen
+		// Include locals that the new catalogue covered before its scan.
+		dropped := droppedLocal(ds.Rows[ds.NCat:], rows[ncat:])
 		res.moves = data.LocalTakeovers(dropped, catalogue)
 		// A stand-in whose file is now a version of a game that runs here
 		// hands its star and remembered version to that game, which offers
@@ -1741,12 +1774,12 @@ func (h *host) scan(rows []data.Row, ncat int, gen, hash string, feedAt time.Tim
 			}
 		}
 	}
-	if res.complete {
+	if res.complete && fresh == h.pendingCatalogue.Load() {
 		h.saveLocalRows(hash, merged[ncat:])
-		if res.rows != nil {
-			rows = res.rows
-		}
 		h.saveCard(rows, nextGen, scanFolder, res)
+		if fresh != nil && req.hasInventory {
+			h.saveCatalogue(fresh)
+		}
 	}
 	h.sendScan(res)
 }
@@ -1776,7 +1809,7 @@ func availableAlternatives(ps []string, cores map[string]string, idx *scan.Index
 }
 
 func (h *host) versionCore(p string) (string, bool) {
-	if h.savedCard != nil {
+	if h.savedCard != nil && !h.savedCard.statusOnly {
 		return h.savedCard.Missing[p], false
 	}
 	return h.index.VersionCore(p)

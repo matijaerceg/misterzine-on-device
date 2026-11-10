@@ -271,6 +271,11 @@ func (a *App) emptyListMessage() string {
 	if a.mode == data.SortRecents && len(a.cfg.RecentLaunches) == 0 {
 		return "No launches yet"
 	}
+	if a.filters.Install != "" && a.filters.Install != data.InstallAll && a.cfg.CardCheckMessage != nil {
+		if msg := a.cfg.CardCheckMessage(); msg != "" {
+			return msg
+		}
+	}
 	if a.mode == data.SortNeoGeo && a.query == "" {
 		if a.filters.SrcOff[data.SrcLocal] || a.filters.CoreOff["local/NeoGeo"] {
 			return "Neo Geo hidden"

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
+	"github.com/matijaerceg/misterzine-on-device/internal/scan"
 	"github.com/matijaerceg/misterzine-on-device/internal/store"
 )
 
@@ -26,9 +27,20 @@ func (h *host) cardStatus(i int) data.Status {
 	return data.StatusUnknown
 }
 
+func (h *host) cardCheckMessage() string {
+	if !h.scanRunning && h.cardScanProblem != "" {
+		return h.cardScanProblem
+	}
+	if h.scanRunning || h.index == nil {
+		return "Checking card..."
+	}
+	return ""
+}
+
 // A complete scan's answers for the list. Keep the game keys as well as the
 // generation: a positional answer from another row must never look installed.
 type cardInventory struct {
+	statusOnly bool                   // an interrupted or older update left the catalogue and inventory out of step
 	Version    int                    `json:"version"`
 	Generation string                 `json:"generation"`
 	ScanFolder bool                   `json:"scan_neogeo_folder,omitempty"`
@@ -59,16 +71,36 @@ func (h *host) restoreCard(ds *data.Dataset) {
 		h.lg.Printf("card cache ignored: %v", err)
 		return
 	}
-	if saved.Version != 1 || ds.Hash == "" || saved.Generation != ds.Gen || saved.ScanFolder != h.settings.ScanNeoGeoFolder || len(saved.Status) != len(ds.Rows) {
+	if saved.Version != 1 || ds.Hash == "" || saved.Generation == "" || saved.ScanFolder != h.settings.ScanNeoGeoFolder {
+		return
+	}
+	saved.statusOnly = saved.Generation != ds.Gen
+	if !saved.statusOnly && len(saved.Status) != len(ds.Rows) {
 		return
 	}
 	status := make([]data.Status, len(ds.Rows))
+	matched := 0
 	for i, r := range ds.Rows {
 		st, ok := saved.Status[r.K]
+		if !ok && saved.statusOnly {
+			continue // no previous observation of this game
+		}
 		if !ok || st > data.StatusLikelyOutdated {
 			return
 		}
 		status[i] = st
+		matched++
+	}
+	if saved.statusOnly {
+		// Saved statuses have stable game keys. Installed paths, shared-file
+		// ownership and version lists belong to the old catalogue.
+		if matched > 0 {
+			h.status = status
+			h.savedCard = &cardInventory{statusOnly: true, Paths: saved.Paths, Owners: saved.Owners,
+				Hidden: saved.Hidden, INIFound: saved.INIFound}
+			h.lg.Printf("card cache: %d statuses from the previous catalogue (%v)", matched, time.Since(start).Round(time.Millisecond))
+		}
+		return
 	}
 	for key, p := range saved.Paths {
 		i := ds.Index(key)
@@ -92,6 +124,30 @@ func (h *host) restoreCard(ds *data.Dataset) {
 	saved.Status, saved.Paths = nil, nil
 	h.savedCard = &saved
 	h.lg.Printf("card cache: restored %d statuses (%v)", len(status), time.Since(start).Round(time.Millisecond))
+}
+
+// When we only have last-known presence, the catalogue's own launcher can
+// still be checked at Start. Let the scan resolve a collection override or
+// remembered version before offering a different file in its place.
+func (h *host) checkProvisionalLaunch(row *data.Row, target string) string {
+	s := h.savedCard
+	if s == nil || !s.statusOnly {
+		return ""
+	}
+	for _, wanted := range []string{s.Paths[row.K], h.state.Versions[row.K], h.state.Versions[row.PreferenceKey()]} {
+		if wanted != "" && wanted != target {
+			return h.cardCheckMessage()
+		}
+	}
+	if strings.EqualFold(path.Ext(target), ".mra") {
+		if row.Core == "" || s.Owners[row.K] != "" {
+			return h.cardCheckMessage()
+		}
+		if err := scan.CheckMRACore(h.card, target, row.Core); err != nil {
+			return err.Error()
+		}
+	}
+	return ""
 }
 
 // Versions resolved by the scan are MRA files or duplicate MGL shortcuts.

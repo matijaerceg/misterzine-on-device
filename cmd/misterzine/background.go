@@ -26,6 +26,9 @@ func (h *host) requestCheck() {
 	h.checkPending = false
 	h.checkRunning = true
 	current, trusted := h.a.Data().Hash, h.clockTrusted()
+	if pending := h.pendingCatalogue.Load(); pending != nil {
+		current = pending.Meta.Hash
+	}
 	go h.check(current, trusted)
 }
 
@@ -48,43 +51,58 @@ func (h *host) requestScan() {
 	h.scanRunning = true
 	ds := h.a.Data()
 	h.scanningNeoGeoFolder = h.settings.ScanNeoGeoFolder
-	go h.scan(ds.Rows, ds.NCat, ds.Gen, ds.Hash, ds.Updated, h.localSaved, h.scanningNeoGeoFolder)
+	go h.scan(scanRequest{displayed: ds, catalogue: h.pendingCatalogue.Load(), savedLocals: h.localSaved,
+		scanFolder: h.scanningNeoGeoFolder, hasInventory: h.index != nil || h.savedCard != nil})
 }
 
 // receiveScan installs a scan result. Results are checked against the
-// dataset generation they were computed for: the catalogue hash plus the
-// local rows, since positional statuses are only right for that row set.
+// dataset on screen when the scan started. A replacement catalogue must
+// also still be the one we're waiting for.
 func (h *host) receiveScan(r scanResult) {
 	first := h.index == nil
-	current := r.gen == h.a.Data().Gen && h.scanningNeoGeoFolder == h.settings.ScanNeoGeoFolder
-	if current && h.savedCard != nil {
+	current := r.gen == h.a.Data().Gen && h.scanningNeoGeoFolder == h.settings.ScanNeoGeoFolder &&
+		r.catalogue == h.pendingCatalogue.Load()
+	if current && (h.savedCard != nil || r.catalogue != nil && h.index != nil) {
 		// The saved list includes local games, collection paths and versions.
 		// Publishing only the first pass would split that inventory in two.
 		if !r.final {
 			return
 		}
-		if r.complete {
-			h.savedCard = nil
-		} else {
+		if !r.complete {
 			// Keep the last complete list and report the failed/incomplete scan.
 			r.index, r.rows = nil, nil
 		}
 	}
-	if current && r.index != nil {
-		h.index = r.index
-	}
+	selection := ""
 	if current && r.final && r.rows != nil {
 		// The card's local rows changed: install the new row set and its
 		// statuses in one step, before anything paints.
 		old := h.a.Data()
-		ds := data.Ingest(r.rows, old.Hash, old.Updated)
+		hash, updated := old.Hash, old.Updated
+		if r.catalogue != nil {
+			hash = r.catalogue.Meta.Hash
+			updated, _ = data.ParseMetaTime(r.catalogue.Meta.Updated)
+		}
+		ds := data.Ingest(r.rows, hash, updated)
 		if ds.Gen != r.nextGen {
 			h.lg.Printf("scan: local rows generation mismatch (%s vs %s); rescanning", ds.Gen, r.nextGen)
 			h.scanPending = true
 			current = false
 		} else {
+			selection = h.a.CursorKey()
+			if moved := r.moves[selection]; moved != "" {
+				selection = moved
+			}
 			h.status, h.owners = r.status, r.owners
+			h.index = r.index
 			h.a.SetData(ds, nil)
+			if r.catalogue != nil {
+				if news := h.a.CatalogueNews(old, r.catalogue.Rows); news != "" {
+					h.a.Notice(news, 12*time.Second)
+				}
+				h.pendingCatalogue.Store(nil)
+				h.dirty = true
+			}
 			h.localSaved = false
 			// a standin row the card now runs from the catalogue hands its star over
 			h.a.RenameKeys(r.moves)
@@ -94,6 +112,7 @@ func (h *host) receiveScan(r scanResult) {
 			}
 		}
 	} else if current && r.index != nil {
+		h.index = r.index
 		h.status, h.owners = r.status, r.owners
 	} else if !current {
 		// Reordered/new rows cannot use old positional statuses. Queue one scan
@@ -103,6 +122,7 @@ func (h *host) receiveScan(r scanResult) {
 	// A nil alternatives result means genuinely empty only on the final pass.
 	if r.final && r.index != nil && current {
 		if r.complete {
+			h.savedCard = nil
 			// the last run's local rows are this card's, as far as a scan can tell
 			h.localSaved = false
 			// a star on a local row that a catalogue refresh covered before
@@ -126,13 +146,19 @@ func (h *host) receiveScan(r scanResult) {
 		h.a.SetSourceFiles(r.sourceFiles)
 	}
 	h.a.Refilter()
+	if selection != "" && h.a.CursorKey() != selection && h.a.Data().Index(selection) >= 0 {
+		h.a.MoveToKey(selection)
+	}
 	if current && r.notice != "" {
 		h.a.Notice(r.notice, 8*time.Second)
 	} else if first && h.favLoadFailed {
 		h.a.Notice(app.FavoritesUnavailableNotice, 12*time.Second)
 	}
 	if r.final {
-		if r.diag != nil {
+		if current {
+			h.cardScanProblem = r.notice
+		}
+		if current && r.diag != nil {
 			h.scanDiag = r.diag
 		}
 		if !h.prefetchSet && h.img != nil {

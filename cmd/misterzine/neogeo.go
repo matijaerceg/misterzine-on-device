@@ -121,10 +121,11 @@ func (h *host) prepareLaunch(target string) (string, error) {
 		return mister.LaunchPath(h.card, p)
 	}
 	abs, err := mister.LaunchPath(h.card, target)
-	if err == nil && ext == ".mra" && (h.savedCard != nil || h.index.CollectionLauncher(target)) {
+	rechecking := h.savedCard != nil || h.pendingCatalogue.Load() != nil
+	if err == nil && ext == ".mra" && (rechecking || h.index.CollectionLauncher(target)) {
 		// A shared filename can have changed hands since the saved scan.
 		expected := ""
-		if h.savedCard != nil {
+		if rechecking {
 			ds := h.a.Data()
 			for _, owner := range h.owners {
 				if i := ds.Index(owner); i >= 0 && strings.EqualFold(ds.Rows[i].MRA, target) {

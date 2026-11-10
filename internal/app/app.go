@@ -67,6 +67,9 @@ type Config struct {
 	ControlProfiles controls.File
 	LastControlID   string
 
+	CardCheckMessage func() string                  // why a card-filtered list may still be empty
+	CheckLaunch      func(*data.Row, string) string // verify a target when only old card statuses could be restored
+
 	// FavoritesUnavailable prevents edits after the host could not read the file.
 	FavoritesUnavailable bool
 

@@ -821,7 +821,7 @@ came from. Favorites mode
 always shows favorites only;
 use Y in the main view to leave it.
 
-The **On the card** filters use the last complete scan as soon as the list opens, including when you return from a game. A background scan updates the list when files have changed and keeps your place if the selected game is still there. On the first run, or when the saved results no longer match the catalogue or scan settings, the filters fill in as the scan reports.
+The **On the card** filters use the last complete scan as soon as the list opens, including when you return from a game. If a new catalogue downloads, you can browse and launch from the previous list until the card check finishes. The list then updates and keeps your place if the game is still visible. An empty card filter shows **Checking card...** during the first scan. After an interrupted update, previously found games can appear while the scan verifies their files and versions.
 
 Options -> Rescan card shows a result screen
 with up-to-date, older, undated, missing and unknown totals for the enabled
