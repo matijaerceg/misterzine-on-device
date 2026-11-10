@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -16,9 +17,54 @@ import (
 	"github.com/matijaerceg/misterzine-on-device/internal/app"
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
 	"github.com/matijaerceg/misterzine-on-device/internal/fetch"
+	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 	"github.com/matijaerceg/misterzine-on-device/internal/scan"
 )
+
+func TestRepeatedCardFailureStaysQuiet(t *testing.T) {
+	for _, rot := range []gfx.Rotation{gfx.RotNone, gfx.RotLeft} {
+		for _, message := range []string{"Card scan failed", "Card scan incomplete"} {
+			t.Run(rot.String()+"/"+message, func(t *testing.T) {
+				h := backgroundHost(t)
+				now := time.Date(2026, 11, 10, 12, 0, 0, 0, time.UTC)
+				ds := data.Ingest(catalogueRows(), "saved", now)
+				h.status = []data.Status{data.StatusCurrent, data.StatusCurrent}
+				h.savedCard = &cardInventory{}
+				h.a = app.New(app.Config{PhysW: 320, PhysH: 240, SafeInsetX: 15, SafeInsetY: 15, Rotation: rot,
+					Status: h.cardStatus, TimerNow: func() time.Time { return now }, Now: func() time.Time { return now }}, ds, nil)
+				paint := func() []byte {
+					h.a.Paint()
+					return bytes.Clone(h.a.Logical().Pix)
+				}
+				fail := func() {
+					h.receiveScan(scanResult{gen: ds.Gen, final: true, notice: message})
+				}
+				fail()
+				first := paint()
+				h.a.Notice(message+". Using saved list.", 8*time.Second)
+				if !bytes.Equal(first, paint()) {
+					t.Fatal("failure did not explain that the saved list was retained")
+				}
+				now = now.Add(9 * time.Second)
+				h.a.Tick(now)
+				quiet := paint()
+				if bytes.Equal(first, quiet) {
+					t.Fatal("failure notice did not expire")
+				}
+				fail()
+				if !bytes.Equal(quiet, paint()) {
+					t.Fatal("an identical automatic failure covered the status bar again")
+				}
+				h.manualScan = true
+				fail()
+				if !bytes.Equal(first, paint()) {
+					t.Fatal("a manual retry did not report its failure")
+				}
+			})
+		}
+	}
+}
 
 func TestBrowsePreviousCatalogueThroughRefresh(t *testing.T) {
 	h := backgroundHost(t)
@@ -140,11 +186,61 @@ func TestPendingCatalogueFailureAndRetry(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(h.root, "cache", "data.json")); !os.IsNotExist(err) {
 		t.Fatal("failed refresh displaced the known catalogue on disk")
 	}
+	// The card can recover with the network still offline. Automatic retries
+	// must back off, keep the list, and never require a successful site check.
+	h.client = nil
+	selected := h.a.CursorKey()
+	for _, delay := range []time.Duration{30 * time.Second, time.Minute, 2 * time.Minute, 4 * time.Minute, 8 * time.Minute, 10 * time.Minute, 10 * time.Minute} {
+		if remaining := time.Until(h.nextScanRetry); remaining < delay-time.Second || remaining > delay {
+			t.Fatalf("retry due in %v, want %v", remaining, delay)
+		}
+		h.retryScan(h.nextScanRetry.Add(-time.Millisecond))
+		if h.scanRunning || h.scanPending {
+			t.Fatal("retried before the delay elapsed")
+		}
+		h.retryScan(h.nextScanRetry)
+		if !h.scanRunning || !h.nextScanRetry.IsZero() {
+			t.Fatal("due retry did not start")
+		}
+		h.retryScan(time.Now().Add(time.Hour))
+		if h.scanPending {
+			t.Fatal("timer queued an extra scan while retrying")
+		}
+		finishBackground(t, h)
+		if h.a.Data() != original || h.a.CursorKey() != selected {
+			t.Fatal("repeated failure displaced the list or selection")
+		}
+	}
+	// Update All owns the card until it finishes. A due retry must wait
+	// without queuing an extra scan after the updater's own rescan.
+	h.updatePending = true
+	h.retryScan(h.nextScanRetry)
+	h.updatePending, h.updateRunning = false, true
+	h.retryScan(h.nextScanRetry)
+	if h.scanRunning || h.scanPending || h.nextScanRetry.IsZero() {
+		t.Fatal("retry interfered with Update All or was lost")
+	}
+	h.updateRunning = false
+	h.card = filepath.Dir(h.card)
+	h.retryScan(h.nextScanRetry)
+	finishBackground(t, h)
+	if h.a.Data().Hash != "latest" || h.pendingCatalogue.Load() != nil || h.cardCheckMessage() != "" ||
+		!h.nextScanRetry.IsZero() || h.scanRetryDelay != 0 {
+		t.Fatal("retry did not adopt the latest catalogue and clear the error")
+	}
+	// A later, unrelated failure starts with the short delay again. An
+	// explicit Rescan card can recover before that delay has elapsed.
+	h.card = filepath.Join(h.card, "unreadable")
+	h.requestScan()
+	finishBackground(t, h)
+	if remaining := time.Until(h.nextScanRetry); remaining < 29*time.Second || remaining > 30*time.Second {
+		t.Fatal("successful recovery did not reset the retry delay")
+	}
 	h.card = filepath.Dir(h.card)
 	h.requestScan()
 	finishBackground(t, h)
-	if h.a.Data().Hash != "latest" || h.pendingCatalogue.Load() != nil || h.cardCheckMessage() != "" {
-		t.Fatal("retry did not adopt the latest catalogue and clear the error")
+	if !h.nextScanRetry.IsZero() || h.cardCheckMessage() != "" {
+		t.Fatal("explicit rescan did not recover immediately")
 	}
 }
 
@@ -155,6 +251,12 @@ func TestCatalogueOnFirstFailedCardScan(t *testing.T) {
 	finishBackground(t, h)
 	if h.a.Data().Hash != "download" || h.pendingCatalogue.Load() != nil || h.status != nil || h.cardCheckMessage() != "Card scan failed" {
 		t.Fatal("an unreadable card blocked the first catalogue or produced install statuses")
+	}
+	h.card = filepath.Dir(h.card)
+	h.retryScan(h.nextScanRetry)
+	finishBackground(t, h)
+	if h.index == nil || h.cardCheckMessage() != "" || !h.nextScanRetry.IsZero() {
+		t.Fatal("a first scan without saved results did not recover automatically")
 	}
 }
 

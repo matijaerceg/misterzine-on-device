@@ -117,6 +117,8 @@ type host struct {
 	appCheckRunning               bool
 	scanRunning                   bool
 	scanPending                   bool
+	nextScanRetry                 time.Time
+	scanRetryDelay                time.Duration
 	manualScan                    bool
 	prefetchSet                   bool // the picture service has its prefetch list (after the first scan)
 	netCh                         chan string
@@ -671,6 +673,7 @@ func run(root, card, iniPath, debugAddr string, resume bool) (code int) {
 				return 3
 			}
 		}
+		h.retryScan(time.Now())
 		if !h.sweepDue.IsZero() && !time.Now().Before(h.sweepDue) {
 			h.sweepDue = time.Time{}
 			h.sweepROMs()
@@ -1344,8 +1347,6 @@ func (h *host) check(current string, trusted bool) {
 		h.runOnUI(func() {
 			if tablesChanged {
 				h.relabel()
-			} else if h.pendingCatalogue.Load() != nil && !h.scanRunning {
-				h.requestScan() // retry a catalogue whose card scan failed
 			}
 		})
 		return

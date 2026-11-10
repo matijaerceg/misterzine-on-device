@@ -49,10 +49,30 @@ func (h *host) requestScan() {
 	}
 	h.scanPending = false
 	h.scanRunning = true
+	h.nextScanRetry = time.Time{}
 	ds := h.a.Data()
 	h.scanningNeoGeoFolder = h.settings.ScanNeoGeoFolder
 	go h.scan(scanRequest{displayed: ds, catalogue: h.pendingCatalogue.Load(), savedLocals: h.localSaved,
 		scanFolder: h.scanningNeoGeoFolder, hasInventory: h.index != nil || h.savedCard != nil})
+}
+
+// Card recovery is independent of the network check. Space out repeated
+// failures, and let an explicit rescan or a new catalogue start immediately.
+func (h *host) finishScanRetry(complete bool, now time.Time) {
+	if complete {
+		h.scanRetryDelay = 0
+		h.nextScanRetry = time.Time{}
+		return
+	}
+	h.scanRetryDelay = min(max(30*time.Second, h.scanRetryDelay*2), 10*time.Minute)
+	h.nextScanRetry = now.Add(h.scanRetryDelay)
+}
+
+func (h *host) retryScan(now time.Time) {
+	if h.nextScanRetry.IsZero() || now.Before(h.nextScanRetry) || h.scanRunning || h.updateRunning || h.updatePending {
+		return
+	}
+	h.requestScan()
 }
 
 // receiveScan installs a scan result. Results are checked against the
@@ -150,13 +170,22 @@ func (h *host) receiveScan(r scanResult) {
 		h.a.MoveToKey(selection)
 	}
 	if current && r.notice != "" {
-		h.a.Notice(r.notice, 8*time.Second)
+		// Repeated automatic failures stay in the log and empty-list message;
+		// they should not keep covering the status bar while someone browses.
+		if r.notice != h.cardScanProblem || h.manualScan {
+			notice := r.notice
+			if r.final && r.index == nil && (h.index != nil || h.savedCard != nil) {
+				notice += ". Using saved list."
+			}
+			h.a.Notice(notice, 8*time.Second)
+		}
 	} else if first && h.favLoadFailed {
 		h.a.Notice(app.FavoritesUnavailableNotice, 12*time.Second)
 	}
 	if r.final {
 		if current {
 			h.cardScanProblem = r.notice
+			h.finishScanRetry(r.complete, time.Now())
 		}
 		if current && r.diag != nil {
 			h.scanDiag = r.diag

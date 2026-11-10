@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Failed or incomplete card scans retry automatically, even offline, with increasing delays. When the previous list is kept, the failure notice explains that it is using previous results. Repeated identical failures stay quiet, and **Rescan card** retries immediately.
 - **Found on card** keeps the previous game list and its launch choices available while a downloaded catalogue is checked against the card. The checked list appears with the selected game still highlighted if it remains visible. On a first scan, an empty card filter says **Checking card...**. Thanks to berp for reporting the cold-start case.
 
 ## v1.2.32 — 2026-11-09

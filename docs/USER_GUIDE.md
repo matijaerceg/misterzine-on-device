@@ -832,7 +832,7 @@ date, installed that it had none. "No longer up to date" follows when a
 release went missing or fell behind. A rescan made before any status was
 known, while the scan at launch is still running, says neither. B closes it even
 while scanning; completion does not interrupt the screen you moved to.
-Unreadable card scans retain the previous inventory and show a failure banner.
+Unreadable card scans retain the previous inventory and show a failure banner. Failed or incomplete scans retry automatically, even offline, starting after 30 seconds and spacing out to once every 10 minutes. Repeated identical failures do not keep showing the banner. **Options -> Data -> Rescan card** retries immediately. A downloaded catalogue stays pending until the card can be checked successfully.
 
 MisterZine checks GitHub for a newer stable app release on launch and every 30 minutes after a successful check. If Wi-Fi is still connecting, it retries shortly and spaces out further attempts. When an update is available, the main bar shows **App update** and the Update All row reads **Update MisterZine + all**. On cards with Downloader, **Options → Data → Update MisterZine only** is available even before the first check succeeds. Connect to the internet to run it. Development and prerelease builds skip stable downgrade notices.
 
