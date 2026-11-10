@@ -1,9 +1,11 @@
 # Changelog
 
-## Unreleased
+## v1.2.33 — 2026-11-10
 
-- Failed or incomplete card scans retry automatically, even offline, with increasing delays. When the previous list is kept, the failure notice explains that it is using previous results. Repeated identical failures stay quiet, and **Rescan card** retries immediately.
 - **Found on card** keeps the previous game list and its launch choices available while a downloaded catalogue is checked against the card. The checked list appears with the selected game still highlighted if it remains visible. On a first scan, an empty card filter says **Checking card...**. Thanks to berp for reporting the cold-start case.
+- Failed or incomplete card scans retry automatically, even offline, with increasing delays. When the previous list is kept, the failure notice explains that it is using previous results. Repeated identical failures stay quiet, and **Rescan card** retries immediately.
+- Credits: Aaron de Zeeuw, Aidan Moher, andynumbers, Brandt Van Rees, Brendan McCoy, Brian M, Cameron Sander, Charles Soell, Daniel Acedo Calderon, djconcarne, Don Zauker, Doss, Douglas Denton, Eric Cannon, Fallon, FiveSide, Francisco Balugas, Georald Camposano, Getu, Guillermo Tunon, Hoby Brenner, indigotrance, IndyGotcha, jheggstrife, jklax, joeverdrive, Jon Applebaum, justserii, KholdFuzion, L, Lawrence Morrison, Lilja Vesa, Marcos Rubio, Mark Ozone, Michael Smalley, ndstudio, Nicholas Murray, PA_Marvin, Pat Blackwell, Pete Rittwage, Phi Long Tran, Rajah, Richard Kimmel, Roadside Explorers, Ross Grivell, Rudi, Rune P, ryretro, Samuel, segacollection, Tyler Moyer, Vinay Srinivasan, Yoshimitsu Ashikaga and Zubi Khan join the Patreon supporters.
+- Refresh the offline catalogue to the November 10 export with 2,942 entries.
 
 ## v1.2.32 — 2026-11-09
 

@@ -1,6 +1,10 @@
 {
-  "updated": "2026-10-25",
+  "updated": "2026-11-10",
   "current": [
+    {
+      "name": "Aaron de Zeeuw",
+      "since": "2026-10"
+    },
     {
       "name": "Aaron Whitmore",
       "since": "2026-09"
@@ -8,6 +12,10 @@
     {
       "name": "Adam Hepton",
       "since": "2026-09"
+    },
+    {
+      "name": "Aidan Moher",
+      "since": "2026-11"
     },
     {
       "name": "Alec Peden",
@@ -24,6 +32,10 @@
     {
       "name": "Andrew Nolte",
       "since": "2026-09"
+    },
+    {
+      "name": "andynumbers",
+      "since": "2026-10"
     },
     {
       "name": "Arthur Shingler",
@@ -54,8 +66,24 @@
       "since": "2026-10"
     },
     {
+      "name": "Brandt Van Rees",
+      "since": "2026-10"
+    },
+    {
+      "name": "Brendan McCoy",
+      "since": "2026-10"
+    },
+    {
       "name": "Brian",
       "since": "2026-10"
+    },
+    {
+      "name": "Brian M",
+      "since": "2026-10"
+    },
+    {
+      "name": "Cameron Sander",
+      "since": "2026-11"
     },
     {
       "name": "Cameron Tinker",
@@ -64,6 +92,10 @@
     {
       "name": "Charles Dreiss",
       "since": "2026-09"
+    },
+    {
+      "name": "Charles Soell",
+      "since": "2026-10"
     },
     {
       "name": "Charlie Murphy",
@@ -102,6 +134,10 @@
       "since": "2026-10"
     },
     {
+      "name": "Daniel Acedo Calderon",
+      "since": "2026-10"
+    },
+    {
       "name": "Daniel Nichols",
       "since": "2026-09"
     },
@@ -134,11 +170,31 @@
       "since": "2026-10"
     },
     {
+      "name": "djconcarne",
+      "since": "2026-10"
+    },
+    {
+      "name": "Don Zauker",
+      "since": "2026-10"
+    },
+    {
       "name": "Dong-hyeon Park",
       "since": "2026-10"
     },
     {
+      "name": "Doss",
+      "since": "2026-10"
+    },
+    {
+      "name": "Douglas Denton",
+      "since": "2026-11"
+    },
+    {
       "name": "Dr. Octagon",
+      "since": "2026-10"
+    },
+    {
+      "name": "Eric Cannon",
       "since": "2026-10"
     },
     {
@@ -150,7 +206,7 @@
       "since": "2026-09"
     },
     {
-      "name": "Fabien Lafarge",
+      "name": "Fallon",
       "since": "2026-10"
     },
     {
@@ -158,19 +214,43 @@
       "since": "2026-09"
     },
     {
-      "name": "Fran",
+      "name": "FiveSide",
+      "since": "2026-11"
+    },
+    {
+      "name": "Francisco Balugas",
+      "since": "2026-11"
+    },
+    {
+      "name": "Georald Camposano",
       "since": "2026-10"
     },
     {
-      "name": "GASQBDUV",
+      "name": "Getu",
       "since": "2026-10"
+    },
+    {
+      "name": "Guillermo Tunon",
+      "since": "2026-10"
+    },
+    {
+      "name": "Hoby Brenner",
+      "since": "2026-11"
     },
     {
       "name": "Imran Ladha",
       "since": "2026-10"
     },
     {
+      "name": "indigotrance",
+      "since": "2026-10"
+    },
+    {
       "name": "Individual",
+      "since": "2026-10"
+    },
+    {
+      "name": "IndyGotcha",
       "since": "2026-10"
     },
     {
@@ -214,7 +294,19 @@
       "since": "2026-10"
     },
     {
+      "name": "jheggstrife",
+      "since": "2026-10"
+    },
+    {
+      "name": "jklax",
+      "since": "2026-10"
+    },
+    {
       "name": "Joe Musso",
+      "since": "2026-10"
+    },
+    {
+      "name": "joeverdrive",
       "since": "2026-10"
     },
     {
@@ -230,12 +322,20 @@
       "since": "2026-10"
     },
     {
+      "name": "Jon Applebaum",
+      "since": "2026-11"
+    },
+    {
       "name": "Jordan Rich",
       "since": "2026-10"
     },
     {
       "name": "José-Manuel Anguita",
       "since": "2026-10"
+    },
+    {
+      "name": "justserii",
+      "since": "2026-11"
     },
     {
       "name": "K64",
@@ -246,11 +346,23 @@
       "since": "2026-10"
     },
     {
+      "name": "KholdFuzion",
+      "since": "2026-11"
+    },
+    {
       "name": "kobiyashi",
       "since": "2026-09"
     },
     {
+      "name": "L",
+      "since": "2026-10"
+    },
+    {
       "name": "Landork",
+      "since": "2026-10"
+    },
+    {
+      "name": "Lawrence Morrison",
       "since": "2026-10"
     },
     {
@@ -270,8 +382,8 @@
       "since": "2026-10"
     },
     {
-      "name": "Lon Seidman / Lon.TV",
-      "since": "2026-10"
+      "name": "Lilja Vesa",
+      "since": "2026-11"
     },
     {
       "name": "Lucas Azevedo",
@@ -294,6 +406,14 @@
       "since": "2026-09"
     },
     {
+      "name": "Marcos Rubio",
+      "since": "2026-11"
+    },
+    {
+      "name": "Mark Ozone",
+      "since": "2026-10"
+    },
+    {
       "name": "Mark Paterson",
       "since": "2026-10"
     },
@@ -308,6 +428,10 @@
     {
       "name": "Michael",
       "since": "2026-10"
+    },
+    {
+      "name": "Michael Smalley",
+      "since": "2026-11"
     },
     {
       "name": "Mike Puelinckx",
@@ -326,7 +450,15 @@
       "since": "2026-09"
     },
     {
+      "name": "ndstudio",
+      "since": "2026-10"
+    },
+    {
       "name": "Nero",
+      "since": "2026-10"
+    },
+    {
+      "name": "Nicholas Murray",
       "since": "2026-10"
     },
     {
@@ -350,8 +482,24 @@
       "since": "2026-09"
     },
     {
+      "name": "PA_Marvin",
+      "since": "2026-11"
+    },
+    {
       "name": "pagename?",
       "since": "2026-10"
+    },
+    {
+      "name": "Pat Blackwell",
+      "since": "2026-11"
+    },
+    {
+      "name": "Pete Rittwage",
+      "since": "2026-10"
+    },
+    {
+      "name": "Phi Long Tran",
+      "since": "2026-11"
     },
     {
       "name": "phil harris",
@@ -370,6 +518,10 @@
       "since": "2026-09"
     },
     {
+      "name": "Rajah",
+      "since": "2026-10"
+    },
+    {
       "name": "Random Hajile",
       "since": "2026-09"
     },
@@ -386,8 +538,16 @@
       "since": "2026-09"
     },
     {
+      "name": "Richard Kimmel",
+      "since": "2026-11"
+    },
+    {
       "name": "Rikkert ten Klooster",
       "since": "2026-10"
+    },
+    {
+      "name": "Roadside Explorers",
+      "since": "2026-11"
     },
     {
       "name": "Robbie",
@@ -396,6 +556,22 @@
     {
       "name": "Rory Clare",
       "since": "2026-10"
+    },
+    {
+      "name": "Ross Grivell",
+      "since": "2026-10"
+    },
+    {
+      "name": "Rudi",
+      "since": "2026-11"
+    },
+    {
+      "name": "Rune P",
+      "since": "2026-11"
+    },
+    {
+      "name": "ryretro",
+      "since": "2026-11"
     },
     {
       "name": "S",
@@ -410,11 +586,19 @@
       "since": "2026-10"
     },
     {
+      "name": "Samuel",
+      "since": "2026-10"
+    },
+    {
       "name": "Scott Ayers",
       "since": "2026-10"
     },
     {
       "name": "Scott Learmonth",
+      "since": "2026-10"
+    },
+    {
+      "name": "segacollection",
       "since": "2026-10"
     },
     {
@@ -474,19 +658,57 @@
       "since": "2026-10"
     },
     {
+      "name": "Tyler Moyer",
+      "since": "2026-10"
+    },
+    {
       "name": "unastrike",
       "since": "2026-10"
+    },
+    {
+      "name": "Vinay Srinivasan",
+      "since": "2026-11"
     },
     {
       "name": "Wolfgang Wolfgang",
       "since": "2026-09"
     },
     {
-      "name": "Yunho Nam",
+      "name": "Yoshimitsu Ashikaga",
+      "since": "2026-11"
+    },
+    {
+      "name": "Zubi Khan",
       "since": "2026-10"
     }
   ],
-  "past": [],
+  "past": [
+    {
+      "name": "Fabien Lafarge",
+      "since": "2026-10",
+      "until": "2026-11"
+    },
+    {
+      "name": "Fran",
+      "since": "2026-10",
+      "until": "2026-11"
+    },
+    {
+      "name": "GASQBDUV",
+      "since": "2026-10",
+      "until": "2026-11"
+    },
+    {
+      "name": "Lon Seidman / Lon.TV",
+      "since": "2026-10",
+      "until": "2026-11"
+    },
+    {
+      "name": "Yunho Nam",
+      "since": "2026-10",
+      "until": "2026-11"
+    }
+  ],
   "early_adopters": [
     "ac3",
     "akeley",
