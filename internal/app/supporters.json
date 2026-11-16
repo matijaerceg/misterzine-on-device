@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-10",
+  "updated": "2026-11-16",
   "current": [
     {
       "name": "Aaron de Zeeuw",
@@ -32,6 +32,10 @@
     {
       "name": "Andrew Nolte",
       "since": "2026-09"
+    },
+    {
+      "name": "Andy Drake",
+      "since": "2026-11"
     },
     {
       "name": "andynumbers",
@@ -90,6 +94,10 @@
       "since": "2026-10"
     },
     {
+      "name": "Cathode Ray Jacob",
+      "since": "2026-11"
+    },
+    {
       "name": "Charles Dreiss",
       "since": "2026-09"
     },
@@ -146,10 +154,6 @@
       "since": "2026-09"
     },
     {
-      "name": "David",
-      "since": "2026-10"
-    },
-    {
       "name": "David Broadwick",
       "since": "2026-10"
     },
@@ -164,10 +168,6 @@
     {
       "name": "DecoyBacon",
       "since": "2026-09"
-    },
-    {
-      "name": "DJ METH LAB FOR CUTIE",
-      "since": "2026-10"
     },
     {
       "name": "djconcarne",
@@ -238,10 +238,6 @@
       "since": "2026-11"
     },
     {
-      "name": "Imran Ladha",
-      "since": "2026-10"
-    },
-    {
       "name": "indigotrance",
       "since": "2026-10"
     },
@@ -300,6 +296,10 @@
     {
       "name": "jklax",
       "since": "2026-10"
+    },
+    {
+      "name": "Joao Pedro Kurtz",
+      "since": "2026-11"
     },
     {
       "name": "Joe Musso",
@@ -378,6 +378,10 @@
       "since": "2026-09"
     },
     {
+      "name": "Lemur Themepark",
+      "since": "2026-11"
+    },
+    {
       "name": "lil' ecto-1",
       "since": "2026-10"
     },
@@ -392,6 +396,10 @@
     {
       "name": "Luke Boyce",
       "since": "2026-09"
+    },
+    {
+      "name": "lupin62",
+      "since": "2026-11"
     },
     {
       "name": "Malcove",
@@ -424,6 +432,10 @@
     {
       "name": "Matthew Prather",
       "since": "2026-10"
+    },
+    {
+      "name": "Mauro Guadagnini",
+      "since": "2026-11"
     },
     {
       "name": "Michael",
@@ -554,6 +566,10 @@
       "since": "2026-10"
     },
     {
+      "name": "ronalvel .",
+      "since": "2026-11"
+    },
+    {
       "name": "Rory Clare",
       "since": "2026-10"
     },
@@ -590,6 +606,10 @@
       "since": "2026-10"
     },
     {
+      "name": "Sanborn",
+      "since": "2026-11"
+    },
+    {
       "name": "Scott Ayers",
       "since": "2026-10"
     },
@@ -608,6 +628,10 @@
     {
       "name": "SneakingElephant",
       "since": "2026-10"
+    },
+    {
+      "name": "Sophie McKeever",
+      "since": "2026-11"
     },
     {
       "name": "Stefano Mazzola",
@@ -670,6 +694,10 @@
       "since": "2026-11"
     },
     {
+      "name": "Wade Marshall",
+      "since": "2026-11"
+    },
+    {
       "name": "Wolfgang Wolfgang",
       "since": "2026-09"
     },
@@ -684,6 +712,16 @@
   ],
   "past": [
     {
+      "name": "David",
+      "since": "2026-10",
+      "until": "2026-11"
+    },
+    {
+      "name": "DJ METH LAB FOR CUTIE",
+      "since": "2026-10",
+      "until": "2026-11"
+    },
+    {
       "name": "Fabien Lafarge",
       "since": "2026-10",
       "until": "2026-11"
@@ -695,6 +733,11 @@
     },
     {
       "name": "GASQBDUV",
+      "since": "2026-10",
+      "until": "2026-11"
+    },
+    {
+      "name": "Imran Ladha",
       "since": "2026-10",
       "until": "2026-11"
     },

@@ -1,8 +1,13 @@
 # Changelog
 
-## Unreleased
+## v1.2.34 — 2026-11-16
 
 - **Options → Data → ROM report** now shows the games with ROM problems instead of a "Rescan card" message. It clears the other filters and the search, sets **Filters → ROM check** to a problem in any version and returns to the list, with the number of games in the status bar. Favorites, Recents, genre and Neo Geo views give way to the first enabled view that shows the whole catalogue. While the background check is running, or when it found nothing to show, the row says so instead. `misterzine/rom_problems.txt` still lists the zip files to add or replace. Thanks to malento for asking what the row was for.
+- In **Filters**, Y on a section heading turns every choice in that section back on, leaving the other sections and the search alone. The bottom bar offers **Y All on** only while something in the section is turned off, so a heading never empties the list. The rotation rule from Options stays in charge of **Rotation**, and with non-arcade cores hidden, **Type** keeps their saved choices. Thanks to malento for asking for a select-all.
+- When the **Filters** bottom bar runs out of room, as on vertical screens, it now drops **B Back** before shortening **Y Only/all** to **Y Only**.
+- The built-in source and core names include Rodimus Cores and the latest test builds, for cards that start without a connection. Earlier versions already learn them from the site.
+- Credits: Andy Drake, Cathode Ray Jacob, Joao Pedro Kurtz, Lemur Themepark, lupin62, Mauro Guadagnini, ronalvel, Sanborn, Sophie McKeever and Wade Marshall join the Patreon supporters.
+- Refresh the offline catalogue to the November 16 export with 3,171 entries.
 
 ## v1.2.33 — 2026-11-10
 
