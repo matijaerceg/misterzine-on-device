@@ -270,7 +270,7 @@ arcade controls. It is free and needs no beta switch or code.
 | A | Enter | details | artwork | | toggle a value; open/close a heading | run action |
 | B | Esc | Options / clear search | back | back | back | back |
 | X | Tab | Filters | | | back to the list | |
-| Y | Space | choose view | favorite | | only/all | |
+| Y | Space | choose view | favorite | | only/all; all on at a heading | |
 | Start | gamepad Start | launch remembered version | launch selected version | launch selected version | | |
 | Select (held) | | + Y: Layout, + X: Art type, + Left/Right: rotation, + A: favorite | | | | |
 | Menu | | Options; held 2 s: quit MisterZine (or quit at once: Options -> Menu button) | Options | Options | Options | back to the screen it was opened over |
@@ -776,17 +776,7 @@ screenshots match, lettering runs instead and the Preview help explains why.
   frontend that opened MisterZine). The pad's Menu button held for two
   seconds does the same.
 
-Filters start with Clear all filters, greyed out until a filter is active,
-then On the card, ROM check, Since last look, Type and Source/core. Pressing Clear all filters
-moves the selection to the first heading. The same edge arrows as in Options
-show when the list continues above or below.
-Favorites is a main-view mode and still respects all these filters.
-Press Y on a value to select only that value in its section, leaving all other
-sections and your search unchanged. Press Y again on that value to enable all
-values in its section. A still toggles values individually. On a section
-heading, A opens a closed section or closes an open one, the same as Left/Right;
-the legend reads "A ▶ Open" or "A ◀ Close" to match the selected heading.
-Y does nothing on section headings. For Since last look, Y toggles the choice.
+Filters start with Clear all filters, greyed out until a filter is active, then On the card, ROM check, Since last look, Type and Source/core. Pressing Clear all filters moves the selection to the first heading. The same edge arrows as in Options show when the list continues above or below. Favorites is a main-view mode and still respects all these filters. Press Y on a value to select only that value in its section, leaving all other sections and your search unchanged. Press Y again on that value to enable all values in its section. A still toggles values individually. On a section heading, A opens a closed section or closes an open one, the same as Left/Right; the legend reads "A ▶ Open" or "A ◀ Close" to match the selected heading. Y on a heading turns every choice in its section back on, leaving the other sections and your search unchanged; the legend offers "Y All on" only while that section has something turned off, and Y on a heading never turns anything off. For Since last look, Y toggles the choice.
 
 Filters -> Original release year groups arcade games into decades. A toggles
 the selected decade; Right expands its individual years and Left collapses
@@ -862,11 +852,7 @@ its own row and keeps its choice. A core two sources ship is a separate choice
 under each. Turning every row of a source off is the same as turning the
 source off.
 
-Counts reflect your search and the other filter sections. A choice's count
-ignores its own section, so unchecked choices still show how many entries they
-could include. Choices remain selectable at zero. Y on a value twice enables
-every choice in its section; Clear all filters restores the ordinary filter choices within your enabled
-catalogue; it does not change Options preferences.
+Counts reflect your search and the other filter sections. A choice's count ignores its own section, so unchecked choices still show how many entries they could include. Choices remain selectable at zero. Y on a value twice, or Y once on the section's heading, enables every choice in its section; Clear all filters restores the ordinary filter choices within your enabled catalogue; it does not change Options preferences.
 
 Resolution uses the catalogue's 15kHz/31kHz labels. **Unknown** means that value
 is missing. Controls includes separately recorded special controls such as

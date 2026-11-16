@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"github.com/matijaerceg/misterzine-on-device/internal/data"
+	"github.com/matijaerceg/misterzine-on-device/internal/gfx"
 	"github.com/matijaerceg/misterzine-on-device/internal/platform"
 	"reflect"
 	"strings"
@@ -49,8 +50,134 @@ func TestOnlyFilterKeepsOtherSectionsAndSearch(t *testing.T) {
 			break
 		}
 	}
-	if a.canOnlyFilter() || a.actPanel(platform.KeySpace) {
-		t.Fatal("Y acted on header")
+	// Y on the heading turns the whole section back on, never off
+	if a.canOnlyFilter() || !a.canShowAllFilter() {
+		t.Fatal("a heading with choices off offers All on, not Only")
+	}
+	beforeHeading := saves
+	if !a.actPanel(platform.KeySpace) || saves != beforeHeading+1 {
+		t.Fatal("Y on the heading did not apply and persist")
+	}
+	if len(a.filters.GenreOff) != 0 || !a.filters.SrcOff["excluded"] || a.query != "Game" || len(a.view) != 2 {
+		t.Fatal("All on changed other filters/search or left genres off")
+	}
+	if e := a.panel.entries[a.panel.cursor]; !e.header || e.kind != "genre" {
+		t.Fatal("All on moved the selection off the heading")
+	}
+	if a.canShowAllFilter() || a.actPanel(platform.KeySpace) || strings.Contains(a.filterHint(), "Y ") {
+		t.Fatal("Y acted on, or was offered on, a heading with everything on")
+	}
+}
+
+func TestHeadingAllOnAcrossSections(t *testing.T) {
+	rows := []data.Row{
+		{K: "a", Base: "Arcade", Genre: "Shooter", Year: "1985", Rot: "h"},
+		{K: "b", Base: "Arcade", Genre: "Puzzle", Year: "1992", Rot: "v"},
+	}
+	for _, rot := range []gfx.Rotation{gfx.RotNone, gfx.RotLeft} {
+		for _, inset := range []int{0, 15, 40} {
+			for _, size := range [][2]int{{320, 240}, {360, 270}, {480, 270}} {
+				a := New(Config{PhysW: size[0], PhysH: size[1], Rotation: rot, SafeInsetX: inset, SafeInsetY: inset}, data.Ingest(rows, "", time.Now()), nil)
+				a.SetFilters(data.Filters{
+					Install:  data.InstallFound,
+					YearOff:  map[string]bool{"1985": true},
+					RotOff:   map[string]bool{"v": true},
+					GenreOff: map[string]bool{"Puzzle": true},
+				})
+				a.openPanel(ScreenFilter)
+				heading := func(kind string) {
+					t.Helper()
+					for i, e := range a.panel.entries {
+						if e.header && e.kind == kind {
+							a.panel.cursor = i
+							return
+						}
+					}
+					t.Fatal("missing heading", kind)
+				}
+				for _, kind := range []string{"install", "year", "rot", "genre"} {
+					heading(kind)
+					hint := a.filterHint()
+					if !strings.HasSuffix(hint, "Y All on") || a.sm.Width(hint) > a.lay.Hint.Dx()-4 {
+						t.Fatalf("%v inset %d %v %s heading hint %q", rot, inset, size, kind, hint)
+					}
+					closed := a.panel.sectionClosed[kind]
+					a.actPanel(platform.KeySpace)
+					if a.filterSectionActive(kind) || a.panel.sectionClosed[kind] != closed {
+						t.Fatalf("%s: section still filtered or its expansion changed", kind)
+					}
+					if strings.Contains(a.filterHint(), "Y ") {
+						t.Fatalf("%s: All on still offered once everything is on", kind)
+					}
+				}
+				if a.filters.Active() {
+					t.Fatalf("every section was reset but filters remain: %+v", a.filters)
+				}
+			}
+		}
+	}
+}
+
+func TestHeadingAllOnKeepsHiddenTypeChoices(t *testing.T) {
+	a := New(Config{PhysW: 320, PhysH: 240}, data.Ingest([]data.Row{
+		{K: "a", Base: "Arcade"}, {K: "c", Base: "Console"},
+	}, "", time.Now()), nil)
+	a.SetFilters(data.Filters{BaseOff: map[string]bool{"Console": true}, BetaOff: map[string]bool{"beta": true}})
+	openExpandedFilters(a)
+	for i, e := range a.panel.entries {
+		if e.header && e.kind == "base" {
+			a.panel.cursor = i
+		}
+	}
+	if !a.actPanel(platform.KeySpace) {
+		t.Fatal("Y on Type with Beta off must turn it back on")
+	}
+	if len(a.filters.BetaOff) != 0 || !reflect.DeepEqual(a.filters.BaseOff, map[string]bool{"Console": true}) {
+		t.Fatalf("Type reset lost a hidden non-arcade choice or kept Beta off: %+v", a.filters)
+	}
+}
+
+func TestHeadingAllOnLeavesTheRotationRule(t *testing.T) {
+	a := New(Config{PhysW: 320, PhysH: 240, FilterRotation: true}, data.Ingest([]data.Row{
+		{K: "a", Base: "Arcade", Rot: "h"}, {K: "b", Base: "Arcade", Rot: "v"},
+	}, "", time.Now()), nil)
+	openExpandedFilters(a)
+	for i, e := range a.panel.entries {
+		if e.header && e.kind == "rot" {
+			a.panel.cursor = i
+		}
+	}
+	before := a.filters
+	if a.canShowAllFilter() || a.actPanel(platform.KeySpace) || a.filterHint() != "B Back" || !reflect.DeepEqual(a.filters, before) {
+		t.Fatal("Y on the rotation heading must leave the Options rule alone")
+	}
+}
+
+func TestOnlyAllLegendKeepsAllBeforeBack(t *testing.T) {
+	rows := []data.Row{{K: "a", Base: "Arcade", Genre: "Shooter", Year: "1985"}, {K: "b", Base: "Arcade", Genre: "Puzzle", Year: "1992"}}
+	for _, rot := range []gfx.Rotation{gfx.RotNone, gfx.RotLeft} {
+		for _, inset := range []int{0, 15, 40} {
+			a := New(Config{PhysW: 320, PhysH: 240, Rotation: rot, SafeInsetX: inset, SafeInsetY: inset}, data.Ingest(rows, "", time.Now()), nil)
+			openExpandedFilters(a)
+			for i, e := range a.panel.entries {
+				if e.header || e.info || (e.kind != "genre" && e.kind != "decade" && e.kind != "year") {
+					continue
+				}
+				a.panel.cursor = i
+				hint := a.filterHint()
+				if !a.hintFits(hint) {
+					t.Fatalf("%v inset %d: %q does not fit", rot, inset, hint)
+				}
+				if !strings.Contains(hint, "Y Only/all") && strings.Contains(hint, "B Back") {
+					t.Fatalf("%v inset %d: shortened Y Only/all while keeping B Back: %q", rot, inset, hint)
+				}
+				// a value row without a subgroup to open has room for the
+				// whole Y legend everywhere once B Back goes
+				if e := a.panel.entries[i]; e.kind == "genre" && !strings.Contains(hint, "Y Only/all") {
+					t.Fatalf("%v inset %d: genre row lost Y Only/all: %q", rot, inset, hint)
+				}
+			}
+		}
 	}
 }
 

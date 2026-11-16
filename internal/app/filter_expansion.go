@@ -97,10 +97,17 @@ func (a *App) filterHint() string {
 		return "A Clear  B Back"
 	}
 	if a.onFilterSectionHeader() {
+		hint := "A " + gfx.ArrowLeft + " Close  B Back"
 		if p.sectionClosed[e.kind] {
-			return "A " + gfx.ArrowRight + " Open  B Back"
+			hint = "A " + gfx.ArrowRight + " Open  B Back"
 		}
-		return "A " + gfx.ArrowLeft + " Close  B Back"
+		if a.canShowAllFilter() {
+			hint += "  Y All on"
+			if a.sm.Width(hint) > a.lay.Hint.Dx()-4 {
+				hint = strings.Replace(hint, "  B Back", "", 1)
+			}
+		}
+		return hint
 	}
 	parts := []string{"A Toggle", "B Back"}
 	if a.canOnlyFilter() {
@@ -113,11 +120,13 @@ func (a *App) filterHint() string {
 		parts = append(parts, gfx.ArrowLeft+" Close")
 	}
 	hint := strings.Join(parts, "  ")
-	if a.sm.Width(hint) > a.lay.Hint.Dx()-4 {
-		hint = strings.ReplaceAll(hint, "Y Only/all", "Y Only")
-	}
+	// B Back goes first: everyone knows B, while "/all" is the only place
+	// the footer says a second Y turns the section back on.
 	if a.sm.Width(hint) > a.lay.Hint.Dx()-4 {
 		hint = strings.ReplaceAll(hint, "  B Back", "")
+	}
+	if a.sm.Width(hint) > a.lay.Hint.Dx()-4 {
+		hint = strings.ReplaceAll(hint, "Y Only/all", "Y Only")
 	}
 	return hint
 }

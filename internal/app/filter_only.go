@@ -92,6 +92,46 @@ func (a *App) onlyFilter() bool {
 	return true
 }
 
+// canShowAllFilter reports whether Y on the selected Filters heading would
+// turn its section back on: only a heading whose section has choices off.
+// It never turns choices off, so a heading cannot empty the list.
+func (a *App) canShowAllFilter() bool {
+	if !a.onFilterSectionHeader() {
+		return false
+	}
+	kind := a.panel.entries[a.panel.cursor].kind
+	if kind == "rot" && a.rotationFilter() != "" {
+		return false // the Options rotation rule owns this section
+	}
+	return a.filterSectionActive(kind)
+}
+
+// showAllFilter turns every choice in the selected heading's section back
+// on, leaving the other sections, the search and the expansion unchanged.
+func (a *App) showAllFilter() bool {
+	if !a.canShowAllFilter() {
+		return false
+	}
+	kind := a.panel.entries[a.panel.cursor].kind
+	f := a.filters
+	copySection(kind, &f, data.Filters{})
+	if kind == "base" && !a.cfg.ShowNonArcade {
+		// Type shows only Stable and Beta here: keep the hidden non-arcade
+		// choices for when Show non-arcade cores comes back on
+		for k, v := range a.filters.BaseOff {
+			if v && k != "Arcade" {
+				if f.BaseOff == nil {
+					f.BaseOff = map[string]bool{}
+				}
+				f.BaseOff[k] = true
+			}
+		}
+	}
+	a.SetFilters(f)
+	a.buildPanel()
+	return true
+}
+
 // Compare/copy only one section so enabling all never changes other sections.
 func copySection(kind string, to *data.Filters, from data.Filters) {
 	switch kind {

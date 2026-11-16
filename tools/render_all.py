@@ -167,7 +167,9 @@ for rotation in ([], ["-rot", "left", "-logical"]):
                           "-out", f"out/year-filter-{orientation}-{inset}", "-script",
                           "tab; pagedown*4; right; down*2; shot decades; right; shot expanded; "
                           "down*2; enter; shot mixed; space; shot only-year; "
-                          "space; shot all-years; left; shot collapsed"])
+                          "space; shot all-years; left; shot collapsed; "
+                          # Y on the heading of a section with a choice off
+                          "enter; left; shot heading-all-on; space; shot heading-restored"])
 for rotation in ([], ["-rot", "left", "-logical"]):
     orientation = "t" if rotation else "h"
     scenarios.append([*rotation, "-inset", "40",
