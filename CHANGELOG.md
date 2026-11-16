@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Options → Data → ROM report** now shows the games with ROM problems instead of a "Rescan card" message. It clears the other filters and the search, sets **Filters → ROM check** to a problem in any version and returns to the list, with the number of games in the status bar. Favorites, Recents, genre and Neo Geo views give way to the first enabled view that shows the whole catalogue. While the background check is running, or when it found nothing to show, the row says so instead. `misterzine/rom_problems.txt` still lists the zip files to add or replace. Thanks to malento for asking what the row was for.
+
 ## v1.2.33 — 2026-11-10
 
 - **Found on card** keeps the previous game list and its launch choices available while a downloaded catalogue is checked against the card. The checked list appears with the selected game still highlighted if it remains visible. On a first scan, an empty card filter says **Checking card...**. Thanks to berp for reporting the cold-start case.

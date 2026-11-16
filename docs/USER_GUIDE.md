@@ -477,6 +477,8 @@ in a second or two. It waits while the list scrolls or a page turns, and
 runs below the drawing's priority, so it does not slow the list. Choosing
 another version in Details moves the mark with it.
 
+Options -> Data -> ROM report shows the pass's findings on screen: it clears the other filters and the search, sets Filters -> ROM check to a problem in any version and returns to the list, with the number of games in the status bar. A view that shows only part of the catalogue (Favorites, Recents, a genre or Neo Geo) gives way to the first enabled view that shows all of it. Clear all filters in Filters brings the whole list back. While the pass is still running, or when it found nothing the list can show, the row says so and changes nothing. The pass also writes `misterzine/rom_problems.txt` on the card: the zip files to add or replace, one to a line, then each MRA with a problem and what it is.
+
 MisterZine cannot promise that a game runs: the card status describes
 installation and core version, not a guarantee of playability.
 

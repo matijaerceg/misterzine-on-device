@@ -16,6 +16,23 @@ func (a *App) viewAvailable(m data.SortMode) bool {
 // viewOn reports whether a view is in the chooser.
 func (a *App) viewOn(m data.SortMode) bool { return a.viewAvailable(m) && !a.viewsOff[m] }
 
+// viewNarrows reports whether view m shows only part of the catalogue:
+// favourites, recent launches, one genre or the Neo Geo shortcuts.
+func viewNarrows(m data.SortMode) bool {
+	return m == data.SortFavorites || m == data.SortRecents || m.Genre() != "" || m == data.SortNeoGeo
+}
+
+// fullView is the first enabled view that shows the whole catalogue; false
+// when every enabled view narrows it.
+func (a *App) fullView() (data.SortMode, bool) {
+	for _, m := range a.enabledViews() {
+		if !viewNarrows(m) {
+			return m, true
+		}
+	}
+	return a.mode, false
+}
+
 // NeoGeoView reports the optional view's saved choice.
 func (a *App) NeoGeoView() bool { return a.viewOn(data.SortNeoGeo) }
 

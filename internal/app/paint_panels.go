@@ -703,7 +703,7 @@ func (a *App) optionsEntries() []panelEntry {
 	}
 	for i, e := range E {
 		if e.kind == "rescan" {
-			row := panelEntry{text: "ROM report", child: true, kind: "rom-report", help: "Lists ROM problems in misterzine/rom_problems.txt. Rescan card refreshes it."}
+			row := panelEntry{text: "ROM report", child: true, kind: "rom-report", help: a.romReportHelp()}
 			E = append(E[:i+1], append([]panelEntry{row}, E[i+1:]...)...)
 			break
 		}
@@ -1040,7 +1040,7 @@ var optionsActs = map[string]string{
 	"enter-code":         "Enter code",
 	"your-access":        "Open",
 	"forget-code":        "Open",
-	"rom-report":         "Info",
+	"rom-report":         "Show",
 	"show-beta-features": "Toggle",
 	"refresh":            "Refresh", "update": "Run", "update-app": "Run", "update-result": "Open", "rescan": "Rescan", "clearimg": "Clear",
 	"source-files": "Open", "views": "Open", "saver-options": "Open", "saver-preview": "Preview", "screensaver": "Preview", "launch-transition": "Preview", "saver-style": "Preview", "saver-bright": "Preview", "saver-dim": "Preview", "saver-info": "Preview",
@@ -1401,7 +1401,7 @@ func (a *App) togglePanel() bool {
 		a.openViews(e.kind)
 		return true
 	case "rom-report":
-		a.Notice("Rescan card to refresh the ROM report", 4*time.Second)
+		a.openROMReport()
 		return true
 	case "forget-code":
 		a.openForgetCode()

@@ -28,6 +28,11 @@ scenarios = [
      "tab; down; right; shot filters"],
     ["-show-beta", "-access-month", "202610", "-data", "testdata/rom-warning.json", "-rom-issue", "Missing game ROM: jpark.zip", "-rot", "left", "-logical", "-inset", "40", "-out", "out/beta-rom-list-t", "-script",
      "tab; down; right; shot filters"],
+    # Options -> Data -> ROM report: its help names the file, A lands on the games with a problem
+    ["-data", "testdata/rom-warning.json", "-rom-issue", "Missing game ROM: jpark.zip", "-out", "out/rom-report-h", "-script",
+     "back; home; right; down*6; shot row; enter; shot report"],
+    ["-data", "testdata/rom-warning.json", "-rom-issue", "Missing game ROM: jpark.zip", "-rot", "left", "-logical", "-inset", "40", "-out", "out/rom-report-t", "-script",
+     "back; home; right; down*6; shot row; enter; shot report"],
     ["-out", "out/saver-dim-h", "-script",
      "back; home; pagedown*2; right; down*3; enter; down*2; right*2; down; shot brightness-33; enter; wait 1500; shot preview-33; back; right; shot brightness-66; enter; wait 1500; shot preview-66"],
     ["-rot", "left", "-logical", "-out", "out/saver-dim-t", "-script",

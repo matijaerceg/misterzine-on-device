@@ -170,7 +170,7 @@ func (a *App) statusBar() statusBar {
 	if v, ok := statusViews[a.mode]; ok {
 		s.view = v
 	}
-	if a.filtersActive() || a.mode == data.SortFavorites || a.mode == data.SortRecents || a.mode.Genre() != "" || a.mode == data.SortNeoGeo {
+	if a.filtersActive() || viewNarrows(a.mode) {
 		s.shown, s.narrow = a.shown, true
 	}
 	return s
